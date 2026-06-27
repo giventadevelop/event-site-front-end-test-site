@@ -1,0 +1,2631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Complete guide to using Stripe Test Clocks for testing subscription renewals. Learn what Test Clocks are and how to create subscriptions with Test Clocks for reliable testing.">
+    <title>Stripe Test Clocks Guide - Testing Subscription Renewals</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+            background-color: #fff;
+        }
+        h1 {
+            color: #1a1a1a;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        h2 {
+            color: #0066cc;
+            margin-top: 30px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #333;
+            margin-top: 25px;
+        }
+        h4 {
+            color: #555;
+            margin-top: 20px;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        ul, ol {
+            margin-left: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .info code,
+        .info .code-highlight {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .success code,
+        .success .code-highlight {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .warning code,
+        .warning .code-highlight {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .error code,
+        .error .code-highlight {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .toc {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .toc ul {
+            list-style-type: none;
+            margin-left: 0;
+        }
+        .toc li {
+            margin-bottom: 5px;
+        }
+        .toc a {
+            color: #0066cc;
+        }
+        .step {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0066cc;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .step-number {
+            display: inline-block;
+            background-color: #0066cc;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .section-container {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-container.parameters {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left-color: #ff9800;
+        }
+        .section-container.output {
+            background: linear-gradient(135deg, #e6ffe6 0%, #ccffcc 100%);
+            border-left-color: #28a745;
+        }
+        .section-container.usage {
+            background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%);
+            border-left-color: #9c27b0;
+        }
+        .section-header {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            padding: 12px 20px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 8px 8px 0 0;
+            font-size: 1.2em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-header.parameters {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+        .section-header.output {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+        }
+        .section-header.usage {
+            background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        tr:hover {
+            background-color: #e3f2fd;
+            transition: background-color 0.2s ease;
+        }
+        td code {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .script-name {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+        }
+        .section-intro {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-intro code {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 3px 8px;
+            border-radius: 3px;
+        }
+        .parameters-list {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left: 4px solid #ff9800;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .parameters-list strong {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .parameters-list code {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 3px 8px;
+            border-radius: 3px;
+        }
+        .code-block {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .code-block code {
+            background-color: transparent;
+            color: #f8f8f2;
+            padding: 0;
+        }
+        .command-block {
+            position: relative;
+            margin: 15px 0;
+            border-radius: 5px;
+            overflow: hidden;
+            border: 2px solid;
+        }
+        .command-block.setup {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-color: #2196f3;
+        }
+        .command-block.expedite {
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+            border-color: #9c27b0;
+        }
+        .command-block.advance {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-color: #ff9800;
+        }
+        .command-block.verify {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-color: #4caf50;
+        }
+        .command-block.delete {
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+            border-color: #f44336;
+        }
+        .command-block.default {
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+            border-color: #757575;
+        }
+        .command-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            font-weight: bold;
+            color: #333;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .command-header-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .copy-button-template {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .copy-button-template:hover {
+            background-color: #5a6268;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .copy-button-template.copied {
+            background-color: #28a745;
+        }
+        .command-header .command-type {
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .command-content {
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            color: #1a1a1a;
+            white-space: pre-wrap;
+            word-break: break-all;
+            position: relative;
+        }
+        .copy-button {
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .copy-button:hover {
+            background-color: #0052a3;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .copy-button:active {
+            transform: translateY(0);
+        }
+        .copy-button.copied {
+            background-color: #28a745;
+        }
+        .copy-button.copied::after {
+            content: " ✓ Copied!";
+        }
+        .command-single-line {
+            display: none;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            margin-top: 8px;
+            padding: 12px 15px;
+            border-top: 1px dashed rgba(0,0,0,0.2);
+            border-radius: 4px;
+        }
+        .command-single-line.show {
+            display: block;
+        }
+        .command-single-line-label {
+            font-size: 0.8em;
+            color: #cccccc;
+            font-style: italic;
+            margin-bottom: 6px;
+        }
+        .command-single-line code {
+            background-color: transparent;
+            color: #ffffff;
+            padding: 0;
+        }
+        .command-parameters {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.5);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .command-parameters h5 {
+            margin: 0 0 12px 0;
+            font-size: 0.9em;
+            color: #333;
+            font-weight: bold;
+        }
+        .parameter-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .parameter-group.single {
+            grid-template-columns: 1fr;
+        }
+        .parameter-input {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .parameter-input label {
+            font-size: 0.8em;
+            color: #555;
+            font-weight: 600;
+        }
+        .parameter-input input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            transition: border-color 0.2s ease;
+        }
+        .parameter-input input:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+        .parameter-input input::placeholder {
+            color: #999;
+            font-style: italic;
+        }
+        @media (max-width: 768px) {
+            .parameter-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Stripe Test Clocks Guide - Testing Subscription Renewals</h1>
+
+    <p>Complete guide to using Stripe Test Clocks for testing subscription renewals and time-based events in Stripe test mode.</p>
+
+    <div class="toc">
+        <h2>Table of Contents</h2>
+        <ul>
+            <li><a href="#what-is-test-clock">What is a Test Clock?</a></li>
+            <li><a href="#quick-command-reference">Quick Command Reference</a></li>
+            <li><a href="#why-use-test-clocks">Why Use Test Clocks?</a></li>
+            <li><a href="#limitations">Limitations and Important Notes</a></li>
+            <li><a href="#customer-selection">Customer Selection Issue: Multiple Customers with Same Email</a></li>
+            <li><a href="#step-by-step">Step-by-Step: Creating Subscriptions with Test Clocks</a></li>
+            <li><a href="#code-examples">Code Examples</a></li>
+            <li><a href="#setup-script">Using the Setup Test Clock Script</a></li>
+            <li><a href="#list-test-clocks">Listing and Looking Up Test Clocks</a></li>
+            <li><a href="#advancing-time">Advancing Time with Test Clocks</a></li>
+            <li><a href="#troubleshooting">Troubleshooting</a></li>
+            <li><a href="#best-practices">Best Practices</a></li>
+            <li><a href="#related-documentation">Related Documentation</a></li>
+        </ul>
+    </div>
+
+    <h2 id="what-is-test-clock">What is a Test Clock?</h2>
+
+    <p>A <strong>Stripe Test Clock</strong> is a special testing tool that allows you to control time in Stripe's test mode. It's like a virtual clock that you can set to any time and advance at will, enabling you to test time-based events without waiting for real time to pass.</p>
+
+    <div class="info">
+        <strong>Key Concept:</strong> Test Clocks let you simulate the passage of time in Stripe test mode. When you advance a Test Clock, Stripe automatically processes all time-based events (subscription renewals, invoice generation, webhooks) as if that time had actually passed.
+    </div>
+
+    <h2 id="quick-command-reference">Quick Command Reference</h2>
+
+    <p>All scripts and commands mentioned in this guide, organized by purpose:</p>
+
+    <div class="section-container">
+        <div class="section-header">🔧 Setup and Configuration</div>
+        <ul>
+            <li><strong><a href="#setup-script">Setup Test Clock</a></strong> - Create test clock and attach customer
+                <br><code>node scripts/test-subscription-renewal/setup-test-clock.js --customer-email=test@example.com --customer-name="Test Customer" --test-clock-name="Subscription Test Clock"</code>
+            </li>
+            <li><strong><a href="#list-test-clocks">List Test Clocks</a></strong> - View all test clocks or search by name
+                <br><code>node scripts/test-subscription-renewal/list-test-clocks.js --name="Subscription Test Clock"</code>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section-container">
+        <div class="section-header">👤 Customer Management</div>
+        <ul>
+            <li><strong><a href="#verify-customer-selection">Verify Customer Selection</a></strong> - Check customers with same email
+                <br><code>node scripts/test-subscription-renewal/verify-customer-selection.js --email=test@example.com</code>
+            </li>
+            <li><strong><a href="#delete-customer">Delete Customer</a></strong> - Remove customer by ID or email
+                <br><code>node scripts/test-subscription-renewal/delete-customer.js --customer-id=cus_xxx</code>
+                <br><code>node scripts/test-subscription-renewal/delete-customer.js --customer-email=test@example.com --delete-all=true</code>
+            </li>
+            <li><strong>Check Customer Test Clock</strong> - Verify if customer is attached to test clock
+                <br><code>node scripts/test-subscription-renewal/check-customer-test-clock.js --customer-id=cus_xxx</code>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section-container">
+        <div class="section-header">⏩ Advancing Time</div>
+        <ul>
+            <li><strong><a href="#advancing-time">Expedite Subscription Renewal</a></strong> - Advance test clock to trigger renewal
+                <br><code>node scripts/test-subscription-renewal/expedite-stripe-renewal-test-clock.js --subscription-id=sub_xxx --days-to-advance=30</code>
+            </li>
+        </ul>
+    </div>
+
+    <div class="info">
+        <strong>💡 Tip:</strong> Click on any script name above to jump directly to its detailed documentation section below.
+    </div>
+
+    <h3>How Test Clocks Work</h3>
+
+    <ol>
+        <li><strong>Create a Test Clock</strong> - You create a virtual clock and set its initial time (usually current time)</li>
+        <li><strong>Attach Resources</strong> - You attach customers, subscriptions, or other resources to the Test Clock</li>
+        <li><strong>Advance Time</strong> - You can advance the clock by any amount (days, weeks, months)</li>
+        <li><strong>Automatic Processing</strong> - Stripe automatically processes all time-based events when the clock advances</li>
+    </ol>
+
+    <h3>What Happens When You Advance a Test Clock?</h3>
+
+    <p>When you advance a Test Clock, Stripe automatically:</p>
+    <ul>
+        <li>✅ Processes subscription renewals</li>
+        <li>✅ Generates invoices for upcoming billing periods</li>
+        <li>✅ Sends webhooks (invoice.payment_succeeded, customer.subscription.updated, etc.)</li>
+        <li>✅ Updates subscription period dates</li>
+        <li>✅ Handles trial period expirations</li>
+        <li>✅ Processes any other time-based events</li>
+    </ul>
+
+    <h2 id="why-use-test-clocks">Why Use Test Clocks?</h2>
+
+    <p>Test Clocks are the <strong>official and recommended way</strong> to test time-based events in Stripe test mode. Here's why:</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Benefit</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Official Stripe Feature</strong></td>
+                <td>Test Clocks are built into Stripe's API and are the recommended way to test time-based events</td>
+            </tr>
+            <tr>
+                <td><strong>Automatic Processing</strong></td>
+                <td>Stripe automatically handles renewals, invoices, and webhooks when you advance time</td>
+            </tr>
+            <tr>
+                <td><strong>Realistic Testing</strong></td>
+                <td>Simulates real-world time passing, making tests more accurate</td>
+            </tr>
+            <tr>
+                <td><strong>Webhook Triggers</strong></td>
+                <td>Automatically sends webhooks as if time actually passed</td>
+            </tr>
+            <tr>
+                <td><strong>Works with Incomplete Subscriptions</strong></td>
+                <td>Can advance time even if subscription isn't fully active</td>
+            </tr>
+            <tr>
+                <td><strong>Precise Control</strong></td>
+                <td>You can advance by exact amounts (days, hours, etc.)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 id="limitations">Limitations and Important Notes</h2>
+
+    <div class="warning">
+        <strong>⚠️ CRITICAL LIMITATION:</strong> Test Clocks <strong>ONLY work for subscriptions created AFTER the test clock is set up</strong>. You cannot retroactively attach an existing subscription to a test clock.
+    </div>
+
+    <h3>What This Means</h3>
+
+    <ul>
+        <li>❌ <strong>Existing subscriptions cannot use Test Clocks</strong> - If a subscription was created before the test clock, it cannot be attached</li>
+        <li>✅ <strong>New subscriptions work perfectly</strong> - Subscriptions created after attaching the customer to a test clock will use the test clock</li>
+        <li>⚠️ <strong>Order matters</strong> - You must create the test clock and attach the customer BEFORE creating the subscription</li>
+    </ul>
+
+    <h3>Why This Limitation Exists</h3>
+
+    <p>Stripe needs to know about the test clock at the time of subscription creation so it can properly track time-based events. Once a subscription is created with real time, it cannot be retroactively moved to a test clock.</p>
+
+    <h3>Customer Attachment Limitation</h3>
+
+    <div class="error">
+        <strong>❌ STRIPE RESTRICTION:</strong> You <strong>CANNOT attach a customer to a test clock</strong> if they have existing subscriptions that were created <strong>BEFORE</strong> the test clock was created.
+    </div>
+
+    <p><strong>Error Message:</strong> <code class="code-highlight">Received unknown parameter: test_clock</code></p>
+
+    <p>This happens when you try to update a customer with <code class="code-highlight">test_clock</code> parameter, but Stripe rejects it because the customer has existing subscriptions created before the test clock.</p>
+
+    <h4>Why This Happens</h4>
+    <p>Stripe prevents attaching customers to test clocks if they have existing subscriptions because:</p>
+    <ul>
+        <li>Existing subscriptions cannot be retroactively attached to test clocks</li>
+        <li>Stripe wants to prevent confusion about which subscriptions use the test clock</li>
+        <li>Only new subscriptions created AFTER the test clock can use it</li>
+    </ul>
+
+    <h4>Solutions</h4>
+    <div class="info">
+        <strong>✅ Solution 1: Create a New Customer (Recommended)</strong>
+        <p>Create a fresh customer specifically for testing. This is the cleanest approach:</p>
+        <div class="code-block">
+<code>node scripts/test-subscription-renewal/setup-test-clock.js \
+  --customer-email=newtest@example.com \
+  --customer-name="New Test Customer" \
+  --test-clock-name="Subscription Test Clock"</code>
+        </div>
+    </div>
+
+    <div class="info">
+        <strong>✅ Solution 2: Skip Customer Attachment</strong>
+        <p>If you must use an existing customer, you can skip the attachment step. The test clock will still be created, and <strong>new subscriptions</strong> created for that customer will automatically use the test clock if they are created AFTER the test clock was created.</p>
+        <p><strong>Note:</strong> The <code class="script-name">setup-test-clock.js</code> script will automatically detect this situation and offer to skip attachment.</p>
+    </div>
+
+    <div class="info">
+        <strong>✅ Solution 3: Cancel Existing Subscriptions First</strong>
+        <p>Cancel all existing subscriptions for the customer, then attach to test clock, then create new subscriptions. This ensures all subscriptions use the test clock.</p>
+        <p><strong>Warning:</strong> This will cancel real subscriptions in test mode, so only do this if you're okay with losing those subscriptions.</p>
+    </div>
+
+    <div class="warning">
+        <strong>⚠️ Important:</strong> Even if customer attachment fails, you can still create NEW subscriptions for that customer and they will use the test clock automatically, as long as:
+        <ul>
+            <li>The test clock was created BEFORE the subscription</li>
+            <li>The subscription is created AFTER the test clock</li>
+            <li>You don't need to explicitly attach the customer (Stripe handles it automatically for new subscriptions)</li>
+        </ul>
+    </div>
+
+    <h2 id="customer-selection">Customer Selection Issue: Multiple Customers with Same Email</h2>
+
+    <div class="warning">
+        <strong>⚠️ Critical Issue:</strong> If multiple Stripe customers exist with the same email address, the application may select the WRONG customer (one without a test clock) when processing payments.
+    </div>
+
+    <h3>The Problem</h3>
+
+    <p>When the application creates a Stripe Checkout Session or processes a payment, it uses:</p>
+    <div class="code-block">
+<code>stripe.customers.list({ email: <span class="code-highlight">"user@example.com"</span>, limit: <span class="code-highlight">1</span> })</code>
+    </div>
+
+    <p>This returns the <strong>FIRST customer found</strong> with that email. If multiple customers exist:</p>
+    <ul>
+        <li>❌ The selection is <strong>NOT guaranteed</strong> to be the newest customer</li>
+        <li>❌ The selection is <strong>NOT guaranteed</strong> to be the one attached to a test clock</li>
+        <li>❌ The application may pick an old customer without a test clock</li>
+        <li>❌ New subscriptions will NOT use the test clock if the wrong customer is selected</li>
+    </ul>
+
+    <h3 id="verify-customer-selection">How to Verify Which Customer Will Be Selected</h3>
+
+    <p>Use the <code class="script-name">verify-customer-selection.js</code> script to check which customer ID will be used:</p>
+
+    <div class="command-block verify" data-command-type="verify" data-command-base="node scripts/test-subscription-renewal/verify-customer-selection.js" data-template-command="node scripts/test-subscription-renewal/verify-customer-selection.js --email=test@example.com">
+        <div class="command-header">
+            <span class="command-type">Verify Script</span>
+            <div class="command-header-buttons">
+                <button class="copy-button-template" onclick="copyTemplateCommand(this, 'verify-customer')" title="Copy template command">📄 Template</button>
+                <button class="copy-button" onclick="copyCommand(this, 'verify-customer')" title="Copy customized command">📋 Copy</button>
+            </div>
+        </div>
+        <div class="command-parameters">
+            <h5>🔧 Customize Parameters:</h5>
+            <div class="parameter-group single">
+                <div class="parameter-input">
+                    <label for="verify-customer-email">Customer Email:</label>
+                    <input type="email" id="verify-customer-email" placeholder="test@example.com" value="test@example.com" oninput="updateCommand('verify-customer', 'email', this.value)">
+                </div>
+            </div>
+        </div>
+        <div class="command-content" id="verify-customer">node scripts/test-subscription-renewal/verify-customer-selection.js --email=test@example.com</div>
+        <div class="command-single-line" id="verify-customer-single">
+            <div class="command-single-line-label">Windows Single-Line:</div>
+            <code id="verify-customer-single-code">node scripts/test-subscription-renewal/verify-customer-selection.js --email=test@example.com</code>
+        </div>
+    </div>
+
+    <p>This script will:</p>
+    <ul>
+        <li>✅ List all customers with the given email</li>
+        <li>✅ Show which customer will be selected (first in API response)</li>
+        <li>✅ Check if the selected customer is attached to a test clock</li>
+        <li>✅ Provide recommendations for fixing the issue</li>
+    </ul>
+
+    <h3 id="delete-customer">Solutions</h3>
+
+    <div class="info">
+        <strong>✅ Solution 1: Delete Old Customers (Recommended)</strong>
+        <p>Delete old customers that are not attached to test clocks. This ensures only the correct customer exists:</p>
+
+        <p><strong>Step 1: Verify which customers exist</strong></p>
+        <div class="command-block verify" data-command-type="verify" data-command-base="node scripts/test-subscription-renewal/verify-customer-selection.js" data-template-command="node scripts/test-subscription-renewal/verify-customer-selection.js --email=test@example.com">
+            <div class="command-header">
+                <span class="command-type">Verify Script</span>
+                <div class="command-header-buttons">
+                    <button class="copy-button-template" onclick="copyTemplateCommand(this, 'verify-customer-1')" title="Copy template command">📄 Template</button>
+                    <button class="copy-button" onclick="copyCommand(this, 'verify-customer-1')" title="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>🔧 Customize Parameters:</h5>
+                <div class="parameter-group single">
+                    <div class="parameter-input">
+                        <label for="verify-customer-1-email">Customer Email:</label>
+                        <input type="email" id="verify-customer-1-email" placeholder="test@example.com" value="test@example.com" oninput="updateCommand('verify-customer-1', 'email', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="verify-customer-1">node scripts/test-subscription-renewal/verify-customer-selection.js --email=test@example.com</div>
+            <div class="command-single-line" id="verify-customer-1-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="verify-customer-1-single-code">node scripts/test-subscription-renewal/verify-customer-selection.js --email=test@example.com</code>
+            </div>
+        </div>
+
+        <p><strong>Step 2: Delete customer by ID (one at a time)</strong></p>
+        <div class="command-block delete" data-command-type="delete" data-command-base="node scripts/test-subscription-renewal/delete-customer.js" data-template-command="node scripts/test-subscription-renewal/delete-customer.js --customer-id=cus_OLD_CUSTOMER_ID">
+            <div class="command-header">
+                <span class="command-type">Delete Script</span>
+                <div class="command-header-buttons">
+                    <button class="copy-button-template" onclick="copyTemplateCommand(this, 'delete-customer-id')" title="Copy template command">📄 Template</button>
+                    <button class="copy-button" onclick="copyCommand(this, 'delete-customer-id')" title="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>🔧 Customize Parameters:</h5>
+                <div class="parameter-group single">
+                    <div class="parameter-input">
+                        <label for="delete-customer-id-customer-id">Customer ID (cus_xxx):</label>
+                        <input type="text" id="delete-customer-id-customer-id" placeholder="cus_OLD_CUSTOMER_ID" value="cus_OLD_CUSTOMER_ID" oninput="updateCommand('delete-customer-id', 'customer-id', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="delete-customer-id">node scripts/test-subscription-renewal/delete-customer.js --customer-id=cus_OLD_CUSTOMER_ID</div>
+            <div class="command-single-line" id="delete-customer-id-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="delete-customer-id-single-code">node scripts/test-subscription-renewal/delete-customer.js --customer-id=cus_OLD_CUSTOMER_ID</code>
+            </div>
+        </div>
+
+        <p><strong>Step 3: Or delete all customers with email (use with caution)</strong></p>
+        <div class="command-block delete" data-command-type="delete" data-command-base="node scripts/test-subscription-renewal/delete-customer.js" data-template-command="node scripts/test-subscription-renewal/delete-customer.js --customer-email=test@example.com --delete-all=true">
+            <div class="command-header">
+                <span class="command-type">Delete Script</span>
+                <div class="command-header-buttons">
+                    <button class="copy-button-template" onclick="copyTemplateCommand(this, 'delete-customer-email')" title="Copy template command">📄 Template</button>
+                    <button class="copy-button" onclick="copyCommand(this, 'delete-customer-email')" title="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>🔧 Customize Parameters:</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="delete-customer-email-customer-email">Customer Email:</label>
+                        <input type="email" id="delete-customer-email-customer-email" placeholder="test@example.com" value="test@example.com" oninput="updateCommand('delete-customer-email', 'customer-email', this.value)">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="delete-customer-email-delete-all">Delete All:</label>
+                        <input type="text" id="delete-customer-email-delete-all" placeholder="true" value="true" oninput="updateCommand('delete-customer-email', 'delete-all', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="delete-customer-email">node scripts/test-subscription-renewal/delete-customer.js --customer-email=test@example.com --delete-all=true</div>
+            <div class="command-single-line" id="delete-customer-email-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="delete-customer-email-single-code">node scripts/test-subscription-renewal/delete-customer.js --customer-email=test@example.com --delete-all=true</code>
+            </div>
+        </div>
+
+        <p><strong>Note:</strong> The <code class="script-name">delete-customer.js</code> script will automatically cancel all subscriptions before deleting the customer.</p>
+    </div>
+
+    <div class="info">
+        <strong>✅ Solution 2: Attach Selected Customer to Test Clock</strong>
+        <p>If the selected customer is not attached to a test clock, attach it:</p>
+
+        <p><strong>Step 1: Verify which customer will be selected</strong></p>
+        <div class="command-block verify" data-command-type="verify" data-command-base="node scripts/test-subscription-renewal/verify-customer-selection.js" data-template-command="node scripts/test-subscription-renewal/verify-customer-selection.js --email=test@example.com">
+            <div class="command-header">
+                <span class="command-type">Verify Script</span>
+                <div class="command-header-buttons">
+                    <button class="copy-button-template" onclick="copyTemplateCommand(this, 'verify-customer-2')" title="Copy template command">📄 Template</button>
+                    <button class="copy-button" onclick="copyCommand(this, 'verify-customer-2')" title="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>🔧 Customize Parameters:</h5>
+                <div class="parameter-group single">
+                    <div class="parameter-input">
+                        <label for="verify-customer-2-email">Customer Email:</label>
+                        <input type="email" id="verify-customer-2-email" placeholder="test@example.com" value="test@example.com" oninput="updateCommand('verify-customer-2', 'email', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="verify-customer-2">node scripts/test-subscription-renewal/verify-customer-selection.js --email=test@example.com</div>
+            <div class="command-single-line" id="verify-customer-2-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="verify-customer-2-single-code">node scripts/test-subscription-renewal/verify-customer-selection.js --email=test@example.com</code>
+            </div>
+        </div>
+
+        <p><strong>Step 2: Attach the selected customer to an existing test clock</strong></p>
+        <div class="command-block setup" data-command-type="setup" data-command-base="node scripts/test-subscription-renewal/setup-test-clock.js" data-template-command="node scripts/test-subscription-renewal/setup-test-clock.js --customer-id=cus_SELECTED_CUSTOMER_ID --test-clock-name=&quot;Subscription Test Clock&quot; --reuse-test-clock=true">
+            <div class="command-header">
+                <span class="command-type">Setup Script</span>
+                <div class="command-header-buttons">
+                    <button class="copy-button-template" onclick="copyTemplateCommand(this, 'setup-attach')" title="Copy template command">📄 Template</button>
+                    <button class="copy-button" onclick="copyCommand(this, 'setup-attach')" title="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>🔧 Customize Parameters:</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="setup-attach-customer-id">Customer ID (cus_xxx):</label>
+                        <input type="text" id="setup-attach-customer-id" placeholder="cus_SELECTED_CUSTOMER_ID" value="cus_SELECTED_CUSTOMER_ID" oninput="updateCommand('setup-attach', 'customer-id', this.value)">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="setup-attach-test-clock-name">Test Clock Name:</label>
+                        <input type="text" id="setup-attach-test-clock-name" placeholder="Subscription Test Clock" value="Subscription Test Clock" oninput="updateCommand('setup-attach', 'test-clock-name', this.value)">
+                    </div>
+                </div>
+                <div class="parameter-group single">
+                    <div class="parameter-input">
+                        <label for="setup-attach-reuse-test-clock">Reuse Test Clock:</label>
+                        <input type="text" id="setup-attach-reuse-test-clock" placeholder="true" value="true" oninput="updateCommand('setup-attach', 'reuse-test-clock', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="setup-attach">node scripts/test-subscription-renewal/setup-test-clock.js --customer-id=cus_SELECTED_CUSTOMER_ID --test-clock-name="Subscription Test Clock" --reuse-test-clock=true</div>
+            <div class="command-single-line" id="setup-attach-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="setup-attach-single-code">node scripts/test-subscription-renewal/setup-test-clock.js --customer-id=cus_SELECTED_CUSTOMER_ID --test-clock-name="Subscription Test Clock" --reuse-test-clock=true</code>
+            </div>
+        </div>
+
+        <p><strong>Note:</strong> This only works if the customer has NO existing subscriptions. If subscriptions exist, you must delete them first or use Solution 1.</p>
+    </div>
+
+    <div class="info">
+        <strong>✅ Solution 3: Create New Customer with Test Clock (Best for Testing)</strong>
+        <p>Create a fresh customer specifically for testing. This is the cleanest approach:</p>
+
+        <p><strong>Step 1: Delete old customers first (optional but recommended)</strong></p>
+        <div class="command-block delete" data-command-type="delete" data-command-base="node scripts/test-subscription-renewal/delete-customer.js" data-template-command="node scripts/test-subscription-renewal/delete-customer.js --customer-email=test@example.com --delete-all=true">
+            <div class="command-header">
+                <span class="command-type">Delete Script</span>
+                <div class="command-header-buttons">
+                    <button class="copy-button-template" onclick="copyTemplateCommand(this, 'delete-customer-3')" title="Copy template command">📄 Template</button>
+                    <button class="copy-button" onclick="copyCommand(this, 'delete-customer-3')" title="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>🔧 Customize Parameters:</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="delete-customer-3-customer-email">Customer Email:</label>
+                        <input type="email" id="delete-customer-3-customer-email" placeholder="test@example.com" value="test@example.com" oninput="updateCommand('delete-customer-3', 'customer-email', this.value)">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="delete-customer-3-delete-all">Delete All:</label>
+                        <input type="text" id="delete-customer-3-delete-all" placeholder="true" value="true" oninput="updateCommand('delete-customer-3', 'delete-all', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="delete-customer-3">node scripts/test-subscription-renewal/delete-customer.js --customer-email=test@example.com --delete-all=true</div>
+            <div class="command-single-line" id="delete-customer-3-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="delete-customer-3-single-code">node scripts/test-subscription-renewal/delete-customer.js --customer-email=test@example.com --delete-all=true</code>
+            </div>
+        </div>
+
+        <p><strong>Step 2: Create new customer with test clock</strong></p>
+        <div class="command-block setup" data-command-type="setup" data-command-base="node scripts/test-subscription-renewal/setup-test-clock.js" data-template-command="node scripts/test-subscription-renewal/setup-test-clock.js --customer-email=test@example.com --customer-name=&quot;Test Customer&quot; --test-clock-name=&quot;Subscription Test Clock&quot; --force-new-customer=true">
+            <div class="command-header">
+                <span class="command-type">Setup Script</span>
+                <div class="command-header-buttons">
+                    <button class="copy-button-template" onclick="copyTemplateCommand(this, 'setup-new-customer')" title="Copy template command">📄 Template</button>
+                    <button class="copy-button" onclick="copyCommand(this, 'setup-new-customer')" title="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>🔧 Customize Parameters:</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="setup-new-customer-customer-email">Customer Email:</label>
+                        <input type="email" id="setup-new-customer-customer-email" placeholder="test@example.com" value="test@example.com" oninput="updateCommand('setup-new-customer', 'customer-email', this.value)">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="setup-new-customer-customer-name">Customer Name:</label>
+                        <input type="text" id="setup-new-customer-customer-name" placeholder="Test Customer" value="Test Customer" oninput="updateCommand('setup-new-customer', 'customer-name', this.value)">
+                    </div>
+                </div>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="setup-new-customer-test-clock-name">Test Clock Name:</label>
+                        <input type="text" id="setup-new-customer-test-clock-name" placeholder="Subscription Test Clock" value="Subscription Test Clock" oninput="updateCommand('setup-new-customer', 'test-clock-name', this.value)">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="setup-new-customer-force-new-customer">Force New Customer:</label>
+                        <input type="text" id="setup-new-customer-force-new-customer" placeholder="true" value="true" oninput="updateCommand('setup-new-customer', 'force-new-customer', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="setup-new-customer">node scripts/test-subscription-renewal/setup-test-clock.js --customer-email=test@example.com --customer-name="Test Customer" --test-clock-name="Subscription Test Clock" --force-new-customer=true</div>
+            <div class="command-single-line" id="setup-new-customer-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="setup-new-customer-single-code">node scripts/test-subscription-renewal/setup-test-clock.js --customer-email=test@example.com --customer-name="Test Customer" --test-clock-name="Subscription Test Clock" --force-new-customer=true</code>
+            </div>
+        </div>
+
+        <p><strong>Note:</strong> Using <code class="code-highlight">--force-new-customer=true</code> ensures a new customer is created even if one with the same email exists (Stripe allows multiple customers with the same email).</p>
+    </div>
+
+    <h3>Attaching Customer to Existing Test Clock</h3>
+
+    <p>The <code class="script-name">setup-test-clock.js</code> script supports attaching a customer to an <strong>existing</strong> test clock:</p>
+
+    <div class="command-block setup" data-command-type="setup" data-command-base="node scripts/test-subscription-renewal/setup-test-clock.js" data-template-command="node scripts/test-subscription-renewal/setup-test-clock.js --customer-id=cus_xxx --test-clock-name=&quot;Subscription Test Clock&quot; --reuse-test-clock=true">
+        <div class="command-header">
+            <span class="command-type">Setup Script</span>
+            <div class="command-header-buttons">
+                <button class="copy-button-template" onclick="copyTemplateCommand(this, 'setup-existing-clock')" title="Copy template command">📄 Template</button>
+                <button class="copy-button" onclick="copyCommand(this, 'setup-existing-clock')" title="Copy customized command">📋 Copy</button>
+            </div>
+        </div>
+        <div class="command-parameters">
+            <h5>🔧 Customize Parameters:</h5>
+            <div class="parameter-group">
+                <div class="parameter-input">
+                    <label for="setup-existing-clock-customer-id">Customer ID (cus_xxx):</label>
+                    <input type="text" id="setup-existing-clock-customer-id" placeholder="cus_xxx" value="cus_xxx" oninput="updateCommand('setup-existing-clock', 'customer-id', this.value)">
+                </div>
+                <div class="parameter-input">
+                    <label for="setup-existing-clock-test-clock-name">Test Clock Name:</label>
+                    <input type="text" id="setup-existing-clock-test-clock-name" placeholder="Subscription Test Clock" value="Subscription Test Clock" oninput="updateCommand('setup-existing-clock', 'test-clock-name', this.value)">
+                </div>
+            </div>
+            <div class="parameter-group single">
+                <div class="parameter-input">
+                    <label for="setup-existing-clock-reuse-test-clock">Reuse Test Clock:</label>
+                    <input type="text" id="setup-existing-clock-reuse-test-clock" placeholder="true" value="true" oninput="updateCommand('setup-existing-clock', 'reuse-test-clock', this.value)">
+                </div>
+            </div>
+        </div>
+        <div class="command-content" id="setup-existing-clock">node scripts/test-subscription-renewal/setup-test-clock.js --customer-id=cus_xxx --test-clock-name="Subscription Test Clock" --reuse-test-clock=true</div>
+        <div class="command-single-line" id="setup-existing-clock-single">
+            <div class="command-single-line-label">Windows Single-Line:</div>
+            <code id="setup-existing-clock-single-code">node scripts/test-subscription-renewal/setup-test-clock.js --customer-id=cus_xxx --test-clock-name="Subscription Test Clock" --reuse-test-clock=true</code>
+        </div>
+    </div>
+
+    <p>This will:</p>
+    <ul>
+        <li>✅ Find the existing test clock by name (if <code class="code-highlight">--reuse-test-clock=true</code>)</li>
+        <li>✅ Retrieve the customer by ID</li>
+        <li>✅ Check if customer has existing subscriptions</li>
+        <li>✅ Attach customer to the test clock (if no subscriptions exist)</li>
+    </ul>
+
+    <div class="warning">
+        <strong>⚠️ Important:</strong> You can only attach a customer to a test clock if:
+        <ul>
+            <li>✅ The customer has NO existing subscriptions, OR</li>
+            <li>✅ All existing subscriptions were created AFTER the test clock was created</li>
+        </ul>
+        <p>If the customer has subscriptions created BEFORE the test clock, attachment will fail. In this case, delete the old customer and create a new one.</p>
+    </div>
+
+    <h3>Testing Workflow</h3>
+
+    <p>Recommended workflow for testing with test clocks:</p>
+    <ol>
+        <li><strong>Verify customer selection:</strong>
+            <div class="command-block verify" data-command-type="verify" data-command-base="node scripts/test-subscription-renewal/verify-customer-selection.js" data-template-command="node scripts/test-subscription-renewal/verify-customer-selection.js --email=test@example.com">
+                <div class="command-header">
+                    <span class="command-type">Verify Script</span>
+                    <div class="command-header-buttons">
+                        <button class="copy-button-template" onclick="copyTemplateCommand(this, 'verify-workflow-1')" title="Copy template command">📄 Template</button>
+                        <button class="copy-button" onclick="copyCommand(this, 'verify-workflow-1')" title="Copy customized command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Customize Parameters:</h5>
+                    <div class="parameter-group single">
+                        <div class="parameter-input">
+                            <label for="verify-workflow-1-email">Customer Email:</label>
+                            <input type="email" id="verify-workflow-1-email" placeholder="test@example.com" value="test@example.com" oninput="updateCommand('verify-workflow-1', 'email', this.value)">
+                        </div>
+                    </div>
+                </div>
+                <div class="command-content" id="verify-workflow-1">node scripts/test-subscription-renewal/verify-customer-selection.js --email=test@example.com</div>
+                <div class="command-single-line" id="verify-workflow-1-single">
+                    <div class="command-single-line-label">Windows Single-Line:</div>
+                    <code id="verify-workflow-1-single-code">node scripts/test-subscription-renewal/verify-customer-selection.js --email=test@example.com</code>
+                </div>
+            </div>
+        </li>
+        <li><strong>Delete old customers (if needed):</strong>
+            <div class="command-block delete" data-command-type="delete" data-command-base="node scripts/test-subscription-renewal/delete-customer.js" data-template-command="node scripts/test-subscription-renewal/delete-customer.js --customer-id=cus_OLD_ID">
+                <div class="command-header">
+                    <span class="command-type">Delete Script</span>
+                    <div class="command-header-buttons">
+                        <button class="copy-button-template" onclick="copyTemplateCommand(this, 'delete-workflow-2')" title="Copy template command">📄 Template</button>
+                        <button class="copy-button" onclick="copyCommand(this, 'delete-workflow-2')" title="Copy customized command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Customize Parameters:</h5>
+                    <div class="parameter-group single">
+                        <div class="parameter-input">
+                            <label for="delete-workflow-2-customer-id">Customer ID (cus_xxx):</label>
+                            <input type="text" id="delete-workflow-2-customer-id" placeholder="cus_OLD_ID" value="cus_OLD_ID" oninput="updateCommand('delete-workflow-2', 'customer-id', this.value)">
+                        </div>
+                    </div>
+                </div>
+                <div class="command-content" id="delete-workflow-2">node scripts/test-subscription-renewal/delete-customer.js --customer-id=cus_OLD_ID</div>
+                <div class="command-single-line" id="delete-workflow-2-single">
+                    <div class="command-single-line-label">Windows Single-Line:</div>
+                    <code id="delete-workflow-2-single-code">node scripts/test-subscription-renewal/delete-customer.js --customer-id=cus_OLD_ID</code>
+                </div>
+            </div>
+        </li>
+        <li><strong>Create new customer with test clock:</strong>
+            <div class="command-block setup" data-command-type="setup" data-command-base="node scripts/test-subscription-renewal/setup-test-clock.js" data-template-command="node scripts/test-subscription-renewal/setup-test-clock.js --customer-email=test@example.com --customer-name=&quot;Test Customer&quot; --test-clock-name=&quot;Subscription Test Clock&quot;">
+                <div class="command-header">
+                    <span class="command-type">Setup Script</span>
+                    <div class="command-header-buttons">
+                        <button class="copy-button-template" onclick="copyTemplateCommand(this, 'setup-workflow-3')" title="Copy template command">📄 Template</button>
+                        <button class="copy-button" onclick="copyCommand(this, 'setup-workflow-3')" title="Copy customized command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Customize Parameters:</h5>
+                    <div class="parameter-group">
+                        <div class="parameter-input">
+                            <label for="setup-workflow-3-customer-email">Customer Email:</label>
+                            <input type="email" id="setup-workflow-3-customer-email" placeholder="test@example.com" value="test@example.com" oninput="updateCommand('setup-workflow-3', 'customer-email', this.value)">
+                        </div>
+                        <div class="parameter-input">
+                            <label for="setup-workflow-3-customer-name">Customer Name:</label>
+                            <input type="text" id="setup-workflow-3-customer-name" placeholder="Test Customer" value="Test Customer" oninput="updateCommand('setup-workflow-3', 'customer-name', this.value)">
+                        </div>
+                    </div>
+                    <div class="parameter-group single">
+                        <div class="parameter-input">
+                            <label for="setup-workflow-3-test-clock-name">Test Clock Name:</label>
+                            <input type="text" id="setup-workflow-3-test-clock-name" placeholder="Subscription Test Clock" value="Subscription Test Clock" oninput="updateCommand('setup-workflow-3', 'test-clock-name', this.value)">
+                        </div>
+                    </div>
+                </div>
+                <div class="command-content" id="setup-workflow-3">node scripts/test-subscription-renewal/setup-test-clock.js --customer-email=test@example.com --customer-name="Test Customer" --test-clock-name="Subscription Test Clock"</div>
+                <div class="command-single-line" id="setup-workflow-3-single">
+                    <div class="command-single-line-label">Windows Single-Line:</div>
+                    <code id="setup-workflow-3-single-code">node scripts/test-subscription-renewal/setup-test-clock.js --customer-email=test@example.com --customer-name="Test Customer" --test-clock-name="Subscription Test Clock"</code>
+                </div>
+            </div>
+        </li>
+        <li><strong>Verify setup:</strong>
+            <div class="command-block verify" data-command-type="verify" data-command-base="node scripts/test-subscription-renewal/verify-customer-selection.js" data-template-command="node scripts/test-subscription-renewal/verify-customer-selection.js --email=test@example.com">
+                <div class="command-header">
+                    <span class="command-type">Verify Script</span>
+                    <div class="command-header-buttons">
+                        <button class="copy-button-template" onclick="copyTemplateCommand(this, 'verify-workflow-4')" title="Copy template command">📄 Template</button>
+                        <button class="copy-button" onclick="copyCommand(this, 'verify-workflow-4')" title="Copy customized command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Customize Parameters:</h5>
+                    <div class="parameter-group single">
+                        <div class="parameter-input">
+                            <label for="verify-workflow-4-email">Customer Email:</label>
+                            <input type="email" id="verify-workflow-4-email" placeholder="test@example.com" value="test@example.com" oninput="updateCommand('verify-workflow-4', 'email', this.value)">
+                        </div>
+                    </div>
+                </div>
+                <div class="command-content" id="verify-workflow-4">node scripts/test-subscription-renewal/verify-customer-selection.js --email=test@example.com</div>
+                <div class="command-single-line" id="verify-workflow-4-single">
+                    <div class="command-single-line-label">Windows Single-Line:</div>
+                    <code id="verify-workflow-4-single-code">node scripts/test-subscription-renewal/verify-customer-selection.js --email=test@example.com</code>
+                </div>
+            </div>
+        </li>
+        <li><strong>Make a purchase through the web app</strong> - The new subscription will use the test clock</li>
+        <li><strong>Advance the test clock:</strong>
+            <div class="command-block expedite" data-command-type="expedite" data-command-base="node scripts/test-subscription-renewal/expedite-stripe-renewal-test-clock.js" data-template-command="node scripts/test-subscription-renewal/expedite-stripe-renewal-test-clock.js --subscription-id=sub_xxx --customer-id=cus_xxx --test-clock-id=clock_xxx --days-to-advance=30">
+                <div class="command-header">
+                    <span class="command-type">Expedite Script</span>
+                    <div class="command-header-buttons">
+                        <button class="copy-button-template" onclick="copyTemplateCommand(this, 'expedite-workflow-6')" title="Copy template command">📄 Template</button>
+                        <button class="copy-button" onclick="copyCommand(this, 'expedite-workflow-6')" title="Copy customized command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Customize Parameters:</h5>
+                    <div class="parameter-group">
+                        <div class="parameter-input">
+                            <label for="expedite-workflow-6-subscription-id">Subscription ID (sub_xxx):</label>
+                            <input type="text" id="expedite-workflow-6-subscription-id" placeholder="sub_xxx" value="sub_xxx" oninput="updateCommand('expedite-workflow-6', 'subscription-id', this.value)">
+                        </div>
+                        <div class="parameter-input">
+                            <label for="expedite-workflow-6-customer-id">Customer ID (cus_xxx):</label>
+                            <input type="text" id="expedite-workflow-6-customer-id" placeholder="cus_xxx" value="cus_xxx" oninput="updateCommand('expedite-workflow-6', 'customer-id', this.value)">
+                        </div>
+                    </div>
+                    <div class="parameter-group">
+                        <div class="parameter-input">
+                            <label for="expedite-workflow-6-test-clock-id">Test Clock ID (clock_xxx):</label>
+                            <input type="text" id="expedite-workflow-6-test-clock-id" placeholder="clock_xxx" value="clock_xxx" oninput="updateCommand('expedite-workflow-6', 'test-clock-id', this.value)">
+                        </div>
+                        <div class="parameter-input">
+                            <label for="expedite-workflow-6-days-to-advance">Days to Advance:</label>
+                            <input type="number" id="expedite-workflow-6-days-to-advance" placeholder="30" value="30" oninput="updateCommand('expedite-workflow-6', 'days-to-advance', this.value)">
+                        </div>
+                    </div>
+                </div>
+                <div class="command-content" id="expedite-workflow-6">node scripts/test-subscription-renewal/expedite-stripe-renewal-test-clock.js --subscription-id=sub_xxx --customer-id=cus_xxx --test-clock-id=clock_xxx --days-to-advance=30</div>
+                <div class="command-single-line" id="expedite-workflow-6-single">
+                    <div class="command-single-line-label">Windows Single-Line:</div>
+                    <code id="expedite-workflow-6-single-code">node scripts/test-subscription-renewal/expedite-stripe-renewal-test-clock.js --subscription-id=sub_xxx --customer-id=cus_xxx --test-clock-id=clock_xxx --days-to-advance=30</code>
+                </div>
+            </div>
+        </li>
+    </ol>
+
+    <h2 id="step-by-step">Step-by-Step: Creating Subscriptions with Test Clocks</h2>
+
+    <p>Follow these steps to create a subscription that can be advanced using Test Clocks:</p>
+
+    <div class="step">
+        <h3><span class="step-number">1</span> Create a Test Clock</h3>
+        <p>First, create a Test Clock in Stripe test mode. The clock starts at the current time (or you can set a specific time).</p>
+
+        <div class="code-block">
+<code>const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+// Create a test clock
+const testClock = await stripe.testHelpers.testClocks.create({
+  name: 'Test Clock for Subscription Testing',
+  frozen_time: Math.floor(Date.now() / 1000), // Current time in Unix timestamp
+});
+
+console.log('Test Clock created:', testClock.id);
+console.log('Test Clock time:', new Date(testClock.frozen_time * 1000).toISOString());</code>
+        </div>
+
+        <div class="parameters-list">
+            <p><strong>Parameters:</strong></p>
+            <ul>
+                <li><code>name</code> - A descriptive name for the test clock</li>
+                <li><code>frozen_time</code> - Unix timestamp for the initial time (usually current time)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="step">
+        <h3><span class="step-number">2</span> Create or Retrieve Customer</h3>
+        <p>You need a Stripe customer. You can create a new one or use an existing customer.</p>
+
+        <div class="code-block">
+<code>// Create a new customer (or retrieve existing)
+const customer = await stripe.customers.create({
+  email: 'test@example.com',
+  name: 'Test Customer',
+  metadata: {
+    test_clock_id: testClock.id, // Store test clock ID for reference
+  },
+});
+
+console.log('Customer created:', customer.id);</code>
+        </div>
+    </div>
+
+    <div class="step">
+        <h3><span class="step-number">3</span> Attach Customer to Test Clock</h3>
+        <p><strong>CRITICAL:</strong> Attach the customer to the test clock BEFORE creating the subscription. This ensures the subscription will use the test clock.</p>
+
+        <div class="code-block">
+<code>// Attach customer to test clock
+const updatedCustomer = await stripe.customers.update(customer.id, {
+  test_clock: testClock.id,
+});
+
+console.log('Customer attached to test clock');
+console.log('Customer test clock:', updatedCustomer.test_clock);</code>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ IMPORTANT:</strong> The customer MUST be attached to the test clock BEFORE creating the subscription. If you create the subscription first, it cannot be attached to the test clock.
+        </div>
+    </div>
+
+    <div class="step">
+        <h3><span class="step-number">4</span> Create Subscription</h3>
+        <p>Now create the subscription. Since the customer is attached to the test clock, the subscription will automatically use the test clock.</p>
+
+        <div class="code-block">
+<code>// Create subscription (will automatically use the test clock)
+const subscription = await stripe.subscriptions.create({
+  customer: customer.id,
+  items: [{
+    price: 'price_1234567890', // Your Stripe Price ID
+  }],
+  payment_behavior: 'default_incomplete', // Or 'default_incomplete' if needed
+  metadata: {
+    test_clock_id: testClock.id,
+    membership_plan_id: '4552',
+    tenant_id: 'tenant_demo_002',
+  },
+});
+
+console.log('Subscription created:', subscription.id);
+console.log('Subscription test clock:', subscription.test_clock);
+console.log('Period start:', new Date(subscription.current_period_start * 1000).toISOString());
+console.log('Period end:', new Date(subscription.current_period_end * 1000).toISOString());</code>
+        </div>
+
+        <div class="success">
+            <strong>✅ Success:</strong> The subscription is now attached to the test clock. You can verify this by checking <code class="code-highlight">subscription.test_clock</code> - it should match your test clock ID.
+        </div>
+    </div>
+
+    <div class="step">
+        <h3><span class="step-number">5</span> Complete Subscription (If Needed)</h3>
+        <p>If the subscription was created with <code>payment_behavior: 'default_incomplete'</code>, you may need to complete it by paying its invoice first.</p>
+
+        <div class="code-block">
+<code>// If subscription is incomplete, complete it by paying the invoice
+if (subscription.status === 'incomplete') {
+  const invoice = subscription.latest_invoice;
+  if (invoice && typeof invoice !== 'string') {
+    const paidInvoice = await stripe.invoices.pay(invoice.id);
+    console.log('Invoice paid:', paidInvoice.id);
+
+    // Wait for Stripe to process
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Retrieve updated subscription
+    const updatedSubscription = await stripe.subscriptions.retrieve(subscription.id);
+    console.log('Subscription status:', updatedSubscription.status);
+  }
+}</code>
+        </div>
+    </div>
+
+    <div class="step">
+        <h3><span class="step-number">6</span> Advance Time Using Test Clock</h3>
+        <p>Now you can advance the test clock to simulate time passing. This will automatically trigger subscription renewals, invoice generation, and webhooks.</p>
+
+        <div class="code-block">
+<code>// Advance test clock by 30 days
+const daysToAdvance = 30;
+const currentTime = testClock.frozen_time;
+const targetTime = currentTime + (daysToAdvance * 24 * 60 * 60);
+
+const advancedClock = await stripe.testHelpers.testClocks.advance(testClock.id, {
+  frozen_time: targetTime,
+});
+
+console.log('Test clock advanced by', daysToAdvance, 'days');
+console.log('New clock time:', new Date(advancedClock.frozen_time * 1000).toISOString());
+
+// Wait for Stripe to process
+await new Promise(resolve => setTimeout(resolve, 2000));
+
+// Retrieve updated subscription
+const updatedSubscription = await stripe.subscriptions.retrieve(subscription.id);
+console.log('Updated period end:', new Date(updatedSubscription.current_period_end * 1000).toISOString());</code>
+        </div>
+
+        <p><strong>What Happens:</strong></p>
+        <ul>
+            <li>Stripe automatically processes the subscription renewal</li>
+            <li>New invoice is created and paid (if payment method is attached)</li>
+            <li>Subscription period dates are updated</li>
+            <li>Webhooks are sent (invoice.payment_succeeded, customer.subscription.updated, etc.)</li>
+        </ul>
+    </div>
+
+    <h2 id="code-examples">Complete Code Example</h2>
+
+    <p>Here's a complete example that creates a subscription with a test clock and advances it:</p>
+
+    <div class="code-block">
+<code>const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+async function createSubscriptionWithTestClock() {
+  // Step 1: Create Test Clock
+  const testClock = await stripe.testHelpers.testClocks.create({
+    name: 'Test Clock for Subscription Testing',
+    frozen_time: Math.floor(Date.now() / 1000),
+  });
+  console.log('✅ Test Clock created:', testClock.id);
+
+  // Step 2: Create Customer
+  const customer = await stripe.customers.create({
+    email: 'test@example.com',
+    name: 'Test Customer',
+  });
+  console.log('✅ Customer created:', customer.id);
+
+  // Step 3: Attach Customer to Test Clock (CRITICAL: Before creating subscription)
+  await stripe.customers.update(customer.id, {
+    test_clock: testClock.id,
+  });
+  console.log('✅ Customer attached to test clock');
+
+  // Step 4: Create Subscription (will use test clock)
+  const subscription = await stripe.subscriptions.create({
+    customer: customer.id,
+    items: [{
+      price: 'price_1234567890', // Your Stripe Price ID
+    }],
+    payment_behavior: 'default_incomplete',
+  });
+  console.log('✅ Subscription created:', subscription.id);
+  console.log('   Test clock:', subscription.test_clock);
+  console.log('   Period end:', new Date(subscription.current_period_end * 1000).toISOString());
+
+  // Step 5: Complete subscription if needed
+  if (subscription.status === 'incomplete') {
+    const invoice = subscription.latest_invoice;
+    if (invoice && typeof invoice !== 'string') {
+      await stripe.invoices.pay(invoice.id);
+      console.log('✅ Subscription completed');
+    }
+  }
+
+  // Step 6: Advance Test Clock by 30 days
+  const daysToAdvance = 30;
+  const targetTime = testClock.frozen_time + (daysToAdvance * 24 * 60 * 60);
+
+  await stripe.testHelpers.testClocks.advance(testClock.id, {
+    frozen_time: targetTime,
+  });
+  console.log('✅ Test clock advanced by', daysToAdvance, 'days');
+
+  // Wait for processing
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  // Step 7: Verify subscription was renewed
+  const updatedSubscription = await stripe.subscriptions.retrieve(subscription.id);
+  console.log('✅ Updated period end:', new Date(updatedSubscription.current_period_end * 1000).toISOString());
+
+  return {
+    testClockId: testClock.id,
+    customerId: customer.id,
+    subscriptionId: subscription.id,
+  };
+}
+
+// Run the function
+createSubscriptionWithTestClock()
+  .then(result => {
+    console.log('\n✅ Success!');
+    console.log('Test Clock ID:', result.testClockId);
+    console.log('Customer ID:', result.customerId);
+    console.log('Subscription ID:', result.subscriptionId);
+  })
+  .catch(error => {
+    console.error('❌ Error:', error.message);
+  });</code>
+    </div>
+
+    <h2 id="setup-script">Using the Setup Test Clock Script</h2>
+
+    <div class="section-intro">
+        <p>The <code class="script-name">setup-test-clock.js</code> script is a dedicated tool that automates the process of creating a Test Clock and attaching a customer to it. <strong>This script MUST be run BEFORE creating a subscription</strong> if you want to use Test Clocks.</p>
+    </div>
+
+    <div class="warning">
+        <strong>⚠️ CRITICAL:</strong> The customer MUST be attached to the test clock BEFORE creating the subscription. If you create the subscription first, it cannot be attached to the test clock.
+    </div>
+
+    <div class="section-container">
+        <div class="section-header">❓ What is a Stripe Customer ID?</div>
+        <p><strong>A Stripe Customer ID is NOT an email address.</strong> It's a unique identifier that Stripe creates for each customer, in the format <code class="code-highlight">cus_xxxxx</code> (e.g., <code class="code-highlight">cus_Tf535MtgN6otNK</code>).</p>
+
+        <h4>Where to Get the Customer ID</h4>
+
+        <h5>Option 1: Use Email Instead (Recommended)</h5>
+        <p>You don't need the customer ID! You can use the email address instead:</p>
+        <div class="command-block setup" data-command-type="setup" data-command-base="node scripts/test-subscription-renewal/setup-test-clock.js" data-template-command="node scripts/test-subscription-renewal/setup-test-clock.js --customer-email=test@example.com --customer-name=&quot;Test Customer&quot; --test-clock-name=&quot;My Test Clock&quot;">
+            <div class="command-header">
+                <span class="command-type">Setup Script</span>
+                <div class="command-header-buttons">
+                    <button class="copy-button-template" onclick="copyTemplateCommand(this, 'setup-email')" title="Copy template command">📄 Template</button>
+                    <button class="copy-button" onclick="copyCommand(this, 'setup-email')" title="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>🔧 Customize Parameters:</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="setup-email-customer-email">Customer Email:</label>
+                        <input type="email" id="setup-email-customer-email" placeholder="test@example.com" value="test@example.com" oninput="updateCommand('setup-email', 'customer-email', this.value)">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="setup-email-customer-name">Customer Name:</label>
+                        <input type="text" id="setup-email-customer-name" placeholder="Test Customer" value="Test Customer" oninput="updateCommand('setup-email', 'customer-name', this.value)">
+                    </div>
+                </div>
+                <div class="parameter-group single">
+                    <div class="parameter-input">
+                        <label for="setup-email-test-clock-name">Test Clock Name:</label>
+                        <input type="text" id="setup-email-test-clock-name" placeholder="My Test Clock" value="My Test Clock" oninput="updateCommand('setup-email', 'test-clock-name', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="setup-email">node scripts/test-subscription-renewal/setup-test-clock.js --customer-email=test@example.com --customer-name="Test Customer" --test-clock-name="My Test Clock"</div>
+            <div class="command-single-line" id="setup-email-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="setup-email-single-code">node scripts/test-subscription-renewal/setup-test-clock.js --customer-email=test@example.com --customer-name="Test Customer" --test-clock-name="My Test Clock"</code>
+            </div>
+        </div>
+        <p>The script will automatically:</p>
+        <ul>
+            <li>Search for an existing customer with that email</li>
+            <li>If found, use that customer</li>
+            <li>If not found, create a new customer with that email</li>
+        </ul>
+
+        <h5>Option 2: Get it from the Database</h5>
+        <p>If a subscription already exists, the customer ID is stored in the <code class="code-highlight">membership_subscription</code> table:</p>
+        <div class="code-block">
+<code>-- Find customer ID by email (via user_profile)
+SELECT
+    ms.stripe_customer_id,
+    ms.stripe_subscription_id,
+    up.email,
+    up.first_name,
+    up.last_name
+FROM membership_subscription ms
+JOIN user_profile up ON ms.user_profile_id = up.id
+WHERE up.email = 'test@example.com'
+  AND ms.tenant_id = 'tenant_demo_002'
+  AND ms.stripe_customer_id IS NOT NULL
+LIMIT 1;</code>
+        </div>
+
+        <h5>Option 3: Get it from Stripe Dashboard</h5>
+        <ol>
+            <li>Go to <a href="https://dashboard.stripe.com/test/customers" target="_blank">https://dashboard.stripe.com/test/customers</a></li>
+            <li>Search by email address</li>
+            <li>Click on the customer</li>
+            <li>The Customer ID is displayed at the top (starts with <code class="code-highlight">cus_</code>)</li>
+        </ol>
+
+        <h5>Option 4: Query via API</h5>
+        <p>If you have a subscription ID, you can get the customer ID from Stripe:</p>
+        <div class="code-block">
+<code># Using Stripe CLI (if installed)
+stripe customers list --email=test@example.com --limit=1
+
+# Or use the <code class="script-name">verify-database.js</code> script which shows customer IDs
+node scripts/test-subscription-renewal/verify-database.js \
+  --subscription-id=sub_xxx \
+  --tenant-id=tenant_demo_002</code>
+        </div>
+
+        <div class="info">
+            <strong>💡 Recommendation:</strong> Use <code class="code-highlight">--customer-email</code> instead of <code class="code-highlight">--customer-id</code> unless you specifically need to use an existing customer ID. The script will handle finding or creating the customer automatically.
+        </div>
+    </div>
+
+    <div class="section-container usage">
+        <div class="section-header usage">📋 Script Usage</div>
+        <p><strong>File:</strong> <code class="script-name">scripts/test-subscription-renewal/setup-test-clock.js</code></p>
+
+    <h4>Option 1: Use Existing Customer</h4>
+    <div class="command-block setup" data-command-type="setup" data-command-base="node scripts/test-subscription-renewal/setup-test-clock.js" data-template-command="node scripts/test-subscription-renewal/setup-test-clock.js --customer-id=cus_xxx --test-clock-name=&quot;My Test Clock&quot;">
+        <div class="command-header">
+            <span class="command-type">Setup Script</span>
+            <div class="command-header-buttons">
+                <button class="copy-button-template" onclick="copyTemplateCommand(this, 'setup-1')" title="Copy template command">📄 Template</button>
+                <button class="copy-button" onclick="copyCommand(this, 'setup-1')" title="Copy customized command">📋 Copy</button>
+            </div>
+        </div>
+        <div class="command-parameters">
+            <h5>🔧 Customize Parameters:</h5>
+            <div class="parameter-group">
+                <div class="parameter-input">
+                    <label for="setup-1-customer-id">Customer ID (cus_xxx):</label>
+                    <input type="text" id="setup-1-customer-id" placeholder="cus_xxx" value="cus_xxx" oninput="updateCommand('setup-1', 'customer-id', this.value)">
+                </div>
+                <div class="parameter-input">
+                    <label for="setup-1-test-clock-name">Test Clock Name:</label>
+                    <input type="text" id="setup-1-test-clock-name" placeholder="My Test Clock" value="My Test Clock" oninput="updateCommand('setup-1', 'test-clock-name', this.value)">
+                </div>
+            </div>
+        </div>
+        <div class="command-content" id="setup-1">node scripts/test-subscription-renewal/setup-test-clock.js --customer-id=cus_xxx --test-clock-name="My Test Clock"</div>
+        <div class="command-single-line" id="setup-1-single">
+            <div class="command-single-line-label">Windows Single-Line:</div>
+            <code id="setup-1-single-code">node scripts/test-subscription-renewal/setup-test-clock.js --customer-id=cus_xxx --test-clock-name="My Test Clock"</code>
+        </div>
+    </div>
+
+    <h4>Option 2: Create New Customer</h4>
+    <div class="command-block setup" data-command-type="setup" data-command-base="node scripts/test-subscription-renewal/setup-test-clock.js" data-template-command="node scripts/test-subscription-renewal/setup-test-clock.js --customer-email=test@example.com --customer-name=&quot;Test Customer&quot; --test-clock-name=&quot;My Test Clock&quot;">
+        <div class="command-header">
+            <span class="command-type">Setup Script</span>
+            <div class="command-header-buttons">
+                <button class="copy-button-template" onclick="copyTemplateCommand(this, 'setup-2')" title="Copy template command">📄 Template</button>
+                <button class="copy-button" onclick="copyCommand(this, 'setup-2')" title="Copy customized command">📋 Copy</button>
+            </div>
+        </div>
+        <div class="command-parameters">
+            <h5>🔧 Customize Parameters:</h5>
+            <div class="parameter-group">
+                <div class="parameter-input">
+                    <label for="setup-2-customer-email">Customer Email:</label>
+                    <input type="email" id="setup-2-customer-email" placeholder="test@example.com" value="test@example.com" oninput="updateCommand('setup-2', 'customer-email', this.value)">
+                </div>
+                <div class="parameter-input">
+                    <label for="setup-2-customer-name">Customer Name:</label>
+                    <input type="text" id="setup-2-customer-name" placeholder="Test Customer" value="Test Customer" oninput="updateCommand('setup-2', 'customer-name', this.value)">
+                </div>
+            </div>
+            <div class="parameter-group single">
+                <div class="parameter-input">
+                    <label for="setup-2-test-clock-name">Test Clock Name:</label>
+                    <input type="text" id="setup-2-test-clock-name" placeholder="My Test Clock" value="My Test Clock" oninput="updateCommand('setup-2', 'test-clock-name', this.value)">
+                </div>
+            </div>
+        </div>
+        <div class="command-content" id="setup-2">node scripts/test-subscription-renewal/setup-test-clock.js --customer-email=test@example.com --customer-name="Test Customer" --test-clock-name="My Test Clock"</div>
+        <div class="command-single-line" id="setup-2-single">
+            <div class="command-single-line-label">Windows Single-Line:</div>
+            <code id="setup-2-single-code">node scripts/test-subscription-renewal/setup-test-clock.js --customer-email=test@example.com --customer-name="Test Customer" --test-clock-name="My Test Clock"</code>
+        </div>
+    </div>
+
+    <h4>Option 3: Force Create New Customer (Same Email Allowed)</h4>
+    <div class="info">
+        <strong>💡 Important:</strong> Stripe allows multiple customers with the same email address. If you want to create a <strong>NEW</strong> customer for testing even if one with the same email already exists, use <code class="code-highlight">--force-new-customer=true</code>.
+        <br><br>
+        <strong>When to use this:</strong>
+        <ul>
+            <li>✅ You want a fresh customer without any existing subscriptions</li>
+            <li>✅ The existing customer with this email has subscriptions that prevent test clock attachment</li>
+            <li>✅ You want to test with a clean customer record</li>
+        </ul>
+    </div>
+    <div class="command-block setup" data-command-type="setup" data-command-base="node scripts/test-subscription-renewal/setup-test-clock.js" data-template-command="node scripts/test-subscription-renewal/setup-test-clock.js --customer-email=test@example.com --customer-name=&quot;Test Customer&quot; --test-clock-name=&quot;My Test Clock&quot; --force-new-customer=true">
+        <div class="command-header">
+            <span class="command-type">Setup Script</span>
+            <div class="command-header-buttons">
+                <button class="copy-button-template" onclick="copyTemplateCommand(this, 'setup-force-new')" title="Copy template command">📄 Template</button>
+                <button class="copy-button" onclick="copyCommand(this, 'setup-force-new')" title="Copy customized command">📋 Copy</button>
+            </div>
+        </div>
+        <div class="command-parameters">
+            <h5>🔧 Customize Parameters:</h5>
+            <div class="parameter-group">
+                <div class="parameter-input">
+                    <label for="setup-force-new-customer-email">Customer Email:</label>
+                    <input type="email" id="setup-force-new-customer-email" placeholder="test@example.com" value="test@example.com" oninput="updateCommand('setup-force-new', 'customer-email', this.value)">
+                </div>
+                <div class="parameter-input">
+                    <label for="setup-force-new-customer-name">Customer Name:</label>
+                    <input type="text" id="setup-force-new-customer-name" placeholder="Test Customer" value="Test Customer" oninput="updateCommand('setup-force-new', 'customer-name', this.value)">
+                </div>
+            </div>
+            <div class="parameter-group single">
+                <div class="parameter-input">
+                    <label for="setup-force-new-test-clock-name">Test Clock Name:</label>
+                    <input type="text" id="setup-force-new-test-clock-name" placeholder="My Test Clock" value="My Test Clock" oninput="updateCommand('setup-force-new', 'test-clock-name', this.value)">
+                </div>
+            </div>
+            <div class="parameter-group single">
+                <div class="parameter-input">
+                    <label for="setup-force-new-force-new-customer">Force New Customer:</label>
+                    <input type="text" id="setup-force-new-force-new-customer" placeholder="true" value="true" oninput="updateCommand('setup-force-new', 'force-new-customer', this.value)">
+                </div>
+            </div>
+        </div>
+        <div class="command-content" id="setup-force-new">node scripts/test-subscription-renewal/setup-test-clock.js --customer-email=test@example.com --customer-name="Test Customer" --test-clock-name="My Test Clock" --force-new-customer=true</div>
+        <div class="command-single-line" id="setup-force-new-single">
+            <div class="command-single-line-label">Windows Single-Line:</div>
+            <code id="setup-force-new-single-code">node scripts/test-subscription-renewal/setup-test-clock.js --customer-email=test@example.com --customer-name="Test Customer" --test-clock-name="My Test Clock" --force-new-customer=true</code>
+        </div>
+    </div>
+
+    <h4>Option 4: Reuse Existing Test Clock by Name</h4>
+    <div class="command-block setup" data-command-type="setup" data-command-base="node scripts/test-subscription-renewal/setup-test-clock.js" data-template-command="node scripts/test-subscription-renewal/setup-test-clock.js --customer-id=cus_xxx --test-clock-name=&quot;My Test Clock&quot; --reuse-test-clock=true">
+        <div class="command-header">
+            <span class="command-type">Setup Script</span>
+            <div class="command-header-buttons">
+                <button class="copy-button-template" onclick="copyTemplateCommand(this, 'setup-3')" title="Copy template command">📄 Template</button>
+                <button class="copy-button" onclick="copyCommand(this, 'setup-3')" title="Copy customized command">📋 Copy</button>
+            </div>
+        </div>
+        <div class="command-parameters">
+            <h5>🔧 Customize Parameters:</h5>
+            <div class="parameter-group">
+                <div class="parameter-input">
+                    <label for="setup-3-customer-id">Customer ID (cus_xxx):</label>
+                    <input type="text" id="setup-3-customer-id" placeholder="cus_xxx" oninput="updateCommand('setup-3', 'customer-id', this.value)">
+                </div>
+                <div class="parameter-input">
+                    <label for="setup-3-test-clock-name">Test Clock Name:</label>
+                    <input type="text" id="setup-3-test-clock-name" placeholder="My Test Clock" value="My Test Clock" oninput="updateCommand('setup-3', 'test-clock-name', this.value)">
+                </div>
+            </div>
+            <div class="parameter-group single">
+                <div class="parameter-input">
+                    <label for="setup-3-reuse-test-clock">Reuse Test Clock:</label>
+                    <input type="text" id="setup-3-reuse-test-clock" placeholder="true" value="true" oninput="updateCommand('setup-3', 'reuse-test-clock', this.value)">
+                </div>
+            </div>
+        </div>
+        <div class="command-content" id="setup-3">node scripts/test-subscription-renewal/setup-test-clock.js --customer-id=cus_xxx --test-clock-name="My Test Clock" --reuse-test-clock=true</div>
+        <div class="command-single-line" id="setup-3-single">
+            <div class="command-single-line-label">Windows Single-Line:</div>
+            <code id="setup-3-single-code">node scripts/test-subscription-renewal/setup-test-clock.js --customer-id=cus_xxx --test-clock-name="My Test Clock" --reuse-test-clock=true</code>
+        </div>
+    </div>
+
+    <div class="section-container parameters">
+        <div class="section-header parameters">⚙️ Script Parameters</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>--customer-id</code></td>
+                <td>Optional*</td>
+                <td>Existing Stripe customer ID</td>
+            </tr>
+            <tr>
+                <td><code>--customer-email</code></td>
+                <td>Optional*</td>
+                <td>Email for new customer (required if customer-id not provided)</td>
+            </tr>
+            <tr>
+                <td><code>--customer-name</code></td>
+                <td>Optional</td>
+                <td>Name for new customer (default: "Test Customer")</td>
+            </tr>
+            <tr>
+                <td><code>--test-clock-name</code></td>
+                <td>Optional</td>
+                <td>Name for test clock (default: auto-generated timestamp)</td>
+            </tr>
+            <tr>
+                <td><code>--reuse-test-clock</code></td>
+                <td>Optional</td>
+                <td>Reuse existing test clock with same name (default: false)</td>
+            </tr>
+            <tr>
+                <td><code>--force-new-customer</code></td>
+                <td>Optional</td>
+                <td>Force create a NEW customer even if one with the same email exists (default: false). <strong>Stripe allows multiple customers with the same email address.</strong> Use this when the existing customer has subscriptions that prevent test clock attachment.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><em>* Either <code class="code-highlight">--customer-id</code> or <code class="code-highlight">--customer-email</code> must be provided</em></p>
+
+    <div class="info">
+        <strong>💡 About Multiple Customers with Same Email:</strong>
+        <ul>
+            <li>✅ Stripe allows multiple customers with the same email address</li>
+            <li>✅ Each customer has a unique customer ID (cus_xxx)</li>
+            <li>✅ Use <code class="code-highlight">--force-new-customer=true</code> to create a new customer even if one with the same email exists</li>
+            <li>✅ This is useful when the existing customer has subscriptions that prevent test clock attachment</li>
+            <li>✅ The new customer will have no subscriptions and can be attached to a test clock</li>
+        </ul>
+    </div>
+    </div>
+
+    <div class="section-container">
+        <div class="section-header">🔧 What the Script Does</div>
+
+    <ol>
+        <li><strong>Creates or finds a test clock by name</strong> - If <code class="code-highlight">--reuse-test-clock=true</code>, it searches for an existing test clock with the same name. Otherwise, it creates a new one.</li>
+        <li><strong>Creates or retrieves a customer</strong> - If <code class="code-highlight">--customer-id</code> is provided, it retrieves the existing customer. If <code class="code-highlight">--customer-email</code> is provided:
+            <ul>
+                <li>By default: Searches for existing customer with that email and reuses it (or creates new if not found)</li>
+                <li>With <code class="code-highlight">--force-new-customer=true</code>: Always creates a NEW customer, even if one with the same email exists (Stripe allows multiple customers with the same email)</li>
+            </ul>
+        </li>
+        <li><strong>Checks for existing subscriptions</strong> - Warns if the customer has existing subscriptions that won't use the test clock (since they were created before the test clock was set up).</li>
+        <li><strong>Attaches customer to test clock</strong> - Updates the customer record to attach it to the test clock.</li>
+        <li><strong>Provides next steps</strong> - Outputs all necessary IDs and example code for creating a subscription.</li>
+    </ol>
+    </div>
+
+    <div class="section-container">
+        <div class="section-header">⭐ Why This Script is Important</div>
+        <ul>
+        <li>✅ <strong>Order matters</strong> - Ensures customer is attached to test clock BEFORE subscription creation</li>
+        <li>✅ <strong>Automatic attachment</strong> - New subscriptions will automatically use the test clock</li>
+        <li>✅ <strong>Reusable</strong> - Can reuse test clocks for multiple subscriptions</li>
+        <li>✅ <strong>Validation</strong> - Warns if customer has existing subscriptions that won't use test clock</li>
+        <li>✅ <strong>Error prevention</strong> - Prevents common mistakes like creating subscription before attaching to test clock</li>
+    </ul>
+    </div>
+
+    <div class="section-container output">
+        <div class="section-header output">📊 Script Output</div>
+        <p>The script provides comprehensive output including:</p>
+    <ul>
+        <li>Test Clock ID and details (name, current time)</li>
+        <li>Customer ID and details (email, name, current test clock status)</li>
+        <li>Confirmation of attachment</li>
+        <li>Next steps for subscription creation</li>
+        <li>Example code for creating subscription</li>
+        <li>Example command for advancing time</li>
+    </ul>
+    </div>
+
+    <div class="info">
+        <strong>💡 Next Steps After Running Setup Script:</strong>
+        <ol>
+            <li>Create a NEW subscription for the customer (the subscription will automatically use the test clock)</li>
+            <li>Verify the subscription has <code class="code-highlight">test_clock</code> set to your test clock ID</li>
+            <li>Use <code class="script-name">expedite-stripe-renewal-test-clock.js</code> to advance time</li>
+        </ol>
+    </div>
+
+    <div class="section-container output">
+        <div class="section-header output">💻 Example Script Output</div>
+        <div class="code-block">
+<code>🔄 Setting Up Test Clock and Attaching Customer
+============================================================
+Test Clock Name: My Test Clock
+Customer ID: cus_Tf535MtgN6otNK
+Reuse Existing Test Clock: false
+============================================================
+
+📅 Step 1: Finding or creating test clock...
+✅ Created new test clock: clock_1Sl2BrK5BrggeAHM
+   Name: My Test Clock
+   Current time: 2026-01-01T23:11:50.000Z
+
+👤 Step 2: Getting or creating customer...
+✅ Using existing customer: cus_Tf535MtgN6otNK
+   Email: test@example.com
+   Name: Test Customer
+   Current test clock: None
+
+📋 Step 3: Checking for existing subscriptions...
+✅ Customer has no existing subscriptions
+   Perfect! Any new subscriptions will use the test clock.
+
+🔗 Step 4: Attaching customer to test clock...
+✅ Customer attached to test clock successfully
+   Customer test clock: clock_1Sl2BrK5BrggeAHM
+
+============================================================
+✅ Setup Complete!
+============================================================
+
+📊 Summary:
+   Test Clock ID: clock_1Sl2BrK5BrggeAHM
+   Test Clock Name: My Test Clock
+   Test Clock Time: 2026-01-01T23:11:50.000Z
+   Customer ID: cus_Tf535MtgN6otNK
+   Customer Email: test@example.com
+   Customer Name: Test Customer
+   Customer Test Clock: clock_1Sl2BrK5BrggeAHM
+
+📝 Next Steps:
+   1. Create a NEW subscription for this customer
+      (The subscription will automatically use the test clock)
+   2. Verify the subscription has test_clock: clock_1Sl2BrK5BrggeAHM
+   3. Use expedite-stripe-renewal-test-clock.js to advance time
+   4. Stripe will automatically process renewals, invoices, and webhooks
+
+💡 Example Subscription Creation:
+   const subscription = await stripe.subscriptions.create({
+     customer: "cus_Tf535MtgN6otNK",
+     items: [{ price: "price_xxx" }],
+   });
+   // subscription.test_clock should be: clock_1Sl2BrK5BrggeAHM
+
+💡 Example Time Advancement:
+   node scripts/test-subscription-renewal/expedite-stripe-renewal-test-clock.js \
+     --subscription-id=sub_xxx \
+     --days-to-advance=30
+
+✅ Setup completed successfully!</code>
+        </div>
+    </div>
+
+    <h2 id="list-test-clocks">Listing and Looking Up Test Clocks</h2>
+
+    <div class="section-intro">
+        <p>The <code class="script-name">list-test-clocks.js</code> script allows you to list all your Stripe Test Clocks or look up a specific one by name. This is useful for finding test clocks you created earlier and checking which customers and subscriptions are using them.</p>
+    </div>
+
+    <div class="section-container usage">
+        <div class="section-header usage">📝 Script Usage</div>
+        <p><strong>File:</strong> <code class="script-name">scripts/test-subscription-renewal/list-test-clocks.js</code></p>
+
+        <div class="command-block verify" data-command-type="verify" data-command-base="node scripts/test-subscription-renewal/list-test-clocks.js" data-template-command="node scripts/test-subscription-renewal/list-test-clocks.js">
+            <div class="command-header">
+                <span class="command-type">List All Test Clocks</span>
+                <div class="command-header-buttons">
+                    <button class="copy-button-template" onclick="copyTemplateCommand(this, 'list-all')" title="Copy template command">📄 Template</button>
+                    <button class="copy-button" onclick="copyCommand(this, 'list-all')" title="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-content" id="list-all">node scripts/test-subscription-renewal/list-test-clocks.js</div>
+            <div class="command-single-line" id="list-all-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="list-all-single-code">node scripts/test-subscription-renewal/list-test-clocks.js</code>
+            </div>
+        </div>
+
+        <div class="command-block verify" data-command-type="verify" data-command-base="node scripts/test-subscription-renewal/list-test-clocks.js" data-template-command="node scripts/test-subscription-renewal/list-test-clocks.js --name=&quot;Subscription Test Clock&quot;">
+            <div class="command-header">
+                <span class="command-type">Look Up by Name</span>
+                <div class="command-header-buttons">
+                    <button class="copy-button-template" onclick="copyTemplateCommand(this, 'list-name')" title="Copy template command">📄 Template</button>
+                    <button class="copy-button" onclick="copyCommand(this, 'list-name')" title="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>🔧 Customize Parameters:</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="list-name-name">Test Clock Name:</label>
+                        <input type="text" id="list-name-name" placeholder="Subscription Test Clock" value="Subscription Test Clock" oninput="updateCommand('list-name', 'name', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="list-name">node scripts/test-subscription-renewal/list-test-clocks.js --name="Subscription Test Clock"</div>
+            <div class="command-single-line" id="list-name-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="list-name-single-code">node scripts/test-subscription-renewal/list-test-clocks.js --name="Subscription Test Clock"</code>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-container parameters">
+        <div class="section-header parameters">⚙️ Script Parameters</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>--name</code> or <code>--test-clock-name</code></td>
+                    <td>Optional</td>
+                    <td>Name of test clock to search for (partial match, case-insensitive). If not provided, lists all test clocks.</td>
+                </tr>
+                <tr>
+                    <td><code>--limit</code></td>
+                    <td>Optional</td>
+                    <td>Maximum number of test clocks to list (default: 100)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section-container">
+        <div class="section-header">🔧 What the Script Does</div>
+        <ol>
+            <li><strong>Lists all test clocks</strong> - Retrieves all test clocks from your Stripe account (up to the specified limit)</li>
+            <li><strong>Filters by name (if provided)</strong> - If <code class="code-highlight">--name</code> is provided, filters test clocks by name (partial match, case-insensitive)</li>
+            <li><strong>Displays detailed information</strong> - Shows test clock ID, name, current frozen time, attached customers, and subscriptions using the test clock</li>
+            <li><strong>Shows usage information</strong> - Displays which customers are attached to each test clock and which subscriptions are using it</li>
+        </ol>
+    </div>
+
+    <div class="section-container">
+        <div class="section-header">⭐ Why This Script is Useful</div>
+        <ul>
+            <li>✅ <strong>Find existing test clocks</strong> - Quickly locate test clocks you created earlier</li>
+            <li>✅ <strong>Verify setup</strong> - Check which customers and subscriptions are using a test clock</li>
+            <li>✅ <strong>Debugging</strong> - Understand which test clock is being used for a subscription</li>
+            <li>✅ <strong>Management</strong> - See all your test clocks in one place</li>
+            <li>✅ <strong>Reuse test clocks</strong> - Find existing test clocks to reuse instead of creating new ones</li>
+        </ul>
+    </div>
+
+    <div class="section-container output">
+        <div class="section-header output">📊 Script Output</div>
+        <p>The script provides comprehensive output including:</p>
+        <ul>
+            <li>Test Clock ID and name</li>
+            <li>Current frozen time (in ISO format and local time)</li>
+            <li>List of attached customers (with email and name)</li>
+            <li>List of subscriptions using the test clock (with status and product information)</li>
+            <li>Usage tips for advancing time</li>
+        </ul>
+    </div>
+
+    <div class="section-container output">
+        <div class="section-header output">💻 Example Script Output</div>
+        <div class="code-block">
+<code>📋 Listing Stripe Test Clocks
+======================================================================
+Searching for test clock with name: "Subscription Test Clock"
+======================================================================
+
+✅ Found 1 test clock(s):
+
+──────────────────────────────────────────────────────────────────────
+Test Clock 1 of 1:
+──────────────────────────────────────────────────────────────────────
+ID:              clock_1SlEIqK5BrggeAHMLLOH3oGX
+Name:            Subscription Test Clock
+Current Time:    2026-01-02T19:46:28.000Z
+                (1/2/2026, 2:46:28 PM)
+
+👤 Attached Customers:
+   - cus_Tf535MtgN6otNK
+     Email: giventauser@gmail.com
+     Name: Gain Joseph
+
+📦 Subscriptions Using This Test Clock:
+   ✅ sub_1SlI8FK5BrggeAHMGYjyqagM
+     Status: incomplete
+     Customer: cus_Tf535MtgN6otNK
+     Product: prod_TiLM0LRBQaIK7o
+
+======================================================================
+✅ Test clock listing completed successfully!
+======================================================================</code>
+        </div>
+    </div>
+
+    <div class="info">
+        <strong>💡 Usage Tips:</strong>
+        <ul>
+            <li>Use <code class="code-highlight">--name</code> to find a specific test clock by name (partial match supported)</li>
+            <li>If no test clocks are found, the script will suggest creating one using <code class="script-name">setup-test-clock.js</code></li>
+            <li>The script shows all customers attached to each test clock and all subscriptions using it</li>
+            <li>Use the test clock ID from the output with <code class="script-name">expedite-stripe-renewal-test-clock.js</code> to advance time</li>
+        </ul>
+    </div>
+
+    <h2 id="advancing-time">Advancing Time with Test Clocks</h2>
+
+    <p>Once you have a subscription attached to a test clock (using the setup script above), you can use the <code class="script-name">expedite-stripe-renewal-test-clock.js</code> script to advance time:</p>
+
+    <div class="command-block expedite" data-command-type="expedite" data-command-base="node scripts/test-subscription-renewal/expedite-stripe-renewal-test-clock.js" data-template-command="node scripts/test-subscription-renewal/expedite-stripe-renewal-test-clock.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --days-to-advance=30">
+        <div class="command-header">
+            <span class="command-type">Expedite Script</span>
+            <div class="command-header-buttons">
+                <button class="copy-button-template" onclick="copyTemplateCommand(this, 'expedite-1')" title="Copy template command">📄 Template</button>
+                <button class="copy-button" onclick="copyCommand(this, 'expedite-1')" title="Copy customized command">📋 Copy</button>
+            </div>
+        </div>
+        <div class="command-parameters">
+            <h5>🔧 Customize Parameters:</h5>
+            <div class="parameter-group">
+                <div class="parameter-input">
+                    <label for="expedite-1-subscription-id">Subscription ID (sub_xxx):</label>
+                    <input type="text" id="expedite-1-subscription-id" placeholder="sub_xxx" value="sub_1SeifsK5BrggeAHMBvg2XE93" oninput="updateCommand('expedite-1', 'subscription-id', this.value)">
+                </div>
+                <div class="parameter-input">
+                    <label for="expedite-1-days-to-advance">Days to Advance:</label>
+                    <input type="number" id="expedite-1-days-to-advance" placeholder="30" value="30" oninput="updateCommand('expedite-1', 'days-to-advance', this.value)">
+                </div>
+            </div>
+        </div>
+        <div class="command-content" id="expedite-1">node scripts/test-subscription-renewal/expedite-stripe-renewal-test-clock.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --days-to-advance=30</div>
+        <div class="command-single-line" id="expedite-1-single">
+            <div class="command-single-line-label">Windows Single-Line:</div>
+            <code id="expedite-1-single-code">node scripts/test-subscription-renewal/expedite-stripe-renewal-test-clock.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --days-to-advance=30</code>
+        </div>
+    </div>
+
+    <div class="section-container parameters">
+        <div class="section-header parameters">⚙️ Script Parameters</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>--subscription-id</code></td>
+                    <td>Yes</td>
+                    <td>Stripe subscription ID</td>
+                </tr>
+                <tr>
+                    <td><code>--days-to-advance</code></td>
+                    <td>No</td>
+                    <td>Number of days to advance (default: 30)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section-container">
+        <div class="section-header">🔧 What the Script Does</div>
+
+    <ol>
+        <li><strong>Retrieves current subscription</strong> - Gets the subscription details including status, period dates, and test clock ID</li>
+        <li><strong>Creates or finds existing test clock</strong> - If the subscription is not attached to a test clock, it checks if the customer is attached to one. If not, it creates a new test clock (with a warning that it may not work for existing subscriptions).</li>
+        <li><strong>Calculates time advancement</strong> - Determines the target time based on current test clock time plus days to advance</li>
+        <li><strong>Advances test clock</strong> - Advances the test clock by the specified number of days</li>
+        <li><strong>Stripe automatically processes subscription renewal</strong> - Stripe handles renewals, invoices, and webhooks automatically</li>
+        <li><strong>Verifies final subscription state</strong> - Retrieves the updated subscription and reports the actual days advanced</li>
+    </ol>
+    </div>
+
+    <div class="section-container">
+        <div class="section-header">⭐ Why Test Clocks?</div>
+        <ul>
+        <li>✅ <strong>Proper Stripe feature</strong> - Official way to test time-based events</li>
+        <li>✅ <strong>Automatic processing</strong> - Stripe handles renewals, invoices, and webhooks automatically</li>
+        <li>✅ <strong>Works with incomplete subscriptions</strong> - Can advance time even if subscription isn't fully active</li>
+        <li>✅ <strong>Realistic testing</strong> - Simulates real-world time passing</li>
+        <li>✅ <strong>Webhook triggers</strong> - Automatically sends webhooks as if time actually passed</li>
+    </ul>
+    </div>
+
+    <div class="section-container output">
+        <div class="section-header output">📊 Script Output</div>
+        <p>The script provides detailed output including:</p>
+    <ul>
+        <li>Current subscription status and period dates</li>
+        <li>Test clock creation/retrieval status</li>
+        <li>Time advancement confirmation</li>
+        <li>Updated subscription period dates</li>
+        <li>Actual days advanced (may differ from requested if subscription renewed at natural billing cycle)</li>
+        <li>Warnings if subscription was created before test clock</li>
+        <li>Next steps for verification</li>
+    </ul>
+    </div>
+
+    <div class="warning">
+        <strong>⚠️ IMPORTANT:</strong> Test Clocks only work for subscriptions created AFTER the test clock is set up. <strong>Run <code class="script-name">setup-test-clock.js</code> first</strong> to set up the test clock and attach the customer before creating the subscription. For existing subscriptions, use <code class="script-name">advance-existing-subscription.js</code> instead (though it has limitations).
+    </div>
+
+    <div class="info">
+        <strong>💡 Note:</strong> If your subscription is in <code>incomplete</code> status, you may need to activate it first before using test clocks. Test clocks work best with <code>active</code> subscriptions.
+    </div>
+
+    <div class="section-container output">
+        <div class="section-header output">💻 Example Script Output</div>
+        <div class="code-block">
+<code>🔄 Expediting Stripe Subscription Renewal Using Test Clock
+============================================================
+Subscription ID: sub_1SeifsK5BrggeAHMBvg2XE93
+Days to Advance: 30
+============================================================
+
+📋 Step 1: Retrieving current subscription...
+✅ Current subscription status: active
+   Current period start: 2026-01-01T23:11:50.000Z
+   Current period end: 2026-02-01T23:11:50.000Z
+   Test Clock ID: clock_1Sl2BrK5BrggeAHM
+
+📅 Step 2: Using existing test clock: clock_1Sl2BrK5BrggeAHM
+
+📅 Step 3: Calculating time advancement...
+   Current test clock time: 2026-01-01T23:11:50.000Z
+   Target time (after advance): 2026-02-01T23:11:50.000Z
+   Days to advance: 30
+
+⏰ Step 4: Advancing test clock...
+✅ Test clock advanced successfully
+   New test clock time: 2026-02-01T23:11:50.000Z
+   Time advanced by: 30 days
+
+⏳ Step 5: Waiting for Stripe to process subscription renewal...
+📋 Step 6: Retrieving updated subscription...
+
+📊 Final Subscription State:
+   Status: active
+   Current period start: 2026-02-01T23:11:50.000Z
+   Current period end: 2026-03-03T23:11:50.000Z
+
+📈 Period Advancement Summary:
+   Original period end: 2026-02-01T23:11:50.000Z
+   New period end: 2026-03-03T23:11:50.000Z
+   Actual days advanced: 30
+
+✅ Successfully advanced subscription by 30 days!
+
+📝 Next Steps:
+   1. Wait 1-2 seconds for Stripe webhooks to be sent
+   2. Run database verification script
+   3. Run batch job execution script (if needed)
+   4. Verify data accuracy
+
+💡 Tip: Test Clock ID: clock_1Sl2BrK5BrggeAHM
+   You can reuse this test clock for future tests by attaching new subscriptions to it.</code>
+        </div>
+    </div>
+
+    <h2 id="troubleshooting">Troubleshooting</h2>
+
+    <h3>Problem: Subscription Not Advancing</h3>
+
+    <p><strong>Symptoms:</strong> Test clock advances, but subscription period doesn't change</p>
+
+    <p><strong>Possible Causes:</strong></p>
+    <ul>
+        <li>Subscription was created BEFORE test clock was set up</li>
+        <li>Customer was not attached to test clock before subscription creation</li>
+        <li>Subscription is in an invalid state (cancelled, incomplete_expired, etc.)</li>
+    </ul>
+
+    <p><strong>Solution:</strong> Create a new subscription with the customer attached to the test clock from the start.</p>
+
+    <h3>Problem: "Cannot attach customer to test clock"</h3>
+
+    <p><strong>Symptoms:</strong> Error when trying to attach customer to test clock</p>
+
+    <p><strong>Possible Causes:</strong></p>
+    <ul>
+        <li>Customer already has subscriptions created before test clock</li>
+        <li>Test clock is in an invalid state</li>
+    </ul>
+
+    <p><strong>Solution:</strong> Create a new customer specifically for testing, or cancel existing subscriptions first.</p>
+
+    <h3>Problem: Webhooks Not Being Sent</h3>
+
+    <p><strong>Symptoms:</strong> Test clock advances, but webhooks aren't received</p>
+
+    <p><strong>Possible Causes:</strong></p>
+    <ul>
+        <li>Webhook endpoint not configured in Stripe dashboard</li>
+        <li>Webhook endpoint not accessible (for local testing, use Stripe CLI)</li>
+        <li>Subscription didn't actually renew (check subscription status)</li>
+    </ul>
+
+    <p><strong>Solution:</strong> Use Stripe CLI to forward webhooks to your local server, or check webhook configuration in Stripe dashboard.</p>
+
+    <h2 id="best-practices">Best Practices</h2>
+
+    <h3>1. Create Test Clocks for Each Test Suite</h3>
+    <p>Create a separate test clock for each test scenario to avoid conflicts and make debugging easier.</p>
+
+    <h3>2. Always Attach Customer Before Creating Subscription</h3>
+    <p>The order is critical: Test Clock → Customer → Attach Customer to Test Clock → Create Subscription</p>
+
+    <h3>3. Use Descriptive Names</h3>
+    <p>Give your test clocks descriptive names so you can identify them later:</p>
+    <div class="code-block">
+<code>const testClock = await stripe.testHelpers.testClocks.create({
+  name: 'Monthly Subscription Renewal Test - ' + new Date().toISOString(),
+  frozen_time: Math.floor(Date.now() / 1000),
+});</code>
+    </div>
+
+    <h3>4. Store Test Clock IDs</h3>
+    <p>Store test clock IDs in metadata or a test database so you can reuse them:</p>
+    <div class="code-block">
+<code>await stripe.subscriptions.update(subscription.id, {
+  metadata: {
+    test_clock_id: testClock.id,
+    test_scenario: 'monthly_renewal',
+  },
+});</code>
+    </div>
+
+    <h3>5. Clean Up Test Clocks</h3>
+    <p>Delete test clocks after testing to keep your Stripe test mode clean:</p>
+    <div class="code-block">
+<code>// Delete test clock (optional - for cleanup)
+await stripe.testHelpers.testClocks.delete(testClock.id);
+console.log('Test clock deleted');</code>
+    </div>
+
+    <h3>6. Wait for Processing</h3>
+    <p>Always wait 1-2 seconds after advancing a test clock for Stripe to process events:</p>
+    <div class="code-block">
+<code>await stripe.testHelpers.testClocks.advance(testClock.id, {
+  frozen_time: targetTime,
+});
+
+// Wait for Stripe to process
+await new Promise(resolve => setTimeout(resolve, 2000));
+
+// Now retrieve updated subscription
+const updatedSubscription = await stripe.subscriptions.retrieve(subscription.id);</code>
+    </div>
+
+    <h2 id="comparison">Test Clocks vs. Other Methods</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Method</th>
+                <th>Works for Existing Subscriptions?</th>
+                <th>Automatic Processing?</th>
+                <th>Webhook Triggers?</th>
+                <th>Recommended?</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Test Clocks</strong></td>
+                <td>❌ No (only new subscriptions)</td>
+                <td>✅ Yes</td>
+                <td>✅ Yes</td>
+                <td>✅ <strong>YES</strong> (for new subscriptions)</td>
+            </tr>
+            <tr>
+                <td><strong>Invoice Payment</strong></td>
+                <td>⚠️ Limited</td>
+                <td>❌ No</td>
+                <td>⚠️ Partial</td>
+                <td>❌ No (has limitations)</td>
+            </tr>
+            <tr>
+                <td><strong>Billing Cycle Anchor Update</strong></td>
+                <td>❌ No (Stripe restriction)</td>
+                <td>❌ No</td>
+                <td>❌ No</td>
+                <td>❌ No (doesn't work)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 id="integration-with-application">Integration with Your Application</h2>
+
+    <p>To integrate Test Clocks into your application's subscription creation flow:</p>
+
+    <h3>Option 1: Create Test Clock in Application Code</h3>
+    <p>Modify your subscription creation code to create a test clock and attach the customer before creating the subscription (only in test mode):</p>
+
+    <div class="code-block">
+<code>// In your subscription creation code (test mode only)
+if (process.env.NODE_ENV === 'test' || process.env.STRIPE_SECRET_KEY?.includes('test')) {
+  // Create or retrieve test clock
+  let testClock = await findOrCreateTestClock(customerId);
+
+  // Attach customer to test clock
+  await stripe.customers.update(customerId, {
+    test_clock: testClock.id,
+  });
+}
+
+// Then create subscription (will use test clock if attached)
+const subscription = await stripe.subscriptions.create({
+  customer: customerId,
+  items: [{ price: priceId }],
+  // ... other params
+});</code>
+    </div>
+
+    <h3>Option 2: Use Scripts for Testing</h3>
+    <p>Keep test clock creation separate from application code and use scripts for testing:</p>
+    <ul>
+        <li>Create test clocks manually or via scripts</li>
+        <li>Attach customers to test clocks before testing</li>
+            <li>Use <code class="script-name">expedite-stripe-renewal-test-clock.js</code> to advance time</li>
+    </ul>
+
+    <h2 id="related-documentation">Related Documentation</h2>
+
+    <ul>
+        <li><a href="./SUBSCRIPTION_RENEWAL_TESTING_SCRIPTS_GUIDE.html">Subscription Renewal Testing Scripts Guide</a> - Complete guide to all testing scripts for subscription renewal functionality</li>
+        <li><a href="./STRIPE_SUBSCRIPTION_RENEWAL_TESTING_GUIDE.html">Stripe Subscription Renewal Testing Guide</a> - Complete guide to all testing scripts</li>
+        <li><a href="https://stripe.com/docs/billing/testing/test-clocks" target="_blank">Stripe Test Clocks Documentation</a> - Official Stripe documentation</li>
+        <li><a href="https://stripe.com/docs/testing" target="_blank">Stripe Test Mode Documentation</a> - General testing guide</li>
+        <li><a href="./SUBSCRIPTION_RENEWAL_BATCH_JOB_ANALYSIS.html">Subscription Renewal Batch Job Analysis</a> - Backend batch job documentation</li>
+    </ul>
+
+    <h2 id="summary">Summary</h2>
+
+    <div class="success">
+        <h3>Key Takeaways</h3>
+        <ul>
+            <li><strong>Test Clocks</strong> are Stripe's official way to test time-based events</li>
+            <li><strong>Order matters:</strong> Create Test Clock → Attach Customer → Create Subscription</li>
+            <li><strong>Limitation:</strong> Only works for subscriptions created AFTER test clock setup</li>
+            <li><strong>Automatic:</strong> Stripe handles renewals, invoices, and webhooks automatically</li>
+            <li><strong>Recommended:</strong> Use Test Clocks for all new subscription testing</li>
+        </ul>
+    </div>
+
+    <p><strong>For existing subscriptions:</strong> Unfortunately, there's no reliable way to force-advance them. Your options are:</p>
+    <ol>
+        <li>Wait for the current period to end naturally</li>
+        <li>Create a new subscription with a test clock attached from the start</li>
+        <li>Cancel and recreate the subscription with a test clock</li>
+    </ol>
+
+    <script>
+        // Store parameter values for each command block
+        const commandParams = {};
+
+        // Initialize commands from input values on page load
+        function initializeCommands() {
+            // Find all command blocks with parameter inputs
+            document.querySelectorAll('.command-block[data-command-base]').forEach(block => {
+                const commandContent = block.querySelector('.command-content');
+                if (!commandContent) return;
+
+                const commandId = commandContent.id;
+                if (!commandId) return;
+
+                // Initialize parameters from input values
+                block.querySelectorAll('.parameter-input input').forEach(input => {
+                    const inputId = input.id;
+                    if (!inputId || !inputId.startsWith(commandId + '-')) return;
+
+                    // Extract parameter name from input ID (e.g., "setup-1-customer-id" -> "customer-id")
+                    const paramName = inputId.substring(commandId.length + 1);
+                    const paramValue = input.value || '';
+
+                    // Store initial value (always store, even if empty - will be filtered in updateCommandFromParams)
+                    if (!commandParams[commandId]) {
+                        commandParams[commandId] = {};
+                    }
+                    commandParams[commandId][paramName] = paramValue;
+                });
+
+                // Update command with initial values
+                updateCommandFromParams(commandId);
+            });
+        }
+
+        // Update command from stored parameters
+        function updateCommandFromParams(commandId) {
+            const commandElement = document.getElementById(commandId);
+            if (!commandElement) return;
+
+            const commandBlock = commandElement.closest('.command-block');
+            if (!commandBlock) return;
+
+            // Get base command from data attribute
+            let baseCommand = commandBlock.getAttribute('data-command-base');
+            if (!baseCommand) return;
+
+            // Build the command with all parameters
+            let command = baseCommand;
+            const params = commandParams[commandId] || {};
+
+            // Add parameters based on command type
+            if (commandId.startsWith('setup-1') || commandId.startsWith('setup-3')) {
+                // Option 1 & 3: Use customer-id
+                if (params['customer-id'] && params['customer-id'].trim()) {
+                    command += ` --customer-id=${params['customer-id'].trim()}`;
+                }
+                if (params['test-clock-name'] && params['test-clock-name'].trim()) {
+                    command += ` --test-clock-name="${params['test-clock-name'].trim()}"`;
+                }
+                if (params['reuse-test-clock'] && params['reuse-test-clock'].trim()) {
+                    command += ` --reuse-test-clock=${params['reuse-test-clock'].trim()}`;
+                }
+            } else if (commandId.startsWith('setup-2') || commandId.startsWith('setup-email')) {
+                // Option 2 & Email option: Use customer-email
+                if (params['customer-email'] && params['customer-email'].trim()) {
+                    command += ` --customer-email=${params['customer-email'].trim()}`;
+                }
+                if (params['customer-name'] && params['customer-name'].trim()) {
+                    command += ` --customer-name="${params['customer-name'].trim()}"`;
+                }
+                if (params['test-clock-name'] && params['test-clock-name'].trim()) {
+                    command += ` --test-clock-name="${params['test-clock-name'].trim()}"`;
+                }
+            } else if (commandId.startsWith('setup-force-new')) {
+                // Option 3: Force new customer with same email
+                if (params['customer-email'] && params['customer-email'].trim()) {
+                    command += ` --customer-email=${params['customer-email'].trim()}`;
+                }
+                if (params['customer-name'] && params['customer-name'].trim()) {
+                    command += ` --customer-name="${params['customer-name'].trim()}"`;
+                }
+                if (params['test-clock-name'] && params['test-clock-name'].trim()) {
+                    command += ` --test-clock-name="${params['test-clock-name'].trim()}"`;
+                }
+                if (params['force-new-customer'] && params['force-new-customer'].trim()) {
+                    command += ` --force-new-customer=${params['force-new-customer'].trim()}`;
+                }
+            } else if (commandId.startsWith('expedite')) {
+                // Expedite script
+                if (params['subscription-id'] && params['subscription-id'].trim()) {
+                    command += ` --subscription-id=${params['subscription-id'].trim()}`;
+                }
+                if (params['customer-id'] && params['customer-id'].trim()) {
+                    command += ` --customer-id=${params['customer-id'].trim()}`;
+                }
+                if (params['test-clock-id'] && params['test-clock-id'].trim()) {
+                    command += ` --test-clock-id=${params['test-clock-id'].trim()}`;
+                }
+                if (params['days-to-advance'] && params['days-to-advance'].trim()) {
+                    command += ` --days-to-advance=${params['days-to-advance'].trim()}`;
+                }
+            } else if (commandId.startsWith('verify')) {
+                // Verify customer selection script
+                if (params['email'] && params['email'].trim()) {
+                    command += ` --email=${params['email'].trim()}`;
+                }
+            } else if (commandId.startsWith('delete')) {
+                // Delete customer script
+                if (params['customer-id'] && params['customer-id'].trim()) {
+                    command += ` --customer-id=${params['customer-id'].trim()}`;
+                }
+                if (params['customer-email'] && params['customer-email'].trim()) {
+                    command += ` --customer-email=${params['customer-email'].trim()}`;
+                }
+                if (params['delete-all'] && params['delete-all'].trim()) {
+                    command += ` --delete-all=${params['delete-all'].trim()}`;
+                }
+            } else if (commandId.startsWith('list-name')) {
+                // List test clocks by name
+                if (params['name'] && params['name'].trim()) {
+                    command += ` --name="${params['name'].trim()}"`;
+                }
+            }
+
+            // Update the command display
+            commandElement.textContent = command;
+
+            // Update the single-line version
+            const singleLineCode = document.getElementById(commandId + '-single-code');
+            if (singleLineCode) {
+                singleLineCode.textContent = command;
+            }
+        }
+
+        // Update command dynamically as user types
+        function updateCommand(commandId, paramName, paramValue) {
+            // Store the parameter value
+            if (!commandParams[commandId]) {
+                commandParams[commandId] = {};
+            }
+            commandParams[commandId][paramName] = paramValue;
+
+            // Get the command element first
+            const commandElement = document.getElementById(commandId);
+            if (!commandElement) return;
+
+            // Get the command block
+            const commandBlock = commandElement.closest('.command-block');
+            if (!commandBlock) return;
+
+            // Update command using the shared function
+            updateCommandFromParams(commandId);
+        }
+
+        // Initialize all commands on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCommands();
+        });
+
+        // Copy template command to clipboard
+        function copyTemplateCommand(button, commandId) {
+            // Find the command block from the button
+            const commandBlock = button.closest('.command-block');
+            if (!commandBlock) return;
+
+            // Get template command from data attribute
+            let templateCommand = commandBlock.getAttribute('data-template-command');
+            if (!templateCommand) {
+                // Fallback: use the initial command content
+                const commandElement = document.getElementById(commandId);
+                if (!commandElement) return;
+                templateCommand = commandElement.textContent.trim();
+            }
+
+            // Replace HTML entities
+            templateCommand = templateCommand.replace(/&quot;/g, '"');
+
+            // Copy to clipboard
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(templateCommand).then(() => {
+                    // Show success feedback
+                    button.classList.add('copied');
+                    button.textContent = '✓ Copied!';
+
+                    // Reset after 2 seconds
+                    setTimeout(() => {
+                        button.classList.remove('copied');
+                        button.textContent = '📄 Template';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    fallbackCopy(templateCommand, button);
+                });
+            } else {
+                // Fallback for older browsers
+                fallbackCopy(templateCommand, button);
+            }
+        }
+
+        // Copy command to clipboard (updated to use customized command)
+        function copyCommand(button, commandId) {
+            const commandElement = document.getElementById(commandId);
+            if (!commandElement) return;
+
+            // Get the command text (use customized version - already updated by updateCommand)
+            const commandText = commandElement.textContent.trim();
+
+            // Copy to clipboard
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(commandText).then(() => {
+                    // Show success feedback
+                    button.classList.add('copied');
+                    button.textContent = '✓ Copied!';
+
+                    // Reset after 2 seconds
+                    setTimeout(() => {
+                        button.classList.remove('copied');
+                        button.textContent = '📋 Copy';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    fallbackCopy(commandText, button);
+                });
+            } else {
+                // Fallback for older browsers
+                fallbackCopy(commandText, button);
+            }
+
+            // Show single-line version for Windows
+            const singleLineElement = document.getElementById(commandId + '-single');
+            if (singleLineElement) {
+                singleLineElement.classList.add('show');
+            }
+        }
+
+        // Fallback copy method for older browsers
+        function fallbackCopy(text, button) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                document.execCommand('copy');
+                button.classList.add('copied');
+                button.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.textContent = '📋 Copy';
+                }, 2000);
+            } catch (err) {
+                console.error('Fallback copy failed:', err);
+                alert('Failed to copy command. Please copy manually:\n\n' + text);
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        // Auto-detect Windows and show single-line hints
+        if (navigator.platform.toLowerCase().includes('win')) {
+            document.addEventListener('DOMContentLoaded', function() {
+                const singleLineElements = document.querySelectorAll('.command-single-line');
+                singleLineElements.forEach(el => {
+                    el.style.display = 'block';
+                });
+            });
+        }
+    </script>
+</body>
+</html>
+

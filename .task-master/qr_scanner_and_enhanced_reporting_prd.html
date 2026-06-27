@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRD: QR Scanner & Enhanced Reporting for Event Ticketing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 50px;
+            margin-bottom: 25px;
+            padding-left: 15px;
+            border-left: 5px solid #3498db;
+            font-size: 2em;
+        }
+        h3 {
+            color: #555;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        h4 {
+            color: #666;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        .metadata {
+            background: #e8f4f8;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            border-left: 4px solid #3498db;
+        }
+        .metadata p {
+            margin: 5px 0;
+        }
+        .metadata strong {
+            color: #2c3e50;
+        }
+        .feature-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+        }
+        .requirement {
+            background: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            margin: 15px 0;
+        }
+        .requirement h4 {
+            color: #856404;
+            margin-top: 0;
+        }
+        .technical-spec {
+            background: #d1ecf1;
+            padding: 15px;
+            border-left: 4px solid #17a2b8;
+            margin: 15px 0;
+        }
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .code-block code {
+            color: #ecf0f1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        table th {
+            background: #3498db;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        table tr:hover {
+            background: #f8f9fa;
+        }
+        .status-complete {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .status-partial {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        .status-missing {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .implementation-step {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 3px solid #3498db;
+            border-radius: 3px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .step-number {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .api-endpoint {
+            background: #e7f3ff;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            font-family: monospace;
+            border-left: 3px solid #0066cc;
+        }
+        .warning {
+            background: #f8d7da;
+            padding: 15px;
+            border-left: 4px solid #dc3545;
+            margin: 20px 0;
+        }
+        .success {
+            background: #d4edda;
+            padding: 15px;
+            border-left: 4px solid #28a745;
+            margin: 20px 0;
+        }
+        ul, ol {
+            margin-left: 30px;
+            margin-top: 10px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .priority-high {
+            background: #fee;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .priority-medium {
+            background: #ffe;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .priority-low {
+            background: #efe;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Product Requirements Document</h1>
+        <h2>QR Scanner & Enhanced Reporting for Event Ticketing System</h2>
+
+        <div class="metadata">
+            <p><strong>Document Version:</strong> 1.0</p>
+            <p><strong>Date:</strong> January 2026</p>
+            <p><strong>Status:</strong> Draft</p>
+            <p><strong>Project:</strong> Event Ticketing System Enhancement</p>
+            <p><strong>Frontend Location:</strong> E:\project_workspace\mosc-temp</p>
+            <p><strong>Backend Location:</strong> E:\project_workspace\malayalees-us-site-boot</p>
+            <p><strong>Backend Port:</strong> Default (as configured)</p>
+            <p><strong>Frontend Port:</strong> 3000 (running)</p>
+        </div>
+
+        <h2>1. Executive Summary</h2>
+        <p>This PRD outlines the requirements for implementing four critical enhancements to the event ticketing system:</p>
+        <ol>
+            <li><strong>Web-Based QR Scanner</strong> - Upgrade from manual check-in to camera-based scanning</li>
+            <li><strong>Camera-Based Scanning</strong> - Enable real-time QR code scanning using device cameras</li>
+            <li><strong>Check-In History & Analytics</strong> - Enhance basic check-in tracking with comprehensive analytics</li>
+            <li><strong>Sales Reports</strong> - Expand basic reporting to comprehensive sales analytics</li>
+        </ol>
+
+        <div class="success">
+            <strong>Business Value:</strong> These enhancements will transform the event check-in process from manual to automated, provide real-time insights into event attendance, and enable data-driven decision making for event organizers.
+        </div>
+
+        <h2>2. Current State Analysis</h2>
+
+        <h3>2.1 Web-Based QR Scanner</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Current State</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>QR Code Generation</td>
+                    <td>✅ Implemented - QR codes generated server-side and stored in <code>qrCodeImageUrl</code></td>
+                    <td class="status-complete">Complete</td>
+                </tr>
+                <tr>
+                    <td>QR Code Display</td>
+                    <td>✅ Implemented - QR codes shown on success pages and in emails</td>
+                    <td class="status-complete">Complete</td>
+                </tr>
+                <tr>
+                    <td>Manual Check-In</td>
+                    <td>✅ Implemented - Admin can manually check in via form at <code>/admin/qrcode-scan/tickets/events/[eventId]/transactions/[transactionId]</code></td>
+                    <td class="status-complete">Complete</td>
+                </tr>
+                <tr>
+                    <td>Camera-Based Scanning</td>
+                    <td>❌ Not Implemented - No camera access or QR scanning capability</td>
+                    <td class="status-missing">Missing</td>
+                </tr>
+                <tr>
+                    <td>Browser-Based Scanner</td>
+                    <td>❌ Not Implemented - Cannot use webcam/mobile camera to scan QR codes</td>
+                    <td class="status-missing">Missing</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2.2 Check-In History & Analytics</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Current State</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Check-In Status Tracking</td>
+                    <td>✅ Basic - Tracks <code>checkInStatus</code>, <code>checkInTime</code>, <code>numberOfGuestsCheckedIn</code></td>
+                    <td class="status-complete">Complete</td>
+                </tr>
+                <tr>
+                    <td>Check-In History</td>
+                    <td>⚠️ Limited - No historical view of check-ins over time</td>
+                    <td class="status-partial">Partial</td>
+                </tr>
+                <tr>
+                    <td>Check-In Analytics</td>
+                    <td>⚠️ Limited - No charts, trends, or insights</td>
+                    <td class="status-partial">Partial</td>
+                </tr>
+                <tr>
+                    <td>Real-Time Check-In Dashboard</td>
+                    <td>❌ Not Implemented</td>
+                    <td class="status-missing">Missing</td>
+                </tr>
+                <tr>
+                    <td>Check-In Export</td>
+                    <td>❌ Not Implemented</td>
+                    <td class="status-missing">Missing</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2.3 Sales Reports</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Current State</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Basic Statistics</td>
+                    <td>✅ Implemented - Shows total tickets sold, total amount, net amount, tickets by status</td>
+                    <td class="status-complete">Complete</td>
+                </tr>
+                <tr>
+                    <td>Ticket Type Breakdown</td>
+                    <td>✅ Implemented - Shows sales by ticket type</td>
+                    <td class="status-complete">Complete</td>
+                </tr>
+                <tr>
+                    <td>Sales Trends</td>
+                    <td>❌ Not Implemented - No time-based sales charts</td>
+                    <td class="status-missing">Missing</td>
+                </tr>
+                <tr>
+                    <td>Revenue Analytics</td>
+                    <td>⚠️ Limited - Basic totals only, no detailed breakdowns</td>
+                    <td class="status-partial">Partial</td>
+                </tr>
+                <tr>
+                    <td>Export Functionality</td>
+                    <td>⚠️ Limited - Reports page exists but export not fully implemented</td>
+                    <td class="status-partial">Partial</td>
+                </tr>
+                <tr>
+                    <td>Custom Date Ranges</td>
+                    <td>⚠️ Limited - UI exists but functionality not connected</td>
+                    <td class="status-partial">Partial</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>3. Goals & Objectives</h2>
+
+        <h3>3.1 Primary Goals</h3>
+        <ol>
+            <li><strong>Streamline Check-In Process:</strong> Reduce check-in time from minutes to seconds using camera-based QR scanning</li>
+            <li><strong>Improve Event Day Operations:</strong> Enable real-time check-in tracking and analytics for event staff</li>
+            <li><strong>Enhance Reporting Capabilities:</strong> Provide comprehensive sales and attendance analytics for event organizers</li>
+            <li><strong>Increase Data Visibility:</strong> Enable data-driven decision making with detailed reports and exports</li>
+        </ol>
+
+        <h3>3.2 Success Metrics</h3>
+        <ul>
+            <li>Check-in time reduced by 80% (from ~2 minutes to ~15 seconds per attendee)</li>
+            <li>100% of check-ins use QR scanner (eliminate manual entry)</li>
+            <li>Real-time check-in dashboard shows live attendance data</li>
+            <li>Sales reports exported in CSV/Excel format within 5 seconds</li>
+            <li>Check-in analytics available within 30 seconds of scan</li>
+        </ul>
+
+        <h2>4. Functional Requirements</h2>
+
+        <h3>4.1 Web-Based QR Scanner <span class="priority-high">HIGH PRIORITY</span></h3>
+
+        <div class="requirement">
+            <h4>FR-1.1: Camera Access & QR Scanning</h4>
+            <ul>
+                <li>System must request camera permissions from user</li>
+                <li>System must support both front-facing (mobile) and rear-facing (desktop webcam) cameras</li>
+                <li>System must allow users to switch between cameras</li>
+                <li>QR scanner must continuously scan for QR codes</li>
+                <li>QR scanner must provide visual feedback (scanning overlay, success/error indicators)</li>
+                <li>QR scanner must work on both desktop (webcam) and mobile (camera) devices</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h4>FR-1.2: QR Code Validation</h4>
+            <ul>
+                <li>System must validate QR code format (transaction ID, event ID, or URL)</li>
+                <li>System must verify ticket exists in database</li>
+                <li>System must check ticket status (not REFUNDED, not CANCELLED)</li>
+                <li>System must verify ticket belongs to correct event</li>
+                <li>System must check if ticket is already checked in (with option to re-check-in)</li>
+                <li>System must display clear validation messages (valid/invalid ticket)</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h4>FR-1.3: Check-In Processing</h4>
+            <ul>
+                <li>Upon valid QR scan, system must automatically navigate to check-in page</li>
+                <li>System must pre-populate check-in form with ticket details</li>
+                <li>System must allow admin to adjust number of guests checking in</li>
+                <li>System must record check-in timestamp</li>
+                <li>System must update <code>checkInStatus</code> to 'CHECKED_IN'</li>
+                <li>System must update <code>checkInTime</code> with current timestamp</li>
+                <li>System must update <code>numberOfGuestsCheckedIn</code></li>
+                <li>System must provide success confirmation after check-in</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h4>FR-1.4: Error Handling</h4>
+            <ul>
+                <li>System must handle camera permission denial gracefully</li>
+                <li>System must handle invalid QR codes with clear error messages</li>
+                <li>System must handle network errors during validation</li>
+                <li>System must handle duplicate check-ins (show warning, allow override)</li>
+                <li>System must handle expired or invalid tickets</li>
+            </ul>
+        </div>
+
+        <h3>4.2 Camera-Based Scanning <span class="priority-high">HIGH PRIORITY</span></h3>
+
+        <div class="requirement">
+            <h4>FR-2.1: Browser Camera Integration</h4>
+            <ul>
+                <li>System must use browser MediaDevices API for camera access</li>
+                <li>System must support getUserMedia() for webcam/camera access</li>
+                <li>System must handle camera initialization errors</li>
+                <li>System must provide fallback if camera is unavailable</li>
+                <li>System must optimize camera performance (frame rate, resolution)</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h4>FR-2.2: QR Code Detection</h4>
+            <ul>
+                <li>System must use QR code detection library (react-qr-reader or @zxing/library)</li>
+                <li>System must detect QR codes in real-time from camera feed</li>
+                <li>System must handle multiple QR codes in frame (select first valid)</li>
+                <li>System must provide visual scanning overlay (targeting box)</li>
+                <li>System must provide audio/visual feedback on successful scan</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h4>FR-2.3: Mobile Optimization</h4>
+            <ul>
+                <li>System must work on iOS Safari (with proper permissions)</li>
+                <li>System must work on Android Chrome</li>
+                <li>System must handle mobile camera orientation changes</li>
+                <li>System must optimize for mobile performance (battery, processing)</li>
+                <li>System must provide touch-friendly controls</li>
+            </ul>
+        </div>
+
+        <h3>4.3 Check-In History & Analytics <span class="priority-medium">MEDIUM PRIORITY</span></h3>
+
+        <div class="requirement">
+            <h4>FR-3.1: Check-In History View</h4>
+            <ul>
+                <li>System must display chronological list of all check-ins for an event</li>
+                <li>System must show check-in time, attendee name, ticket type, number of guests</li>
+                <li>System must support filtering by date range</li>
+                <li>System must support filtering by ticket type</li>
+                <li>System must support filtering by check-in status</li>
+                <li>System must support pagination for large datasets</li>
+                <li>System must support search by attendee name or email</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h4>FR-3.2: Check-In Analytics Dashboard</h4>
+            <ul>
+                <li>System must display real-time check-in count</li>
+                <li>System must show check-in rate (check-ins per hour)</li>
+                <li>System must display check-in timeline chart</li>
+                <li>System must show check-in percentage (checked in vs. total tickets)</li>
+                <li>System must display peak check-in times</li>
+                <li>System must show check-ins by ticket type</li>
+                <li>System must display no-show count</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h4>FR-3.3: Check-In Export</h4>
+            <ul>
+                <li>System must export check-in data to CSV format</li>
+                <li>System must export check-in data to Excel format</li>
+                <li>Export must include: attendee name, email, ticket type, check-in time, number of guests</li>
+                <li>Export must support date range filtering</li>
+                <li>Export must be downloadable within 5 seconds for events with &lt;1000 attendees</li>
+            </ul>
+        </div>
+
+        <h3>4.4 Sales Reports <span class="priority-medium">MEDIUM PRIORITY</span></h3>
+
+        <div class="requirement">
+            <h4>FR-4.1: Enhanced Sales Dashboard</h4>
+            <ul>
+                <li>System must display sales trends over time (line chart)</li>
+                <li>System must show daily/hourly sales breakdown</li>
+                <li>System must display revenue by ticket type (pie/bar chart)</li>
+                <li>System must show discount code usage statistics</li>
+                <li>System must display refund statistics</li>
+                <li>System must show average ticket price</li>
+                <li>System must display conversion rate (visits vs. purchases)</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h4>FR-4.2: Custom Date Range Reports</h4>
+            <ul>
+                <li>System must allow selection of custom date ranges</li>
+                <li>System must support preset ranges (last 7 days, last 30 days, last 90 days, last year)</li>
+                <li>System must filter all statistics by selected date range</li>
+                <li>System must update charts and metrics in real-time when date range changes</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h4>FR-4.3: Sales Report Export</h4>
+            <ul>
+                <li>System must export sales data to CSV format</li>
+                <li>System must export sales data to Excel format</li>
+                <li>System must export sales data to PDF format (formatted report)</li>
+                <li>Export must include: transaction details, ticket types, amounts, discounts, refunds</li>
+                <li>Export must support date range filtering</li>
+                <li>Export must be downloadable within 10 seconds for events with &lt;5000 transactions</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h4>FR-4.4: Revenue Analytics</h4>
+            <ul>
+                <li>System must display gross revenue (total sales)</li>
+                <li>System must display net revenue (after discounts, refunds)</li>
+                <li>System must display platform fees</li>
+                <li>System must display tax amounts</li>
+                <li>System must show revenue by payment method</li>
+                <li>System must display revenue trends (daily, weekly, monthly)</li>
+            </ul>
+        </div>
+
+        <h2>5. Technical Specifications</h2>
+
+        <h3>5.1 Technology Stack</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Technology</th>
+                    <th>Version/Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>QR Scanner Library</td>
+                    <td>react-qr-reader or @zxing/library</td>
+                    <td>Latest stable version</td>
+                </tr>
+                <tr>
+                    <td>Camera Access</td>
+                    <td>MediaDevices API (getUserMedia)</td>
+                    <td>Browser native API</td>
+                </tr>
+                <tr>
+                    <td>Chart Library</td>
+                    <td>recharts or chart.js</td>
+                    <td>For analytics visualization</td>
+                </tr>
+                <tr>
+                    <td>Export Library</td>
+                    <td>xlsx (for Excel), csv-writer (for CSV)</td>
+                    <td>Client-side export generation</td>
+                </tr>
+                <tr>
+                    <td>Backend API</td>
+                    <td>Spring Boot REST API</td>
+                    <td>Existing backend at E:\project_workspace\malayalees-us-site-boot</td>
+                </tr>
+                <tr>
+                    <td>Frontend Framework</td>
+                    <td>Next.js 15+ (App Router)</td>
+                    <td>Existing frontend</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>5.2 Database Schema</h3>
+        <p>Based on <code>Latest_Schema_Post__Blob_Claude_12.sql</code>, the following tables are relevant:</p>
+
+        <div class="code-block">
+<code>-- event_ticket_transaction table (existing)
+CREATE TABLE public.event_ticket_transaction (
+    id bigint PRIMARY KEY,
+    tenant_id character varying(255),
+    transaction_reference varchar(255),
+    email character varying(255) NOT NULL,
+    first_name character varying(255),
+    last_name character varying(255),
+    -- ... other fields ...
+    qr_code_image_url character varying(2048),
+    check_in_status character varying(20) DEFAULT 'NOT_CHECKED_IN',
+    check_in_time timestamp without time zone,
+    check_out_time timestamp without time zone,
+    number_of_guests_checked_in integer,
+    -- ... other fields ...
+);
+
+-- qr_code_usage table (existing - for enhanced tracking)
+CREATE TABLE public.qr_code_usage (
+    id bigint PRIMARY KEY,
+    tenant_id character varying(255),
+    attendee_id bigint NOT NULL,
+    qr_code_data character varying(1000) NOT NULL,
+    qr_code_type character varying(50) DEFAULT 'CHECK_IN',
+    generated_at timestamp without time zone DEFAULT now(),
+    expires_at timestamp without time zone,
+    used_at timestamp without time zone,
+    usage_count integer DEFAULT 0,
+    max_usage_count integer DEFAULT 1,
+    last_scanned_by character varying(255),
+    scan_location character varying(255),
+    device_info text,
+    ip_address inet,
+    is_valid boolean DEFAULT true,
+    invalidated_at timestamp without time zone,
+    invalidation_reason text,
+    created_at timestamp without time zone DEFAULT now()
+);</code>
+        </div>
+
+        <h3>5.3 API Endpoints</h3>
+
+        <h4>5.3.1 QR Verification API</h4>
+        <div class="api-endpoint">
+            <strong>GET</strong> /api/qr/verify?data={qrData}
+            <br><br>
+            <strong>Purpose:</strong> Validate QR code and return ticket information
+            <br><br>
+            <strong>Query Parameters:</strong>
+            <ul>
+                <li><code>data</code> (required): QR code data (transaction ID, URL, or encoded JSON)</li>
+            </ul>
+            <br>
+            <strong>Response (200 OK):</strong>
+            <pre>{
+  "valid": true,
+  "transaction": {
+    "id": 123,
+    "eventId": 456,
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john@example.com",
+    "status": "CONFIRMED",
+    "checkInStatus": "NOT_CHECKED_IN",
+    "numberOfGuestsCheckedIn": 0,
+    "quantity": 2,
+    "ticketTypes": [...]
+  },
+  "message": "Ticket valid - Access granted"
+}</pre>
+            <br>
+            <strong>Response (400/404):</strong>
+            <pre>{
+  "valid": false,
+  "error": "Invalid QR code format" | "Ticket not found" | "Ticket already refunded",
+  "message": "Invalid ticket"
+}</pre>
+        </div>
+
+        <h4>5.3.2 Check-In History API</h4>
+        <div class="api-endpoint">
+            <strong>GET</strong> /api/proxy/event-ticket-transactions/check-ins?eventId.equals={eventId}&checkInStatus.equals=CHECKED_IN&sort=checkInTime,desc
+            <br><br>
+            <strong>Purpose:</strong> Retrieve check-in history for an event
+            <br><br>
+            <strong>Query Parameters:</strong>
+            <ul>
+                <li><code>eventId.equals</code> (required): Event ID</li>
+                <li><code>checkInStatus.equals</code> (optional): Filter by status</li>
+                <li><code>checkInTime.greaterThanOrEqual</code> (optional): Start date</li>
+                <li><code>checkInTime.lessThanOrEqual</code> (optional): End date</li>
+                <li><code>sort</code> (optional): Sort order (default: checkInTime,desc)</li>
+                <li><code>page</code> (optional): Page number (0-based)</li>
+                <li><code>size</code> (optional): Page size</li>
+            </ul>
+            <br>
+            <strong>Note:</strong> Uses existing proxy handler pattern. <code>tenantId.equals</code> is automatically injected by proxy handler.
+        </div>
+
+        <h4>5.3.3 Check-In Analytics API</h4>
+        <div class="api-endpoint">
+            <strong>GET</strong> /api/proxy/event-ticket-transactions/check-in-analytics/{eventId}
+            <br><br>
+            <strong>Purpose:</strong> Get check-in analytics for an event
+            <br><br>
+            <strong>Response (200 OK):</strong>
+            <pre>{
+  "eventId": 456,
+  "totalTickets": 100,
+  "checkedInCount": 75,
+  "notCheckedInCount": 20,
+  "noShowCount": 5,
+  "checkInPercentage": 75.0,
+  "checkInsByHour": [
+    {"hour": "09:00", "count": 10},
+    {"hour": "10:00", "count": 25},
+    ...
+  ],
+  "checkInsByTicketType": {
+    "VIP": 20,
+    "General": 55
+  },
+  "peakCheckInTime": "10:00-11:00",
+  "averageCheckInTime": "10:15"
+}</pre>
+            <br>
+            <strong>Note:</strong> This endpoint may need to be created in the backend. Frontend can also calculate from transaction data.
+        </div>
+
+        <h4>5.3.4 Sales Analytics API</h4>
+        <div class="api-endpoint">
+            <strong>GET</strong> /api/proxy/event-ticket-transactions/sales-analytics/{eventId}?startDate={startDate}&endDate={endDate}
+            <br><br>
+            <strong>Purpose:</strong> Get sales analytics for an event
+            <br><br>
+            <strong>Query Parameters:</strong>
+            <ul>
+                <li><code>startDate</code> (optional): Start date for date range (ISO 8601)</li>
+                <li><code>endDate</code> (optional): End date for date range (ISO 8601)</li>
+            </ul>
+            <br>
+            <strong>Response (200 OK):</strong>
+            <pre>{
+  "eventId": 456,
+  "totalSales": 1000,
+  "totalRevenue": 50000.00,
+  "netRevenue": 47500.00,
+  "totalDiscounts": 2000.00,
+  "totalRefunds": 500.00,
+  "platformFees": 1750.00,
+  "salesByDate": [
+    {"date": "2026-01-01", "count": 50, "revenue": 2500.00},
+    ...
+  ],
+  "salesByTicketType": {
+    "VIP": {"count": 100, "revenue": 20000.00},
+    "General": {"count": 900, "revenue": 30000.00}
+  },
+  "salesByPaymentMethod": {
+    "card": {"count": 800, "revenue": 40000.00},
+    "apple_pay": {"count": 200, "revenue": 10000.00}
+  },
+  "averageTicketPrice": 50.00,
+  "conversionRate": 15.5
+}</pre>
+        </div>
+
+        <h2>6. UI/UX Design Specifications</h2>
+
+        <h3>6.1 QR Scanner Page</h3>
+        <p><strong>Route:</strong> <code>/admin/qr-scanner</code></p>
+        <p><strong>Access:</strong> Admin only (protected route)</p>
+
+        <div class="technical-spec">
+            <h4>Layout Requirements:</h4>
+            <ul>
+                <li><strong>Page Container:</strong> <code>max-w-5xl mx-auto px-8 py-8</code> (per UI style guide)</li>
+                <li><strong>Scanner Container:</strong> <code>bg-white rounded-lg shadow-md p-6</code> (per UI style guide)</li>
+                <li><strong>Camera View:</strong> Full-width video element with rounded corners</li>
+                <li><strong>Scanning Overlay:</strong> Centered targeting box with corner indicators</li>
+                <li><strong>Controls:</strong> Camera switch button, scan status indicator</li>
+                <li><strong>Results Panel:</strong> Shows validation result and ticket details</li>
+            </ul>
+        </div>
+
+        <div class="code-block">
+<code>// Page Structure (pseudo-code)
+&lt;div className="max-w-5xl mx-auto px-8 py-8"&gt;
+  &lt;h1 className="text-3xl font-bold mb-6"&gt;QR Code Scanner&lt;/h1&gt;
+
+  &lt;div className="bg-white rounded-lg shadow-md p-6 mb-6"&gt;
+    &lt;QrScanner
+      onScan={handleScan}
+      onError={handleError}
+      delay={300}
+    /&gt;
+  &lt;/div&gt;
+
+  {loading && &lt;LoadingSpinner /&gt;}
+  {error && &lt;ErrorMessage error={error} /&gt;}
+  {result && &lt;ValidationResult result={result} /&gt;}
+&lt;/div&gt;</code>
+        </div>
+
+        <h3>6.2 Check-In Analytics Dashboard</h3>
+        <p><strong>Route:</strong> <code>/admin/events/[id]/check-in-analytics</code></p>
+
+        <div class="technical-spec">
+            <h4>Layout Requirements:</h4>
+            <ul>
+                <li><strong>Statistics Cards:</strong> Use gradient background cards matching ticket list page style</li>
+                <li><strong>Charts:</strong> Use recharts or chart.js for visualization</li>
+                <li><strong>Check-In Timeline:</strong> Line chart showing check-ins over time</li>
+                <li><strong>Check-In List:</strong> Table with pagination (matching ticket list style)</li>
+                <li><strong>Export Button:</strong> Styled button matching admin action buttons pattern</li>
+            </ul>
+        </div>
+
+        <h3>6.3 Enhanced Sales Reports Page</h3>
+        <p><strong>Route:</strong> <code>/admin/events/[id]/sales-reports</code></p>
+
+        <div class="technical-spec">
+            <h4>Layout Requirements:</h4>
+            <ul>
+                <li><strong>Date Range Selector:</strong> Use existing reports page UI pattern</li>
+                <li><strong>Sales Charts:</strong> Line chart for trends, pie chart for ticket types, bar chart for daily sales</li>
+                <li><strong>Revenue Cards:</strong> Matching statistics dashboard style</li>
+                <li><strong>Export Controls:</strong> Format selector (CSV, Excel, PDF) with download button</li>
+                <li><strong>Report Preview:</strong> Show summary before export</li>
+            </ul>
+        </div>
+
+        <h2>7. Implementation Plan</h2>
+
+        <h3>7.1 Phase 1: QR Scanner Implementation <span class="priority-high">WEEK 1</span></h3>
+
+        <div class="implementation-step">
+            <span class="step-number">1</span>
+            <strong>Install Dependencies</strong>
+            <div class="code-block">
+<code>npm install react-qr-reader
+# OR
+npm install @zxing/library @zxing/browser</code>
+            </div>
+        </div>
+
+        <div class="implementation-step">
+            <span class="step-number">2</span>
+            <strong>Create QR Scanner Component</strong>
+            <p><strong>File:</strong> <code>src/components/qr/QrScanner.tsx</code></p>
+            <ul>
+                <li>Implement camera access using getUserMedia()</li>
+                <li>Integrate QR code detection library</li>
+                <li>Handle camera permissions and errors</li>
+                <li>Provide visual feedback (scanning overlay, success/error states)</li>
+                <li>Support camera switching (front/rear)</li>
+            </ul>
+        </div>
+
+        <div class="implementation-step">
+            <span class="step-number">3</span>
+            <strong>Create QR Verification API Route</strong>
+            <p><strong>File:</strong> <code>src/app/api/qr/verify/route.ts</code></p>
+            <ul>
+                <li>Parse QR code data (transaction ID, URL, or JSON)</li>
+                <li>Fetch transaction from backend using <code>fetchWithJwtRetry</code></li>
+                <li>Validate ticket status and event match</li>
+                <li>Return validation result with transaction details</li>
+                <li>Handle errors gracefully</li>
+            </ul>
+            <div class="warning">
+                <strong>CRITICAL:</strong> Follow <code>nextjs_api_routes.mdc</code> rules:
+                <ul>
+                    <li>Use <code>fetchWithJwtRetry</code> for backend calls</li>
+                    <li>Use <code>getAppUrl()</code> for server-side URLs</li>
+                    <li>Handle errors with try-catch</li>
+                    <li>Return JSON responses</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="implementation-step">
+            <span class="step-number">4</span>
+            <strong>Create Admin QR Scanner Page</strong>
+            <p><strong>File:</strong> <code>src/app/admin/qr-scanner/page.tsx</code></p>
+            <ul>
+                <li>Server component for page structure</li>
+                <li>Client component for scanner functionality</li>
+                <li>Integrate QrScanner component</li>
+                <li>Handle scan results and navigation</li>
+                <li>Display validation results</li>
+            </ul>
+        </div>
+
+        <div class="implementation-step">
+            <span class="step-number">5</span>
+            <strong>Update Check-In Flow</strong>
+            <p><strong>File:</strong> <code>src/app/admin/qrcode-scan/tickets/events/[eventId]/transactions/[transactionId]/page.tsx</code></p>
+            <ul>
+                <li>Add "Scan Another QR Code" button</li>
+                <li>Pre-populate form when accessed via QR scan</li>
+                <li>Improve check-in success feedback</li>
+            </ul>
+        </div>
+
+        <h3>7.2 Phase 2: Check-In Analytics <span class="priority-medium">WEEK 2</span></h3>
+
+        <div class="implementation-step">
+            <span class="step-number">1</span>
+            <strong>Create Check-In History API Server Actions</strong>
+            <p><strong>File:</strong> <code>src/app/admin/events/[id]/check-in-analytics/ApiServerActions.ts</code></p>
+            <ul>
+                <li>Create <code>fetchCheckInHistoryServer</code> function</li>
+                <li>Create <code>fetchCheckInAnalyticsServer</code> function</li>
+                <li>Use <code>fetchWithJwtRetry</code> for backend calls</li>
+                <li>Support date range filtering</li>
+                <li>Support pagination</li>
+            </ul>
+        </div>
+
+        <div class="implementation-step">
+            <span class="step-number">2</span>
+            <strong>Create Check-In Analytics Page</strong>
+            <p><strong>File:</strong> <code>src/app/admin/events/[id]/check-in-analytics/page.tsx</code></p>
+            <ul>
+                <li>Server component to fetch initial data</li>
+                <li>Display statistics cards (matching ticket list style)</li>
+                <li>Display check-in timeline chart</li>
+                <li>Display check-in list table</li>
+                <li>Add date range filter</li>
+            </ul>
+        </div>
+
+        <div class="implementation-step">
+            <span class="step-number">3</span>
+            <strong>Create Check-In Analytics Client Component</strong>
+            <p><strong>File:</strong> <code>src/app/admin/events/[id]/check-in-analytics/CheckInAnalyticsClient.tsx</code></p>
+            <ul>
+                <li>Implement real-time updates (polling or WebSocket)</li>
+                <li>Implement date range filtering</li>
+                <li>Implement chart rendering (recharts)</li>
+                <li>Implement export functionality (CSV/Excel)</li>
+            </ul>
+        </div>
+
+        <h3>7.3 Phase 3: Enhanced Sales Reports <span class="priority-medium">WEEK 3</span></h3>
+
+        <div class="implementation-step">
+            <span class="step-number">1</span>
+            <strong>Create Sales Analytics API Server Actions</strong>
+            <p><strong>File:</strong> <code>src/app/admin/events/[id]/sales-reports/ApiServerActions.ts</code></p>
+            <ul>
+                <li>Create <code>fetchSalesAnalyticsServer</code> function</li>
+                <li>Create <code>fetchSalesTrendsServer</code> function</li>
+                <li>Support date range filtering</li>
+                <li>Calculate revenue metrics</li>
+            </ul>
+        </div>
+
+        <div class="implementation-step">
+            <span class="step-number">2</span>
+            <strong>Create Enhanced Sales Reports Page</strong>
+            <p><strong>File:</strong> <code>src/app/admin/events/[id]/sales-reports/page.tsx</code></p>
+            <ul>
+                <li>Server component to fetch initial data</li>
+                <li>Display sales charts (trends, ticket types, daily sales)</li>
+                <li>Display revenue cards</li>
+                <li>Add date range selector</li>
+                <li>Add export controls</li>
+            </ul>
+        </div>
+
+        <div class="implementation-step">
+            <span class="step-number">3</span>
+            <strong>Implement Export Functionality</strong>
+            <p><strong>Files:</strong> <code>src/lib/export/salesReportExport.ts</code>, <code>src/lib/export/checkInExport.ts</code></p>
+            <ul>
+                <li>Create CSV export function</li>
+                <li>Create Excel export function (using xlsx library)</li>
+                <li>Create PDF export function (optional, using jsPDF or similar)</li>
+                <li>Handle large datasets efficiently</li>
+            </ul>
+        </div>
+
+        <h2>8. API Implementation Details</h2>
+
+        <h3>8.1 QR Verification API Route</h3>
+        <div class="code-block">
+<code>// src/app/api/qr/verify/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { fetchWithJwtRetry } from '@/lib/proxyHandler';
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const qrData = searchParams.get('data');
+
+    if (!qrData) {
+      return NextResponse.json(
+        { valid: false, error: 'No QR data provided' },
+        { status: 400 }
+      );
+    }
+
+    // Extract transaction ID from QR data
+    const transactionId = extractTransactionId(qrData);
+    if (!transactionId) {
+      return NextResponse.json(
+        { valid: false, error: 'Invalid QR code format' },
+        { status: 400 }
+      );
+    }
+
+    // Fetch transaction from backend
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+    const response = await fetchWithJwtRetry(
+      `${API_BASE_URL}/api/event-ticket-transactions/${transactionId}`,
+      { cache: 'no-store' }
+    );
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { valid: false, error: 'Ticket not found' },
+        { status: 404 }
+      );
+    }
+
+    const transaction = await response.json();
+
+    // Validate ticket
+    const validation = validateTicket(transaction);
+
+    return NextResponse.json({
+      valid: validation.isValid,
+      transaction: validation.isValid ? transaction : null,
+      message: validation.message,
+      error: validation.isValid ? null : validation.error
+    });
+  } catch (error) {
+    console.error('QR Verification Error:', error);
+    return NextResponse.json(
+      { valid: false, error: 'Verification failed' },
+      { status: 500 }
+    );
+  }
+}
+
+function extractTransactionId(qrData: string): string | null {
+  // Handle URL format: /admin/qrcode-scan/.../transactions/123
+  const urlMatch = qrData.match(/transactions\/(\d+)/);
+  if (urlMatch) return urlMatch[1];
+
+  // Handle JSON format: {"transactionId": 123, "eventId": 456}
+  try {
+    const parsed = JSON.parse(qrData);
+    return parsed.transactionId || parsed.id || null;
+  } catch {
+    // Handle direct ID
+    return /^\d+$/.test(qrData) ? qrData : null;
+  }
+}
+
+function validateTicket(transaction: any): { isValid: boolean; message: string; error?: string } {
+  if (!transaction) {
+    return { isValid: false, message: 'Invalid ticket', error: 'Transaction not found' };
+  }
+
+  if (transaction.status === 'REFUNDED') {
+    return { isValid: false, message: 'Invalid ticket', error: 'Ticket has been refunded' };
+  }
+
+  if (transaction.status === 'CANCELLED') {
+    return { isValid: false, message: 'Invalid ticket', error: 'Ticket has been cancelled' };
+  }
+
+  return { isValid: true, message: 'Ticket valid - Access granted' };
+}</code>
+        </div>
+
+        <h3>8.2 Check-In Analytics Server Actions</h3>
+        <div class="code-block">
+<code>// src/app/admin/events/[id]/check-in-analytics/ApiServerActions.ts
+"use server";
+import { fetchWithJwtRetry } from '@/lib/proxyHandler';
+import type { EventTicketTransactionDTO } from '@/types';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+export async function fetchCheckInHistoryServer(
+  eventId: string,
+  options: {
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    size?: number;
+  } = {}
+): Promise<{ transactions: EventTicketTransactionDTO[]; totalCount: number }> {
+  const params = new URLSearchParams({
+    'eventId.equals': eventId,
+    'checkInStatus.equals': 'CHECKED_IN',
+    'sort': 'checkInTime,desc',
+    page: (options.page || 0).toString(),
+    size: (options.size || 20).toString(),
+  });
+
+  if (options.startDate) {
+    params.append('checkInTime.greaterThanOrEqual', options.startDate);
+  }
+  if (options.endDate) {
+    params.append('checkInTime.lessThanOrEqual', options.endDate);
+  }
+
+  const url = `${API_BASE_URL}/api/event-ticket-transactions?${params.toString()}`;
+  const response = await fetchWithJwtRetry(url, { cache: 'no-store' });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch check-in history');
+  }
+
+  const transactions = await response.json();
+  const totalCount = parseInt(response.headers.get('x-total-count') || '0', 10);
+
+  return {
+    transactions: Array.isArray(transactions) ? transactions : [],
+    totalCount
+  };
+}
+
+export async function fetchCheckInAnalyticsServer(eventId: string): Promise<any> {
+  // Fetch all checked-in transactions
+  const params = new URLSearchParams({
+    'eventId.equals': eventId,
+    'checkInStatus.equals': 'CHECKED_IN',
+    'size': '1000', // Get all for analytics
+  });
+
+  const url = `${API_BASE_URL}/api/event-ticket-transactions?${params.toString()}`;
+  const response = await fetchWithJwtRetry(url, { cache: 'no-store' });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch check-in analytics');
+  }
+
+  const transactions = await response.json();
+  const allTransactions = Array.isArray(transactions) ? transactions : [];
+
+  // Calculate analytics
+  const totalTickets = allTransactions.reduce((sum, t) => sum + (t.quantity || 0), 0);
+  const checkedInCount = allTransactions.length;
+  const totalGuestsCheckedIn = allTransactions.reduce((sum, t) => sum + (t.numberOfGuestsCheckedIn || 0), 0);
+
+  // Group by hour
+  const checkInsByHour: Record&lt;string, number&gt; = {};
+  allTransactions.forEach(t => {
+    if (t.checkInTime) {
+      const hour = new Date(t.checkInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      checkInsByHour[hour] = (checkInsByHour[hour] || 0) + 1;
+    }
+  });
+
+  return {
+    eventId: parseInt(eventId, 10),
+    totalTickets,
+    checkedInCount,
+    totalGuestsCheckedIn,
+    checkInPercentage: totalTickets > 0 ? (checkedInCount / totalTickets) * 100 : 0,
+    checkInsByHour: Object.entries(checkInsByHour).map(([hour, count]) => ({ hour, count })),
+  };
+}</code>
+        </div>
+
+        <h2>9. UI Component Specifications</h2>
+
+        <h3>9.1 QR Scanner Component</h3>
+        <div class="code-block">
+<code>// src/components/qr/QrScanner.tsx
+"use client";
+import { useState, useRef, useEffect } from 'react';
+import dynamic from "next/dynamic";
+
+// Dynamically import to avoid SSR issues
+const QrReader = dynamic(() => import("react-qr-reader"), { ssr: false });
+
+interface QrScannerProps {
+  onScan: (data: string | null) => void;
+  onError: (error: Error) => void;
+  delay?: number;
+}
+
+export default function QrScanner({ onScan, onError, delay = 300 }: QrScannerProps) {
+  const [facingMode, setFacingMode] = useState&lt;'user' | 'environment'&gt;('environment');
+  const [hasPermission, setHasPermission] = useState&lt;boolean | null&gt;(null);
+
+  useEffect(() => {
+    // Check camera permissions
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(() => setHasPermission(true))
+      .catch(() => setHasPermission(false));
+  }, []);
+
+  const handleScan = (data: string | null) => {
+    if (data) {
+      onScan(data);
+    }
+  };
+
+  const handleError = (err: Error) => {
+    console.error('QR Scanner Error:', err);
+    onError(err);
+  };
+
+  if (hasPermission === false) {
+    return (
+      &lt;div className="text-center p-8"&gt;
+        &lt;p className="text-red-600 mb-4"&gt;Camera permission denied&lt;/p&gt;
+        &lt;p className="text-gray-600"&gt;Please enable camera access in your browser settings&lt;/p&gt;
+      &lt;/div&gt;
+    );
+  }
+
+  return (
+    &lt;div className="relative w-full max-w-md mx-auto"&gt;
+      &lt;div className="relative aspect-video bg-black rounded-lg overflow-hidden"&gt;
+        &lt;QrReader
+          delay={delay}
+          onScan={handleScan}
+          onError={handleError}
+          facingMode={facingMode}
+          style={{ width: '100%', height: '100%' }}
+        /&gt;
+        &lt;div className="absolute inset-0 pointer-events-none"&gt;
+          &lt;div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 border-4 border-blue-500 rounded-lg"&gt;
+            &lt;div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-blue-500"&gt;&lt;/div&gt;
+            &lt;div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-blue-500"&gt;&lt;/div&gt;
+            &lt;div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-blue-500"&gt;&lt;/div&gt;
+            &lt;div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-blue-500"&gt;&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;button
+        onClick={() => setFacingMode(facingMode === 'user' ? 'environment' : 'user')}
+        className="mt-4 w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+      &gt;
+        Switch Camera
+      &lt;/button&gt;
+    &lt;/div&gt;
+  );
+}</code>
+        </div>
+
+        <h3>9.2 Admin QR Scanner Page</h3>
+        <div class="code-block">
+<code>// src/app/admin/qr-scanner/page.tsx
+"use client";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import QrScanner from '@/components/qr/QrScanner';
+
+export default function AdminQrScannerPage() {
+  const [scanResult, setScanResult] = useState&lt;string | null&gt;(null);
+  const [verificationResult, setVerificationResult] = useState&lt;any&gt;(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState&lt;string | null&gt;(null);
+  const router = useRouter();
+
+  const handleScan = async (data: string | null) => {
+    if (!data) return;
+
+    setScanResult(data);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const baseUrl = window.location.origin;
+      const response = await fetch(`${baseUrl}/api/qr/verify?data=${encodeURIComponent(data)}`);
+      const result = await response.json();
+
+      setVerificationResult(result);
+
+      if (result.valid && result.transaction) {
+        // Redirect to check-in page
+        const eventId = result.transaction.eventId;
+        const transactionId = result.transaction.id;
+        router.push(`/admin/qrcode-scan/tickets/events/${eventId}/transactions/${transactionId}`);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleError = (err: Error) => {
+    setError(`Scanner error: ${err.message}`);
+  };
+
+  return (
+    &lt;div className="max-w-5xl mx-auto px-8 py-8"&gt;
+      &lt;h1 className="text-3xl font-bold mb-6"&gt;QR Code Scanner&lt;/h1&gt;
+
+      &lt;div className="bg-white rounded-lg shadow-md p-6 mb-6"&gt;
+        &lt;QrScanner onScan={handleScan} onError={handleError} /&gt;
+      &lt;/div&gt;
+
+      {loading && (
+        &lt;div className="text-center py-4"&gt;
+          &lt;div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"&gt;&lt;/div&gt;
+          &lt;p className="mt-2"&gt;Verifying ticket...&lt;/p&gt;
+        &lt;/div&gt;
+      )}
+
+      {error && (
+        &lt;div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"&gt;
+          &lt;strong&gt;Error:&lt;/strong&gt; {error}
+        &lt;/div&gt;
+      )}
+
+      {verificationResult && (
+        &lt;div className={`p-4 rounded-lg ${
+          verificationResult.valid
+            ? 'bg-green-100 border border-green-400 text-green-700'
+            : 'bg-red-100 border border-red-400 text-red-700'
+        }`}&gt;
+          &lt;h3 className="font-bold text-lg mb-2"&gt;
+            {verificationResult.valid ? '✅ Ticket Valid' : '❌ Invalid Ticket'}
+          &lt;/h3&gt;
+          &lt;p&gt;{verificationResult.message}&lt;/p&gt;
+        &lt;/div&gt;
+      )}
+    &lt;/div&gt;
+  );
+}</code>
+        </div>
+
+        <h2>10. Database Considerations</h2>
+
+        <h3>10.1 Existing Schema Support</h3>
+        <p>The existing database schema already supports the required features:</p>
+        <ul>
+            <li><strong>event_ticket_transaction:</strong> Contains <code>checkInStatus</code>, <code>checkInTime</code>, <code>numberOfGuestsCheckedIn</code></li>
+            <li><strong>qr_code_usage:</strong> Available for enhanced QR tracking (optional enhancement)</li>
+            <li><strong>event_ticket_transaction_item:</strong> Supports multi-ticket-type transactions</li>
+        </ul>
+
+        <h3>10.2 Optional Enhancements</h3>
+        <p>Consider adding the following fields/indices for better performance:</p>
+        <ul>
+            <li>Index on <code>checkInTime</code> for faster check-in history queries</li>
+            <li>Index on <code>eventId + checkInStatus</code> for faster filtering</li>
+            <li>Consider adding <code>scannedBy</code> field to track which admin scanned the ticket</li>
+        </ul>
+
+        <h2>11. Testing Strategy</h2>
+
+        <h3>11.1 QR Scanner Testing</h3>
+        <ul>
+            <li><strong>Camera Access:</strong> Test on desktop (Chrome, Firefox, Safari) and mobile (iOS Safari, Android Chrome)</li>
+            <li><strong>QR Code Scanning:</strong> Test with valid QR codes, invalid QR codes, expired tickets, refunded tickets</li>
+            <li><strong>Error Handling:</strong> Test camera permission denial, network errors, invalid formats</li>
+            <li><strong>Performance:</strong> Test scanning speed, battery usage on mobile</li>
+        </ul>
+
+        <h3>11.2 Check-In Analytics Testing</h3>
+        <ul>
+            <li><strong>Data Accuracy:</strong> Verify check-in counts match database records</li>
+            <li><strong>Date Range Filtering:</strong> Test with various date ranges</li>
+            <li><strong>Pagination:</strong> Test with large datasets</li>
+            <li><strong>Export:</strong> Verify CSV/Excel exports contain correct data</li>
+        </ul>
+
+        <h3>11.3 Sales Reports Testing</h3>
+        <ul>
+            <li><strong>Calculations:</strong> Verify revenue calculations match database totals</li>
+            <li><strong>Charts:</strong> Verify chart data matches underlying data</li>
+            <li><strong>Date Ranges:</strong> Test custom date range filtering</li>
+            <li><strong>Export:</strong> Verify exports are formatted correctly</li>
+        </ul>
+
+        <h2>12. Security Considerations</h2>
+
+        <h3>12.1 QR Code Security</h3>
+        <ul>
+            <li>QR codes should not contain sensitive information (only transaction ID)</li>
+            <li>Validate ticket ownership before allowing check-in</li>
+            <li>Prevent duplicate check-ins without admin override</li>
+            <li>Log all scan attempts for audit trail</li>
+        </ul>
+
+        <h3>12.2 API Security</h3>
+        <ul>
+            <li>All API routes must use JWT authentication via <code>fetchWithJwtRetry</code></li>
+            <li>QR verification API should rate-limit to prevent abuse</li>
+            <li>Check-in updates should require admin authentication</li>
+            <li>Export functionality should be admin-only</li>
+        </ul>
+
+        <h2>13. Success Criteria</h2>
+
+        <h3>13.1 Functional Success</h3>
+        <ul>
+            <li>✅ QR scanner successfully scans QR codes from camera</li>
+            <li>✅ Ticket validation works correctly for all ticket statuses</li>
+            <li>✅ Check-in process completes in &lt;15 seconds</li>
+            <li>✅ Check-in analytics display accurate data</li>
+            <li>✅ Sales reports export correctly in all formats</li>
+        </ul>
+
+        <h3>13.2 Performance Success</h3>
+        <ul>
+            <li>✅ QR scanner initializes in &lt;3 seconds</li>
+            <li>✅ QR code detection happens in real-time (&lt;500ms)</li>
+            <li>✅ Check-in analytics load in &lt;2 seconds</li>
+            <li>✅ Sales reports generate in &lt;5 seconds</li>
+            <li>✅ Export files download in &lt;10 seconds</li>
+        </ul>
+
+        <h3>13.3 User Experience Success</h3>
+        <ul>
+            <li>✅ Camera permissions requested clearly</li>
+            <li>✅ Scanning feedback is immediate and clear</li>
+            <li>✅ Error messages are helpful and actionable</li>
+            <li>✅ Analytics are easy to understand</li>
+            <li>✅ Export process is intuitive</li>
+        </ul>
+
+        <h2>14. Dependencies & Prerequisites</h2>
+
+        <h3>14.1 Frontend Dependencies</h3>
+        <div class="code-block">
+<code>// package.json additions
+{
+  "dependencies": {
+    "react-qr-reader": "^2.2.1",
+    // OR
+    "@zxing/library": "^0.20.0",
+    "@zxing/browser": "^0.1.0",
+    "recharts": "^2.10.0", // For charts
+    "xlsx": "^0.18.0", // For Excel export
+    "csv-writer": "^1.6.0" // For CSV export
+  }
+}</code>
+        </div>
+
+        <h3>14.2 Backend Requirements</h3>
+        <ul>
+            <li>Backend API must support filtering by <code>checkInStatus</code></li>
+            <li>Backend API must support filtering by <code>checkInTime</code> date range</li>
+            <li>Backend API must support sorting by <code>checkInTime</code></li>
+            <li>Backend API must return <code>x-total-count</code> header for pagination</li>
+        </ul>
+
+        <h2>15. References</h2>
+
+        <h3>15.1 Code References</h3>
+        <ul>
+            <li><strong>Current Check-In Implementation:</strong> <code>src/app/admin/qrcode-scan/tickets/events/[eventId]/transactions/[transactionId]</code></li>
+            <li><strong>Current Ticket List:</strong> <code>src/app/admin/events/[id]/tickets/list</code></li>
+            <li><strong>Current Statistics:</strong> <code>src/app/admin/events/[id]/tickets/list/page.tsx</code> (lines 103-113)</li>
+            <li><strong>API Routes Pattern:</strong> <code>.cursor/rules/nextjs_api_routes.mdc</code></li>
+            <li><strong>UI Style Guide:</strong> <code>shared-cursor-rules/ui_style_guide.mdc</code></li>
+            <li><strong>Database Schema:</strong> <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></li>
+            <li><strong>Swagger API Docs:</strong> <code>documentation/Swagger_API_Docs/api-docs.json</code></li>
+        </ul>
+
+        <h3>15.2 External References</h3>
+        <ul>
+            <li><strong>react-qr-reader:</strong> https://www.npmjs.com/package/react-qr-reader</li>
+            <li><strong>@zxing/library:</strong> https://www.npmjs.com/package/@zxing/library</li>
+            <li><strong>MediaDevices API:</strong> https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia</li>
+            <li><strong>recharts:</strong> https://recharts.org/</li>
+        </ul>
+
+        <h2>16. Appendix: Implementation Checklist</h2>
+
+        <h3>Phase 1: QR Scanner</h3>
+        <ul>
+            <li>□ Install QR scanner library</li>
+            <li>□ Create QrScanner component</li>
+            <li>□ Create QR verification API route</li>
+            <li>□ Create admin QR scanner page</li>
+            <li>□ Update check-in flow</li>
+            <li>□ Test on desktop browsers</li>
+            <li>□ Test on mobile devices</li>
+            <li>□ Handle camera permissions</li>
+            <li>□ Handle error cases</li>
+        </ul>
+
+        <h3>Phase 2: Check-In Analytics</h3>
+        <ul>
+            <li>□ Create check-in history API server actions</li>
+            <li>□ Create check-in analytics API server actions</li>
+            <li>□ Create check-in analytics page</li>
+            <li>□ Create check-in analytics client component</li>
+            <li>□ Implement charts (timeline, breakdown)</li>
+            <li>□ Implement date range filtering</li>
+            <li>□ Implement CSV export</li>
+            <li>□ Implement Excel export</li>
+            <li>□ Test with real data</li>
+        </ul>
+
+        <h3>Phase 3: Enhanced Sales Reports</h3>
+        <ul>
+            <li>□ Create sales analytics API server actions</li>
+            <li>□ Create enhanced sales reports page</li>
+            <li>□ Implement sales trend charts</li>
+            <li>□ Implement revenue breakdown charts</li>
+            <li>□ Implement date range selector</li>
+            <li>□ Implement CSV export</li>
+            <li>□ Implement Excel export</li>
+            <li>□ Implement PDF export (optional)</li>
+            <li>□ Test with real data</li>
+        </ul>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #ddd;">
+
+        <p style="text-align: center; color: #666; font-size: 14px;">
+            Generated: January 2026 | QR Scanner & Enhanced Reporting PRD
+            <br>
+            Frontend: E:\project_workspace\mosc-temp | Backend: E:\project_workspace\malayalees-us-site-boot
+        </p>
+    </div>
+</body>
+</html>
+

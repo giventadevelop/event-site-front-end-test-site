@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PRD: Focus Group – Member Join &amp; Executive/Organising Committee (Generic)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+      h1, h2, h3, h4 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+      h1 { font-size: 2.3rem; margin-bottom: 0.75rem; }
+      h2 { font-size: 1.7rem; margin-top: 2.5rem; }
+      h3 { font-size: 1.3rem; margin-top: 1.8rem; }
+      h4 { font-size: 1.1rem; margin-top: 1.2rem; }
+      p, li { line-height: 1.75; font-size: 1rem; }
+      ul, ol { margin-left: 1.4rem; }
+      table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+      th, td { border: 1px solid rgba(42, 32, 23, 0.15); padding: 0.75rem; vertical-align: top; }
+      th { background: rgba(213, 201, 182, 0.35); font-weight: 600; }
+      code, pre {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+      }
+      pre { padding: 1rem; line-height: 1.6; overflow-x: auto; }
+      code.inline { padding: 0.15rem 0.35rem; font-size: 0.95rem; display: inline-block; }
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .divider { height: 1px; background: rgba(42, 32, 23, 0.12); margin: 2rem 0; }
+      .callout {
+        border-left: 4px solid #8b7d6b;
+        background: rgba(213, 201, 182, 0.3);
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
+        margin: 1.8rem 0;
+      }
+      .toc ol { list-style: decimal; }
+      .toc a { color: #1f4c8f; text-decoration: none; }
+      .toc a:hover { text-decoration: underline; }
+      footer { margin-top: 4rem; text-align: center; font-size: 0.9rem; color: #7a7066; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Draft · Focus Group Members &amp; Organisers</span>
+      <h1>PRD: Focus Group – Member Join &amp; Executive/Organising Committee (Generic)</h1>
+      <p>
+        <strong>Project:</strong> MCEFEE Multi-Tenant Event Management Platform<br />
+        <strong>Document Version:</strong> 1.0<br />
+        <strong>Date:</strong> March 2026<br />
+        <strong>Status:</strong> Draft
+      </p>
+
+      <div class="divider"></div>
+
+      <h2 id="executive-summary">Executive Summary</h2>
+      <p>
+        This document defines (1) <strong>end-user join</strong>: a logged-in user can join a focus group, with the
+        mapping between focus group and user profile stored in the existing <code class="inline">focus_group_members</code>
+        table; and (2) <strong>executive/organising committee</strong>: a list of members with role EXECUTIVE or ORGANISER
+        (and optionally LEAD, ADMIN) per focus group, using the same table’s <code class="inline">role</code> column. No new
+        tables are required; only documentation and optional SQL comments on <code class="inline">role</code> and
+        <code class="inline">status</code>.
+      </p>
+
+      <div class="callout">
+        <strong>Key Concept:</strong> The mapping <strong>focus group ↔ user profile</strong> already exists in
+        <code class="inline">public.focus_group_members</code> (focus_group_id, user_profile_id, tenant_id, role, status).
+        End-user “join” = insert one row; “committee” = members where role IN (EXECUTIVE, ORGANISER).
+      </div>
+
+      <h2 id="table-of-contents">Table of Contents</h2>
+      <nav class="toc">
+        <ol>
+          <li><a href="#data-model">Data Model</a></li>
+          <li><a href="#role-and-status">Role and Status Values</a></li>
+          <li><a href="#out-of-scope">Out of Scope</a></li>
+          <li><a href="#references">References</a></li>
+        </ol>
+      </nav>
+
+      <div class="divider"></div>
+
+      <section id="data-model">
+        <h2>1. Data Model</h2>
+        <p>
+          <strong>focus_group_members</strong> (existing table):
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Type</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>id</td>
+              <td>bigint</td>
+              <td>Primary key</td>
+            </tr>
+            <tr>
+              <td>tenant_id</td>
+              <td>varchar(255)</td>
+              <td>Tenant isolation</td>
+            </tr>
+            <tr>
+              <td>focus_group_id</td>
+              <td>bigint</td>
+              <td>FK to focus_group(id)</td>
+            </tr>
+            <tr>
+              <td>user_profile_id</td>
+              <td>bigint</td>
+              <td>FK to user_profile(id)</td>
+            </tr>
+            <tr>
+              <td>role</td>
+              <td>varchar(50)</td>
+              <td>MEMBER, LEAD, ADMIN, EXECUTIVE, ORGANISER (EXECUTIVE/ORGANISER = committee)</td>
+            </tr>
+            <tr>
+              <td>status</td>
+              <td>varchar(50)</td>
+              <td>PENDING, ACTIVE, INACTIVE</td>
+            </tr>
+            <tr>
+              <td>created_at, updated_at</td>
+              <td>timestamp</td>
+              <td>Audit fields</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          Unique constraint: <code class="inline">(tenant_id, focus_group_id, user_profile_id)</code>. One membership row per
+          user per focus group per tenant.
+        </p>
+      </section>
+
+      <section id="role-and-status">
+        <div class="divider"></div>
+        <h2>2. Role and Status Values</h2>
+        <p><strong>role</strong> (allowed values):</p>
+        <ul>
+          <li><code class="inline">MEMBER</code> – Regular member (default for end-user join).</li>
+          <li><code class="inline">LEAD</code> – Lead (optional committee display).</li>
+          <li><code class="inline">ADMIN</code> – Admin (optional committee display).</li>
+          <li><code class="inline">EXECUTIVE</code> – Executive committee member.</li>
+          <li><code class="inline">ORGANISER</code> – Organising committee member.</li>
+        </ul>
+        <p>
+          The <strong>executive/organising committee</strong> list for a focus group is defined as all
+          <code class="inline">focus_group_members</code> rows for that focus group where
+          <code class="inline">role IN ('EXECUTIVE', 'ORGANISER')</code>. Optionally include LEAD and ADMIN per product decision.
+        </p>
+        <p><strong>status</strong> (allowed values):</p>
+        <ul>
+          <li><code class="inline">PENDING</code> – Awaiting approval (default for self-service join if policy requires approval).</li>
+          <li><code class="inline">ACTIVE</code> – Active membership.</li>
+          <li><code class="inline">INACTIVE</code> – Inactive (e.g. left or revoked).</li>
+        </ul>
+      </section>
+
+      <section id="out-of-scope">
+        <div class="divider"></div>
+        <h2>3. Out of Scope</h2>
+        <p>
+          Event–focus group association (<code class="inline">event_focus_groups</code>) and event media focus group tagging
+          (<code class="inline">event_media.event_focus_group_id</code>) are covered in the separate PRDs under
+          <code class="inline">documentation/focus_group_requirements/event_media_integration/</code>. This PRD covers only
+          focus group membership (join) and committee (role-based list).
+        </p>
+      </section>
+
+      <section id="references">
+        <div class="divider"></div>
+        <h2>4. References</h2>
+        <ul>
+          <li><strong>Canonical schema:</strong> <code class="inline">code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></li>
+          <li><strong>Backend project:</strong> <code class="inline">E:\project_workspace\malayalees-us-site-boot</code></li>
+          <li><strong>Batch job project:</strong> <code class="inline">E:\project_workspace\event-site-manager-batch-jobs</code></li>
+          <li><strong>Frontend PRD:</strong> <a href="frontend_prd.html">frontend_prd.html</a></li>
+          <li><strong>Backend PRD:</strong> <a href="backend_prd.html">backend_prd.html</a></li>
+          <li><strong>Batch job PRD:</strong> <a href="batch_job_prd.html">batch_job_prd.html</a></li>
+        </ul>
+      </section>
+
+      <footer>
+        <p>Focus Group – Member Join &amp; Executive/Organising Committee PRD · MCEFEE Platform</p>
+      </footer>
+    </main>
+  </body>
+</html>

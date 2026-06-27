@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SalesIQ Articles Export — Node Script (Step 2)</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.65;
+            color: #333;
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 24px 20px 48px;
+            background: #f5f7fa;
+        }
+        h1 { color: #0066cc; border-bottom: 3px solid #0066cc; padding-bottom: 12px; }
+        h2 { color: #0052a3; margin-top: 36px; border-left: 4px solid #0066cc; padding-left: 12px; }
+        h3 { color: #333; margin-top: 24px; }
+        a { color: #0066cc; }
+        code { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 2px 6px; border-radius: 4px; font-size: 0.92em; }
+        code.script-name { background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border-color: #9c27b0; color: #4a148c; }
+        .section-intro { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-left: 4px solid #2196f3; padding: 16px 20px; margin: 20px 0; border-radius: 4px; }
+        .info { background: #d1ecf1; border: 1px solid #0c5460; border-radius: 6px; padding: 14px 18px; margin: 16px 0; }
+        .warning { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 14px 18px; margin: 16px 0; }
+        .success { background: #d4edda; border: 1px solid #28a745; border-radius: 6px; padding: 14px 18px; margin: 16px 0; }
+        .section-container { border-radius: 8px; margin: 24px 0; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .section-header { padding: 14px 20px; font-weight: bold; color: #fff; }
+        .section-header.overview { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); }
+        .section-header.parameters { background: linear-gradient(135deg, #ef6c00 0%, #e65100 100%); }
+        .section-header.output { background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%); }
+        .section-header.salesiq { background: linear-gradient(135deg, #3949ab 0%, #283593 100%); }
+        .section-body { padding: 20px; background: #fff; }
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+        th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; padding: 10px 12px; text-align: left; }
+        td { border: 1px solid #b8d4e3; padding: 10px 12px; vertical-align: top; }
+        tr:nth-child(even) { background: #f8fbfd; }
+        ol.steps { padding-left: 1.4em; }
+        ol.steps li { margin-bottom: 0.5em; }
+        .command-block { border: 2px solid #2196f3; border-radius: 8px; margin: 20px 0; overflow: hidden; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); }
+        .command-block.setup { border-color: #2196f3; }
+        .command-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding: 12px 16px; background: rgba(255,255,255,0.55); border-bottom: 1px solid rgba(0,0,0,0.08); }
+        .command-type { font-weight: bold; color: #0d47a1; }
+        .copy-button { background: #0066cc; color: #fff; border: none; border-radius: 6px; padding: 8px 14px; cursor: pointer; font-size: 0.9em; }
+        .copy-button:hover { background: #0052a3; }
+        .copy-button.secondary { background: #6c757d; }
+        .copy-button.secondary:hover { background: #5a6268; }
+        .command-single-line { padding: 12px 15px; background: #e8f4f8; border-top: 1px solid #b8d4e3; }
+        .command-single-line-label { font-size: 0.75em; color: #666; margin-bottom: 6px; font-weight: 600; }
+        .command-single-line code { display: block; background: transparent; border: none; padding: 0; word-break: break-all; white-space: pre-wrap; }
+        .parameters-list { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-left: 4px solid #ff9800; padding: 14px 18px; margin: 16px 0; border-radius: 4px; }
+        .parameters-list ul { margin: 0; padding-left: 1.2em; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>SalesIQ Articles Export — Node Script (Step 2)</h1>
+
+        <div class="section-intro">
+            This script automates <strong>Step 2</strong> of the Zoho SalesIQ knowledge-base pipeline: it reads your URL list, fetches each public <code>/mosc-redesign</code> page, extracts title and main content, and writes <code class="script-name">salesiq-articles-import.csv</code>.
+            <strong>Recommended next step:</strong> post articles via REST API — <a href="ZOHO_SALESIQ_OPERATIONS_RUNBOOK.html#bulk-upload">Operations Runbook §9 Bulk upload</a> (<code>npm run zobot:bulk-upload-articles -- --confirm</code>). Portal CSV import is documented as an alternative in the same runbook (§10) and main guide Section 7.
+            See also: <a href="ZOHO_SALESIQ_ZOBOT_MOSC_REDESIGN_KNOWLEDGE_BASE_GUIDE.html">Zobot knowledge base guide</a>.
+        </div>
+
+        <h2 id="overview">1. What it does</h2>
+        <table>
+            <thead>
+                <tr><th>Input</th><th>Output</th><th>Script</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code class="script-name">documentation/zoh_zobot_settings/mosc-redesign-urls.txt</code></td>
+                    <td><code class="script-name">documentation/zoh_zobot_settings/salesiq-articles-import.csv</code></td>
+                    <td><code class="script-name">scripts/zoh-zobot-settings/export-salesiq-articles.mjs</code></td>
+                </tr>
+            </tbody>
+        </table>
+        <p>CSV columns: <strong>Title</strong>, <strong>Description</strong>, <strong>Content</strong>, <strong>Category</strong>, <strong>Language</strong>, <strong>Source URL</strong>, <strong>Tags</strong>. Match these to Zoho’s sample import spreadsheet in your portal (column names may differ slightly — rename columns in Excel if needed).</p>
+
+        <div class="info">
+            <strong>Malformed URL list?</strong> If lines look like <code>https://www.mosc-temp.comF:/project_...</code>, the script still <strong>normalizes</strong> them to <code>https://www.mosc-temp.com/mosc-redesign/...</code>. Re-run the PowerShell generator in section 5 of the main guide for a clean source file.
+        </div>
+
+        <h2 id="prerequisites">2. Prerequisites</h2>
+        <ul>
+            <li><strong>Node.js 18+</strong> (uses built-in <code>fetch</code>)</li>
+            <li>Repository cloned with <code>npm install</code> already run (uses project <code>package.json</code> scripts only — no extra npm packages)</li>
+            <li>URL list file present at <code class="script-name">documentation/zoh_zobot_settings/mosc-redesign-urls.txt</code></li>
+            <li>Live site reachable at <code>https://www.mosc-temp.com</code> (script fetches production HTML)</li>
+        </ul>
+
+        <h2 id="where-to-run">3. Where to run</h2>
+        <div class="section-container">
+            <div class="section-header parameters">Repository root required</div>
+            <div class="section-body">
+                <p>Run all commands from the <strong>repository root</strong> (folder containing <code>package.json</code>), e.g. <code>f:\project_workspace\mosc-temp</code>.</p>
+                <p>Use <strong>PowerShell</strong> or <strong>Windows Terminal</strong> — not CMD — for the <code>cd ...; npm run ...</code> lines below.</p>
+            </div>
+        </div>
+
+        <h2 id="commands">4. Commands</h2>
+
+        <div class="command-block setup">
+            <div class="command-header">
+                <span class="command-type">Test export (first 10 URLs)</span>
+                <button type="button" class="copy-button" onclick="copyCmd('cb-export-test')" title="Copy test command">📋 Copy</button>
+            </div>
+            <div class="command-single-line">
+                <div class="command-single-line-label">PowerShell — run at repo root</div>
+                <code id="cb-export-test">cd f:\project_workspace\mosc-temp; npm run zobot:export-articles:test</code>
+            </div>
+        </div>
+
+        <div class="command-block setup">
+            <div class="command-header">
+                <span class="command-type">Full export (~265 URLs; 7 dynamic templates auto-skipped)</span>
+                <button type="button" class="copy-button" onclick="copyCmd('cb-export-full')" title="Copy full export">📋 Copy</button>
+            </div>
+            <div class="command-single-line">
+                <div class="command-single-line-label">PowerShell — run at repo root (several minutes; 400ms delay between requests)</div>
+                <code id="cb-export-full">cd f:\project_workspace\mosc-temp; npm run zobot:export-articles</code>
+            </div>
+        </div>
+
+        <div class="command-block setup">
+            <div class="command-header">
+                <span class="command-type">Dry run (parse URLs only, no HTTP)</span>
+                <button type="button" class="copy-button secondary" onclick="copyCmd('cb-export-dry')" title="Copy dry run">📋 Copy</button>
+            </div>
+            <div class="command-single-line">
+                <code id="cb-export-dry">cd f:\project_workspace\mosc-temp; node scripts/zoh-zobot-settings/export-salesiq-articles.mjs --dry-run --limit 5</code>
+            </div>
+        </div>
+
+        <div class="parameters-list">
+            <strong>Optional flags</strong> (append to <code>node scripts/zoh-zobot-settings/export-salesiq-articles.mjs</code>):
+            <ul>
+                <li><code>--limit 25</code> — process first N URLs</li>
+                <li><code>--delay-ms 800</code> — slower pacing between requests</li>
+                <li><code>--input path\to\urls.txt</code> — custom URL list</li>
+                <li><code>--output path\to\out.csv</code> — custom CSV path</li>
+                <li><code>--dry-run</code> — list normalized URLs without fetching</li>
+                <li><code>--include-templates</code> — also fetch placeholder routes like <code>.../news/[slug]</code> (usually not needed for SalesIQ)</li>
+            </ul>
+            <p class="section-intro">After a full run you should see about <strong>265 articles</strong> in the CSV (not 272 — dynamic App Router folders are skipped). If you previously got 250 articles and 22 errors, pull the latest exporter and run again; the 16 real-page failures were fixed by stripping RSC scripts before parsing <code>&lt;main&gt;</code>.</p>
+        </div>
+
+        <h2 id="output">5. Output files</h2>
+        <div class="section-container">
+            <div class="section-header output">After a successful run</div>
+            <div class="section-body">
+                <table>
+                    <thead>
+                        <tr><th>File</th><th>Purpose</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="script-name">salesiq-articles-import.csv</code></td>
+                            <td>Input for <code>zobot:bulk-upload-articles</code> (runbook §9) or portal import (runbook §10 / main guide §7)</td>
+                        </tr>
+                        <tr>
+                            <td><code class="script-name">salesiq-articles-export-errors.json</code></td>
+                            <td>Failed URLs plus <code>skippedTemplateUrls</code> (dynamic routes not fetched) and any malformed lines in <code>skippedLines</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="success">
+                    <strong>Next step (recommended):</strong> <a href="ZOHO_SALESIQ_OPERATIONS_RUNBOOK.html#bulk-upload">Operations Runbook §9</a> — <code>npm run zobot:fix-import-titles</code>, <code>npm run zobot:merge-faq-supplement</code>, <code>npm run zobot:bulk-upload-articles -- --dry-run</code>, then <code>--confirm</code>. Then Answer Bot (main guide §8) and Zobot (§9).
+                </div>
+            </div>
+        </div>
+
+        <h2 id="salesiq-upload-api">6. Upload articles via REST API (recommended)</h2>
+        <div class="section-container">
+            <div class="section-header salesiq">Operations Runbook — full command list</div>
+            <div class="section-body">
+                <p>Follow <a href="ZOHO_SALESIQ_OPERATIONS_RUNBOOK.html">ZOHO_SALESIQ_OPERATIONS_RUNBOOK.html</a> sections 3–4 (OAuth + <code>.env.local</code>), then:</p>
+                <div class="command-block setup">
+                    <div class="command-single-line">
+                        <code>cd f:\project_workspace\mosc-temp; npm run zobot:fix-import-titles</code>
+                    </div>
+                </div>
+                <div class="command-block setup">
+                    <div class="command-single-line">
+                        <code>cd f:\project_workspace\mosc-temp; npm run zobot:merge-faq-supplement</code>
+                    </div>
+                </div>
+                <div class="command-block setup">
+                    <div class="command-single-line">
+                        <code>cd f:\project_workspace\mosc-temp; npm run zobot:list-portal-ids</code>
+                    </div>
+                </div>
+                <div class="command-block setup">
+                    <div class="command-single-line">
+                        <code>cd f:\project_workspace\mosc-temp; npm run zobot:bulk-upload-articles -- --dry-run</code>
+                    </div>
+                </div>
+                <div class="command-block setup">
+                    <div class="command-single-line">
+                        <code>cd f:\project_workspace\mosc-temp; npm run zobot:bulk-upload-articles -- --confirm</code>
+                    </div>
+                </div>
+                <p>Requires OAuth scope <code>SalesIQ.articles.CREATE</code>. API: <code>POST https://salesiq.zoho.com/api/v2/giventainc/articles</code>.</p>
+            </div>
+        </div>
+
+        <h2 id="salesiq-import">7. Alternative: portal CSV import</h2>
+        <div class="section-container">
+            <div class="section-header salesiq">Settings → Articles → Add</div>
+            <div class="section-body">
+                <ol class="steps">
+                    <li>Sign in at <a href="https://salesiq.zoho.com/giventainc/onboard" rel="noopener noreferrer">salesiq.zoho.com/giventainc/onboard</a></li>
+                    <li>Confirm brand language: <strong>Settings → Brands → Giventa Inc. → General configurations → Languages</strong> — <strong>English</strong> selected and default (main guide <a href="ZOHO_SALESIQ_ZOBOT_MOSC_REDESIGN_KNOWLEDGE_BASE_GUIDE.html#import-brand-language">#import-brand-language</a>)</li>
+                    <li>Create article <strong>Categories</strong> matching the CSV before bulk import (main guide <a href="ZOHO_SALESIQ_ZOBOT_MOSC_REDESIGN_KNOWLEDGE_BASE_GUIDE.html#import-categories">#import-categories</a>)</li>
+                    <li><strong>Settings</strong> → <strong>Articles</strong> (Settings sidebar) → <strong>Add</strong> → upload <code class="script-name">salesiq-articles-import.csv</code></li>
+                    <li>On <strong>Add Articles</strong> mapping: map every column 1:1; set <strong>Article status</strong> to <strong>Publish</strong> (or Status in sheet + map Status). See main guide <a href="ZOHO_SALESIQ_ZOBOT_MOSC_REDESIGN_KNOWLEDGE_BASE_GUIDE.html#import-mapping">section 7 mapping table</a>.</li>
+                    <li>Click <strong>Validate</strong>, then finish import</li>
+                    <li>Import a <strong>test batch</strong> first (use <code>--limit 10</code> when exporting)</li>
+                    <li>Review a few articles in the portal, then run the full export and import again</li>
+                </ol>
+            </div>
+        </div>
+
+        <h2 id="troubleshoot">8. Troubleshooting</h2>
+        <table>
+            <thead>
+                <tr><th>Issue</th><th>Cause</th><th>Fix</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>ENOENT</code> on input file</td>
+                    <td>Missing URL list</td>
+                    <td>Run PowerShell URL generator (main guide section 5) or create <code class="script-name">mosc-redesign-urls.txt</code></td>
+                </tr>
+                <tr>
+                    <td>Many rows in errors JSON</td>
+                    <td>Site down, 404, Next.js inline scripts breaking <code>&lt;main&gt;</code> parsing, or page has little text</td>
+                    <td>Re-run with latest exporter (strips scripts before parsing); check URL in browser; increase <code>--delay-ms</code></td>
+                </tr>
+                <tr>
+                    <td><code>Extracted content too short</code> on directory/news/calendar</td>
+                    <td>Fixed in exporter v2 — RSC <code>&lt;script&gt;</code> tags inside <code>&lt;main&gt;</code> caused early <code>&lt;/main&gt;</code> match</td>
+                    <td>Pull latest script and run <code>npm run zobot:export-articles</code> again</td>
+                </tr>
+                <tr>
+                    <td>URLs like <code>.../news/[slug]</code> in errors</td>
+                    <td>Dynamic route placeholders from file scan — not real pages</td>
+                    <td>Re-run PowerShell generator (skips <code>[...]</code> folders) or let exporter skip them automatically</td>
+                </tr>
+                <tr>
+                    <td>Validate: &quot;Invalid article language&quot;</td>
+                    <td>CSV used <code>en</code> or brand has no English</td>
+                    <td>Patch: <code>npm run zobot:patch-import-csv -- --department "MOSC Connect" --language English --channels Web</code>; enable English under <strong>Settings → Brands → Giventa Inc. → General configurations → Languages</strong></td>
+                </tr>
+                <tr>
+                    <td>Edit info: Channels blank / globe not selected</td>
+                    <td>CSV used <code>Website</code> instead of <code>Web</code></td>
+                    <td>Patch with <code>--channels Web</code> and re-upload; map <strong>Channels → Channels</strong></td>
+                </tr>
+                <tr>
+                    <td>Edit info: Category blank / Validate fails</td>
+                    <td>Category string not in SalesIQ</td>
+                    <td>Create categories in <strong>Settings → Articles → Categories</strong>, or patch with <code>--flatten-categories</code> and create shorter names</td>
+                </tr>
+                <tr>
+                    <td>Edit info: Resource ID</td>
+                    <td>Expectation that new rows need numeric IDs</td>
+                    <td>For <code>Action = Create</code>, leave Resource ID empty in CSV and in Edit info — only existing articles use numeric IDs</td>
+                </tr>
+                <tr>
+                    <td>Validate fails on Department / Is Public</td>
+                    <td>Required SalesIQ fields not in our CSV</td>
+                    <td>Set <strong>Publish</strong> (not Status in sheet); pick MOSC <strong>Department</strong> in dropdown; set Is Public default if offered</td>
+                </tr>
+                <tr>
+                    <td>CSV import rejected by SalesIQ</td>
+                    <td>Column names don’t match portal template</td>
+                    <td>Align headers with Zoho sample XLS; save as CSV UTF-8</td>
+                </tr>
+                <tr>
+                    <td>Bot still has no answers</td>
+                    <td>Articles not linked to Answer Bot</td>
+                    <td>Complete Answer Bot setup (main guide section 8), not Zobot URL import</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p style="margin-top: 32px;"><a href="ZOHO_SALESIQ_ZOBOT_MOSC_REDESIGN_KNOWLEDGE_BASE_GUIDE.html">← Back to Zobot knowledge base guide</a></p>
+    </main>
+    <script>
+        function copyCmd(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            navigator.clipboard.writeText(el.textContent.trim()).then(function () {
+                alert('Command copied.');
+            });
+        }
+    </script>
+</body>
+</html>

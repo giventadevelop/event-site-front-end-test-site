@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organization Address &amp; Description — Database Schema (v2.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; overflow-x: auto; font-family: Consolas, monospace; font-size: 0.82em; line-height: 1.45; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Organization Address &amp; Description — Database Schema Enhancements (v2.0)</h1>
+    <p class="doc-meta">
+        <strong>Layer:</strong> PostgreSQL / Liquibase &nbsp;|&nbsp; <strong>Version:</strong> 2.0 &nbsp;|&nbsp; <strong>Date:</strong> June 17, 2026<br>
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a> &nbsp;|&nbsp;
+        <strong>Migrations:</strong> <code>migrations/001_tenant_org_address_description.sql</code>, <code>migrations/002_drop_deprecated_tenant_settings_identity_columns.sql</code> (v2.1)
+    </p>
+
+    <div class="lead">
+        <p>v2.0 adds identity columns to <strong><code>tenant_organization</code></strong> only, migrates legacy data from <strong><code>tenant_settings</code></strong>, and deprecates settings identity columns (no new columns on settings). Baseline schema file: <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code>.</p>
+    </div>
+
+    <h2>1. Summary of deltas</h2>
+    <table>
+        <thead><tr><th>Object</th><th>Change type</th><th>Purpose</th></tr></thead>
+        <tbody>
+            <tr><td><code>tenant_organization</code></td><td>ALTER ADD (8 columns)</td><td>Canonical description, address, website</td></tr>
+            <tr><td><code>tenant_organization</code></td><td>UPDATE (data migration)</td><td>Copy from settings where org fields NULL</td></tr>
+            <tr><td><code>tenant_settings</code></td><td>COMMENT (deprecate)</td><td>Mark legacy address/description columns; no new ADD in v2.0</td></tr>
+            <tr><td><code>tenant_settings</code></td><td>DROP (v2.1 optional)</td><td>Remove deprecated columns after verification window</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. tenant_organization — canonical columns</h2>
+    <table>
+        <thead><tr><th>Java / JSON (camelCase)</th><th>PostgreSQL (snake_case)</th><th>Type</th><th>Max</th><th>Nullable</th></tr></thead>
+        <tbody>
+            <tr><td><code>description</code></td><td><code>description</code></td><td><code>VARCHAR(1000)</code></td><td>1000</td><td>Yes</td></tr>
+            <tr><td><code>addressLine1</code></td><td><code>address_line_1</code></td><td><code>VARCHAR(255)</code></td><td>255</td><td>Yes</td></tr>
+            <tr><td><code>addressLine2</code></td><td><code>address_line_2</code></td><td><code>VARCHAR(255)</code></td><td>255</td><td>Yes</td></tr>
+            <tr><td><code>city</code></td><td><code>city</code></td><td><code>VARCHAR(255)</code></td><td>255</td><td>Yes</td></tr>
+            <tr><td><code>stateProvince</code></td><td><code>state_province</code></td><td><code>VARCHAR(255)</code></td><td>255</td><td>Yes</td></tr>
+            <tr><td><code>zipCode</code></td><td><code>zip_code</code></td><td><code>VARCHAR(20)</code></td><td>20</td><td>Yes</td></tr>
+            <tr><td><code>country</code></td><td><code>country</code></td><td><code>VARCHAR(100)</code></td><td>100</td><td>Yes</td></tr>
+            <tr><td><code>websiteUrl</code></td><td><code>website_url</code></td><td><code>VARCHAR(1024)</code></td><td>1024</td><td>Yes</td></tr>
+        </tbody>
+    </table>
+
+    <h2>3. tenant_settings — deprecated columns (retained v2.0, dropped v2.1)</h2>
+    <p>These columns pre-exist on many deployments. v2.0 does <strong>not</strong> add new identity columns here.</p>
+    <table>
+        <thead><tr><th>Column</th><th>v2.0 status</th></tr></thead>
+        <tbody>
+            <tr><td><code>address_line_1</code>, <code>address_line_2</code></td><td>DEPRECATED — read fallback only</td></tr>
+            <tr><td><code>city</code> (if present from v1.0)</td><td>DEPRECATED — read fallback only</td></tr>
+            <tr><td><code>state_province</code>, <code>zip_code</code>, <code>country</code></td><td>DEPRECATED — read fallback only</td></tr>
+            <tr><td><code>description</code> (if present from v1.0)</td><td>DEPRECATED — read fallback only</td></tr>
+            <tr><td><code>email</code>, <code>phone_number</code>, social URLs</td><td><strong>Active</strong> — unchanged</td></tr>
+        </tbody>
+    </table>
+
+    <h2>4. Migration script (001)</h2>
+    <div class="section-container">
+        <div class="section-header">migrations/001_tenant_org_address_description.sql</div>
+        <p>See file in repo — includes ALTER on org, UPDATE migration from settings, COMMENT deprecations on settings.</p>
+    </div>
+
+    <h2>5. Liquibase changelog entries</h2>
+    <pre>&lt;changeSet id="20260617-tenant-org-identity-v2" author="platform"&gt;
+    &lt;sqlFile path="config/liquibase/changelog/20260617_tenant_org_identity_v2.sql"
+             relativeToChangelogFile="false" splitStatements="true"/&gt;
+&lt;/changeSet&gt;
+
+&lt;!-- v2.1 — after production verification --&gt;
+&lt;changeSet id="20260701-drop-settings-identity-legacy" author="platform"&gt;
+    &lt;sqlFile path="config/liquibase/changelog/20260701_drop_settings_identity_legacy.sql"
+             relativeToChangelogFile="false" splitStatements="true"/&gt;
+&lt;/changeSet&gt;</pre>
+
+    <h2>6. Baseline schema file updates</h2>
+    <p>Update <code>Latest_Schema_Post__Blob_Claude_12.sql</code>:</p>
+    <ul>
+        <li><code>tenant_organization</code> — include all 8 identity columns + COMMENTs (source of truth).</li>
+        <li><code>tenant_settings</code> — remove <code>description</code> and <code>city</code> from CREATE TABLE if v1.0 added them; keep legacy address columns with DEPRECATED COMMENTs until v2.1 DROP migration runs.</li>
+    </ul>
+
+    <h2>7. Rollback (001 only)</h2>
+    <pre>ALTER TABLE public.tenant_organization
+    DROP COLUMN IF EXISTS description,
+    DROP COLUMN IF EXISTS address_line_1,
+    DROP COLUMN IF EXISTS address_line_2,
+    DROP COLUMN IF EXISTS city,
+    DROP COLUMN IF EXISTS state_province,
+    DROP COLUMN IF EXISTS zip_code,
+    DROP COLUMN IF EXISTS country,
+    DROP COLUMN IF EXISTS website_url;
+-- Note: data migration UPDATE is not automatically reversible; backup before run.</pre>
+
+    <h2>8. Indexes</h2>
+    <p>No new indexes required for v2.0.</p>
+
+    <div class="info-box">
+        <strong>Baseline reference:</strong> <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code> — <code>tenant_organization</code> (~2357–2408), <code>tenant_settings</code> (~2416–2478).
+    </div>
+
+</body>
+</html>

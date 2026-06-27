@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Group Member Event Registration - Database Design</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+            font-size: 1.8em;
+        }
+
+        h3 {
+            color: #555;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        h4 {
+            color: #666;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #e74c3c;
+        }
+
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        pre code {
+            background-color: transparent;
+            color: #ecf0f1;
+            padding: 0;
+        }
+
+        .analysis {
+            background-color: #f8f9fa;
+            border-left: 4px solid #27ae60;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .analysis h3 {
+            margin-top: 0;
+            color: #27ae60;
+        }
+
+        .design {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .design h3 {
+            margin-top: 0;
+            color: #3498db;
+        }
+
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .warning strong {
+            color: #856404;
+        }
+
+        .info {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .info strong {
+            color: #0c5460;
+        }
+
+        .file-path {
+            background-color: #e8f4f8;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            display: inline-block;
+            margin: 5px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .diagram {
+            background-color: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        .reference {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .reference h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Focus Group Member Event Registration - Database Design</h1>
+
+        <div class="reference">
+            <h4>📋 Document Information</h4>
+            <p><strong>Purpose:</strong> Database schema design for tracking focus group member participation in events</p>
+            <p><strong>Schema File:</strong> <code>code_html_template/SQLS/Latest_Schema_Post__Blob_Claude_11.sql</code></p>
+            <p><strong>Created:</strong> <span id="date"></span></p>
+            <p><strong>Status:</strong> Design Documentation (No Implementation)</p>
+        </div>
+
+        <h2>1. Current Database Schema Analysis</h2>
+
+        <div class="analysis">
+            <h3>1.1 Existing Tables and Relationships</h3>
+
+            <h4>✅ Existing: focus_group_members Table</h4>
+            <pre><code>CREATE TABLE public.focus_group_members (
+    id bigint PRIMARY KEY,
+    tenant_id character varying(255) NOT NULL,
+    focus_group_id bigint NOT NULL,
+    user_profile_id bigint NOT NULL,
+    role character varying(50) NOT NULL DEFAULT 'MEMBER',
+    status character varying(50) NOT NULL DEFAULT 'PENDING',
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    CONSTRAINT ux_focus_group_members__tenant_group_user UNIQUE (tenant_id, focus_group_id, user_profile_id),
+    CONSTRAINT fk_focus_group_members__group FOREIGN KEY (focus_group_id)
+        REFERENCES public.focus_group(id) ON DELETE CASCADE,
+    CONSTRAINT fk_focus_group_members__user_profile FOREIGN KEY (user_profile_id)
+        REFERENCES public.user_profile(id) ON DELETE CASCADE
+);</code></pre>
+
+            <p><strong>Purpose:</strong> Direct membership of users in focus groups</p>
+            <p><strong>Relationship:</strong> <code>user_profile</code> ↔ <code>focus_group</code> (Many-to-Many)</p>
+            <p><strong>Fields:</strong> Role (MEMBER/LEAD/ADMIN), Status (ACTIVE/INACTIVE/PENDING)</p>
+
+            <h4>✅ Existing: event_focus_groups Table</h4>
+            <pre><code>CREATE TABLE public.event_focus_groups (
+    id bigint PRIMARY KEY,
+    tenant_id character varying(255) NOT NULL,
+    event_id bigint NOT NULL,
+    focus_group_id bigint NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    CONSTRAINT ux_event_focus_groups__tenant_event_group UNIQUE (tenant_id, event_id, focus_group_id),
+    CONSTRAINT fk_event_focus_groups__group FOREIGN KEY (focus_group_id)
+        REFERENCES public.focus_group(id) ON DELETE CASCADE,
+    CONSTRAINT fk_event_focus_groups__event FOREIGN KEY (event_id)
+        REFERENCES public.event_details(id) ON DELETE CASCADE
+);</code></pre>
+
+            <p><strong>Purpose:</strong> Associates events with focus groups</p>
+            <p><strong>Relationship:</strong> <code>event_details</code> ↔ <code>focus_group</code> (Many-to-Many)</p>
+            <p><strong>Note:</strong> This table does NOT track which users registered for events</p>
+
+            <h4>✅ Existing: event_ticket_transaction Table</h4>
+            <pre><code>CREATE TABLE public.event_ticket_transaction (
+    id bigint PRIMARY KEY,
+    tenant_id character varying(255),
+    event_id bigint NOT NULL,
+    user_id bigint,  -- References user_profile.id
+    email character varying(255) NOT NULL,
+    first_name character varying(255),
+    last_name character varying(255),
+    quantity INTEGER NOT NULL,
+    total_amount numeric(21,2) NOT NULL,
+    status character varying(255) DEFAULT 'PENDING',
+    purchase_date timestamp without time zone NOT NULL,
+    -- ... other fields ...
+    CONSTRAINT fk_event FOREIGN KEY (event_id)
+        REFERENCES public.event_details(id) ON DELETE CASCADE,
+    CONSTRAINT fk_user FOREIGN KEY (user_id)
+        REFERENCES public.user_profile(id) ON DELETE SET null
+);</code></pre>
+
+            <p><strong>Purpose:</strong> Tracks event registrations/purchases by users</p>
+            <p><strong>Relationship:</strong> <code>user_profile</code> ↔ <code>event_details</code> (Many-to-Many via transactions)</p>
+            <p><strong>Note:</strong> This tracks event registrations but does NOT link to focus groups</p>
+        </div>
+
+        <div class="analysis">
+            <h3>1.2 Current Relationship Diagram</h3>
+            <div class="diagram">┌─────────────────┐
+│  user_profile   │
+│  (id, email,    │
+│   first_name,   │
+│   ...)          │
+└────────┬────────┘
+         │
+         │ 1:N (via focus_group_members)
+         │
+         ▼
+┌─────────────────────────┐         ┌─────────────────┐
+│ focus_group_members     │────────►│  focus_group    │
+│ (user_profile_id,       │    N:1  │  (id, name,     │
+│  focus_group_id,        │         │   slug, ...)    │
+│  role, status)          │         └────────┬────────┘
+└─────────────────────────┘                  │
+                                             │ 1:N (via event_focus_groups)
+                                             │
+                                             ▼
+                                    ┌──────────────────────┐         ┌─────────────────┐
+                                    │ event_focus_groups   │────────►│  event_details  │
+                                    │ (event_id,           │    N:1  │  (id, title,    │
+                                    │  focus_group_id)     │         │   start_date,   │
+                                    └──────────────────────┘         │   ...)          │
+                                                                      └────────┬────────┘
+                                                                               │
+                                                                               │ 1:N (via event_ticket_transaction)
+                                                                               │
+                                                                               ▼
+                                                                      ┌──────────────────────────────┐
+                                                                      │ event_ticket_transaction      │
+                                                                      │ (event_id, user_id,           │
+                                                                      │  email, quantity,             │
+                                                                      │  purchase_date, ...)          │
+                                                                      └──────────────────────────────┘
+
+❌ MISSING LINK: No direct relationship between:
+   - Focus group members and their event registrations
+   - Event registrations and focus groups</div>
+        </div>
+
+        <div class="warning">
+            <h3>⚠️ Gap Analysis</h3>
+            <p><strong>Current Limitations:</strong></p>
+            <ul>
+                <li>❌ <strong>No direct link</strong> between <code>focus_group_members</code> and <code>event_ticket_transaction</code></li>
+                <li>❌ <strong>Cannot easily query</strong> which focus group members registered for events</li>
+                <li>❌ <strong>Cannot track</strong> focus group member participation in events</li>
+                <li>❌ <strong>Cannot automatically</strong> add users to focus groups when they register for focus group events</li>
+                <li>❌ <strong>Cannot generate</strong> reports on focus group member event participation</li>
+            </ul>
+
+            <p><strong>Use Cases Not Supported:</strong></p>
+            <ul>
+                <li>"Show all events that members of Career Focus Group have registered for"</li>
+                <li>"Automatically add user to IT Focus Group when they register for IT Career Fair event"</li>
+                <li>"Track participation rate of focus group members in focus group events"</li>
+                <li>"Send targeted emails to focus group members who haven't registered for upcoming events"</li>
+            </ul>
+        </div>
+
+        <h2>2. Proposed Database Design</h2>
+
+        <div class="design">
+            <h3>2.1 New Table: focus_group_member_event_registration</h3>
+
+            <h4>Purpose:</h4>
+            <p>Track which focus group members have registered for events that belong to their focus group(s). This creates a direct link between focus group membership and event registrations.</p>
+
+            <h4>Use Cases:</h4>
+            <ul>
+                <li>Track focus group member participation in focus group events</li>
+                <li>Generate reports on member engagement</li>
+                <li>Send targeted communications to members who haven't registered</li>
+                <li>Analyze event registration patterns by focus group</li>
+                <li>Automatically create records when members register for focus group events</li>
+            </ul>
+
+            <h4>Table Structure:</h4>
+            <pre><code>CREATE TABLE public.focus_group_member_event_registration (
+    id bigint DEFAULT nextval('public.sequence_generator'::regclass) NOT NULL,
+    tenant_id character varying(255) NOT NULL,
+
+    -- Foreign Keys
+    focus_group_id bigint NOT NULL,
+    focus_group_member_id bigint NOT NULL,
+    user_profile_id bigint NOT NULL,
+    event_id bigint NOT NULL,
+    event_ticket_transaction_id bigint,
+
+    -- Registration Details
+    registration_date timestamp without time zone DEFAULT now() NOT NULL,
+    registration_status character varying(50) NOT NULL DEFAULT 'REGISTERED',
+    registration_source character varying(50) DEFAULT 'MANUAL',
+
+    -- Optional Metadata
+    notes text,
+    attended boolean DEFAULT false,
+    attendance_date timestamp without time zone,
+
+    -- Audit Fields
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    created_by_id bigint,
+
+    -- Constraints
+    CONSTRAINT focus_group_member_event_registration_pkey PRIMARY KEY (id),
+    CONSTRAINT ux_focus_group_member_event_reg__tenant_group_member_event
+        UNIQUE (tenant_id, focus_group_id, focus_group_member_id, event_id),
+
+    -- Foreign Key Constraints
+    CONSTRAINT fk_fg_member_event_reg__focus_group
+        FOREIGN KEY (focus_group_id)
+        REFERENCES public.focus_group(id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_fg_member_event_reg__focus_group_member
+        FOREIGN KEY (focus_group_member_id)
+        REFERENCES public.focus_group_members(id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_fg_member_event_reg__user_profile
+        FOREIGN KEY (user_profile_id)
+        REFERENCES public.user_profile(id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_fg_member_event_reg__event
+        FOREIGN KEY (event_id)
+        REFERENCES public.event_details(id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_fg_member_event_reg__transaction
+        FOREIGN KEY (event_ticket_transaction_id)
+        REFERENCES public.event_ticket_transaction(id) ON DELETE SET NULL,
+
+    CONSTRAINT fk_fg_member_event_reg__created_by
+        FOREIGN KEY (created_by_id)
+        REFERENCES public.user_profile(id) ON DELETE SET NULL,
+
+    -- Check Constraints
+    CONSTRAINT check_registration_status
+        CHECK (registration_status IN ('REGISTERED', 'CANCELLED', 'WAITLISTED', 'ATTENDED', 'NO_SHOW')),
+
+    CONSTRAINT check_registration_source
+        CHECK (registration_source IN ('MANUAL', 'AUTO_FROM_TRANSACTION', 'IMPORT', 'API'))
+);
+
+-- Table Comment
+COMMENT ON TABLE public.focus_group_member_event_registration IS
+    'Tracks focus group member registrations for events associated with their focus group(s). Links focus_group_members, events, and event_ticket_transactions.';
+
+-- Column Comments
+COMMENT ON COLUMN public.focus_group_member_event_registration.focus_group_member_id IS
+    'Reference to focus_group_members table - ensures user is actually a member of the focus group';
+
+COMMENT ON COLUMN public.focus_group_member_event_registration.event_ticket_transaction_id IS
+    'Optional link to event_ticket_transaction if registration came from ticket purchase';
+
+COMMENT ON COLUMN public.focus_group_member_event_registration.registration_source IS
+    'How the registration was created: MANUAL (admin), AUTO_FROM_TRANSACTION (auto-created from ticket purchase), IMPORT, API';
+
+COMMENT ON COLUMN public.focus_group_member_event_registration.registration_status IS
+    'Current status: REGISTERED, CANCELLED, WAITLISTED, ATTENDED, NO_SHOW';
+
+-- Indexes for Performance
+CREATE INDEX idx_fg_member_event_reg__focus_group_id
+    ON public.focus_group_member_event_registration(focus_group_id);
+
+CREATE INDEX idx_fg_member_event_reg__user_profile_id
+    ON public.focus_group_member_event_registration(user_profile_id);
+
+CREATE INDEX idx_fg_member_event_reg__event_id
+    ON public.focus_group_member_event_registration(event_id);
+
+CREATE INDEX idx_fg_member_event_reg__focus_group_member_id
+    ON public.focus_group_member_event_registration(focus_group_member_id);
+
+CREATE INDEX idx_fg_member_event_reg__transaction_id
+    ON public.focus_group_member_event_registration(event_ticket_transaction_id)
+    WHERE event_ticket_transaction_id IS NOT NULL;
+
+CREATE INDEX idx_fg_member_event_reg__registration_status
+    ON public.focus_group_member_event_registration(registration_status);
+
+CREATE INDEX idx_fg_member_event_reg__tenant_group_event
+    ON public.focus_group_member_event_registration(tenant_id, focus_group_id, event_id);
+
+-- Trigger for updated_at
+CREATE TRIGGER update_focus_group_member_event_registration_updated_at
+    BEFORE UPDATE ON public.focus_group_member_event_registration
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_updated_at_column();</code></pre>
+        </div>
+
+        <div class="design">
+            <h3>2.2 Field Descriptions</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Nullable</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>id</code></td>
+                        <td>bigint</td>
+                        <td>NO</td>
+                        <td>Primary key, auto-generated</td>
+                    </tr>
+                    <tr>
+                        <td><code>tenant_id</code></td>
+                        <td>varchar(255)</td>
+                        <td>NO</td>
+                        <td>Multi-tenant isolation</td>
+                    </tr>
+                    <tr>
+                        <td><code>focus_group_id</code></td>
+                        <td>bigint</td>
+                        <td>NO</td>
+                        <td>FK to focus_group - which focus group</td>
+                    </tr>
+                    <tr>
+                        <td><code>focus_group_member_id</code></td>
+                        <td>bigint</td>
+                        <td>NO</td>
+                        <td>FK to focus_group_members - ensures user is a member</td>
+                    </tr>
+                    <tr>
+                        <td><code>user_profile_id</code></td>
+                        <td>bigint</td>
+                        <td>NO</td>
+                        <td>FK to user_profile - the user who registered</td>
+                    </tr>
+                    <tr>
+                        <td><code>event_id</code></td>
+                        <td>bigint</td>
+                        <td>NO</td>
+                        <td>FK to event_details - which event</td>
+                    </tr>
+                    <tr>
+                        <td><code>event_ticket_transaction_id</code></td>
+                        <td>bigint</td>
+                        <td>YES</td>
+                        <td>FK to event_ticket_transaction - optional link to purchase</td>
+                    </tr>
+                    <tr>
+                        <td><code>registration_date</code></td>
+                        <td>timestamp</td>
+                        <td>NO</td>
+                        <td>When the registration occurred</td>
+                    </tr>
+                    <tr>
+                        <td><code>registration_status</code></td>
+                        <td>varchar(50)</td>
+                        <td>NO</td>
+                        <td>REGISTERED, CANCELLED, WAITLISTED, ATTENDED, NO_SHOW</td>
+                    </tr>
+                    <tr>
+                        <td><code>registration_source</code></td>
+                        <td>varchar(50)</td>
+                        <td>NO</td>
+                        <td>MANUAL, AUTO_FROM_TRANSACTION, IMPORT, API</td>
+                    </tr>
+                    <tr>
+                        <td><code>notes</code></td>
+                        <td>text</td>
+                        <td>YES</td>
+                        <td>Optional notes about the registration</td>
+                    </tr>
+                    <tr>
+                        <td><code>attended</code></td>
+                        <td>boolean</td>
+                        <td>NO</td>
+                        <td>Whether the member actually attended</td>
+                    </tr>
+                    <tr>
+                        <td><code>attendance_date</code></td>
+                        <td>timestamp</td>
+                        <td>YES</td>
+                        <td>When attendance was recorded</td>
+                    </tr>
+                    <tr>
+                        <td><code>created_at</code></td>
+                        <td>timestamp</td>
+                        <td>NO</td>
+                        <td>Record creation timestamp</td>
+                    </tr>
+                    <tr>
+                        <td><code>updated_at</code></td>
+                        <td>timestamp</td>
+                        <td>NO</td>
+                        <td>Record update timestamp (auto-updated)</td>
+                    </tr>
+                    <tr>
+                        <td><code>created_by_id</code></td>
+                        <td>bigint</td>
+                        <td>YES</td>
+                        <td>FK to user_profile - who created this record</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="design">
+            <h3>2.3 Updated Relationship Diagram</h3>
+            <div class="diagram">┌─────────────────┐
+│  user_profile   │
+│  (id, email,    │
+│   ...)          │
+└────────┬────────┘
+         │
+         │ 1:N (via focus_group_members)
+         │
+         ▼
+┌─────────────────────────┐         ┌─────────────────┐
+│ focus_group_members     │────────►│  focus_group    │
+│ (id, user_profile_id,   │    N:1  │  (id, name,     │
+│  focus_group_id,        │         │   slug, ...)    │
+│  role, status)          │         └────────┬────────┘
+└────────┬────────────────┘                  │
+         │                                    │ 1:N (via event_focus_groups)
+         │                                    │
+         │ 1:N (via focus_group_member_event_registration)
+         │                                    │
+         ▼                                    ▼
+┌──────────────────────────────────────────────┐    ┌──────────────────────┐
+│ focus_group_member_event_registration        │    │ event_focus_groups   │
+│ (focus_group_member_id,                      │    │ (event_id,           │
+│  focus_group_id,                             │    │  focus_group_id)     │
+│  user_profile_id,                            │    └──────────┬───────────┘
+│  event_id,                                    │               │
+│  event_ticket_transaction_id,                │               │ 1:N
+│  registration_status, ...)                    │               │
+└────────┬─────────────────────────────────────┘               │
+         │                                                      │
+         │ N:1                                                  │
+         │                                                      │
+         ▼                                                      ▼
+┌──────────────────────────────┐         ┌─────────────────┐
+│ event_ticket_transaction      │────────►│  event_details  │
+│ (id, event_id, user_id,      │    N:1  │  (id, title,    │
+│  email, quantity, ...)        │         │   start_date,   │
+└──────────────────────────────┘         │   ...)          │
+                                         └─────────────────┘
+
+✅ NEW LINK: focus_group_member_event_registration connects:
+   - Focus group members → Events
+   - Event registrations → Focus groups
+   - Enables tracking member participation</div>
+        </div>
+
+        <h2>3. Constraints and Relationships</h2>
+
+        <div class="design">
+            <h3>3.1 Unique Constraint</h3>
+            <pre><code>CONSTRAINT ux_focus_group_member_event_reg__tenant_group_member_event
+    UNIQUE (tenant_id, focus_group_id, focus_group_member_id, event_id)</code></pre>
+
+            <p><strong>Purpose:</strong> Prevents duplicate registrations for the same focus group member, event, and focus group combination.</p>
+            <p><strong>Rationale:</strong> A member can register for the same event through multiple focus groups (if event belongs to multiple groups), but only once per focus group.</p>
+        </div>
+
+        <div class="design">
+            <h3>3.2 Foreign Key Relationships</h3>
+
+            <h4>Cascade Delete Rules:</h4>
+            <ul>
+                <li><strong>focus_group_id:</strong> <code>ON DELETE CASCADE</code> - If focus group is deleted, remove all registrations</li>
+                <li><strong>focus_group_member_id:</strong> <code>ON DELETE CASCADE</code> - If membership is removed, remove all registrations</li>
+                <li><strong>user_profile_id:</strong> <code>ON DELETE CASCADE</code> - If user is deleted, remove all registrations</li>
+                <li><strong>event_id:</strong> <code>ON DELETE CASCADE</code> - If event is deleted, remove all registrations</li>
+                <li><strong>event_ticket_transaction_id:</strong> <code>ON DELETE SET NULL</code> - If transaction is deleted, keep registration but clear link</li>
+                <li><strong>created_by_id:</strong> <code>ON DELETE SET NULL</code> - If creator is deleted, keep registration but clear creator</li>
+            </ul>
+        </div>
+
+        <div class="design">
+            <h3>3.3 Check Constraints</h3>
+
+            <h4>Registration Status:</h4>
+            <pre><code>CONSTRAINT check_registration_status
+    CHECK (registration_status IN ('REGISTERED', 'CANCELLED', 'WAITLISTED', 'ATTENDED', 'NO_SHOW'))</code></pre>
+
+            <h4>Registration Source:</h4>
+            <pre><code>CONSTRAINT check_registration_source
+    CHECK (registration_source IN ('MANUAL', 'AUTO_FROM_TRANSACTION', 'IMPORT', 'API'))</code></pre>
+        </div>
+
+        <h2>4. Indexes for Performance</h2>
+
+        <div class="design">
+            <h3>4.1 Recommended Indexes</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Index Name</th>
+                        <th>Columns</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>idx_fg_member_event_reg__focus_group_id</code></td>
+                        <td><code>focus_group_id</code></td>
+                        <td>Fast lookup of all registrations for a focus group</td>
+                    </tr>
+                    <tr>
+                        <td><code>idx_fg_member_event_reg__user_profile_id</code></td>
+                        <td><code>user_profile_id</code></td>
+                        <td>Fast lookup of all registrations for a user</td>
+                    </tr>
+                    <tr>
+                        <td><code>idx_fg_member_event_reg__event_id</code></td>
+                        <td><code>event_id</code></td>
+                        <td>Fast lookup of all registrations for an event</td>
+                    </tr>
+                    <tr>
+                        <td><code>idx_fg_member_event_reg__focus_group_member_id</code></td>
+                        <td><code>focus_group_member_id</code></td>
+                        <td>Fast lookup by membership record</td>
+                    </tr>
+                    <tr>
+                        <td><code>idx_fg_member_event_reg__transaction_id</code></td>
+                        <td><code>event_ticket_transaction_id</code></td>
+                        <td>Fast lookup by transaction (partial index, NULL excluded)</td>
+                    </tr>
+                    <tr>
+                        <td><code>idx_fg_member_event_reg__registration_status</code></td>
+                        <td><code>registration_status</code></td>
+                        <td>Fast filtering by status</td>
+                    </tr>
+                    <tr>
+                        <td><code>idx_fg_member_event_reg__tenant_group_event</code></td>
+                        <td><code>tenant_id, focus_group_id, event_id</code></td>
+                        <td>Composite index for common query pattern</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>5. Complete DDL Statement</h2>
+
+        <div class="design">
+            <h3>5.1 Full CREATE TABLE Statement</h3>
+            <pre><code>-- ===================================================
+-- Focus Group Member Event Registration
+-- ===================================================
+
+CREATE TABLE public.focus_group_member_event_registration (
+    id bigint DEFAULT nextval('public.sequence_generator'::regclass) NOT NULL,
+    tenant_id character varying(255) NOT NULL,
+
+    -- Foreign Keys
+    focus_group_id bigint NOT NULL,
+    focus_group_member_id bigint NOT NULL,
+    user_profile_id bigint NOT NULL,
+    event_id bigint NOT NULL,
+    event_ticket_transaction_id bigint,
+
+    -- Registration Details
+    registration_date timestamp without time zone DEFAULT now() NOT NULL,
+    registration_status character varying(50) NOT NULL DEFAULT 'REGISTERED',
+    registration_source character varying(50) DEFAULT 'MANUAL',
+
+    -- Optional Metadata
+    notes text,
+    attended boolean DEFAULT false,
+    attendance_date timestamp without time zone,
+
+    -- Audit Fields
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    created_by_id bigint,
+
+    -- Primary Key
+    CONSTRAINT focus_group_member_event_registration_pkey PRIMARY KEY (id),
+
+    -- Unique Constraint
+    CONSTRAINT ux_focus_group_member_event_reg__tenant_group_member_event
+        UNIQUE (tenant_id, focus_group_id, focus_group_member_id, event_id),
+
+    -- Foreign Key Constraints
+    CONSTRAINT fk_fg_member_event_reg__focus_group
+        FOREIGN KEY (focus_group_id)
+        REFERENCES public.focus_group(id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_fg_member_event_reg__focus_group_member
+        FOREIGN KEY (focus_group_member_id)
+        REFERENCES public.focus_group_members(id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_fg_member_event_reg__user_profile
+        FOREIGN KEY (user_profile_id)
+        REFERENCES public.user_profile(id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_fg_member_event_reg__event
+        FOREIGN KEY (event_id)
+        REFERENCES public.event_details(id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_fg_member_event_reg__transaction
+        FOREIGN KEY (event_ticket_transaction_id)
+        REFERENCES public.event_ticket_transaction(id) ON DELETE SET NULL,
+
+    CONSTRAINT fk_fg_member_event_reg__created_by
+        FOREIGN KEY (created_by_id)
+        REFERENCES public.user_profile(id) ON DELETE SET NULL,
+
+    -- Check Constraints
+    CONSTRAINT check_registration_status
+        CHECK (registration_status IN ('REGISTERED', 'CANCELLED', 'WAITLISTED', 'ATTENDED', 'NO_SHOW')),
+
+    CONSTRAINT check_registration_source
+        CHECK (registration_source IN ('MANUAL', 'AUTO_FROM_TRANSACTION', 'IMPORT', 'API'))
+);
+
+-- Table Comment
+COMMENT ON TABLE public.focus_group_member_event_registration IS
+    'Tracks focus group member registrations for events associated with their focus group(s). Links focus_group_members, events, and event_ticket_transactions.';
+
+-- Column Comments
+COMMENT ON COLUMN public.focus_group_member_event_registration.focus_group_member_id IS
+    'Reference to focus_group_members table - ensures user is actually a member of the focus group';
+
+COMMENT ON COLUMN public.focus_group_member_event_registration.event_ticket_transaction_id IS
+    'Optional link to event_ticket_transaction if registration came from ticket purchase';
+
+COMMENT ON COLUMN public.focus_group_member_event_registration.registration_source IS
+    'How the registration was created: MANUAL (admin), AUTO_FROM_TRANSACTION (auto-created from ticket purchase), IMPORT, API';
+
+COMMENT ON COLUMN public.focus_group_member_event_registration.registration_status IS
+    'Current status: REGISTERED, CANCELLED, WAITLISTED, ATTENDED, NO_SHOW';
+
+-- Indexes for Performance
+CREATE INDEX idx_fg_member_event_reg__focus_group_id
+    ON public.focus_group_member_event_registration(focus_group_id);
+
+CREATE INDEX idx_fg_member_event_reg__user_profile_id
+    ON public.focus_group_member_event_registration(user_profile_id);
+
+CREATE INDEX idx_fg_member_event_reg__event_id
+    ON public.focus_group_member_event_registration(event_id);
+
+CREATE INDEX idx_fg_member_event_reg__focus_group_member_id
+    ON public.focus_group_member_event_registration(focus_group_member_id);
+
+CREATE INDEX idx_fg_member_event_reg__transaction_id
+    ON public.focus_group_member_event_registration(event_ticket_transaction_id)
+    WHERE event_ticket_transaction_id IS NOT NULL;
+
+CREATE INDEX idx_fg_member_event_reg__registration_status
+    ON public.focus_group_member_event_registration(registration_status);
+
+CREATE INDEX idx_fg_member_event_reg__tenant_group_event
+    ON public.focus_group_member_event_registration(tenant_id, focus_group_id, event_id);
+
+-- Trigger for updated_at
+CREATE TRIGGER update_focus_group_member_event_registration_updated_at
+    BEFORE UPDATE ON public.focus_group_member_event_registration
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_updated_at_column();</code></pre>
+        </div>
+
+        <h2>6. Use Cases and Query Examples</h2>
+
+        <div class="design">
+            <h3>6.1 Common Queries</h3>
+
+            <h4>Query 1: Get all events a focus group member has registered for</h4>
+            <pre><code>SELECT
+    e.id,
+    e.title,
+    e.start_date,
+    e.start_time,
+    fgmer.registration_date,
+    fgmer.registration_status,
+    fgmer.attended
+FROM focus_group_member_event_registration fgmer
+INNER JOIN event_details e ON fgmer.event_id = e.id
+INNER JOIN focus_group_members fgm ON fgmer.focus_group_member_id = fgm.id
+WHERE fgm.user_profile_id = :userId
+  AND fgm.focus_group_id = :focusGroupId
+  AND fgmer.tenant_id = :tenantId
+ORDER BY e.start_date DESC;</code></pre>
+
+            <h4>Query 2: Get all members who registered for a specific event</h4>
+            <pre><code>SELECT
+    up.id,
+    up.first_name,
+    up.last_name,
+    up.email,
+    fg.name AS focus_group_name,
+    fgmer.registration_date,
+    fgmer.registration_status,
+    fgmer.attended
+FROM focus_group_member_event_registration fgmer
+INNER JOIN user_profile up ON fgmer.user_profile_id = up.id
+INNER JOIN focus_group fg ON fgmer.focus_group_id = fg.id
+WHERE fgmer.event_id = :eventId
+  AND fgmer.tenant_id = :tenantId
+  AND fgmer.registration_status = 'REGISTERED'
+ORDER BY fgmer.registration_date DESC;</code></pre>
+
+            <h4>Query 3: Get registration statistics for a focus group</h4>
+            <pre><code>SELECT
+    COUNT(*) AS total_registrations,
+    COUNT(DISTINCT fgmer.user_profile_id) AS unique_members,
+    COUNT(DISTINCT fgmer.event_id) AS unique_events,
+    SUM(CASE WHEN fgmer.attended = true THEN 1 ELSE 0 END) AS total_attended
+FROM focus_group_member_event_registration fgmer
+WHERE fgmer.focus_group_id = :focusGroupId
+  AND fgmer.tenant_id = :tenantId
+  AND fgmer.registration_status = 'REGISTERED';</code></pre>
+
+            <h4>Query 4: Auto-create registration when transaction is created</h4>
+            <pre><code>-- This would be done via trigger or application logic
+INSERT INTO focus_group_member_event_registration (
+    tenant_id,
+    focus_group_id,
+    focus_group_member_id,
+    user_profile_id,
+    event_id,
+    event_ticket_transaction_id,
+    registration_date,
+    registration_status,
+    registration_source
+)
+SELECT
+    ett.tenant_id,
+    efg.focus_group_id,
+    fgm.id AS focus_group_member_id,
+    ett.user_id AS user_profile_id,
+    ett.event_id,
+    ett.id AS event_ticket_transaction_id,
+    ett.purchase_date,
+    'REGISTERED',
+    'AUTO_FROM_TRANSACTION'
+FROM event_ticket_transaction ett
+INNER JOIN event_focus_groups efg ON ett.event_id = efg.event_id
+INNER JOIN focus_group_members fgm
+    ON efg.focus_group_id = fgm.focus_group_id
+    AND ett.user_id = fgm.user_profile_id
+WHERE ett.id = :transactionId
+  AND ett.status = 'CONFIRMED'
+  AND fgm.status = 'ACTIVE'
+ON CONFLICT (tenant_id, focus_group_id, focus_group_member_id, event_id)
+DO NOTHING;</code></pre>
+        </div>
+
+        <h2>7. Implementation Considerations</h2>
+
+        <div class="info">
+            <h3>📝 Important Notes</h3>
+            <ul>
+                <li><strong>Data Integrity:</strong> The <code>focus_group_member_id</code> foreign key ensures that only actual focus group members can have registrations</li>
+                <li><strong>Automatic Creation:</strong> Consider creating triggers or application logic to auto-create registrations when:
+                    <ul>
+                        <li>User purchases ticket for focus group event</li>
+                        <li>User is added to focus group and has existing registrations for focus group events</li>
+                    </ul>
+                </li>
+                <li><strong>Validation:</strong> Before inserting, verify:
+                    <ul>
+                        <li>Event belongs to the focus group (via <code>event_focus_groups</code>)</li>
+                        <li>User is a member of the focus group (via <code>focus_group_members</code>)</li>
+                        <li>Focus group member status is ACTIVE</li>
+                    </ul>
+                </li>
+                <li><strong>Performance:</strong> Indexes are critical for query performance, especially composite indexes</li>
+                <li><strong>Tenant Isolation:</strong> Always filter by <code>tenant_id</code> in queries</li>
+            </ul>
+        </div>
+
+        <div class="warning">
+            <h3>⚠️ Migration Considerations</h3>
+            <ul>
+                <li><strong>Existing Data:</strong> If there are existing event registrations, consider creating a migration script to populate this table</li>
+                <li><strong>Backward Compatibility:</strong> This table is additive - existing functionality will continue to work</li>
+                <li><strong>Gradual Rollout:</strong> Can be implemented incrementally without breaking existing features</li>
+                <li><strong>Data Validation:</strong> Run validation queries to ensure data integrity after migration</li>
+            </ul>
+        </div>
+
+        <h2>8. Summary</h2>
+
+        <div class="reference">
+            <h4>✅ Current State</h4>
+            <ul>
+                <li><strong>focus_group_members:</strong> Links users to focus groups (exists)</li>
+                <li><strong>event_focus_groups:</strong> Links events to focus groups (exists)</li>
+                <li><strong>event_ticket_transaction:</strong> Links users to events (exists)</li>
+                <li><strong>Missing:</strong> Direct link between focus group members and their event registrations</li>
+            </ul>
+
+            <h4>✅ Proposed Solution</h4>
+            <ul>
+                <li><strong>New Table:</strong> <code>focus_group_member_event_registration</code></li>
+                <li><strong>Purpose:</strong> Track focus group member participation in focus group events</li>
+                <li><strong>Key Features:</strong>
+                    <ul>
+                        <li>Links focus group members to events</li>
+                        <li>Optional link to ticket transactions</li>
+                        <li>Tracks registration status and attendance</li>
+                        <li>Supports automatic creation from transactions</li>
+                        <li>Full audit trail with created_by and timestamps</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>✅ Benefits</h4>
+            <ul>
+                <li>Enable focus group member event participation tracking</li>
+                <li>Generate reports on member engagement</li>
+                <li>Send targeted communications</li>
+                <li>Analyze event registration patterns</li>
+                <li>Support automatic member addition when registering for focus group events</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>Focus Group Member Event Registration - Database Design Document</p>
+            <p>Schema File: <code>code_html_template/SQLS/Latest_Schema_Post__Blob_Claude_11.sql</code></p>
+            <p>Status: Design Documentation - No Implementation</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('date').textContent = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    </script>
+</body>
+</html>
+

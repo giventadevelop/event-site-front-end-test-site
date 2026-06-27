@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Category &amp; Year — Database Schema Enhancements (v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .section-container.schema { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left-color: #0066cc; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; overflow-x: auto; font-family: Consolas, monospace; font-size: 0.82em; line-height: 1.45; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Category &amp; Year — Database Schema Enhancements (v1.0)</h1>
+    <p class="doc-meta">
+        <strong>Layer:</strong> PostgreSQL / Liquibase &nbsp;|&nbsp; <strong>Date:</strong> June 17, 2026<br>
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a> &nbsp;|&nbsp;
+        <strong>Gap analysis:</strong> <a href="gap_analysis_prd.html">gap_analysis_prd.html</a><br>
+        <strong>Canonical SQL:</strong> <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code>
+    </p>
+
+    <div class="lead">
+        <p>Incremental DDL for gallery album card metadata. Apply via Liquibase changelog in <code>malayalees-us-site-boot</code>, then sync canonical SQL. New columns are <strong>nullable</strong> — existing albums unchanged until admin backfill.</p>
+    </div>
+
+    <h2>1. Summary of deltas</h2>
+    <table>
+        <thead><tr><th>Object</th><th>Change type</th><th>Purpose</th></tr></thead>
+        <tbody>
+            <tr><td><code>gallery_category</code></td><td>CREATE TABLE</td><td>Tenant-scoped lookup for category pills (Ecumenical Visits, etc.)</td></tr>
+            <tr><td><code>gallery_album</code></td><td>ALTER ADD</td><td><code>gallery_category_id</code> (FK), <code>album_year</code> (integer)</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. gallery_category — new table</h2>
+    <div class="section-container schema">
+        <div class="section-header">CREATE TABLE gallery_category</div>
+<pre>CREATE TABLE public.gallery_category (
+    id int8 DEFAULT nextval('public.sequence_generator'::regclass) NOT NULL,
+    tenant_id varchar(255) NOT NULL,
+    slug varchar(64) NOT NULL,
+    display_name varchar(128) NOT NULL,
+    description varchar(512) NULL,
+    sort_order int4 DEFAULT 0 NOT NULL,
+    is_active bool DEFAULT true NOT NULL,
+    created_at timestamp DEFAULT now() NOT NULL,
+    updated_at timestamp DEFAULT now() NOT NULL,
+    CONSTRAINT pk_gallery_category PRIMARY KEY (id),
+    CONSTRAINT ux_gallery_category_tenant_slug UNIQUE (tenant_id, slug),
+    CONSTRAINT chk_gallery_category_slug_format CHECK (
+        slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'
+    ),
+    CONSTRAINT chk_gallery_category_sort_non_negative CHECK (sort_order &gt;= 0)
+);
+
+COMMENT ON TABLE public.gallery_category IS
+    'Tenant-scoped categories for gallery albums (e.g. Ecumenical Visits, Major Events).';
+COMMENT ON COLUMN public.gallery_category.slug IS
+    'URL-safe identifier; unique per tenant. Used for filters and admin keys.';
+COMMENT ON COLUMN public.gallery_category.display_name IS
+    'Human-readable label shown on album card category pill.';
+
+CREATE INDEX idx_gallery_category_tenant_active
+    ON public.gallery_category (tenant_id, is_active, sort_order);</pre>
+    </div>
+
+    <h3>Seed categories (per tenant — example)</h3>
+    <table>
+        <thead><tr><th>slug</th><th>display_name</th><th>sort_order</th></tr></thead>
+        <tbody>
+            <tr><td><code>ecumenical-visits</code></td><td>Ecumenical Visits</td><td>10</td></tr>
+            <tr><td><code>major-events</code></td><td>Major Events</td><td>20</td></tr>
+            <tr><td><code>receptions</code></td><td>Receptions</td><td>30</td></tr>
+            <tr><td><code>liturgical-events</code></td><td>Liturgical Events</td><td>40</td></tr>
+        </tbody>
+    </table>
+    <p>Full seed script: <a href="data_migration_enhancements_prd.html">data_migration_enhancements_prd.html</a></p>
+
+    <h2>3. gallery_album — new columns</h2>
+    <div class="section-container schema">
+        <div class="section-header">ALTER TABLE gallery_album</div>
+<pre>ALTER TABLE public.gallery_album
+    ADD COLUMN IF NOT EXISTS gallery_category_id int8 NULL,
+    ADD COLUMN IF NOT EXISTS album_year int4 NULL;
+
+ALTER TABLE public.gallery_album
+    ADD CONSTRAINT fk_gallery_album_category
+        FOREIGN KEY (gallery_category_id)
+        REFERENCES public.gallery_category(id)
+        ON DELETE SET NULL;
+
+ALTER TABLE public.gallery_album
+    ADD CONSTRAINT chk_gallery_album_year_range
+        CHECK (album_year IS NULL OR (album_year &gt;= 1900 AND album_year &lt;= 2100));
+
+COMMENT ON COLUMN public.gallery_album.gallery_category_id IS
+    'Optional FK to gallery_category; drives category pill on public album cards.';
+COMMENT ON COLUMN public.gallery_album.album_year IS
+    'Calendar year of the visit/event shown on cards (e.g. 2019). Not the same as created_at.';
+
+CREATE INDEX idx_gallery_album_category_id
+    ON public.gallery_album (gallery_category_id)
+    WHERE gallery_category_id IS NOT NULL;
+
+CREATE INDEX idx_gallery_album_album_year
+    ON public.gallery_album (tenant_id, album_year)
+    WHERE album_year IS NOT NULL;</pre>
+    </div>
+
+    <h2>4. Existing gallery_album columns (unchanged)</h2>
+    <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Card use</th></tr></thead>
+        <tbody>
+            <tr><td><code>id</code></td><td>int8</td><td>Internal key; API id</td></tr>
+            <tr><td><code>tenant_id</code></td><td>varchar</td><td>Multi-tenant scope</td></tr>
+            <tr><td><code>title</code></td><td>varchar</td><td>Card title</td></tr>
+            <tr><td><code>description</code></td><td>varchar</td><td>Optional subtitle / SEO</td></tr>
+            <tr><td><code>cover_image_url</code></td><td>varchar</td><td>Card cover</td></tr>
+            <tr><td><code>is_public</code></td><td>bool</td><td>Public gallery filter</td></tr>
+            <tr><td><code>display_order</code></td><td>int4</td><td>Sort on gallery page</td></tr>
+            <tr><td><code>created_at</code> / <code>updated_at</code></td><td>timestamp</td><td>Audit only — not display year</td></tr>
+            <tr><td><code>created_by_id</code></td><td>int8</td><td>Admin audit</td></tr>
+        </tbody>
+    </table>
+
+    <h2>5. event_media relationship (unchanged)</h2>
+    <p>Photo count remains derived from <code>event_media.album_id</code> → <code>gallery_album.id</code>. No schema change required for count badge.</p>
+    <pre>-- Count public photos for an album (application layer or view)
+SELECT COUNT(*) FROM event_media em
+ WHERE em.album_id = :albumId
+   AND em.is_public = true
+   AND em.tenant_id = :tenantId;</pre>
+
+    <h2>6. Optional v1.1 — album slug (deferred)</h2>
+    <div class="warning-box">
+        <p>Not in v1.0. If MOSC static routes (<code>/gallery/russia-visit</code>) must map 1:1 to DB albums, add later:</p>
+        <pre>ALTER TABLE public.gallery_album
+    ADD COLUMN slug varchar(128) NULL;
+ALTER TABLE public.gallery_album
+    ADD CONSTRAINT ux_gallery_album_tenant_slug UNIQUE (tenant_id, slug);</pre>
+    </div>
+
+    <h2>7. Liquibase checklist</h2>
+    <ul>
+        <li>Changelog file: <code>config/liquibase/changelog/YYYYMMDD_gallery_category_v1.xml</code></li>
+        <li>Order: create <code>gallery_category</code> → alter <code>gallery_album</code> → indexes → seed data (tenant-specific)</li>
+        <li>Sync <code>Latest_Schema_Post__Blob_Claude_12.sql</code> in mosc-temp after deploy</li>
+        <li>Regenerate JHipster entities / OpenAPI</li>
+    </ul>
+
+    <div class="info-box">
+        <strong>Next:</strong> <a href="backend_enhancements_prd.html">Backend enhancements</a> ·
+        <a href="implementation_roadmap.html">Implementation roadmap</a>
+    </div>
+
+</body>
+</html>

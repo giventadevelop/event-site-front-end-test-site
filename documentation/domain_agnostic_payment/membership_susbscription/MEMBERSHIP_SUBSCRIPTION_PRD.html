@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Membership Subscription Feature - Product Requirements Document</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #2D2A26;
+            background-color: #F5F1E8;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #FFFFFF;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(139, 125, 107, 0.1);
+        }
+
+        h1 {
+            font-family: 'Crimson Text', serif;
+            font-size: 2.5em;
+            color: #8B7D6B;
+            margin-bottom: 10px;
+            border-bottom: 3px solid #8B7D6B;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            font-family: 'Crimson Text', serif;
+            font-size: 2em;
+            color: #6B4E3D;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #A0926B;
+            padding-bottom: 8px;
+        }
+
+        h3 {
+            font-family: 'Crimson Text', serif;
+            font-size: 1.5em;
+            color: #8B7D6B;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        h4 {
+            font-family: 'Crimson Text', serif;
+            font-size: 1.25em;
+            color: #6B4E3D;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            background-color: #EDE7D3;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            color: #6B4E3D;
+        }
+
+        pre {
+            background-color: #2D2A26;
+            color: #F5F1E8;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        pre code {
+            background-color: transparent;
+            color: #F5F1E8;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: #FFFFFF;
+        }
+
+        th, td {
+            border: 1px solid #A0926B;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #8B7D6B;
+            color: #FFFFFF;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background-color: #F5F1E8;
+        }
+
+        .info-box {
+            background-color: #EDE7D3;
+            border-left: 4px solid #8B7D6B;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box {
+            background-color: #FFF4E6;
+            border-left: 4px solid #A67C52;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .success-box {
+            background-color: #E8F5E9;
+            border-left: 4px solid #4A6741;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .toc {
+            background-color: #EDE7D3;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+
+        .toc ul {
+            list-style-type: none;
+            margin-left: 0;
+        }
+
+        .toc li {
+            margin-bottom: 8px;
+        }
+
+        .toc a {
+            color: #6B4E3D;
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .badge-primary {
+            background-color: #8B7D6B;
+            color: #FFFFFF;
+        }
+
+        .badge-success {
+            background-color: #4A6741;
+            color: #FFFFFF;
+        }
+
+        .badge-warning {
+            background-color: #A67C52;
+            color: #FFFFFF;
+        }
+
+        .diagram {
+            background-color: #F5F1E8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+
+        .footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px solid #A0926B;
+            text-align: center;
+            color: #8B7D6B;
+            font-size: 0.9em;
+        }
+
+        @media print {
+            body {
+                background-color: #FFFFFF;
+            }
+
+            .container {
+                box-shadow: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            h2 {
+                font-size: 1.5em;
+            }
+
+            pre {
+                font-size: 0.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Membership Subscription Feature <span class="badge badge-primary">PRD v1.0</span></h1>
+
+        <div class="info-box">
+            <strong>Document Information:</strong><br>
+            <strong>Version:</strong> 1.0<br>
+            <strong>Date:</strong> 2025-01-27<br>
+            <strong>Status:</strong> Draft<br>
+            <strong>Author:</strong> Development Team<br>
+            <strong>Related Projects:</strong><br>
+            &nbsp;&nbsp;• Frontend: <code>E:\project_workspace\mosc-temp</code><br>
+            &nbsp;&nbsp;• Backend: <code>E:\project_workspace\malayalees-us-site-boot</code>
+        </div>
+
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#executive-summary">1. Executive Summary</a></li>
+                <li><a href="#problem-statement">2. Problem Statement</a></li>
+                <li><a href="#goals-objectives">3. Goals and Objectives</a></li>
+                <li><a href="#current-system">4. Current System Analysis</a></li>
+                <li><a href="#requirements">5. Requirements</a></li>
+                <li><a href="#architecture">6. Technical Architecture</a></li>
+                <li><a href="#user-stories">7. User Stories</a></li>
+                <li><a href="#api-specs">8. API Specifications</a></li>
+                <li><a href="#database">9. Database Schema</a></li>
+                <li><a href="#ui-design">10. UI/UX Design</a></li>
+                <li><a href="#implementation">11. Implementation Plan</a></li>
+                <li><a href="#testing">12. Testing Strategy</a></li>
+                <li><a href="#security">13. Security Considerations</a></li>
+                <li><a href="#metrics">14. Success Metrics</a></li>
+            </ul>
+        </div>
+
+        <h2 id="executive-summary">1. Executive Summary</h2>
+        <p>This document outlines the requirements for implementing a <strong>Membership Subscription</strong> feature that allows users to subscribe to tiered membership plans with recurring monthly fees. The feature will leverage the existing Stripe payment infrastructure and support both desktop and mobile browsers.</p>
+
+        <h3>Key Features</h3>
+        <ul>
+            <li><strong>Tiered Membership Plans</strong>: Multiple membership tiers (e.g., Basic, Premium, Enterprise) with different pricing and features</li>
+            <li><strong>Recurring Billing</strong>: Monthly subscription fees automatically charged via Stripe</li>
+            <li><strong>Cross-Platform Support</strong>: Works seamlessly on desktop and mobile browsers</li>
+            <li><strong>Tenant-Specific</strong>: Each tenant can configure their own membership plans</li>
+            <li><strong>Trial Periods</strong>: Support for free trial periods before billing begins</li>
+            <li><strong>Subscription Management</strong>: Users can view, upgrade, downgrade, and cancel subscriptions</li>
+        </ul>
+
+        <h2 id="problem-statement">2. Problem Statement</h2>
+
+        <h3>Current State</h3>
+        <ul>
+            <li>Users can register and create profiles in the system</li>
+            <li>Payment infrastructure exists for one-time payments (event tickets, donations)</li>
+            <li>Database schema includes <code>membership_plan</code> and <code>membership_subscription</code> tables</li>
+            <li>Stripe integration exists but is primarily used for one-time payments</li>
+            <li>No user-facing membership subscription flow exists</li>
+        </ul>
+
+        <h3>Problem</h3>
+        <p>Organizations need a way to:</p>
+        <ol>
+            <li>Offer tiered membership plans to their community members</li>
+            <li>Collect recurring monthly subscription fees</li>
+            <li>Manage member subscriptions (active, cancelled, expired)</li>
+            <li>Provide different features/benefits based on membership tier</li>
+            <li>Allow members to self-manage their subscriptions</li>
+        </ol>
+
+        <h3>Solution</h3>
+        <p>Implement a comprehensive membership subscription system that:</p>
+        <ul>
+            <li>Integrates with existing Stripe payment infrastructure</li>
+            <li>Provides a user-friendly subscription management interface</li>
+            <li>Supports multiple membership tiers with configurable pricing</li>
+            <li>Handles recurring billing automatically</li>
+            <li>Works on both desktop and mobile devices</li>
+        </ul>
+
+        <h2 id="goals-objectives">3. Goals and Objectives</h2>
+
+        <h3>Primary Goals</h3>
+        <ol>
+            <li><strong>Enable Membership Subscriptions</strong>
+                <ul>
+                    <li>Allow organizations to create and manage membership plans</li>
+                    <li>Enable users to subscribe to membership plans</li>
+                    <li>Process recurring monthly payments automatically</li>
+                </ul>
+            </li>
+            <li><strong>Seamless Payment Experience</strong>
+                <ul>
+                    <li>Leverage existing Stripe payment infrastructure</li>
+                    <li>Support Apple Pay, Google Pay, and credit card payments</li>
+                    <li>Provide consistent experience across desktop and mobile</li>
+                </ul>
+            </li>
+            <li><strong>Subscription Management</strong>
+                <ul>
+                    <li>Allow users to view their current subscription status</li>
+                    <li>Enable subscription upgrades/downgrades</li>
+                    <li>Support subscription cancellation with end-of-period billing</li>
+                </ul>
+            </li>
+            <li><strong>Multi-Tenant Support</strong>
+                <ul>
+                    <li>Each tenant can configure their own membership plans</li>
+                    <li>Tenant-specific pricing and features</li>
+                    <li>Isolated subscription data per tenant</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h3>Secondary Goals</h3>
+        <ul>
+            <li><strong>Trial Periods</strong>: Support free trial periods for new members</li>
+            <li><strong>Feature Gating</strong>: Restrict features based on membership tier</li>
+            <li><strong>Analytics</strong>: Track subscription metrics and revenue</li>
+            <li><strong>Notifications</strong>: Email notifications for subscription events</li>
+        </ul>
+
+        <h2 id="current-system">4. Current System Analysis</h2>
+
+        <h3>Existing Infrastructure</h3>
+
+        <h4>Database Schema</h4>
+        <p>The database already includes the necessary tables:</p>
+        <ul>
+            <li><code>membership_plan</code> - Stores membership plan definitions</li>
+            <li><code>membership_subscription</code> - Stores user subscription enrollments</li>
+            <li><code>user_profile</code> - User profile information</li>
+            <li><code>payment_provider_config</code> - Payment provider configuration</li>
+        </ul>
+
+        <h4>Payment Infrastructure</h4>
+        <p><strong>Existing Components:</strong></p>
+        <ul>
+            <li><code>UniversalPaymentCheckout</code> - Provider-agnostic payment wrapper</li>
+            <li><code>StripeDesktopCheckout</code> - Stripe Elements integration for desktop</li>
+            <li><code>StripePaymentRequestButton</code> - Apple Pay/Google Pay integration</li>
+            <li><code>/api/billing/manage-subscription</code> - Existing subscription management endpoint</li>
+            <li><code>/api/webhooks/stripe</code> - Stripe webhook handler</li>
+        </ul>
+
+        <h3>Gaps and Requirements</h3>
+        <div class="warning-box">
+            <strong>Missing Components:</strong>
+            <ol>
+                <li><strong>Membership Plan Management</strong> - No API endpoints for CRUD operations on <code>membership_plan</code></li>
+                <li><strong>Membership Subscription Flow</strong> - No user-facing subscription signup page</li>
+                <li><strong>Stripe Integration Gaps</strong> - Need to create Stripe Products and Prices for membership plans</li>
+                <li><strong>Frontend Components</strong> - Missing membership plan selection and subscription management pages</li>
+            </ol>
+        </div>
+
+        <h2 id="requirements">5. Requirements</h2>
+
+        <h3>Functional Requirements</h3>
+
+        <h4>FR1: Membership Plan Management</h4>
+        <ul>
+            <li><strong>FR1.1</strong>: Admin users must be able to create membership plans</li>
+            <li><strong>FR1.2</strong>: Admin users must be able to update membership plans</li>
+            <li><strong>FR1.3</strong>: Admin users must be able to view all membership plans</li>
+            <li><strong>FR1.4</strong>: Admin users must be able to delete membership plans</li>
+        </ul>
+
+        <h4>FR2: User Subscription Signup</h4>
+        <ul>
+            <li><strong>FR2.1</strong>: Users must be able to view available membership plans</li>
+            <li><strong>FR2.2</strong>: Users must be able to subscribe to a membership plan</li>
+            <li><strong>FR2.3</strong>: Users must be able to start a trial period</li>
+            <li><strong>FR2.4</strong>: Users must receive confirmation after subscription</li>
+        </ul>
+
+        <h4>FR3: Subscription Management</h4>
+        <ul>
+            <li><strong>FR3.1</strong>: Users must be able to view their current subscription</li>
+            <li><strong>FR3.2</strong>: Users must be able to upgrade their subscription</li>
+            <li><strong>FR3.3</strong>: Users must be able to downgrade their subscription</li>
+            <li><strong>FR3.4</strong>: Users must be able to cancel their subscription</li>
+            <li><strong>FR3.5</strong>: Users must be able to update payment method</li>
+        </ul>
+
+        <h3>Non-Functional Requirements</h3>
+
+        <h4>Performance</h4>
+        <ul>
+            <li>Subscription signup must complete in &lt; 5 seconds</li>
+            <li>Subscription management page must load in &lt; 2 seconds</li>
+            <li>Webhook processing must complete in &lt; 10 seconds</li>
+        </ul>
+
+        <h4>Security</h4>
+        <ul>
+            <li>All payment data must be handled by Stripe (PCI compliance)</li>
+            <li>Subscription data must be encrypted at rest</li>
+            <li>API endpoints must require authentication</li>
+            <li>Tenant isolation must be enforced at database level</li>
+        </ul>
+
+        <h2 id="architecture">6. Technical Architecture</h2>
+
+        <h3>System Architecture</h3>
+        <div class="diagram">
+Frontend (Next.js)
+├── Membership Plans Page
+├── Subscription Signup Page
+└── Subscription Management Page
+    │
+    └── UniversalPaymentCheckout
+        │
+        └── Next.js API Routes (Proxy)
+            ├── /api/proxy/membership-plans
+            ├── /api/billing/manage-subscription
+            └── /api/webhooks/stripe
+                │
+                └── Backend API (Spring Boot)
+                    ├── Membership Plan Controller
+                    ├── Membership Subscription Controller
+                    └── PostgreSQL Database
+                        │
+                        └── Stripe API
+        </div>
+
+        <h3>Data Flow</h3>
+
+        <h4>Subscription Signup Flow</h4>
+        <ol>
+            <li>User visits <code>/membership/plans</code></li>
+            <li>Frontend fetches plans: <code>GET /api/proxy/membership-plans</code></li>
+            <li>User selects a plan</li>
+            <li>User clicks "Subscribe"</li>
+            <li>Frontend redirects to <code>/membership/subscribe/[planId]</code></li>
+            <li>User enters payment info (via UniversalPaymentCheckout)</li>
+            <li>Frontend calls: <code>POST /api/billing/manage-subscription</code></li>
+            <li>Backend creates Stripe Checkout Session</li>
+            <li>User redirected to Stripe Checkout</li>
+            <li>User completes payment</li>
+            <li>Stripe webhook: <code>checkout.session.completed</code></li>
+            <li>Webhook handler creates <code>membership_subscription</code> record</li>
+            <li>User redirected to <code>/membership/manage?success=true</code></li>
+        </ol>
+
+        <h2 id="user-stories">7. User Stories</h2>
+
+        <div class="info-box">
+            <h4>US1: View Available Plans</h4>
+            <p><strong>As a user</strong>, I want to view available membership plans <strong>so I can</strong> choose the right plan for me.</p>
+            <p><strong>Acceptance Criteria:</strong></p>
+            <ul>
+                <li>User can see all active membership plans for their tenant</li>
+                <li>Each plan displays: name, price, billing interval, features, trial period</li>
+                <li>Plans are displayed in a clear, easy-to-compare format</li>
+                <li>Mobile-responsive layout</li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <h4>US2: Subscribe to Plan</h4>
+            <p><strong>As a user</strong>, I want to subscribe to a membership plan <strong>so I can</strong> access member benefits.</p>
+            <p><strong>Acceptance Criteria:</strong></p>
+            <ul>
+                <li>User can select a membership plan</li>
+                <li>User can enter payment information securely</li>
+                <li>User can complete subscription via Stripe Checkout</li>
+                <li>User receives confirmation email</li>
+            </ul>
+        </div>
+
+        <h2 id="api-specs">8. API Specifications</h2>
+
+        <h3>Membership Plan Endpoints</h3>
+
+        <h4>GET /api/membership-plans</h4>
+        <p><strong>Description:</strong> List all membership plans for the tenant</p>
+        <p><strong>Query Parameters:</strong></p>
+        <ul>
+            <li><code>tenantId.equals</code> (required) - Tenant ID</li>
+            <li><code>isActive.equals</code> (optional) - Filter by active status</li>
+            <li><code>sort</code> (optional) - Sort order (e.g., <code>price,asc</code>)</li>
+        </ul>
+
+        <h4>POST /api/membership-plans</h4>
+        <p><strong>Description:</strong> Create a new membership plan (admin only)</p>
+        <p><strong>Request Body:</strong></p>
+        <pre><code>{
+  "tenantId": "tenant_demo_001",
+  "planName": "Premium Membership",
+  "planCode": "PREMIUM",
+  "billingInterval": "MONTHLY",
+  "price": 19.99,
+  "currency": "USD",
+  "trialDays": 14,
+  "stripePriceId": "price_0987654321"
+}</code></pre>
+
+        <h2 id="database">9. Database Schema</h2>
+
+        <p>The database schema already includes the necessary tables. See the PRD markdown document for complete table structures.</p>
+
+        <h3>Required Indexes</h3>
+        <pre><code>-- Membership Plan Indexes
+CREATE INDEX IF NOT EXISTS idx_membership_plan_tenant_id
+ON membership_plan(tenant_id);
+
+CREATE INDEX IF NOT EXISTS idx_membership_subscription_user_profile_id
+ON membership_subscription(user_profile_id);</code></pre>
+
+        <h2 id="ui-design">10. UI/UX Design</h2>
+
+        <h3>Design System</h3>
+        <p>Follow the <strong>MOSC Styling Standards</strong>:</p>
+        <ul>
+            <li><strong>Color Palette</strong>: Warm earth tones (#F5F1E8 background, #8B7D6B primary)</li>
+            <li><strong>Typography</strong>: Crimson Text for headings, Source Sans Pro for body</li>
+            <li><strong>Spacing</strong>: Sacred spacing (2rem) for consistent vertical spacing</li>
+            <li><strong>Components</strong>: Use established card, button, and form patterns</li>
+        </ul>
+
+        <h3>Page Layouts</h3>
+
+        <h4>Membership Plans Page</h4>
+        <p>Display plan cards in a responsive grid (1 column mobile, 3 columns desktop) with pricing, features, and CTA buttons.</p>
+
+        <h4>Subscription Signup Page</h4>
+        <p>Show plan summary and payment form using UniversalPaymentCheckout component.</p>
+
+        <h2 id="implementation">11. Implementation Plan</h2>
+
+        <h3>Phase 1: Backend API Development (Week 1-2)</h3>
+        <ul>
+            <li>Create Membership Plan Controller</li>
+            <li>Create Membership Subscription Controller</li>
+            <li>Enhance Stripe Integration</li>
+            <li>Database Migrations</li>
+        </ul>
+
+        <h3>Phase 2: Frontend Components (Week 3-4)</h3>
+        <ul>
+            <li>Create Membership Plans Page</li>
+            <li>Create Subscription Signup Page</li>
+            <li>Create Subscription Management Page</li>
+            <li>Create Reusable Components</li>
+        </ul>
+
+        <h3>Phase 3: Payment Integration (Week 5)</h3>
+        <ul>
+            <li>Enhance billing endpoint</li>
+            <li>Enhance Stripe Webhook Handler</li>
+            <li>Test Payment Flows</li>
+        </ul>
+
+        <h3>Phase 4: Admin Interface (Week 6)</h3>
+        <ul>
+            <li>Create Admin Membership Plan Management</li>
+            <li>Create Admin Subscription Management</li>
+        </ul>
+
+        <h3>Phase 5: Testing & Polish (Week 7-8)</h3>
+        <ul>
+            <li>End-to-End Testing</li>
+            <li>Mobile Testing</li>
+            <li>Performance Optimization</li>
+            <li>Documentation</li>
+        </ul>
+
+        <h2 id="testing">12. Testing Strategy</h2>
+
+        <h3>Unit Testing</h3>
+        <ul>
+            <li>Backend service tests</li>
+            <li>Frontend component tests</li>
+        </ul>
+
+        <h3>Integration Testing</h3>
+        <ul>
+            <li>API endpoint tests</li>
+            <li>Payment integration tests</li>
+        </ul>
+
+        <h3>End-to-End Testing</h3>
+        <ul>
+            <li>User subscription flow</li>
+            <li>Recurring billing</li>
+            <li>Subscription management</li>
+        </ul>
+
+        <h2 id="security">13. Security Considerations</h2>
+
+        <h3>Payment Security</h3>
+        <ul>
+            <li>All payment data handled by Stripe (PCI compliance)</li>
+            <li>Verify Stripe webhook signatures</li>
+            <li>All API endpoints require JWT authentication</li>
+        </ul>
+
+        <h3>Data Security</h3>
+        <ul>
+            <li>Tenant isolation enforced at database level</li>
+            <li>Encrypt sensitive data at rest</li>
+            <li>Use HTTPS for all API calls</li>
+        </ul>
+
+        <h2 id="metrics">14. Success Metrics</h2>
+
+        <h3>Business Metrics</h3>
+        <ul>
+            <li><strong>Subscription Conversion Rate</strong>: Target 5% of registered users</li>
+            <li><strong>Monthly Recurring Revenue (MRR)</strong>: Target $10,000 within 3 months</li>
+            <li><strong>Churn Rate</strong>: Target &lt; 5% monthly churn</li>
+            <li><strong>Trial Conversion Rate</strong>: Target 30% of trials convert to paid</li>
+        </ul>
+
+        <h3>Technical Metrics</h3>
+        <ul>
+            <li><strong>API Performance</strong>: Target &lt; 200ms average response time</li>
+            <li><strong>Webhook Processing</strong>: Target &lt; 10 seconds</li>
+            <li><strong>Payment Success Rate</strong>: Target &gt; 95%</li>
+            <li><strong>System Uptime</strong>: Target 99.9%</li>
+        </ul>
+
+        <div class="success-box">
+            <h3>Appendix: Key References</h3>
+            <ul>
+                <li><a href="https://stripe.com/docs/billing/subscriptions/overview" target="_blank">Stripe Subscriptions Documentation</a></li>
+                <li><a href="https://stripe.com/docs/payments/checkout" target="_blank">Stripe Checkout Documentation</a></li>
+                <li><a href="https://stripe.com/docs/webhooks" target="_blank">Stripe Webhooks Documentation</a></li>
+                <li>Database Schema: <code>code_html_template/SQLS/Latest_Schema_Post__Blob_Claude_11.sql</code></li>
+                <li>API Documentation: <code>documentation/Swagger_API_Docs/api-docs.json</code></li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p><strong>Membership Subscription Feature - Product Requirements Document</strong></p>
+            <p>Version 1.0 | Date: 2025-01-27</p>
+            <p>For complete details, see the markdown version: <code>MEMBERSHIP_SUBSCRIPTION_PRD.md</code></p>
+        </div>
+    </div>
+</body>
+</html>
+
+
+
+
+

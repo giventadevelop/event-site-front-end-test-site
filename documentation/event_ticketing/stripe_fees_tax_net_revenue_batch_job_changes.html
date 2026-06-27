@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Job Changes: Stripe Fees, Tax, and Net Revenue</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+        }
+        .code-block {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 15px 0;
+        }
+        .file-path {
+            font-family: 'Courier New', monospace;
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #d63384;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .recommendation {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Batch Job Changes: Stripe Fees, Tax, and Net Revenue</h1>
+        <p><strong>Document Date:</strong> January 11, 2026</p>
+        <p><strong>Project Location:</strong> <code>E:\project_workspace\event-site-manager-batch-jobs</code></p>
+        <p><strong>Purpose:</strong> Detailed implementation guide for batch job changes to add eventId filtering, implement 10-day delay logic, retrieve BalanceTransaction.net, and calculate net_payout_amount.</p>
+
+        <div class="info-box">
+            <h2>Overview</h2>
+            <p>This document details all batch job changes required to:</p>
+            <ol>
+                <li>Add eventId filtering capability</li>
+                <li>Implement 10-day delay logic for normal batch runs</li>
+                <li>Change date filter to use purchaseDate instead of createdAt</li>
+                <li>Retrieve BalanceTransaction.net from Stripe API</li>
+                <li>Calculate and store net_payout_amount</li>
+                <li>Update DTOs and service methods</li>
+            </ol>
+        </div>
+
+        <h2>1. Update DTO: Add eventId and useDefaultDateRange</h2>
+
+        <h3>1.1 File: <span class="file-path">StripeFeesTaxUpdateRequest.java</span></h3>
+        <p><strong>Location:</strong> <code>src/main/java/com/eventmanager/batch/dto/StripeFeesTaxUpdateRequest.java</code></p>
+
+        <div class="code-block">
+package com.eventmanager.batch.dto;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Data;
+
+import java.time.ZonedDateTime;
+
+/**
+ * Request DTO for Stripe fees and tax update batch job.
+ */
+@Data
+public class StripeFeesTaxUpdateRequest {
+    /**
+     * Optional tenant ID to filter by. If not provided, processes all tenants.
+     */
+    private String tenantId;
+
+    /**
+     * NEW: Optional event ID to filter by. If not provided, processes all events.
+     */
+    private Long eventId;
+
+    /**
+     * Optional start date (ISO 8601 format). Process transactions created on or after this date.
+     * Note: For normal batch runs, this is calculated automatically if useDefaultDateRange is true.
+     */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+    private ZonedDateTime startDate;
+
+    /**
+     * Optional end date (ISO 8601 format). Process transactions created on or before this date.
+     * Note: For normal batch runs, this is calculated automatically if useDefaultDateRange is true.
+     */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+    private ZonedDateTime endDate;
+
+    /**
+     * NEW: If true, automatically calculate date range for normal batch runs.
+     * - Start Date: First day of current month
+     * - End Date: Today minus 10 days
+     * Default: false (use provided dates or process all if not provided)
+     */
+    private Boolean useDefaultDateRange = false;
+
+    /**
+     * If true, update even if stripe_fee_amount is already populated. Default: false.
+     */
+    private Boolean forceUpdate = false;
+}
+        </div>
+
+        <h2>2. Update Repository: Add eventId Filter and Use purchaseDate</h2>
+
+        <h3>2.1 File: <span class="file-path">EventTicketTransactionRepository.java</span></h3>
+        <p><strong>Location:</strong> <code>src/main/java/com/eventmanager/batch/repository/EventTicketTransactionRepository.java</code></p>
+
+        <div class="code-block">
+package com.eventmanager.batch.repository;
+
+import com.eventmanager.batch.domain.EventTicketTransaction;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.ZonedDateTime;
+import java.util.List;
+
+@Repository
+public interface EventTicketTransactionRepository extends JpaRepository&lt;EventTicketTransaction, Long&gt; {
+
+    /**
+     * Find distinct tenant IDs from event_ticket_transaction table.
+     * Used for multi-tenant processing.
+     */
+    @Query("SELECT DISTINCT t.tenantId FROM EventTicketTransaction t WHERE t.tenantId IS NOT NULL ORDER BY t.tenantId")
+    List&lt;String&gt; findDistinctTenantIds();
+
+    /**
+     * Find transactions that need fee/tax updates for a specific tenant.
+     * UPDATED: Added eventId filter and changed date filter to use purchaseDate.
+     * Used when processing a single tenant.
+     */
+    @Query("SELECT t FROM EventTicketTransaction t " +
+           "WHERE t.tenantId = :tenantId " +
+           "AND (:eventId IS NULL OR t.eventId = :eventId) " +  // NEW: Event ID filter
+           "AND (t.stripeFeeAmount IS NULL OR t.stripeFeeAmount = 0 OR :forceUpdate = true) " +
+           "AND t.stripePaymentIntentId IS NOT NULL " +
+           "AND t.status = 'COMPLETED' " +
+           "AND (:startDate IS NULL OR t.purchaseDate >= :startDate) " +  // CHANGED: Use purchaseDate instead of createdAt
+           "AND (:endDate IS NULL OR t.purchaseDate <= :endDate) " +      // CHANGED: Use purchaseDate instead of createdAt
+           "ORDER BY t.purchaseDate DESC")  // CHANGED: Order by purchaseDate
+    Page&lt;EventTicketTransaction&gt; findTransactionsNeedingUpdate(
+        @Param("tenantId") String tenantId,
+        @Param("eventId") Long eventId,  // NEW: Event ID parameter
+        @Param("forceUpdate") boolean forceUpdate,
+        @Param("startDate") ZonedDateTime startDate,
+        @Param("endDate") ZonedDateTime endDate,
+        Pageable pageable
+    );
+
+    /**
+     * Count transactions that need fee/tax updates for a specific tenant.
+     * UPDATED: Added eventId filter and changed date filter to use purchaseDate.
+     */
+    @Query("SELECT COUNT(t) FROM EventTicketTransaction t " +
+           "WHERE t.tenantId = :tenantId " +
+           "AND (:eventId IS NULL OR t.eventId = :eventId) " +  // NEW: Event ID filter
+           "AND (t.stripeFeeAmount IS NULL OR t.stripeFeeAmount = 0 OR :forceUpdate = true) " +
+           "AND t.stripePaymentIntentId IS NOT NULL " +
+           "AND t.status = 'COMPLETED' " +
+           "AND (:startDate IS NULL OR t.purchaseDate >= :startDate) " +  // CHANGED: Use purchaseDate
+           "AND (:endDate IS NULL OR t.purchaseDate <= :endDate)")        // CHANGED: Use purchaseDate
+    long countTransactionsNeedingUpdate(
+        @Param("tenantId") String tenantId,
+        @Param("eventId") Long eventId,  // NEW: Event ID parameter
+        @Param("forceUpdate") boolean forceUpdate,
+        @Param("startDate") ZonedDateTime startDate,
+        @Param("endDate") ZonedDateTime endDate
+    );
+}
+        </div>
+
+        <div class="warning-box">
+            <h4>⚠️ Important Changes:</h4>
+            <ul>
+                <li><strong>Event ID Filter:</strong> Added <code>AND (:eventId IS NULL OR t.eventId = :eventId)</code> to both queries</li>
+                <li><strong>Date Field Change:</strong> Changed from <code>t.createdAt</code> to <code>t.purchaseDate</code> for accurate 10-day delay calculation</li>
+                <li><strong>Order By:</strong> Changed to order by <code>purchaseDate</code> instead of <code>createdAt</code></li>
+            </ul>
+        </div>
+
+        <h2>3. Update Service: Add 10-Day Delay Logic and Event ID Support</h2>
+
+        <h3>3.1 File: <span class="file-path">StripeFeesTaxUpdateService.java</span></h3>
+        <p><strong>Location:</strong> <code>src/main/java/com/eventmanager/batch/service/StripeFeesTaxUpdateService.java</code></p>
+
+        <div class="code-block">
+// ✅ UPDATE processStripeFeesAndTax method signature
+@Async
+public CompletableFuture&lt;ProcessingStats&gt; processStripeFeesAndTax(
+    String tenantId,
+    Long eventId,  // NEW: Add eventId parameter
+    ZonedDateTime startDate,
+    ZonedDateTime endDate,
+    boolean forceUpdate,
+    boolean useDefaultDateRange  // NEW: Add useDefaultDateRange parameter
+) {
+    ProcessingStats globalStats = new ProcessingStats();
+    globalStats.startTime = ZonedDateTime.now();
+
+    // NEW: Calculate default date range if useDefaultDateRange is true
+    if (useDefaultDateRange) {
+        ZonedDateTime now = ZonedDateTime.now();
+        // Start Date: First day of current month at 00:00:00
+        startDate = now.withDayOfMonth(1)
+            .withHour(0)
+            .withMinute(0)
+            .withSecond(0)
+            .withNano(0);
+        // End Date: Today minus 10 days at 23:59:59.999
+        endDate = now.minusDays(10)
+            .withHour(23)
+            .withMinute(59)
+            .withSecond(59)
+            .withNano(999999999);
+
+        log.info("Using default date range for normal batch run: startDate={}, endDate={}", startDate, endDate);
+    }
+
+    log.info("Starting Stripe fees and tax update job - tenantId: {}, eventId: {}, startDate: {}, endDate: {}, forceUpdate: {}, useDefaultDateRange: {}",
+        tenantId, eventId, startDate, endDate, forceUpdate, useDefaultDateRange);
+
+    // Determine which tenants to process
+    List&lt;String&gt; tenantsToProcess = new ArrayList&lt;&gt;();
+    if (tenantId != null && !tenantId.isEmpty()) {
+        tenantsToProcess.add(tenantId);
+    } else {
+        // Process all tenants
+        tenantsToProcess = transactionRepository.findDistinctTenantIds();
+        log.info("Processing all tenants: {} tenants found", tenantsToProcess.size());
+    }
+
+    if (tenantsToProcess.isEmpty()) {
+        log.warn("No tenants found to process");
+        globalStats.endTime = ZonedDateTime.now();
+        return CompletableFuture.completedFuture(globalStats);
+    }
+
+    // Process each tenant sequentially
+    for (String currentTenantId : tenantsToProcess) {
+        log.info("Processing tenant: {}, eventId: {}", currentTenantId, eventId);
+        TenantStats tenantStats = processTenantTransactions(
+            currentTenantId,
+            eventId,  // NEW: Pass eventId
+            startDate,
+            endDate,
+            forceUpdate
+        );
+
+        globalStats.totalTenantsProcessed++;
+        globalStats.totalProcessed += tenantStats.processed;
+        globalStats.successfullyUpdated += tenantStats.updated;
+        globalStats.failed += tenantStats.failed;
+        globalStats.skipped += tenantStats.skipped;
+        globalStats.totalFeesRetrieved = globalStats.totalFeesRetrieved.add(tenantStats.totalFees);
+        globalStats.totalTaxRetrieved = globalStats.totalTaxRetrieved.add(tenantStats.totalTax);
+        globalStats.totalNetPayoutRetrieved = globalStats.totalNetPayoutRetrieved.add(tenantStats.totalNetPayout);  // NEW
+        globalStats.tenantStats.add(tenantStats);
+
+        log.info("Completed tenant {}: processed={}, updated={}, failed={}, skipped={}",
+            currentTenantId, tenantStats.processed, tenantStats.updated,
+            tenantStats.failed, tenantStats.skipped);
+    }
+
+    globalStats.endTime = ZonedDateTime.now();
+    long durationMs = java.time.Duration.between(globalStats.startTime, globalStats.endTime).toMillis();
+    globalStats.durationMs = durationMs;
+
+    // Generate summary report
+    log.info("=== Stripe Fees and Tax Update Job Summary ===");
+    log.info("Total Tenants Processed: {}", globalStats.totalTenantsProcessed);
+    log.info("Total Transactions Processed: {}", globalStats.totalProcessed);
+    log.info("Successfully Updated: {}", globalStats.successfullyUpdated);
+    log.info("Failed: {}", globalStats.failed);
+    log.info("Skipped: {}", globalStats.skipped);
+    log.info("Total Fees Retrieved: ${}", globalStats.totalFeesRetrieved);
+    log.info("Total Tax Retrieved: ${}", globalStats.totalTaxRetrieved);
+    log.info("Total Net Payout Retrieved: ${}", globalStats.totalNetPayoutRetrieved);  // NEW
+    log.info("Duration: {} ms", durationMs);
+
+    // ... existing failure rate logging ...
+
+    return CompletableFuture.completedFuture(globalStats);
+}
+
+// ✅ UPDATE processTenantTransactions method signature
+private TenantStats processTenantTransactions(
+    String tenantId,
+    Long eventId,  // NEW: Add eventId parameter
+    ZonedDateTime startDate,
+    ZonedDateTime endDate,
+    boolean forceUpdate
+) {
+    TenantStats stats = new TenantStats();
+    stats.tenantId = tenantId;
+
+    int batchSize = defaultBatchSize;
+    int offset = 0;
+    boolean hasMore = true;
+
+    while (hasMore) {
+        Pageable pageable = PageRequest.of(offset / batchSize, batchSize);
+        // UPDATED: Pass eventId to repository query
+        Page&lt;EventTicketTransaction&gt; transactions = transactionRepository.findTransactionsNeedingUpdate(
+            tenantId,
+            eventId,  // NEW: Pass eventId
+            forceUpdate,
+            startDate,
+            endDate,
+            pageable
+        );
+
+        if (transactions.isEmpty()) {
+            hasMore = false;
+            break;
+        }
+
+        for (EventTicketTransaction txn : transactions) {
+            stats.processed++;
+
+            try {
+                // Check if already populated (idempotency check, unless forceUpdate)
+                if (!forceUpdate && txn.getStripeFeeAmount() != null &&
+                    txn.getStripeFeeAmount().compareTo(BigDecimal.ZERO) > 0) {
+                    stats.skipped++;
+                    continue;
+                }
+
+                // Retrieve Stripe fee and net amount
+                StripeFeeTaxNetResult result = stripeFeesTaxService.getStripeFeeTaxAndNet(
+                    tenantId,
+                    txn.getStripePaymentIntentId(),
+                    txn.getStripeCheckoutSessionId()
+                );
+                delay(rateLimitDelayMs);
+
+                BigDecimal stripeFee = result.getFee();
+                BigDecimal stripeTax = result.getTax();
+                BigDecimal netPayout = result.getNetPayout();  // NEW: Get net payout from Stripe
+
+                // Calculate net_payout_amount if not provided by Stripe
+                // Net Payout = final_amount - stripe_fee_amount - stripe_amount_tax
+                BigDecimal calculatedNetPayout;
+                if (netPayout != null) {
+                    // Use Stripe's net amount (most accurate)
+                    calculatedNetPayout = netPayout;
+                } else {
+                    // Fallback: Calculate from final_amount, stripe_fee_amount, stripe_amount_tax
+                    BigDecimal finalAmount = txn.getFinalAmount() != null ? txn.getFinalAmount() : BigDecimal.ZERO;
+                    BigDecimal fee = stripeFee != null ? stripeFee : BigDecimal.ZERO;
+                    BigDecimal tax = stripeTax != null ? stripeTax : BigDecimal.ZERO;
+                    calculatedNetPayout = finalAmount.subtract(fee).subtract(tax);
+                }
+
+                // Update database via backend API
+                boolean success = backendApiService.updateTransaction(
+                    txn.getId(),
+                    stripeFee,
+                    stripeTax,
+                    calculatedNetPayout  // NEW: Pass net payout amount
+                );
+
+                if (success) {
+                    stats.updated++;
+                    if (stripeFee != null) {
+                        stats.totalFees = stats.totalFees.add(stripeFee);
+                    }
+                    if (stripeTax != null) {
+                        stats.totalTax = stats.totalTax.add(stripeTax);
+                    }
+                    if (calculatedNetPayout != null) {
+                        stats.totalNetPayout = stats.totalNetPayout.add(calculatedNetPayout);  // NEW
+                    }
+                    log.debug("Successfully updated transaction {} for tenant {}", txn.getId(), tenantId);
+                } else {
+                    stats.failed++;
+                    stats.errors.add(new TransactionError(txn.getId(), tenantId, "Backend API update failed"));
+                    log.warn("Failed to update transaction {} for tenant {}", txn.getId(), tenantId);
+                }
+            } catch (Exception e) {
+                stats.failed++;
+                stats.errors.add(new TransactionError(txn.getId(), tenantId, e.getMessage()));
+                log.error("Error processing transaction {} for tenant {}: {}",
+                    txn.getId(), tenantId, e.getMessage(), e);
+            }
+        }
+
+        offset += transactions.getNumberOfElements();
+
+        if (transactions.getNumberOfElements() &lt; batchSize) {
+            hasMore = false;
+        }
+    }
+
+    return stats;
+}
+
+// ✅ UPDATE ProcessingStats class to include net payout
+public static class ProcessingStats {
+    public int totalTenantsProcessed = 0;
+    public long totalProcessed = 0;
+    public long successfullyUpdated = 0;
+    public long failed = 0;
+    public long skipped = 0;
+    public BigDecimal totalFeesRetrieved = BigDecimal.ZERO;
+    public BigDecimal totalTaxRetrieved = BigDecimal.ZERO;
+    public BigDecimal totalNetPayoutRetrieved = BigDecimal.ZERO;  // NEW
+    public ZonedDateTime startTime;
+    public ZonedDateTime endTime;
+    public Long durationMs;
+    public List&lt;TenantStats&gt; tenantStats = new ArrayList&lt;&gt;();
+}
+
+// ✅ UPDATE TenantStats class to include net payout
+public static class TenantStats {
+    public String tenantId;
+    public long processed = 0;
+    public long updated = 0;
+    public long failed = 0;
+    public long skipped = 0;
+    public BigDecimal totalFees = BigDecimal.ZERO;
+    public BigDecimal totalTax = BigDecimal.ZERO;
+    public BigDecimal totalNetPayout = BigDecimal.ZERO;  // NEW
+    public List&lt;TransactionError&gt; errors = new ArrayList&lt;&gt;();
+}
+        </div>
+
+        <h2>4. Enhance Stripe Service: Retrieve BalanceTransaction.net</h2>
+
+        <h3>4.1 File: <span class="file-path">StripeFeesTaxService.java</span></h3>
+        <p><strong>Location:</strong> <code>src/main/java/com/eventmanager/batch/service/StripeFeesTaxService.java</code></p>
+
+        <div class="code-block">
+// ✅ ADD new result class to hold fee, tax, and net payout
+public static class StripeFeeTaxNetResult {
+    private final BigDecimal fee;
+    private final BigDecimal tax;
+    private final BigDecimal netPayout;
+
+    public StripeFeeTaxNetResult(BigDecimal fee, BigDecimal tax, BigDecimal netPayout) {
+        this.fee = fee;
+        this.tax = tax;
+        this.netPayout = netPayout;
+    }
+
+    public BigDecimal getFee() {
+        return fee;
+    }
+
+    public BigDecimal getTax() {
+        return tax;
+    }
+
+    public BigDecimal getNetPayout() {
+        return netPayout;
+    }
+}
+
+// ✅ ADD new method to retrieve fee, tax, and net payout together
+/**
+ * Retrieve Stripe fee, tax, and net payout amount for a payment intent.
+ * This method retrieves all three values in a single call for efficiency.
+ *
+ * @param tenantId The tenant ID
+ * @param paymentIntentId The Stripe payment intent ID
+ * @param checkoutSessionId The Stripe checkout session ID (optional, for tax retrieval)
+ * @return StripeFeeTaxNetResult containing fee, tax, and net payout, or null if not found
+ */
+public StripeFeeTaxNetResult getStripeFeeTaxAndNet(
+    String tenantId,
+    String paymentIntentId,
+    String checkoutSessionId
+) {
+    if (paymentIntentId == null || paymentIntentId.isEmpty()) {
+        log.warn("Payment intent ID is null or empty for tenant: {}", tenantId);
+        return new StripeFeeTaxNetResult(null, null, null);
+    }
+
+    String apiKey = getStripeApiKey(tenantId);
+    if (apiKey == null || apiKey.isEmpty()) {
+        log.warn("Stripe API key not found for tenant: {}", tenantId);
+        return new StripeFeeTaxNetResult(null, null, null);
+    }
+
+    try {
+        Stripe.apiKey = apiKey;
+
+        // Step 1: Retrieve PaymentIntent
+        log.debug("Retrieving PaymentIntent {} for tenant {}", paymentIntentId, tenantId);
+        PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentId);
+
+        // Step 2: Get charges for this PaymentIntent
+        Map&lt;String, Object&gt; chargeParams = new java.util.HashMap&lt;&gt;();
+        chargeParams.put("payment_intent", paymentIntentId);
+        chargeParams.put("limit", 1);
+
+        List&lt;Charge&gt; charges = Charge.list(chargeParams).getData();
+
+        if (charges.isEmpty()) {
+            log.warn("No charges found for PaymentIntent {} for tenant {}", paymentIntentId, tenantId);
+            return new StripeFeeTaxNetResult(null, null, null);
+        }
+
+        Charge charge = charges.get(0);
+
+        // Step 3: Get balance transaction (contains fee and net)
+        if (charge.getBalanceTransaction() == null) {
+            log.warn("Charge {} missing balance_transaction for tenant {}", charge.getId(), tenantId);
+            return new StripeFeeTaxNetResult(null, null, null);
+        }
+
+        String balanceTransactionId = charge.getBalanceTransaction();
+        log.debug("Retrieving balance transaction {} for tenant {}", balanceTransactionId, tenantId);
+        BalanceTransaction balanceTx = BalanceTransaction.retrieve(balanceTransactionId);
+
+        // Step 4: Extract fee (convert from cents to dollars)
+        Long feeInCents = balanceTx.getFee();
+        BigDecimal feeAmount = null;
+        if (feeInCents != null) {
+            feeAmount = BigDecimal.valueOf(feeInCents).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        }
+
+        // NEW: Step 5: Extract net amount (convert from cents to dollars)
+        Long netInCents = balanceTx.getNet();
+        BigDecimal netAmount = null;
+        if (netInCents != null) {
+            netAmount = BigDecimal.valueOf(netInCents).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            log.debug("Retrieved Stripe net payout {} for PaymentIntent {} for tenant {}",
+                netAmount, paymentIntentId, tenantId);
+        }
+
+        // Step 6: Retrieve tax amount (existing logic)
+        BigDecimal taxAmount = getStripeTax(tenantId, paymentIntentId, checkoutSessionId);
+
+        log.debug("Retrieved Stripe fee={}, tax={}, net={} for PaymentIntent {} for tenant {}",
+            feeAmount, taxAmount, netAmount, paymentIntentId, tenantId);
+
+        return new StripeFeeTaxNetResult(feeAmount, taxAmount, netAmount);
+
+    } catch (StripeException e) {
+        log.error("Stripe API error retrieving fee/tax/net for PaymentIntent {} for tenant {}: {}",
+            paymentIntentId, tenantId, e.getMessage());
+        return new StripeFeeTaxNetResult(null, null, null);
+    } catch (Exception e) {
+        log.error("Unexpected error retrieving Stripe fee/tax/net for PaymentIntent {} for tenant {}: {}",
+            paymentIntentId, tenantId, e.getMessage(), e);
+        return new StripeFeeTaxNetResult(null, null, null);
+    }
+}
+        </div>
+
+        <h2>5. Update Backend API Service: Include netPayoutAmount</h2>
+
+        <h3>5.1 File: <span class="file-path">BackendApiService.java</span></h3>
+        <p><strong>Location:</strong> <code>src/main/java/com/eventmanager/batch/service/BackendApiService.java</code></p>
+
+        <div class="code-block">
+// ✅ UPDATE updateTransaction method to include netPayoutAmount
+/**
+ * Update transaction with Stripe fee, tax, and net payout amount via backend API.
+ *
+ * @param transactionId The transaction ID
+ * @param stripeFee The Stripe fee amount
+ * @param stripeTax The Stripe tax amount
+ * @param netPayout The net payout amount (finalAmount - stripeFee - stripeTax)
+ * @return true if update was successful, false otherwise
+ */
+public boolean updateTransaction(
+    Long transactionId,
+    BigDecimal stripeFee,
+    BigDecimal stripeTax,
+    BigDecimal netPayout  // NEW: Add netPayout parameter
+) {
+    try {
+        String backendUrl = backendApiBaseUrl + "/api/event-ticket-transactions/" + transactionId;
+
+        // Prepare PATCH payload
+        Map&lt;String, Object&gt; payload = new HashMap&lt;&gt;();
+        payload.put("id", transactionId);
+
+        if (stripeFee != null) {
+            payload.put("stripeFeeAmount", stripeFee);
+        }
+        if (stripeTax != null) {
+            payload.put("stripeAmountTax", stripeTax);
+        }
+        if (netPayout != null) {  // NEW: Include netPayoutAmount
+            payload.put("netPayoutAmount", netPayout);
+        }
+
+        // Get JWT token
+        String jwt = getCachedJwt();
+        if (jwt == null) {
+            jwt = generateJwt();
+        }
+
+        // Make PATCH request
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(jwt);
+
+        HttpEntity&lt;Map&lt;String, Object&gt;&gt; requestEntity = new HttpEntity&lt;&gt;(payload, headers);
+
+        ResponseEntity&lt;?&gt; response = restTemplate.exchange(
+            backendUrl,
+            HttpMethod.PATCH,
+            requestEntity,
+            Object.class
+        );
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+            log.debug("Successfully updated transaction {} with fee={}, tax={}, netPayout={}",
+                transactionId, stripeFee, stripeTax, netPayout);
+            return true;
+        } else {
+            log.warn("Failed to update transaction {}: HTTP {}", transactionId, response.getStatusCode());
+            return false;
+        }
+
+    } catch (Exception e) {
+        log.error("Error updating transaction {}: {}", transactionId, e.getMessage(), e);
+        return false;
+    }
+}
+        </div>
+
+        <h2>6. Update Controller: Accept New Parameters</h2>
+
+        <h3>6.1 File: <span class="file-path">BatchJobController.java</span></h3>
+        <p><strong>Location:</strong> <code>src/main/java/com/eventmanager/batch/controller/BatchJobController.java</code></p>
+
+        <div class="code-block">
+// ✅ UPDATE triggerStripeFeesTaxUpdate endpoint
+@PostMapping("/stripe-fees-tax-update")
+public ResponseEntity&lt;StripeFeesTaxUpdateResponse&gt; triggerStripeFeesTaxUpdate(
+    @Valid @RequestBody StripeFeesTaxUpdateRequest request
+) {
+    try {
+        log.info("Received request to trigger Stripe fees and tax update job - tenantId: {}, eventId: {}, useDefaultDateRange: {}",
+            request.getTenantId(), request.getEventId(), request.getUseDefaultDateRange());
+
+        // Start async processing
+        CompletableFuture&lt;StripeFeesTaxUpdateService.ProcessingStats&gt; future =
+            stripeFeesTaxUpdateService.processStripeFeesAndTax(
+                request.getTenantId(),
+                request.getEventId(),  // NEW: Pass eventId
+                request.getStartDate(),
+                request.getEndDate(),
+                request.getForceUpdate() != null ? request.getForceUpdate() : false,
+                request.getUseDefaultDateRange() != null ? request.getUseDefaultDateRange() : false  // NEW: Pass useDefaultDateRange
+            );
+
+        // Generate job ID
+        String jobId = "stripe-fees-tax-update-" + System.currentTimeMillis();
+
+        // Estimate records (optional - can be calculated from repository count)
+        Long estimatedRecords = null;
+        if (request.getTenantId() != null) {
+            estimatedRecords = transactionRepository.countTransactionsNeedingUpdate(
+                request.getTenantId(),
+                request.getEventId(),  // NEW: Pass eventId
+                request.getForceUpdate() != null ? request.getForceUpdate() : false,
+                request.getStartDate(),
+                request.getEndDate()
+            );
+        }
+
+        // Return immediate response
+        StripeFeesTaxUpdateResponse response = new StripeFeesTaxUpdateResponse();
+        response.setJobId(jobId);
+        response.setStatus("STARTED");
+        response.setTenantId(request.getTenantId());
+        response.setEventId(request.getEventId());  // NEW: Include eventId in response
+        response.setStartDate(request.getStartDate());
+        response.setEndDate(request.getEndDate());
+        response.setForceUpdate(request.getForceUpdate() != null ? request.getForceUpdate() : false);
+        response.setEstimatedRecords(estimatedRecords);
+        response.setMessage("Batch job started successfully. Processing will continue in the background.");
+
+        return ResponseEntity.ok(response);
+
+    } catch (Exception e) {
+        log.error("Failed to trigger Stripe fees and tax update job: {}", e.getMessage(), e);
+        StripeFeesTaxUpdateResponse errorResponse = new StripeFeesTaxUpdateResponse();
+        errorResponse.setJobId(null);
+        errorResponse.setStatus("FAILED");
+        errorResponse.setMessage("Failed to start batch job: " + e.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+}
+        </div>
+
+        <h3>6.2 Update Response DTO</h3>
+        <p><strong>File:</strong> <code>src/main/java/com/eventmanager/batch/dto/StripeFeesTaxUpdateResponse.java</code></p>
+
+        <div class="code-block">
+// ✅ ADD eventId to response DTO
+@Data
+public class StripeFeesTaxUpdateResponse {
+    private String jobId;
+    private String status; // STARTED, IN_PROGRESS, COMPLETED, FAILED
+    private String tenantId;
+    private Long eventId;  // NEW: Add eventId field
+    private ZonedDateTime startDate;
+    private ZonedDateTime endDate;
+    private Boolean forceUpdate;
+    private Long estimatedRecords;
+    private String estimatedCompletionTime;
+    private String message;
+}
+        </div>
+
+        <h2>7. Update Scheduler: Use Default Date Range</h2>
+
+        <h3>7.1 File: <span class="file-path">BatchJobScheduler.java</span></h3>
+        <p><strong>Location:</strong> <code>src/main/java/com/eventmanager/batch/scheduler/BatchJobScheduler.java</code></p>
+
+        <div class="code-block">
+// ✅ ADD or UPDATE scheduled method for Stripe fees and tax update
+@Scheduled(cron = "${batch.stripe-fees-tax.schedule.cron:0 0 2 * * ?}") // Daily at 2:00 AM (default)
+public void runStripeFeesTaxUpdateJob() {
+    log.info("Starting scheduled Stripe fees and tax update job");
+
+    try {
+        StripeFeesTaxUpdateRequest request = new StripeFeesTaxUpdateRequest();
+        request.setTenantId(null); // Process all tenants
+        request.setEventId(null);  // Process all events
+        request.setStartDate(null); // Will be calculated automatically
+        request.setEndDate(null);   // Will be calculated automatically
+        request.setUseDefaultDateRange(true); // NEW: Enable automatic date calculation
+        request.setForceUpdate(false); // Only update missing values
+
+        CompletableFuture&lt;StripeFeesTaxUpdateService.ProcessingStats&gt; future =
+            stripeFeesTaxUpdateService.processStripeFeesAndTax(
+                request.getTenantId(),
+                request.getEventId(),
+                request.getStartDate(),
+                request.getEndDate(),
+                request.getForceUpdate(),
+                request.getUseDefaultDateRange()
+            );
+
+        log.info("Scheduled Stripe fees and tax update job started successfully");
+
+    } catch (Exception e) {
+        log.error("Failed to start scheduled Stripe fees and tax update job: {}", e.getMessage(), e);
+    }
+}
+        </div>
+
+        <div class="info-box">
+            <h4>Configuration:</h4>
+            <p>Add to <code>application.properties</code> or <code>application.yml</code>:</p>
+            <div class="code-block">
+# Stripe Fees and Tax Update Batch Job Schedule
+# Default: Daily at 2:00 AM
+batch.stripe-fees-tax.schedule.cron=0 0 2 * * ?
+batch.stripe-fees-tax.batch-size=100
+batch.stripe-fees-tax.rate-limit-delay-ms=100
+            </div>
+        </div>
+
+        <h2>8. Testing Checklist</h2>
+
+        <h3>8.1 Unit Testing</h3>
+        <ul>
+            <li>✅ Test eventId filtering with null, specific ID, and non-existent ID</li>
+            <li>✅ Test 10-day delay date range calculation (useDefaultDateRange=true)</li>
+            <li>✅ Test purchaseDate filtering vs createdAt filtering</li>
+            <li>✅ Test net payout calculation with various fee/tax combinations</li>
+            <li>✅ Test BalanceTransaction.net retrieval from Stripe</li>
+        </ul>
+
+        <h3>8.2 Integration Testing</h3>
+        <ul>
+            <li>✅ Test batch job with real Stripe test transactions</li>
+            <li>✅ Verify Stripe API rate limiting is respected</li>
+            <li>✅ Test multi-tenant processing with multiple tenants</li>
+            <li>✅ Test eventId filtering processes only specified event</li>
+            <li>✅ Test scheduled batch job execution</li>
+            <li>✅ Test on-demand API endpoint with various parameters</li>
+            <li>✅ Verify net_payout_amount is calculated and stored correctly</li>
+        </ul>
+
+        <h3>8.3 Data Verification</h3>
+        <ul>
+            <li>✅ Verify stripe_fee_amount matches Stripe Dashboard</li>
+            <li>✅ Verify stripe_amount_tax matches Stripe Dashboard</li>
+            <li>✅ Verify net_payout_amount matches BalanceTransaction.net from Stripe</li>
+            <li>✅ Verify 10-day delay logic only processes transactions 10+ days old</li>
+            <li>✅ Verify eventId filtering works correctly</li>
+            <li>✅ Verify purchaseDate filtering is more accurate than createdAt</li>
+        </ul>
+
+        <h2>9. File Modification Summary</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>File Path</th>
+                    <th>Changes</th>
+                    <th>Priority</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="file-path">dto/StripeFeesTaxUpdateRequest.java</span></td>
+                    <td>Add eventId and useDefaultDateRange fields</td>
+                    <td>HIGH</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">dto/StripeFeesTaxUpdateResponse.java</span></td>
+                    <td>Add eventId field</td>
+                    <td>HIGH</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">repository/EventTicketTransactionRepository.java</span></td>
+                    <td>Add eventId parameter, change to use purchaseDate</td>
+                    <td>HIGH</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">service/StripeFeesTaxUpdateService.java</span></td>
+                    <td>Add eventId parameter, implement 10-day delay logic, add net payout tracking</td>
+                    <td>HIGH</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">service/StripeFeesTaxService.java</span></td>
+                    <td>Add getStripeFeeTaxAndNet method, retrieve BalanceTransaction.net</td>
+                    <td>HIGH</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">service/BackendApiService.java</span></td>
+                    <td>Update updateTransaction to include netPayoutAmount</td>
+                    <td>HIGH</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">controller/BatchJobController.java</span></td>
+                    <td>Update endpoint to accept and pass eventId and useDefaultDateRange</td>
+                    <td>HIGH</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">scheduler/BatchJobScheduler.java</span></td>
+                    <td>Update scheduled method to use default date range</td>
+                    <td>HIGH</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">application.properties</span></td>
+                    <td>Add batch job schedule configuration</td>
+                    <td>MEDIUM</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>10. Deployment Steps</h2>
+
+        <div class="recommendation">
+            <h3>Batch Job Deployment Sequence:</h3>
+            <ol>
+                <li><strong>Step 1: Update Code</strong>
+                    <ul>
+                        <li>Update all DTOs, repositories, services, and controllers</li>
+                        <li>Rebuild application</li>
+                        <li>Run unit tests</li>
+                    </ul>
+                </li>
+                <li><strong>Step 2: Deploy Batch Job</strong>
+                    <ul>
+                        <li>Deploy updated batch job application</li>
+                        <li>Verify application starts successfully</li>
+                        <li>Check logs for any errors</li>
+                    </ul>
+                </li>
+                <li><strong>Step 3: Test On-Demand Trigger</strong>
+                    <ul>
+                        <li>Test API endpoint with eventId parameter</li>
+                        <li>Test API endpoint with useDefaultDateRange=true</li>
+                        <li>Verify transactions are filtered correctly</li>
+                        <li>Verify net_payout_amount is calculated and stored</li>
+                    </ul>
+                </li>
+                <li><strong>Step 4: Test Scheduled Job</strong>
+                    <ul>
+                        <li>Wait for scheduled execution or trigger manually</li>
+                        <li>Verify only transactions 10+ days old are processed</li>
+                        <li>Verify only current month transactions are processed</li>
+                        <li>Monitor logs for any issues</li>
+                    </ul>
+                </li>
+                <li><strong>Step 5: Verification</strong>
+                    <ul>
+                        <li>Verify stripe_fee_amount, stripe_amount_tax, and net_payout_amount are populated</li>
+                        <li>Verify calculations match Stripe Dashboard</li>
+                        <li>Monitor for any errors or performance issues</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <h2>11. Related Documentation</h2>
+        <ul>
+            <li><a href="stripe_fees_tax_net_revenue_complete_implementation_plan.html">Complete Implementation Plan</a></li>
+            <li><a href="stripe_fees_tax_net_revenue_frontend_changes.html">Frontend Changes</a></li>
+            <li><a href="stripe_fees_tax_net_revenue_backend_changes.html">Backend Changes</a></li>
+            <li><strong>Database Schema:</strong> <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></li>
+        </ul>
+
+        <hr>
+        <p><em>Document generated: January 11, 2026</em></p>
+        <p><em>Last updated: January 11, 2026</em></p>
+    </div>
+</body>
+</html>

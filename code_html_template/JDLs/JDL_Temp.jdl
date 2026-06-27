@@ -1,0 +1,726 @@
+// ===================================================
+// MULTI-TENANT EVENT MANAGEMENT SYSTEM - JHipster JDL
+// Generated from PostgreSQL Schema - ALL COMMENTS ADDRESSED
+// ===================================================
+
+// Global Options
+service all with serviceImpl
+paginate all with pagination
+dto all with mapstruct
+search * with no
+filter all
+
+// Microservice definition
+microservice * with eventmanagement
+
+// Entity Definitions
+/**
+ * TenantOrganization and TenantSettings JDL Entities
+ * Generated from Java domain classes
+ */
+
+// Enums for better data consistency
+
+// TenantOrganization entity
+entity TenantOrganization {
+    id Long,
+    tenantId String required unique maxlength(255),
+    organizationName String required maxlength(255),
+    domain String unique maxlength(255),
+    primaryColor String maxlength(7),
+    secondaryColor String maxlength(7),
+    logoUrl String maxlength(1024),
+    contactEmail String required maxlength(255),
+    contactPhone String maxlength(50),
+    subscriptionPlan String maxlength(20),
+    subscriptionStatus String maxlength(20),
+    subscriptionStartDate LocalDate,
+    subscriptionEndDate LocalDate,
+    monthlyFeeUsd BigDecimal,
+    stripeCustomerId String maxlength(255),
+    isActive Boolean,
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+// TenantSettings entity
+entity TenantSettings {
+    id Long,
+    tenantId String required unique maxlength(255),
+    allowUserRegistration Boolean,
+    requireAdminApproval Boolean,
+    enableWhatsappIntegration Boolean,
+    enableEmailMarketing Boolean,
+    whatsappApiKey String maxlength(500),
+    emailProviderConfig String maxlength(2048),
+    maxEventsPerMonth Integer,
+    maxAttendeesPerEvent Integer,
+    enableGuestRegistration Boolean,
+    maxGuestsPerAttendee Integer,
+    defaultEventCapacity Integer,
+    platformFeePercentage BigDecimal,
+    customCss String maxlength(8192),
+    customJs String maxlength(16384),
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+entity UserProfile {
+    id Long,
+    tenantId String maxlength(255),
+    userId String required unique maxlength(255),
+    firstName String maxlength(255),
+    lastName String maxlength(255),
+    email String maxlength(255),
+    phone String maxlength(255),
+    addressLine1 String maxlength(255),
+    addressLine2 String maxlength(255),
+    city String maxlength(255),
+    state String maxlength(255),
+    zipCode String maxlength(255),
+    country String maxlength(255),
+    notes String maxlength(255),
+    familyName String maxlength(255),
+    cityTown String maxlength(255),
+    district String maxlength(255),
+    educationalInstitution String maxlength(255),
+    profileImageUrl String maxlength(255),
+    isEmailSubscribed Boolean,
+    emailSubscriptionToken String maxlength(255),
+    isEmailSubscriptionTokenUsed Boolean,
+    userStatus String maxlength(50),
+    userRole String maxlength(50),
+    reviewedByAdminAt LocalDate,
+    requestId String unique maxlength(255),
+    requestReason String maxlength(1000),
+    status String maxlength(50),
+    adminComments String maxlength(1000),
+    submittedAt ZonedDateTime,
+    reviewedAt ZonedDateTime,
+    approvedAt ZonedDateTime,
+    rejectedAt ZonedDateTime,
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+entity UserSubscription {
+    id Long,
+    tenantId String maxlength(255),
+    stripeCustomerId String unique maxlength(255),
+    stripeSubscriptionId String unique maxlength(255),
+    stripePriceId String maxlength(255),
+    stripeCurrentPeriodEnd ZonedDateTime,
+    status String required maxlength(255)
+}
+
+entity UserTask {
+    id Long,
+    tenantId String maxlength(255),
+    title String required maxlength(255),
+    description String maxlength(4096),
+    status String required maxlength(255),
+    priority String required maxlength(255),
+    dueDate ZonedDateTime,
+    completed Boolean required,
+    assigneeName String maxlength(255),
+    assigneeContactPhone String maxlength(50),
+    assigneeContactEmail String maxlength(255),
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+entity EventTypeDetails {
+    id Long,
+    tenantId String maxlength(255),
+    name String required unique maxlength(255),
+    description String maxlength(255),
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+// UPDATED: EventDetails entity with ALL required guest management fields
+entity EventDetails {
+    id Long,
+    tenantId String maxlength(255),
+    title String required maxlength(255),
+    caption String maxlength(255),
+    description String maxlength(255),
+    startDate LocalDate required,
+    endDate LocalDate required,
+    startTime String required maxlength(100),
+    endTime String required maxlength(100),
+    timezone String required,
+    location String maxlength(255),
+    directionsToVenue String maxlength(255),
+    capacity Integer,
+    admissionType String maxlength(50),
+    isActive Boolean,
+    // COMMENT 1 ADDRESSED: All guest management fields added
+    maxGuestsPerAttendee Integer min(0),
+    allowGuests Boolean,
+    requireGuestApproval Boolean,
+    enableGuestPricing Boolean,
+    enableQrCode Boolean,
+    isRegistrationRequired Boolean,
+    isSportsEvent Boolean,
+    isLive Boolean,
+    isFeaturedEvent Boolean required,
+    featuredEventPriority Integer required,
+    liveEventPriority Integer required,
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+entity EventTicketTransaction {
+    id Long,
+    tenantId String maxlength(255),
+    transactionReference String unique maxlength(255),
+    email String required maxlength(255),
+    firstName String maxlength(255),
+    lastName String maxlength(255),
+    phone String maxlength(255),
+    quantity Integer,
+    pricePerUnit BigDecimal required,
+    totalAmount BigDecimal required,
+    taxAmount BigDecimal,
+    platformFeeAmount BigDecimal,
+    serviceFee BigDecimal,
+    discountCodeId Long,
+    discountAmount BigDecimal,
+    finalAmount BigDecimal required,
+    status String required maxlength(255),
+    paymentMethod String maxlength(100),
+    paymentReference String maxlength(255),
+    purchaseDate ZonedDateTime required,
+    confirmationSentAt ZonedDateTime,
+    refundAmount BigDecimal,
+    refundDate ZonedDateTime,
+    refundReason String maxlength(2048),
+    stripeCheckoutSessionId String maxlength(255),
+    stripePaymentIntentId String maxlength(255),
+    // Stripe-specific fields
+    stripeCustomerId String maxlength(255), // Stripe customer ID
+    stripePaymentStatus String maxlength(50), // Stripe payment status
+    stripeCustomerEmail String maxlength(255), // Stripe customer email
+    stripePaymentCurrency String maxlength(10), // Stripe payment currency
+    stripeAmountDiscount BigDecimal, // Stripe discount amount
+    stripeAmountTax BigDecimal, // Stripe tax amount
+    stripeFeeAmount BigDecimal, // Stripe fee amount
+    qrCodeImageUrl String maxlength(2048),
+    eventId Long,
+    userId Long,
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required,
+    checkInStatus String maxlength(50), // NOT_CHECKED_IN, CHECKED_IN, NO_SHOW
+    numberOfGuestsCheckedIn Integer,
+    checkInTime ZonedDateTime,
+    checkOutTime ZonedDateTime
+}
+
+// NEW: EventTicketTransactionItem entity for line items (multi-ticket-type support)
+entity EventTicketTransactionItem {
+    id Long,
+    tenantId String maxlength(255),
+    transactionId Long required, // FK to EventTicketTransaction
+    ticketTypeId Long required,  // FK to EventTicketType
+    quantity Integer required min(1),
+    pricePerUnit BigDecimal required,
+    totalAmount BigDecimal required,
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+entity EventOrganizer {
+    id Long,
+    tenantId String maxlength(255),
+    title String required maxlength(255),
+    designation String maxlength(255),
+    contactEmail String maxlength(255),
+    contactPhone String maxlength(255),
+    isPrimary Boolean,
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+entity EventTicketType {
+    id Long,
+    tenantId String maxlength(255),
+    name String required maxlength(255),
+    description String maxlength(255),
+    isServiceFeeIncluded Boolean,
+    serviceFee BigDecimal,
+    price BigDecimal required,
+    code String required maxlength(255),
+    availableQuantity Integer,
+    soldQuantity Integer,
+    remainingQuantity  Integer,
+    isActive Boolean,
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+entity EventPoll {
+    id Long,
+    tenantId String maxlength(255),
+    title String required maxlength(255),
+    description String maxlength(255),
+    isActive Boolean,
+    startDate ZonedDateTime required,
+    endDate ZonedDateTime,
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+entity EventPollOption {
+    id Long,
+    tenantId String maxlength(255),
+    optionText String required maxlength(255),
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+entity EventPollResponse {
+    id Long,
+    tenantId String maxlength(255),
+    comment String maxlength(255),
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+entity EventAdmin {
+    id Long,
+    tenantId String maxlength(255),
+    role String required maxlength(255),
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+entity EventAdminAuditLog {
+    id Long,
+    tenantId String maxlength(255),
+    action String required maxlength(255),
+    tableName String required maxlength(255),
+    recordId String required maxlength(255),
+    changes String maxlength(8192),
+    createdAt ZonedDateTime required
+}
+
+entity EventCalendarEntry {
+    id Long,
+    tenantId String maxlength(255),
+    calendarProvider String required maxlength(255),
+    externalEventId String maxlength(255),
+    calendarLink String required maxlength(255),
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+// UPDATED: EventMedia entity with corrected field length
+entity EventMedia {
+    id Long,
+    tenantId String maxlength(255),
+    title String required maxlength(255),
+    description String maxlength(2048),
+    eventMediaType String required maxlength(255),
+    storageType String required maxlength(255),
+    fileUrl String maxlength(2048),
+    contentType String maxlength(255),
+    fileSize Integer,
+    isPublic Boolean,
+    eventFlyer Boolean,
+    isEventManagementOfficialDocument Boolean,
+    preSignedUrl String maxlength(2048),
+    preSignedUrlExpiresAt ZonedDateTime,
+    altText String maxlength(500),
+    displayOrder Integer,
+    downloadCount Integer,
+    isFeaturedVideo Boolean,
+    featuredVideoUrl String maxlength(2048),
+    isHeroImage Boolean,
+    isActiveHeroImage Boolean,
+    isHomePageHeroImage Boolean required,
+    isFeaturedEventImage Boolean required,
+    isLiveEventImage Boolean required,
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required,
+    eventId Long,
+    uploadedById Long
+}
+
+entity UserPaymentTransaction {
+    id Long,
+    tenantId String required maxlength(255),
+    transactionType String maxlength(20),
+    amount BigDecimal required,
+    currency String required maxlength(3),
+    stripePaymentIntentId String maxlength(255),
+    stripeTransferGroup String maxlength(255),
+    platformFeeAmount BigDecimal,
+    tenantAmount BigDecimal,
+    status String maxlength(20),
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+
+/**
+ * Event Guest Management JDL Model
+ * Enhanced entities for sophisticated guest management with age-based pricing
+ */
+
+// Event Attendee Guest entity for managing individual guests
+entity EventAttendeeGuest {
+    id Long,
+    tenantId String maxlength(255),
+    firstName String maxlength(255),
+    lastName String maxlength(255),
+    email String maxlength(255),
+    phone String maxlength(255),
+    ageGroup String maxlength(20),
+    relationship String maxlength(50),
+    specialRequirements String maxlength(500),
+    registrationStatus String maxlength(50),
+    checkInStatus String maxlength(50),
+    checkInTime ZonedDateTime,
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+// UPDATED: Event Guest Pricing entity with ALL required fields and validation
+entity EventGuestPricing {
+    id Long,
+    tenantId String maxlength(255),
+    ageGroup String maxlength(20),
+    // COMMENT 4 ADDRESSED: Added required validation and min constraint
+    price BigDecimal required min(0),
+    // COMMENT 2 ADDRESSED: All missing fields added
+    isActive Boolean,
+    validFrom LocalDate,
+    validTo LocalDate,
+    description String maxlength(255),
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+entity EventAttendee {
+    id Long,
+    firstName String maxlength(255),
+    lastName String maxlength(255),
+    email String maxlength(255),
+    phone String maxlength(255),
+    isMember Boolean,
+    eventId Long required,
+    userId Long,
+    tenantId String maxlength(255),
+    registrationStatus String required maxlength(50), // PENDING, CONFIRMED, CANCELLED, WAITLISTED
+    registrationDate ZonedDateTime required,
+    confirmationDate ZonedDateTime,
+    cancellationDate ZonedDateTime,
+    cancellationReason String maxlength(500),
+    attendeeType String maxlength(50), // MEMBER, GUEST, VIP, SPEAKER
+    specialRequirements String maxlength(1000), // Dietary, accessibility, etc.
+    emergencyContactName String maxlength(255),
+    emergencyContactPhone String maxlength(50),
+    checkInStatus String maxlength(50), // NOT_CHECKED_IN, CHECKED_IN, NO_SHOW
+    checkInTime ZonedDateTime,
+    totalNumberOfGuests Integer,
+    numberOfGuestsCheckedIn Integer,
+    notes String maxlength(1000), // Admin notes
+    qrCodeData String maxlength(1000), // QR code for check-in
+    qrCodeGenerated Boolean,
+    qrCodeGeneratedAt ZonedDateTime,
+    dietaryRestrictions String maxlength(1000),
+    accessibilityNeeds String maxlength(1000),
+    emergencyContactRelationship String maxlength(100),
+    checkOutTime ZonedDateTime,
+    attendanceRating Integer min(1) max(5), // Valid range: 1–5
+    feedback String maxlength(1000),
+    registrationSource String maxlength(100), // e.g., DIRECT, REFERRAL, PARTNER
+    waitListPosition Integer min(1), // Must be > 0 if present
+    priorityScore Integer,
+
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+
+entity QrCodeUsage {
+    id Long,
+    tenantId String maxlength(255),
+    qrCodeData String required maxlength(1000),
+    generatedAt ZonedDateTime required,
+    usedAt ZonedDateTime,
+    usageCount Integer,
+    lastScannedBy String maxlength(255), // User who scanned
+    createdAt ZonedDateTime required
+}
+
+entity BulkOperationLog {
+    id Long,
+    tenantId String maxlength(255),
+    operationType String required maxlength(50), // BULK_CONFIRM, BULK_CHECKIN, BULK_CANCEL
+    targetCount Integer required,
+    successCount Integer,
+    errorCount Integer,
+    operationDetails String maxlength(16384), // JSON with detailed results
+    createdAt ZonedDateTime required
+}
+
+entity DiscountCode {
+    id Long,
+    code String required maxlength(50),
+    description String maxlength(255),
+    discountType String required maxlength(20), // PERCENT or FIXED
+    discountValue BigDecimal required,
+    maxUses Integer,
+    usesCount Integer,
+    validFrom ZonedDateTime,
+    validTo ZonedDateTime,
+    isActive Boolean,
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required,
+    eventId Long required,
+    tenantId String required maxlength(255)
+}
+
+
+entity EventScoreCard {
+    id Long,
+    teamAName String required maxlength(255),
+    teamBName String required maxlength(255),
+    teamAScore Integer required,
+    teamBScore Integer required,
+    remarks String,
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+entity EventScoreCardDetail {
+    id Long,
+    teamName String required maxlength(255),
+    playerName String maxlength(255),
+    points Integer required,
+    remarks String,
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+entity EventLiveUpdate {
+    id Long,
+    updateType String required maxlength(20), // TEXT, IMAGE, VIDEO, etc.
+    contentText String,
+    contentImageUrl String maxlength(1024),
+    contentVideoUrl String maxlength(1024),
+    contentLinkUrl String maxlength(1024),
+    metadata String maxlength(8192) ,
+    displayOrder Integer,
+    isDefault Boolean,
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+entity EventLiveUpdateAttachment {
+    id Long,
+    attachmentType String maxlength(20),
+    attachmentUrl String maxlength(1024),
+    displayOrder Integer,
+    metadata String maxlength(4096),
+    createdAt ZonedDateTime required,
+    updatedAt ZonedDateTime required
+}
+
+entity EmailLog {
+    id Long,
+    tenantId String required maxlength(255),
+    recipientEmail String required maxlength(255),
+    subject String maxlength(255),
+    body String maxlength(32768),
+    sentAt ZonedDateTime required,
+    status String maxlength(50), // SENT, FAILED, etc.
+    type String maxlength(50), // TRANSACTIONAL, BULK
+    campaignId Long, // nullable, for bulk
+    metadata  String maxlength(8192) // JSON for provider response, etc.
+}
+
+entity WhatsAppLog {
+    id Long,
+    tenantId String required maxlength(255),
+    recipientPhone String required maxlength(50),
+    messageBody String maxlength(4096),
+    sentAt ZonedDateTime required,
+    status String maxlength(50), // SENT, FAILED, etc.
+    type String maxlength(50), // TRANSACTIONAL, BULK
+    campaignId Long, // nullable, for bulk
+    metadata  String maxlength(8192) // JSON for provider response, etc.
+}
+
+entity CommunicationCampaign {
+    id Long,
+    tenantId String required maxlength(255),
+    name String required maxlength(255),
+    type String maxlength(50), // EMAIL, WHATSAPP
+    description String maxlength(1000),
+    createdById Long,
+    createdAt ZonedDateTime required,
+    scheduledAt ZonedDateTime,
+    sentAt ZonedDateTime,
+    status String maxlength(50) // DRAFT, SCHEDULED, SENT, FAILED
+}
+
+entity ExecutiveCommitteeTeamMember {
+    id Long,
+    firstName String required,
+    lastName String required,
+    title String required,
+    designation String,
+    bio String maxlength(2048),
+    email String,
+    profileImageUrl String,
+    expertise String maxlength(4096),  // Changed from JsonNode
+    imageBackground String,
+    imageStyle String,
+    department String,
+    joinDate LocalDate,
+    isActive Boolean,
+    linkedinUrl String,
+    twitterUrl String,
+    priorityOrder Integer,
+    websiteUrl String
+}
+
+// Relationships
+relationship OneToOne {
+    UserSubscription{userProfile} to UserProfile,
+    TenantSettings{tenantOrganization} to TenantOrganization{tenantSettings}
+}
+
+relationship ManyToOne {
+    // User Profile relationships
+    UserProfile{reviewedByAdmin} to UserProfile,
+
+    // User Task relationships
+    UserTask{user} to UserProfile,
+    UserTask{event} to EventDetails,
+
+    // Event Details relationships
+    EventDetails{createdBy} to UserProfile,
+    EventDetails{eventType} to EventTypeDetails,
+
+    // Event Organizer relationships
+    EventOrganizer{event} to EventDetails,
+    EventOrganizer{organizer} to UserProfile,
+
+    // Event Ticket relationships
+    EventTicketType{event} to EventDetails,
+    EventTicketTransaction{event} to EventDetails,
+    EventTicketTransaction{user} to UserProfile,
+
+    // Event Poll relationships
+    EventPoll{event} to EventDetails,
+    EventPoll{createdBy} to UserProfile,
+    EventPollOption{poll} to EventPoll,
+    EventPollResponse{poll} to EventPoll,
+    EventPollResponse{pollOption} to EventPollOption,
+    EventPollResponse{user} to UserProfile,
+
+    // Event Admin relationships
+    EventAdmin{user} to UserProfile,
+    EventAdmin{createdBy} to UserProfile,
+    EventAdminAuditLog{admin} to UserProfile,
+
+    // Event Calendar relationships
+    EventCalendarEntry{event} to EventDetails,
+    EventCalendarEntry{createdBy} to UserProfile,
+
+    // Event Media relationships
+    EventMedia{event} to EventDetails,
+    EventMedia{uploadedBy} to UserProfile,
+
+    // Payment Transaction relationships
+    UserPaymentTransaction{event} to EventDetails,
+    UserPaymentTransaction{ticketTransaction} to EventTicketTransaction,
+
+    // Event Attendee relationships
+    EventAttendee{event required} to EventDetails,
+    //    EventAttendee{userId} to UserProfile,
+
+    // QR Code Usage relationships
+    QrCodeUsage{attendee} to EventAttendee,
+
+    // Bulk Operation Log relationships
+    BulkOperationLog{performedBy} to UserProfile,
+
+    // Guest management relationships
+    EventAttendeeGuest{primaryAttendee required} to EventAttendee,
+    EventGuestPricing{event required} to EventDetails,
+
+    // Event Score Card relationships
+    EventScoreCard{event required} to EventDetails,
+    EventScoreCardDetail{scoreCard required} to EventScoreCard,
+
+    // Event Live Update relationships
+    EventLiveUpdate{event required} to EventDetails,
+    EventLiveUpdateAttachment{liveUpdate required} to EventLiveUpdate,
+
+    EmailLog{campaign} to CommunicationCampaign,
+    WhatsAppLog{campaign} to CommunicationCampaign,
+    CommunicationCampaign{createdBy} to UserProfile,
+
+    // Event Ticket Transaction Item relationships
+    EventTicketTransactionItem{transaction required} to EventTicketTransaction,
+    EventTicketTransactionItem{ticketType required} to EventTicketType
+}
+
+
+
+// ADDITIONAL VALIDATION RULES (Comments for implementation)
+/*
+Additional Validation Rules to Implement:
+
+1. EventDetails:
+   - If allowGuests = true, maxGuestsPerAttendee should be > 0
+   - If enableGuestPricing = true, there should be related EventGuestPricing records
+   - startDate should not be in the past
+   - endDate should be >= startDate
+
+2. EventGuestPricing:
+   - validFrom should be <= validTo (if both are set)
+   - price should be >= 0 (already enforced with min(0))
+   - Only one active pricing per ageGroup per event at any time
+
+3. EventAttendee:
+   - registrationDate should be before confirmationDate
+   - checkInTime should be on or after event start date
+   - If event.allowGuests = false, should not have related EventAttendeeGuest records
+
+4. EventAttendeeGuest:
+   - Should only exist if primaryAttendee.event.allowGuests = true
+   - Total guests per attendee should not exceed event.maxGuestsPerAttendee
+
+5. EventTicketType:
+   - soldQuantity should be <= availableQuantity
+   - code should be unique per event
+
+6. Cross-Entity Validations:
+   - Event capacity checks with total confirmed attendees + guests
+   - Ticket availability checks before completing transactions
+   - Guest approval workflow if requireGuestApproval = true
+*/
+
+// Discount code integration summary:
+// - DiscountCode entity for code management
+// - Many-to-many EventDetails <-> DiscountCode
+// - EventTicketTransaction links to DiscountCode and discount amount
+// - EventDetails has isRegistrationRequired Boolean
+
+// Sports event/scorecard integration summary:
+// - isSportsEvent Boolean in EventDetails
+// - EventScoreCard entity for event-level scores
+// - EventScoreCardDetail entity for per-player/team breakdowns
+// - Relationships: EventScoreCard to EventDetails, EventScoreCardDetail to EventScoreCard
+
+// Live event update integration summary:
+// - isLive Boolean in EventDetails
+// - EventLiveUpdate entity for live updates (text, image, video, etc.)
+// - EventLiveUpdateAttachment entity for multiple attachments per update
+// - Relationships: EventLiveUpdate to EventDetails, EventLiveUpdateAttachment to EventLiveUpdate

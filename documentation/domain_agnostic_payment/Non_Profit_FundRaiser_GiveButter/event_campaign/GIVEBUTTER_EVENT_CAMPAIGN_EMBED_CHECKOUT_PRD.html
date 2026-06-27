@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiveButter Event Campaign Embed Checkout PRD</title>
+    <style>
+        body {
+            font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+            background: #f4f2ed;
+            color: #2b241e;
+            margin: 0;
+            padding: 2.5rem 0;
+        }
+        main {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 22px 48px -20px rgba(43, 34, 28, 0.25);
+            padding: 3rem;
+        }
+        h1, h2, h3, h4 {
+            font-family: "Crimson Text", Georgia, serif;
+            color: #2b241e;
+        }
+        h1 { font-size: 2.2rem; margin-bottom: 0.6rem; }
+        h2 { font-size: 1.6rem; margin-top: 2.2rem; border-left: 4px solid #8b7d6b; padding-left: 15px; }
+        h3 { font-size: 1.25rem; margin-top: 1.5rem; }
+        h4 { font-size: 1.05rem; margin-top: 1rem; }
+        p, li { font-size: 1rem; line-height: 1.75; }
+        ul, ol { margin-left: 1.3rem; }
+        code { font-family: "JetBrains Mono", Consolas, monospace; background: #f6f1e6; padding: 0.12rem 0.4rem; border-radius: 6px; }
+        .tag { display: inline-block; background: #8b7d6b; color: #fff; padding: 0.25rem 0.7rem; border-radius: 999px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 10px; }
+        .divider { height: 1px; background: rgba(42,32,23,0.12); margin: 1.9rem 0; }
+        .callout { border-left: 4px solid #8b7d6b; background: rgba(213,201,182,0.3); padding: 1rem 1.2rem; border-radius: 12px; margin: 1.6rem 0; }
+        .warning { border-left: 4px solid #A67C52; background: rgba(255,244,230,0.5); padding: 1rem 1.2rem; border-radius: 12px; margin: 1.6rem 0; }
+        .success { border-left: 4px solid #4A6741; background: rgba(240,249,240,0.5); padding: 1rem 1.2rem; border-radius: 12px; margin: 1.6rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+        th, td { border: 1px solid rgba(42,32,23,0.15); padding: 0.75rem; text-align: left; vertical-align: top; }
+        th { background: rgba(213,201,182,0.35); font-weight: 600; }
+        pre { background: #2D2A26; color: #F5F1E8; padding: 15px; border-radius: 5px; overflow-x: auto; margin: 15px 0; font-family: "JetBrains Mono", Consolas, monospace; font-size: 0.9em; }
+        .meta { background: #EDE7D3; padding: 15px; border-radius: 5px; margin-bottom: 30px; border-left: 4px solid #8b7d6b; }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="meta">
+            <p><strong>Document Type:</strong> Product Requirements Document (PRD)</p>
+            <p><strong>Project:</strong> GiveButter Event Campaign Embed Checkout</p>
+            <p><strong>Repository:</strong> <code>E:\project_workspace\mosc-temp</code></p>
+            <p><strong>Version:</strong> 1.0</p>
+            <p><strong>Date:</strong> January 2025</p>
+            <p><strong>Status:</strong> <span class="tag">Enhancement</span></p>
+        </div>
+
+        <h1>GiveButter Event Campaign Embed Checkout PRD<br><small style="font-size: 0.5em; color: #7b7067;">Event Hero + Embedded Widget</small></h1>
+
+        <div class="divider"></div>
+
+        <h2>1. Overview</h2>
+        <p>This PRD defines the event campaign embed checkout: a new page that shows the event hero at the top and an embedded GiveButter widget in the center. It is distinct from:</p>
+        <ul>
+            <li><strong>Generic donate button:</strong> Site-wide or non-event GiveButter campaigns.</li>
+            <li><strong>Donation-checkout:</strong> Existing <code>/events/[id]/donation-checkout</code> page that opens GiveButter in a popup or new tab (no embed).</li>
+        </ul>
+        <p>The new page uses the same event-scoped URL pattern and eligibility rules as donation-checkout for ticketed fundraiser/charity events, but renders the GiveButter widget inline (no Stripe, no mixed flow).</p>
+
+        <div class="success">
+            <strong>✅ X-Frame-Options:</strong> GiveButter sets <code>X-Frame-Options: sameorigin</code>, so the full GiveButter page cannot be iframe'd. Only the <strong>widget</strong> (script + custom element <code>&lt;givebutter-widget&gt;</code> or <code>&lt;givebutter-form&gt;</code>) can be embedded on our site. This page is our layout (hero + center area) with the GiveButter widget embedded.
+        </div>
+
+        <h2>2. User Flow</h2>
+        <p>Events listing or event detail (hero) → user clicks “Buy ticket” / fundraiser CTA → <code>/events/[id]/givebutter-checkout</code> → event hero at top, GiveButter widget in center. User completes donation/ticket purchase in the embedded widget.</p>
+
+        <h2>3. Checkout URL Format</h2>
+        <p><strong>Pattern:</strong> <code>/events/[id]/givebutter-checkout</code></p>
+        <p><strong>Example:</strong> <code>http://localhost:3000/events/4202/givebutter-checkout</code></p>
+        <p>No query parameters required; the event <code>id</code> from the path is sufficient. This keeps parity with <code>/events/[id]/donation-checkout</code> and makes the page clearly event-specific.</p>
+
+        <h2>4. Data Model</h2>
+        <p>Use existing <code>event_details.donation_metadata</code> (TEXT, JSON). No new database columns for the initial implementation.</p>
+        <ul>
+            <li><strong>givebutterCampaignId</strong> (already present): e.g. <code>FwSx70</code> from the event ticketing URL.</li>
+            <li><strong>givebutterWidgetId</strong> (optional, new): e.g. <code>j1ek6j</code> for <code>&lt;givebutter-widget id="j1ek6j"&gt;</code>.</li>
+        </ul>
+        <p>When rendering the embed page: if <code>givebutterWidgetId</code> is set, render <code>&lt;GivebutterWidget widgetId="..." /&gt;</code>; else if <code>givebutterCampaignId</code> is set, render <code>&lt;GivebutterWidget campaignId="..." /&gt;</code>. Backend must accept and return <code>givebutterWidgetId</code> inside the same JSON.</p>
+
+        <h2>5. Page Layout and Behavior</h2>
+        <ul>
+            <li><strong>Route:</strong> <code>src/app/events/[id]/givebutter-checkout/</code> (page.tsx + server data + client component).</li>
+            <li><strong>Top:</strong> Event hero (reuse same hero resolution as donation-checkout, e.g. from DonationCheckoutServerData / event media).</li>
+            <li><strong>Center:</strong> GiveButter widget only (no Stripe, no donation-checkout form).</li>
+        </ul>
+        <p><strong>Data loading:</strong> Server fetches event by <code>id</code>, resolves hero image, reads <code>donation_metadata</code> via <code>getDonationMetadata</code>. Pass to client: <code>heroImageUrl</code>, <code>eventId</code>, <code>givebutterCampaignId</code>, <code>givebutterWidgetId</code>.</p>
+        <p><strong>Widget rendering (client):</strong> If <code>givebutterWidgetId</code> present → <code>&lt;GivebutterWidget widgetId={givebutterWidgetId} /&gt;</code>. Else if <code>givebutterCampaignId</code> present → <code>&lt;GivebutterWidget campaignId={givebutterCampaignId} /&gt;</code>. Else show message that GiveButter is not configured and link back to event or donation-checkout.</p>
+        <p><strong>Access control:</strong> Only allow for events that are <strong>ticketed + fundraiser/charity with GiveButter</strong>. Reuse <code>isTicketedFundraiserEvent</code> and donation metadata checks; 404 or friendly error otherwise.</p>
+
+        <h2>6. Frontend Implementation</h2>
+        <ul>
+            <li>New route: <code>src/app/events/[id]/givebutter-checkout/</code> with server data layer, page component, and client component (hero + GivebutterWidget).</li>
+            <li>Use existing <code>GivebutterWidget</code> (<code>src/components/GivebutterWidget.tsx</code>) with either <code>widgetId</code> or <code>campaignId</code> from donation_metadata.</li>
+            <li>EventForm: add optional “GiveButter event widget ID” (and optionally “GiveButter event campaign slug” to override). Persist in the same donation_metadata payload sent to the backend.</li>
+        </ul>
+
+        <h2>7. Backend</h2>
+        <p>Ensure <code>event_details</code> API returns <code>donationMetadata</code> (or equivalent) with the full JSON. When saving event (admin), accept and persist <code>givebutterWidgetId</code> inside that JSON. No new endpoints required for the embed page; no change to <code>event_details</code> table for Option A (JSON-only).</p>
+
+        <h2>8. Links to Update</h2>
+        <p>For ticketed GiveButter events, point “Buy ticket” / fundraiser CTAs to <code>/events/[id]/givebutter-checkout</code>. Places to update:</p>
+        <ul>
+            <li><code>src/components/HeroSection.tsx</code> (e.g. href for ticketed fundraiser).</li>
+            <li><code>src/app/events/page.tsx</code> (links for fundraiser cards).</li>
+            <li><code>src/app/events/[id]/page.tsx</code> (link for ticketed fundraiser).</li>
+            <li><code>src/components/UpcomingEventsSection.tsx</code>.</li>
+        </ul>
+        <p>Decision: either <strong>replace</strong> donation-checkout links with givebutter-checkout for these events, or add a small config (e.g. in donation_metadata) to choose “embed” vs “popup” and set links accordingly.</p>
+
+        <h2>9. References</h2>
+        <table>
+            <thead>
+                <tr><th>Item</th><th>Location</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>GiveButter widget rule</td><td><code>.cursor/rules/givebutter_widget_integration.mdc</code></td></tr>
+                <tr><td>Donation metadata / eligibility</td><td><code>src/lib/donation/utils.ts</code></td></tr>
+                <tr><td>GivebutterWidget (campaignId vs widgetId)</td><td><code>src/components/GivebutterWidget.tsx</code></td></tr>
+                <tr><td>Donation-checkout server data</td><td><code>src/app/events/[id]/donation-checkout/DonationCheckoutServerData.tsx</code></td></tr>
+                <tr><td>Hero link for fundraiser</td><td><code>src/components/HeroSection.tsx</code></td></tr>
+                <tr><td>event_details schema</td><td><code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></td></tr>
+                <tr><td>Next.js API routes</td><td><code>.cursor/rules/nextjs_api_routes.mdc</code></td></tr>
+                <tr><td>Existing GiveButter PRD style</td><td><code>documentation/.../GIVEBUTTER_FRONTEND_PRD.html</code></td></tr>
+            </tbody>
+        </table>
+
+        <h2>10. Implementation Order</h2>
+        <ol>
+            <li>Add PRD HTML file under <code>documentation/.../event_campaign/</code>.</li>
+            <li>Extend <code>getDonationMetadata</code> (and types) to include <code>givebutterWidgetId</code>.</li>
+            <li>Implement <code>src/app/events/[id]/givebutter-checkout/</code> (server data + page + client with hero + GivebutterWidget).</li>
+            <li>Add optional “GiveButter event widget ID” (and optional campaign slug) to EventForm; persist in donation_metadata.</li>
+            <li>Update hero and events listing links for ticketed GiveButter events to <code>/events/[id]/givebutter-checkout</code> (or make configurable per PRD decision).</li>
+            <li>Backend: ensure donation_metadata JSON accepts and returns <code>givebutterWidgetId</code>.</li>
+        </ol>
+    </main>
+</body>
+</html>

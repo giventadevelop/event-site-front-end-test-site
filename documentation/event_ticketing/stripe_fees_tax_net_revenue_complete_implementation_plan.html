@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Implementation Plan: Stripe Fees, Tax, and Net Revenue</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+        }
+        .summary-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .recommendation {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .code-block {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 15px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .field-name {
+            font-family: 'Courier New', monospace;
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .calculation-box {
+            background-color: #f8f9fa;
+            border: 2px solid #6c757d;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .doc-link {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .doc-link:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Complete Implementation Plan: Stripe Fees, Tax, and Net Revenue</h1>
+        <p><strong>Document Date:</strong> January 11, 2026</p>
+        <p><strong>Purpose:</strong> Master implementation plan for capturing Stripe fees, taxes, and calculating net revenue across frontend, backend, and batch job systems.</p>
+        <p><strong>Implementation Phase:</strong> Single Phase - All Enhancements</p>
+
+        <div class="summary-box">
+            <h2>Executive Summary</h2>
+            <p>This document provides a comprehensive overview of the complete implementation plan to:</p>
+            <ol>
+                <li>Capture Stripe fees and taxes that are not being captured during purchase flow</li>
+                <li>Calculate and track net revenue (actual payout to bank account)</li>
+                <li>Implement proper timing logic (10-day delay for normal batch runs)</li>
+                <li>Add eventId filtering capability to batch job</li>
+                <li>Fix purchase flow calculations (total_amount vs final_amount)</li>
+                <li>Enhance analytics to display net payout and organizer revenue</li>
+            </ol>
+            <p><strong>All changes will be implemented in a single phase with no future enhancements deferred.</strong></p>
+        </div>
+
+        <h2>Documentation Structure</h2>
+        <p>This implementation plan is split into four comprehensive documents:</p>
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="stripe_fees_tax_net_revenue_complete_implementation_plan.html" class="doc-link">📋 Main Plan</a>
+            <a href="stripe_fees_tax_net_revenue_frontend_changes.html" class="doc-link">💻 Frontend Changes</a>
+            <a href="stripe_fees_tax_net_revenue_backend_changes.html" class="doc-link">⚙️ Backend Changes</a>
+            <a href="stripe_fees_tax_net_revenue_batch_job_changes.html" class="doc-link">🔄 Batch Job Changes</a>
+        </div>
+
+        <h2>1. Problem Statement</h2>
+
+        <h3>1.1 Current Issues</h3>
+        <div class="warning-box">
+            <ul>
+                <li><strong>Issue 1:</strong> <span class="field-name">total_amount</span> and <span class="field-name">final_amount</span> are identical because calculations are not being done during purchase</li>
+                <li><strong>Issue 2:</strong> <span class="field-name">stripe_fee_amount</span> and <span class="field-name">stripe_amount_tax</span> are consistently NULL/0.00</li>
+                <li><strong>Issue 3:</strong> Net revenue (payout to bank) is not calculated or displayed</li>
+                <li><strong>Issue 4:</strong> Batch job cannot filter by eventId</li>
+                <li><strong>Issue 5:</strong> Batch job does not implement 10-day delay logic for normal runs</li>
+            </ul>
+        </div>
+
+        <h3>1.2 Financial Flow Understanding</h3>
+        <div class="calculation-box">
+            <h4>Example Transaction Flow:</h4>
+            <p><strong>1. Customer Payment:</strong> $1.00 (final_amount)</p>
+            <p><strong>2. Stripe Processing:</strong></p>
+            <ul>
+                <li>Stripe Fee: $0.30 (stripe_fee_amount)</li>
+                <li>Stripe Tax: $0.10 (stripe_amount_tax)</li>
+            </ul>
+            <p><strong>3. Net Payout to Bank:</strong> $1.00 - $0.30 - $0.10 = <strong>$0.60</strong></p>
+            <p><strong>4. Platform Fee:</strong> $0.05 (platform_fee_amount)</p>
+            <p><strong>5. Event Organizer Receives:</strong> $0.60 - $0.05 = <strong>$0.55</strong></p>
+        </div>
+
+        <h2>2. Database Schema Verification</h2>
+
+        <h3>2.1 Required Fields Status</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Column</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>total_amount</td>
+                    <td><code>total_amount</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>✅ Exists</td>
+                    <td>Fix calculation in purchase flow</td>
+                </tr>
+                <tr>
+                    <td>final_amount</td>
+                    <td><code>final_amount</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>✅ Exists</td>
+                    <td>Fix calculation in purchase flow</td>
+                </tr>
+                <tr>
+                    <td>stripe_fee_amount</td>
+                    <td><code>stripe_fee_amount</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>✅ Exists</td>
+                    <td>Populate via batch job</td>
+                </tr>
+                <tr>
+                    <td>stripe_amount_tax</td>
+                    <td><code>stripe_amount_tax</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>✅ Exists</td>
+                    <td>Populate via batch job</td>
+                </tr>
+                <tr>
+                    <td>platform_fee_amount</td>
+                    <td><code>platform_fee_amount</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>✅ Exists</td>
+                    <td>Already populated</td>
+                </tr>
+                <tr>
+                    <td>discount_amount</td>
+                    <td><code>discount_amount</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>✅ Exists</td>
+                    <td>Already populated</td>
+                </tr>
+                <tr>
+                    <td>event_id</td>
+                    <td><code>event_id</code></td>
+                    <td>bigint</td>
+                    <td>✅ Exists</td>
+                    <td>Use for filtering in batch job</td>
+                </tr>
+                <tr>
+                    <td>purchase_date</td>
+                    <td><code>purchase_date</code></td>
+                    <td>timestamp</td>
+                    <td>✅ Exists</td>
+                    <td>Use for 10-day delay logic</td>
+                </tr>
+                <tr>
+                    <td>net_payout_amount</td>
+                    <td><code>net_payout_amount</code></td>
+                    <td>N/A</td>
+                    <td>❌ Not exists</td>
+                    <td>🔧 <strong>ADD NEW FIELD</strong> (optional but recommended)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="recommendation">
+            <h3>✅ Schema Assessment</h3>
+            <p><strong>Conclusion:</strong> All core fields exist. We recommend adding <code>net_payout_amount</code> field for performance and historical tracking.</p>
+            <p><strong>Schema Change Required:</strong> Add <code>net_payout_amount numeric(21,2) NULL</code> to <code>event_ticket_transaction</code> table.</p>
+        </div>
+
+        <h2>3. Implementation Scope</h2>
+
+        <h3>3.1 Frontend Changes</h3>
+        <div class="info-box">
+            <p><strong>Location:</strong> Current workspace (mosc-temp)</p>
+            <ul>
+                <li>Fix purchase flow calculations (total_amount vs final_amount)</li>
+                <li>Update sales analytics to display net payout and organizer revenue</li>
+                <li>Update batch job trigger UI to support eventId parameter</li>
+                <li>Add net revenue metrics to analytics dashboard</li>
+            </ul>
+            <p><strong>See:</strong> <a href="stripe_fees_tax_net_revenue_frontend_changes.html">Frontend Changes Documentation</a></p>
+        </div>
+
+        <h3>3.2 Backend Changes</h3>
+        <div class="info-box">
+            <p><strong>Location:</strong> <code>E:\project_workspace\malayalees-us-site-boot</code></p>
+            <ul>
+                <li>Add net_payout_amount field to EventTicketTransaction entity</li>
+                <li>Update PATCH endpoint to accept net_payout_amount</li>
+                <li>Fix purchase flow calculation logic</li>
+                <li>Update DTOs to include net_payout_amount</li>
+                <li>Add database migration for new field</li>
+            </ul>
+            <p><strong>See:</strong> <a href="stripe_fees_tax_net_revenue_backend_changes.html">Backend Changes Documentation</a></p>
+        </div>
+
+        <h3>3.3 Batch Job Changes</h3>
+        <div class="info-box">
+            <p><strong>Location:</strong> <code>E:\project_workspace\event-site-manager-batch-jobs</code></p>
+            <ul>
+                <li>Add eventId filtering to batch job</li>
+                <li>Implement 10-day delay logic for normal batch runs</li>
+                <li>Change date filter to use purchaseDate instead of createdAt</li>
+                <li>Retrieve BalanceTransaction.net from Stripe</li>
+                <li>Calculate and store net_payout_amount</li>
+                <li>Update DTOs and service methods</li>
+            </ul>
+            <p><strong>See:</strong> <a href="stripe_fees_tax_net_revenue_batch_job_changes.html">Batch Job Changes Documentation</a></p>
+        </div>
+
+        <h2>4. Implementation Checklist</h2>
+
+        <h3>4.1 Database Changes</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Task</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Add net_payout_amount column to event_ticket_transaction</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+                <tr>
+                    <td>Create database migration script</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>4.2 Backend Changes</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Task</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Add netPayoutAmount field to EventTicketTransaction entity</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+                <tr>
+                    <td>Update EventTicketTransactionDTO to include netPayoutAmount</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+                <tr>
+                    <td>Update PATCH endpoint to accept netPayoutAmount</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+                <tr>
+                    <td>Fix purchase flow calculation logic</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+                <tr>
+                    <td>Run database migration</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>4.3 Batch Job Changes</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Task</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Add eventId to StripeFeesTaxUpdateRequest DTO</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+                <tr>
+                    <td>Add useDefaultDateRange to StripeFeesTaxUpdateRequest DTO</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+                <tr>
+                    <td>Update repository query to add eventId filter</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+                <tr>
+                    <td>Change repository query to use purchaseDate instead of createdAt</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+                <tr>
+                    <td>Implement 10-day delay logic in service</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+                <tr>
+                    <td>Enhance StripeFeesTaxService to retrieve BalanceTransaction.net</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+                <tr>
+                    <td>Calculate and store net_payout_amount in batch job</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+                <tr>
+                    <td>Update scheduler to use default date range</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>4.4 Frontend Changes</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Task</th>
+                    <th>Priority</th>
+                    <td>Status</td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Fix purchase flow total_amount vs final_amount calculation</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+                <tr>
+                    <td>Update batch job trigger UI to include eventId input</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+                <tr>
+                    <td>Add net payout metric to sales analytics</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+                <tr>
+                    <td>Add organizer net revenue metric to sales analytics</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+                <tr>
+                    <td>Update sales analytics calculation logic</td>
+                    <td>HIGH</td>
+                    <td>⏳ Pending</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>5. Testing Strategy</h2>
+
+        <h3>5.1 Unit Testing</h3>
+        <ul>
+            <li>Test eventId filtering with various combinations</li>
+            <li>Test 10-day delay date range calculation</li>
+            <li>Test net payout calculation formulas</li>
+            <li>Test purchase flow calculation fixes</li>
+        </ul>
+
+        <h3>5.2 Integration Testing</h3>
+        <ul>
+            <li>Test batch job with real Stripe test transactions</li>
+            <li>Verify net_payout_amount is calculated and stored correctly</li>
+            <li>Test frontend analytics display with new metrics</li>
+            <li>Test scheduled batch job execution</li>
+            <li>Test on-demand batch job with eventId parameter</li>
+        </ul>
+
+        <h3>5.3 Data Verification</h3>
+        <ul>
+            <li>Verify stripe_fee_amount matches Stripe Dashboard</li>
+            <li>Verify stripe_amount_tax matches Stripe Dashboard</li>
+            <li>Verify net_payout_amount matches BalanceTransaction.net from Stripe</li>
+            <li>Verify 10-day delay logic only processes transactions 10+ days old</li>
+            <li>Verify eventId filtering works correctly</li>
+            <li>Verify purchase flow calculations are correct</li>
+        </ul>
+
+        <h2>6. Deployment Order</h2>
+
+        <div class="recommendation">
+            <h3>Recommended Deployment Sequence:</h3>
+            <ol>
+                <li><strong>Step 1: Database Migration</strong>
+                    <ul>
+                        <li>Run migration to add net_payout_amount column</li>
+                        <li>Verify column exists and is nullable</li>
+                    </ul>
+                </li>
+                <li><strong>Step 2: Backend Changes</strong>
+                    <ul>
+                        <li>Update entity, DTO, and API endpoints</li>
+                        <li>Deploy backend application</li>
+                        <li>Verify PATCH endpoint accepts netPayoutAmount</li>
+                    </ul>
+                </li>
+                <li><strong>Step 3: Batch Job Changes</strong>
+                    <ul>
+                        <li>Update batch job code</li>
+                        <li>Deploy batch job application</li>
+                        <li>Test batch job with test transactions</li>
+                    </ul>
+                </li>
+                <li><strong>Step 4: Frontend Changes</strong>
+                    <ul>
+                        <li>Update frontend code</li>
+                        <li>Deploy frontend application</li>
+                        <li>Test UI and analytics display</li>
+                    </ul>
+                </li>
+                <li><strong>Step 5: Verification</strong>
+                    <ul>
+                        <li>Run batch job on production data</li>
+                        <li>Verify all metrics display correctly</li>
+                        <li>Monitor for any issues</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <h2>7. Success Criteria</h2>
+
+        <div class="info-box">
+            <h3>Implementation is considered successful when:</h3>
+            <ul>
+                <li>✅ All transactions have stripe_fee_amount and stripe_amount_tax populated (via batch job)</li>
+                <li>✅ All transactions have net_payout_amount calculated and stored</li>
+                <li>✅ Batch job can filter by eventId</li>
+                <li>✅ Scheduled batch job only processes transactions 10+ days old from current month</li>
+                <li>✅ Purchase flow correctly calculates total_amount and final_amount</li>
+                <li>✅ Sales analytics displays net payout and organizer revenue metrics</li>
+                <li>✅ All calculations match Stripe Dashboard data</li>
+            </ul>
+        </div>
+
+        <h2>8. Related Documentation</h2>
+        <ul>
+            <li><a href="stripe_fees_taxes_revenue_calculation_analysis.html">Stripe Fees, Taxes, and Revenue Calculation Analysis</a></li>
+            <li><a href="batch_job_stripe_fees_tax_implementation_prompt.html">Batch Job Implementation Prompt</a></li>
+            <li><a href="frontend_stripe_fees_tax_batch_job_integration_guide.html">Frontend Integration Guide</a></li>
+            <li><a href="stripe_fees_tax_net_revenue_frontend_changes.html">Frontend Changes (Detailed)</a></li>
+            <li><a href="stripe_fees_tax_net_revenue_backend_changes.html">Backend Changes (Detailed)</a></li>
+            <li><a href="stripe_fees_tax_net_revenue_batch_job_changes.html">Batch Job Changes (Detailed)</a></li>
+        </ul>
+
+        <hr>
+        <p><em>Document generated: January 11, 2026</em></p>
+        <p><em>Last updated: January 11, 2026</em></p>
+    </div>
+</body>
+</html>

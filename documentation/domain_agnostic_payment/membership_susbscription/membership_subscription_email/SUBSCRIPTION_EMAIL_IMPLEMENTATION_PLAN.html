@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Membership Subscription Email Notification Implementation Plan</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            border-left: 5px solid #3498db;
+            padding-left: 20px;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            background-color: #f8f9fa;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 8px;
+        }
+        h4 {
+            color: #666;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+        .status-box {
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border-left: 5px solid;
+        }
+        .info {
+            background-color: #e3f2fd;
+            border-left-color: #2196f3;
+        }
+        .warning {
+            background-color: #fff3e0;
+            border-left-color: #ff9800;
+        }
+        .success {
+            background-color: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+        .error {
+            background-color: #ffebee;
+            border-left-color: #f44336;
+        }
+        .critical {
+            background-color: #fce4ec;
+            border-left-color: #e91e63;
+            font-weight: 600;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #e83e8c;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            border-left: 4px solid #3498db;
+        }
+        pre code {
+            background-color: transparent;
+            color: #f8f8f2;
+            padding: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 14px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+        .checklist li {
+            padding: 10px 0;
+            padding-left: 35px;
+            position: relative;
+            margin: 8px 0;
+        }
+        .checklist li:before {
+            content: "☐";
+            position: absolute;
+            left: 0;
+            font-size: 22px;
+            color: #666;
+        }
+        .checklist li.completed:before {
+            content: "✅";
+            color: #4caf50;
+        }
+        .checklist li.pending:before {
+            content: "⏳";
+            color: #ff9800;
+        }
+        .checklist li.required:before {
+            content: "🔴";
+            color: #f44336;
+        }
+        .checklist li.info:before {
+            content: "ℹ️";
+            color: #2196f3;
+        }
+        .section {
+            margin: 35px 0;
+            padding: 25px;
+            background-color: #fafafa;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+        .flow-diagram {
+            background-color: #fff;
+            padding: 25px;
+            border: 2px solid #3498db;
+            border-radius: 6px;
+            margin: 25px 0;
+        }
+        .flow-step {
+            padding: 15px;
+            margin: 12px 0;
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            border-radius: 4px;
+        }
+        .flow-step strong {
+            color: #1976d2;
+        }
+        .code-reference {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #6c757d;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .comparison-table {
+            background-color: #fff;
+            border: 2px solid #3498db;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+            font-style: italic;
+            text-align: center;
+            margin-top: 30px;
+        }
+        .file-path {
+            background-color: #e8eaf6;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            display: inline-block;
+            margin: 5px 0;
+        }
+        .endpoint-box {
+            background-color: #fff3e0;
+            padding: 15px;
+            border-left: 4px solid #ff9800;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .endpoint-box code {
+            background-color: #fff;
+            padding: 2px 6px;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .highlight {
+            background-color: #fff9c4;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Membership Subscription Email Notification Implementation Plan</h1>
+        <p class="timestamp">Generated: December 6, 2025</p>
+
+        <div class="status-box critical">
+            <strong>CRITICAL REQUIREMENT:</strong> This implementation must follow existing email patterns (ticket emails and promotional emails) to ensure consistency and avoid breaking existing functionality.
+        </div>
+
+        <h2>1. Executive Summary</h2>
+
+        <div class="section">
+            <p>This document provides a comprehensive plan for implementing email notifications for membership subscriptions. The implementation will follow the existing patterns used for:</p>
+            <ul>
+                <li><strong>Ticket Purchase Emails:</strong> Event ticket confirmation emails sent after successful payment</li>
+                <li><strong>Promotional Emails:</strong> Bulk email system for event notifications and marketing</li>
+            </ul>
+            <p>The plan ensures that subscription emails integrate seamlessly with the existing email infrastructure without disrupting current functionality.</p>
+        </div>
+
+        <h2>2. Current Email Implementation Analysis</h2>
+
+        <h3>2.1 Ticket Purchase Email Flow (Reference Pattern)</h3>
+
+        <div class="flow-diagram">
+            <h4>Current Ticket Email Flow:</h4>
+            <div class="flow-step">
+                <strong>Step 1:</strong> User completes ticket purchase → Payment succeeds
+            </div>
+            <div class="flow-step">
+                <strong>Step 2:</strong> Frontend detects success → Calls <code>sendTicketEmailAsync()</code> from <code>src/lib/emailUtils.ts</code>
+            </div>
+            <div class="flow-step">
+                <strong>Step 3:</strong> Frontend makes API call:
+                <div class="code-reference">
+                    POST /api/proxy/events/{eventId}/transactions/{transactionId}/send-ticket-email?to={email}
+                    Headers: x-email-host-url-prefix: {hostUrlPrefix}
+                </div>
+            </div>
+            <div class="flow-step">
+                <strong>Step 4:</strong> Proxy handler (<code>src/pages/api/proxy/events/[id]/transactions/[transactionId]/send-ticket-email.ts</code>):
+                <ul>
+                    <li>Extracts <code>emailHostUrlPrefix</code> from headers</li>
+                    <li>Base64 encodes the prefix</li>
+                    <li>Forwards to backend: <code>/api/events/{id}/transactions/{transactionId}/emailHostUrlPrefix/{base64}/send-ticket-email</code></li>
+                </ul>
+            </div>
+            <div class="flow-step">
+                <strong>Step 5:</strong> Backend processes email:
+                <ul>
+                    <li>Retrieves transaction and event details</li>
+                    <li>Generates email content with QR code</li>
+                    <li>Sends email via email service (likely AWS SES)</li>
+                    <li>Logs email in <code>email_log</code> table</li>
+                </ul>
+            </div>
+        </div>
+
+        <h4>Key Files for Ticket Emails:</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>File Path</th>
+                    <th>Purpose</th>
+                    <th>Key Functions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>src/lib/emailUtils.ts</code></td>
+                    <td>Frontend email utility</td>
+                    <td><code>sendTicketEmail()</code>, <code>sendTicketEmailAsync()</code></td>
+                </tr>
+                <tr>
+                    <td><code>src/pages/api/proxy/events/[id]/transactions/[transactionId]/send-ticket-email.ts</code></td>
+                    <td>Proxy handler</td>
+                    <td>Base64 encoding, forwards to backend</td>
+                </tr>
+                <tr>
+                    <td><code>src/app/event/success/PaymentSuccessClient.tsx</code></td>
+                    <td>Success page</td>
+                    <td>Calls <code>sendTicketEmailAsync()</code> after QR code display</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2.2 Promotional Email Flow (Reference Pattern)</h3>
+
+        <div class="flow-diagram">
+            <h4>Current Promotional Email Flow:</h4>
+            <div class="flow-step">
+                <strong>Step 1:</strong> Admin creates email template → Saves to <code>promotion_email_template</code> table
+            </div>
+            <div class="flow-step">
+                <strong>Step 2:</strong> Admin triggers send → Calls <code>sendPromotionEmailServer()</code> from <code>src/app/admin/promotion-emails/serverActions.ts</code>
+            </div>
+            <div class="flow-step">
+                <strong>Step 3:</strong> Server action makes API call:
+                <div class="code-reference">
+                    POST /api/proxy/send-promotion-emails
+                    Body: { to, subject, bodyHtml, emailHostUrlPrefix, ... }
+                </div>
+            </div>
+            <div class="flow-step">
+                <strong>Step 4:</strong> Proxy handler (<code>src/pages/api/proxy/send-promotion-emails/index.ts</code>):
+                <ul>
+                    <li>Uses <code>createProxyHandler()</code> with <code>backendPath: '/api/send-promotion-emails'</code></li>
+                    <li>Forwards request to backend</li>
+                </ul>
+            </div>
+            <div class="flow-step">
+                <strong>Step 5:</strong> Backend processes email:
+                <ul>
+                    <li>Renders HTML template with dynamic data</li>
+                    <li>Sends email via email service</li>
+                    <li>Logs in <code>promotion_email_sent_log</code> table</li>
+                </ul>
+            </div>
+        </div>
+
+        <h4>Key Files for Promotional Emails:</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>File Path</th>
+                    <th>Purpose</th>
+                    <th>Key Functions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>src/app/admin/promotion-emails/serverActions.ts</code></td>
+                    <td>Server action</td>
+                    <td><code>sendPromotionEmailServer()</code></td>
+                </tr>
+                <tr>
+                    <td><code>src/pages/api/proxy/send-promotion-emails/index.ts</code></td>
+                    <td>Proxy handler</td>
+                    <td>Uses <code>createProxyHandler()</code></td>
+                </tr>
+                <tr>
+                    <td><code>src/app/admin/promotion-emails/ApiServerActions.ts</code></td>
+                    <td>API server actions</td>
+                    <td><code>sendTestEmailServer()</code>, <code>sendBulkEmailServer()</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2.3 Common Patterns Identified</h3>
+
+        <div class="section">
+            <h4>Pattern 1: Email Host URL Prefix</h4>
+            <ul>
+                <li><strong>Purpose:</strong> Ensures email links and images use correct domain</li>
+                <li><strong>Source:</strong> <code>getEmailHostUrlPrefix()</code> from <code>src/lib/env.ts</code></li>
+                <li><strong>Encoding:</strong> Base64 encoding for URL paths (not URL encoding)</li>
+                <li><strong>Header:</strong> <code>x-email-host-url-prefix</code> for custom proxy handlers</li>
+            </ul>
+
+            <h4>Pattern 2: Proxy Handler Structure</h4>
+            <ul>
+                <li><strong>Simple endpoints:</strong> Use <code>createProxyHandler()</code> with <code>backendPath</code></li>
+                <li><strong>Complex endpoints:</strong> Custom handler with Base64 encoding for <code>emailHostUrlPrefix</code></li>
+                <li><strong>Tenant ID:</strong> Automatically injected by <code>createProxyHandler()</code> unless <code>injectTenantId: false</code></li>
+            </ul>
+
+            <h4>Pattern 3: Server Actions</h4>
+            <ul>
+                <li><strong>Location:</strong> <code>ApiServerActions.ts</code> in feature folder</li>
+                <li><strong>Pattern:</strong> Use <code>fetchWithJwtRetry()</code> for backend calls</li>
+                <li><strong>Error handling:</strong> Try-catch with proper error messages</li>
+            </ul>
+
+            <h4>Pattern 4: Email Logging</h4>
+            <ul>
+                <li><strong>Database table:</strong> <code>email_log</code> for general emails</li>
+                <li><strong>Specialized table:</strong> <code>promotion_email_sent_log</code> for promotional emails</li>
+                <li><strong>Fields:</strong> recipient_email, subject, status, sent_at, metadata</li>
+            </ul>
+        </div>
+
+        <h2>3. Subscription Email Requirements</h2>
+
+        <h3>3.1 Email Types Required</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Email Type</th>
+                    <th>Trigger</th>
+                    <th>Recipient</th>
+                    <th>Content</th>
+                    <th>Priority</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Welcome Email</strong></td>
+                    <td>After successful subscription creation</td>
+                    <td>Subscriber (user email)</td>
+                    <td>Plan name, billing amount, period dates, next billing date, manage link</td>
+                    <td>🔴 High</td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Confirmation</strong></td>
+                    <td>After recurring payment succeeds (<code>invoice.payment_succeeded</code>)</td>
+                    <td>Subscriber</td>
+                    <td>Payment amount, payment date, updated period dates, receipt link</td>
+                    <td>🔴 High</td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Failure</strong></td>
+                    <td>After recurring payment fails (<code>invoice.payment_failed</code>)</td>
+                    <td>Subscriber</td>
+                    <td>Failure notice, amount due, update payment method link, support contact</td>
+                    <td>🔴 High</td>
+                </tr>
+                <tr>
+                    <td><strong>Cancellation Confirmation</strong></td>
+                    <td>After subscription cancellation</td>
+                    <td>Subscriber</td>
+                    <td>Cancellation confirmation, access until date, reactivation link</td>
+                    <td>⏳ Medium</td>
+                </tr>
+                <tr>
+                    <td><strong>Subscription Updated</strong></td>
+                    <td>After plan upgrade/downgrade</td>
+                    <td>Subscriber</td>
+                    <td>New plan details, prorated amount, effective date</td>
+                    <td>⏳ Medium</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>3.2 Email Content Requirements</h3>
+
+        <div class="section">
+            <h4>Welcome Email Content:</h4>
+            <ul>
+                <li>Subject: "Welcome to [Plan Name] - Your Subscription is Active"</li>
+                <li>Greeting with user's name</li>
+                <li>Subscription plan name and description</li>
+                <li>Billing amount and currency</li>
+                <li>Current period start and end dates</li>
+                <li>Next billing date</li>
+                <li>Billing interval (Monthly/Yearly)</li>
+                <li>Link to manage subscription</li>
+                <li>Support contact information</li>
+                <li>Tenant branding (logo, colors)</li>
+            </ul>
+
+            <h4>Payment Confirmation Email Content:</h4>
+            <ul>
+                <li>Subject: "Payment Received - [Plan Name] Subscription"</li>
+                <li>Payment confirmation message</li>
+                <li>Amount paid and currency</li>
+                <li>Payment date</li>
+                <li>Updated period dates</li>
+                <li>Next billing date</li>
+                <li>Receipt/invoice link</li>
+                <li>Manage subscription link</li>
+            </ul>
+
+            <h4>Payment Failure Email Content:</h4>
+            <ul>
+                <li>Subject: "Payment Failed - Action Required for [Plan Name]"</li>
+                <li>Payment failure notification</li>
+                <li>Amount due</li>
+                <li>Failure reason (if available)</li>
+                <li>Link to update payment method</li>
+                <li>Support contact information</li>
+                <li>Warning about service interruption</li>
+                <li>Retry payment link</li>
+            </ul>
+        </div>
+
+        <h2>4. Implementation Plan - Frontend</h2>
+
+        <h3>4.1 Create Subscription Email Utility</h3>
+
+        <div class="file-path">File: <code>src/lib/subscriptionEmailUtils.ts</code> (NEW FILE)</div>
+
+        <pre><code>/**
+ * Utility functions for sending subscription emails
+ * Follows the same pattern as ticket emails (src/lib/emailUtils.ts)
+ */
+
+export interface SendSubscriptionEmailParams {
+  subscriptionId: number;
+  email: string;
+  emailType: 'welcome' | 'payment-confirmation' | 'payment-failure' | 'cancellation' | 'updated';
+  emailHostUrlPrefix?: string;
+}
+
+/**
+ * Sends a subscription email for a completed subscription
+ * Similar to sendTicketEmail() but for subscriptions
+ */
+export async function sendSubscriptionEmail({
+  subscriptionId,
+  email,
+  emailType,
+  emailHostUrlPrefix
+}: SendSubscriptionEmailParams): Promise&lt;{ success: boolean; error?: string }&gt; {
+  try {
+    // Get the current domain for email context if not provided
+    const hostUrlPrefix = emailHostUrlPrefix ||
+      (typeof window !== 'undefined' ? window.location.origin : '');
+
+    // Validate that we have a valid host URL prefix
+    if (!hostUrlPrefix) {
+      console.error('[SUBSCRIPTION EMAIL UTILS] No emailHostUrlPrefix provided');
+      return {
+        success: false,
+        error: 'Email host URL prefix is required for proper email context'
+      };
+    }
+
+    console.log('[SUBSCRIPTION EMAIL UTILS] Sending subscription email:', {
+      subscriptionId,
+      email,
+      emailType,
+      hostUrlPrefix
+    });
+
+    const response = await fetch(
+      `/api/proxy/membership-subscriptions/${subscriptionId}/send-email?to=${encodeURIComponent(email)}&type=${emailType}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-email-host-url-prefix': hostUrlPrefix
+        },
+      }
+    );
+
+    if (response.ok) {
+      console.log('[SUBSCRIPTION EMAIL UTILS] Subscription email sent successfully');
+      return { success: true };
+    } else {
+      const errorText = await response.text();
+      console.error('[SUBSCRIPTION EMAIL UTILS] Failed to send email:', response.status, errorText);
+      return {
+        success: false,
+        error: `Failed to send email: ${response.status} - ${errorText}`
+      };
+    }
+  } catch (error: any) {
+    console.error('[SUBSCRIPTION EMAIL UTILS] Exception sending email:', error);
+    return {
+      success: false,
+      error: `Email sending failed: ${error.message || 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Sends subscription email asynchronously without blocking the UI
+ * Similar to sendTicketEmailAsync() pattern
+ */
+export function sendSubscriptionEmailAsync(params: SendSubscriptionEmailParams): void {
+  // Send email in background without blocking
+  sendSubscriptionEmail(params).then(result => {
+    if (result.success) {
+      console.log('[SUBSCRIPTION EMAIL UTILS] Background email sent successfully');
+    } else {
+      console.warn('[SUBSCRIPTION EMAIL UTILS] Background email failed:', result.error);
+    }
+  }).catch(error => {
+    console.error('[SUBSCRIPTION EMAIL UTILS] Background email exception:', error);
+  });
+}</code></pre>
+
+        <h3>4.2 Create Proxy Handler for Subscription Emails</h3>
+
+        <div class="file-path">File: <code>src/pages/api/proxy/membership-subscriptions/[id]/send-email.ts</code> (NEW FILE)</div>
+
+        <pre><code>import { createProxyHandler } from '@/lib/proxyHandler';
+import { getEmailHostUrlPrefix } from '@/lib/env';
+
+// Custom handler for subscription email sending
+// Follows the same pattern as send-ticket-email.ts
+export default async function handler(req: any, res: any) {
+  const { id } = req.query;
+  const { type } = req.query; // email type: welcome, payment-confirmation, etc.
+
+  // Get emailHostUrlPrefix from request headers or use default
+  const emailHostUrlPrefix = req.headers['x-email-host-url-prefix'] as string ||
+                           getEmailHostUrlPrefix();
+
+  // Validate that we have a valid host URL prefix
+  if (!emailHostUrlPrefix) {
+    console.error('[Send Subscription Email Proxy] No emailHostUrlPrefix available');
+    return res.status(400).json({
+      error: 'Email host URL prefix is required for proper email context',
+      details: 'Please ensure NEXT_PUBLIC_APP_URL is set in environment variables or pass x-email-host-url-prefix header'
+    });
+  }
+
+  // Use Base64 encoding like the working ticket email endpoint
+  const encodedEmailHostUrlPrefix = Buffer.from(emailHostUrlPrefix).toString('base64');
+
+  // Create a custom backend path that includes the Base64-encoded emailHostUrlPrefix
+  const customBackendPath = `/api/membership-subscriptions/${id}/emailHostUrlPrefix/${encodedEmailHostUrlPrefix}/send-email?type=${type}`;
+
+  console.log('[Send Subscription Email Proxy] Using Base64 encoding:', {
+    subscriptionId: id,
+    emailType: type,
+    emailHostUrlPrefix: emailHostUrlPrefix,
+    encodedBase64: encodedEmailHostUrlPrefix,
+    backendPath: customBackendPath
+  });
+
+  // Use the shared proxy handler with the custom backend path
+  const proxyHandler = createProxyHandler({
+    backendPath: customBackendPath,
+    allowedMethods: ['POST'],
+    injectTenantId: false  // Don't inject tenant ID as it's in the subscription record
+  });
+
+  return proxyHandler(req, res);
+}</code></pre>
+
+        <h3>4.3 Update Membership Success Page</h3>
+
+        <div class="file-path">File: <code>src/app/membership/success/MembershipSuccessClient.tsx</code> (MODIFY EXISTING)</div>
+
+        <pre><code>// Add import at top
+import { sendSubscriptionEmailAsync } from '@/lib/subscriptionEmailUtils';
+
+// Add email sending effect after subscription is successfully created
+useEffect(() => {
+  // Only send email if:
+  // 1. Subscription is successfully created
+  // 2. We have user profile with email
+  // 3. Email hasn't been sent yet (check sessionStorage to prevent duplicates)
+  if (
+    subscriptionDetails?.subscription?.id &&
+    subscriptionDetails?.userProfile?.email &&
+    typeof window !== 'undefined'
+  ) {
+    // Check if email already sent (prevent duplicate sends on page refresh)
+    const emailSentKey = `subscription_email_sent_${subscriptionDetails.subscription.id}`;
+    if (sessionStorage.getItem(emailSentKey)) {
+      console.log('[MEMBERSHIP-SUCCESS] Welcome email already sent, skipping');
+      return;
+    }
+
+    // Mark as sent BEFORE sending to prevent race conditions
+    sessionStorage.setItem(emailSentKey, 'true');
+
+    console.log('[MEMBERSHIP-SUCCESS] Sending welcome email:', {
+      subscriptionId: subscriptionDetails.subscription.id,
+      email: subscriptionDetails.userProfile.email
+    });
+
+    // Send welcome email asynchronously (non-blocking)
+    sendSubscriptionEmailAsync({
+      subscriptionId: subscriptionDetails.subscription.id,
+      email: subscriptionDetails.userProfile.email,
+      emailType: 'welcome'
+    });
+  }
+}, [subscriptionDetails?.subscription?.id, subscriptionDetails?.userProfile?.email]);</code></pre>
+
+        <h3>4.4 Update Subscription Cancellation Flow</h3>
+
+        <div class="file-path">File: <code>src/app/admin/membership/subscriptions/ApiServerActions.ts</code> (MODIFY EXISTING)</div>
+
+        <pre><code>// Add import at top
+import { getAppUrl, getEmailHostUrlPrefix } from '@/lib/env';
+import { fetchWithJwtRetry } from '@/lib/proxyHandler';
+
+// Add new function after cancelUserSubscriptionServer()
+export async function sendSubscriptionCancellationEmailServer(
+  subscriptionId: number,
+  userEmail: string
+): Promise&lt;{ success: boolean }&gt; {
+  const baseUrl = getAppUrl();
+  const emailHostUrlPrefix = getEmailHostUrlPrefix();
+
+  // Base64 encode emailHostUrlPrefix
+  const encodedEmailHostUrlPrefix = Buffer.from(emailHostUrlPrefix).toString('base64');
+
+  const url = `${baseUrl}/api/proxy/membership-subscriptions/${subscriptionId}/send-email?to=${encodeURIComponent(userEmail)}&type=cancellation`;
+
+  const res = await fetchWithJwtRetry(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-email-host-url-prefix': emailHostUrlPrefix
+    },
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    console.error('Failed to send cancellation email:', res.status);
+    return { success: false };
+  }
+
+  return { success: true };
+}</code></pre>
+
+        <div class="file-path">File: <code>src/app/admin/membership/subscriptions/AdminSubscriptionsClient.tsx</code> (MODIFY EXISTING)</div>
+
+        <pre><code>// Update handleCancelConfirm function to send email after cancellation
+const handleCancelConfirm = async () => {
+  if (!cancelSubscriptionId) return;
+
+  try {
+    setIsLoading(cancelSubscriptionId);
+    setCancelError(null);
+
+    // Cancel subscription
+    const cancelledSubscription = await cancelUserSubscriptionServer(cancelSubscriptionId);
+
+    // Send cancellation email
+    if (cancelledSubscription.userProfile?.email) {
+      try {
+        await sendSubscriptionCancellationEmailServer(
+          cancelSubscriptionId,
+          cancelledSubscription.userProfile.email
+        );
+      } catch (emailError) {
+        // Log but don't fail the cancellation if email fails
+        console.warn('Failed to send cancellation email:', emailError);
+      }
+    }
+
+    setCancelSuccess(true);
+    setTimeout(() => {
+      setShowCancelModal(false);
+      setCancelSubscriptionId(null);
+      setCancelSuccess(false);
+      router.refresh();
+    }, 1500);
+  } catch (err) {
+    setCancelError(err instanceof Error ? err.message : 'Failed to cancel subscription');
+  } finally {
+    setIsLoading(null);
+  }
+};</code></pre>
+
+        <h2>5. Implementation Plan - Backend</h2>
+
+        <h3>5.1 Backend Email Endpoint Structure</h3>
+
+        <div class="endpoint-box">
+            <strong>Backend Endpoint Pattern:</strong><br>
+            <code>POST /api/membership-subscriptions/{id}/emailHostUrlPrefix/{base64EncodedUrlPrefix}/send-email?type={emailType}&to={email}</code>
+        </div>
+
+        <p><strong>Parameters:</strong></p>
+        <ul>
+            <li><code>{id}</code> - Subscription ID</li>
+            <li><code>{base64EncodedUrlPrefix}</code> - Base64 encoded email host URL prefix</li>
+            <li><code>type</code> - Email type: <code>welcome</code>, <code>payment-confirmation</code>, <code>payment-failure</code>, <code>cancellation</code>, <code>updated</code></li>
+            <li><code>to</code> - Recipient email address</li>
+        </ul>
+
+        <h3>5.2 Backend Controller Implementation</h3>
+
+        <div class="file-path">Backend File: <code>E:\project_workspace\malayalees-us-site-boot\src\main\java\...\web\rest\MembershipSubscriptionResource.java</code> (ADD NEW METHOD)</div>
+
+        <pre><code>/**
+ * Send subscription email
+ * POST /api/membership-subscriptions/{id}/emailHostUrlPrefix/{emailHostUrlPrefix}/send-email
+ *
+ * Follows the same pattern as EventTicketTransactionResource.sendTicketEmail()
+ */
+@PostMapping("/membership-subscriptions/{id}/emailHostUrlPrefix/{emailHostUrlPrefix}/send-email")
+public ResponseEntity&lt;Void&gt; sendSubscriptionEmail(
+    @PathVariable Long id,
+    @PathVariable String emailHostUrlPrefix,
+    @RequestParam String type,
+    @RequestParam String to
+) {
+    log.debug("REST request to send subscription email: subscriptionId={}, type={}, to={}", id, type, to);
+
+    // Decode Base64 emailHostUrlPrefix
+    String decodedEmailHostUrlPrefix;
+    try {
+        byte[] decodedBytes = Base64.getDecoder().decode(emailHostUrlPrefix);
+        decodedEmailHostUrlPrefix = new String(decodedBytes, StandardCharsets.UTF_8);
+    } catch (IllegalArgumentException e) {
+        log.error("Failed to decode emailHostUrlPrefix: {}", emailHostUrlPrefix);
+        return ResponseEntity.badRequest().build();
+    }
+
+    // Find subscription
+    MembershipSubscriptionDTO subscription = membershipSubscriptionService.findOne(id)
+        .orElseThrow(() -> new BadRequestAlertException(
+            "Subscription not found", "membershipSubscription", "notfound"
+        ));
+
+    // Find user profile
+    UserProfileDTO userProfile = userProfileService.findOne(subscription.getUserProfileId())
+        .orElseThrow(() -> new BadRequestAlertException(
+            "User profile not found", "userProfile", "notfound"
+        ));
+
+    // Find membership plan
+    MembershipPlanDTO plan = membershipPlanService.findOne(subscription.getMembershipPlanId())
+        .orElseThrow(() -> new BadRequestAlertException(
+            "Membership plan not found", "membershipPlan", "notfound"
+        ));
+
+    // Send email based on type
+    try {
+        switch (type) {
+            case "welcome":
+                emailService.sendSubscriptionWelcomeEmail(
+                    userProfile,
+                    subscription,
+                    plan,
+                    decodedEmailHostUrlPrefix
+                );
+                break;
+            case "payment-confirmation":
+                emailService.sendSubscriptionPaymentConfirmation(
+                    userProfile,
+                    subscription,
+                    plan,
+                    decodedEmailHostUrlPrefix
+                );
+                break;
+            case "payment-failure":
+                emailService.sendSubscriptionPaymentFailure(
+                    userProfile,
+                    subscription,
+                    plan,
+                    decodedEmailHostUrlPrefix
+                );
+                break;
+            case "cancellation":
+                emailService.sendSubscriptionCancellationEmail(
+                    userProfile,
+                    subscription,
+                    plan,
+                    decodedEmailHostUrlPrefix
+                );
+                break;
+            case "updated":
+                emailService.sendSubscriptionUpdatedEmail(
+                    userProfile,
+                    subscription,
+                    plan,
+                    decodedEmailHostUrlPrefix
+                );
+                break;
+            default:
+                log.warn("Unknown email type: {}", type);
+                return ResponseEntity.badRequest().build();
+        }
+
+        return ResponseEntity.ok().build();
+    } catch (Exception e) {
+        log.error("Failed to send subscription email", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    }
+}</code></pre>
+
+        <h3>5.3 Backend Email Service Implementation</h3>
+
+        <div class="file-path">Backend File: <code>E:\project_workspace\malayalees-us-site-boot\src\main\java\...\service\EmailService.java</code> (ADD NEW METHODS)</div>
+
+        <pre><code>/**
+ * Send subscription welcome email
+ * Similar to sendTicketEmail() but for subscriptions
+ */
+public void sendSubscriptionWelcomeEmail(
+    UserProfileDTO userProfile,
+    MembershipSubscriptionDTO subscription,
+    MembershipPlanDTO plan,
+    String emailHostUrlPrefix
+) {
+    try {
+        // Build email subject
+        String subject = String.format("Welcome to %s - Your Subscription is Active", plan.getPlanName());
+
+        // Build email body HTML using template
+        String emailBody = buildSubscriptionWelcomeEmailTemplate(
+            userProfile,
+            subscription,
+            plan,
+            emailHostUrlPrefix
+        );
+
+        // Send email via AWS SES or configured email service
+        sendEmail(
+            userProfile.getEmail(),
+            subject,
+            emailBody,
+            "SUBSCRIPTION_WELCOME",
+            subscription.getTenantId()
+        );
+
+        // Log email in email_log table
+        logEmailSent(
+            subscription.getTenantId(),
+            userProfile.getEmail(),
+            subject,
+            emailBody,
+            "SENT",
+            "TRANSACTIONAL",
+            null,
+            Map.of(
+                "subscriptionId", String.valueOf(subscription.getId()),
+                "emailType", "welcome"
+            )
+        );
+
+        log.info("Subscription welcome email sent to: {}", userProfile.getEmail());
+    } catch (Exception e) {
+        log.error("Failed to send subscription welcome email", e);
+        throw new RuntimeException("Failed to send subscription welcome email", e);
+    }
+}
+
+/**
+ * Send subscription payment confirmation email
+ */
+public void sendSubscriptionPaymentConfirmation(
+    UserProfileDTO userProfile,
+    MembershipSubscriptionDTO subscription,
+    MembershipPlanDTO plan,
+    String emailHostUrlPrefix
+) {
+    // Similar implementation to sendSubscriptionWelcomeEmail()
+    // but with payment confirmation content
+}
+
+/**
+ * Send subscription payment failure email
+ */
+public void sendSubscriptionPaymentFailure(
+    UserProfileDTO userProfile,
+    MembershipSubscriptionDTO subscription,
+    MembershipPlanDTO plan,
+    String emailHostUrlPrefix
+) {
+    // Similar implementation with payment failure content
+}
+
+/**
+ * Build subscription welcome email HTML template
+ * Similar to buildTicketEmailTemplate() but for subscriptions
+ */
+private String buildSubscriptionWelcomeEmailTemplate(
+    UserProfileDTO userProfile,
+    MembershipSubscriptionDTO subscription,
+    MembershipPlanDTO plan,
+    String emailHostUrlPrefix
+) {
+    // Use Thymeleaf or similar template engine
+    // Include:
+    // - Tenant branding (logo, colors)
+    // - User name
+    // - Plan details
+    // - Billing information
+    // - Period dates
+    // - Manage subscription link
+    // - Support contact
+
+    return emailTemplateService.renderTemplate(
+        "subscription-welcome",
+        Map.of(
+            "userName", userProfile.getFirstName() + " " + userProfile.getLastName(),
+            "planName", plan.getPlanName(),
+            "planDescription", plan.getDescription(),
+            "billingAmount", plan.getPrice(),
+            "currency", plan.getCurrency(),
+            "periodStart", subscription.getCurrentPeriodStart(),
+            "periodEnd", subscription.getCurrentPeriodEnd(),
+            "nextBillingDate", subscription.getCurrentPeriodEnd(),
+            "billingInterval", plan.getBillingInterval(),
+            "manageSubscriptionUrl", emailHostUrlPrefix + "/membership/manage",
+            "supportEmail", getTenantSupportEmail(subscription.getTenantId()),
+            "tenantLogo", getTenantLogoUrl(subscription.getTenantId())
+        )
+    );
+}</code></pre>
+
+        <h3>5.4 Backend Webhook Integration</h3>
+
+        <div class="file-path">Backend File: <code>E:\project_workspace\malayalees-us-site-boot\src\main\java\...\webhook\StripeWebhookHandler.java</code> (MODIFY EXISTING)</div>
+
+        <pre><code>/**
+ * Handle invoice.payment_succeeded webhook for subscription recurring payments
+ * ADD THIS METHOD to existing webhook handler
+ */
+private void handleInvoicePaymentSucceeded(Invoice invoice) {
+    String stripeSubscriptionId = invoice.getSubscription();
+
+    // Find subscription by Stripe subscription ID
+    MembershipSubscription subscription = membershipSubscriptionRepository
+        .findByStripeSubscriptionId(stripeSubscriptionId)
+        .orElse(null);
+
+    if (subscription == null) {
+        log.warn("Subscription not found for Stripe subscription: {}", stripeSubscriptionId);
+        return;
+    }
+
+    // Update period dates (existing logic)
+    // ... update subscription dates ...
+
+    // Send payment confirmation email
+    try {
+        UserProfile userProfile = userProfileRepository.findById(subscription.getUserProfileId())
+            .orElse(null);
+        MembershipPlan plan = membershipPlanRepository.findById(subscription.getMembershipPlanId())
+            .orElse(null);
+
+        if (userProfile != null && plan != null) {
+            String emailHostUrlPrefix = getEmailHostUrlPrefix(); // Get from config
+
+            emailService.sendSubscriptionPaymentConfirmation(
+                userProfileMapper.toDto(userProfile),
+                membershipSubscriptionMapper.toDto(subscription),
+                membershipPlanMapper.toDto(plan),
+                emailHostUrlPrefix
+            );
+
+            log.info("Payment confirmation email sent for subscription: {}", subscription.getId());
+        }
+    } catch (Exception e) {
+        log.error("Failed to send payment confirmation email", e);
+        // Don't fail webhook if email fails
+    }
+}
+
+/**
+ * Handle invoice.payment_failed webhook
+ * ADD THIS METHOD to existing webhook handler
+ */
+private void handleInvoicePaymentFailed(Invoice invoice) {
+    String stripeSubscriptionId = invoice.getSubscription();
+
+    MembershipSubscription subscription = membershipSubscriptionRepository
+        .findByStripeSubscriptionId(stripeSubscriptionId)
+        .orElse(null);
+
+    if (subscription == null) {
+        return;
+    }
+
+    // Update status to PAST_DUE (existing logic)
+    // ... update subscription status ...
+
+    // Send payment failure email
+    try {
+        UserProfile userProfile = userProfileRepository.findById(subscription.getUserProfileId())
+            .orElse(null);
+        MembershipPlan plan = membershipPlanRepository.findById(subscription.getMembershipPlanId())
+            .orElse(null);
+
+        if (userProfile != null && plan != null) {
+            String emailHostUrlPrefix = getEmailHostUrlPrefix();
+
+            emailService.sendSubscriptionPaymentFailure(
+                userProfileMapper.toDto(userProfile),
+                membershipSubscriptionMapper.toDto(subscription),
+                membershipPlanMapper.toDto(plan),
+                emailHostUrlPrefix
+            );
+
+            log.info("Payment failure email sent for subscription: {}", subscription.getId());
+        }
+    } catch (Exception e) {
+        log.error("Failed to send payment failure email", e);
+    }
+}</code></pre>
+
+        <h2>6. Email Template Design</h2>
+
+        <h3>6.1 Template Structure</h3>
+
+        <div class="section">
+            <p><strong>Template Location:</strong> Backend templates directory (similar to ticket email templates)</p>
+            <p><strong>Template Engine:</strong> Thymeleaf or similar (match existing ticket email template system)</p>
+            <p><strong>Template Files:</strong></p>
+            <ul>
+                <li><code>subscription-welcome.html</code></li>
+                <li><code>subscription-payment-confirmation.html</code></li>
+                <li><code>subscription-payment-failure.html</code></li>
+                <li><code>subscription-cancellation.html</code></li>
+                <li><code>subscription-updated.html</code></li>
+            </ul>
+        </div>
+
+        <h3>6.2 Template Variables</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Variable</th>
+                    <th>Source</th>
+                    <th>Example</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>{{userName}}</code></td>
+                    <td>UserProfile.firstName + lastName</td>
+                    <td>"John Doe"</td>
+                </tr>
+                <tr>
+                    <td><code>{{planName}}</code></td>
+                    <td>MembershipPlan.planName</td>
+                    <td>"Premium Plan"</td>
+                </tr>
+                <tr>
+                    <td><code>{{billingAmount}}</code></td>
+                    <td>MembershipPlan.price</td>
+                    <td>29.99</td>
+                </tr>
+                <tr>
+                    <td><code>{{currency}}</code></td>
+                    <td>MembershipPlan.currency</td>
+                    <td>"USD"</td>
+                </tr>
+                <tr>
+                    <td><code>{{periodStart}}</code></td>
+                    <td>MembershipSubscription.currentPeriodStart</td>
+                    <td>"2025-12-05"</td>
+                </tr>
+                <tr>
+                    <td><code>{{periodEnd}}</code></td>
+                    <td>MembershipSubscription.currentPeriodEnd</td>
+                    <td>"2026-01-04"</td>
+                </tr>
+                <tr>
+                    <td><code>{{nextBillingDate}}</code></td>
+                    <td>MembershipSubscription.currentPeriodEnd</td>
+                    <td>"2026-01-04"</td>
+                </tr>
+                <tr>
+                    <td><code>{{billingInterval}}</code></td>
+                    <td>MembershipPlan.billingInterval</td>
+                    <td>"MONTHLY"</td>
+                </tr>
+                <tr>
+                    <td><code>{{manageSubscriptionUrl}}</code></td>
+                    <td>emailHostUrlPrefix + "/membership/manage"</td>
+                    <td>"https://example.com/membership/manage"</td>
+                </tr>
+                <tr>
+                    <td><code>{{tenantLogo}}</code></td>
+                    <td>TenantSettings.logoUrl</td>
+                    <td>"https://example.com/logo.png"</td>
+                </tr>
+                <tr>
+                    <td><code>{{supportEmail}}</code></td>
+                    <td>TenantSettings.supportEmail</td>
+                    <td>"support@example.com"</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>6.3 Template Design Guidelines</h3>
+
+        <div class="section">
+            <h4>Follow Existing Ticket Email Template:</h4>
+            <ul>
+                <li>Use same HTML structure and CSS styling</li>
+                <li>Include tenant branding (logo, colors)</li>
+                <li>Responsive design for mobile and desktop</li>
+                <li>Clear call-to-action buttons</li>
+                <li>Footer with support information</li>
+            </ul>
+
+            <h4>Key Sections:</h4>
+            <ol>
+                <li><strong>Header:</strong> Tenant logo and branding</li>
+                <li><strong>Greeting:</strong> Personalized message</li>
+                <li><strong>Main Content:</strong> Subscription details, billing info</li>
+                <li><strong>Action Buttons:</strong> Manage subscription, update payment method</li>
+                <li><strong>Footer:</strong> Support contact, unsubscribe link</li>
+            </ol>
+        </div>
+
+        <h2>7. Database Considerations</h2>
+
+        <h3>7.1 Email Logging</h3>
+
+        <div class="section">
+            <p><strong>Use Existing Table:</strong> <code>email_log</code> table (already exists in schema)</p>
+
+            <pre><code>CREATE TABLE email_log (
+    id bigint PRIMARY KEY,
+    tenant_id varchar(255) NOT NULL,
+    recipient_email varchar(255) NOT NULL,
+    subject varchar(255),
+    body VARCHAR(32768),
+    sent_at timestamp NOT NULL,
+    status varchar(50), -- SENT, FAILED, etc.
+    type varchar(50), -- TRANSACTIONAL, BULK
+    campaign_id bigint,
+    metadata VARCHAR(8192) -- JSON with subscriptionId, emailType, etc.
+);</code></pre>
+
+            <p><strong>Metadata JSON Structure:</strong></p>
+            <pre><code>{
+  "subscriptionId": 7453,
+  "emailType": "welcome",
+  "membershipPlanId": 4051,
+  "userProfileId": 4651
+}</code></pre>
+        </div>
+
+        <h3>7.2 No Schema Changes Required</h3>
+
+        <div class="status-box success">
+            <strong>✅ No Database Schema Changes:</strong> The existing <code>email_log</code> table is sufficient for logging subscription emails. No new tables or columns needed.
+        </div>
+
+        <h2>8. Integration Points</h2>
+
+        <h3>8.1 Frontend Integration Points</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Location</th>
+                    <th>Action</th>
+                    <th>Email Type</th>
+                    <th>Trigger</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>src/app/membership/success/MembershipSuccessClient.tsx</code></td>
+                    <td>Send welcome email</td>
+                    <td>welcome</td>
+                    <td>After subscription creation</td>
+                </tr>
+                <tr>
+                    <td><code>src/app/admin/membership/subscriptions/AdminSubscriptionsClient.tsx</code></td>
+                    <td>Send cancellation email</td>
+                    <td>cancellation</td>
+                    <td>After admin cancels subscription</td>
+                </tr>
+                <tr>
+                    <td><code>src/app/membership/manage/page.tsx</code> (future)</td>
+                    <td>Send cancellation email</td>
+                    <td>cancellation</td>
+                    <td>After user cancels subscription</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>8.2 Backend Integration Points</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Location</th>
+                    <th>Action</th>
+                    <th>Email Type</th>
+                    <th>Trigger</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>StripeWebhookHandler.java</code></td>
+                    <td>Send payment confirmation</td>
+                    <td>payment-confirmation</td>
+                    <td><code>invoice.payment_succeeded</code> webhook</td>
+                </tr>
+                <tr>
+                    <td><code>StripeWebhookHandler.java</code></td>
+                    <td>Send payment failure</td>
+                    <td>payment-failure</td>
+                    <td><code>invoice.payment_failed</code> webhook</td>
+                </tr>
+                <tr>
+                    <td><code>StripeWebhookHandler.java</code></td>
+                    <td>Send cancellation email</td>
+                    <td>cancellation</td>
+                    <td><code>customer.subscription.deleted</code> webhook</td>
+                </tr>
+                <tr>
+                    <td><code>MembershipSubscriptionResource.java</code></td>
+                    <td>Send updated email</td>
+                    <td>updated</td>
+                    <td>After plan upgrade/downgrade</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>9. Comparison with Existing Patterns</h2>
+
+        <h3>9.1 Ticket Email vs Subscription Email</h3>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Aspect</th>
+                    <th>Ticket Email</th>
+                    <th>Subscription Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Frontend Utility</strong></td>
+                    <td><code>src/lib/emailUtils.ts</code></td>
+                    <td><code>src/lib/subscriptionEmailUtils.ts</code> (NEW)</td>
+                </tr>
+                <tr>
+                    <td><strong>Proxy Handler</strong></td>
+                    <td><code>src/pages/api/proxy/events/[id]/transactions/[transactionId]/send-ticket-email.ts</code></td>
+                    <td><code>src/pages/api/proxy/membership-subscriptions/[id]/send-email.ts</code> (NEW)</td>
+                </tr>
+                <tr>
+                    <td><strong>Backend Endpoint</strong></td>
+                    <td><code>/api/events/{id}/transactions/{id}/emailHostUrlPrefix/{base64}/send-ticket-email</code></td>
+                    <td><code>/api/membership-subscriptions/{id}/emailHostUrlPrefix/{base64}/send-email</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Email Host Prefix</strong></td>
+                    <td>Base64 encoded in URL path</td>
+                    <td>Base64 encoded in URL path (same pattern)</td>
+                </tr>
+                <tr>
+                    <td><strong>Email Type</strong></td>
+                    <td>Single type (ticket confirmation)</td>
+                    <td>Multiple types (welcome, payment-confirmation, etc.)</td>
+                </tr>
+                <tr>
+                    <td><strong>Query Parameters</strong></td>
+                    <td><code>?to={email}</code></td>
+                    <td><code>?to={email}&type={emailType}</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Trigger Location</strong></td>
+                    <td>Success page after QR code display</td>
+                    <td>Success page + Webhook handlers</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>9.2 Promotional Email vs Subscription Email</h3>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Aspect</th>
+                    <th>Promotional Email</th>
+                    <th>Subscription Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Server Action</strong></td>
+                    <td><code>src/app/admin/promotion-emails/serverActions.ts</code></td>
+                    <td><code>src/lib/subscriptionEmailUtils.ts</code> (utility, not server action)</td>
+                </tr>
+                <tr>
+                    <td><strong>Proxy Handler</strong></td>
+                    <td><code>src/pages/api/proxy/send-promotion-emails/index.ts</code></td>
+                    <td><code>src/pages/api/proxy/membership-subscriptions/[id]/send-email.ts</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Backend Endpoint</strong></td>
+                    <td><code>/api/send-promotion-emails</code></td>
+                    <td><code>/api/membership-subscriptions/{id}/emailHostUrlPrefix/{base64}/send-email</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Email Host Prefix</strong></td>
+                    <td>In request body</td>
+                    <td>Base64 encoded in URL path (like ticket emails)</td>
+                </tr>
+                <tr>
+                    <td><strong>Template Source</strong></td>
+                    <td>Database (<code>promotion_email_template</code>)</td>
+                    <td>Backend template files (like ticket emails)</td>
+                </tr>
+                <tr>
+                    <td><strong>Logging Table</strong></td>
+                    <td><code>promotion_email_sent_log</code></td>
+                    <td><code>email_log</code> (general table)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>10. Implementation Checklist</h2>
+
+        <h3>10.1 Frontend Implementation</h3>
+        <ul class="checklist">
+            <li class="required">Create <code>src/lib/subscriptionEmailUtils.ts</code> with email utility functions</li>
+            <li class="required">Create <code>src/pages/api/proxy/membership-subscriptions/[id]/send-email.ts</code> proxy handler</li>
+            <li class="required">Update <code>src/app/membership/success/MembershipSuccessClient.tsx</code> to send welcome email</li>
+            <li class="required">Update <code>src/app/admin/membership/subscriptions/ApiServerActions.ts</code> to add cancellation email function</li>
+            <li class="required">Update <code>src/app/admin/membership/subscriptions/AdminSubscriptionsClient.tsx</code> to send cancellation email</li>
+            <li class="pending">Add email sending to user subscription management page (future)</li>
+            <li class="pending">Test email sending from frontend</li>
+            <li class="pending">Verify duplicate email prevention (sessionStorage)</li>
+        </ul>
+
+        <h3>10.2 Backend Implementation</h3>
+        <ul class="checklist">
+            <li class="required">Add email endpoint to <code>MembershipSubscriptionResource.java</code></li>
+            <li class="required">Implement <code>sendSubscriptionWelcomeEmail()</code> in <code>EmailService.java</code></li>
+            <li class="required">Implement <code>sendSubscriptionPaymentConfirmation()</code> in <code>EmailService.java</code></li>
+            <li class="required">Implement <code>sendSubscriptionPaymentFailure()</code> in <code>EmailService.java</code></li>
+            <li class="required">Implement <code>sendSubscriptionCancellationEmail()</code> in <code>EmailService.java</code></li>
+            <li class="pending">Create email template files (HTML)</li>
+            <li class="pending">Add template rendering logic</li>
+            <li class="required">Update <code>StripeWebhookHandler.java</code> to send emails on webhook events</li>
+            <li class="pending">Add email logging to <code>email_log</code> table</li>
+            <li class="pending">Test email delivery</li>
+            <li class="pending">Verify tenant branding in emails</li>
+        </ul>
+
+        <h3>10.3 Testing Requirements</h3>
+        <ul class="checklist">
+            <li class="pending">Test welcome email after subscription creation</li>
+            <li class="pending">Test payment confirmation email via webhook</li>
+            <li class="pending">Test payment failure email via webhook</li>
+            <li class="pending">Test cancellation email</li>
+            <li class="pending">Test email template rendering</li>
+            <li class="pending">Test email logging</li>
+            <li class="pending">Test duplicate email prevention</li>
+            <li class="pending">Test email delivery in production</li>
+            <li class="pending">Verify email links work correctly</li>
+            <li class="pending">Test email rendering in different email clients</li>
+        </ul>
+
+        <h2>11. Error Handling & Edge Cases</h2>
+
+        <h3>11.1 Frontend Error Handling</h3>
+
+        <div class="section">
+            <h4>Email Sending Failures:</h4>
+            <ul>
+                <li><strong>Non-blocking:</strong> Email failures should not block subscription creation or cancellation</li>
+                <li><strong>Logging:</strong> Log errors to console for debugging</li>
+                <li><strong>User Feedback:</strong> Don't show error to user if email fails (subscription still succeeds)</li>
+                <li><strong>Retry Logic:</strong> Consider adding retry logic for failed emails (future enhancement)</li>
+            </ul>
+
+            <h4>Duplicate Email Prevention:</h4>
+            <ul>
+                <li><strong>SessionStorage:</strong> Use sessionStorage to track sent emails (like ticket emails)</li>
+                <li><strong>Key Format:</strong> <code>subscription_email_sent_{subscriptionId}</code></li>
+                <li><strong>Persistence:</strong> Persists across page refreshes</li>
+            </ul>
+        </div>
+
+        <h3>11.2 Backend Error Handling</h3>
+
+        <div class="section">
+            <h4>Email Service Failures:</h4>
+            <ul>
+                <li><strong>Webhook Processing:</strong> Don't fail webhook if email sending fails</li>
+                <li><strong>Logging:</strong> Log all email failures with details</li>
+                <li><strong>Retry:</strong> Consider implementing retry logic for transient failures</li>
+                <li><strong>Fallback:</strong> Log to database even if email sending fails</li>
+            </ul>
+
+            <h4>Missing Data:</h4>
+            <ul>
+                <li><strong>User Profile:</strong> Skip email if user profile not found</li>
+                <li><strong>Email Address:</strong> Skip email if user email is missing or invalid</li>
+                <li><strong>Subscription:</strong> Return 404 if subscription not found</li>
+            </ul>
+        </div>
+
+        <h2>12. Security Considerations</h2>
+
+        <div class="section">
+            <h4>Email Security:</h4>
+            <ul>
+                <li>✅ <strong>Tenant Isolation:</strong> Ensure emails only sent to users in correct tenant</li>
+                <li>✅ <strong>Email Validation:</strong> Validate email addresses before sending</li>
+                <li>✅ <strong>Rate Limiting:</strong> Consider rate limiting for email endpoints</li>
+                <li>✅ <strong>Template Sanitization:</strong> Sanitize user data in email templates</li>
+                <li>✅ <strong>Authentication:</strong> Email endpoints require JWT authentication</li>
+                <li>⏳ <strong>SPF/DKIM:</strong> Configure email authentication (backend responsibility)</li>
+            </ul>
+        </div>
+
+        <h2>13. Performance Considerations</h2>
+
+        <div class="section">
+            <h4>Email Sending Performance:</h4>
+            <ul>
+                <li><strong>Asynchronous:</strong> Send emails asynchronously (non-blocking)</li>
+                <li><strong>Queue System:</strong> Consider using email queue for high volume (future)</li>
+                <li><strong>Batch Processing:</strong> For bulk operations, use batch email sending</li>
+                <li><strong>Caching:</strong> Cache tenant settings and templates</li>
+                <li><strong>Database:</strong> Use async logging for email_log entries</li>
+            </ul>
+        </div>
+
+        <h2>14. Migration & Deployment Plan</h2>
+
+        <h3>14.1 Phase 1: Frontend Infrastructure</h3>
+        <ol>
+            <li>Create <code>subscriptionEmailUtils.ts</code></li>
+            <li>Create proxy handler for subscription emails</li>
+            <li>Update membership success page</li>
+            <li>Test frontend email calls</li>
+        </ol>
+
+        <h3>14.2 Phase 2: Backend Infrastructure</h3>
+        <ol>
+            <li>Add email endpoint to MembershipSubscriptionResource</li>
+            <li>Implement email service methods</li>
+            <li>Create email templates</li>
+            <li>Test backend email sending</li>
+        </ol>
+
+        <h3>14.3 Phase 3: Webhook Integration</h3>
+        <ol>
+            <li>Update StripeWebhookHandler for invoice.payment_succeeded</li>
+            <li>Update StripeWebhookHandler for invoice.payment_failed</li>
+            <li>Test webhook email sending</li>
+            <li>Deploy to staging</li>
+        </ol>
+
+        <h3>14.4 Phase 4: Testing & Production</h3>
+        <ol>
+            <li>End-to-end testing</li>
+            <li>Email delivery verification</li>
+            <li>Template rendering testing</li>
+            <li>Deploy to production</li>
+        </ol>
+
+        <h2>15. Summary & Recommendations</h2>
+
+        <div class="section">
+            <h3>15.1 Key Implementation Points</h3>
+            <ol>
+                <li><strong>Follow Existing Patterns:</strong> Use ticket email pattern for URL structure and Base64 encoding</li>
+                <li><strong>Separate Utility:</strong> Create dedicated <code>subscriptionEmailUtils.ts</code> to keep code organized</li>
+                <li><strong>Multiple Email Types:</strong> Support welcome, payment-confirmation, payment-failure, cancellation, updated</li>
+                <li><strong>Webhook Integration:</strong> Send emails from webhook handlers for recurring payments</li>
+                <li><strong>Non-Blocking:</strong> Email failures should not affect subscription operations</li>
+                <li><strong>Logging:</strong> Use existing <code>email_log</code> table for all subscription emails</li>
+            </ol>
+
+            <h3>15.2 Priority Actions</h3>
+            <ol>
+                <li><strong>HIGH PRIORITY:</strong> Implement welcome email after subscription creation</li>
+                <li><strong>HIGH PRIORITY:</strong> Implement payment confirmation email in webhook handler</li>
+                <li><strong>HIGH PRIORITY:</strong> Implement payment failure email in webhook handler</li>
+                <li><strong>MEDIUM PRIORITY:</strong> Implement cancellation email</li>
+                <li><strong>LOW PRIORITY:</strong> Implement subscription updated email</li>
+            </ol>
+
+            <h3>15.3 Estimated Implementation Time</h3>
+            <ul>
+                <li><strong>Frontend Infrastructure:</strong> 1-2 days</li>
+                <li><strong>Backend Infrastructure:</strong> 2-3 days</li>
+                <li><strong>Email Templates:</strong> 1-2 days</li>
+                <li><strong>Webhook Integration:</strong> 1 day</li>
+                <li><strong>Testing & QA:</strong> 2 days</li>
+                <li><strong>Total:</strong> 7-10 days</li>
+            </ul>
+        </div>
+
+        <div class="status-box info">
+            <strong>Note:</strong> This implementation plan follows all existing patterns in the codebase and ensures that subscription emails integrate seamlessly without breaking existing ticket email or promotional email functionality. All code examples follow the patterns established in <code>nextjs_api_routes.mdc</code> and <code>ui_style_guide.mdc</code>.
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #ddd;">
+
+        <p class="timestamp">
+            Analysis completed on December 6, 2025<br>
+            Frontend Project: <code>E:\project_workspace\code_backup\mosc-temp</code><br>
+            Backend Project: <code>E:\project_workspace\malayalees-us-site-boot</code><br>
+            Reference Patterns: Ticket Emails, Promotional Emails
+        </p>
+    </div>
+</body>
+</html>
+
+
+

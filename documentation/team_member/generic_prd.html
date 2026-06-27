@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Members / Squad Roster — Generic PRD (Index)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .layer-cards { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 20px 0; }
+        @media (min-width: 640px) { .layer-cards { grid-template-columns: 1fr 1fr; } }
+        .layer-card { background: #fff; border: 2px solid #b8d4e3; border-radius: 8px; padding: 16px; }
+        .layer-card h3 { margin-top: 0; color: #0052a3; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        .companion { background: #d4edda; border-left: 4px solid #28a745; padding: 14px 18px; border-radius: 8px; margin: 20px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Team Members / Squad Roster — Generic PRD (Index)</h1>
+    <p class="doc-meta">
+        <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> May 23, 2026 &nbsp;|&nbsp; <strong>Status:</strong> Draft<br>
+        <strong>UI reference:</strong> Dark squad carousel (portrait cards, jersey badge, “View all” CTA)<br>
+        <strong>Component prompts:</strong> <a href="components_prompt.html">components_prompt.html</a>
+    </p>
+
+    <div class="lead">
+        <p>Tenants publish <strong>sports squads</strong> or <strong>music bands</strong> as roster groups with members, skills, positions, and optional links to <code>user_profile</code>. Admin CRUD mirrors <code>executive_committee_team_members</code>; public UI uses a squad-style carousel distinct from the executive committee homepage rail.</p>
+        <p><strong>Non-breaking:</strong> <code>executive_committee_team_members</code> and <code>TeamSection</code> remain unchanged.</p>
+    </div>
+
+    <div class="companion">
+        <p><strong>Layer PRDs (implement in order):</strong></p>
+        <div class="layer-cards">
+            <div class="layer-card">
+                <h3><a href="database_schema_prd.html">Database schema PRD</a></h3>
+                <p><code>team_groups</code>, <code>team_members</code>, tenant_settings flag. <strong>P0.</strong></p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="backend_prd.html">Backend PRD</a></h3>
+                <p><code>malayalees-us-site-boot</code> — REST, Liquibase, criteria.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="frontend_prd.html">Frontend PRD</a></h3>
+                <p>Proxies, admin CRUD, <code>SquadRosterSection</code>, <code>/team/[slug]</code>.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="batch_job_prd.html">Batch job PRD</a></h3>
+                <p>Optional P4 — not required for MVP.</p>
+            </div>
+        </div>
+    </div>
+
+    <h2>Executive summary</h2>
+    <div class="section-container">
+        <div class="section-header">Problem and solution</div>
+        <p>Organizations need rosters for sports teams and music bands with positions, jersey numbers, instruments, and skills—not only executive leadership bios. The platform already has <code>executive_committee_team_members</code> for org leadership; this feature adds <code>team_groups</code> + <code>team_members</code> with optional <code>user_profile_id</code>.</p>
+    </div>
+
+    <h2>Data model (confirmed)</h2>
+    <ul>
+        <li><strong>team_groups</strong> — tenant-scoped squad/band (type, name, slug, section labels, CTA).</li>
+        <li><strong>team_members</strong> — members belonging to one group; optional FK to <code>user_profile</code>.</li>
+    </ul>
+
+    <h2>Normalization rules</h2>
+    <ul>
+        <li>When <code>user_profile_id</code> is set, admin may prefill name, email, and image from profile; stored columns are the public display source (overrides allowed).</li>
+        <li>Without profile: <code>first_name</code> and <code>last_name</code> required.</li>
+        <li><code>expertise</code> — JSON array string of skills (same convention as executive committee).</li>
+        <li><code>team_type</code> on group (<code>SPORTS</code> | <code>MUSIC</code> | <code>OTHER</code>) drives which admin fields are emphasized.</li>
+    </ul>
+
+    <h2>Repositories</h2>
+    <table>
+        <thead><tr><th>Layer</th><th>Path</th><th>PRD</th></tr></thead>
+        <tbody>
+            <tr><td>Canonical SQL</td><td><code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></td><td><a href="database_schema_prd.html">database_schema_prd.html</a></td></tr>
+            <tr><td>Backend</td><td><code>malayalees-us-site-boot</code></td><td><a href="backend_prd.html">backend_prd.html</a></td></tr>
+            <tr><td>Frontend</td><td><code>mosc-temp</code></td><td><a href="frontend_prd.html">frontend_prd.html</a></td></tr>
+            <tr><td>Batch</td><td><code>event-site-manager-batch-jobs</code></td><td><a href="batch_job_prd.html">batch_job_prd.html</a></td></tr>
+        </tbody>
+    </table>
+
+    <h2>vs Executive Committee</h2>
+    <table>
+        <thead><tr><th>Aspect</th><th>Executive committee</th><th>Squad roster</th></tr></thead>
+        <tbody>
+            <tr><td>Table</td><td><code>executive_committee_team_members</code></td><td><code>team_groups</code> + <code>team_members</code></td></tr>
+            <tr><td>Grouping</td><td>Flat list</td><td>Multiple groups per tenant</td></tr>
+            <tr><td>Profile link</td><td>No</td><td>Optional <code>user_profile_id</code></td></tr>
+            <tr><td>Public UI</td><td><code>TeamSection</code> (light rail)</td><td><code>SquadRosterSection</code> (dark carousel)</td></tr>
+            <tr><td>Homepage flag</td><td><code>show_executive_committee_section_in_home_page</code> (new)</td><td><code>show_team_members_section_in_home_page</code> (squad)</td></tr>
+        </tbody>
+    </table>
+
+    <h2>Implementation phases</h2>
+    <table>
+        <thead><tr><th>Phase</th><th>Scope</th></tr></thead>
+        <tbody>
+            <tr><td>P0</td><td>HTML PRDs + DDL + Liquibase</td></tr>
+            <tr><td>P1</td><td>Backend entities + REST</td></tr>
+            <tr><td>P2</td><td>Proxies + admin team-groups</td></tr>
+            <tr><td>P3</td><td>Admin team-members + upload</td></tr>
+            <tr><td>P4</td><td>Public squad UI + homepage flags</td></tr>
+            <tr><td>P5</td><td>OpenAPI sync</td></tr>
+        </tbody>
+    </table>
+
+    <div class="info-box">
+        <p><strong>API pattern:</strong> All frontend calls use <code>/api/proxy/team-groups</code> and <code>/api/proxy/team-members</code> per <code>nextjs_api_routes.mdc</code>. Do not add <code>tenantId.equals</code> in client queries—the proxy injects it.</p>
+    </div>
+
+</body>
+</html>

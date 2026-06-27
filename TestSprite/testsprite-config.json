@@ -1,0 +1,194 @@
+{
+  "project": {
+    "name": "Malayalees US Site Event Registration Platform",
+    "version": "1.0.0",
+    "type": "web-app",
+    "baseUrl": "http://localhost:3000",
+    "backendUrl": "http://localhost:8080"
+  },
+  "authentication": {
+    "type": "clerk",
+    "loginUrl": "/sign-in",
+    "signupUrl": "/sign-up",
+    "testUsers": {
+      "admin": {
+        "email": "admin@malayalees.com",
+        "password": "AdminPass123!",
+        "role": "admin"
+      },
+      "member": {
+        "email": "member@malayalees.com",
+        "password": "MemberPass123!",
+        "role": "member"
+      },
+      "guest": {
+        "email": "guest@example.com",
+        "password": "GuestPass123!",
+        "role": "guest"
+      }
+    }
+  },
+  "testScenarios": [
+    {
+      "name": "Homepage Load",
+      "url": "/",
+      "type": "page-load",
+      "expectedElements": [
+        "h1:contains('Malayalees')",
+        ".event-card",
+        "nav"
+      ]
+    },
+    {
+      "name": "Event Registration Flow",
+      "url": "/event/register",
+      "type": "user-flow",
+      "steps": [
+        {
+          "action": "click",
+          "selector": ".register-button"
+        },
+        {
+          "action": "fill",
+          "selector": "input[name='firstName']",
+          "value": "Test User"
+        },
+        {
+          "action": "fill",
+          "selector": "input[name='lastName']",
+          "value": "Test"
+        },
+        {
+          "action": "fill",
+          "selector": "input[name='email']",
+          "value": "test@example.com"
+        },
+        {
+          "action": "click",
+          "selector": "button[type='submit']"
+        }
+      ],
+      "expectedResult": "success-page"
+    },
+    {
+      "name": "Admin Dashboard Access",
+      "url": "/admin",
+      "type": "authentication-required",
+      "userRole": "admin",
+      "expectedElements": [
+        ".admin-nav",
+        ".dashboard-stats",
+        ".event-management"
+      ]
+    },
+    {
+      "name": "Registration Management",
+      "url": "/admin/events/registrations",
+      "type": "admin-functionality",
+      "userRole": "admin",
+      "steps": [
+        {
+          "action": "search",
+          "selector": "input[placeholder*='search']",
+          "value": "test@example.com"
+        },
+        {
+          "action": "click",
+          "selector": ".edit-button"
+        },
+        {
+          "action": "fill",
+          "selector": "input[name='firstName']",
+          "value": "Updated Name"
+        },
+        {
+          "action": "click",
+          "selector": ".save-button"
+        }
+      ]
+    },
+    {
+      "name": "Payment Integration",
+      "url": "/event/register",
+      "type": "payment-flow",
+      "steps": [
+        {
+          "action": "select",
+          "selector": "select[name='eventId']",
+          "value": "paid-event"
+        },
+        {
+          "action": "click",
+          "selector": ".stripe-button"
+        },
+        {
+          "action": "wait",
+          "timeout": 5000
+        }
+      ],
+      "expectedResult": "stripe-checkout"
+    },
+    {
+      "name": "Mobile Responsiveness",
+      "url": "/",
+      "type": "responsive-test",
+      "viewport": "375x667",
+      "expectedElements": [
+        ".mobile-nav",
+        ".event-card",
+        ".register-button"
+      ]
+    },
+    {
+      "name": "QR Code Generation",
+      "url": "/event/success",
+      "type": "qr-code-test",
+      "expectedElements": [
+        ".qr-code",
+        ".ticket-details",
+        ".download-button"
+      ]
+    }
+  ],
+  "performance": {
+    "pageLoadTime": 3000,
+    "lighthouseScore": 90,
+    "mobilePerformance": true
+  },
+  "security": {
+    "testXSS": true,
+    "testSQLInjection": true,
+    "testCSRF": true,
+    "testAuthentication": true
+  },
+  "browsers": [
+    "chrome",
+    "firefox",
+    "safari",
+    "edge"
+  ],
+  "mobile": {
+    "enabled": true,
+    "devices": [
+      "iPhone 12",
+      "Samsung Galaxy S21",
+      "iPad"
+    ]
+  },
+  "dataCleanup": {
+    "enabled": true,
+    "cleanupAfter": "each-test",
+    "tables": [
+      "user_profiles",
+      "event_attendees",
+      "event_attendee_guests",
+      "event_details"
+    ]
+  },
+  "reporting": {
+    "format": "html",
+    "includeScreenshots": true,
+    "includeConsoleLogs": true,
+    "includeNetworkLogs": true
+  }
+}

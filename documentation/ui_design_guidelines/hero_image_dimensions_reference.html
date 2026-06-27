@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hero Section Image Dimensions Reference</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; max-width: 64rem; margin: 0 auto; padding: 2rem; color: #333; }
+    h1 { font-size: 1.75rem; border-bottom: 3px solid #0066cc; padding-bottom: 0.5rem; }
+    h2 { font-size: 1.35rem; margin-top: 2rem; border-left: 4px solid #0066cc; padding-left: 12px; }
+    h3 { font-size: 1.1rem; margin-top: 1.5rem; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+    th, td { border: 1px solid #ddd; padding: 0.75rem; text-align: left; }
+    th { background: #0066cc; color: white; }
+    tr:nth-child(even) { background: #f8f9fa; }
+    .highlight { background: #d4edda; padding: 1rem; border-left: 4px solid #28a745; margin: 1rem 0; border-radius: 0 6px 6px 0; }
+    .warning { background: #fff3cd; padding: 1rem; border-left: 4px solid #ffc107; margin: 1rem 0; border-radius: 0 6px 6px 0; }
+    .info { background: #d1ecf1; padding: 1rem; border-left: 4px solid #0c5460; margin: 1rem 0; border-radius: 0 6px 6px 0; }
+    code { background: #e8f4f8; padding: 0.15em 0.4em; border-radius: 3px; font-size: 0.9em; }
+    .safe-zone { display: inline-block; border: 3px dashed #28a745; padding: 1.5rem 3rem; margin: 0.5rem 0; text-align: center; position: relative; }
+    .safe-zone::before { content: '← 20% →'; position: absolute; left: 0; top: 50%; transform: translateY(-50%); font-size: 0.7rem; color: #dc3545; }
+    .safe-zone::after { content: '← 20% →'; position: absolute; right: 0; top: 50%; transform: translateY(-50%); font-size: 0.7rem; color: #dc3545; }
+  </style>
+</head>
+<body>
+  <h1>Hero Section &mdash; Image Dimensions Reference</h1>
+  <p>Use these dimensions when creating or uploading images for each hero section.</p>
+
+  <h2>Section 1 &mdash; Left Panel (Branding Image)</h2>
+
+  <div class="highlight">
+    <strong>CSS:</strong> <code>object-fit: contain</code> &mdash; Image is ALWAYS fully visible, no cutoff on any side.<br>
+    <strong>Frame:</strong> <code>aspect-ratio: 5/6</code> &mdash; The frame auto-sizes to hug the image tightly.
+  </div>
+
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Aspect Ratio</td><td><strong>5:6 portrait</strong> (0.83:1)</td></tr>
+    <tr><td>Recommended Size</td><td><strong>1000 &times; 1200 px</strong></td></tr>
+    <tr><td>Minimum Size</td><td>600 &times; 720 px</td></tr>
+    <tr><td>Fit Behaviour</td><td><code>object-contain</code> &mdash; full image, no cropping</td></tr>
+    <tr><td>Safe Zone</td><td>Entire image is visible &mdash; use the full canvas</td></tr>
+  </table>
+
+  <p>Since the frame matches the image ratio (5:6), a 5:6 image fills the frame <strong>perfectly</strong> with zero gaps and zero cropping. Logos and edge text are fully visible.</p>
+
+  <h2>Section 2 &mdash; Right Panel (Slideshow / Event Images)</h2>
+
+  <div class="info">
+    <strong>CSS:</strong> <code>object-fit: cover</code> &mdash; Image FILLS the container at every viewport width.<br>
+    <strong>Why cover?</strong> The container width changes dramatically with the browser (from 459px on tablet to 1254px on large desktop), but the height stays fixed. The ratio swings from 1.55:1 to 3.56:1. No single image can match all sizes, so <code>object-cover</code> fills the space and crops edges minimally.
+  </div>
+
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Aspect Ratio</td><td><strong>5:2 wide landscape</strong> (2.5:1)</td></tr>
+    <tr><td>Recommended Size</td><td><strong>2000 &times; 800 px</strong></td></tr>
+    <tr><td>Also Acceptable</td><td>2500 &times; 1000 px, 1500 &times; 600 px</td></tr>
+    <tr><td>Minimum Size</td><td>1200 &times; 480 px</td></tr>
+    <tr><td>Fit Behaviour</td><td><code>object-cover</code> &mdash; fills container, slight edge crop</td></tr>
+    <tr><td>Safe Zone</td><td><strong>Center 60%</strong> &mdash; keep important content away from edges</td></tr>
+  </table>
+
+  <h3>Section 2 Container Ratios by Viewport (Fixed Hero Heights)</h3>
+  <table>
+    <thead>
+      <tr><th>Viewport</th><th>Image Area (px)</th><th>Container Ratio</th><th>Crop with 2.5:1 image</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>768px (tablet)</td><td>459 &times; 296</td><td>1.55:1</td><td>Top/bottom cropped ~24%</td></tr>
+      <tr><td>1024px (desktop)</td><td>644 &times; 320</td><td>2.01:1</td><td>Top/bottom cropped ~11%</td></tr>
+      <tr><td>1366px (laptop)</td><td>877 &times; 320</td><td>2.74:1</td><td>Left/right cropped ~5%</td></tr>
+      <tr><td>1536px (laptop)</td><td>992 &times; 352</td><td>2.82:1</td><td>Left/right cropped ~6%</td></tr>
+      <tr><td>1920px (desktop)</td><td>1254 &times; 352</td><td>3.56:1</td><td>Left/right cropped ~18%</td></tr>
+    </tbody>
+  </table>
+
+  <div class="warning">
+    <strong>Safe Zone for Section 2:</strong> Keep all important content (text, faces, logos) within the <strong>center 60%</strong> of the image. The outer 20% on each edge may be cropped depending on viewport width. At the most common laptop size (1366px), a 2.5:1 image has only ~5% edge crop.
+  </div>
+
+  <h2>Section 3 &mdash; Mission Card (Unite India Banner)</h2>
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Aspect Ratio</td><td><strong>5:1 wide banner</strong></td></tr>
+    <tr><td>Recommended Size</td><td><strong>1000 &times; 200 px</strong></td></tr>
+    <tr><td>Minimum Size</td><td>680 &times; 140 px</td></tr>
+    <tr><td>Fit Behaviour</td><td><code>object-cover</code></td></tr>
+  </table>
+
+  <h2>Why Section 1 and Section 2 Use Different Strategies</h2>
+  <table>
+    <thead>
+      <tr><th></th><th>Section 1 (Left Panel)</th><th>Section 2 (Slideshow)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Content type</strong></td><td>Single branding image with edge text</td><td>Dynamic slideshow, event photos</td></tr>
+      <tr><td><strong>Edge content</strong></td><td>Critical &mdash; "MALAYALEES.US" text on edges</td><td>Flexible &mdash; event photos tolerate edge crop</td></tr>
+      <tr><td><strong>Container ratio</strong></td><td>Fixed (5:6 via aspect-ratio)</td><td>Variable (1.55:1 to 3.56:1)</td></tr>
+      <tr><td><strong>object-fit</strong></td><td><code>contain</code> (zero cutoff)</td><td><code>cover</code> (fills container)</td></tr>
+      <tr><td><strong>Trade-off</strong></td><td>Frame hugs image perfectly</td><td>Slight edge crop, but always fills area</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Quick Summary</h2>
+  <div class="highlight">
+    <strong>Section 1:</strong> Provide <strong>5:6 portrait</strong> images (1000&times;1200px). Full image always visible.<br>
+    <strong>Section 2:</strong> Provide <strong>5:2 wide landscape</strong> images (2000&times;800px). Keep important content in center 60%.<br>
+    <strong>Section 3:</strong> Provide <strong>5:1 wide banner</strong> images (1000&times;200px).
+  </div>
+</body>
+</html>

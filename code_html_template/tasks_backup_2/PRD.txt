@@ -1,0 +1,116 @@
+# Overview
+This PRD describes the Event Management Module for a member organization web application. The module enables admins to create, update, delete, and manage events, upload event media to AWS S3, manage ticket types and admission, integrate events with a calendar, run polls, and assign user tasks for events. The system is secured with Clerk authentication, and all admin operations are auditable.
+
+# Core Features
+- **Admin Event Management Dashboard**
+  - Admins can create, update, delete, and cancel events via a dashboard.
+  - Event form includes all event details (title, description, date/time, location, admission type, ticket types, etc.).
+  - Canceling an event sets its `active` field to false and removes it from the homepage hero section.
+- **Media Upload & Management**
+  - Admins can upload media files (images, flyers, etc.) for each event.
+  - Media files are stored in AWS S3; URLs are saved in a media table in the database.
+  - Only media of type 'flyer' is shown in the homepage hero slider.
+- **Homepage Event Display**
+  - The current event (if any) is shown in the homepage hero section with a slider for multiple images.
+  - If no current/upcoming event, a default image is shown.
+  - The hero section updates automatically when events expire or are canceled.
+- **Event Listing Page**
+  - Lists current and past events with thumbnails from event media.
+  - Gallery/slider for event images.
+- **Ticketing**
+  - Each event can have multiple ticket types (with different prices and codes).
+  - Admission type can be 'free' or 'ticketed'.
+  - Ticket purchase page displays ticket types as cards; users select quantity and proceed to payment.
+  - After purchase, a success page shows ticket and price details.
+- **Poll Feature**
+  - Admins can create/enable/disable polls for events.
+  - Users can vote and comment on active polls.
+  - Only one active poll at a time; if none, show 'No active poll happening at this point.'
+- **Calendar Integration**
+  - Creating an event automatically creates a calendar entry.
+  - Users can view future events and add them to their personal calendar via a link.
+- **User Task Assignment (Optional)**
+  - Tasks can be assigned to users for each event (reuse existing user-task feature).
+  - Task list UI with CRUD for event tasks.
+- **Authentication & Authorization**
+  - All admin features are protected; only admins (Clerk-authenticated) can access event management.
+  - All user and admin references use Clerk user IDs.
+
+# User Experience
+- **Admins**
+  - Access event management dashboard from the admin page.
+  - Use forms to create/update events, upload media, manage tickets, and polls.
+  - Cancel events with a single action; see immediate homepage update.
+- **Users**
+  - See current event in homepage hero section; interact with slider if multiple images.
+  - Browse events page for current/past events and galleries.
+  - Buy tickets via a clear, card-based UI; see total price and proceed to payment.
+  - Participate in polls if active; see results/comments.
+  - Add events to their calendar with one click.
+
+# Technical Architecture
+- **System Components**
+  - Next.js frontend (admin dashboard, event pages, ticketing, polls, etc.)
+  - Next.js API routes for backend
+  - AWS S3 for media storage invoked thru  Next.js API routes for backend
+  - PostgreSQL (or similar) for event, media, ticket, poll, calendar, and task tables invoked thru Next.js API routes for backend
+  - Clerk for authentication/authorization
+- **Data Models**
+  - Event table (id, title, description, date, location, admission type, active, etc.)
+  - Media table (id, event_id, url, type, uploaded_by, etc.)
+  - TicketType table (id, event_id, type, price, code, etc.)
+  - Poll table (id, event_id, question, options, active, etc.)
+  - PollVote table (id, poll_id, user_id, option, comment, etc.)
+  - Calendar table (id, event_id, start, end, link, etc.)
+  - UserTask table (id, event_id, user_id, task, status, etc.)
+- **APIs and Integrations**
+  - REST API endpoints for CRUD on events, media, tickets, polls, calendar, and tasks
+  - Media upload API integrates with AWS S3 and returns URLs
+  - All API calls require Clerk authentication; admin routes are protected
+- **Infrastructure Requirements**
+  - AWS S3 bucket for media
+  - Database for all tables
+  - Clerk account for authentication
+
+# Development Roadmap
+- **MVP Requirements**
+  - Admin event CRUD (with media upload to S3)
+  - Homepage hero event display (with slider)
+  - Event listing page (current/past events, galleries)
+  - Ticket type management and ticket purchase UI
+  - Poll creation and voting
+  - Calendar integration (auto-create calendar entry on event creation)
+  - Clerk authentication and admin protection
+- **Future Enhancements**
+  - User task assignment and task list UI
+  - Audit log for admin operations
+  - Advanced analytics for event attendance and poll results
+  - Bulk media upload and management
+  - Improved calendar sync (Google/Outlook integration)
+
+# Logical Dependency Chain
+- Set up authentication and admin roles (foundation)
+- Implement event CRUD and media upload (core admin features)
+- Build homepage hero event display (user-facing)
+- Add event listing and gallery
+- Implement ticket type management and purchase flow
+- Add poll feature and UI
+- Integrate calendar auto-creation and add-to-calendar links
+- (Optional) Add user task assignment and task list UI
+
+# Risks and Mitigations
+- **Technical challenges:** Media upload to S3, real-time homepage updates, calendar integration
+  - Mitigation: Use proven libraries and AWS SDK; test thoroughly
+- **MVP scoping:** Too many features for initial release
+  - Mitigation: Prioritize admin event CRUD, media upload, and homepage display for MVP
+- **Resource constraints:** Limited dev/admin time
+  - Mitigation: Modularize features for phased rollout
+
+# Appendix
+- **Research findings:**
+  - S3 is feasible for media storage; URLs can be stored in DB and used in frontend
+  - Clerk user IDs are suitable for all user/admin references
+- **Technical specifications:**
+  - See data models above for table structure
+  - Use REST API for all admin and event operations
+  - All admin actions should be auditable

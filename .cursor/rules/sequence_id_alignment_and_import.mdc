@@ -1,0 +1,207 @@
+---
+description: Per-table {table}_id_seq alignment, SQL reorder/renumber import pipeline, and backend changes (event-site-manager-service + batch-jobs)
+globs: code_html_template/SQLS/**/*.sql, code_html_template/SQLS/**/*.cjs, **/domain/*.java, **/SequenceSynchronization*.java
+alwaysApply: false
+---
+
+# Sequence and ID Alignment (Database + SQL + Backend)
+
+## Overview
+
+This system uses **per-table PostgreSQL sequences** (`public.{table_name}_id_seq`) for primary keys on application tables. Hibernate entities must use a **unique** `@SequenceGenerator` name and matching `sequenceName`. Manual INSERT seed files do **not** advance sequences — you must sync after import.
+
+**Three-layer alignment (all required):**
+
+| Layer | Requirement |
+|-------|-------------|
+| PostgreSQL | `CREATE SEQUENCE public.{table}_id_seq INCREMENT BY 1`; `id bigint DEFAULT nextval('public.{table}_id_seq'::regclass)` |
+| Hibernate | Unique generator name per entity; `sequenceName = "public.{table}_id_seq"`, `allocationSize = 1` |
+| Post-import | `sync_all_table_sequences.sql` and/or `POST /api/admin/sync-sequence` |
+
+**Separate from application IDs:** Spring Batch uses `batch_job_seq`, `batch_job_execution_seq`, `batch_step_execution_seq`. `batch_job_execution_log` uses `batch_job_execution_log_id_seq`. Sync framework sequences with `sync_spring_batch_sequences.sql` only — never mix into `sync_all_table_sequences.sql`.
+
+---
+
+## Why Next IDs Jump to 600000+
+
+1. **MOSC tenant block** in `corrected_event_media_inserts.ordered.sql` uses explicit IDs **600001+** (tenant isolation).
+2. **Per-table sequences** — each table's next id is `MAX(id)+1` for **that table only** (e.g. executive committee continues at 38 after row 37).
+3. **Import without sync** — `{table}_id_seq.last_value` stays stale or wrong.
+4. **Legacy shared `sequence_generator`** — migrated away; run canonical schema rebuild + reimport for prod.
+5. **After sync with renumbered data** — each sequence sits at that table's `MAX(id)`.
+
+**To get compact new IDs:** import `sequence_fix_inserts/corrected_event_media_inserts.renumbered.sql`, then run `sync_all_table_sequences.sql`. Executive committee next id = `MAX(id)+1` for that table only.
+
+---
+
+## SQL Import Pipeline (Canonical Paths)
+
+All paths under `code_html_template/SQLS/` unless noted.
+
+### Step 1 — Export
+
+```bash
+docker exec -it <container_id> pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts > export.sql
+```
+
+### Step 2 — Reorder (FK-safe table order)
+
+- **Script:** [reorder_sql_inserts_final.cjs](mdc:code_html_template/SQLS/reorder_sql_inserts_final.cjs)
+- **Input:** `export.sql`
+- **Output:** `corrected_event_media_inserts.ordered.sql`
+- **Maintain:** extend `TABLE_ORDER` when console shows `Extra tables (not in order):` — parents before children; Spring Batch chain: instance → execution → context → params → step → step_context → log.
+
+### Step 3 — Optional renumber (compact PKs + trim batch noise)
+
+- **Folder:** `sequence_fix_inserts/`
+- **Script:** [renumber_sql_insert_ids.cjs](mdc:code_html_template/SQLS/sequence_fix_inserts/renumber_sql_insert_ids.cjs)
+- **Input:** `sequence_fix_inserts/corrected_event_media_inserts.ordered.sql` (or `--input=`)
+- **Output:** `corrected_event_media_inserts.renumbered.sql`, `id-mapping-report.json`
+- **Does:** per-table PKs 1..N; column-aware FK rewrite from schema + manual overrides; trim to first N batch executions + N batch logs (default 3); orphan FK repair (demo event IDs 500001–500003; `rel_event_details__discount_codes` via `discount_code.event_id`).
+- **Does not:** replace canonical `SQLS/corrected_event_media_inserts.ordered.sql` until import is validated.
+
+```bash
+cd code_html_template/SQLS/sequence_fix_inserts
+node renumber_sql_insert_ids.cjs --batch-executions=3 --batch-logs=3
+```
+
+### Step 4 — Import
+
+Apply schema first: [Latest_Schema_Post__Blob_Claude_12.sql](mdc:code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql), then ordered or renumbered INSERT file.
+
+### Step 5 — Sync sequences (mandatory on every machine that imported data)
+
+| Script | When |
+|--------|------|
+| [sync_all_table_sequences.sql](mdc:code_html_template/SQLS/Current_Sqls/sync_all_table_sequences.sql) | **Always** after manual INSERT import (per-table setval) |
+| [sync_spring_batch_sequences.sql](mdc:code_html_template/SQLS/Current_Sqls/sync_spring_batch_sequences.sql) | After any Spring Batch table data imported |
+| [generate_per_table_sequences.cjs](mdc:code_html_template/SQLS/sequence_fix_inserts/generate_per_table_sequences.cjs) | Regenerate schema/entity patches when adding tables |
+
+**Deprecated:** `sync_sequence_after_inserts.sql`, `fix_sequence_generator_increment_by_one.sql` (shared `sequence_generator` removed).
+
+**Preferred canonical folder:** `SQLS/Current_Sqls/` (matches [DATABASE_EXPORT_IMPORT_GUIDE.html](mdc:documentation/database_export_import/DATABASE_EXPORT_IMPORT_GUIDE.html)).
+
+### Batch automation
+
+[database_export_import_refresh.bat](mdc:code_html_template/batch_files/database_export_import_refresh.bat): Steps 1–6 export/reorder/import; Step 7 `sync_all_table_sequences.sql`; Step 7b `sync_spring_batch_sequences.sql`. Use `/IMPORT-FILE` with renumbered path + `/SKIP-EXPORT` when importing pre-built SQL on another machine.
+
+**Production RDS:** use `/REMOTE /TARGET-ENV batch_files/database_target.prod.env` (see `application-deployments/.cursor/rules/prod_database_import_remote_refresh.mdc`). `/FORCE` skips the `PRODUCTION` confirmation on remote runs.
+
+---
+
+## Backend: event-site-manager-service
+
+**Repo path:** `F:/project_workspace/event-site-manager-service` (active REST API; not `malayalees-us-site-boot`).
+
+### Entity changes (required for all new/changed entities)
+
+```java
+// ✅ DO — unique generator name per entity
+@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "executiveCommitteeTeamMembersSeq")
+@SequenceGenerator(
+    name = "executiveCommitteeTeamMembersSeq",
+    sequenceName = "public.executive_committee_team_members_id_seq",
+    allocationSize = 1
+)
+
+// ❌ DON'T — shared sequence_generator or Hibernate default allocationSize = 50
+@SequenceGenerator(name = "sequenceGenerator", sequenceName = "public.sequence_generator")
+```
+
+All application domain entities use per-table `sequenceName` and `allocationSize = 1`.
+
+### Runtime sequence sync
+
+| Component | Path | Role |
+|-----------|------|------|
+| `SequenceSynchronizationService` | `.../service/SequenceSynchronizationService.java` | Dynamic per-table `setval` on all `*_id_seq` (discovers via `pg_sequences`) |
+| `SequenceSynchronizationAspect` | `.../aop/sequence/SequenceSynchronizationAspect.java` | On duplicate PK: sync **that table's** sequence and retry save |
+| `AdminController` | `.../web/rest/AdminController.java` | `POST /api/admin/sync-sequence` returns `sequences` map per table |
+| Duplicate-key pattern | [.cursor/rules/duplicate-key-prevention.mdc](mdc:../event-site-manager-service/.cursor/rules/duplicate-key-prevention.mdc) | Clear `entity.setId(null)` on create; AOP fallback |
+
+### Schema alignment
+
+When adding tables, run `generate_per_table_sequences.cjs` and update:
+
+1. `CREATE SEQUENCE public.{table}_id_seq` + column default in `Latest_Schema_Post__Blob_Claude_12.sql`
+2. `sync_all_table_sequences.sql` table list (or regenerate via script)
+3. Java entity with unique `@SequenceGenerator` matching `{table}_id_seq`
+
+See [database_schema_guidelines.mdc](mdc:database_schema_guidelines.mdc).
+
+### Liquibase
+
+`20260625120000_per_table_id_sequences.xml` creates per-table sequences for Liquibase-managed installs. Shared `sequence_generator` is deprecated.
+
+---
+
+## Backend: event-site-manager-batch-jobs
+
+**Repo path:** `F:/project_workspace/event-site-manager-batch-jobs`
+
+### Entity changes
+
+- Domain entities (11): `allocationSize = 1` on `@SequenceGenerator` — same pattern as main service.
+- `BatchJobExecution`: uses `GenerationType.IDENTITY` (not `sequence_generator`).
+
+### Batch-specific sequence sync
+
+| Component | Path | Role |
+|-----------|------|------|
+| `SequenceSynchronizationService` | `.../batch/service/SequenceSynchronizationService.java` | **Dynamic** sync: discovers all public tables with numeric `id`; builds GREATEST at runtime |
+| `synchronizeBatchJobExecutionLogSequence()` | same file | Syncs `batch_job_execution_log_id_seq` |
+| `BatchJobExecutionService` | `.../batch/service/BatchJobExecutionService.java` | **Pre-sync** both sequences before each job run |
+| `SequenceSynchronizationAspect` | `.../batch/aop/sequence/SequenceSynchronizationAspect.java` | Duplicate-key recovery + batch log sequence |
+| Rules | `.cursor/rules/duplicate-key-prevention.mdc` | Same ID-clearing pattern as main service |
+
+After SQL import on a batch server, run **both** `sync_all_table_sequences.sql` and `sync_spring_batch_sequences.sql` locally — do not rely only on runtime pre-sync if DB was restored from dump.
+
+---
+
+## Verification Queries
+
+```sql
+-- sequence_generator should not exist after migration
+SELECT sequencename FROM pg_sequences
+WHERE schemaname = 'public' AND sequencename = 'sequence_generator';
+
+SELECT MAX(id) FROM executive_committee_team_members;
+SELECT last_value FROM executive_committee_team_members_id_seq;
+
+SELECT sequencename, last_value FROM pg_sequences
+WHERE schemaname = 'public' AND sequencename IN ('batch_job_seq', 'batch_job_execution_seq', 'batch_step_execution_seq');
+```
+
+After sync, each `{table}_id_seq.last_value` should be ≥ `MAX(id)` for that table.
+
+---
+
+## Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| Next ID ~600001+ | Imported **ordered** SQL with MOSC block | Expected after sync; use **renumbered** import if you want lower IDs |
+| Duplicate PK on create | Table sequence behind `MAX(id)` | Run `sync_all_table_sequences.sql`; call `POST /api/admin/sync-sequence` |
+| Executive id jumps to 800+ | Old shared `sequence_generator` still in use | Schema rebuild + per-table migration |
+| Batch job duplicate PK | Spring Batch sequences stale | Run `sync_spring_batch_sequences.sql` |
+| Import OK, app still wrong on **other machine** | Sync scripts not run on that DB | Run Steps 7 + 7b on **each** database that received INSERTs |
+| Renumber FK warnings | Old script / wrong import file | Re-run latest `renumber_sql_insert_ids.cjs`; check `id-mapping-report.json` `fkWarningCount: 0` |
+
+---
+
+## Documentation
+
+- **HTML (full):** [SEQUENCE_ID_ALIGNMENT_GUIDE.html](mdc:documentation/database_export_import/SEQUENCE_ID_ALIGNMENT_GUIDE.html)
+- **Import workflow:** [DATABASE_EXPORT_IMPORT_GUIDE.html](mdc:documentation/database_export_import/DATABASE_EXPORT_IMPORT_GUIDE.html) §3a, §7, §11
+- **Schema DDL rules:** [database_schema_guidelines.mdc](mdc:database_schema_guidelines.mdc)
+
+---
+
+## Checklist (new environment)
+
+- [ ] Schema applied from `Latest_Schema_Post__Blob_Claude_12.sql` (per-table `*_id_seq`)
+- [ ] INSERT file imported (ordered or renumbered)
+- [ ] `sync_all_table_sequences.sql` executed on **this** database
+- [ ] `sync_spring_batch_sequences.sql` executed if batch tables have rows
+- [ ] Backend deployed with per-table `@SequenceGenerator` and `allocationSize = 1`
+- [ ] Verify `sequence_generator` absent; per-table `last_value` ≥ `MAX(id)`; create one test row via app

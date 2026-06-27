@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Member Social Feature – Feasibility & Integration Analysis</title>
+    <meta
+      name="description"
+      content="Feasibility study for adding private-member social features to the MOSC platform."
+    />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+          Arial, sans-serif;
+        color: #2d2a26;
+        background: #f5f1e8;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+
+      main {
+        background: #ffffff;
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 2.5rem 3rem;
+        border-radius: 18px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+
+      h1 {
+        font-size: 2.2rem;
+        margin-bottom: 0.75rem;
+      }
+
+      h2 {
+        margin-top: 2rem;
+        font-size: 1.6rem;
+      }
+
+      h3 {
+        font-size: 1.25rem;
+        margin-top: 1.5rem;
+      }
+
+      p,
+      li {
+        line-height: 1.7;
+        font-size: 1rem;
+      }
+
+      ul {
+        padding-left: 1.2rem;
+      }
+
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        font-size: 0.98rem;
+      }
+
+      th,
+      td {
+        border: 1px solid rgba(139, 125, 107, 0.25);
+        padding: 0.75rem;
+        vertical-align: top;
+      }
+
+      th {
+        background: rgba(139, 125, 107, 0.12);
+        font-weight: 600;
+      }
+
+      .callout {
+        background: rgba(224, 211, 187, 0.45);
+        border-left: 4px solid #8b7d6b;
+        padding: 1rem 1.25rem;
+        border-radius: 12px;
+        margin: 1.5rem 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Internal Draft · November 2025</span>
+      <h1>Member Social Feature – Feasibility &amp; Integration Analysis</h1>
+      <p>
+        This document explores options for adding a <strong>member-only social experience</strong>
+        to the MOSC platform. The goal is to provide a lightweight social layer—member profiles,
+        mutual visibility, media sharing, and comments—exclusively for users whose profile
+        designates them as <em>members</em>. The analysis focuses on solutions that can integrate with
+        our existing Next.js + Clerk + proxy API architecture with minimal lift.
+      </p>
+
+      <h2>Current System Snapshot</h2>
+      <ul>
+        <li>
+          <strong>Identity &amp; Auth:</strong> Clerk is used for authentication; Next.js middleware
+          controls public vs protected routes. Session data is exposed to server actions and
+          proxy APIs.
+        </li>
+        <li>
+          <strong>Member Data:</strong> `user_profiles` table (via proxy endpoints) tracks roles such
+          as <code>member</code>; tenant scoping is enforced via `tenantId` injection helpers.
+        </li>
+        <li>
+          <strong>Content Storage:</strong> Event media, sponsor media, and gallery uploads are served
+          through existing API/proxy layers.
+        </li>
+        <li>
+          <strong>Frontend Stack:</strong> Next.js App Router with client/server components, Tailwind UI,
+          and reusable feature cards.
+        </li>
+      </ul>
+
+      <h2>Feature Objectives</h2>
+      <ul>
+        <li>Provide each member with a dedicated profile page visible only to other members.</li>
+        <li>Allow members to post short updates, upload media, and comment within the private community.</li>
+        <li>Keep the experience embedded within the MOSC UI while reusing Clerk sessions for SSO.</li>
+        <li>Maintain tenant isolation and reuse existing API proxy &amp; JWT patterns.</li>
+        <li>Achieve “minimal viable social” with limited engineering investment.</li>
+      </ul>
+
+      <h2>Capability Gap Assessment</h2>
+      <p>
+        Our current backend does not provide a ready-made social graph or timeline. Building the entire
+        stack (posts, reactions, media feeds, notifications) would require significant backend work, new
+        database tables, and moderation tooling. A lightweight embedded community SaaS or headless social
+        API can accelerate delivery while we retain control over authentication.
+      </p>
+
+      <h2>Plugin / SaaS Options</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Provider</th>
+            <th>Fit for Requirements</th>
+            <th>Integration Considerations</th>
+            <th>Estimated Lift</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Hyvor Talk Communities</strong></td>
+            <td>
+              Embeddable member communities with posts, comments, reactions. Supports SSO via JSON Web Tokens.
+            </td>
+            <td>
+              Requires generating signed SSO tokens for members<br />
+              Embeds via iframe/widget; styling is customizable but not 100% native.
+            </td>
+            <td>Low (1–2 weeks incl. theming + SSO token service)</td>
+          </tr>
+          <tr>
+            <td><strong>Tribe / Bettermode</strong></td>
+            <td>
+              Full-featured community platform with feeds, collections, and moderation dashboards. Headless GraphQL
+              API enables custom UI.
+            </td>
+            <td>
+              Build Next.js views consuming Tribe GraphQL API. Clerk session must mint Tribe JWT. Compliance with tenant
+              boundaries handled via membership groups.
+            </td>
+            <td>Medium (3–5 weeks to build custom UI shells)</td>
+          </tr>
+          <tr>
+            <td><strong>CometChat / PubNub Chat</strong></td>
+            <td>
+              Primarily chat-focused. Offers group chat and media messages but limited profile feed UX out of the box.
+            </td>
+            <td>
+              Requires designing profile pages ourselves; SDK handles messaging only. Still need separate storage for
+              gallery posts.
+            </td>
+            <td>Medium–High (chat is solved, profile/feed still custom)</td>
+          </tr>
+          <tr>
+            <td><strong>Firebase + React Social Templates</strong></td>
+            <td>
+              Build from scratch using Firebase Auth/Firestore plus open-source UI kits (e.g., Fireship, DevDojo).
+            </td>
+            <td>
+              Significant divergence from our existing backend and auth layers. Duplicates profile data and breaks tenant
+              structure.
+            </td>
+            <td>High (6+ weeks to reach feature parity)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Hyvor vs. Bettermode – Cost &amp; Scalability Notes</h3>
+      <ul>
+        <li>
+          <strong>Hyvor Talk Communities:</strong> Entry plans start around <em>$49/month</em> with generous MAU limits
+          (50k+ monthly visitors depending on tier). Higher tiers scale into hundreds of thousands of monthly users while
+          staying under <em>$249/month</em>. Hyvor supports custom CSS/JS, JWT SSO, and API endpoints for exporting data—
+          making it the most cost-effective option that still accommodates thousands of members and incremental
+          customization. Limitations: primarily widget-based UI; deeper feature tweaks require working within the embed.
+        </li>
+        <li>
+          <strong>Tribe / Bettermode:</strong> Pricing typically begins at <em>$599/month</em> (Business plan) with support for
+          advanced workflows, white-label experiences, and GraphQL APIs. Enterprise tiers handle millions of members and
+          allow full UI overrides, but the cost is 10–12× higher than Hyvor. Bettermode is ideal if we need enterprise SSO,
+          granular permissions, or custom feeds built on top of their headless APIs.
+        </li>
+      </ul>
+      <p>
+        <strong>Summary:</strong> For a budget-conscious rollout that must still welcome thousands of authenticated members,
+        Hyvor Talk offers the best price-to-scale ratio. Bettermode is more expensive but excels when we need deep integration
+        (native React components via GraphQL) and enterprise-grade customization out of the gate.
+      </p>
+
+      <h3>Blogging &amp; Long-Form Content Options</h3>
+      <p>
+        Many of our tenants/domains want a light blog or announcements area in addition to the member-only social feed. Neither
+        Hyvor Talk nor Bettermode replaces a full CMS, but both can complement or host lightweight blogging:
+      </p>
+      <ul>
+        <li>
+          <strong>Hyvor Ecosystem:</strong> Hyvor Talk focuses on discussions/comments. Hyvor also offers a separate product,
+          <em>Hyvor Blogs</em>, which supports custom domains, multi-author posts, and Markdown. We can configure one blog per
+          tenant and embed snippets or link directly from MOSC. SSO is not automatic between Talk &amp; Blogs, so we would manage
+          access by publishing public posts while keeping member-only conversations inside Hyvor Talk.
+        </li>
+        <li>
+          <strong>Bettermode Articles:</strong> Bettermode includes an <em>Articles</em> module (aka Knowledge Base) that supports
+          rich-text posts, tagging, and collections. Articles can be restricted to specific member groups and exposed via
+          Bettermode’s GraphQL API to render a fully custom blog UI inside MOSC. This is the closest “built-in” blogging option.
+        </li>
+        <li>
+          <strong>External Headless CMS:</strong> For stronger editorial tooling, we can integrate Sanity, Contentful, or
+          Strapi. Each tenant/domain would map to a space/environment. We would render blog pages via Next.js server components
+          and protect member-only posts with our existing middleware. The community plugin remains responsible for comments and
+          social engagement, while the headless CMS stores the canonical content.
+        </li>
+      </ul>
+      <p>
+        <strong>Recommendation:</strong> If we need only lightweight news updates, Bettermode’s Articles (or a small Hyvor Blog)
+        may suffice. For a structured editorial calendar or multi-site branding requirements, pair the community plugin with a
+        headless CMS so each domain retains control over layout and SEO while reusing the same auth and theming.
+      </p>
+
+      <div class="callout">
+        <strong>Recommendation:</strong> A hosted community platform with JWT-based SSO (e.g., Hyvor Talk or Bettermode)
+        offers the fastest path. It keeps core data (member identity) inside MOSC while outsourcing feed storage,
+        reactions, and moderation. We can progressively replace the embed with native UI using the provider’s REST/GraphQL
+        endpoints if we outgrow the widget.
+      </div>
+
+      <h2>Integration Blueprint (JWT-SSO Community)</h2>
+      <ol>
+        <li>
+          <strong>Eligibility Check:</strong> Add server-side guard (middleware + API) ensuring only users whose profile
+          has <code>role === 'member'</code> can access the community routes (e.g., <code>/member-community</code>).
+        </li>
+        <li>
+          <strong>SSO Token Endpoint:</strong> Create a server action or API route (e.g.,
+          <code>/api/member-community/sso</code>) that:
+          <ul>
+            <li>Validates Clerk session</li>
+            <li>Fetches membership profile via proxy (<code>/api/proxy/user-profiles/by-user/:id</code>)</li>
+            <li>Generates provider-specific JWT payload with member id, name, avatar</li>
+            <li>Returns short-lived signed token to the frontend</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Embed Component:</strong> Build a client component that:
+          <ul>
+            <li>Calls the SSO endpoint on mount</li>
+            <li>Initializes the community widget with the token</li>
+            <li>Applies MOSC theming (background, typography)</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Member Directory:</strong> Reuse existing sponsor/event card patterns to render a member directory view
+          using data from our backend; clicking a member card opens the plugin profile page.
+        </li>
+        <li>
+          <strong>Media Governance:</strong> Configure the provider’s storage or use existing MOSC media proxy endpoints to
+          avoid duplicating uploads. Some providers allow overriding media storage via webhooks.
+        </li>
+        <li>
+          <strong>Moderation &amp; Auditing:</strong> Assign staff accounts inside the community dashboard. Optionally send
+          moderation webhooks back to MOSC for audit logs.
+        </li>
+      </ol>
+
+      <h2>Security &amp; Compliance Notes</h2>
+      <ul>
+        <li>Ensure JWT SSO secret is stored using our environment variable pattern (`withTenantId`, Amplify-safe config).</li>
+        <li>Limit API route to authenticated members; never expose provider secrets to the browser.</li>
+        <li>Document data residency &amp; retention for the chosen SaaS provider (important for religious org privacy).</li>
+        <li>Maintain tenant isolation by including <code>tenantId</code> in the SSO payload or by provisioning separate community
+          spaces per tenant.</li>
+      </ul>
+
+      <h2>Effort &amp; Risk Summary</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Workstream</th>
+            <th>Owner</th>
+            <th>Effort (est.)</th>
+            <th>Risks / Mitigations</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Plugin selection &amp; trial</td>
+            <td>Product + Engineering</td>
+            <td>3–5 days</td>
+            <td>Vendor lock-in → choose plan with API export / headless fallback</td>
+          </tr>
+          <tr>
+            <td>SSO token endpoint + middleware</td>
+            <td>Backend engineer</td>
+            <td>2–3 days</td>
+            <td>Ensure tenant scoping in payload; add automated tests for role checks</td>
+          </tr>
+          <tr>
+            <td>Frontend embedding + theming</td>
+            <td>Frontend engineer</td>
+            <td>3–4 days</td>
+            <td>Styling mismatches → use provider CSS overrides or iframe size constraints</td>
+          </tr>
+          <tr>
+            <td>Member directory + navigation</td>
+            <td>Frontend engineer</td>
+            <td>2 days</td>
+            <td>Leverage existing card patterns and server actions</td>
+          </tr>
+          <tr>
+            <td>QA + moderation setup</td>
+            <td>Product / Community team</td>
+            <td>2 days</td>
+            <td>Create workflow for reporting abuse; confirm email notifications</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Next Steps</h2>
+      <ol>
+        <li>Select two SaaS vendors (e.g., Hyvor Community and Bettermode) and request trial sandboxes.</li>
+        <li>Spike a proof-of-concept route (`/member-community`) that authenticates a sample member and loads the widget.</li>
+        <li>Validate that media uploads and moderation controls meet MOSC requirements.</li>
+        <li>Draft member onboarding flow (profile completeness, avatar upload, terms acceptance).</li>
+        <li>Plan content governance (community guidelines, data export policy).</li>
+      </ol>
+
+      <p>
+        With a hosted social layer plus SSO, we can unlock member-to-member engagement rapidly while keeping our engineering
+        team focused on mission-critical features (events, payments, sponsors). If the community grows beyond the SaaS
+        limits, we can revisit a bespoke solution using the provider’s APIs as a bridge.
+      </p>
+
+      <h2>Extension Idea: Member Matrimonial Module</h2>
+      <p>
+        A matrimonial board adds profile listings (bride/groom details), discoverability, and contact requests. Neither Hyvor
+        Talk nor Bettermode ships a turnkey matrimonial vertical, but both platforms can be extended to cover the use case:
+      </p>
+      <ul>
+        <li>
+          <strong>Hyvor Talk:</strong> Supports creating dedicated “community spaces” or threads. We can host a “Matrimonial”
+          category where members post structured cards (title, description, media). To keep the UI consistent, we can render a
+          custom Next.js listing page that consumes the Hyvor API (e.g., reading posts with a specific tag) and augments it with
+          filters for age, location, occupation. Contact could flow through private comments or external links (WhatsApp, email).
+        </li>
+        <li>
+          <strong>Bettermode:</strong> Offers Collections, Custom Fields, and Workflow Automations. We can construct a
+          “Matrimonial” collection with custom schema (birth year, parish, language, etc.). Bettermode’s GraphQL API lets us
+          build a bespoke MOSC frontend for browsing/filtering while all submissions live within their moderation tools. We can
+          also configure automated contact-request flows (e.g., button triggers DM or sends email).
+        </li>
+      </ul>
+      <p>
+        If neither hosted option satisfies the exact matrimonial experience, we can still leverage the SSO community for the feed
+        portion while storing structured profiles inside our own database. Members would publish “matrimonial posts” to generate
+        awareness, and the detailed profile/contact flow could live on a secured MOSC page driven by our existing proxy APIs.
+      </p>
+    </main>
+  </body>
+</html>
+
+

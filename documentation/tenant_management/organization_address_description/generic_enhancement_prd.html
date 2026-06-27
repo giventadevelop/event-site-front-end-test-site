@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organization Address &amp; Description — Enhancement Index (v2.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Organization Address &amp; Description — Enhancement PRD Index</h1>
+    <p class="doc-meta">
+        <strong>Project:</strong> <code>event-site-manager</code> (Next.js) + <code>malayalees-us-site-boot</code> (Rust/JHipster API) &nbsp;|&nbsp;
+        <strong>Version:</strong> 2.0 &nbsp;|&nbsp; <strong>Date:</strong> June 17, 2026
+    </p>
+
+    <div class="lead">
+        <p><strong>v2.0 architecture change:</strong> Description, full mailing/HQ address, and public website URL are owned exclusively by <strong><code>tenant_organization</code></strong> (canonical identity record). Legacy address columns on <strong><code>tenant_settings</code></strong> are deprecated — not extended with new identity fields. Tenant settings keeps operational contact only (<code>email</code>, <code>phone_number</code>, social URLs, feature flags).</p>
+    </div>
+
+    <div class="warning-box">
+        <strong>v1.0 → v2.0 refactor:</strong> If v1.0 added <code>description</code> / <code>city</code> to <code>tenant_settings</code> or duplicated address UI on both admin forms, reverse that per this pack. Migrate existing settings address data into <code>tenant_organization</code>, then remove address/description editing from the settings form.
+    </div>
+
+    <h2>Documents</h2>
+    <table>
+        <thead><tr><th>Document</th><th>Audience</th><th>Scope</th></tr></thead>
+        <tbody>
+            <tr><td><a href="gap_analysis_prd.html">gap_analysis_prd.html</a></td><td>All teams</td><td>Gap analysis + source-of-truth decision</td></tr>
+            <tr><td><a href="database_schema_enhancements_prd.html">database_schema_enhancements_prd.html</a></td><td>DBA / backend</td><td>DDL on <code>tenant_organization</code>; deprecate settings identity columns; data migration</td></tr>
+            <tr><td><a href="backend_enhancements_prd.html">backend_enhancements_prd.html</a></td><td>Backend API</td><td>Org DTO/entity only for writes; settings identity fields read-only deprecated</td></tr>
+            <tr><td><a href="frontend_enhancements_prd.html">frontend_enhancements_prd.html</a></td><td>Frontend</td><td>Org form = edit; settings form = remove address/description; read fallback helper</td></tr>
+            <tr><td><a href="implementation_roadmap.html">implementation_roadmap.html</a></td><td>PM / leads</td><td>Phased rollout including refactor of v1.0 if already deployed</td></tr>
+        </tbody>
+    </table>
+
+    <h2>Source of truth (v2.0)</h2>
+    <table>
+        <thead><tr><th>Data</th><th>Canonical table</th><th>Notes</th></tr></thead>
+        <tbody>
+            <tr><td>Description (About, max 1000)</td><td><code>tenant_organization</code></td><td>Single org narrative</td></tr>
+            <tr><td>Address block (lines, city, state, zip, country)</td><td><code>tenant_organization</code></td><td>HQ / official mailing address</td></tr>
+            <tr><td>Public website</td><td><code>tenant_organization.website_url</code></td><td>Not on settings</td></tr>
+            <tr><td>Public contact email / phone</td><td><code>tenant_settings</code></td><td>Operational channels (footer, contact forms)</td></tr>
+            <tr><td>Social media URLs</td><td><code>tenant_settings</code></td><td>Already on settings</td></tr>
+            <tr><td>Legacy settings address columns</td><td>Deprecated</td><td>Read fallback only until dropped (v2.1+)</td></tr>
+        </tbody>
+    </table>
+
+    <h2>Goals</h2>
+    <ul>
+        <li>Capture complete organization address + description + website on <strong>tenant organization</strong> create/edit.</li>
+        <li>Migrate existing <code>tenant_settings</code> address values into <code>tenant_organization</code> where org fields are empty.</li>
+        <li>Remove address and description fields from <strong>tenant settings</strong> admin UI and stop PATCHing them on settings.</li>
+        <li>Public/footer/contact reads: <strong>organization first</strong>, settings address fallback for legacy tenants.</li>
+        <li>Align admin UX with user profile address layout on the organization form only.</li>
+    </ul>
+
+    <h2>Out of scope (v2.0)</h2>
+    <ul>
+        <li>Physical DROP of deprecated <code>tenant_settings</code> address columns (planned v2.1 after migration window).</li>
+        <li>ISO-3166 country dropdown, geocoding, Maps autocomplete.</li>
+        <li>Separate “public contact address” distinct from HQ (future if product requires).</li>
+    </ul>
+
+    <div class="info-box">
+        <strong>Reference UI:</strong> Address block — <code>src/components/ProfileForm.tsx</code>. Canonical edit surface — <code>TenantOrganizationForm.tsx</code>. Read helper — <code>src/lib/resolveTenantOrganizationIdentity.ts</code> (new, see frontend PRD).
+    </div>
+
+</body>
+</html>

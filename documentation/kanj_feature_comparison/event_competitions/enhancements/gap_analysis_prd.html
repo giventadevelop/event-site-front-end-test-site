@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Competitions — Gap Analysis PRD (v2.1)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; background: #fff; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        a { color: #0066cc; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .section-container.parameters { background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%); border-left-color: #ff9800; }
+        .section-container.parameters .section-header { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; border-radius: 6px; overflow: hidden; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        tbody tr:hover { background: #f5faff; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px 16px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px 16px; border-radius: 6px; margin: 16px 0; }
+        .status-done { color: #155724; font-weight: 600; }
+        .status-partial { color: #856404; font-weight: 600; }
+        .status-missing { color: #721c24; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <h1>Event Competitions — Gap Analysis PRD</h1>
+    <p class="doc-meta">
+        <strong>Version:</strong> 2.1 &nbsp;|&nbsp; <strong>Date:</strong> June 6, 2026<br>
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a> &nbsp;|&nbsp;
+        <strong>Baseline:</strong> <a href="../generic_prd.html">generic_prd.html</a>
+    </p>
+
+    <div class="lead">
+        <p>Compares <strong>current implementation</strong> (v2.0 P0–P3 largely complete) against <strong>v2.1 target</strong> from stakeholder requirements: per-competition breakdown, guardrails, multi-child and team registration, extended podium.</p>
+    </div>
+
+    <h2>1. Layer implementation status</h2>
+    <table>
+        <thead><tr><th>Layer</th><th>Status</th><th>Evidence</th></tr></thead>
+        <tbody>
+            <tr><td><strong>Database</strong></td><td class="status-partial">Partial</td><td>8 <code>event_competition_*</code> tables in <code>Latest_Schema_Post__Blob_Claude_12.sql</code>; <code>event_competition_group_member</code> DDL only — no JHipster entity</td></tr>
+            <tr><td><strong>Backend</strong></td><td class="status-partial">Partial</td><td>7 REST resources in <code>malayalees-us-site-boot</code>; <code>EventCompetitionRegistrationServiceImpl.validateRegistration()</code> — max group size only, no age/grade</td></tr>
+            <tr><td><strong>Frontend</strong></td><td class="status-partial">Partial</td><td>Admin + public routes under <code>src/app/**/competitions/</code>; wizard uses first participant only; hub cards not linked to detail</td></tr>
+            <tr><td><strong>Batch jobs</strong></td><td class="status-partial">Partial</td><td><code>EventCompetitionRegistrationEmailJobService</code> stubs in <code>event-site-manager-batch-jobs</code>; no team-specific templates</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. Requirements vs implementation matrix</h2>
+    <table>
+        <thead><tr><th>Requirement</th><th>Current</th><th>Gap (v2.1)</th><th>Phase</th></tr></thead>
+        <tbody>
+            <tr><td>List each competition in domain</td><td>Hub static cards (<code>CompetitionHub.tsx</code>)</td><td>No <code>/competitions/[compId]</code> detail; cards not clickable; no discipline icon</td><td>E2</td></tr>
+            <tr><td>Register per competition separately</td><td>Wizard multi-select cart</td><td>No deep-link <code>?competitionId=</code>; no single-competition flow</td><td>E2, E3</td></tr>
+            <tr><td>Parent registers multiple children</td><td>Single participant (first existing)</td><td>Child picker, add/switch child, guardian on create</td><td>E3</td></tr>
+            <tr><td>Adult self / MIXED mode</td><td><code>participantType</code> from <code>audienceMode</code>; MIXED → ADULT</td><td>Actor step: Parent | Self | Team captain</td><td>E3</td></tr>
+            <tr><td>Team competitions (soccer, group dance)</td><td><code>competition_type=GROUP</code>, min/max in DB</td><td>No team name, roster UI, group member API, captain flow</td><td>E1, E3</td></tr>
+            <tr><td>Regulations / guardrails per competition</td><td><code>judgmentCriteriaJson</code>, capacity in backend</td><td>No age/grade columns; no wizard pre-validation; no rules editor</td><td>E1, E2</td></tr>
+            <tr><td>Discipline types (song, speech, sports)</td><td><code>track</code>, free-text fields</td><td>No <code>discipline_code</code> enum; no filter on hub</td><td>E1, E2</td></tr>
+            <tr><td>1st–4th+ placements</td><td><code>placement</code>, points 5/3/1 in settings</td><td>No <code>max_placements</code>, <code>points_fourth</code>; flat winners list</td><td>E4</td></tr>
+            <tr><td>Admin create/manage competitions</td><td><code>EventCompetitionForm</code>, list/edit</td><td>Needs discipline, bounds, rules, team settings</td><td>E2, E4</td></tr>
+            <tr><td>Batch notifications</td><td>Generic confirmation stubs</td><td>Team roster email, per-comp winners digest, CSV export</td><td>E5</td></tr>
+        </tbody>
+    </table>
+
+    <div class="warning-box">
+        <strong>Critical orphan:</strong> <code>event_competition_group_member</code> exists in DDL/Liquibase but has <strong>no</strong> JHipster entity, REST resource, DTO in <code>src/types/index.ts</code>, proxy route, or frontend usage.
+    </div>
+
+    <h2>3. Frontend file inventory (mosc-temp)</h2>
+    <div class="section-container">
+        <div class="section-header">Public routes — exists</div>
+        <table>
+            <thead><tr><th>Path</th><th>File</th><th>Enhancement note</th></tr></thead>
+            <tbody>
+                <tr><td><code>/events/[id]/competitions</code></td><td><code>src/app/events/[id]/competitions/page.tsx</code></td><td>Add links to detail pages</td></tr>
+                <tr><td><code>.../competitions/register</code></td><td><code>.../register/page.tsx</code></td><td>Support <code>?competitionId=</code></td></tr>
+                <tr><td><code>.../competitions/my-registrations</code></td><td><code>.../my-registrations/page.tsx</code></td><td>Show per-competition breakdown</td></tr>
+                <tr><td><code>.../competitions/winners</code></td><td><code>.../winners/page.tsx</code></td><td>Group by competition podium</td></tr>
+                <tr><td><code>.../competitions/rules</code></td><td><code>.../rules/page.tsx</code></td><td>OK baseline</td></tr>
+                <tr><td><code>.../competitions/[compId]</code></td><td class="status-missing">Missing</td><td><strong>New</strong> detail page (E2)</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section-container parameters">
+        <div class="section-header">Admin routes — exists</div>
+        <table>
+            <thead><tr><th>Path</th><th>File</th><th>Enhancement note</th></tr></thead>
+            <tbody>
+                <tr><td><code>/admin/events/[id]/competitions/settings</code></td><td><code>settings/page.tsx</code></td><td>Add <code>points_fourth</code>, <code>default_max_placements</code></td></tr>
+                <tr><td><code>.../competitions/days</code></td><td><code>days/page.tsx</code></td><td>OK</td></tr>
+                <tr><td><code>.../competitions/list</code></td><td><code>list/page.tsx</code>, <code>list/new/page.tsx</code></td><td>Discipline column</td></tr>
+                <tr><td><code>.../competitions/[compId]/edit</code></td><td><code>[compId]/edit/page.tsx</code></td><td>Extend form guardrails</td></tr>
+                <tr><td><code>.../competitions/registrations</code></td><td><code>registrations/page.tsx</code></td><td>Roster view for GROUP</td></tr>
+                <tr><td><code>.../competitions/results</code></td><td><code>results/page.tsx</code></td><td>Podium presets 1–4</td></tr>
+                <tr><td><code>.../competitions/[compId]/registrations</code></td><td class="status-missing">Missing</td><td>Optional per-comp filter (E5)</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2>4. Component inventory</h2>
+    <table>
+        <thead><tr><th>Component</th><th>Location</th><th>Status</th><th>Enhancement</th></tr></thead>
+        <tbody>
+            <tr><td><code>CompetitionHub.tsx</code></td><td><code>src/components/competitions/</code></td><td class="status-partial">Partial</td><td>Link cards to detail; discipline badges</td></tr>
+            <tr><td><code>CompetitionCatalog.tsx</code></td><td>same</td><td class="status-partial">Partial</td><td>Eligibility badges, filter by discipline</td></tr>
+            <tr><td><code>RegistrationWizard.tsx</code></td><td>same</td><td class="status-partial">Partial</td><td>Actor step, multi-child, team roster branch</td></tr>
+            <tr><td><code>RegistrationCart.tsx</code></td><td>same</td><td class="status-done">Done</td><td>Extend metadata for team registrations</td></tr>
+            <tr><td><code>PublishedWinnersView.tsx</code></td><td>same</td><td class="status-partial">Partial</td><td>Podium layout per competition</td></tr>
+            <tr><td><code>EventCompetitionForm.tsx</code></td><td><code>src/components/admin/competitions/</code></td><td class="status-partial">Partial</td><td>discipline, age/grade, rules, team flags</td></tr>
+            <tr><td><code>CompetitionResultsEntryGrid.tsx</code></td><td>same</td><td class="status-partial">Partial</td><td>Placement presets, auto points</td></tr>
+            <tr><td><code>CompetitionDetailPage.tsx</code></td><td>—</td><td class="status-missing">Missing</td><td><strong>New</strong> (E2)</td></tr>
+            <tr><td><code>TeamRosterForm.tsx</code></td><td>—</td><td class="status-missing">Missing</td><td><strong>New</strong> (E3)</td></tr>
+            <tr><td><code>ChildParticipantManager.tsx</code></td><td>—</td><td class="status-missing">Missing</td><td><strong>New</strong> (E3)</td></tr>
+            <tr><td><code>CompetitionEligibilityBadge.tsx</code></td><td>—</td><td class="status-missing">Missing</td><td><strong>New</strong> (E2)</td></tr>
+        </tbody>
+    </table>
+
+    <h2>5. Proxy route inventory</h2>
+    <table>
+        <thead><tr><th>Proxy folder</th><th>Status</th><th>Enhancement</th></tr></thead>
+        <tbody>
+            <tr><td><code>event-competition-settings/</code></td><td class="status-done">Exists</td><td>—</td></tr>
+            <tr><td><code>event-competition-days/</code></td><td class="status-done">Exists</td><td>—</td></tr>
+            <tr><td><code>event-competitions/</code></td><td class="status-done">Exists</td><td>—</td></tr>
+            <tr><td><code>event-competition-participants/</code></td><td class="status-done">Exists</td><td>—</td></tr>
+            <tr><td><code>event-competition-registrations/</code></td><td class="status-done">Exists</td><td>Team/bulk composite may use server actions</td></tr>
+            <tr><td><code>event-competition-results/</code></td><td class="status-done">Exists</td><td>—</td></tr>
+            <tr><td><code>event-competition-content-blocks/</code></td><td class="status-done">Exists</td><td>—</td></tr>
+            <tr><td><code>event-competition-group-members/</code></td><td class="status-missing">Missing</td><td><strong>New</strong> (E1)</td></tr>
+        </tbody>
+    </table>
+
+    <h2>6. Backend resource inventory (malayalees-us-site-boot)</h2>
+    <div class="info-box">
+        <p><strong>Exists:</strong> <code>EventCompetitionSettings</code>, <code>EventCompetitionDay</code>, <code>EventCompetition</code>, <code>EventCompetitionParticipant</code>, <code>EventCompetitionRegistration</code>, <code>EventCompetitionResult</code>, <code>EventCompetitionContentBlock</code> — each with Resource, Service, Criteria, Liquibase.</p>
+        <p><strong>Missing:</strong> <code>EventCompetitionGroupMember*</code> full stack; composite endpoints <code>POST .../team</code>, <code>POST .../bulk</code>, <code>GET .../eligibility-check</code>.</p>
+    </div>
+
+    <div class="info-box">
+        <strong>Next:</strong> <a href="database_schema_enhancements_prd.html">Database schema enhancements</a> ·
+        <a href="implementation_roadmap.html">Implementation roadmap</a>
+    </div>
+
+</body>
+</html>

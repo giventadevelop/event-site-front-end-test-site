@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Complete guide to using automated test scripts for subscription renewal functionality in Stripe test mode. Learn how to expedite renewals, verify database state, and trigger batch jobs.">
+    <title>Subscription Renewal Testing Scripts Guide</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+            background-color: #fff;
+        }
+        h1 {
+            color: #1a1a1a;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        h2 {
+            color: #0066cc;
+            margin-top: 30px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #333;
+            margin-top: 25px;
+        }
+        h4 {
+            color: #555;
+            margin-top: 20px;
+        }
+        h5 {
+            color: #666;
+            margin-top: 15px;
+            font-size: 1em;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        ul, ol {
+            margin-left: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .info code,
+        .info .code-highlight {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .success code,
+        .success .code-highlight {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .warning code,
+        .warning .code-highlight {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .error code,
+        .error .code-highlight {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .toc {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .toc ul {
+            list-style-type: none;
+            margin-left: 0;
+        }
+        .toc li {
+            margin-bottom: 5px;
+        }
+        .toc a {
+            color: #0066cc;
+        }
+        .step {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0066cc;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .step-number {
+            display: inline-block;
+            background-color: #0066cc;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .section-container {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-container.parameters {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left-color: #ff9800;
+        }
+        .section-container.output {
+            background: linear-gradient(135deg, #e6ffe6 0%, #ccffcc 100%);
+            border-left-color: #28a745;
+        }
+        .section-container.usage {
+            background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%);
+            border-left-color: #9c27b0;
+        }
+        .section-header {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            padding: 12px 20px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 8px 8px 0 0;
+            font-size: 1.2em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-header.parameters {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+        .section-header.output {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+        }
+        .section-header.usage {
+            background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        tr:hover {
+            background-color: #e3f2fd;
+            transition: background-color 0.2s ease;
+        }
+        td code {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .script-name {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+        }
+        .section-intro {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-intro code {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 3px 8px;
+            border-radius: 3px;
+        }
+        .parameters-list {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left: 4px solid #ff9800;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .parameters-list strong {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .parameters-list code {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 3px 8px;
+            border-radius: 3px;
+        }
+        .code-block {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .code-block code {
+            background-color: transparent;
+            color: #f8f8f2;
+            padding: 0;
+        }
+        .command-block {
+            position: relative;
+            margin: 15px 0;
+            border-radius: 5px;
+            overflow: hidden;
+            border: 2px solid;
+        }
+        .command-block.setup {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-color: #2196f3;
+        }
+        .command-block.expedite {
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+            border-color: #9c27b0;
+        }
+        .command-block.advance {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-color: #ff9800;
+        }
+        .command-block.verify {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-color: #4caf50;
+        }
+        .command-block.default {
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+            border-color: #757575;
+        }
+        .command-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            font-weight: bold;
+            color: #333;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .command-header-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .copy-button-template {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .copy-button-template:hover {
+            background-color: #5a6268;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .copy-button-template.copied {
+            background-color: #28a745;
+        }
+        .command-header .command-type {
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .command-content {
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            color: #1a1a1a;
+            white-space: pre-wrap;
+            word-break: break-all;
+            position: relative;
+        }
+        .copy-button {
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .copy-button:hover {
+            background-color: #0052a3;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .copy-button:active {
+            transform: translateY(0);
+        }
+        .copy-button.copied {
+            background-color: #28a745;
+        }
+        .copy-button.copied::after {
+            content: " ✓ Copied!";
+        }
+        .command-single-line {
+            display: none;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            margin-top: 8px;
+            padding: 12px 15px;
+            border-top: 1px dashed rgba(0,0,0,0.2);
+            border-radius: 4px;
+        }
+        .command-single-line.show {
+            display: block;
+        }
+        .command-single-line-label {
+            font-size: 0.8em;
+            color: #cccccc;
+            font-style: italic;
+            margin-bottom: 6px;
+        }
+        .command-single-line code {
+            background-color: transparent;
+            color: #ffffff;
+            padding: 0;
+        }
+        .command-parameters {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.5);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .command-parameters h5 {
+            margin: 0 0 12px 0;
+            font-size: 0.9em;
+            color: #333;
+            font-weight: bold;
+        }
+        .parameter-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .parameter-group.single {
+            grid-template-columns: 1fr;
+        }
+        .parameter-input {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .parameter-input label {
+            font-size: 0.8em;
+            color: #555;
+            font-weight: 600;
+        }
+        .parameter-input input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            transition: border-color 0.2s ease;
+        }
+        .parameter-input input:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+        .parameter-input input::placeholder {
+            color: #999;
+            font-style: italic;
+        }
+        .metadata {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .metadata-item {
+            margin: 5px 0;
+        }
+        .metadata-label {
+            font-weight: 600;
+            color: #555;
+        }
+        .script-list {
+            list-style: none;
+            margin-left: 0;
+        }
+        .script-list li {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-left: 4px solid #0066cc;
+            border-radius: 4px;
+        }
+        .script-list h3 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        @media (max-width: 768px) {
+            .parameter-group {
+                grid-template-columns: 1fr;
+            }
+            body {
+                padding: 10px;
+            }
+            .command-block {
+                font-size: 0.85em;
+            }
+        }
+    </style>
+    <script>
+        // Store parameter values for each command block
+        const commandParams = {};
+
+        // Initialize commands from input values on page load
+        function initializeCommands() {
+            document.querySelectorAll('.command-block[data-command-base]').forEach(block => {
+                const commandContent = block.querySelector('.command-content');
+                if (!commandContent) return;
+
+                const commandId = commandContent.id;
+                if (!commandId) return;
+
+                block.querySelectorAll('.parameter-input input').forEach(input => {
+                    const inputId = input.id;
+                    if (!inputId || !inputId.startsWith(commandId + '-')) return;
+
+                    const paramName = inputId.substring(commandId.length + 1);
+                    const paramValue = input.value || '';
+
+                    if (!commandParams[commandId]) {
+                        commandParams[commandId] = {};
+                    }
+                    commandParams[commandId][paramName] = paramValue;
+                });
+
+                updateCommandFromParams(commandId);
+            });
+        }
+
+        // Update command from stored parameters
+        function updateCommandFromParams(commandId) {
+            const commandElement = document.getElementById(commandId);
+            if (!commandElement) return;
+
+            const commandBlock = commandElement.closest('.command-block');
+            if (!commandBlock) return;
+
+            let baseCommand = commandBlock.getAttribute('data-command-base');
+            if (!baseCommand) return;
+
+            let command = baseCommand;
+            const params = commandParams[commandId] || {};
+
+            // Add parameters based on command type
+            if (commandId.startsWith('view-')) {
+                if (params['subscription-id'] && params['subscription-id'].trim()) {
+                    command += ` --subscription-id=${params['subscription-id'].trim()}`;
+                }
+            } else if (commandId.startsWith('expedite-')) {
+                if (params['subscription-id'] && params['subscription-id'].trim()) {
+                    command += ` --subscription-id=${params['subscription-id'].trim()}`;
+                }
+                if (params['days-to-advance'] && params['days-to-advance'].trim()) {
+                    command += ` --days-to-advance=${params['days-to-advance'].trim()}`;
+                }
+            } else if (commandId.startsWith('verify-')) {
+                if (params['subscription-id'] && params['subscription-id'].trim()) {
+                    command += ` --subscription-id=${params['subscription-id'].trim()}`;
+                }
+                if (params['tenant-id'] && params['tenant-id'].trim()) {
+                    command += ` --tenant-id=${params['tenant-id'].trim()}`;
+                }
+            } else if (commandId.startsWith('trigger-')) {
+                if (params['tenant-id'] && params['tenant-id'].trim()) {
+                    command += ` --tenant-id=${params['tenant-id'].trim()}`;
+                }
+                if (params['subscription-id'] && params['subscription-id'].trim()) {
+                    command += ` --subscription-id=${params['subscription-id'].trim()}`;
+                }
+                if (params['batch-size'] && params['batch-size'].trim()) {
+                    command += ` --batch-size=${params['batch-size'].trim()}`;
+                }
+                if (params['max-subscriptions'] && params['max-subscriptions'].trim()) {
+                    command += ` --max-subscriptions=${params['max-subscriptions'].trim()}`;
+                }
+            } else if (commandId.startsWith('full-')) {
+                if (params['subscription-id'] && params['subscription-id'].trim()) {
+                    command += ` --subscription-id=${params['subscription-id'].trim()}`;
+                }
+                if (params['tenant-id'] && params['tenant-id'].trim()) {
+                    command += ` --tenant-id=${params['tenant-id'].trim()}`;
+                }
+                if (params['days-to-advance'] && params['days-to-advance'].trim()) {
+                    command += ` --days-to-advance=${params['days-to-advance'].trim()}`;
+                }
+            }
+
+            commandElement.textContent = command;
+
+            const singleLineCode = document.getElementById(commandId + '-single-code');
+            if (singleLineCode) {
+                singleLineCode.textContent = command;
+            }
+        }
+
+        // Update command dynamically as user types
+        function updateCommand(commandId, paramName, paramValue) {
+            if (!commandParams[commandId]) {
+                commandParams[commandId] = {};
+            }
+            commandParams[commandId][paramName] = paramValue;
+            updateCommandFromParams(commandId);
+        }
+
+        // Copy template command to clipboard
+        function copyTemplateCommand(button, commandId) {
+            const commandBlock = button.closest('.command-block');
+            if (!commandBlock) return;
+
+            let templateCommand = commandBlock.getAttribute('data-template-command');
+            if (!templateCommand) {
+                const commandElement = document.getElementById(commandId);
+                if (!commandElement) return;
+                templateCommand = commandElement.textContent.trim();
+            }
+
+            templateCommand = templateCommand.replace(/&quot;/g, '"');
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(templateCommand).then(() => {
+                    button.classList.add('copied');
+                    button.textContent = '✓ Copied!';
+                    setTimeout(() => {
+                        button.classList.remove('copied');
+                        button.textContent = '📄 Template';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy template:', err);
+                    fallbackCopy(templateCommand, button);
+                });
+            } else {
+                fallbackCopy(templateCommand, button);
+            }
+        }
+
+        // Copy command to clipboard
+        function copyCommand(button, commandId) {
+            const commandElement = document.getElementById(commandId);
+            if (!commandElement) return;
+
+            const commandText = commandElement.textContent.trim();
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(commandText).then(() => {
+                    button.classList.add('copied');
+                    button.textContent = '✓ Copied!';
+
+                    setTimeout(() => {
+                        button.classList.remove('copied');
+                        button.textContent = '📋 Copy';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    fallbackCopy(commandText, button);
+                });
+            } else {
+                fallbackCopy(commandText, button);
+            }
+
+            const singleLineElement = document.getElementById(commandId + '-single');
+            if (singleLineElement) {
+                singleLineElement.classList.add('show');
+            }
+        }
+
+        // Fallback copy method
+        function fallbackCopy(text, button) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                document.execCommand('copy');
+                button.classList.add('copied');
+                button.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.textContent = '📋 Copy';
+                }, 2000);
+            } catch (err) {
+                console.error('Fallback copy failed:', err);
+                alert('Failed to copy command. Please copy manually:\n\n' + text);
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        // Auto-detect Windows and show single-line hints
+        if (navigator.platform.toLowerCase().includes('win')) {
+            document.addEventListener('DOMContentLoaded', function() {
+                const singleLineElements = document.querySelectorAll('.command-single-line');
+                singleLineElements.forEach(el => {
+                    el.style.display = 'block';
+                });
+            });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCommands();
+        });
+    </script>
+</head>
+<body>
+    <h1>Subscription Renewal Testing Scripts Guide</h1>
+
+    <p>Complete guide to using automated test scripts for subscription renewal functionality in Stripe test mode. Learn how to expedite renewals, verify database state, and trigger batch jobs.</p>
+
+    <div class="toc">
+        <h2>Table of Contents</h2>
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#prerequisites">Prerequisites</a></li>
+            <li><a href="#scripts">Scripts</a></li>
+            <li><a href="#quick-start">Quick Start Example</a></li>
+            <li><a href="#testing-workflow">Testing Workflow</a></li>
+            <li><a href="#troubleshooting">Troubleshooting</a></li>
+            <li><a href="#important-notes">Important Notes</a></li>
+            <li><a href="#related-documentation">Related Documentation</a></li>
+        </ul>
+    </div>
+
+    <div class="metadata">
+        <div class="metadata-item">
+            <span class="metadata-label">Purpose:</span> Guide for using automated test scripts to expedite and test subscription renewal functionality in Stripe test mode
+        </div>
+        <div class="metadata-item">
+            <span class="metadata-label">Location:</span> <code class="script-name">scripts/test-subscription-renewal/</code>
+        </div>
+        <div class="metadata-item">
+            <span class="metadata-label">Last Updated:</span> December 31, 2025
+        </div>
+    </div>
+
+    <h2 id="overview">Overview</h2>
+
+    <div class="section-intro">
+        <p>These scripts allow you to test subscription renewal functionality without waiting for the actual billing period to end. They work with Stripe test mode subscriptions to:</p>
+        <ol>
+            <li><strong>View subscription details</strong> - Retrieve and display comprehensive Stripe subscription information</li>
+            <li><strong>Expedite renewal</strong> - Advance subscription period dates in Stripe test mode</li>
+            <li><strong>Verify database</strong> - Compare database state with Stripe subscription state</li>
+            <li><strong>Trigger batch job</strong> - Execute batch job on demand for testing</li>
+            <li><strong>Full test suite</strong> - Run all tests in sequence</li>
+        </ol>
+    </div>
+
+    <h2 id="prerequisites">Prerequisites</h2>
+
+    <h3>Environment Variables</h3>
+
+    <div class="section-container usage">
+        <div class="section-header usage">📋 Script Usage</div>
+        <p>Required environment variables for all scripts:</p>
+        <div class="command-block default" data-command-base="" data-template-command="">
+            <div class="command-header">
+                <span class="command-type">Environment Variables</span>
+                <div class="command-header-buttons">
+                    <button class="copy-button-template" onclick="copyTemplateCommand(this, 'env-vars')" title="Copy template">📄 Template</button>
+                    <button class="copy-button" onclick="copyCommand(this, 'env-vars')" title="Copy command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-content" id="env-vars">export STRIPE_SECRET_KEY="sk_test_..."
+export DATABASE_URL="postgresql://..."
+export NEXT_PUBLIC_API_BASE_URL="http://localhost:8080"
+export API_JWT_USER="jwtadmin"
+export API_JWT_PASS="jwtadmin"
+export NEXT_PUBLIC_TENANT_ID="tenant_demo_002"</div>
+            <div class="command-single-line" id="env-vars-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="env-vars-single-code">$env:STRIPE_SECRET_KEY="sk_test_..."; $env:DATABASE_URL="postgresql://..."; $env:NEXT_PUBLIC_API_BASE_URL="http://localhost:8080"; $env:API_JWT_USER="jwtadmin"; $env:API_JWT_PASS="jwtadmin"; $env:NEXT_PUBLIC_TENANT_ID="tenant_demo_002"</code>
+            </div>
+        </div>
+    </div>
+
+    <h3>Node.js Dependencies</h3>
+
+    <div class="section-container usage">
+        <div class="section-header usage">📋 Script Usage</div>
+        <div class="command-block default" data-command-base="npm install --save-dev" data-template-command="npm install --save-dev stripe pg">
+            <div class="command-header">
+                <span class="command-type">Install Dependencies</span>
+                <div class="command-header-buttons">
+                    <button class="copy-button-template" onclick="copyTemplateCommand(this, 'npm-install')" title="Copy template">📄 Template</button>
+                    <button class="copy-button" onclick="copyCommand(this, 'npm-install')" title="Copy command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-content" id="npm-install">npm install --save-dev stripe pg</div>
+            <div class="command-single-line" id="npm-install-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="npm-install-single-code">npm install --save-dev stripe pg</code>
+            </div>
+        </div>
+    </div>
+
+    <p>Or add to <code>package.json</code>:</p>
+    <div class="code-block">
+        <pre><code>{
+  "devDependencies": {
+    "stripe": "^14.0.0",
+    "pg": "^8.11.0"
+  }
+}</code></pre>
+    </div>
+
+    <h2 id="scripts">Scripts</h2>
+
+    <ul class="script-list">
+        <li>
+            <h3>1. View Stripe Subscription Details</h3>
+            <p><strong>File:</strong> <code class="script-name">view-stripe-subscription.js</code></p>
+            <p>Retrieves and displays detailed information about a Stripe subscription including dates, status, billing information, and other attributes.</p>
+
+            <div class="section-container usage">
+                <div class="section-header usage">📋 Script Usage</div>
+                <div class="command-block verify" data-command-base="node scripts/test-subscription-renewal/view-stripe-subscription.js" data-template-command="node scripts/test-subscription-renewal/view-stripe-subscription.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93">
+                    <div class="command-header">
+                        <span class="command-type">Verify Script</span>
+                        <div class="command-header-buttons">
+                            <button class="copy-button-template" onclick="copyTemplateCommand(this, 'view-1')" title="Copy template">📄 Template</button>
+                            <button class="copy-button" onclick="copyCommand(this, 'view-1')" title="Copy customized command">📋 Copy</button>
+                        </div>
+                    </div>
+                    <div class="command-parameters">
+                        <h5>🔧 Customize Parameters:</h5>
+                        <div class="parameter-group">
+                            <div class="parameter-input">
+                                <label for="view-1-subscription-id">Subscription ID:</label>
+                                <input type="text" id="view-1-subscription-id" placeholder="sub_xxx" value="sub_1SeifsK5BrggeAHMBvg2XE93" oninput="updateCommand('view-1', 'subscription-id', this.value)">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="command-content" id="view-1">node scripts/test-subscription-renewal/view-stripe-subscription.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93</div>
+                    <div class="command-single-line" id="view-1-single">
+                        <div class="command-single-line-label">Windows Single-Line:</div>
+                        <code id="view-1-single-code">node scripts/test-subscription-renewal/view-stripe-subscription.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93</code>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-container parameters">
+                <div class="section-header parameters">⚙️ Script Parameters</div>
+                <div class="parameters-list">
+                    <p><strong>Parameters:</strong></p>
+                    <ul>
+                        <li><code>--subscription-id</code> (required): Stripe subscription ID</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section-container">
+                <div class="section-header">📊 What it displays</div>
+                <ul>
+                    <li>Subscription status and customer information</li>
+                    <li>Current billing period dates (start, end, days until renewal)</li>
+                    <li>Billing cycle anchor</li>
+                    <li>Billing information (currency, collection method, interval, amount)</li>
+                    <li>Subscription items and pricing</li>
+                    <li>Cancellation settings</li>
+                    <li>Trial information (if applicable)</li>
+                    <li>Latest invoice details</li>
+                    <li>Payment method information</li>
+                    <li>Metadata</li>
+                    <li>Additional subscription attributes</li>
+                </ul>
+            </div>
+
+            <div class="section-container output">
+                <div class="section-header output">📊 Script Output</div>
+                <ul>
+                    <li>Comprehensive subscription details formatted for easy reading</li>
+                    <li>All dates in both ISO format and localized format</li>
+                    <li>Days until renewal calculation</li>
+                </ul>
+            </div>
+        </li>
+
+        <li>
+            <h3>2. Expedite Stripe Renewal</h3>
+            <p><strong>File:</strong> <code class="script-name">expedite-stripe-renewal.js</code></p>
+            <p>Advances a Stripe test mode subscription's billing period to trigger renewal immediately.</p>
+
+            <div class="section-container usage">
+                <div class="section-header usage">📋 Script Usage</div>
+                <div class="command-block expedite" data-command-base="node scripts/test-subscription-renewal/expedite-stripe-renewal.js" data-template-command="node scripts/test-subscription-renewal/expedite-stripe-renewal.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --days-to-advance=30">
+                    <div class="command-header">
+                        <span class="command-type">Expedite Script</span>
+                        <div class="command-header-buttons">
+                            <button class="copy-button-template" onclick="copyTemplateCommand(this, 'expedite-1')" title="Copy template">📄 Template</button>
+                            <button class="copy-button" onclick="copyCommand(this, 'expedite-1')" title="Copy customized command">📋 Copy</button>
+                        </div>
+                    </div>
+                    <div class="command-parameters">
+                        <h5>🔧 Customize Parameters:</h5>
+                        <div class="parameter-group">
+                            <div class="parameter-input">
+                                <label for="expedite-1-subscription-id">Subscription ID:</label>
+                                <input type="text" id="expedite-1-subscription-id" placeholder="sub_xxx" value="sub_1SeifsK5BrggeAHMBvg2XE93" oninput="updateCommand('expedite-1', 'subscription-id', this.value)">
+                            </div>
+                            <div class="parameter-input">
+                                <label for="expedite-1-days-to-advance">Days to Advance:</label>
+                                <input type="text" id="expedite-1-days-to-advance" placeholder="30" value="30" oninput="updateCommand('expedite-1', 'days-to-advance', this.value)">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="command-content" id="expedite-1">node scripts/test-subscription-renewal/expedite-stripe-renewal.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --days-to-advance=30</div>
+                    <div class="command-single-line" id="expedite-1-single">
+                        <div class="command-single-line-label">Windows Single-Line:</div>
+                        <code id="expedite-1-single-code">node scripts/test-subscription-renewal/expedite-stripe-renewal.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --days-to-advance=30</code>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-container parameters">
+                <div class="section-header parameters">⚙️ Script Parameters</div>
+                <div class="parameters-list">
+                    <p><strong>Parameters:</strong></p>
+                    <ul>
+                        <li><code>--subscription-id</code> (required): Stripe subscription ID</li>
+                        <li><code>--days-to-advance</code> (optional): Number of days to advance (default: 30)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section-container">
+                <div class="section-header">📊 What it does</div>
+                <ol>
+                    <li>Retrieves current subscription from Stripe</li>
+                    <li>Calculates new period dates</li>
+                    <li>Updates subscription billing cycle anchor</li>
+                    <li>Creates and pays invoice for new period</li>
+                    <li>Verifies final subscription state</li>
+                </ol>
+            </div>
+
+            <div class="section-container output">
+                <div class="section-header output">📊 Script Output</div>
+                <ul>
+                    <li>Current and new period dates</li>
+                    <li>Invoice creation status</li>
+                    <li>Final subscription state</li>
+                </ul>
+            </div>
+
+            <div class="info">
+                <strong>Note:</strong> Running this script multiple times will advance the subscription month by month. Each run reads the current Stripe date and advances by one billing period (typically 30 days).
+            </div>
+        </li>
+
+        <li>
+            <h3>3. Verify Database</h3>
+            <p><strong>File:</strong> <code class="script-name">verify-database.js</code></p>
+            <p>Compares database subscription record with Stripe subscription state.</p>
+
+            <div class="section-container usage">
+                <div class="section-header usage">📋 Script Usage</div>
+                <div class="command-block verify" data-command-base="node scripts/test-subscription-renewal/verify-database.js" data-template-command="node scripts/test-subscription-renewal/verify-database.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002">
+                    <div class="command-header">
+                        <span class="command-type">Verify Script</span>
+                        <div class="command-header-buttons">
+                            <button class="copy-button-template" onclick="copyTemplateCommand(this, 'verify-1')" title="Copy template">📄 Template</button>
+                            <button class="copy-button" onclick="copyCommand(this, 'verify-1')" title="Copy customized command">📋 Copy</button>
+                        </div>
+                    </div>
+                    <div class="command-parameters">
+                        <h5>🔧 Customize Parameters:</h5>
+                        <div class="parameter-group">
+                            <div class="parameter-input">
+                                <label for="verify-1-subscription-id">Subscription ID:</label>
+                                <input type="text" id="verify-1-subscription-id" placeholder="sub_xxx" value="sub_1SeifsK5BrggeAHMBvg2XE93" oninput="updateCommand('verify-1', 'subscription-id', this.value)">
+                            </div>
+                            <div class="parameter-input">
+                                <label for="verify-1-tenant-id">Tenant ID:</label>
+                                <input type="text" id="verify-1-tenant-id" placeholder="tenant_xxx" value="tenant_demo_002" oninput="updateCommand('verify-1', 'tenant-id', this.value)">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="command-content" id="verify-1">node scripts/test-subscription-renewal/verify-database.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002</div>
+                    <div class="command-single-line" id="verify-1-single">
+                        <div class="command-single-line-label">Windows Single-Line:</div>
+                        <code id="verify-1-single-code">node scripts/test-subscription-renewal/verify-database.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002</code>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-container parameters">
+                <div class="section-header parameters">⚙️ Script Parameters</div>
+                <div class="parameters-list">
+                    <p><strong>Parameters:</strong></p>
+                    <ul>
+                        <li><code>--subscription-id</code> (required): Stripe subscription ID</li>
+                        <li><code>--tenant-id</code> (optional): Tenant ID (defaults to NEXT_PUBLIC_TENANT_ID)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section-container">
+                <div class="section-header">📊 What it does</div>
+                <ol>
+                    <li>Fetches subscription from Stripe</li>
+                    <li>Fetches subscription from database via API proxy</li>
+                    <li>Compares:
+                        <ul>
+                            <li><code class="code-highlight">current_period_start</code></li>
+                            <li><code class="code-highlight">current_period_end</code></li>
+                            <li><code class="code-highlight">subscription_status</code></li>
+                            <li><code class="code-highlight">stripe_customer_id</code></li>
+                        </ul>
+                    </li>
+                    <li>Reports discrepancies</li>
+                    <li>Checks reconciliation status</li>
+                </ol>
+            </div>
+
+            <div class="section-container output">
+                <div class="section-header output">📊 Script Output</div>
+                <ul>
+                    <li>Comparison results (matches, warnings, issues)</li>
+                    <li>Reconciliation status</li>
+                    <li>Recommendations</li>
+                </ul>
+            </div>
+        </li>
+
+        <li>
+            <h3>4. Trigger Batch Job</h3>
+            <p><strong>File:</strong> <code class="script-name">trigger-batch-job.js</code></p>
+            <p>Triggers the subscription renewal batch job manually for testing.</p>
+
+            <div class="section-container usage">
+                <div class="section-header usage">📋 Script Usage</div>
+                <div class="command-block default" data-command-base="node scripts/test-subscription-renewal/trigger-batch-job.js" data-template-command="node scripts/test-subscription-renewal/trigger-batch-job.js --tenant-id=tenant_demo_002 --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --batch-size=10 --max-subscriptions=100">
+                    <div class="command-header">
+                        <span class="command-type">Default Script</span>
+                        <div class="command-header-buttons">
+                            <button class="copy-button-template" onclick="copyTemplateCommand(this, 'trigger-1')" title="Copy template">📄 Template</button>
+                            <button class="copy-button" onclick="copyCommand(this, 'trigger-1')" title="Copy customized command">📋 Copy</button>
+                        </div>
+                    </div>
+                    <div class="command-parameters">
+                        <h5>🔧 Customize Parameters:</h5>
+                        <div class="parameter-group">
+                            <div class="parameter-input">
+                                <label for="trigger-1-tenant-id">Tenant ID:</label>
+                                <input type="text" id="trigger-1-tenant-id" placeholder="tenant_xxx" value="tenant_demo_002" oninput="updateCommand('trigger-1', 'tenant-id', this.value)">
+                            </div>
+                            <div class="parameter-input">
+                                <label for="trigger-1-subscription-id">Subscription ID:</label>
+                                <input type="text" id="trigger-1-subscription-id" placeholder="sub_xxx" value="sub_1SeifsK5BrggeAHMBvg2XE93" oninput="updateCommand('trigger-1', 'subscription-id', this.value)">
+                            </div>
+                        </div>
+                        <div class="parameter-group">
+                            <div class="parameter-input">
+                                <label for="trigger-1-batch-size">Batch Size:</label>
+                                <input type="text" id="trigger-1-batch-size" placeholder="10" value="10" oninput="updateCommand('trigger-1', 'batch-size', this.value)">
+                            </div>
+                            <div class="parameter-input">
+                                <label for="trigger-1-max-subscriptions">Max Subscriptions:</label>
+                                <input type="text" id="trigger-1-max-subscriptions" placeholder="100" value="100" oninput="updateCommand('trigger-1', 'max-subscriptions', this.value)">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="command-content" id="trigger-1">node scripts/test-subscription-renewal/trigger-batch-job.js --tenant-id=tenant_demo_002 --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --batch-size=10 --max-subscriptions=100</div>
+                    <div class="command-single-line" id="trigger-1-single">
+                        <div class="command-single-line-label">Windows Single-Line:</div>
+                        <code id="trigger-1-single-code">node scripts/test-subscription-renewal/trigger-batch-job.js --tenant-id=tenant_demo_002 --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --batch-size=10 --max-subscriptions=100</code>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-container parameters">
+                <div class="section-header parameters">⚙️ Script Parameters</div>
+                <div class="parameters-list">
+                    <p><strong>Parameters:</strong></p>
+                    <ul>
+                        <li><code>--tenant-id</code> (required): Tenant ID</li>
+                        <li><code>--subscription-id</code> (optional): Filter by specific subscription</li>
+                        <li><code>--batch-size</code> (optional): Batch size (default: 10)</li>
+                        <li><code>--max-subscriptions</code> (optional): Max subscriptions to process (default: 100)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section-container">
+                <div class="section-header">📊 What it does</div>
+                <ol>
+                    <li>Authenticates with backend API</li>
+                    <li>Triggers batch job endpoint</li>
+                    <li>Reports job execution results</li>
+                </ol>
+            </div>
+
+            <div class="section-container output">
+                <div class="section-header output">📊 Script Output</div>
+                <ul>
+                    <li>Job execution status</li>
+                    <li>Statistics (processed, updated, skipped, errors)</li>
+                    <li>Duration</li>
+                </ul>
+            </div>
+        </li>
+
+        <li>
+            <h3>5. Full Test Suite</h3>
+            <p><strong>File:</strong> <code class="script-name">run-full-test.sh</code></p>
+            <p>Runs all tests in sequence for complete end-to-end testing.</p>
+
+            <div class="section-container usage">
+                <div class="section-header usage">📋 Script Usage</div>
+                <div class="command-block default" data-command-base="bash scripts/test-subscription-renewal/run-full-test.sh" data-template-command="bash scripts/test-subscription-renewal/run-full-test.sh --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002 --days-to-advance=30">
+                    <div class="command-header">
+                        <span class="command-type">Default Script</span>
+                        <div class="command-header-buttons">
+                            <button class="copy-button-template" onclick="copyTemplateCommand(this, 'full-1')" title="Copy template">📄 Template</button>
+                            <button class="copy-button" onclick="copyCommand(this, 'full-1')" title="Copy customized command">📋 Copy</button>
+                        </div>
+                    </div>
+                    <div class="command-parameters">
+                        <h5>🔧 Customize Parameters:</h5>
+                        <div class="parameter-group">
+                            <div class="parameter-input">
+                                <label for="full-1-subscription-id">Subscription ID:</label>
+                                <input type="text" id="full-1-subscription-id" placeholder="sub_xxx" value="sub_1SeifsK5BrggeAHMBvg2XE93" oninput="updateCommand('full-1', 'subscription-id', this.value)">
+                            </div>
+                            <div class="parameter-input">
+                                <label for="full-1-tenant-id">Tenant ID:</label>
+                                <input type="text" id="full-1-tenant-id" placeholder="tenant_xxx" value="tenant_demo_002" oninput="updateCommand('full-1', 'tenant-id', this.value)">
+                            </div>
+                        </div>
+                        <div class="parameter-group single">
+                            <div class="parameter-input">
+                                <label for="full-1-days-to-advance">Days to Advance:</label>
+                                <input type="text" id="full-1-days-to-advance" placeholder="30" value="30" oninput="updateCommand('full-1', 'days-to-advance', this.value)">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="command-content" id="full-1">bash scripts/test-subscription-renewal/run-full-test.sh --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002 --days-to-advance=30</div>
+                    <div class="command-single-line" id="full-1-single">
+                        <div class="command-single-line-label">Windows Single-Line:</div>
+                        <code id="full-1-single-code">bash scripts/test-subscription-renewal/run-full-test.sh --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002 --days-to-advance=30</code>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-container parameters">
+                <div class="section-header parameters">⚙️ Script Parameters</div>
+                <div class="parameters-list">
+                    <p><strong>Parameters:</strong></p>
+                    <ul>
+                        <li><code>--subscription-id</code> (required): Stripe subscription ID</li>
+                        <li><code>--tenant-id</code> (optional): Tenant ID (defaults to NEXT_PUBLIC_TENANT_ID)</li>
+                        <li><code>--days-to-advance</code> (optional): Days to advance (default: 30)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section-container">
+                <div class="section-header">📊 What it does</div>
+                <ol>
+                    <li>Expedites Stripe subscription renewal</li>
+                    <li>Waits for webhook processing</li>
+                    <li>Verifies database state (before batch job)</li>
+                    <li>Triggers batch job</li>
+                    <li>Waits for batch job completion</li>
+                    <li>Verifies final database state</li>
+                </ol>
+            </div>
+
+            <div class="section-container output">
+                <div class="section-header output">📊 Script Output</div>
+                <ul>
+                    <li>Complete test results</li>
+                    <li>Pass/fail status</li>
+                </ul>
+            </div>
+        </li>
+    </ul>
+
+    <h2 id="quick-start">Quick Start Example</h2>
+
+    <div class="section-container usage">
+        <div class="section-header usage">📋 Quick Start</div>
+        <p>Complete example workflow for testing subscription renewal:</p>
+        <div class="command-block default" data-command-base="" data-template-command="">
+            <div class="command-header">
+                <span class="command-type">Full Test Suite</span>
+                <div class="command-header-buttons">
+                    <button class="copy-button-template" onclick="copyTemplateCommand(this, 'quick-start')" title="Copy template">📄 Template</button>
+                    <button class="copy-button" onclick="copyCommand(this, 'quick-start')" title="Copy command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-content" id="quick-start"># Set environment variables
+export STRIPE_SECRET_KEY="sk_test_..."
+export DATABASE_URL="postgresql://user:pass@localhost:5432/dbname"
+export NEXT_PUBLIC_API_BASE_URL="http://localhost:8080"
+export API_JWT_USER="jwtadmin"
+export API_JWT_PASS="jwtadmin"
+export NEXT_PUBLIC_TENANT_ID="tenant_demo_002"
+
+# Run full test suite
+bash scripts/test-subscription-renewal/run-full-test.sh --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002 --days-to-advance=30</div>
+            <div class="command-single-line" id="quick-start-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="quick-start-single-code">$env:STRIPE_SECRET_KEY="sk_test_..."; $env:DATABASE_URL="postgresql://user:pass@localhost:5432/dbname"; $env:NEXT_PUBLIC_API_BASE_URL="http://localhost:8080"; $env:API_JWT_USER="jwtadmin"; $env:API_JWT_PASS="jwtadmin"; $env:NEXT_PUBLIC_TENANT_ID="tenant_demo_002"; bash scripts/test-subscription-renewal/run-full-test.sh --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002 --days-to-advance=30</code>
+            </div>
+        </div>
+    </div>
+
+    <h2 id="testing-workflow">Testing Workflow</h2>
+
+    <h3><span class="step-number">1</span> Prepare Test Subscription</h3>
+    <p>Ensure you have a test subscription in the database:</p>
+    <div class="code-block">
+        <pre><code>SELECT id, tenant_id, user_profile_id, membership_plan_id,
+       subscription_status, current_period_start, current_period_end,
+       stripe_subscription_id, stripe_customer_id
+FROM membership_subscription
+WHERE stripe_subscription_id = 'sub_1SeifsK5BrggeAHMBvg2XE93'
+  AND tenant_id = 'tenant_demo_002';</code></pre>
+    </div>
+
+    <h3><span class="step-number">2</span> View Subscription Details (Optional)</h3>
+    <p>To check current subscription state before testing:</p>
+    <div class="section-container usage">
+        <div class="section-header usage">📋 Script Usage</div>
+        <div class="command-block verify" data-command-base="node scripts/test-subscription-renewal/view-stripe-subscription.js" data-template-command="node scripts/test-subscription-renewal/view-stripe-subscription.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93">
+            <div class="command-header">
+                <span class="command-type">Verify Script</span>
+                <div class="command-header-buttons">
+                    <button class="copy-button-template" onclick="copyTemplateCommand(this, 'view-step')" title="Copy template">📄 Template</button>
+                    <button class="copy-button" onclick="copyCommand(this, 'view-step')" title="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>🔧 Customize Parameters:</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="view-step-subscription-id">Subscription ID:</label>
+                        <input type="text" id="view-step-subscription-id" placeholder="sub_xxx" value="sub_1SeifsK5BrggeAHMBvg2XE93" oninput="updateCommand('view-step', 'subscription-id', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="view-step">node scripts/test-subscription-renewal/view-stripe-subscription.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93</div>
+            <div class="command-single-line" id="view-step-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="view-step-single-code">node scripts/test-subscription-renewal/view-stripe-subscription.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93</code>
+            </div>
+        </div>
+    </div>
+
+    <h3><span class="step-number">3</span> Run Expedited Renewal</h3>
+    <div class="section-container usage">
+        <div class="section-header usage">📋 Script Usage</div>
+        <div class="command-block expedite" data-command-base="node scripts/test-subscription-renewal/expedite-stripe-renewal.js" data-template-command="node scripts/test-subscription-renewal/expedite-stripe-renewal.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --days-to-advance=30">
+            <div class="command-header">
+                <span class="command-type">Expedite Script</span>
+                <div class="command-header-buttons">
+                    <button class="copy-button-template" onclick="copyTemplateCommand(this, 'expedite-step')" title="Copy template">📄 Template</button>
+                    <button class="copy-button" onclick="copyCommand(this, 'expedite-step')" title="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>🔧 Customize Parameters:</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="expedite-step-subscription-id">Subscription ID:</label>
+                        <input type="text" id="expedite-step-subscription-id" placeholder="sub_xxx" value="sub_1SeifsK5BrggeAHMBvg2XE93" oninput="updateCommand('expedite-step', 'subscription-id', this.value)">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="expedite-step-days-to-advance">Days to Advance:</label>
+                        <input type="text" id="expedite-step-days-to-advance" placeholder="30" value="30" oninput="updateCommand('expedite-step', 'days-to-advance', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="expedite-step">node scripts/test-subscription-renewal/expedite-stripe-renewal.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --days-to-advance=30</div>
+            <div class="command-single-line" id="expedite-step-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="expedite-step-single-code">node scripts/test-subscription-renewal/expedite-stripe-renewal.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --days-to-advance=30</code>
+            </div>
+        </div>
+    </div>
+
+    <h3><span class="step-number">4</span> Verify Webhook Processing</h3>
+    <p>Wait 5-10 seconds, then verify database:</p>
+    <div class="section-container usage">
+        <div class="section-header usage">📋 Script Usage</div>
+        <div class="command-block verify" data-command-base="node scripts/test-subscription-renewal/verify-database.js" data-template-command="node scripts/test-subscription-renewal/verify-database.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002">
+            <div class="command-header">
+                <span class="command-type">Verify Script</span>
+                <div class="command-header-buttons">
+                    <button class="copy-button-template" onclick="copyTemplateCommand(this, 'verify-step')" title="Copy template">📄 Template</button>
+                    <button class="copy-button" onclick="copyCommand(this, 'verify-step')" title="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>🔧 Customize Parameters:</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="verify-step-subscription-id">Subscription ID:</label>
+                        <input type="text" id="verify-step-subscription-id" placeholder="sub_xxx" value="sub_1SeifsK5BrggeAHMBvg2XE93" oninput="updateCommand('verify-step', 'subscription-id', this.value)">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="verify-step-tenant-id">Tenant ID:</label>
+                        <input type="text" id="verify-step-tenant-id" placeholder="tenant_xxx" value="tenant_demo_002" oninput="updateCommand('verify-step', 'tenant-id', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="verify-step">node scripts/test-subscription-renewal/verify-database.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002</div>
+            <div class="command-single-line" id="verify-step-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="verify-step-single-code">node scripts/test-subscription-renewal/verify-database.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002</code>
+            </div>
+        </div>
+    </div>
+
+    <h3><span class="step-number">5</span> Trigger Batch Job</h3>
+    <p>If webhook didn't update database, trigger batch job:</p>
+    <div class="section-container usage">
+        <div class="section-header usage">📋 Script Usage</div>
+        <div class="command-block default" data-command-base="node scripts/test-subscription-renewal/trigger-batch-job.js" data-template-command="node scripts/test-subscription-renewal/trigger-batch-job.js --tenant-id=tenant_demo_002 --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93">
+            <div class="command-header">
+                <span class="command-type">Default Script</span>
+                <div class="command-header-buttons">
+                    <button class="copy-button-template" onclick="copyTemplateCommand(this, 'trigger-step')" title="Copy template">📄 Template</button>
+                    <button class="copy-button" onclick="copyCommand(this, 'trigger-step')" title="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>🔧 Customize Parameters:</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="trigger-step-tenant-id">Tenant ID:</label>
+                        <input type="text" id="trigger-step-tenant-id" placeholder="tenant_xxx" value="tenant_demo_002" oninput="updateCommand('trigger-step', 'tenant-id', this.value)">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="trigger-step-subscription-id">Subscription ID:</label>
+                        <input type="text" id="trigger-step-subscription-id" placeholder="sub_xxx" value="sub_1SeifsK5BrggeAHMBvg2XE93" oninput="updateCommand('trigger-step', 'subscription-id', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="trigger-step">node scripts/test-subscription-renewal/trigger-batch-job.js --tenant-id=tenant_demo_002 --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93</div>
+            <div class="command-single-line" id="trigger-step-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="trigger-step-single-code">node scripts/test-subscription-renewal/trigger-batch-job.js --tenant-id=tenant_demo_002 --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93</code>
+            </div>
+        </div>
+    </div>
+
+    <h3><span class="step-number">6</span> Final Verification</h3>
+    <p>Verify database is in sync:</p>
+    <div class="section-container usage">
+        <div class="section-header usage">📋 Script Usage</div>
+        <div class="command-block verify" data-command-base="node scripts/test-subscription-renewal/verify-database.js" data-template-command="node scripts/test-subscription-renewal/verify-database.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002">
+            <div class="command-header">
+                <span class="command-type">Verify Script</span>
+                <div class="command-header-buttons">
+                    <button class="copy-button-template" onclick="copyTemplateCommand(this, 'final-step')" title="Copy template">📄 Template</button>
+                    <button class="copy-button" onclick="copyCommand(this, 'final-step')" title="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>🔧 Customize Parameters:</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="final-step-subscription-id">Subscription ID:</label>
+                        <input type="text" id="final-step-subscription-id" placeholder="sub_xxx" value="sub_1SeifsK5BrggeAHMBvg2XE93" oninput="updateCommand('final-step', 'subscription-id', this.value)">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="final-step-tenant-id">Tenant ID:</label>
+                        <input type="text" id="final-step-tenant-id" placeholder="tenant_xxx" value="tenant_demo_002" oninput="updateCommand('final-step', 'tenant-id', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="final-step">node scripts/test-subscription-renewal/verify-database.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002</div>
+            <div class="command-single-line" id="final-step-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="final-step-single-code">node scripts/test-subscription-renewal/verify-database.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002</code>
+            </div>
+        </div>
+    </div>
+
+    <h2 id="troubleshooting">Troubleshooting</h2>
+
+    <h3>Stripe API Errors</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Error</th>
+                <th>Solution</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>"No such subscription"</strong></td>
+                <td>Check subscription ID is correct and in test mode</td>
+            </tr>
+            <tr>
+                <td><strong>"Invalid API key"</strong></td>
+                <td>Verify <code>STRIPE_SECRET_KEY</code> is set and is a test mode key</td>
+            </tr>
+            <tr>
+                <td><strong>"Cannot update subscription"</strong></td>
+                <td>Subscription may be canceled or in invalid state</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Database Connection Errors</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Error</th>
+                <th>Solution</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>"Connection refused"</strong></td>
+                <td>Check <code>DATABASE_URL</code> and database is running</td>
+            </tr>
+            <tr>
+                <td><strong>"Authentication failed"</strong></td>
+                <td>Verify database credentials</td>
+            </tr>
+            <tr>
+                <td><strong>"Subscription not found"</strong></td>
+                <td>Check subscription exists in database with correct <code>tenant_id</code></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Batch Job Errors</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Error</th>
+                <th>Solution</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>"401 Unauthorized"</strong></td>
+                <td>Check <code>API_JWT_USER</code> and <code>API_JWT_PASS</code></td>
+            </tr>
+            <tr>
+                <td><strong>"404 Not Found"</strong></td>
+                <td>Verify batch job endpoint exists in backend</td>
+            </tr>
+            <tr>
+                <td><strong>"500 Internal Server Error"</strong></td>
+                <td>Check backend logs for details</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 id="important-notes">Important Notes</h2>
+
+    <div class="warning">
+        <h3>⚠️ Test Mode Only</h3>
+        <p>These scripts only work with Stripe test mode subscriptions. Do not use with production subscriptions.</p>
+    </div>
+
+    <div class="info">
+        <h3>📋 Database Safety</h3>
+        <p>Scripts are read-only for database (except batch job which updates). The batch job will update subscription dates to match Stripe.</p>
+    </div>
+
+    <div class="info">
+        <h3>⏱️ Timing Considerations</h3>
+        <ul>
+            <li><strong>Webhook Timing:</strong> Allow 5-10 seconds for webhooks to process after expediting</li>
+            <li><strong>Batch Job Timing:</strong> Allow 10-30 seconds for batch job to complete</li>
+            <li><strong>Multiple Runs:</strong> Running expedite script multiple times will advance subscription month by month</li>
+        </ul>
+    </div>
+
+    <h2 id="related-documentation">Related Documentation</h2>
+
+    <ul>
+        <li><a href="./STRIPE_TEST_CLOCKS_GUIDE.html">Stripe Test Clocks Guide</a> - Complete guide to using Stripe Test Clocks for testing subscription renewals (recommended approach)</li>
+        <li><a href="SUBSCRIPTION_RENEWAL_BATCH_JOB_EXPLAINED.html">Subscription Renewal Batch Job Explained</a> - Plain English explanation of what the batch job does</li>
+        <li><a href="SUBSCRIPTION_RENEWAL_FALLBACK_EXPLAINED.html">Subscription Renewal Fallback Mode Explained</a> - Explanation of fallback mode configuration</li>
+        <li><a href="SUBSCRIPTION_RENEWAL_BATCH_JOB_ANALYSIS_AND_TEST_STEPS.html">Subscription Renewal Batch Job Analysis and Test Steps</a> - Comprehensive technical documentation</li>
+        <li><a href="https://stripe.com/docs/testing" target="_blank">Stripe Test Mode Documentation</a> - Official Stripe testing guide</li>
+    </ul>
+
+    <hr style="margin: 40px 0; border: none; border-top: 2px solid #ddd;">
+
+    <p style="text-align: center; color: #666; margin-top: 40px;">
+        <em>This guide covers all testing scripts for subscription renewal functionality.</em><br>
+        <em>For implementation details, see the source code files in <code class="script-name">scripts/test-subscription-renewal/</code>.</em>
+    </p>
+</body>
+</html>

@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Headless vs Browser-Based Testing: Comprehensive Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-left: 15px;
+            border-left: 5px solid #3498db;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        table th {
+            background: #3498db;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        table tr:hover {
+            background: #f8f9fa;
+        }
+        .headless {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .browser {
+            background: #f3e5f5;
+            color: #6a1b9a;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .both {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .summary-box {
+            background: #e7f3ff;
+            padding: 20px;
+            border-left: 4px solid #0066cc;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .warning-box {
+            background: #fff3cd;
+            padding: 20px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .success-box {
+            background: #d4edda;
+            padding: 20px;
+            border-left: 4px solid #28a745;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .error-box {
+            background: #f8d7da;
+            padding: 20px;
+            border-left: 4px solid #dc3545;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        ul {
+            margin-left: 30px;
+            margin-top: 10px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .comparison-table {
+            margin: 20px 0;
+        }
+        .checkmark {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .cross {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .partial {
+            color: #ffc107;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Headless vs Browser-Based Testing: Comprehensive Guide</h1>
+        <p><strong>Generated:</strong> January 2026</p>
+        <p><strong>Purpose:</strong> Understand the differences between headless and browser-based testing, and determine the best approach for comprehensive admin page testing</p>
+
+        <div class="summary-box">
+            <h2>Executive Summary</h2>
+            <p><strong>Current Issue:</strong> Test suite passed but page <code>/admin/events/4251/media</code> has a JavaScript error (<code>FaPhotoVideo is not defined</code>)</p>
+            <p><strong>Root Cause:</strong> Event ID discovery failed, so dynamic event pages (including the problematic page) were never tested</p>
+            <p><strong>Key Finding:</strong> Headless testing CAN detect JavaScript errors, but only if it actually visits the page. The test suite has JS error detection but didn't run because event discovery failed.</p>
+            <p><strong>Recommendation:</strong> Improve event discovery reliability and add fallback mechanisms. Both headless and browser-based testing can work, but headless is more efficient for CI/CD.</p>
+        </div>
+
+        <h2>1. Understanding Headless vs Browser-Based Testing</h2>
+
+        <h3>1.1 What is Headless Testing?</h3>
+        <p><strong>Headless testing</strong> runs a browser engine without a visible UI. Playwright/Chromium runs in the background, executing tests programmatically.</p>
+        <ul>
+            <li><strong>No visible browser window</strong> - Runs in background</li>
+            <li><strong>Faster execution</strong> - No rendering overhead</li>
+            <li><strong>CI/CD friendly</strong> - Works in server environments without display</li>
+            <li><strong>Full browser capabilities</strong> - Still uses real Chromium engine</li>
+            <li><strong>JavaScript execution</strong> - Full JS runtime, can detect errors</li>
+        </ul>
+
+        <h3>1.2 What is Browser-Based Testing?</h3>
+        <p><strong>Browser-based testing</strong> (also called "headed" or "non-headless") opens a visible browser window that you can watch and interact with.</p>
+        <ul>
+            <li><strong>Visible browser window</strong> - You can see what's happening</li>
+            <li><strong>Slower execution</strong> - Rendering overhead</li>
+            <li><strong>Better for debugging</strong> - See exactly what the test is doing</li>
+            <li><strong>Manual intervention possible</strong> - Can pause and inspect</li>
+            <li><strong>Same capabilities</strong> - Uses same browser engine as headless</li>
+        </ul>
+
+        <h3>1.3 Key Misconception: "Headless Doesn't Catch JavaScript Errors"</h3>
+        <div class="warning-box">
+            <h4>⚠️ This is FALSE</h4>
+            <p><strong>Headless testing CAN and DOES detect JavaScript errors.</strong> Playwright's headless mode uses the same Chromium engine as headed mode, with full JavaScript execution.</p>
+            <p><strong>What headless testing CAN detect:</strong></p>
+            <ul>
+                <li>✅ JavaScript runtime errors (<code>ReferenceError</code>, <code>TypeError</code>, etc.)</li>
+                <li>✅ Console errors and warnings</li>
+                <li>✅ Network errors (404, 500, etc.)</li>
+                <li>✅ Page load failures</li>
+                <li>✅ Unhandled promise rejections</li>
+                <li>✅ React component errors</li>
+            </ul>
+            <p><strong>What headless testing CANNOT do:</strong></p>
+            <ul>
+                <li>❌ Show you a visual representation (you can't "see" the page)</li>
+                <li>❌ Allow manual interaction during test execution</li>
+                <li>❌ Debug visually (but screenshots help)</li>
+            </ul>
+        </div>
+
+        <h2>2. Comparison Table: Headless vs Browser-Based</h2>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Headless</th>
+                    <th>Browser-Based</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>JavaScript Error Detection</strong></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                    <td>Both detect JS errors via <code>page.on('pageerror')</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Console Error Detection</strong></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                    <td>Both detect via <code>page.on('console')</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Network Error Detection</strong></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                    <td>Both detect failed requests</td>
+                </tr>
+                <tr>
+                    <td><strong>Page Load Verification</strong></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                    <td>Both verify HTTP 200 status</td>
+                </tr>
+                <tr>
+                    <td><strong>DOM Element Verification</strong></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                    <td>Both can query DOM elements</td>
+                </tr>
+                <tr>
+                    <td><strong>Visual Rendering</strong></td>
+                    <td><span class="cross">❌ No</span></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                    <td>Headless doesn't render visually, but still executes JS</td>
+                </tr>
+                <tr>
+                    <td><strong>Execution Speed</strong></td>
+                    <td><span class="checkmark">✅ Fast</span></td>
+                    <td><span class="partial">⚠️ Slower</span></td>
+                    <td>Headless is ~20-30% faster</td>
+                </tr>
+                <tr>
+                    <td><strong>CI/CD Compatibility</strong></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                    <td><span class="cross">❌ No</span></td>
+                    <td>Headless works in server environments</td>
+                </tr>
+                <tr>
+                    <td><strong>Debugging Ease</strong></td>
+                    <td><span class="partial">⚠️ Screenshots</span></td>
+                    <td><span class="checkmark">✅ Visual</span></td>
+                    <td>Browser-based easier to debug visually</td>
+                </tr>
+                <tr>
+                    <td><strong>Resource Usage</strong></td>
+                    <td><span class="checkmark">✅ Lower</span></td>
+                    <td><span class="partial">⚠️ Higher</span></td>
+                    <td>Headless uses less CPU/memory</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>3. Current Test Suite Analysis</h2>
+
+        <h3>3.1 What the Test Suite Currently Does</h3>
+        <div class="code-block">
+<code>// Current test suite (comprehensive-admin-test-suite.js)
+// ✅ HAS JavaScript error detection
+page.on('pageerror', (error) => {
+  jsErrors.push({
+    message: error.message,
+    stack: error.stack
+  });
+});
+
+// ✅ Tests dynamic event pages IF event IDs are discovered
+const eventIds = await getAvailableEventIds(page, config.baseUrl);
+if (eventIds.length > 0) {
+  // Test /admin/events/{eventId}/media (upload page)
+  // Test /admin/events/{eventId}/media/list (list page)
+}
+
+// ❌ PROBLEM: Event discovery is failing
+// Result: Dynamic event pages are skipped
+// Result: /admin/events/4251/media is never tested
+// Result: JavaScript error is never detected</code>
+        </div>
+
+        <h3>3.2 Why the Test "Passed" But Page Has Errors</h3>
+        <div class="error-box">
+            <h4>🔍 Root Cause Analysis</h4>
+            <p><strong>Issue 1: Event ID Discovery Failed</strong></p>
+            <ul>
+                <li>The test suite tries to discover event IDs by scraping <code>/admin/manage-events</code></li>
+                <li>If no event IDs are found, dynamic event pages are skipped</li>
+                <li>In your case: <code>getAvailableEventIds()</code> returned <code>[]</code></li>
+                <li>Result: <code>/admin/events/4251/media</code> was never tested</li>
+            </ul>
+            <p><strong>Issue 2: Missing Import Not Caught</strong></p>
+            <ul>
+                <li>The page uses <code>FaPhotoVideo</code> but doesn't import it</li>
+                <li>This causes a <code>ReferenceError: FaPhotoVideo is not defined</code></li>
+                <li>If the test had visited the page, it WOULD have caught this error</li>
+                <li>But since the page was never visited, the error was never detected</li>
+            </ul>
+            <p><strong>Issue 3: Test Only Checks Pages It Visits</strong></p>
+            <ul>
+                <li>JavaScript error detection only works for pages the test actually visits</li>
+                <li>If a page is skipped (due to missing event ID), its errors won't be caught</li>
+                <li>This is a test coverage issue, not a headless vs browser issue</li>
+            </ul>
+        </div>
+
+        <h3>3.3 Current Test Coverage</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Page Type</th>
+                    <th>Tested?</th>
+                    <th>Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>/admin</code> (Dashboard)</td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                    <td>Static route, always tested</td>
+                </tr>
+                <tr>
+                    <td><code>/admin/manage-events</code></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                    <td>Static route, always tested</td>
+                </tr>
+                <tr>
+                    <td><code>/admin/events/{eventId}</code></td>
+                    <td><span class="partial">⚠️ Conditional</span></td>
+                    <td>Only if event IDs discovered</td>
+                </tr>
+                <tr>
+                    <td><code>/admin/events/{eventId}/media</code></td>
+                    <td><span class="cross">❌ Skipped</span></td>
+                    <td>Event discovery failed → page never tested</td>
+                </tr>
+                <tr>
+                    <td><code>/admin/events/{eventId}/media/list</code></td>
+                    <td><span class="cross">❌ Skipped</span></td>
+                    <td>Event discovery failed → page never tested</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>4. The Real Problem: Test Coverage, Not Testing Mode</h2>
+
+        <div class="warning-box">
+            <h3>⚠️ Key Insight</h3>
+            <p><strong>The issue is NOT that headless testing can't detect JavaScript errors.</strong></p>
+            <p><strong>The issue IS that the test suite didn't visit the page with the error.</strong></p>
+            <p>Even if you ran the test in browser-based (headed) mode, it would still miss the error because:</p>
+            <ol>
+                <li>Event ID discovery failed</li>
+                <li>Dynamic event pages were skipped</li>
+                <li>The problematic page was never visited</li>
+                <li>No page visit = no error detection (regardless of headless or browser mode)</li>
+            </ol>
+        </div>
+
+        <h2>5. Comprehensive Testing Approaches</h2>
+
+        <h3>5.1 Approach 1: Improved Headless Testing (Recommended)</h3>
+        <div class="success-box">
+            <h4>✅ Advantages</h4>
+            <ul>
+                <li>Fast execution - suitable for CI/CD</li>
+                <li>Can detect JavaScript errors (via <code>page.on('pageerror')</code>)</li>
+                <li>Can detect console errors</li>
+                <li>Can verify DOM elements</li>
+                <li>Can take screenshots for debugging</li>
+                <li>Resource efficient</li>
+            </ul>
+            <h4>🔧 Improvements Needed</h4>
+            <ul>
+                <li><strong>Fix event ID discovery:</strong> Make it more reliable</li>
+                <li><strong>Add fallback event IDs:</strong> Allow manual override via config/env</li>
+                <li><strong>Improve error detection:</strong> Ensure all errors are caught and reported</li>
+                <li><strong>Add page navigation verification:</strong> Verify pages actually load before testing</li>
+            </ul>
+        </div>
+
+        <h3>5.2 Approach 2: Browser-Based Testing (For Debugging)</h3>
+        <div class="summary-box">
+            <h4>✅ Advantages</h4>
+            <ul>
+                <li>Visual feedback - see what's happening</li>
+                <li>Easier debugging - can pause and inspect</li>
+                <li>Same error detection capabilities as headless</li>
+                <li>Better for manual verification</li>
+            </ul>
+            <h4>❌ Disadvantages</h4>
+            <ul>
+                <li>Slower execution</li>
+                <li>Requires display (doesn't work in CI/CD)</li>
+                <li>Higher resource usage</li>
+                <li>Still won't catch errors if pages aren't visited</li>
+            </ul>
+            <h4>💡 Best Use Case</h4>
+            <p>Use browser-based mode for debugging specific test failures, not for comprehensive testing.</p>
+        </div>
+
+        <h3>5.3 Approach 3: Hybrid Approach (Best of Both Worlds)</h3>
+        <div class="success-box">
+            <h4>✅ Recommended Strategy</h4>
+            <ol>
+                <li><strong>Default: Headless Mode</strong>
+                    <ul>
+                        <li>Run comprehensive tests in headless mode</li>
+                        <li>Fast, CI/CD compatible</li>
+                        <li>Detects JavaScript errors</li>
+                    </ul>
+                </li>
+                <li><strong>On Failure: Browser-Based Mode</strong>
+                    <ul>
+                        <li>If a test fails in headless mode, re-run in browser mode</li>
+                        <li>Visual debugging helps identify the issue</li>
+                        <li>Screenshots + visual inspection</li>
+                    </ul>
+                </li>
+                <li><strong>Manual Override: Force Event IDs</strong>
+                    <ul>
+                        <li>Allow manual event IDs via config/env</li>
+                        <li>Ensures specific pages are always tested</li>
+                        <li>Bypasses unreliable discovery</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <h2>6. What Needs to Be Fixed</h2>
+
+        <h3>6.1 Immediate Fix: Add Missing Import</h3>
+        <div class="code-block">
+<code>// File: src/app/admin/events/[id]/media/MediaClientPage.tsx
+// Line 4: Current import (missing FaPhotoVideo)
+import { FaEdit, FaTrashAlt, FaUpload, FaFolderOpen, FaSpinner, FaBan, FaTimes, FaCheckCircle } from 'react-icons/fa';
+
+// Fix: Add FaPhotoVideo to imports
+import { FaEdit, FaTrashAlt, FaUpload, FaFolderOpen, FaSpinner, FaBan, FaTimes, FaCheckCircle, FaPhotoVideo } from 'react-icons/fa';</code>
+        </div>
+
+        <h3>6.2 Test Suite Improvements</h3>
+        <div class="warning-box">
+            <h4>🔧 Required Changes to Test Suite</h4>
+            <p><strong>1. Fix Event ID Discovery</strong></p>
+            <ul>
+                <li>Increase wait time for event list to render</li>
+                <li>Add retry logic for event discovery</li>
+                <li>Wait for specific selectors before scraping</li>
+                <li>Handle pagination if events span multiple pages</li>
+            </ul>
+            <p><strong>2. Add Fallback Event IDs</strong></p>
+            <ul>
+                <li>Allow manual event IDs via <code>auth.json</code> or env var</li>
+                <li>Example: <code>TEST_EVENT_IDS=4251,4252,4253</code></li>
+                <li>Ensures specific pages are always tested</li>
+            </ul>
+            <p><strong>3. Improve Error Detection</strong></p>
+            <ul>
+                <li>Ensure <code>page.on('pageerror')</code> is set up before navigation</li>
+                <li>Add console error detection for warnings</li>
+                <li>Report all errors, not just critical ones</li>
+            </ul>
+            <p><strong>4. Add Page Load Verification</strong></p>
+            <ul>
+                <li>Wait for page to fully load before testing</li>
+                <li>Check for React hydration errors</li>
+                <li>Verify no unhandled promise rejections</li>
+            </ul>
+        </div>
+
+        <h2>7. Recommended Testing Strategy</h2>
+
+        <h3>7.1 Comprehensive Test Approach</h3>
+        <div class="success-box">
+            <h4>✅ Recommended: Intelligent Headless Testing</h4>
+            <p><strong>Strategy:</strong> Use headless mode with improved discovery and error detection</p>
+            <ol>
+                <li><strong>Static Page Tests</strong>
+                    <ul>
+                        <li>Test all static admin routes (always run)</li>
+                        <li>Verify page loads, DOM elements present</li>
+                        <li>Detect JavaScript errors</li>
+                    </ul>
+                </li>
+                <li><strong>Dynamic Page Discovery</strong>
+                    <ul>
+                        <li>Scrape event IDs from <code>/admin/manage-events</code></li>
+                        <li>Wait for page to fully render</li>
+                        <li>Handle pagination if needed</li>
+                        <li>Retry on failure</li>
+                    </ul>
+                </li>
+                <li><strong>Fallback Event IDs</strong>
+                    <ul>
+                        <li>Allow manual event IDs via config</li>
+                        <li>Test specific pages even if discovery fails</li>
+                        <li>Useful for testing known problematic pages</li>
+                    </ul>
+                </li>
+                <li><strong>Comprehensive Error Detection</strong>
+                    <ul>
+                        <li>JavaScript runtime errors</li>
+                        <li>Console errors and warnings</li>
+                        <li>Network errors</li>
+                        <li>React component errors</li>
+                    </ul>
+                </li>
+                <li><strong>Page Navigation Testing</strong>
+                    <ul>
+                        <li>Click through navigation links</li>
+                        <li>Verify target pages load</li>
+                        <li>Test button clicks and form submissions</li>
+                        <li>Verify no errors on navigation</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <h3>7.2 Should We Use Browser-Based Testing?</h3>
+        <div class="summary-box">
+            <h4>💡 Answer: Use Both, But Strategically</h4>
+            <p><strong>Use Headless for:</strong></p>
+            <ul>
+                <li>✅ Comprehensive test runs</li>
+                <li>✅ CI/CD pipelines</li>
+                <li>✅ Regular regression testing</li>
+                <li>✅ Fast feedback</li>
+            </ul>
+            <p><strong>Use Browser-Based for:</strong></p>
+            <ul>
+                <li>✅ Debugging specific test failures</li>
+                <li>✅ Visual verification of UI changes</li>
+                <li>✅ Manual test scenario validation</li>
+                <li>✅ Development-time testing</li>
+            </ul>
+            <p><strong>Recommendation:</strong> Default to headless, switch to browser-based only when debugging failures.</p>
+        </div>
+
+        <h2>8. Implementation Plan</h2>
+
+        <h3>8.1 Phase 1: Fix Immediate Issues</h3>
+        <ol>
+            <li><strong>Fix Missing Import</strong>
+                <div class="code-block">
+<code>// Add FaPhotoVideo to imports in MediaClientPage.tsx
+import { ..., FaPhotoVideo } from 'react-icons/fa';</code>
+                </div>
+            </li>
+            <li><strong>Verify Test Suite Has JS Error Detection</strong>
+                <ul>
+                    <li>✅ Already implemented: <code>page.on('pageerror')</code></li>
+                    <li>✅ Already implemented: Console error detection</li>
+                    <li>✅ Already implemented: Error reporting in test results</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h3>8.2 Phase 2: Improve Event Discovery</h3>
+        <div class="code-block">
+<code>// Improve getAvailableEventIds() function
+async function getAvailableEventIds(page, baseUrl) {
+  try {
+    // Navigate to manage-events page
+    await page.goto(`${baseUrl}/admin/manage-events`, {
+      waitUntil: 'networkidle',  // Wait for network to be idle
+      timeout: 60000  // Increase timeout
+    });
+
+    // Wait for event list to render (multiple strategies)
+    await Promise.race([
+      page.waitForSelector('a[href*="/admin/events/"]', { timeout: 15000 }),
+      page.waitForSelector('table', { timeout: 15000 }),
+      page.waitForSelector('[class*="event"]', { timeout: 15000 })
+    ]).catch(() => null);
+
+    // Additional wait for client-side rendering
+    await page.waitForTimeout(2000);  // Wait for React to render
+
+    // Try multiple selectors
+    const selectors = [
+      'a[href*="/admin/events/"]',
+      'a[href^="/admin/events/"]',
+      'table a[href*="/admin/events/"]',
+      '[data-event-id]'
+    ];
+
+    let eventLinks = [];
+    for (const selector of selectors) {
+      eventLinks = await page.$$eval(selector, links => {
+        return links
+          .map(link => link.getAttribute('href'))
+          .filter(href => href && /\/admin\/events\/\d+/.test(href))
+          .map(href => {
+            const match = href.match(/\/admin\/events\/(\d+)/);
+            return match ? match[1] : null;
+          })
+          .filter(id => id !== null);
+      }).catch(() => []);
+
+      if (eventLinks.length > 0) break;
+    }
+
+    // Remove duplicates
+    const uniqueEventIds = [...new Set(eventLinks)];
+
+    console.log(`   ✅ Found ${uniqueEventIds.length} event(s): ${uniqueEventIds.join(', ')}`);
+    return uniqueEventIds;
+
+  } catch (error) {
+    console.error('   ⚠️  Error discovering event IDs:', error.message);
+    return [];
+  }
+}</code>
+        </div>
+
+        <h3>8.3 Phase 3: Add Fallback Event IDs</h3>
+        <div class="code-block">
+<code>// Add to auth.json or test config
+{
+  "email": "...",
+  "password": "...",
+  "baseUrl": "http://localhost:3000",
+  "headless": true,
+  "eventIds": [4251, 4252, 4253],  // ← Fallback event IDs
+  "forceEventIds": false  // If true, use these instead of discovery
+}
+
+// Update test suite to use fallback
+async function getAvailableEventIds(page, baseUrl, config) {
+  // If forceEventIds is true, use config.eventIds
+  if (config.forceEventIds && config.eventIds && config.eventIds.length > 0) {
+    console.log(`   ✅ Using forced event IDs: ${config.eventIds.join(', ')}`);
+    return config.eventIds.map(id => String(id));
+  }
+
+  // Otherwise, try discovery
+  const discoveredIds = await discoverEventIds(page, baseUrl);
+
+  // If discovery fails, fall back to config.eventIds
+  if (discoveredIds.length === 0 && config.eventIds && config.eventIds.length > 0) {
+    console.log(`   ⚠️  Discovery failed, using fallback event IDs: ${config.eventIds.join(', ')}`);
+    return config.eventIds.map(id => String(id));
+  }
+
+  return discoveredIds;
+}</code>
+        </div>
+
+        <h3>8.4 Phase 4: Enhanced Error Detection</h3>
+        <div class="code-block">
+<code>// Enhanced error detection setup
+async function setupErrorDetection(page) {
+  const jsErrors = [];
+  const consoleErrors = [];
+  const networkErrors = [];
+
+  // JavaScript runtime errors
+  page.on('pageerror', (error) => {
+    jsErrors.push({
+      type: 'runtime',
+      message: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+    console.error(`   ⚠️  JavaScript Error: ${error.message}`);
+  });
+
+  // Console errors and warnings
+  page.on('console', (msg) => {
+    const type = msg.type();
+    const text = msg.text();
+
+    if (type === 'error' || type === 'warning') {
+      consoleErrors.push({
+        type,
+        text,
+        timestamp: new Date().toISOString()
+      });
+
+      if (type === 'error') {
+        console.error(`   ⚠️  Console Error: ${text}`);
+      } else {
+        console.warn(`   ⚠️  Console Warning: ${text}`);
+      }
+    }
+  });
+
+  // Network errors
+  page.on('response', (response) => {
+    if (response.status() >= 400) {
+      networkErrors.push({
+        url: response.url(),
+        status: response.status(),
+        statusText: response.statusText(),
+        timestamp: new Date().toISOString()
+      });
+      console.error(`   ⚠️  Network Error: ${response.status()} ${response.url()}`);
+    }
+  });
+
+  // Unhandled promise rejections
+  await page.evaluateOnNewDocument(() => {
+    window.addEventListener('unhandledrejection', (event) => {
+      console.error('Unhandled promise rejection:', event.reason);
+    });
+  });
+
+  return { jsErrors, consoleErrors, networkErrors };
+}</code>
+        </div>
+
+        <h2>9. Testing Scenarios: What Should Be Tested?</h2>
+
+        <h3>9.1 Current Test Coverage</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>Current Status</th>
+                    <th>Should Test?</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Static admin pages load</td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                </tr>
+                <tr>
+                    <td>Dynamic event pages load</td>
+                    <td><span class="partial">⚠️ Conditional</span></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                </tr>
+                <tr>
+                    <td>JavaScript errors detected</td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                </tr>
+                <tr>
+                    <td>Console errors detected</td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                </tr>
+                <tr>
+                    <td>Navigation links work</td>
+                    <td><span class="partial">⚠️ Partial</span></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                </tr>
+                <tr>
+                    <td>Button clicks work</td>
+                    <td><span class="cross">❌ No</span></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                </tr>
+                <tr>
+                    <td>Form submissions work</td>
+                    <td><span class="cross">❌ No</span></td>
+                    <td><span class="partial">⚠️ Optional</span></td>
+                </tr>
+                <tr>
+                    <td>Page components render</td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                    <td><span class="checkmark">✅ Yes</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>9.2 Recommended Test Scenarios</h3>
+        <div class="success-box">
+            <h4>✅ Must Test (Critical)</h4>
+            <ol>
+                <li><strong>Page Loads Successfully</strong>
+                    <ul>
+                        <li>HTTP 200 status</li>
+                        <li>No JavaScript errors</li>
+                        <li>No console errors</li>
+                        <li>Page title loads</li>
+                    </ul>
+                </li>
+                <li><strong>Expected DOM Elements Present</strong>
+                    <ul>
+                        <li>Key headings (h1, h2)</li>
+                        <li>Navigation menus</li>
+                        <li>Action buttons</li>
+                        <li>Forms (if applicable)</li>
+                    </ul>
+                </li>
+                <li><strong>Navigation Links Work</strong>
+                    <ul>
+                        <li>Click navigation links</li>
+                        <li>Verify target pages load</li>
+                        <li>No errors on navigation</li>
+                    </ul>
+                </li>
+            </ol>
+            <h4>💡 Should Test (Important)</h4>
+            <ol>
+                <li><strong>Button Clicks</strong>
+                    <ul>
+                        <li>Click action buttons</li>
+                        <li>Verify expected behavior (modal opens, page navigates, etc.)</li>
+                        <li>No errors on click</li>
+                    </ul>
+                </li>
+                <li><strong>Form Interactions</strong>
+                    <ul>
+                        <li>Fill form fields</li>
+                        <li>Submit forms (if safe to do so)</li>
+                        <li>Verify validation works</li>
+                    </ul>
+                </li>
+                <li><strong>Dynamic Content</strong>
+                    <ul>
+                        <li>Wait for async data to load</li>
+                        <li>Verify tables/lists populate</li>
+                        <li>Check pagination works</li>
+                    </ul>
+                </li>
+            </ol>
+            <h4>⚠️ Nice to Have (Optional)</h4>
+            <ol>
+                <li><strong>Full User Flows</strong>
+                    <ul>
+                        <li>Complete workflows (create → edit → delete)</li>
+                        <li>End-to-end scenarios</li>
+                        <li>Complex interactions</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <h2>10. Efficiency Analysis: Intelligent Discovery vs Manual IDs</h2>
+
+        <h3>10.1 Approach A: Intelligent Discovery (Current)</h3>
+        <div class="summary-box">
+            <h4>How It Works</h4>
+            <ol>
+                <li>Test suite navigates to <code>/admin/manage-events</code></li>
+                <li>Scrapes page for event links</li>
+                <li>Extracts event IDs from URLs</li>
+                <li>Tests dynamic pages using discovered IDs</li>
+            </ol>
+            <h4>✅ Advantages</h4>
+            <ul>
+                <li>Automatically tests current events</li>
+                <li>No manual configuration needed</li>
+                <li>Adapts to data changes</li>
+                <li>Tests real data</li>
+            </ul>
+            <h4>❌ Disadvantages</h4>
+            <ul>
+                <li>Can fail if page structure changes</li>
+                <li>Depends on page rendering correctly</li>
+                <li>May miss events on paginated pages</li>
+                <li>Requires reliable selectors</li>
+            </ul>
+        </div>
+
+        <h3>10.2 Approach B: Manual Event IDs</h3>
+        <div class="summary-box">
+            <h4>How It Works</h4>
+            <ol>
+                <li>Manually specify event IDs in config</li>
+                <li>Test suite uses these IDs directly</li>
+                <li>No discovery needed</li>
+            </ol>
+            <h4>✅ Advantages</h4>
+            <ul>
+                <li>100% reliable</li>
+                <li>No dependency on page structure</li>
+                <li>Tests specific known events</li>
+                <li>Fast execution</li>
+            </ul>
+            <h4>❌ Disadvantages</h4>
+            <ul>
+                <li>Requires manual updates</li>
+                <li>May test outdated events</li>
+                <li>Doesn't adapt to new events</li>
+                <li>Requires knowledge of event IDs</li>
+            </ul>
+        </div>
+
+        <h3>10.3 Approach C: Hybrid (Recommended)</h3>
+        <div class="success-box">
+            <h4>✅ Best Approach: Discovery + Fallback</h4>
+            <ol>
+                <li><strong>Try Discovery First</strong>
+                    <ul>
+                        <li>Attempt to discover event IDs automatically</li>
+                        <li>Use intelligent selectors and retries</li>
+                        <li>Handle pagination if needed</li>
+                    </ul>
+                </li>
+                <li><strong>Fallback to Manual IDs</strong>
+                    <ul>
+                        <li>If discovery fails, use config event IDs</li>
+                        <li>Ensures tests always run</li>
+                        <li>Provides reliability</li>
+                    </ul>
+                </li>
+                <li><strong>Force Mode Option</strong>
+                    <ul>
+                        <li>Allow forcing specific event IDs</li>
+                        <li>Bypass discovery entirely</li>
+                        <li>Useful for testing specific pages</li>
+                    </ul>
+                </li>
+            </ol>
+            <p><strong>Result:</strong> Best of both worlds - automatic discovery when possible, reliable fallback when needed.</p>
+        </div>
+
+        <h2>11. Specific Fixes for Current Issue</h2>
+
+        <h3>11.1 Fix 1: Add Missing Import (Immediate)</h3>
+        <div class="code-block">
+<code>// File: src/app/admin/events/[id]/media/MediaClientPage.tsx
+// Line 4: Add FaPhotoVideo to imports
+
+// BEFORE:
+import { FaEdit, FaTrashAlt, FaUpload, FaFolderOpen, FaSpinner, FaBan, FaTimes, FaCheckCircle } from 'react-icons/fa';
+
+// AFTER:
+import { FaEdit, FaTrashAlt, FaUpload, FaFolderOpen, FaSpinner, FaBan, FaTimes, FaCheckCircle, FaPhotoVideo } from 'react-icons/fa';</code>
+        </div>
+
+        <h3>11.2 Fix 2: Improve Event Discovery</h3>
+        <div class="code-block">
+<code>// File: TestSprite/admin-tests/comprehensive-admin-test-suite.js
+// Function: getAvailableEventIds()
+
+// Improvements:
+// 1. Increase wait time
+// 2. Wait for networkidle
+// 3. Try multiple selectors
+// 4. Add retry logic
+// 5. Handle pagination
+
+async function getAvailableEventIds(page, baseUrl) {
+  const maxRetries = 3;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`   🔍 Discovering event IDs (attempt ${attempt}/${maxRetries})...`);
+
+      // Navigate with networkidle wait
+      await page.goto(`${baseUrl}/admin/manage-events`, {
+        waitUntil: 'networkidle',
+        timeout: 60000
+      });
+
+      // Wait for event list to render
+      await page.waitForSelector('a[href*="/admin/events/"]', {
+        timeout: 20000
+      }).catch(() => {
+        // Try alternative selectors
+        return Promise.race([
+          page.waitForSelector('table', { timeout: 10000 }),
+          page.waitForSelector('[class*="event"]', { timeout: 10000 })
+        ]);
+      });
+
+      // Additional wait for React hydration
+      await page.waitForTimeout(3000);
+
+      // Try multiple selector strategies
+      const selectors = [
+        'a[href*="/admin/events/"]',
+        'table a[href*="/admin/events/"]',
+        '[data-event-id]',
+        'a[href^="/admin/events/"]'
+      ];
+
+      let eventIds = [];
+      for (const selector of selectors) {
+        try {
+          const links = await page.$$eval(selector, links => {
+            return links
+              .map(link => link.getAttribute('href'))
+              .filter(href => href && /\/admin\/events\/\d+/.test(href))
+              .map(href => {
+                const match = href.match(/\/admin\/events\/(\d+)/);
+                return match ? match[1] : null;
+              })
+              .filter(id => id !== null);
+          });
+
+          if (links.length > 0) {
+            eventIds = links;
+            break;
+          }
+        } catch (err) {
+          // Try next selector
+          continue;
+        }
+      }
+
+      // Remove duplicates
+      const uniqueIds = [...new Set(eventIds)];
+
+      if (uniqueIds.length > 0) {
+        console.log(`   ✅ Found ${uniqueIds.length} event(s): ${uniqueIds.join(', ')}`);
+        return uniqueIds;
+      }
+
+      // If no events found, wait longer and retry
+      if (attempt < maxRetries) {
+        console.log(`   ⚠️  No events found, retrying in 2 seconds...`);
+        await page.waitForTimeout(2000);
+      }
+
+    } catch (error) {
+      lastError = error;
+      console.error(`   ⚠️  Discovery attempt ${attempt} failed:`, error.message);
+      if (attempt < maxRetries) {
+        await page.waitForTimeout(2000);
+      }
+    }
+  }
+
+  console.error(`   ❌ Event discovery failed after ${maxRetries} attempts`);
+  if (lastError) {
+    console.error(`   Error: ${lastError.message}`);
+  }
+  return [];
+}</code>
+        </div>
+
+        <h3>11.3 Fix 3: Add Fallback Event IDs</h3>
+        <div class="code-block">
+<code>// File: TestSprite/admin-tests/auth.json
+// Add fallback event IDs
+
+{
+  "email": "your-email@example.com",
+  "password": "your-password",
+  "baseUrl": "http://localhost:3000",
+  "headless": true,
+  "timeout": 30000,
+  "screenshotOnFailure": true,
+  "eventIds": [4251, 4252, 4253],  // ← Fallback event IDs
+  "forceEventIds": false  // Set to true to bypass discovery
+}
+
+// File: TestSprite/admin-tests/comprehensive-admin-test-suite.js
+// Update getAvailableEventIds() to use fallback
+
+async function getAvailableEventIds(page, baseUrl, config) {
+  // If forceEventIds is true, use config.eventIds directly
+  if (config.forceEventIds && config.eventIds && config.eventIds.length > 0) {
+    console.log(`   ✅ Using forced event IDs: ${config.eventIds.join(', ')}`);
+    return config.eventIds.map(id => String(id));
+  }
+
+  // Try discovery
+  const discoveredIds = await discoverEventIdsWithRetry(page, baseUrl);
+
+  // If discovery fails, use fallback
+  if (discoveredIds.length === 0 && config.eventIds && config.eventIds.length > 0) {
+    console.log(`   ⚠️  Discovery failed, using fallback event IDs: ${config.eventIds.join(', ')}`);
+    return config.eventIds.map(id => String(id));
+  }
+
+  return discoveredIds;
+}</code>
+        </div>
+
+        <h3>11.4 Fix 4: Ensure All Dynamic Pages Are Tested</h3>
+        <div class="code-block">
+<code>// File: TestSprite/admin-tests/comprehensive-admin-test-suite.js
+// Verify both media pages are tested
+
+const dynamicEventPages = [
+  // ... existing pages ...
+  {
+    id: 'admin-event-003',
+    name: 'Event Media List',
+    urlPattern: '/admin/events/{eventId}/media/list',  // ← List page
+    category: 'events',
+    priority: 'high',
+    expectedElements: ['h1', 'input[type="file"]', '[class*="media"]', 'button'],
+    validation: ['Media management page loads', 'Upload controls visible', 'Media grid/list displayed']
+  },
+  {
+    id: 'admin-event-003b',
+    name: 'Event Media Upload',
+    urlPattern: '/admin/events/{eventId}/media',  // ← Upload page (THIS ONE HAS THE ERROR)
+    category: 'events',
+    priority: 'high',
+    expectedElements: ['h1', 'input[type="file"]', 'button', '[class*="upload"]'],
+    validation: ['Media upload page loads', 'Upload controls visible', 'Upload form displayed']
+  },
+  // ... rest of pages ...
+];</code>
+        </div>
+
+        <h2>12. Testing Best Practices</h2>
+
+        <h3>12.1 Error Detection Setup</h3>
+        <div class="code-block">
+<code>// Always set up error detection BEFORE navigating to pages
+async function runTest(page, test, config) {
+  const jsErrors = [];
+  const consoleErrors = [];
+
+  // Set up error listeners BEFORE navigation
+  page.on('pageerror', (error) => {
+    jsErrors.push({
+      message: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+    console.error(`   ⚠️  JavaScript Error: ${error.message}`);
+  });
+
+  page.on('console', (msg) => {
+    if (msg.type() === 'error') {
+      consoleErrors.push({
+        text: msg.text(),
+        timestamp: new Date().toISOString()
+      });
+      console.error(`   ⚠️  Console Error: ${msg.text()}`);
+    }
+  });
+
+  // NOW navigate to the page
+  await page.goto(`${config.baseUrl}${test.url}`, {
+    waitUntil: 'networkidle',
+    timeout: test.timeout || config.timeout
+  });
+
+  // Wait for page to fully load
+  await page.waitForLoadState('networkidle');
+
+  // Check for errors
+  if (jsErrors.length > 0 || consoleErrors.length > 0) {
+    return {
+      ...test,
+      status: 'failed',
+      jsErrors,
+      consoleErrors,
+      error: 'JavaScript errors detected'
+    };
+  }
+
+  // Continue with element verification...
+}</code>
+        </div>
+
+        <h3>12.2 Page Load Verification</h3>
+        <div class="code-block">
+<code>// Verify page actually loaded before testing
+async function verifyPageLoad(page, test, config) {
+  // Check HTTP status
+  const response = page.response();
+  if (response && response.status() !== 200) {
+    return {
+      status: 'failed',
+      error: `Page returned ${response.status()} instead of 200`
+    };
+  }
+
+  // Wait for React to hydrate
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForLoadState('networkidle');
+
+  // Check for React error boundaries
+  const reactError = await page.evaluate(() => {
+    // Check for React error boundary indicators
+    const errorBoundary = document.querySelector('[data-react-error-boundary]');
+    if (errorBoundary) {
+      return errorBoundary.textContent;
+    }
+    return null;
+  }).catch(() => null);
+
+  if (reactError) {
+    return {
+      status: 'failed',
+      error: `React error detected: ${reactError}`
+    };
+  }
+
+  // Check for Next.js error page
+  const isErrorPage = await page.evaluate(() => {
+    return document.title.includes('Error') ||
+           document.body.textContent.includes('Application error');
+  });
+
+  if (isErrorPage) {
+    return {
+      status: 'failed',
+      error: 'Next.js error page detected'
+    };
+  }
+
+  return { status: 'passed' };
+}</code>
+        </div>
+
+        <h2>13. Summary & Recommendations</h2>
+
+        <div class="success-box">
+            <h3>✅ Key Takeaways</h3>
+            <ol>
+                <li><strong>Headless testing CAN detect JavaScript errors</strong> - The test suite already has this capability</li>
+                <li><strong>The real issue is test coverage</strong> - The problematic page wasn't visited because event discovery failed</li>
+                <li><strong>Both headless and browser-based testing have the same error detection capabilities</strong></li>
+                <li><strong>Browser-based testing is better for debugging, not for comprehensive testing</strong></li>
+            </ol>
+        </div>
+
+        <div class="summary-box">
+            <h3>🎯 Recommended Approach</h3>
+            <p><strong>1. Use Headless Mode as Default</strong></p>
+            <ul>
+                <li>Fast, CI/CD compatible</li>
+                <li>Detects JavaScript errors</li>
+                <li>Comprehensive coverage</li>
+            </ul>
+            <p><strong>2. Fix Event Discovery</strong></p>
+            <ul>
+                <li>Improve reliability with better selectors</li>
+                <li>Add retry logic</li>
+                <li>Handle pagination</li>
+            </ul>
+            <p><strong>3. Add Fallback Event IDs</strong></p>
+            <ul>
+                <li>Allow manual event IDs in config</li>
+                <li>Use fallback if discovery fails</li>
+                <li>Ensure tests always run</li>
+            </ul>
+            <p><strong>4. Use Browser-Based Mode for Debugging</strong></p>
+            <ul>
+                <li>When tests fail, re-run in browser mode</li>
+                <li>Visual debugging helps identify issues</li>
+                <li>Not needed for regular test runs</li>
+            </ul>
+        </div>
+
+        <h2>14. Action Items</h2>
+
+        <h3>14.1 Immediate Actions</h3>
+        <ol>
+            <li>✅ <strong>Fix Missing Import</strong>
+                <ul>
+                    <li>Add <code>FaPhotoVideo</code> to imports in <code>MediaClientPage.tsx</code></li>
+                    <li>This fixes the runtime error</li>
+                </ul>
+            </li>
+            <li>✅ <strong>Verify Test Suite Configuration</strong>
+                <ul>
+                    <li>Check <code>auth.json</code> has correct credentials</li>
+                    <li>Verify <code>headless</code> setting</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h3>14.2 Short-Term Improvements</h3>
+        <ol>
+            <li>🔧 <strong>Improve Event Discovery</strong>
+                <ul>
+                    <li>Increase wait times</li>
+                    <li>Add retry logic</li>
+                    <li>Try multiple selectors</li>
+                </ul>
+            </li>
+            <li>🔧 <strong>Add Fallback Event IDs</strong>
+                <ul>
+                    <li>Add <code>eventIds</code> array to <code>auth.json</code></li>
+                    <li>Update test suite to use fallback</li>
+                </ul>
+            </li>
+            <li>🔧 <strong>Enhance Error Reporting</strong>
+                <ul>
+                    <li>Report all JavaScript errors (not just critical)</li>
+                    <li>Include error stack traces</li>
+                    <li>Add console error reporting</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h3>14.3 Long-Term Enhancements</h3>
+        <ol>
+            <li>💡 <strong>Add Navigation Testing</strong>
+                <ul>
+                    <li>Click through navigation links</li>
+                    <li>Verify target pages load</li>
+                    <li>Test button interactions</li>
+                </ul>
+            </li>
+            <li>💡 <strong>Add Form Testing</strong>
+                <ul>
+                    <li>Test form submissions (if safe)</li>
+                    <li>Verify validation</li>
+                    <li>Check error handling</li>
+                </ul>
+            </li>
+            <li>💡 <strong>Add Visual Regression Testing</strong>
+                <ul>
+                    <li>Compare screenshots</li>
+                    <li>Detect UI regressions</li>
+                    <li>Verify component rendering</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h2>15. Conclusion</h2>
+
+        <div class="summary-box">
+            <h3>Final Answer</h3>
+            <p><strong>Question:</strong> Should we use headless or browser-based testing?</p>
+            <p><strong>Answer:</strong> Use <strong>headless testing as default</strong> with the following improvements:</p>
+            <ol>
+                <li>✅ Fix event discovery reliability</li>
+                <li>✅ Add fallback event IDs</li>
+                <li>✅ Ensure all pages are visited</li>
+                <li>✅ Enhance error detection</li>
+                <li>✅ Use browser-based mode only for debugging failures</li>
+            </ol>
+            <p><strong>Efficiency:</strong> Intelligent discovery with fallback is the most efficient approach - it automatically tests current events while providing reliability through fallback IDs.</p>
+            <p><strong>JavaScript Error Detection:</strong> Both headless and browser-based testing can detect JavaScript errors equally well. The issue was that the page with the error wasn't visited, not that errors couldn't be detected.</p>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #ddd;">
+
+        <p style="text-align: center; color: #666; font-size: 14px;">
+            Generated: January 2026 | Headless vs Browser-Based Testing Guide
+            <br>
+            Test Suite: TestSprite/admin-tests/comprehensive-admin-test-suite.js
+            <br>
+            Issue: FaPhotoVideo not defined in /admin/events/4251/media
+        </p>
+    </div>
+</body>
+</html>

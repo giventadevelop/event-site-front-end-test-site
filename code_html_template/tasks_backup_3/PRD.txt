@@ -1,0 +1,327 @@
+Product Requirements Document (PRD)
+User Registration Request & Event Attendance Workflow
+1. Project Overview & Context
+Based on the comprehensive SaaS Event Management System, this PRD defines the workflow for user registration requests and event attendance for free events (picnics, community gatherings) organized by tenant organizations.
+System Context:
+
+Multi-tenant SaaS platform with Clerk authentication
+PostgreSQL database with tenant isolation
+Spring Boot backend with JHipster framework
+React/Next.js frontend
+AWS S3 for media storage
+Stripe for payments (future paid events)
+
+2. User Stories & Requirements
+Primary User Stories
+
+As a new user, I want to request registration to join an organization so I can attend their events
+As an admin, I want to review and approve/reject user registration requests to maintain membership quality
+As an approved user, I want to register for free events with minimal friction
+As an event organizer, I want to manage event attendance and check-ins efficiently
+As an admin, I want to track all user activities and maintain audit logs
+
+Secondary User Stories
+
+As a user, I want to receive notifications about my registration status
+As an admin, I want to bulk approve multiple registration requests
+As an organizer, I want to export attendee lists for event planning
+As a user, I want to cancel my event registration if needed
+
+3. Detailed Workflow Components
+3.1 User Registration Request Flow
+Phase 1: Initial Registration Request
+Form: User Registration Request Form
+typescriptinterface UserRegistrationForm {
+  // Personal Information
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+
+  // Address Information
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+
+  // Indian-specific fields (optional)
+  familyName?: string;
+  cityTown?: string;
+  district?: string;
+  educationalInstitution?: string;
+
+  // Profile
+  profileImageUrl?: string;
+  requestReason: string; // Why they want to join
+}
+Database Tables Used:
+
+user_registration_request - Store pending requests
+tenant_organization - Validate tenant context
+
+Components to Generate:
+
+UserRegistrationRequestForm.tsx - Main registration form
+UserRegistrationService.ts - API service layer
+UserRegistrationController.java - Spring Boot REST controller
+UserRegistrationRequestEntity.java - JPA entity
+UserRegistrationRepository.java - Data access layer
+
+Phase 2: Admin Review & Approval
+Form: Admin Review Form
+typescriptinterface AdminReviewForm {
+  requestId: string;
+  action: 'APPROVE' | 'REJECT';
+  adminComments?: string;
+  autoCreateProfile: boolean;
+}
+Database Tables Used:
+
+user_registration_request - Update status
+user_profile - Create approved user profile
+event_admin_audit_log - Log admin actions
+
+Components to Generate:
+
+AdminReviewPanel.tsx - Review interface
+BulkApprovalComponent.tsx - Bulk action interface
+AdminReviewService.ts - Review processing service
+NotificationService.ts - Email/SMS notifications
+
+3.2 Event Registration Flow
+Phase 3: Event Discovery & Registration
+Form: Event Registration Form
+typescriptinterface EventRegistrationForm {
+  eventId: number;
+  attendeeType: 'MEMBER' | 'GUEST' | 'FAMILY';
+
+  // For guests
+  guestDetails?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    relationshipToMember: string;
+  }[];
+
+  // Special requirements
+  specialRequirements?: string;
+  dietaryRestrictions?: string;
+  accessibilityNeeds?: string;
+
+  // Emergency contact
+  emergencyContactName: string;
+  emergencyContactPhone: string;
+
+  // Event-specific
+  transportationNeeded?: boolean;
+  volunteerOpportunities?: string[];
+}
+Database Tables Used:
+
+event_details - Event information
+event_attendee - Main registration record
+event_attendee_guest - Guest attendee details
+event_guest_pricing - Pricing for guests (if applicable)
+
+Components to Generate:
+
+EventDiscoveryPage.tsx - Browse available events
+EventRegistrationForm.tsx - Registration form
+GuestRegistrationComponent.tsx - Add guest attendees
+EventAttendeeService.ts - Registration processing
+EventRegistrationController.java - Backend controller
+
+3.3 Event Management & Check-in Flow
+Phase 4: Event Management
+Database Tables Used:
+
+event_organizer - Event organizer assignments
+event_admin - Admin permissions for events
+qr_code_usage - QR code generation and tracking
+bulk_operation_log - Bulk action tracking
+
+Components to Generate:
+
+EventOrganizerDashboard.tsx - Organizer interface
+AttendeeManagementPanel.tsx - Manage registrations
+QRCodeGenerator.tsx - Generate check-in QR codes
+BulkOperationsPanel.tsx - Bulk attendee actions
+CheckInInterface.tsx - Mobile-friendly check-in
+
+3.4 Analytics & Reporting
+Database Tables Used:
+
+user_payment_transaction - Transaction tracking
+event_admin_audit_log - Activity logs
+event_poll & event_poll_option & event_poll_response - Event feedback
+
+Components to Generate:
+
+AnalyticsDashboard.tsx - Event analytics
+AttendeeReportsPage.tsx - Attendee reports
+EventPollComponent.tsx - Post-event surveys
+ExportUtilities.ts - Data export functions
+
+4. Technical Implementation Details
+4.1 API Endpoints
+java// User Registration Endpoints
+POST /api/user-registration/submit
+GET /api/user-registration/pending
+PUT /api/user-registration/{id}/approve
+PUT /api/user-registration/{id}/reject
+POST /api/user-registration/bulk-approve
+
+// Event Registration Endpoints
+GET /api/events/public
+POST /api/event-attendee/register
+PUT /api/event-attendee/{id}/cancel
+GET /api/event-attendee/my-registrations
+POST /api/event-attendee/add-guests
+
+// Event Management Endpoints
+GET /api/events/{id}/attendees
+POST /api/events/{id}/check-in
+POST /api/events/{id}/bulk-operations
+GET /api/events/{id}/qr-codes
+GET /api/events/{id}/export
+4.2 Database Schema Relationships
+sql-- Key relationships for the workflow
+user_registration_request -> user_profile (after approval)
+user_profile -> event_attendee (event registration)
+event_attendee -> event_attendee_guest (guest attendees)
+event_details -> event_attendee (event-attendee relationship)
+event_organizer -> event_details (organizer assignments)
+qr_code_usage -> event_attendee (check-in tracking)
+4.3 State Management
+User Registration States:
+
+PENDING - Initial submission
+UNDER_REVIEW - Admin reviewing
+APPROVED - Approved, user profile created
+REJECTED - Rejected with reason
+
+Event Registration States:
+
+PENDING - Initial registration
+CONFIRMED - Confirmed attendance
+WAITLISTED - On waiting list
+CANCELLED - User cancelled
+NO_SHOW - Didn't attend
+
+Check-in States:
+
+NOT_CHECKED_IN - Registered but not arrived
+CHECKED_IN - Present at event
+NO_SHOW - Marked as no-show
+
+5. Implementation Tasks
+Task 1: User Registration Request System
+Priority: High
+Estimated Time: 1 week
+Subtasks:
+
+Create UserRegistrationRequestForm.tsx
+Implement UserRegistrationService.ts
+Build UserRegistrationController.java
+Create database entities and repositories
+Add email notification system
+Implement admin review interface
+
+Task 2: Event Discovery & Registration
+Priority: High
+Estimated Time: 1 week
+Subtasks:
+
+Create EventDiscoveryPage.tsx
+Build EventRegistrationForm.tsx
+Implement guest registration system
+Create event attendee management
+Add capacity management
+Implement waitlist functionality
+
+Task 3: Event Management & Check-in
+Priority: Medium
+Estimated Time: 1 week
+Subtasks:
+
+Create organizer dashboard
+Implement QR code system
+Build mobile check-in interface
+Add bulk operations
+Create attendee management tools
+Implement real-time updates
+
+Task 4: Analytics & Reporting
+Priority: Medium
+Estimated Time: 3 days
+Subtasks:
+
+Build analytics dashboard
+Create export functionality
+Implement event surveys
+Add reporting tools
+Create audit log viewer
+
+Task 5: Mobile Optimization
+Priority: Low
+Estimated Time: 2 days
+Subtasks:
+
+Optimize forms for mobile
+Create progressive web app features
+Implement offline check-in
+Add mobile notifications
+
+6. Success Metrics
+Registration Metrics
+
+User registration approval time < 24 hours
+Registration form completion rate > 85%
+User registration request approval rate > 75%
+
+Event Metrics
+
+Event registration time < 2 minutes
+Check-in time per attendee < 30 seconds
+Event capacity utilization > 80%
+No-show rate < 15%
+
+System Metrics
+
+Page load time < 3 seconds
+System uptime > 99.5%
+Mobile usability score > 90
+
+7. Risk Mitigation
+Technical Risks
+
+Database performance: Implement proper indexing and query optimization
+File upload limits: Set reasonable limits and implement compression
+Concurrent access: Use proper locking mechanisms for capacity management
+
+Business Risks
+
+Spam registrations: Implement CAPTCHA and admin approval workflow
+No-shows: Send reminder notifications and implement waitlist promotion
+Data privacy: Ensure GDPR compliance and secure data handling
+
+8. Future Enhancements
+Phase 2 Features
+
+Integration with calendar systems (Google, Outlook)
+Advanced analytics with charts and trends
+Multi-language support for forms
+Integration with social media platforms
+
+Phase 3 Features
+
+Mobile app for attendees
+Real-time chat for event coordination
+Integration with payment systems for paid events
+Advanced reporting with custom filters
+
+
+This PRD provides a comprehensive blueprint for implementing the user registration request and event attendance workflow. Each component is designed to work within the existing multi-tenant SaaS architecture and can be implemented incrementally using the task breakdown provided.

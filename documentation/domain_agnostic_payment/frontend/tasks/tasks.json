@@ -1,0 +1,268 @@
+{
+  "meta": {
+    "projectName": "nextjs-template",
+    "version": "1.5.0",
+    "source": ".task-master/PRD_frontend.html",
+    "description": "Tasks generated from PRD",
+    "totalTasksGenerated": 18,
+    "tasksIncluded": 18
+  },
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Set up API proxy endpoints structure",
+      "description": "Create the necessary proxy endpoint structure following the required patterns for REST API calls.",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "details": "- Create proxy routes under `src/pages/api/proxy`\n- Implement proxy pattern according to `cursor_rules/nextjs_api_routes.mdc`\n- Set up `/api/proxy/payments/initialize` endpoint\n- Set up `/api/proxy/payments/{transactionId}` endpoint for polling\n- Set up `/api/proxy/memberships/subscriptions` endpoint",
+      "testStrategy": "Verify that all proxy endpoints correctly forward requests to the backend and handle responses appropriately."
+    },
+    {
+      "id": 2,
+      "title": "Create TypeScript interfaces from Swagger API docs",
+      "description": "Generate TypeScript interfaces for payment-related data structures based on the Swagger API documentation.",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "details": "- Extract and define interfaces for `PaymentSession`, `PaymentStatusResponse`, and other relevant types from `documentation/Swagger_API_Docs/api-docs.json`\n- Create shared type definitions for payment provider configurations\n- Define enums for payment provider types (STRIPE, PAYPAL, REVOLUT, ZEFFY, ZELLE)",
+      "testStrategy": "Ensure TypeScript compiler validates the interfaces against sample data from the API documentation."
+    },
+    {
+      "id": 3,
+      "title": "Implement UniversalPaymentCheckout component",
+      "description": "Create a client component that renders different payment UIs based on the provider type determined by the backend.",
+      "status": "pending",
+      "dependencies": [
+        1,
+        2
+      ],
+      "priority": "high",
+      "details": "- Create a new React component `UniversalPaymentCheckout`\n- Add logic to determine which provider-specific UI to render based on backend response\n- Implement loading states and error handling\n- Ensure the component can be easily integrated into the checkout flow",
+      "testStrategy": "Test with mock responses for different provider types to ensure correct UI rendering and behavior."
+    },
+    {
+      "id": 4,
+      "title": "Refactor Stripe Elements integration",
+      "description": "Update the existing Stripe integration to use backend-provided publishable keys instead of hardcoded ones.",
+      "status": "pending",
+      "dependencies": [
+        1,
+        2,
+        3
+      ],
+      "priority": "high",
+      "details": "- Remove embedded Stripe publishable keys from frontend code\n- Update Stripe Elements initialization to use keys provided by backend\n- Ensure wallet buttons (Apple Pay, Google Pay) continue to function\n- Integrate with the UniversalPaymentCheckout component",
+      "testStrategy": "Test the complete Stripe checkout flow with backend-provided keys to ensure payments process correctly."
+    },
+    {
+      "id": 5,
+      "title": "Implement PayPal checkout integration",
+      "description": "Add support for PayPal as a payment method with embedded buttons and redirect fallback.",
+      "status": "pending",
+      "dependencies": [
+        1,
+        2,
+        3
+      ],
+      "priority": "medium",
+      "details": "- Add PayPal SDK integration\n- Implement PayPal Buttons component\n- Handle success, cancel, and error flows\n- Add redirect fallback mechanism\n- Integrate with UniversalPaymentCheckout component",
+      "testStrategy": "Test PayPal checkout flow in both button and redirect modes, verifying successful payments and proper error handling."
+    },
+    {
+      "id": 6,
+      "title": "Implement Revolut checkout integration",
+      "description": "Add support for Revolut as a payment method with redirect to hosted page for SCA and polling for completion.",
+      "status": "pending",
+      "dependencies": [
+        1,
+        2,
+        3
+      ],
+      "priority": "medium",
+      "details": "- Create \"Pay with Revolut\" button component\n- Implement redirect to Revolut hosted page\n- Add polling mechanism to check transaction status\n- Handle PSD2/SCA requirements\n- Integrate with UniversalPaymentCheckout component",
+      "testStrategy": "Test the complete Revolut flow including redirect, SCA handling, and successful return to the application."
+    },
+    {
+      "id": 7,
+      "title": "Implement Zeffy donation integration",
+      "description": "Add support for Zeffy donations for events flagged as zero-fee fundraisers.",
+      "status": "pending",
+      "dependencies": [
+        1,
+        2,
+        3
+      ],
+      "priority": "medium",
+      "details": "- Create Zeffy embed component\n- Implement detection of `DONATION_ZERO_FEE` flag\n- Add fallback mechanism if Zeffy fails\n- Integrate with UniversalPaymentCheckout component",
+      "testStrategy": "Test Zeffy integration with both successful donation flows and fallback scenarios."
+    },
+    {
+      "id": 8,
+      "title": "Implement Zelle manual payment flow",
+      "description": "Add support for Zelle manual payments with instructions and pending status messaging.",
+      "status": "pending",
+      "dependencies": [
+        1,
+        2,
+        3
+      ],
+      "priority": "medium",
+      "details": "- Create Zelle instructions component\n- Implement confirmation dialog\n- Add backend call to create pending transaction\n- Display \"Awaiting confirmation\" status\n- Integrate with UniversalPaymentCheckout component",
+      "testStrategy": "Test the Zelle manual flow including instructions display, confirmation, and pending status updates."
+    },
+    {
+      "id": 9,
+      "title": "Implement Instant Checkout (ACP) support",
+      "description": "Add support for Stripe Instant Checkout when flagged as available by the backend.",
+      "status": "pending",
+      "dependencies": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "priority": "medium",
+      "details": "- Detect when backend returns `{ providerType: \"STRIPE\", sessionUrl }`\n- Add \"Instant Checkout (Beta)\" button\n- Implement modal with hosted checkout\n- Handle success redirect\n- Ensure proper loading and error states",
+      "testStrategy": "Test the complete ACP flow from button click to hosted checkout to successful return."
+    },
+    {
+      "id": 10,
+      "title": "Update Event Page to display payment method badges",
+      "description": "Update the Upcoming Events section to show badges for supported payment methods based on event metadata.",
+      "status": "pending",
+      "dependencies": [
+        2
+      ],
+      "priority": "low",
+      "details": "- Create payment method badge components\n- Fetch and display supported payment methods from backend event metadata\n- Ensure badges follow design guidelines\n- Maintain existing hero image logic",
+      "testStrategy": "Verify badges display correctly for events with different payment method configurations."
+    },
+    {
+      "id": 11,
+      "title": "Create Admin Tenant Settings UI for payment options",
+      "description": "Add toggles in the admin tenant settings for various payment options.",
+      "status": "pending",
+      "dependencies": [
+        1,
+        2
+      ],
+      "priority": "medium",
+      "details": "- Add toggle for \"Instant Checkout beta\"\n- Add toggle for \"Enable Zeffy for fundraisers\"\n- Add toggle for \"Enable Zelle manual payments\"\n- Add toggle for \"Enable Revolut checkout\"\n- Connect form to new proxy endpoints\n- Follow UI style guide for layout",
+      "testStrategy": "Test that toggles correctly update backend settings and persist between sessions."
+    },
+    {
+      "id": 12,
+      "title": "Implement Membership Portal subscription UI",
+      "description": "Add support for subscription plan selection and management in the Membership Portal.",
+      "status": "pending",
+      "dependencies": [
+        1,
+        2
+      ],
+      "priority": "medium",
+      "details": "- Create subscription plan selection UI (monthly/yearly)\n- Implement integration with `/api/proxy/memberships/subscriptions` endpoints\n- Display current subscription status and renewal date\n- Add cancellation request functionality\n- Ensure proper loading and error states",
+      "testStrategy": "Test the complete subscription lifecycle including selection, payment, status viewing, and cancellation."
+    },
+    {
+      "id": 13,
+      "title": "Implement currency and date localization",
+      "description": "Add support for localized currency and date formats based on tenant settings.",
+      "status": "pending",
+      "dependencies": [
+        2
+      ],
+      "priority": "low",
+      "details": "- Create utility functions for currency formatting (GBP/EUR support for UK/EU tenants)\n- Implement date formatting based on locale\n- Update all price and date displays to use these utilities\n- Ensure proper number formatting for different currencies",
+      "testStrategy": "Test with different tenant locales to ensure correct formatting of currencies and dates."
+    },
+    {
+      "id": 14,
+      "title": "Implement accessibility enhancements",
+      "description": "Ensure all payment components meet accessibility requirements.",
+      "status": "pending",
+      "dependencies": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "priority": "medium",
+      "details": "- Verify all buttons meet contrast requirements\n- Add clear loading and success messaging for hosted flows\n- Ensure keyboard navigation works across all payment components\n- Implement screen-reader announcements when switching providers\n- Test with screen readers and keyboard navigation",
+      "testStrategy": "Test with accessibility tools to ensure WCAG compliance and proper keyboard/screen reader support."
+    },
+    {
+      "id": 15,
+      "title": "Create mock responses for development",
+      "description": "Implement mock responses based on Swagger schema to enable frontend development before backend completion.",
+      "status": "pending",
+      "dependencies": [
+        2
+      ],
+      "priority": "medium",
+      "details": "- Create mock response data for all payment endpoints\n- Implement mock server or MSW setup for local development\n- Ensure mock data covers all provider types and edge cases\n- Add toggle to switch between mock and real backend",
+      "testStrategy": "Verify that mock responses match the expected schema and enable proper frontend testing."
+    },
+    {
+      "id": 16,
+      "title": "Implement error handling and logging",
+      "description": "Add comprehensive error handling and logging for all payment-related operations.",
+      "status": "pending",
+      "dependencies": [
+        1,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "priority": "high",
+      "details": "- Implement error boundaries around payment components\n- Add detailed error logging for API failures\n- Create user-friendly error messages for different failure scenarios\n- Implement retry mechanisms where appropriate\n- Ensure errors are properly reported to monitoring systems",
+      "testStrategy": "Test with various error scenarios to ensure proper handling, messaging, and logging."
+    },
+    {
+      "id": 17,
+      "title": "Integrate and test complete checkout flow",
+      "description": "Integrate all payment components into the checkout flow and test end-to-end.",
+      "status": "pending",
+      "dependencies": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        16
+      ],
+      "priority": "high",
+      "details": "- Ensure seamless integration of UniversalPaymentCheckout into existing checkout flow\n- Test complete purchase flow with all payment providers\n- Verify success, cancel, and error paths for each provider\n- Test with various product and tenant configurations",
+      "testStrategy": "Perform end-to-end testing of the complete checkout flow with each payment provider."
+    },
+    {
+      "id": 18,
+      "title": "Create documentation for payment integration",
+      "description": "Document the payment integration for developers and testers.",
+      "status": "pending",
+      "dependencies": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        11,
+        12
+      ],
+      "priority": "low",
+      "details": "- Document the UniversalPaymentCheckout component API\n- Create usage examples for each payment provider\n- Document admin configuration options\n- Add troubleshooting guides for common issues\n- Include testing instructions for QA team",
+      "testStrategy": "Review documentation for completeness and accuracy with team members."
+    }
+  ]
+}

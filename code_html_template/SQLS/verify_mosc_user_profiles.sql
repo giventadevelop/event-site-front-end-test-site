@@ -1,0 +1,34 @@
+-- Ensures the six Clerk user profiles exist for mosc_malankara_orthodox_2.
+-- IDs use +600000 offset from tenant_demo_002 source rows (no conflict with demo ids 1-10838).
+-- Tenant id is mosc_malankara_orthodox_2 (NOT mosc_malankara_orthodox_02).
+-- Run after delete_mosc_tenant.sql + mosc_dup_only.sql, or standalone to fill gaps.
+
+-- Remove legacy duplicate profiles from old +500000 import attempts (if any)
+DELETE FROM public.user_profile
+WHERE tenant_id = 'mosc_malankara_orthodox_2'
+  AND id BETWEEN 504000 AND 511999
+  AND id NOT IN (604101, 604109, 604123, 605152, 610278, 610838);
+
+-- Upsert canonical profiles (ON CONFLICT on primary key id)
+INSERT INTO public.user_profile (id, tenant_id, user_id, first_name, last_name, email, phone, address_line_1, address_line_2, city, state, zip_code, country, notes, family_name, city_town, district, educational_institution, profile_image_url, is_email_subscribed, email_subscription_token, is_email_subscription_token_used, user_status, user_role, reviewed_by_admin_at, reviewed_by_admin_id, clerk_user_id, clerk_session_id, clerk_org_id, clerk_org_role, auth_provider, auth_provider_user_id, email_verified, profile_image_url_clerk, last_sign_in_at, clerk_metadata, created_at, updated_at, request_id, request_reason, status, admin_comments, submitted_at, reviewed_at, approved_at, rejected_at) VALUES
+(604123, 'mosc_malankara_orthodox_2', 'user_37x6Sw8TD5dVtvvdZmLaoIgDDNE', '', '', NULL, '', '', '', '', '', '', '', '', '', '', '', '', '', true, 'eyJhbGciOiJIUzI1NiJ9.e30.kflEYQGrBTeT3B6Q7z1nvfUNYT31lJioXH7bYbfzQrk', false, 'ACTIVE', 'ADMIN', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-01-12 14:45:30.578', '2026-01-12 14:45:30.594214', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(604109, 'mosc_malankara_orthodox_2', 'user_38DjmE80cjcjFhaVkW8hQkeuya2', 'RegularUpdated', 'Regular User', 'mosc.regular.user@keleno.com', '', '', '', '', '', '', '', '', '', '', '', '', 'https://img.clerk.com/eyJ0eXBlIjoiZGVmYXVsdCIsImlpZCI6Imluc18ydlFXRk5DSWkxaDQwbWZkTFk5T2t0TDJjbGkiLCJyaWQiOiJ1c2VyXzM3WU53Ym9adEN5OVdYa0tTWjlIWWw0QzloaCIsImluaXRpYWxzIjoiUlIifQ', true, 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtb3NjLnJlZ3VsYXIudXNlckBrZWxlbm8uY29tIiwicHVycG9zZSI6ImVtYWlsX3N1YnNjcmlwdGlvbiIsInRlbmFudElkIjoidGVuYW50X2RlbW9fMDAyIiwiZXhwIjoxNzgwMDM2NjkyLCJpYXQiOjE3Nzc0NDQ2OTIsInVzZXJJZCI6InVzZXJfMzhEam1FODBjamNqRmhhVmtXOGhRa2V1eWEyIiwiZW1haWwiOiJtb3NjLnJlZ3VsYXIudXNlckBrZWxlbm8uY29tIn0.BdIHs3CUzSyPA-v15PTUqGZTDpuhaxCFy6GXKY4REGg', false, 'PENDING_APPROVAL', 'MEMBER', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-01-13 14:02:16.057', '2026-04-29 06:38:12.441532', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(610278, 'mosc_malankara_orthodox_2', 'user_3CnyuK2mmwN5hldbcNueveBmoNl', '', '', 'mosc.admin.social@keleno.com', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'https://img.clerk.com/eyJ0eXBlIjoiZGVmYXVsdCIsImlpZCI6Imluc18ydlFXRk5DSWkxaDQwbWZkTFk5T2t0TDJjbGkiLCJyaWQiOiJ1c2VyXzNDbnl1SzJtbXdONWhsZGJjTnVldmVCbW9ObCJ9', true, 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtb3NjLmFkbWluLnNvY2lhbEBrZWxlbm8uY29tIiwicHVycG9zZSI6ImVtYWlsX3N1YnNjcmlwdGlvbiIsInRlbmFudElkIjoidGVuYW50X2RlbW9fMDAyIiwiZXhwIjoxNzgwNDg3OTM1LCJpYXQiOjE3Nzc4OTU5MzUsInVzZXJJZCI6InVzZXJfM0NueXVLMm1td041aGxkYmNOdWV2ZUJtb05sIiwiZW1haWwiOiJtb3NjLmFkbWluLnNvY2lhbEBrZWxlbm8uY29tIn0.7ziucmoSv8Nu8U4yvfbIYp8RpBJejkCHVuVVSSLqEGg', false, 'APPROVED', 'MEMBER', '2026-05-04 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-24 13:04:11.704', '2026-05-04 11:58:55.779515', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(604101, 'mosc_malankara_orthodox_2', 'user_2vVLxhPnsIPGYf6qpfozk383Slr', 'Gain', 'Joseph', 'giventauser@gmail.com', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'https://img.clerk.com/eyJ0eXBlIjoicHJveHkiLCJzcmMiOiJodHRwczovL2ltYWdlcy5jbGVyay5kZXYvb2F1dGhfZ29vZ2xlL2ltZ18ydlZMeGVDUnFWTnpkTDBLUXMySXNWekFBVG8ifQ', true, 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJnaXZlbnRhdXNlckBnbWFpbC5jb20iLCJwdXJwb3NlIjoiZW1haWxfc3Vic2NyaXB0aW9uIiwidGVuYW50SWQiOiJ0ZW5hbnRfZGVtb18wMDIiLCJleHAiOjE3ODA0ODc5NTAsImlhdCI6MTc3Nzg5NTk1MCwidXNlcklkIjoidXNlcl8ydlZMeGhQbnNJUEdZZjZxcGZvemszODNTbHIiLCJlbWFpbCI6ImdpdmVudGF1c2VyQGdtYWlsLmNvbSJ9.vxq513GAHMIam1XGd1PPhN4-sVKps5fNiQuosdJL0AA', false, 'APPROVED', 'ADMIN', '2026-05-04 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-11-03 00:24:33.657', '2026-05-04 11:59:10.627431', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(610838, 'mosc_malankara_orthodox_2', 'user_3DJJHfUfC20KZ8FUL388aPEG5V9', '', '', 'jebin@keleno.com', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'https://img.clerk.com/eyJ0eXBlIjoiZGVmYXVsdCIsImlpZCI6Imluc18ydlFXRk5DSWkxaDQwbWZkTFk5T2t0TDJjbGkiLCJyaWQiOiJ1c2VyXzNESkpIZlVmQzIwS1o4RlVMMzg4YVBFRzVWOSJ9', true, 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqZWJpbkBrZWxlbm8uY29tIiwicHVycG9zZSI6ImVtYWlsX3N1YnNjcmlwdGlvbiIsInRlbmFudElkIjoidGVuYW50X2RlbW9fMDAyIiwiZXhwIjoxNzgwNTg2MjgyLCJpYXQiOjE3Nzc5OTQyODIsInVzZXJJZCI6InVzZXJfM0RKSkhmVWZDMjBLWjhGVUwzODhhUEVHNVY5IiwiZW1haWwiOiJqZWJpbkBrZWxlbm8uY29tIn0.XmgDkwSPYNdaplw6S9FLvp0b0zAp_ztjC05X1wd8iQE', false, 'APPROVED', 'MEMBER', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-05-05 15:15:54.736', '2026-05-05 15:18:02.752783', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(605152, 'mosc_malankara_orthodox_2', 'user_38nbubO0LEVuh1coatR0Rh4MEEa', 'Gain', 'Joseph', 'mosc.admin.user@keleno.com', '3123430073', '165 Hopkins Ave, APT #7', 'APT 7', 'Jersey City', 'NJ', '07306', 'United States', 'cvcvcvcvcvcvcvcvcvcvc', 'Joseph', 'vbvbvbvbv', 'idukki', 'bvbvbvbvbvbv', 'https://img.clerk.com/eyJ0eXBlIjoiZGVmYXVsdCIsImlpZCI6Imluc18ydlFXRk5DSWkxaDQwbWZkTFk5T2t0TDJjbGkiLCJyaWQiOiJ1c2VyXzM4bmJ1Yk8wTEVWdWgxY29hdFIwUmg0TUVFYSJ9', true, 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtb3NjLmFkbWluLnVzZXJAa2VsZW5vLmNvbSIsInB1cnBvc2UiOiJlbWFpbF9zdWJzY3JpcHRpb24iLCJ0ZW5hbnRJZCI6InRlbmFudF9kZW1vXzAwMiIsImV4cCI6MTc4MDU4NjI5OSwiaWF0IjoxNzc3OTk0Mjk5LCJ1c2VySWQiOiJ1c2VyXzM4bmJ1Yk8wTEVWdWgxY29hdFIwUmg0TUVFYSIsImVtYWlsIjoibW9zYy5hZG1pbi51c2VyQGtlbGVuby5jb20ifQ.RhyTwAZmHY5qVVnMrx8KODeqayFQnOAT9D54SaO0TWM', false, 'APPROVED', 'ADMIN', '2026-05-05 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-03 16:03:18.677', '2026-05-05 15:18:19.06196', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
+ON CONFLICT (id) DO UPDATE SET
+  tenant_id = EXCLUDED.tenant_id,
+  user_id = EXCLUDED.user_id,
+  first_name = EXCLUDED.first_name,
+  last_name = EXCLUDED.last_name,
+  email = EXCLUDED.email,
+  user_status = EXCLUDED.user_status,
+  user_role = EXCLUDED.user_role,
+  updated_at = EXCLUDED.updated_at;
+
+-- Sanity check (expect 6 rows)
+SELECT id, tenant_id, user_id, email, user_role, user_status
+FROM public.user_profile
+WHERE tenant_id = 'mosc_malankara_orthodox_2'
+ORDER BY id;

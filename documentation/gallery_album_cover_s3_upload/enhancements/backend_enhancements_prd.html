@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Cover S3 — Backend Enhancements PRD (v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.15em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .section-container.parameters { background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%); border-left-color: #ff9800; }
+        .section-container.parameters .section-header { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Cover S3 — Backend Enhancements PRD</h1>
+    <p class="doc-meta">
+        <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 18, 2026<br>
+        <strong>Repo:</strong> <code>malayalees-us-site-boot</code> (Spring Boot) &nbsp;|&nbsp;
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a><br>
+        <strong>Clone from:</strong> <code>uploadFocusGroupCoverImage</code> in <code>EventMediaResource.java</code>
+    </p>
+
+    <div class="lead">
+        <p>Add a dedicated multipart upload endpoint that stores the cover image in S3, persists an <code>event_media</code> record (optional but recommended), and updates <code>gallery_album.cover_image_url</code> with the returned S3 URL.</p>
+    </div>
+
+    <h2>1. New REST endpoint</h2>
+    <div class="section-container parameters">
+        <div class="section-header">POST /api/event-medias/upload/gallery-album-cover-image</div>
+        <table>
+            <thead><tr><th>Parameter</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td><code>file</code></td><td>Yes</td><td>Multipart image (JPEG, PNG, WebP, GIF)</td></tr>
+                <tr><td><code>albumId</code></td><td>Yes</td><td><code>gallery_album.id</code></td></tr>
+                <tr><td><code>tenantId</code></td><td>Yes</td><td>Tenant scope; must match album row</td></tr>
+                <tr><td><code>title</code></td><td>No</td><td>Default: <code>Gallery Album Cover Image</code></td></tr>
+                <tr><td><code>description</code></td><td>No</td><td>Default: <code>Cover image for gallery album</code></td></tr>
+                <tr><td><code>isPublic</code></td><td>No</td><td>Default: <code>true</code></td></tr>
+            </tbody>
+        </table>
+        <p><strong>Content-Type:</strong> <code>multipart/form-data</code></p>
+        <p><strong>Auth:</strong> Bearer JWT (service or admin user — same as other upload endpoints)</p>
+    </div>
+
+    <h2>2. Processing flow</h2>
+    <ol>
+        <li>Validate <code>albumId</code> exists and <code>tenantId</code> matches album.</li>
+        <li>Validate file: image MIME, max size 10 MB (align with focus group / frontend).</li>
+        <li>Generate S3 key via new <code>S3Service.generateGalleryAlbumCoverPath(...)</code>.</li>
+        <li>Upload to bucket; obtain public/stable <code>fileUrl</code>.</li>
+        <li>Create <code>EventMedia</code> row:
+            <ul>
+                <li><code>albumId</code> = album id</li>
+                <li><code>eventId</code> = null or 0 (non-event gallery)</li>
+                <li><code>eventMediaType</code> = <code>GALLERY</code> or <code>GALLERY_COVER</code> (pick one enum; document in OpenAPI)</li>
+                <li><code>storageType</code> = <code>S3</code></li>
+                <li><code>isPublic</code> = true</li>
+                <li><code>priorityRanking</code> = 0 (cover first in sort if shown in grid)</li>
+            </ul>
+        </li>
+        <li>PATCH <code>GalleryAlbum.coverImageUrl</code> = <code>fileUrl</code>; update <code>updatedAt</code>.</li>
+        <li>Return <code>EventMediaDTO</code> (include <code>fileUrl</code> for frontend).</li>
+    </ol>
+
+    <h2>3. S3 path convention</h2>
+    <pre>{profilePrefix}/media/tenantId/{tenantId}/gallery-album/album-id/{albumId}/cover_{timestamp}_{uuid}.{ext}</pre>
+    <p>Example:</p>
+    <pre>dev/media/tenantId/tenant_demo_002/gallery-album/album-id/10974/cover_1739900000000_a1b2c3d4.jpg</pre>
+    <p>Mirror focus group pattern for consistency:</p>
+    <pre>dev/media/tenantId/tenant_demo_002/focus-groups/focus-group-id/4002/cover_image_1772540438301_f8b17ade.jpg</pre>
+
+    <h2>4. Java implementation checklist</h2>
+    <table>
+        <thead><tr><th>Artifact</th><th>Action</th></tr></thead>
+        <tbody>
+            <tr><td><code>EventMediaResource.java</code></td><td>Add <code>uploadGalleryAlbumCoverImage(...)</code> method</td></tr>
+            <tr><td><code>EventMediaServiceImpl.java</code></td><td>Delegate to <code>uploadFile</code> or dedicated method with album context</td></tr>
+            <tr><td><code>S3ServiceImpl.java</code></td><td>Add <code>generateGalleryAlbumCoverPath(tenantId, albumId, originalFilename)</code></td></tr>
+            <tr><td><code>GalleryAlbumService</code></td><td>Method <code>updateCoverImageUrl(albumId, url)</code> or reuse existing PATCH merge</td></tr>
+            <tr><td>Liquibase</td><td>None for v1.0</td></tr>
+            <tr><td>OpenAPI / Swagger</td><td>Document new path under event-medias upload group</td></tr>
+        </tbody>
+    </table>
+
+    <h2>5. Next.js proxy (mosc-temp)</h2>
+    <p>Create <code>src/pages/api/proxy/event-medias/upload/gallery-album-cover-image.ts</code> — copy structure from <code>focus-group-cover-image.ts</code>:</p>
+    <ul>
+        <li><code>bodyParser: false</code></li>
+        <li>Query params: <code>albumId</code>, <code>tenantId</code>, <code>title</code>, <code>description</code>, <code>isPublic</code></li>
+        <li>Forward raw multipart stream to backend with service JWT</li>
+    </ul>
+    <pre>POST /api/proxy/event-medias/upload/gallery-album-cover-image?albumId=10974&amp;tenantId=tenant_demo_002&amp;isPublic=true</pre>
+
+    <h2>6. Existing endpoints (unchanged)</h2>
+    <table>
+        <thead><tr><th>Endpoint</th><th>Role for covers</th></tr></thead>
+        <tbody>
+            <tr><td><code>PATCH /api/gallery-albums/{id}</code></td><td>Still used to set <code>coverImageUrl</code> when picking existing album media</td></tr>
+            <tr><td><code>POST /api/event-medias/upload-multiple</code></td><td>Album bulk photos — not a substitute for dedicated cover upload</td></tr>
+        </tbody>
+    </table>
+
+    <h2>7. Error cases</h2>
+    <table>
+        <thead><tr><th>Condition</th><th>HTTP</th><th>Message</th></tr></thead>
+        <tbody>
+            <tr><td>Missing albumId / tenantId</td><td>400</td><td>Missing required parameter</td></tr>
+            <tr><td>Album not found</td><td>404</td><td>Gallery album not found</td></tr>
+            <tr><td>Tenant mismatch</td><td>403</td><td>Tenant does not match album</td></tr>
+            <tr><td>Non-image file</td><td>400</td><td>Invalid file type</td></tr>
+            <tr><td>File &gt; 10 MB</td><td>400</td><td>File too large</td></tr>
+            <tr><td>S3 failure</td><td>500</td><td>Upload failed (log details)</td></tr>
+        </tbody>
+    </table>
+
+    <div class="info-box">
+        <strong>Testing:</strong> Use Postman multipart POST against backend directly with JWT, then via Next proxy from admin UI. Verify S3 object exists and <code>SELECT cover_image_url FROM gallery_album WHERE id = ?</code> matches <code>event_media.file_url</code>.
+    </div>
+
+    <p><a href="generic_enhancement_prd.html">← Back to index</a></p>
+
+</body>
+</html>

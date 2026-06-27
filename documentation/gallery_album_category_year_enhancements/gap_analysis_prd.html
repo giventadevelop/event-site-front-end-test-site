@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Category &amp; Year — Gap Analysis PRD (v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; background: #fff; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        tbody tr:hover { background: #f5faff; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px 16px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px 16px; border-radius: 6px; margin: 16px 0; }
+        .status-done { color: #155724; font-weight: 600; }
+        .status-partial { color: #856404; font-weight: 600; }
+        .status-missing { color: #721c24; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Category &amp; Year — Gap Analysis PRD</h1>
+    <p class="doc-meta">
+        <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 17, 2026<br>
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a> &nbsp;|&nbsp;
+        <strong>Baseline:</strong> <a href="../gallery_feature_and_album/FRONTEND_PRD_GALLERY_ALBUM_FEATURE.md">Gallery Album Feature PRD</a>
+    </p>
+
+    <div class="lead">
+        <p>Compares the <strong>target redesign album card</strong> (category pill, year, photo count, cover, title, View Album) against the <strong>current database schema</strong>, <strong>API/DTOs</strong>, and <strong>frontend implementations</strong> (static MOSC gallery vs <code>/gallery</code> API-driven cards).</p>
+    </div>
+
+    <h2>1. Card field gap matrix</h2>
+    <table>
+        <thead><tr><th>Card element</th><th>Redesign mockup</th><th>DB / API today</th><th>Gap</th><th>Phase</th></tr></thead>
+        <tbody>
+            <tr><td>Cover image</td><td class="status-done">Yes</td><td><code>cover_image_url</code></td><td class="status-done">None</td><td>—</td></tr>
+            <tr><td>Photo count</td><td class="status-done">“60 photos”</td><td><code>totalMediaCount</code> via media query</td><td class="status-partial">Works; not on album row</td><td>G1 optional aggregate</td></tr>
+            <tr><td>Category pill</td><td class="status-done">“Ecumenical Visits”</td><td class="status-missing">Missing</td><td class="status-missing">No column or lookup</td><td>G1</td></tr>
+            <tr><td>Title</td><td class="status-done">Yes</td><td><code>title</code></td><td class="status-done">None</td><td>—</td></tr>
+            <tr><td>Year</td><td class="status-done">“2019”</td><td><code>created_at</code> only (wrong semantics)</td><td class="status-missing">No <code>album_year</code></td><td>G1</td></tr>
+            <tr><td>View Album link</td><td class="status-done">Button + chevron</td><td>Slideshow modal on <code>/gallery</code></td><td class="status-partial">MOSC uses per-album routes</td><td>G3</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. Layer implementation status</h2>
+    <table>
+        <thead><tr><th>Layer</th><th>Status</th><th>Evidence</th></tr></thead>
+        <tbody>
+            <tr><td><strong>Database</strong></td><td class="status-partial">Partial</td><td><code>gallery_album</code> exists; no <code>gallery_category</code>; no <code>album_year</code> (<code>Latest_Schema_Post__Blob_Claude_12.sql</code>)</td></tr>
+            <tr><td><strong>Backend</strong></td><td class="status-partial">Partial</td><td><code>/api/gallery-albums</code> CRUD; no category resource; DTO lacks new fields</td></tr>
+            <tr><td><strong>Frontend — /gallery</strong></td><td class="status-partial">Partial</td><td><code>GalleryAlbumCard.tsx</code> — title, cover, count, <code>createdAt</code> date</td></tr>
+            <tr><td><strong>Frontend — MOSC redesign</strong></td><td class="status-partial">Static only</td><td><code>mosc-redesign/(syro)/gallery/page.tsx</code> hardcoded <code>category</code>, <code>date</code>, <code>photoCount</code></td></tr>
+            <tr><td><strong>Admin</strong></td><td class="status-partial">Partial</td><td><code>AdminAlbumEditClient.tsx</code> — title, description, cover, public, order only</td></tr>
+        </tbody>
+    </table>
+
+    <h2>3. Static MOSC gallery data shape (reference)</h2>
+    <div class="section-container">
+        <div class="section-header">Hardcoded album object — target API shape</div>
+        <p>File: <code>src/app/mosc-redesign/(syro)/gallery/page.tsx</code></p>
+        <table>
+            <thead><tr><th>Static field</th><th>Example</th><th>v1.0 API field</th></tr></thead>
+            <tbody>
+                <tr><td><code>id</code></td><td><code>russia-visit</code></td><td>Numeric <code>gallery_album.id</code>; slug deferred v1.1</td></tr>
+                <tr><td><code>title</code></td><td>Russia visit of H.H …</td><td><code>title</code></td></tr>
+                <tr><td><code>date</code></td><td><code>2019</code></td><td><code>albumYear</code></td></tr>
+                <tr><td><code>photoCount</code></td><td><code>60</code></td><td><code>totalMediaCount</code></td></tr>
+                <tr><td><code>category</code></td><td>Ecumenical Visits</td><td><code>galleryCategory.displayName</code></td></tr>
+                <tr><td><code>imageUrl</code></td><td><code>/images/mosc/gallery/...</code></td><td><code>coverImageUrl</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2>4. Existing categories in static gallery (seed list)</h2>
+    <table>
+        <thead><tr><th>display_name</th><th>suggested slug</th><th>Example albums</th></tr></thead>
+        <tbody>
+            <tr><td>Ecumenical Visits</td><td><code>ecumenical-visits</code></td><td>Russia visit, Vatican visit, Paulose II with Kiril</td></tr>
+            <tr><td>Major Events</td><td><code>major-events</code></td><td>Enthronement Mathews III</td></tr>
+            <tr><td>Receptions</td><td><code>receptions</code></td><td>Reception to Mathews III</td></tr>
+            <tr><td>Liturgical Events</td><td><code>liturgical-events</code></td><td>St. Matrona relics</td></tr>
+        </tbody>
+    </table>
+    <p>Additional categories may appear in the full static list — audit <code>gallery/page.tsx</code> before seed SQL (see <a href="data_migration_enhancements_prd.html">data migration PRD</a>).</p>
+
+    <h2>5. Frontend file inventory</h2>
+    <table>
+        <thead><tr><th>File</th><th>Role</th><th>Enhancement</th></tr></thead>
+        <tbody>
+            <tr><td><code>src/types/index.ts</code></td><td><code>GalleryAlbumDTO</code></td><td>Add <code>albumYear</code>, <code>galleryCategoryId</code>, nested category DTO</td></tr>
+            <tr><td><code>src/app/gallery/components/GalleryAlbumCard.tsx</code></td><td>Main app card</td><td>Category pill + year; match redesign styling</td></tr>
+            <tr><td><code>src/app/gallery/ApiServerActions.ts</code></td><td>Fetch albums + media</td><td>Pass category in response; optional category filter</td></tr>
+            <tr><td><code>src/app/mosc-redesign/(syro)/gallery/page.tsx</code></td><td>Static grid</td><td>Replace with server fetch from API</td></tr>
+            <tr><td><code>src/app/admin/gallery/albums/[id]/edit/AdminAlbumEditClient.tsx</code></td><td>Admin edit</td><td>Category select + album year input</td></tr>
+            <tr><td><code>src/pages/api/proxy/gallery-albums/</code></td><td>Proxy</td><td>No change if shared handler; add <code>gallery-categories</code> proxy</td></tr>
+        </tbody>
+    </table>
+
+    <div class="warning-box">
+        <strong>Do not use <code>created_at</code> for display year:</strong> Sample DB rows show <code>created_at</code> in 2026 while visit year is 2019. Using upload date on the card would mislead users.
+    </div>
+
+    <h2>6. Out of scope (v1.0)</h2>
+    <ul>
+        <li>Album slug / deep-link field for MOSC static route replacement (v1.1)</li>
+        <li>Gallery page category/year filter UI</li>
+        <li>Strapi or CMS integration for gallery (separate from DB albums)</li>
+        <li>Batch jobs for gallery</li>
+    </ul>
+
+    <div class="info-box">
+        <strong>Next:</strong> <a href="database_schema_enhancements_prd.html">Database schema enhancements</a> ·
+        <a href="implementation_roadmap.html">Implementation roadmap</a>
+    </div>
+
+</body>
+</html>

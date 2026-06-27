@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="PostgreSQL data export, INSERT reordering, production user ID replacement, sequence sync, and import troubleshooting for event_site_manager_db.">
+  <title>Database Export, Reorder, and Import Guide</title>
+  <style>
+    :root {
+      --text: #333;
+      --code-bg: #e8f4f8;
+      --code-text: #0d3b66;
+      --code-border: #b8d4e3;
+      --blue-accent: #0066cc;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--text);
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2.5em;
+      border-bottom: 3px solid var(--blue-accent);
+      padding-bottom: 0.5rem;
+      margin-top: 0;
+    }
+    h2 {
+      font-size: 1.8em;
+      border-left: 4px solid var(--blue-accent);
+      padding-left: 15px;
+      margin-top: 2rem;
+    }
+    h3 { font-size: 1.2em; color: #555; margin-top: 1.25rem; }
+    .meta { color: #666; font-size: 0.95rem; margin-bottom: 1.5rem; }
+    .toc {
+      background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+      border-left: 4px solid var(--blue-accent);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .toc ul { margin: 0.5rem 0; padding-left: 1.25rem; }
+    .toc a { color: var(--blue-accent); }
+    .section-intro {
+      background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+      border-left: 4px solid var(--blue-accent);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+    }
+    .section-container {
+      background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+      border-left: 4px solid var(--blue-accent);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+    }
+    .section-container.usage {
+      background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%);
+      border-left-color: #9c27b0;
+    }
+    .section-container.parameters {
+      background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+      border-left-color: #ff9800;
+    }
+    .section-container.output {
+      background: linear-gradient(135deg, #e6ffe6 0%, #ccffcc 100%);
+      border-left-color: #28a745;
+    }
+    .section-header {
+      background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+      color: white;
+      padding: 12px 20px;
+      margin: -20px -20px 20px -20px;
+      border-radius: 8px 8px 0 0;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    .section-header.usage {
+      background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+    }
+    .section-header.parameters {
+      background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    }
+    .section-header.output {
+      background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+    }
+    .info {
+      background: #d1ecf1;
+      border-left: 4px solid #0c5460;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    .warning {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    .success {
+      background: #d4edda;
+      border-left: 4px solid #28a745;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    .error {
+      background: #f8d7da;
+      border-left: 4px solid #dc3545;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    .info code, .warning code, .success code, .error code,
+    code.code-highlight {
+      background-color: var(--code-bg);
+      color: var(--code-text);
+      padding: 2px 6px;
+      border-radius: 3px;
+      border: 1px solid var(--code-border);
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+    code.script-name {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      border: none;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 15px 0;
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: left;
+    }
+    th {
+      background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+      color: white;
+      font-weight: bold;
+      font-size: 0.9em;
+    }
+    tr:nth-child(even) { background-color: #f8f9fa; }
+    tr:hover { background-color: #e3f2fd; }
+    td code {
+      background-color: var(--code-bg);
+      color: var(--code-text);
+      padding: 3px 8px;
+      border-radius: 3px;
+      border: 1px solid var(--code-border);
+      font-family: 'Courier New', monospace;
+    }
+    ol.steps { padding-left: 1.5rem; }
+    ol.steps li { margin: 0.75rem 0; }
+    .command-block {
+      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+      border: 2px solid #2196f3;
+      border-radius: 8px;
+      margin: 20px 0;
+      overflow: hidden;
+    }
+    .command-block.expedite {
+      background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+      border-color: #9c27b0;
+    }
+    .command-block.advance {
+      background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+      border-color: #ff9800;
+    }
+    .command-block.verify {
+      background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+      border-color: #4caf50;
+    }
+    .command-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      background: rgba(255,255,255,0.4);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    .command-type { font-weight: bold; color: #333; }
+    .command-header-buttons { display: flex; gap: 8px; }
+    .copy-button, .copy-button-template {
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85em;
+      font-weight: bold;
+    }
+    .copy-button { background-color: #0066cc; }
+    .copy-button-template { background-color: #6c757d; }
+    .copy-button:hover { background-color: #0052a3; }
+    .copy-button-template:hover { background-color: #5a6268; }
+    .copy-button.copied, .copy-button-template.copied { background-color: #28a745; }
+    .command-content {
+      padding: 15px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.95em;
+      color: var(--code-text);
+      word-break: break-all;
+    }
+    .command-parameters {
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.5);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    .command-parameters h5 { margin: 0 0 12px 0; font-size: 0.9em; }
+    .parameter-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .parameter-group.single { grid-template-columns: 1fr; }
+    .parameter-input label { font-size: 0.8em; color: #555; font-weight: 600; }
+    .parameter-input input {
+      padding: 8px 12px;
+      border: 2px solid #ddd;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .parameter-input .path-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+    }
+    .parameter-input .path-input-row input[type="text"] {
+      flex: 1;
+      min-width: 0;
+    }
+    .browse-button {
+      flex-shrink: 0;
+      padding: 8px 14px;
+      border: 2px solid var(--blue-accent);
+      border-radius: 4px;
+      background: #fff;
+      color: var(--blue-accent);
+      font-size: 0.85em;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .browse-button:hover {
+      background: var(--blue-accent);
+      color: #fff;
+    }
+    .parameter-hint {
+      font-size: 0.78em;
+      color: #666;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+    .flag-checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 20px;
+      margin-top: 4px;
+    }
+    .flag-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9em;
+      cursor: pointer;
+      user-select: none;
+    }
+    .flag-checkbox input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--blue-accent);
+      cursor: pointer;
+    }
+    .flag-checkbox span code {
+      font-size: 0.95em;
+    }
+    .command-single-line {
+      padding: 12px 15px;
+      background: var(--code-bg);
+      border-top: 1px solid var(--code-border);
+    }
+    .command-single-line-label { font-size: 0.8em; color: #666; margin-bottom: 6px; }
+    .command-single-line code {
+      background: transparent;
+      color: var(--code-text);
+      padding: 0;
+      border: none;
+      font-family: 'Courier New', monospace;
+    }
+    pre.code-block {
+      background: #e8f4f8;
+      color: #0d3b66;
+      border: 1px solid #b8d4e3;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+    footer.doc-footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid #ddd;
+      font-size: 0.9rem;
+      color: #666;
+    }
+    a { color: var(--blue-accent); }
+    @media (max-width: 768px) {
+      body { padding: 10px; }
+      .parameter-group { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Database Export, Reorder, and Import Guide</h1>
+    <p class="meta">
+      Location: <code class="code-highlight">documentation/database_export_import/DATABASE_EXPORT_IMPORT_GUIDE.html</code><br>
+      Related: <code class="code-highlight">code_html_template/batch_files/database_export_import_refresh.bat</code> ·
+      <code class="code-highlight">code_html_template/SQLS/</code> ·
+      <code class="code-highlight">code_html_template/SQLS/sequence_fix_inserts/</code> ·
+      <code class="code-highlight">scripts/replace-user-profile-ids-in-sql.mjs</code> ·
+      <code class="code-highlight">code_html_template/SQLS/Current_Sqls/sync_sequence_after_inserts.sql</code> ·
+      <code class="code-highlight">code_html_template/SQLS/Current_Sqls/sync_spring_batch_sequences.sql</code>
+    </p>
+
+    <div class="section-intro">
+      <p>
+        This guide documents the full workflow for exporting PostgreSQL data from Docker,
+        reordering <code class="code-highlight">INSERT</code> statements for foreign-key safety,
+        optionally renumbering primary keys and trimming Spring Batch noise,
+        preparing a production copy with Clerk user ID replacements, syncing primary-key sequences,
+        and troubleshooting partial imports in DBeaver or <code class="code-highlight">psql</code>.
+      </p>
+    </div>
+
+    <nav class="toc" aria-label="Table of contents">
+      <h2 style="margin-top:0;border:none;padding:0;font-size:1.3em;">Table of contents</h2>
+      <ul>
+        <li><a href="#quick-start">1. Quick-start workflow</a></li>
+        <li><a href="#batch-automation">1a. Automated batch script (all steps)</a></li>
+        <li><a href="#batch-remote-prod">1b. Import into production PostgreSQL (/REMOTE)</a></li>
+        <li><a href="#mosc-tenant-import">1c. MOSC tenant duplicate import (mosc_malankara_orthodox_2)</a></li>
+        <li><a href="#export">2. Export data with pg_dump (Docker)</a></li>
+        <li><a href="#reorder">3. Reorder INSERT statements</a></li>
+        <li><a href="#renumber">3a. Renumber IDs and trim Spring Batch (optional)</a></li>
+        <li><a href="#prod">4. Production user ID replacement</a></li>
+        <li><a href="#pg-dump-comment">5. Comment out pg_dump header lines</a></li>
+        <li><a href="#import">6. Import the SQL file</a></li>
+        <li><a href="#sequences">7. Sync sequences after import</a></li>
+        <li><a href="#analysis">8. File integrity analysis (is the ordered SQL corrupted?)</a></li>
+        <li><a href="#troubleshooting">9. Troubleshooting partial imports</a></li>
+        <li><a href="#option-a">10. Option A — reorder script fix (implemented)</a></li>
+        <li><a href="#renumber-detail">11. Sequence fix — files, FK repair, and verification</a></li>
+        <li><a href="SEQUENCE_ID_ALIGNMENT_GUIDE.html">12. Sequence and ID alignment (full reference)</a></li>
+      </ul>
+    </nav>
+
+    <!-- Section 1 -->
+    <section id="quick-start" aria-labelledby="h-quick">
+      <h2 id="h-quick">1. Quick-start workflow</h2>
+      <div class="section-container usage">
+        <div class="section-header usage">📋 End-to-end steps</div>
+        <ol class="steps">
+          <li><strong>Fast path:</strong> run <code class="script-name">database_export_import_refresh.bat</code> — see <a href="#batch-automation">§1a Automated batch script</a>.</li>
+          <li><code class="code-highlight">cd E:\project_workspace\mosc-temp\code_html_template\SQLS</code></li>
+          <li>Find Postgres container: <code class="code-highlight">docker ps | findstr postgres</code></li>
+          <li>Export: <code class="code-highlight">docker exec -it &lt;container_id&gt; pg_dump ... &gt; export.sql</code></li>
+          <li>Reorder: <code class="code-highlight">node reorder_sql_inserts_final.cjs</code> → <code class="code-highlight">corrected_event_media_inserts.ordered.sql</code></li>
+          <li><strong>Optional:</strong> Renumber IDs + trim Spring Batch — see <a href="#renumber">§3a</a> → <code class="code-highlight">sequence_fix_inserts/corrected_event_media_inserts.renumbered.sql</code></li>
+          <li>Prod IDs (repo root): <code class="code-highlight">node scripts/replace-user-profile-ids-in-sql.mjs</code> → <code class="code-highlight">corrected_event_media_inserts.ordered_PROD.sql</code></li>
+          <li>In generated SQL: Find/Replace <code class="code-highlight">pg_dump</code> → <code class="code-highlight">-- pg_dump</code> (comment out dump metadata lines)</li>
+          <li>Import ordered SQL into target database (empty schema first)</li>
+          <li>Run <code class="code-highlight">sync_sequence_after_inserts.sql</code> so new rows get IDs above the imported max</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Section 1a: Batch automation -->
+    <section id="batch-automation" aria-labelledby="h-batch">
+      <h2 id="h-batch">1a. Automated batch script (all steps)</h2>
+
+      <div class="section-intro">
+        <p>
+          <code class="script-name">database_export_import_refresh.bat</code> runs the full export → reorder → PROD user-ID copy →
+          <code class="code-highlight">pg_dump</code> line cleanup → schema rebuild → data import → sequence sync workflow in one command.
+          Pass your workspace root (the parent folder of <code class="code-highlight">mosc-temp</code>), for example
+          <code class="code-highlight">F:\project_workspace</code> or <code class="code-highlight">E:\project_workspace</code>.
+        </p>
+      </div>
+
+      <div class="section-container usage">
+        <div class="section-header usage">📋 Steps the batch file runs</div>
+        <table>
+          <thead>
+            <tr><th>Step</th><th>Action</th><th>Output / target</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>0</td><td>Detect Postgres container (<code>docker ps | findstr postgres</code>) or use ID you pass</td><td>—</td></tr>
+            <tr><td>1</td><td><code>pg_dump --data-only --column-inserts</code></td><td><code>export.sql</code></td></tr>
+            <tr><td>2</td><td><code>node reorder_sql_inserts_final.cjs</code></td><td><code>corrected_event_media_inserts.ordered.sql</code></td></tr>
+            <tr><td>3</td><td><code>node scripts/replace-user-profile-ids-in-sql.mjs</code></td><td><code>corrected_event_media_inserts.ordered_PROD.sql</code></td></tr>
+            <tr><td>4</td><td>Comment lines starting with <code>pg_dump</code> in the import file</td><td>Import SQL patched</td></tr>
+            <tr><td>5</td><td>Apply <code>Latest_Schema_Post__Blob_Claude_12.sql</code></td><td><code>event_site_manager_db</code> schema rebuilt</td></tr>
+            <tr><td>6</td><td>Import ordered (or PROD) INSERT file</td><td>Data loaded</td></tr>
+            <tr><td>7</td><td>Run <code>sync_sequence_after_inserts.sql</code></td><td>Primary-key sequence synced</td></tr>
+            <tr><td>7b</td><td>Run <code>sync_spring_batch_sequences.sql</code></td><td>Spring Batch sequences synced</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="warning">
+        <strong>⚠️ Destructive steps:</strong> Steps 5–7 drop and recreate the schema and replace all data in
+        <code class="code-highlight">event_site_manager_db</code>. For <strong>local Docker</strong>, type
+        <code class="code-highlight">Y</code> or <code class="code-highlight">YES</code> at the prompt (unless you pass
+        <code class="code-highlight">/FORCE</code>). For <strong>remote production</strong> (<code class="code-highlight">/REMOTE</code>),
+        you must type <code class="code-highlight">PRODUCTION</code> — even with <code class="code-highlight">/FORCE</code>, remote runs still require that confirmation.
+        If you cancel, steps 1–4 still complete (export, reorder, and PROD copy remain on disk).
+      </div>
+
+      <div class="command-block expedite"
+           data-command-base="WORKSPACE_ROOT\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat WORKSPACE_ROOT"
+           data-template-command="F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace">
+        <div class="command-header">
+          <span class="command-type">Run full workflow (Windows batch)</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'batch-full')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'batch-full')" title="Copy customized command" aria-label="Copy customized command">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-parameters">
+          <h5>🔧 Customize parameters:</h5>
+          <div class="parameter-group">
+            <div class="parameter-input">
+              <label for="batch-full-workspace">Workspace root:</label>
+              <input type="text" id="batch-full-workspace" value="F:\project_workspace" placeholder="F:\project_workspace" oninput="updateBatchRefresh('batch-full')">
+            </div>
+            <div class="parameter-input">
+              <label for="batch-full-container">Container ID (optional):</label>
+              <input type="text" id="batch-full-container" value="" placeholder="Auto-detect if empty" oninput="updateBatchRefresh('batch-full')">
+            </div>
+          </div>
+          <div class="parameter-group single">
+            <div class="parameter-input">
+              <label>Options (click to add flags to the command):</label>
+              <div class="flag-checkbox-group" id="batch-full-flags-group">
+                <label class="flag-checkbox">
+                  <input type="checkbox" id="batch-full-flag-force" onchange="updateBatchRefresh('batch-full')">
+                  <span><code>/FORCE</code> — skip local Y/YES prompt (not for /REMOTE)</span>
+                </label>
+                <label class="flag-checkbox">
+                  <input type="checkbox" id="batch-full-flag-prod" onchange="updateBatchRefresh('batch-full')">
+                  <span><code>/PROD</code> — import _PROD.sql (production Clerk IDs)</span>
+                </label>
+                <label class="flag-checkbox">
+                  <input type="checkbox" id="batch-full-flag-skip-export" onchange="updateBatchRefresh('batch-full')">
+                  <span><code>/SKIP-EXPORT</code> — reuse existing export.sql, skip pg_dump</span>
+                </label>
+                <label class="flag-checkbox">
+                  <input type="checkbox" id="batch-full-flag-remote" onchange="updateBatchRefresh('batch-full')">
+                  <span><code>/REMOTE</code> — steps 5–7 on RDS (.env.local); auto /PROD</span>
+                </label>
+                <label class="flag-checkbox">
+                  <input type="checkbox" id="batch-full-flag-schema-only" onchange="updateBatchRefresh('batch-full')">
+                  <span><code>/SCHEMA-ONLY</code> — apply schema only; skip export and import</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="parameter-group single">
+            <div class="parameter-input">
+              <label for="batch-full-import-file">Custom import file (optional, overrides default ordered/PROD SQL):</label>
+              <div class="path-input-row">
+                <input type="text" id="batch-full-import-file" value="" placeholder="Leave empty for default ordered or _PROD file" oninput="updateBatchRefresh('batch-full')">
+                <button type="button" class="browse-button" onclick="document.getElementById('batch-full-import-file-picker').click()" title="Browse for SQL file" aria-label="Browse for SQL import file">Browse…</button>
+                <input type="file" id="batch-full-import-file-picker" accept=".sql,.SQL" style="display:none" onchange="onImportFileBrowse('batch-full', this)">
+              </div>
+              <p class="parameter-hint">Browsers may not expose the full path — verify or paste the absolute path (e.g. <code>F:\project_workspace\mosc-temp\code_html_template\SQLS\my_import.sql</code>). Adds <code>/IMPORT-FILE "path"</code> to the command. Ignored with <code>/SCHEMA-ONLY</code>.</p>
+            </div>
+          </div>
+        </div>
+        <div class="command-content" id="batch-full">F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="batch-full-single-code">F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace</code>
+        </div>
+      </div>
+
+      <div class="command-block verify"
+           data-command-base="WORKSPACE_ROOT\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat WORKSPACE_ROOT CONTAINER_ID /FORCE"
+           data-template-command="F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace 752786b3431e /FORCE">
+        <div class="command-header">
+          <span class="command-type">Azure VM example (known container, skip prompt)</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'batch-azure')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'batch-azure')" title="Copy command" aria-label="Copy command">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-content" id="batch-azure">F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace 752786b3431e /FORCE</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="batch-azure-single-code">F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace 752786b3431e /FORCE</code>
+        </div>
+      </div>
+
+      <div class="section-container parameters">
+        <div class="section-header parameters">⚙️ Batch parameters and flags</div>
+        <p>
+          The batch script is called as:
+          <code class="code-highlight">database_export_import_refresh.bat WORKSPACE_ROOT [CONTAINER_ID] [flags...]</code>.
+          Only <code class="code-highlight">WORKSPACE_ROOT</code> is required. Everything else is optional.
+          Flags can appear in any order after the workspace path (and optional container ID).
+        </p>
+
+        <table>
+          <thead>
+            <tr><th>Argument / flag</th><th>Required?</th><th>One-line summary</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>WORKSPACE_ROOT</code></td><td>Yes</td><td>Folder that contains the <code>mosc-temp</code> project</td></tr>
+            <tr><td><code>CONTAINER_ID</code></td><td>No</td><td>Which local Docker Postgres container to export from</td></tr>
+            <tr><td><code>/FORCE</code></td><td>No</td><td>Skip the local “Type Y/YES” safety prompt (local Docker only)</td></tr>
+            <tr><td><code>/PROD</code></td><td>No</td><td>Import the SQL file with production Clerk user IDs</td></tr>
+            <tr><td><code>/SKIP-EXPORT</code></td><td>No</td><td>Do not run <code>pg_dump</code>; reuse an existing <code>export.sql</code></td></tr>
+            <tr><td><code>/REMOTE</code></td><td>No</td><td>Apply schema, import, and sync on remote Postgres (e.g. AWS RDS)</td></tr>
+            <tr><td><code>/SCHEMA-ONLY</code></td><td>No</td><td>Apply schema (step 5) only; skip export steps 1–4 and import/sync 6–7</td></tr>
+            <tr><td><code>/IMPORT-FILE</code></td><td>No</td><td>Override the default import SQL with a custom file path</td></tr>
+            <tr><td><code>/REGEN-MOSC</code></td><td>No</td><td>Regenerate <code>mosc_malankara_orthodox_2</code> SQL from the ordered source before import</td></tr>
+            <tr><td><code>/PRE-CLEAN-MOSC</code></td><td>No</td><td>Run <code>delete_mosc_tenant.sql</code> before import (auto when import path contains MOSC files)</td></tr>
+            <tr><td><code>/IMPORT-DUP-ONLY</code></td><td>No</td><td>Import <code>mosc_dup_only.sql</code> only (fast MOSC tenant refresh; implies pre-clean)</td></tr>
+            <tr><td><code>/DATA-ONLY</code></td><td>No</td><td>Skip schema rebuild (step 5); import + sequence sync only</td></tr>
+          </tbody>
+        </table>
+
+        <h3 style="margin-top:1.5rem;">WORKSPACE_ROOT (required)</h3>
+        <p>
+          This is the <strong>parent folder</strong> of your <code class="code-highlight">mosc-temp</code> checkout—not the
+          <code class="code-highlight">mosc-temp</code> folder itself. Example:
+          <code class="code-highlight">F:\project_workspace</code> when the repo lives at
+          <code class="code-highlight">F:\project_workspace\mosc-temp</code>.
+        </p>
+        <p>
+          The script uses this path to find SQL files under
+          <code class="code-highlight">mosc-temp\code_html_template\SQLS</code>, Node scripts under
+          <code class="code-highlight">mosc-temp\scripts</code>, and (for remote mode) credentials in
+          <code class="code-highlight">mosc-temp\.env.local</code>. If the path is wrong, the batch stops immediately with
+          “mosc-temp not found”.
+        </p>
+
+        <h3>CONTAINER_ID (optional, positional)</h3>
+        <p>
+          The Docker container ID (or short ID) of your <strong>local</strong> PostgreSQL instance—the database you
+          export <em>from</em> in steps 0–1. Example: <code class="code-highlight">a6fb865ce8e0</code>.
+        </p>
+        <p>
+          If you omit it, the script runs <code class="code-highlight">docker ps | findstr postgres</code> and uses the
+          first matching container. That is fine when you only have one Postgres container running; pass the ID explicitly
+          when you have several containers and need a specific one.
+        </p>
+        <p>
+          <strong>Not used for remote import:</strong> With <code class="code-highlight">/REMOTE</code>, steps 5–7 connect
+          to RDS (or other remote host) from <code class="code-highlight">.env.local</code>. The container ID still matters
+          for local export unless you also use <code class="code-highlight">/SKIP-EXPORT</code>.
+        </p>
+
+        <h3><code>/FORCE</code> — skip local confirmation prompt</h3>
+        <p>
+          Steps 5–7 are <strong>destructive</strong>: they drop and recreate the schema, import all data, and reset
+          sequences. By default, on <strong>local Docker</strong>, the script pauses and asks you to type
+          <code class="code-highlight">Y</code> or <code class="code-highlight">YES</code> before it continues.
+        </p>
+        <p>
+          <code class="code-highlight">/FORCE</code> skips that local prompt so the script runs straight through after
+          steps 1–4—useful in CI, scripted runs, or when you already know you want a full refresh.
+        </p>
+        <p>
+          <strong>Important:</strong> <code class="code-highlight">/FORCE</code> does <em>not</em> bypass remote production
+          safety. If you use <code class="code-highlight">/REMOTE</code>, you must still type
+          <code class="code-highlight">PRODUCTION</code> at the prompt, even with <code class="code-highlight">/FORCE</code>.
+        </p>
+        <p>
+          If you cancel at the prompt (or type anything other than the expected word), steps 1–4 still finish and their
+          output files remain on disk; only steps 5–7 are skipped. Re-run later with <code class="code-highlight">/FORCE</code>
+          or <code class="code-highlight">/SKIP-EXPORT</code> to apply without re-exporting.
+        </p>
+
+        <h3><code>/PROD</code> — use production Clerk user IDs in the import file</h3>
+        <p>
+          After reordering, the workflow produces two import-ready files:
+        </p>
+        <ul>
+          <li><code class="code-highlight">corrected_event_media_inserts.ordered.sql</code> — dev/staging Clerk IDs from your local export</li>
+          <li><code class="code-highlight">corrected_event_media_inserts.ordered_PROD.sql</code> — same data, but
+            <code class="code-highlight">user_profile</code> rows use production Clerk IDs (via
+            <code class="code-highlight">replace-user-profile-ids-in-sql.mjs</code>)</li>
+        </ul>
+        <p>
+          Without <code class="code-highlight">/PROD</code>, step 6 imports the <strong>non-PROD</strong> file—appropriate
+          for refreshing a local Docker database that uses dev Clerk accounts. With <code class="code-highlight">/PROD</code>,
+          step 6 imports the <strong>_PROD</strong> file so user profiles match production sign-in after you load data
+          into AWS RDS or another production-like environment.
+        </p>
+        <p>
+          Step 3 (PROD ID replacement) always runs during the batch; this flag only chooses <em>which</em> prepared file
+          gets imported in step 6.
+        </p>
+
+        <h3><code>/SKIP-EXPORT</code> — reuse existing <code>export.sql</code></h3>
+        <p>
+          Normally step 1 runs <code class="code-highlight">pg_dump</code> inside Docker and overwrites
+          <code class="code-highlight">code_html_template\SQLS\export.sql</code>. That requires Docker to be running and
+          a reachable Postgres container.
+        </p>
+        <p>
+          <code class="code-highlight">/SKIP-EXPORT</code> tells the script: <strong>do not dump again</strong>—use the
+          <code class="code-highlight">export.sql</code> already on disk, then continue with reorder (step 2), PROD copy
+          (step 3), and the rest. The file must exist or step 1 fails with “export file not found”.
+        </p>
+        <p>
+          Typical uses: you already exported manually; export took a long time and you are retrying steps 2–7 after a
+          failure; or you are pushing prepared SQL to production with
+          <code class="code-highlight">/SKIP-EXPORT /REMOTE</code> (no local Docker needed for step 0–1 when combined
+          with <code class="code-highlight">/REMOTE</code>—the script skips container detection in that case).
+        </p>
+
+        <h3><code>/REMOTE</code> — target production Postgres instead of local Docker</h3>
+        <p>
+          By default, steps 5–7 run against your <strong>local Docker</strong> database via
+          <code class="code-highlight">docker exec … psql</code>. With <code class="code-highlight">/REMOTE</code>, those
+          same steps connect to a <strong>remote</strong> PostgreSQL server using credentials from
+          <code class="code-highlight">mosc-temp\.env.local</code> (<code class="code-highlight">RDS_ENDPOINT</code>,
+          <code class="code-highlight">DB_NAME</code>, <code class="code-highlight">DB_USERNAME</code>,
+          <code class="code-highlight">DB_PASSWORD</code>, etc.). See <a href="#batch-remote-prod">§1b</a>.
+        </p>
+        <p>
+          Steps 1–4 still run on your PC (export from Docker unless skipped, reorder, PROD file generation, comment out
+          <code class="code-highlight">pg_dump</code> lines). Only schema apply, data import, and sequence sync hit the
+          remote database.
+        </p>
+        <p>
+          <strong>Auto-enables PROD import:</strong> If you pass <code class="code-highlight">/REMOTE</code> without
+          <code class="code-highlight">/PROD</code>, the script turns on <code class="code-highlight">/PROD</code> anyway
+          so step 6 uses <code class="code-highlight">corrected_event_media_inserts.ordered_PROD.sql</code>.
+        </p>
+        <p>
+          <strong>Stricter confirmation:</strong> You must type <code class="code-highlight">PRODUCTION</code> (exact word)
+          before the remote schema rebuild runs. This applies even with <code class="code-highlight">/FORCE</code>.
+        </p>
+        <p>
+          <strong>Prerequisites:</strong> Valid <code class="code-highlight">.env.local</code> (or fallback
+          <code class="code-highlight">database_target.local.env</code>), network access to the host, and
+          <code class="code-highlight">psql</code> on PATH—or Docker Desktop so the batch can run
+          <code class="code-highlight">psql</code> inside a <code class="code-highlight">postgres:16</code> container.
+        </p>
+
+        <h3><code>/SCHEMA-ONLY</code> — rebuild schema without importing data</h3>
+        <p>
+          Applies <code class="code-highlight">Latest_Schema_Post__Blob_Claude_12.sql</code> (step 5) and skips export
+          (steps 1–4), data import (step 6), and sequence sync (step 7). Use when you only need DDL changes applied to
+          an empty or disposable database, or when data is already loaded and you want a schema refresh without touching
+          INSERT files.
+        </p>
+        <p>
+          Automatically implies <code class="code-highlight">/SKIP-EXPORT</code> behavior for the export pipeline.
+          <code class="code-highlight">/IMPORT-FILE</code> is ignored if both flags are passed.
+        </p>
+
+        <h3><code>/IMPORT-FILE</code> — override the default import SQL</h3>
+        <p>
+          By default, step 6 imports either
+          <code class="code-highlight">corrected_event_media_inserts.ordered.sql</code> or
+          <code class="code-highlight">corrected_event_media_inserts.ordered_PROD.sql</code> (when <code class="code-highlight">/PROD</code>
+          or <code class="code-highlight">/REMOTE</code> is set). Pass a custom path to import a different prepared SQL file:
+        </p>
+        <ul>
+          <li><code class="code-highlight">/IMPORT-FILE "F:\path\to\custom.sql"</code> — path as the next argument (quote if spaces)</li>
+          <li><code class="code-highlight">/IMPORT-FILE=F:\path\to\custom.sql</code> — path in the same token</li>
+        </ul>
+        <p>
+          The file must exist before the batch runs. Step 4 still patches <code class="code-highlight">pg_dump</code> header
+          lines in that file unless <code class="code-highlight">/SKIP-EXPORT</code> is also set.
+          <strong>Strict import:</strong> when <code class="code-highlight">/IMPORT-FILE</code> is set, step 6 uses
+          <code class="code-highlight">ON_ERROR_STOP=1</code> and the batch <strong>fails</strong> on the first SQL error (instead of
+          logging a warning and continuing). Use <code class="code-highlight">/SKIP-EXPORT</code> with custom files to skip export/reorder.
+        </p>
+
+        <div class="info" style="margin-top:1.25rem;">
+          <strong>Common flag combinations</strong>
+          <ul style="margin:0.5rem 0 0 1rem;">
+            <li><strong>Full local refresh:</strong> <code class="code-highlight">WORKSPACE_ROOT</code> — export, reorder, import into local Docker (confirm with Y/YES).</li>
+            <li><strong>Full local refresh, no prompt:</strong> add <code class="code-highlight">/FORCE</code>.</li>
+            <li><strong>Local DB with prod Clerk IDs:</strong> add <code class="code-highlight">/PROD</code>.</li>
+            <li><strong>Schema only (local):</strong> <code class="code-highlight">WORKSPACE_ROOT /SCHEMA-ONLY /FORCE</code>.</li>
+            <li><strong>Custom import file:</strong> <code class="code-highlight">WORKSPACE_ROOT /SKIP-EXPORT /IMPORT-FILE "path\to\file.sql" /FORCE</code> (recommended).</li>
+            <li><strong>MOSC full custom import:</strong> <code class="code-highlight">/REGEN-MOSC /SKIP-EXPORT /IMPORT-FILE "...\mosc_malankara_orthodox_2.sql" /FORCE</code> — see <a href="#mosc-tenant-import">§1c</a>.</li>
+            <li><strong>MOSC fast refresh (no schema rebuild):</strong> <code class="code-highlight">/SKIP-EXPORT /DATA-ONLY /IMPORT-DUP-ONLY /FORCE</code> — see <a href="#mosc-tenant-import">§1c</a>.</li>
+            <li><strong>Production RDS push (reuse export):</strong> <code class="code-highlight">/SKIP-EXPORT /REMOTE</code> — type <code class="code-highlight">PRODUCTION</code> when asked.</li>
+            <li><strong>Remote schema only:</strong> <code class="code-highlight">/SCHEMA-ONLY /REMOTE</code> — type <code class="code-highlight">PRODUCTION</code> when asked.</li>
+            <li><strong>Azure VM, known container:</strong> <code class="code-highlight">WORKSPACE_ROOT CONTAINER_ID /FORCE</code>.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="section-container output">
+        <div class="section-header output">📊 Prerequisites</div>
+        <ul>
+          <li><strong>Docker Desktop</strong> running with a Postgres container for local export (steps 0–1), unless you use <code class="code-highlight">/SKIP-EXPORT</code> with existing <code class="code-highlight">export.sql</code></li>
+          <li><strong>Node.js</strong> on <code class="code-highlight">PATH</code> (for reorder and PROD ID scripts)</li>
+          <li>For <code class="code-highlight">/REMOTE</code>: <strong>psql</strong> on <code class="code-highlight">PATH</code> <em>or</em> <strong>Docker Desktop</strong> (batch uses <code class="code-highlight">postgres:16</code> image automatically if psql is missing). RDS settings in <code class="code-highlight">mosc-temp\.env.local</code> — see <a href="#batch-remote-prod">§1b</a>.</li>
+          <li>Sequence sync uses <code class="code-highlight">malayalees-us-site-boot/src/main/resources/sqls/sync_sequence_after_inserts.sql</code> when present; otherwise the copy under <code class="code-highlight">code_html_template/SQLS/Current_Sqls/</code></li>
+        </ul>
+      </div>
+
+      <div class="info">
+        <strong>💡 Help:</strong> <code class="code-highlight">database_export_import_refresh.bat --help</code> prints usage and examples.
+        Batch file path: <code class="code-highlight">code_html_template/batch_files/database_export_import_refresh.bat</code>.
+      </div>
+    </section>
+
+    <section id="batch-remote-prod" aria-labelledby="h-batch-remote">
+      <h2 id="h-batch-remote">1b. Import into production PostgreSQL (/REMOTE)</h2>
+
+      <div class="section-intro">
+        <p>
+          By default, steps 5–7 target your <strong>local Docker</strong> Postgres. With <code class="code-highlight">/REMOTE</code>,
+          the batch file applies the schema, imports the <code class="code-highlight">corrected_event_media_inserts.ordered_PROD.sql</code> file,
+          and syncs sequences on your <strong>AWS RDS</strong> (or other remote Postgres) using the same variables already in
+          <code class="code-highlight">mosc-temp\.env.local</code>.
+        </p>
+        <p>
+          Steps 1–4 still run on your machine (export from Docker, reorder, PROD user-ID copy). Only the destructive apply/import/sync steps hit the remote database.
+        </p>
+      </div>
+
+      <div class="warning">
+        <strong>⚠️ Production safety:</strong> Remote mode rebuilds the entire schema and replaces data on the target database.
+        You must type <code class="code-highlight">PRODUCTION</code> at the confirmation prompt.
+        <code class="code-highlight">.env.local</code> is gitignored — never commit it.
+      </div>
+
+      <div class="section-container usage">
+        <div class="section-header usage">📋 Required variables in mosc-temp\.env.local</div>
+        <p>The batch file reads these keys (same names your app uses for RDS):</p>
+        <table>
+          <thead>
+            <tr><th>Key in .env.local</th><th>Maps to</th><th>Example</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>RDS_ENDPOINT</code></td><td>PostgreSQL host</td><td><code>your-db.region.rds.amazonaws.com</code></td></tr>
+            <tr><td><code>DB_NAME</code></td><td>Database name</td><td><code>event_site_manager_db</code></td></tr>
+            <tr><td><code>DB_USERNAME</code></td><td>PostgreSQL user</td><td><code>postgres</code></td></tr>
+            <tr><td><code>DB_PASSWORD</code></td><td>Password</td><td>(your RDS password)</td></tr>
+            <tr><td><code>DB_PORT</code></td><td>Optional — port</td><td><code>5432</code> (default if omitted)</td></tr>
+            <tr><td><code>DB_SSLMODE</code></td><td>Optional — SSL</td><td><code>require</code> (default for RDS)</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:1rem;">
+          <code class="code-highlight">/REMOTE</code> automatically enables <code class="code-highlight">/PROD</code> so step 6 imports
+          <code class="code-highlight">corrected_event_media_inserts.ordered_PROD.sql</code> (Clerk production user IDs).
+        </p>
+      </div>
+
+      <pre class="code-block"># mosc-temp/.env.local (already used by the app — gitignored)
+RDS_ENDPOINT=your-db.region.rds.amazonaws.com
+DB_NAME=event_site_manager_db
+DB_USERNAME=postgres
+DB_PASSWORD=your_password_here
+# Optional:
+# DB_PORT=5432
+# DB_SSLMODE=require</pre>
+
+      <div class="info">
+        <strong>💡 Fallback:</strong> If <code class="code-highlight">.env.local</code> is missing, the batch looks for
+        <code class="code-highlight">code_html_template/batch_files/database_target.local.env</code>
+        (copy from <code class="code-highlight">database_target.local.env.example</code>) with
+        <code class="code-highlight">DB_HOST</code>, <code class="code-highlight">DB_USER</code>, etc.
+        Passwords containing <code class="code-highlight">#</code> or other special characters are supported via PowerShell parsing.
+        If <code class="code-highlight">psql</code> is not installed on Windows, ensure <strong>Docker Desktop</strong> is running — the batch file runs
+        <code class="code-highlight">psql</code> inside a <code class="code-highlight">postgres:16</code> container to connect to RDS.
+        Passwords with <code class="code-highlight">#</code> in them are handled via a temp credential file (Docker <code class="code-highlight">--env-file</code> would truncate at <code class="code-highlight">#</code>).
+      </div>
+
+      <div class="command-block advance"
+           data-command-base="WORKSPACE_ROOT\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat WORKSPACE_ROOT /SKIP-EXPORT /REMOTE"
+           data-template-command="F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace /SKIP-EXPORT /REMOTE">
+        <div class="command-header">
+          <span class="command-type">Typical production run (reuse export, remote apply)</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'batch-remote')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'batch-remote')" title="Copy command" aria-label="Copy command">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-content" id="batch-remote">F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace /SKIP-EXPORT /REMOTE</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="batch-remote-single-code">F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace /SKIP-EXPORT /REMOTE</code>
+        </div>
+      </div>
+
+      <div class="section-container parameters">
+        <div class="section-header parameters">⚙️ Remote vs local behavior</div>
+        <table>
+          <thead>
+            <tr><th>Step</th><th>Local (default)</th><th>/REMOTE</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>0–1 Export</td><td>Docker <code>pg_dump</code></td><td>Same (or skip with <code>/SKIP-EXPORT</code>)</td></tr>
+            <tr><td>2–4 Prepare SQL</td><td>Node scripts on your PC</td><td>Same</td></tr>
+            <tr><td>5 Schema</td><td><code>docker exec … psql</code></td><td><code>psql -h … -f Latest_Schema…</code></td></tr>
+            <tr><td>6 Import</td><td>Docker <code>psql</code></td><td>Remote <code>psql</code> (+ auto <code>/PROD</code> file)</td></tr>
+            <tr><td>7 Sequences</td><td>Docker <code>psql</code></td><td>Remote <code>psql</code></td></tr>
+            <tr><td>Confirm</td><td><code>Y</code> or <code>YES</code></td><td><code>PRODUCTION</code> (required)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </section>
+
+    <!-- Section 1c: MOSC tenant duplicate import -->
+    <section id="mosc-tenant-import" aria-labelledby="h-mosc-import">
+      <h2 id="h-mosc-import">1c. MOSC tenant duplicate import (<code>mosc_malankara_orthodox_2</code>)</h2>
+
+      <div class="section-intro">
+        <p>
+          The default ordered import file seeds <code class="code-highlight">tenant_demo_002</code>. For the MOSC satellite site,
+          a <strong>duplicate tenant block</strong> copies demo data into
+          <code class="code-highlight">mosc_malankara_orthodox_2</code> with a <strong>+600000 ID offset</strong> so primary keys and
+          foreign keys stay unique. Six <code class="code-highlight">user_profile</code> rows (604101–610838) are included in the dup block.
+        </p>
+        <p>
+          <strong>Tenant ID:</strong> use <code class="code-highlight">mosc_malankara_orthodox_2</code> (ends in <code>_2</code>),
+          not <code class="code-highlight">mosc_malankara_orthodox_02</code>. Set
+          <code class="code-highlight">NEXT_PUBLIC_TENANT_ID=mosc_malankara_orthodox_2</code> in <code class="code-highlight">.env.local</code>
+          after import.
+        </p>
+      </div>
+
+      <div class="section-container usage">
+        <div class="section-header usage">📋 Key SQL files</div>
+        <table>
+          <thead>
+            <tr><th>File</th><th>Purpose</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>corrected_event_media_inserts.ordered.sql</code></td><td>Default import (tenant_demo_002 + base tenants)</td></tr>
+            <tr><td><code>corrected_event_media_inserts.ordered.mosc_malankara_orthodox_2.sql</code></td><td>Full custom import: base file + duplicated MOSC block</td></tr>
+            <tr><td><code>mosc_dup_only.sql</code></td><td>MOSC dup block only — fast refresh without schema rebuild</td></tr>
+            <tr><td><code>delete_mosc_tenant.sql</code></td><td>Removes MOSC tenant rows before re-import (FK-safe order)</td></tr>
+            <tr><td><code>verify_mosc_user_profiles.sql</code></td><td>Idempotent upsert for the six MOSC user profiles</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-container parameters">
+        <div class="section-header parameters">⚙️ Regenerate MOSC SQL (after source ordered file changes)</div>
+        <p>Run from repo root or use the helper batch file:</p>
+        <div class="command-block" data-command-base="F:\project_workspace\mosc-temp\code_html_template\batch_files\regenerate_mosc_tenant_sql.bat" data-template-command="F:\project_workspace\mosc-temp\code_html_template\batch_files\regenerate_mosc_tenant_sql.bat F:\project_workspace">
+          <div class="command-content">python scripts\duplicate_tenant_sql.py code_html_template\SQLS\corrected_event_media_inserts.ordered.sql code_html_template\SQLS\corrected_event_media_inserts.ordered.mosc_malankara_orthodox_2.sql
+node code_html_template\SQLS\patch_mosc_malankara_import_block.cjs
+python scripts\extract_dup_tenant_sql.py code_html_template\SQLS\corrected_event_media_inserts.ordered.mosc_malankara_orthodox_2.sql code_html_template\SQLS\mosc_dup_only.sql</div>
+        </div>
+        <p>
+          <code class="script-name">patch_mosc_malankara_import_block.cjs</code> removes stale base-section MOSC
+          <code class="code-highlight">user_profile</code> rows (old +500000 IDs), injects tenant org/settings/event types at the
+          start of the dup block, and sets unique domain <code class="code-highlight">mosc.in2</code>.
+        </p>
+      </div>
+
+      <div class="section-container output">
+        <div class="section-header output">✅ Workflow A — default ordered import (tenant_demo_002)</div>
+        <p>Standard local refresh; no MOSC-specific flags:</p>
+        <div class="command-block">
+          <div class="command-content">F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace /FORCE</div>
+        </div>
+        <p>Imports <code class="code-highlight">corrected_event_media_inserts.ordered.sql</code> after schema rebuild. Uses dev Clerk user IDs.</p>
+      </div>
+
+      <div class="section-container output">
+        <div class="section-header output">✅ Workflow B — full MOSC custom import (schema + all data)</div>
+        <p>Rebuilds schema, then imports the full MOSC file (base tenants + MOSC dup block):</p>
+        <div class="command-block">
+          <div class="command-content">F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace /REGEN-MOSC /SKIP-EXPORT /IMPORT-FILE "F:\project_workspace\mosc-temp\code_html_template\SQLS\corrected_event_media_inserts.ordered.mosc_malankara_orthodox_2.sql" /FORCE</div>
+        </div>
+        <p>
+          <code class="code-highlight">/REGEN-MOSC</code> runs duplicate + patch + extract before import.
+          Custom imports use strict <code class="code-highlight">ON_ERROR_STOP=1</code> (batch fails on first SQL error).
+        </p>
+      </div>
+
+      <div class="section-container output">
+        <div class="section-header output">✅ Workflow C — fast MOSC refresh (recommended for iteration)</div>
+        <p>Keeps schema and other tenants; replaces only MOSC tenant data:</p>
+        <div class="command-block">
+          <div class="command-content">F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace /REGEN-MOSC /SKIP-EXPORT /DATA-ONLY /IMPORT-DUP-ONLY /FORCE</div>
+        </div>
+        <p>
+          Steps: pre-clean (<code class="code-highlight">delete_mosc_tenant.sql</code>) → import
+          <code class="code-highlight">mosc_dup_only.sql</code> → sequence sync.
+          Equivalent to the PowerShell one-liners documented previously.
+        </p>
+      </div>
+
+      <div class="section-container parameters">
+        <div class="section-header parameters">🔍 Verify after import</div>
+        <div class="command-block">
+          <div class="command-content">python scripts\analyze_tenant_sql_coverage.py code_html_template\SQLS\corrected_event_media_inserts.ordered.mosc_malankara_orthodox_2.sql --db</div>
+        </div>
+        <p>
+          Expect matching row counts for <code class="code-highlight">event_details</code> (13),
+          <code class="code-highlight">gallery_album</code> (31),
+          <code class="code-highlight">executive_committee_team_members</code> (15),
+          <code class="code-highlight">event_media</code> (394), and
+          <code class="code-highlight">user_profile</code> (6).
+          <code class="code-highlight">batch_*</code> and <code class="code-highlight">satellite_domain</code> are intentionally skipped in the dup block.
+        </p>
+      </div>
+
+      <div class="warning" style="margin-top:1rem;">
+        <strong>Partial import recovery:</strong> If a previous import stopped mid-file (<code class="code-highlight">ON_ERROR_STOP=1</code>),
+        run <code class="code-highlight">delete_mosc_tenant.sql</code> before retrying. Do not re-import the dup block on top of orphan rows.
+      </div>
+    </section>
+
+    <!-- Section 2 -->
+    <section id="export" aria-labelledby="h-export">
+      <h2 id="h-export">2. Export data with pg_dump (Docker)</h2>
+
+      <div class="command-block setup" data-command-base="cd E:\project_workspace\mosc-temp\code_html_template\SQLS" data-template-command="cd E:\project_workspace\mosc-temp\code_html_template\SQLS">
+        <div class="command-header">
+          <span class="command-type">Step 1 — Navigate to SQLS folder</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cd-sqls')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'cd-sqls')" title="Copy command" aria-label="Copy command">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-content" id="cd-sqls">cd E:\project_workspace\mosc-temp\code_html_template\SQLS</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="cd-sqls-single-code">cd E:\project_workspace\mosc-temp\code_html_template\SQLS</code>
+        </div>
+      </div>
+
+      <div class="command-block verify" data-command-base="docker ps | findstr postgres" data-template-command="docker ps | findstr postgres">
+        <div class="command-header">
+          <span class="command-type">Step 2 — Find PostgreSQL container ID</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'docker-ps')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'docker-ps')" title="Copy command" aria-label="Copy command">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-content" id="docker-ps">docker ps | findstr postgres</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="docker-ps-single-code">docker ps | findstr postgres</code>
+        </div>
+      </div>
+
+      <div class="section-container parameters">
+        <div class="section-header parameters">⚙️ pg_dump parameters</div>
+        <table>
+          <thead>
+            <tr><th>Flag / argument</th><th>Value</th><th>Purpose</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>-U</code></td><td><code>event_site_admin</code></td><td>Database user</td></tr>
+            <tr><td><code>-d</code></td><td><code>event_site_manager_db</code></td><td>Database name</td></tr>
+            <tr><td><code>--data-only</code></td><td>—</td><td>Data rows only (no CREATE TABLE)</td></tr>
+            <tr><td><code>--column-inserts</code></td><td>—</td><td>Explicit column names in each INSERT</td></tr>
+            <tr><td>Output</td><td><code>export.sql</code></td><td>Input for reorder script</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Local development (example container ID)</h3>
+      <div class="command-block setup"
+           data-command-base="docker exec -it CONTAINER_ID pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts"
+           data-template-command="docker exec -it a6fb865ce8e0 pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts &gt; export.sql">
+        <div class="command-header">
+          <span class="command-type">Step 3 — Export (local Docker)</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'pgdump-local')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'pgdump-local')" title="Copy customized command" aria-label="Copy customized command">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-parameters">
+          <h5>🔧 Customize parameters:</h5>
+          <div class="parameter-group single">
+            <div class="parameter-input">
+              <label for="pgdump-local-container">Container ID:</label>
+              <input type="text" id="pgdump-local-container" placeholder="a6fb865ce8e0" value="a6fb865ce8e0" oninput="updatePgDump('pgdump-local', this.value)">
+            </div>
+          </div>
+        </div>
+        <div class="command-content" id="pgdump-local">docker exec -it a6fb865ce8e0 pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts &gt; export.sql</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="pgdump-local-single-code">docker exec -it a6fb865ce8e0 pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts &gt; export.sql</code>
+        </div>
+      </div>
+
+      <h3>Azure virtual desktop (example container ID)</h3>
+      <div class="command-block advance"
+           data-command-base="docker exec -it CONTAINER_ID pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts"
+           data-template-command="docker exec -it 752786b3431e pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts &gt; export.sql">
+        <div class="command-header">
+          <span class="command-type">Step 3 — Export (Azure VDI)</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'pgdump-azure')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'pgdump-azure')" title="Copy customized command" aria-label="Copy customized command">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-parameters">
+          <h5>🔧 Customize parameters:</h5>
+          <div class="parameter-group single">
+            <div class="parameter-input">
+              <label for="pgdump-azure-container">Container ID:</label>
+              <input type="text" id="pgdump-azure-container" placeholder="752786b3431e" value="752786b3431e" oninput="updatePgDump('pgdump-azure', this.value)">
+            </div>
+          </div>
+        </div>
+        <div class="command-content" id="pgdump-azure">docker exec -it 752786b3431e pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts &gt; export.sql</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="pgdump-azure-single-code">docker exec -it 752786b3431e pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts &gt; export.sql</code>
+        </div>
+      </div>
+
+      <div class="warning">
+        <strong>⚠️ Replace the container ID</strong> with the value from <code class="code-highlight">docker ps | findstr postgres</code>. Example IDs above are placeholders from prior environments.
+      </div>
+    </section>
+
+    <!-- Section 3 -->
+    <section id="reorder" aria-labelledby="h-reorder">
+      <h2 id="h-reorder">3. Reorder INSERT statements</h2>
+
+      <div class="section-intro">
+        <p>
+          The script <code class="script-name">reorder_sql_inserts_final.cjs</code> reads
+          <code class="code-highlight">export.sql</code> from the same folder and writes
+          <code class="code-highlight">corrected_event_media_inserts.ordered.sql</code> with tables
+          ordered for foreign-key dependencies (parents before children).
+        </p>
+      </div>
+
+      <div class="command-block expedite" data-command-base="cd E:\project_workspace\mosc-temp\code_html_template\SQLS" data-template-command="cd E:\project_workspace\mosc-temp\code_html_template\SQLS">
+        <div class="command-header">
+          <span class="command-type">Navigate to SQLS</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cd-reorder')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'cd-reorder')" title="Copy command" aria-label="Copy command">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-content" id="cd-reorder">cd E:\project_workspace\mosc-temp\code_html_template\SQLS</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="cd-reorder-single-code">cd E:\project_workspace\mosc-temp\code_html_template\SQLS</code>
+        </div>
+      </div>
+
+      <div class="command-block expedite" data-command-base="node reorder_sql_inserts_final.cjs" data-template-command="node reorder_sql_inserts_final.cjs">
+        <div class="command-header">
+          <span class="command-type">Run reorder script</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'node-reorder')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'node-reorder')" title="Copy command" aria-label="Copy command">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-content" id="node-reorder">node reorder_sql_inserts_final.cjs</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="node-reorder-single-code">node reorder_sql_inserts_final.cjs</code>
+        </div>
+      </div>
+
+      <div class="section-container output">
+        <div class="section-header output">📊 Expected console output</div>
+        <pre class="code-block">✅ Success! Output written to: ...\corrected_event_media_inserts.ordered.sql
+📊 Summary:
+   • Total INSERT statements: 2199
+   • Extra tables (not in order): none</pre>
+        <p>If <strong>Extra tables (not in order)</strong> is not <code class="code-highlight">none</code>, add those table names to <code class="code-highlight">TABLE_ORDER</code> in <code class="script-name">reorder_sql_inserts_final.cjs</code> (see <a href="#option-a">Section 10</a>).</p>
+        <p>For dense primary keys starting at <strong>1</strong> per table and a smaller Spring Batch footprint, continue with <a href="#renumber">Section 3a</a>.</p>
+      </div>
+    </section>
+
+    <!-- Section 3a -->
+    <section id="renumber" aria-labelledby="h-renumber">
+      <h2 id="h-renumber">3a. Renumber IDs and trim Spring Batch (optional)</h2>
+
+      <div class="section-intro">
+        <p>
+          After <a href="#reorder">reordering</a>, the ordered file may still contain <strong>high tenant-specific IDs</strong>
+          (for example MOSC <code class="code-highlight">event_type_details</code> at <code class="code-highlight">600001+</code>),
+          <strong>thousands of Spring Batch rows</strong> (<code class="code-highlight">batch_job_execution_params</code>,
+          <code class="code-highlight">batch_job_execution_log</code>), and FK values that reference those old IDs.
+          The script <code class="script-name">renumber_sql_insert_ids.cjs</code> produces a separate import file with
+          per-table IDs starting at <code class="code-highlight">1</code>, FK columns rewritten column-aware, and Spring Batch
+          trimmed to a small sample — without overwriting the canonical
+          <code class="code-highlight">corrected_event_media_inserts.ordered.sql</code> in <code class="code-highlight">SQLS/</code>.
+        </p>
+      </div>
+
+      <div class="section-container">
+        <div class="section-header">📁 Working folder</div>
+        <table>
+          <thead>
+            <tr><th>Path (under <code>code_html_template/SQLS/</code>)</th><th>Purpose</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>sequence_fix_inserts/corrected_event_media_inserts.ordered.sql</code></td><td>Input copy of the FK-ordered file (or pass <code>--input=</code>)</td></tr>
+            <tr><td><code>sequence_fix_inserts/renumber_sql_insert_ids.cjs</code></td><td>Renumber + FK rewrite + batch trim script</td></tr>
+            <tr><td><code>sequence_fix_inserts/corrected_event_media_inserts.renumbered.sql</code></td><td><strong>Output</strong> — use for import when you want IDs 1…N</td></tr>
+            <tr><td><code>sequence_fix_inserts/id-mapping-report.json</code></td><td>Per-table old→new ID map and FK warning count</td></tr>
+            <tr><td><code>Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></td><td>FK metadata for column-aware rewrites</td></tr>
+            <tr><td><code>Current_Sqls/sync_sequence_after_inserts.sql</code></td><td>Run after import (Step 7)</td></tr>
+            <tr><td><code>Current_Sqls/sync_spring_batch_sequences.sql</code></td><td>Run after import (Step 7b)</td></tr>
+            <tr><td><code>reorder_sql_inserts_final.cjs</code></td><td>Upstream reorder script (<code>TABLE_ORDER</code>)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="command-block expedite"
+           data-command-base="cd WORKSPACE\mosc-temp\code_html_template\SQLS\sequence_fix_inserts"
+           data-template-command="cd F:\project_workspace\mosc-temp\code_html_template\SQLS\sequence_fix_inserts">
+        <div class="command-header">
+          <span class="command-type">Navigate to sequence_fix_inserts</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cd-renumber')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'cd-renumber')" title="Copy command" aria-label="Copy command">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-content" id="cd-renumber">cd F:\project_workspace\mosc-temp\code_html_template\SQLS\sequence_fix_inserts</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="cd-renumber-single-code">cd F:\project_workspace\mosc-temp\code_html_template\SQLS\sequence_fix_inserts</code>
+        </div>
+      </div>
+
+      <div class="command-block expedite setup"
+           data-command-base="node renumber_sql_insert_ids.cjs"
+           data-template-command="node renumber_sql_insert_ids.cjs --batch-executions=3 --batch-logs=3">
+        <div class="command-header">
+          <span class="command-type">Run ID renumber script</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'node-renumber')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'node-renumber')" title="Copy customized command" aria-label="Copy customized command">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-parameters">
+          <h5>🔧 Optional flags:</h5>
+          <div class="parameter-group">
+            <div class="parameter-input">
+              <label for="renumber-input">--input=</label>
+              <input type="text" id="renumber-input" placeholder="path to ordered.sql" oninput="updateRenumberCommand()">
+            </div>
+            <div class="parameter-input">
+              <label for="renumber-output">--output=</label>
+              <input type="text" id="renumber-output" placeholder="path to .renumbered.sql" oninput="updateRenumberCommand()">
+            </div>
+          </div>
+          <div class="parameter-group">
+            <div class="parameter-input">
+              <label for="renumber-batch-exec">--batch-executions=</label>
+              <input type="text" id="renumber-batch-exec" value="3" oninput="updateRenumberCommand()">
+            </div>
+            <div class="parameter-input">
+              <label for="renumber-batch-logs">--batch-logs=</label>
+              <input type="text" id="renumber-batch-logs" value="3" oninput="updateRenumberCommand()">
+            </div>
+          </div>
+          <div class="parameter-group single">
+            <div class="parameter-input">
+              <label class="flag-checkbox">
+                <input type="checkbox" id="renumber-dry-run" onchange="updateRenumberCommand()">
+                <span><code class="code-highlight">--dry-run</code> (report only, no output file)</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="command-content" id="node-renumber">node renumber_sql_insert_ids.cjs --batch-executions=3 --batch-logs=3</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="node-renumber-single-code">node renumber_sql_insert_ids.cjs --batch-executions=3 --batch-logs=3</code>
+        </div>
+      </div>
+
+      <div class="section-container parameters">
+        <div class="section-header parameters">⚙️ What the script does</div>
+        <ol class="steps">
+          <li><strong>Parse</strong> every <code class="code-highlight">INSERT INTO public.&lt;table&gt;</code> (including multiline <code class="code-highlight">VALUES</code>).</li>
+          <li><strong>Trim Spring Batch:</strong> keep the first <code class="code-highlight">N</code> <code class="code-highlight">batch_job_execution</code> rows and cascade to instance, step, context, and params; keep the first <code class="code-highlight">N</code> <code class="code-highlight">batch_job_execution_log</code> rows (default <code class="code-highlight">N=3</code>).</li>
+          <li><strong>Pass 1 — PK map:</strong> assign each table’s primary key <code class="code-highlight">1, 2, 3, …</code> in encounter order (<code class="code-highlight">--start-id=1</code> default). Spring Batch uses <code class="code-highlight">job_instance_id</code>, <code class="code-highlight">job_execution_id</code>, <code class="code-highlight">step_execution_id</code> where applicable.</li>
+          <li><strong>Pass 2 — FK rewrite:</strong> update FK columns using schema <code class="code-highlight">FOREIGN KEY</code> metadata plus manual overrides (junction tables, batch chain, <code class="code-highlight">event_live_update.event_id</code>, etc.). Supports <code class="code-highlight">CREATE TABLE IF NOT EXISTS</code> in the schema file (promotion email tables).</li>
+          <li><strong>Orphan repair:</strong> synthetic aliases for demo event IDs (<code class="code-highlight">500001</code>–<code class="code-highlight">500003</code>); <code class="code-highlight">rel_event_details__discount_codes</code> rows with wrong <code class="code-highlight">event_details_id</code> are corrected via linked <code class="code-highlight">discount_code.event_id</code>.</li>
+          <li><strong>Write</strong> <code class="code-highlight">corrected_event_media_inserts.renumbered.sql</code> and <code class="code-highlight">id-mapping-report.json</code>.</li>
+        </ol>
+      </div>
+
+      <div class="section-container output">
+        <div class="section-header output">📊 Example console output (June 2026)</div>
+        <pre class="code-block">Parsed 4214 INSERT statement(s)
+Batch trim:
+  job_execution ids kept: 1, 2, 3
+  job_instance ids kept: 1, 2, 4
+  step_execution ids kept: 1, 2
+  batch_job_execution_log: 455 → 3
+  spring batch tables: 2079 → 22
+After batch trim: 1705 rows (removed 2509)
+FK warnings: 0
+Written: ...\corrected_event_media_inserts.renumbered.sql (1705 INSERTs)</pre>
+        <p>Sample renumber results: <code class="code-highlight">event_type_details</code> <code class="code-highlight">1–12</code> (was <code class="code-highlight">600001+</code> for MOSC tenant);
+          <code class="code-highlight">event_details</code> dense <code class="code-highlight">1–36</code>;
+          <code class="code-highlight">promotion_email_template.event_id</code> rewritten (e.g. <code class="code-highlight">600002</code> → <code class="code-highlight">17</code>).</p>
+      </div>
+
+      <div class="info">
+        <strong>💡 Import path:</strong> Use <code class="code-highlight">corrected_event_media_inserts.renumbered.sql</code> instead of the ordered file in
+        <a href="#import">Section 6</a> (or pass it to <code class="code-highlight">database_export_import_refresh.bat /IMPORT-FILE "…renumbered.sql"</code> with <code class="code-highlight">/SKIP-EXPORT</code>).
+        Then run <a href="#sequences">sequence sync</a> (Steps 7 and 7b). The canonical <code class="code-highlight">SQLS/corrected_event_media_inserts.ordered.sql</code> is <strong>not</strong> replaced until you validate import in Docker.
+      </div>
+
+      <div class="warning">
+        <strong>⚠️ Production Clerk IDs:</strong> Run <a href="#prod">Section 4</a> on the file you plan to import. If you renumber after PROD replacement, re-run
+        <code class="script-name">replace-user-profile-ids-in-sql.mjs</code> on the renumbered output, or renumber first then apply PROD mapping to
+        <code class="code-highlight">corrected_event_media_inserts.renumbered.sql</code> with <code class="code-highlight">--input</code> / <code class="code-highlight">--output</code> flags on that script.
+      </div>
+    </section>
+
+    <!-- Section 4 -->
+    <section id="prod" aria-labelledby="h-prod">
+      <h2 id="h-prod">4. Production user ID replacement</h2>
+
+      <div class="section-intro">
+        <p>
+          From the <strong>repository root</strong>, run
+          <code class="script-name">replace-user-profile-ids-in-sql.mjs</code>. It copies
+          <code class="code-highlight">corrected_event_media_inserts.ordered.sql</code> to
+          <code class="code-highlight">corrected_event_media_inserts.ordered_PROD.sql</code> and replaces
+          Clerk <code class="code-highlight">user_id</code> / <code class="code-highlight">clerk_user_id</code> values
+          in <code class="code-highlight">user_profile</code> INSERT lines only.
+        </p>
+      </div>
+
+      <div class="command-block advance" data-command-base="cd E:\project_workspace\mosc-temp" data-template-command="cd E:\project_workspace\mosc-temp">
+        <div class="command-header">
+          <span class="command-type">Navigate to repo root</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cd-root')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'cd-root')" title="Copy command" aria-label="Copy command">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-content" id="cd-root">cd E:\project_workspace\mosc-temp</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="cd-root-single-code">cd E:\project_workspace\mosc-temp</code>
+        </div>
+      </div>
+
+      <div class="command-block advance" data-command-base="node scripts/replace-user-profile-ids-in-sql.mjs" data-template-command="node scripts/replace-user-profile-ids-in-sql.mjs">
+        <div class="command-header">
+          <span class="command-type">Generate PROD SQL file</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'node-prod')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'node-prod')" title="Copy command" aria-label="Copy command">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-content" id="node-prod">node scripts/replace-user-profile-ids-in-sql.mjs</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="node-prod-single-code">node scripts/replace-user-profile-ids-in-sql.mjs</code>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>From (dev/staging Clerk ID)</th><th>To (production Clerk ID)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>user_2vVLxhPnsIPGYf6qpfozk383Slr</code></td><td><code>user_34rb3aLFAEudlfmG3xrDQIoX8Hg</code></td></tr>
+          <tr><td><code>user_38nbubO0LEVuh1coatR0Rh4MEEa</code></td><td><code>user_37qATlmYSakWtYH962TYumZT01k</code></td></tr>
+        </tbody>
+      </table>
+
+      <div class="info">
+        <strong>💡 Dry run:</strong> <code class="code-highlight">node scripts/replace-user-profile-ids-in-sql.mjs --dry-run</code> prints changed lines without writing files. Update mappings in the script when production Clerk IDs change.
+      </div>
+    </section>
+
+    <!-- Section 5 -->
+    <section id="pg-dump-comment" aria-labelledby="h-comment">
+      <h2 id="h-comment">5. Comment out pg_dump header lines</h2>
+      <div class="warning">
+        <strong>⚠️ Required before import in some clients:</strong> Generated files may contain lines starting with
+        <code class="code-highlight">pg_dump</code> (metadata comments). PostgreSQL will error if those run as SQL.
+      </div>
+      <ol class="steps">
+        <li>Open <code class="code-highlight">corrected_event_media_inserts.ordered.sql</code> (or the <code class="code-highlight">_PROD</code> variant) in your editor.</li>
+        <li><strong>Ctrl+H</strong> (Find and Replace).</li>
+        <li>Find: <code class="code-highlight">pg_dump</code></li>
+        <li>Replace: <code class="code-highlight">-- pg_dump</code></li>
+        <li>Replace all (review matches so you do not comment legitimate data values).</li>
+      </ol>
+    </section>
+
+    <!-- Section 6 -->
+    <section id="import" aria-labelledby="h-import">
+      <h2 id="h-import">6. Import the SQL file</h2>
+
+      <div class="section-container">
+        <div class="section-header">Prerequisites</div>
+        <ul>
+          <li>Target database has schema applied (empty tables).</li>
+          <li>Import into a <strong>truncated or fresh</strong> database to avoid duplicate primary-key errors.</li>
+          <li>For circular FK warnings on <code class="code-highlight">user_profile</code> / <code class="code-highlight">event_details</code>, consider wrapping import with:
+            <code class="code-highlight">SET session_replication_role = 'replica';</code> … import … <code class="code-highlight">SET session_replication_role = 'origin';</code>
+          </li>
+        </ul>
+      </div>
+
+      <div class="command-block verify"
+           data-command-base="docker exec -i CONTAINER_ID psql -U event_site_admin -d event_site_manager_db"
+           data-template-command="docker exec -i a6fb865ce8e0 psql -U event_site_admin -d event_site_manager_db &lt; corrected_event_media_inserts.ordered.sql">
+        <div class="command-header">
+          <span class="command-type">Import via psql (recommended)</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'psql-import')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'psql-import')" title="Copy customized command" aria-label="Copy customized command">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-parameters">
+          <h5>🔧 Customize parameters:</h5>
+          <div class="parameter-group single">
+            <div class="parameter-input">
+              <label for="psql-import-container">Container ID:</label>
+              <input type="text" id="psql-import-container" value="a6fb865ce8e0" oninput="updatePsqlImport('psql-import', this.value)">
+            </div>
+          </div>
+        </div>
+        <div class="command-content" id="psql-import">docker exec -i a6fb865ce8e0 psql -U event_site_admin -d event_site_manager_db &lt; corrected_event_media_inserts.ordered.sql</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="psql-import-single-code">docker exec -i a6fb865ce8e0 psql -U event_site_admin -d event_site_manager_db &lt; corrected_event_media_inserts.ordered.sql</code>
+        </div>
+      </div>
+
+      <div class="info">
+        <strong>DBeaver:</strong> Open the SQL file, set statement delimiter to <code class="code-highlight">;</code>, enable <strong>continue on error</strong> if available, and execute against an empty schema. Stopping on the first FK error leaves later tables empty.
+      </div>
+    </section>
+
+    <!-- Section 7 -->
+    <section id="sequences" aria-labelledby="h-seq">
+      <h2 id="h-seq">7. Sync sequences after import</h2>
+
+      <div class="section-intro">
+        <p>
+          After manual INSERTs with explicit IDs, PostgreSQL sequences may still point at low values.
+          Run <code class="code-highlight">sync_sequence_after_inserts.sql</code> so the next auto-generated
+          primary key starts above the highest imported ID (typically <code class="code-highlight">MAX(id) + 50</code>).
+          If you imported Spring Batch rows (including the trimmed set from
+          <a href="#renumber">§3a</a>), also run <code class="code-highlight">sync_spring_batch_sequences.sql</code>.
+        </p>
+      </div>
+
+      <p>Canonical paths:</p>
+      <ul>
+        <li><code class="code-highlight">code_html_template/SQLS/Current_Sqls/sync_sequence_after_inserts.sql</code> (this repo)</li>
+        <li><code class="code-highlight">code_html_template/SQLS/Current_Sqls/sync_spring_batch_sequences.sql</code> (Spring Batch <code class="code-highlight">batch_job_seq</code>, <code class="code-highlight">batch_job_execution_seq</code>, <code class="code-highlight">batch_step_execution_seq</code>)</li>
+        <li><code class="code-highlight">E:\project_workspace\malayalees-us-site-boot\src\main\resources\sqls\sync_sequence_after_inserts.sql</code> (backend boot project)</li>
+      </ul>
+
+      <div class="section-container output">
+        <div class="section-header output">📊 Run order</div>
+        <ol class="steps">
+          <li>Apply schema SQL</li>
+          <li>Run ordered or <a href="#renumber">renumbered</a> INSERT file</li>
+          <li>Run <code class="code-highlight">sync_sequence_after_inserts.sql</code> in the same database</li>
+          <li>Run <code class="code-highlight">sync_spring_batch_sequences.sql</code> (Step 7b in <code class="script-name">database_export_import_refresh.bat</code>)</li>
+        </ol>
+      </div>
+
+      <div class="info">
+        <strong>Renumbered imports:</strong> When IDs start at <code class="code-highlight">1</code> per table, sequence sync still sets each
+        <code class="code-highlight">sequence_generator</code> entry above the imported max. Spring Batch sequences must be synced separately —
+        <code class="code-highlight">batch_job_execution</code> is not driven by <code class="code-highlight">sequence_generator</code>.
+      </div>
+    </section>
+
+    <!-- Section 8 -->
+    <section id="analysis" aria-labelledby="h-analysis">
+      <h2 id="h-analysis">8. File integrity analysis (is the ordered SQL corrupted?)</h2>
+
+      <div class="success">
+        <strong>Conclusion:</strong> <code class="code-highlight">corrected_event_media_inserts.ordered.sql</code> is
+        <strong>not corrupted</strong>. Partial row counts after DBeaver import are explained by import order,
+        client error handling, and target DB state — not file damage.
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>Check</th><th>Result</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Valid INSERT statements</td><td>2199 (semicolon-terminated)</td></tr>
+          <tr><td>Malformed INSERT / unbalanced quotes</td><td>0</td></tr>
+          <tr><td>Multiline INSERTs</td><td>273 (valid PostgreSQL)</td></tr>
+          <tr><td>Key table counts vs <code>export.sql</code></td><td>Match (e.g. <code>user_profile</code> 14, <code>official_document_category</code> 45, <code>event_media</code> 98)</td></tr>
+          <tr><td>Encoding notes</td><td>Some <code>event_details</code> description text shows mojibake in display; SQL syntax remains valid</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Section 9 -->
+    <section id="troubleshooting" aria-labelledby="h-trouble">
+      <h2 id="h-trouble">9. Troubleshooting partial imports</h2>
+
+      <table>
+        <thead>
+          <tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Some tables have fewer rows than export</td>
+            <td>Tables were in <strong>“extra tables”</strong> block at EOF (wrong FK order) before script fix</td>
+            <td>Regenerate with updated <code class="script-name">reorder_sql_inserts_final.cjs</code>; confirm <code class="code-highlight">Extra tables: none</code></td>
+          </tr>
+          <tr>
+            <td>Import stops mid-file</td>
+            <td>DBeaver stops on first error (FK violation, duplicate PK)</td>
+            <td>Use <code class="code-highlight">psql</code>, continue-on-error, or fix order; start from empty DB</td>
+          </tr>
+          <tr>
+            <td><code>official_document_year_bundle</code> empty</td>
+            <td>Was ~line 6182 before fix; child rows failed first</td>
+            <td>Now ~line 339 (after <code>official_document_category</code>)</td>
+          </tr>
+          <tr>
+            <td>Spring Batch tables incomplete</td>
+            <td><code>batch_job_instance</code> etc. were after thousands of log rows</td>
+            <td>Batch chain now ordered: instance → execution → context → params → step → step_context → log</td>
+          </tr>
+          <tr>
+            <td>Duplicate key on re-import</td>
+            <td>Target DB not empty</td>
+            <td>Truncate tables or use fresh schema before import</td>
+          </tr>
+          <tr>
+            <td>High IDs / huge Spring Batch section after import</td>
+            <td>Ordered file preserves export PKs and full batch history</td>
+            <td>Use <a href="#renumber">§3a</a> <code class="code-highlight">renumber_sql_insert_ids.cjs</code>; import <code class="code-highlight">.renumbered.sql</code></td>
+          </tr>
+          <tr>
+            <td>FK errors on <code>promotion_email_*</code> after renumber</td>
+            <td>Schema parser missed <code>IF NOT EXISTS</code> tables (fixed June 2026)</td>
+            <td>Re-run latest <code class="script-name">renumber_sql_insert_ids.cjs</code>; confirm <code class="code-highlight">FK warnings: 0</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="info">
+        <strong>Alternative import options:</strong>
+        <ul>
+          <li><strong>Option B:</strong> <code class="code-highlight">psql -v ON_ERROR_STOP=0</code> to log errors and continue</li>
+          <li><strong>Option C:</strong> DBeaver — delimiter <code class="code-highlight">;</code>, continue on error, empty target</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Section 10 -->
+    <section id="option-a" aria-labelledby="h-option-a">
+      <h2 id="h-option-a">10. Option A — reorder script fix (implemented)</h2>
+
+      <div class="section-intro">
+        <p>
+          <strong>Option A (best long-term):</strong> Extend <code class="code-highlight">TABLE_ORDER</code> in
+          <code class="script-name">reorder_sql_inserts_final.cjs</code> so every table from <code class="code-highlight">export.sql</code>
+          appears in FK-safe order. Tables not listed previously were appended near the end of the file, breaking dependency order.
+        </p>
+      </div>
+
+      <h3>Tables added to TABLE_ORDER (March 2026)</h3>
+      <table>
+        <thead>
+          <tr><th>Table</th><th>Placement</th><th>Approx. line after regenerate</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>official_document_year_bundle</code></td><td>After <code>official_document_category</code>, before <code>event_media</code></td><td>~339</td></tr>
+          <tr><td><code>focus_group_members</code></td><td>After <code>focus_group</code></td><td>~1089</td></tr>
+          <tr><td><code>event_focus_groups</code></td><td>After <code>focus_group_members</code></td><td>~1091</td></tr>
+          <tr><td><code>membership_subscription</code></td><td>After <code>membership_plan</code></td><td>~1103</td></tr>
+          <tr><td><code>manual_payment_summary_report</code></td><td>After <code>manual_payment_request</code></td><td>—</td></tr>
+          <tr><td><code>batch_job_instance</code></td><td>Start of Spring Batch chain</td><td>~1209</td></tr>
+          <tr><td><code>batch_job_execution</code></td><td>After instance</td><td>—</td></tr>
+          <tr><td><code>batch_job_execution_context</code></td><td>After execution</td><td>—</td></tr>
+          <tr><td><code>batch_job_execution_params</code></td><td>After context</td><td>—</td></tr>
+          <tr><td><code>batch_step_execution</code></td><td>After params</td><td>—</td></tr>
+          <tr><td><code>batch_step_execution_context</code></td><td>After step execution</td><td>—</td></tr>
+          <tr><td><code>batch_job_execution_log</code></td><td>After step context (unchanged position in chain)</td><td>—</td></tr>
+        </tbody>
+      </table>
+
+      <div class="success">
+        <strong>Verification:</strong> After running <code class="code-highlight">node reorder_sql_inserts_final.cjs</code>,
+        console reports <code class="code-highlight">Extra tables (not in order): none</code> and all 62 tables from
+        <code class="code-highlight">export.sql</code> are explicitly ordered.
+      </div>
+
+      <div class="warning">
+        <strong>When exports add new tables:</strong> Re-run the reorder script and check the summary line. Any new
+        table name listed under “Extra tables” must be inserted into <code class="code-highlight">TABLE_ORDER</code>
+        before its dependent child tables.
+      </div>
+    </section>
+
+    <!-- Section 11 -->
+    <section id="renumber-detail" aria-labelledby="h-renumber-detail">
+      <h2 id="h-renumber-detail">11. Sequence fix — files, FK repair, and verification</h2>
+
+      <div class="section-intro">
+        <p>
+          This section consolidates the <strong>ordering + sequence correction</strong> work (March–June 2026): extending
+          <code class="code-highlight">TABLE_ORDER</code> for FK-safe reorder, fixing
+          <code class="code-highlight">sync_sequence_after_inserts.sql</code>, adding Spring Batch sequence sync to the
+          refresh batch file, and building <code class="script-name">renumber_sql_insert_ids.cjs</code> for dense IDs and
+          smaller batch imports.
+        </p>
+      </div>
+
+      <h3>End-to-end pipeline</h3>
+      <pre class="code-block">export.sql
+  → reorder_sql_inserts_final.cjs     (FK table order)
+  → corrected_event_media_inserts.ordered.sql
+  → [optional] renumber_sql_insert_ids.cjs  (PK 1..N, FK rewrite, batch trim)
+  → corrected_event_media_inserts.renumbered.sql
+  → [optional] replace-user-profile-ids-in-sql.mjs  (PROD Clerk IDs)
+  → import → sync_sequence_after_inserts.sql → sync_spring_batch_sequences.sql</pre>
+
+      <div class="section-container usage">
+        <div class="section-header usage">📋 Related source files in mosc-temp</div>
+        <table>
+          <thead>
+            <tr><th>Area</th><th>File</th><th>Role</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Reorder</td><td><code>code_html_template/SQLS/reorder_sql_inserts_final.cjs</code></td><td>Canonical reorder script; <code>TABLE_ORDER</code> lists 62+ tables</td></tr>
+            <tr><td>Reorder (legacy)</td><td><code>code_html_template/SQLS/reorder_sql_*.cjs</code></td><td>Older iterations — use <code class="script-name">reorder_sql_inserts_final.cjs</code> only</td></tr>
+            <tr><td>Sequence fix</td><td><code>code_html_template/SQLS/sequence_fix_inserts/renumber_sql_insert_ids.cjs</code></td><td>PK/FK renumber + batch trim</td></tr>
+            <tr><td>Import SQL (canonical)</td><td><code>code_html_template/SQLS/corrected_event_media_inserts.ordered.sql</code></td><td>Default batch import target</td></tr>
+            <tr><td>Import SQL (renumbered)</td><td><code>code_html_template/SQLS/sequence_fix_inserts/corrected_event_media_inserts.renumbered.sql</code></td><td>Optional; IDs from 1 per table</td></tr>
+            <tr><td>ID report</td><td><code>code_html_template/SQLS/sequence_fix_inserts/id-mapping-report.json</code></td><td>Audit old→new maps; <code>fkWarningCount</code> should be 0</td></tr>
+            <tr><td>Schema</td><td><code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></td><td>FK definitions for renumber script</td></tr>
+            <tr><td>Sequences</td><td><code>code_html_template/SQLS/Current_Sqls/sync_sequence_after_inserts.sql</code></td><td><code>sequence_generator</code> after import</td></tr>
+            <tr><td>Sequences</td><td><code>code_html_template/SQLS/Current_Sqls/sync_spring_batch_sequences.sql</code></td><td>Spring Batch sequences after import</td></tr>
+            <tr><td>Sequences (copy)</td><td><code>code_html_template/SQLS/INSERTS/sync_sequence_after_inserts.sql</code></td><td>Duplicate/alternate copy</td></tr>
+            <tr><td>Batch automation</td><td><code>code_html_template/batch_files/database_export_import_refresh.bat</code></td><td>Steps 1–7b; pass <code>/IMPORT-FILE</code> for renumbered SQL</td></tr>
+            <tr><td>PROD IDs</td><td><code>scripts/replace-user-profile-ids-in-sql.mjs</code></td><td>Clerk user ID swap in <code>user_profile</code> INSERTs</td></tr>
+            <tr><td>Markdown guide</td><td><code>documentation/INSERT_TABLE_BULK_SQL_REORDERING_AND_PG_DUMP_GUIDE.md</code></td><td>Earlier reorder + pg_dump reference</td></tr>
+            <tr><td>This guide</td><td><code>documentation/database_export_import/DATABASE_EXPORT_IMPORT_GUIDE.html</code></td><td>Full export → reorder → renumber → import workflow</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Problems addressed</h3>
+      <table>
+        <thead>
+          <tr><th>Problem</th><th>Solution</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Tables appended at EOF (“extra tables”) broke FK order on import</td>
+            <td>Extended <code>TABLE_ORDER</code> in <code class="script-name">reorder_sql_inserts_final.cjs</code> — see <a href="#option-a">§10</a></td>
+          </tr>
+          <tr>
+            <td>MOSC tenant rows used high IDs (<code>600001+</code>); sequences out of sync after import</td>
+            <td><code class="script-name">renumber_sql_insert_ids.cjs</code> + <code class="code-highlight">sync_sequence_after_inserts.sql</code></td>
+          </tr>
+          <tr>
+            <td>~2,000+ Spring Batch INSERTs bloated import; wrong batch table order</td>
+            <td>Batch trim (first 3 executions + logs); <code>TABLE_ORDER</code> batch chain; <code class="code-highlight">sync_spring_batch_sequences.sql</code></td>
+          </tr>
+          <tr>
+            <td>Promotion tables (<code>CREATE TABLE IF NOT EXISTS</code>) missed by FK parser</td>
+            <td>Schema regex updated in renumber script to parse <code>IF NOT EXISTS</code> blocks</td>
+          </tr>
+          <tr>
+            <td>Bad source FKs (<code>event_details_id=4101</code>, demo <code>event_id=500001</code>)</td>
+            <td>Discount-code linkage repair + synthetic event ID aliases in renumber script</td>
+          </tr>
+          <tr>
+            <td><code>batch_job_execution</code> incorrectly in <code>sequence_generator</code> sync</td>
+            <td>Removed from <code class="code-highlight">sync_sequence_after_inserts.sql</code>; use dedicated Spring Batch sync</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Verification checklist</h3>
+      <div class="section-container output">
+        <div class="section-header output">✅ After renumber</div>
+        <ol class="steps">
+          <li>Console shows <code class="code-highlight">FK warnings: 0</code>.</li>
+          <li><code class="code-highlight">id-mapping-report.json</code> has <code class="code-highlight">"fkWarningCount": 0</code> and expected row counts per table.</li>
+          <li>Spot-check: <code class="code-highlight">event_type_details</code> starts at <code class="code-highlight">id=1</code>; no <code class="code-highlight">600001</code> in PK columns.</li>
+          <li>Spot-check: <code class="code-highlight">promotion_email_template.event_id</code> matches renumbered <code class="code-highlight">event_details.id</code>.</li>
+          <li>Import into empty Docker DB; run Steps 7 + 7b; create a new row via the app to confirm no duplicate-key errors.</li>
+        </ol>
+      </div>
+
+      <div class="command-block verify"
+           data-command-base="node renumber_sql_insert_ids.cjs --dry-run"
+           data-template-command="node renumber_sql_insert_ids.cjs --dry-run --batch-executions=3 --batch-logs=3">
+        <div class="command-header">
+          <span class="command-type">Dry-run renumber (no file write)</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'renumber-dry')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'renumber-dry')" title="Copy command" aria-label="Copy command">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-content" id="renumber-dry">node renumber_sql_insert_ids.cjs --dry-run --batch-executions=3 --batch-logs=3</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="renumber-dry-single-code">node renumber_sql_insert_ids.cjs --dry-run --batch-executions=3 --batch-logs=3</code>
+        </div>
+      </div>
+    </section>
+
+    <footer class="doc-footer">
+      <p>Last updated: June 2026 · MOSC event_site_manager_db export/import workflow</p>
+      <p>See also: <code class="code-highlight">documentation/INSERT_TABLE_BULK_SQL_REORDERING_AND_PG_DUMP_GUIDE.md</code> ·
+        <code class="code-highlight">code_html_template/SQLS/sequence_fix_inserts/</code> ·
+        <a href="SEQUENCE_ID_ALIGNMENT_GUIDE.html">SEQUENCE_ID_ALIGNMENT_GUIDE.html</a></p>
+    </footer>
+  </main>
+
+  <script>
+    function fallbackCopy(text, button) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        button.classList.add('copied');
+        const orig = button.textContent;
+        button.textContent = '✓ Copied!';
+        setTimeout(function () {
+          button.classList.remove('copied');
+          button.textContent = orig;
+        }, 2000);
+      } catch (e) {
+        console.error('Copy failed', e);
+      }
+      document.body.removeChild(ta);
+    }
+
+    function copyCommand(button, commandId) {
+      const el = document.getElementById(commandId);
+      if (!el) return;
+      const text = el.textContent.trim().replace(/&gt;/g, '>').replace(/&lt;/g, '<');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          button.classList.add('copied');
+          const orig = button.textContent;
+          button.textContent = '✓ Copied!';
+          setTimeout(function () {
+            button.classList.remove('copied');
+            button.textContent = orig;
+          }, 2000);
+        }).catch(function () { fallbackCopy(text, button); });
+      } else {
+        fallbackCopy(text, button);
+      }
+    }
+
+    function copyTemplateCommand(button, commandId) {
+      const block = button.closest('.command-block');
+      if (!block) return;
+      let text = block.getAttribute('data-template-command') || '';
+      text = text.replace(/&quot;/g, '"').replace(/&gt;/g, '>').replace(/&lt;/g, '<');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          button.classList.add('copied');
+          const orig = button.textContent;
+          button.textContent = '✓ Copied!';
+          setTimeout(function () {
+            button.classList.remove('copied');
+            button.textContent = orig;
+          }, 2000);
+        }).catch(function () { fallbackCopy(text, button); });
+      } else {
+        fallbackCopy(text, button);
+      }
+    }
+
+    function updatePgDump(commandId, containerId) {
+      const id = (containerId || 'CONTAINER_ID').trim();
+      const cmd = 'docker exec -it ' + id + ' pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts > export.sql';
+      const el = document.getElementById(commandId);
+      const single = document.getElementById(commandId + '-single-code');
+      if (el) el.textContent = cmd;
+      if (single) single.textContent = cmd;
+    }
+
+    function updatePsqlImport(commandId, containerId) {
+      const id = (containerId || 'CONTAINER_ID').trim();
+      const cmd = 'docker exec -i ' + id + ' psql -U event_site_admin -d event_site_manager_db < corrected_event_media_inserts.ordered.sql';
+      const el = document.getElementById(commandId);
+      const single = document.getElementById(commandId + '-single-code');
+      if (el) el.textContent = cmd;
+      if (single) single.textContent = cmd;
+    }
+
+    function onImportFileBrowse(commandId, picker) {
+      const file = picker.files && picker.files[0];
+      if (!file) return;
+      const wsInput = document.getElementById(commandId + '-workspace');
+      const ws = (wsInput && wsInput.value.trim()) || 'F:\\project_workspace';
+      const defaultDir = ws + '\\mosc-temp\\code_html_template\\SQLS\\';
+      let path = picker.value || file.name;
+      if (path.indexOf('fakepath') !== -1 || !/^[A-Za-z]:\\/.test(path)) {
+        path = defaultDir + file.name;
+      }
+      const pathInput = document.getElementById(commandId + '-import-file');
+      if (pathInput) pathInput.value = path;
+      updateBatchRefresh(commandId);
+      picker.value = '';
+    }
+
+    function updateBatchRefresh(commandId) {
+      const wsInput = document.getElementById(commandId + '-workspace');
+      const containerInput = document.getElementById(commandId + '-container');
+      const importFileInput = document.getElementById(commandId + '-import-file');
+      const ws = (wsInput && wsInput.value.trim()) || 'F:\\project_workspace';
+      const container = containerInput ? containerInput.value.trim() : '';
+      const importFile = importFileInput ? importFileInput.value.trim() : '';
+      const flags = [];
+      const forceEl = document.getElementById(commandId + '-flag-force');
+      const prodEl = document.getElementById(commandId + '-flag-prod');
+      const skipEl = document.getElementById(commandId + '-flag-skip-export');
+      const remoteEl = document.getElementById(commandId + '-flag-remote');
+      const schemaOnlyEl = document.getElementById(commandId + '-flag-schema-only');
+      if (forceEl && forceEl.checked) flags.push('/FORCE');
+      if (prodEl && prodEl.checked) flags.push('/PROD');
+      if (skipEl && skipEl.checked) flags.push('/SKIP-EXPORT');
+      if (remoteEl && remoteEl.checked) flags.push('/REMOTE');
+      if (schemaOnlyEl && schemaOnlyEl.checked) flags.push('/SCHEMA-ONLY');
+      const bat = ws + '\\mosc-temp\\code_html_template\\batch_files\\database_export_import_refresh.bat';
+      let cmd = bat + ' ' + ws;
+      if (container) cmd += ' ' + container;
+      if (importFile && !(schemaOnlyEl && schemaOnlyEl.checked)) {
+        cmd += ' /IMPORT-FILE "' + importFile.replace(/"/g, '') + '"';
+      }
+      if (flags.length) cmd += ' ' + flags.join(' ');
+      const el = document.getElementById(commandId);
+      const single = document.getElementById(commandId + '-single-code');
+      if (el) el.textContent = cmd;
+      if (single) single.textContent = cmd;
+    }
+
+    function updateRenumberCommand() {
+      const parts = ['node renumber_sql_insert_ids.cjs'];
+      const input = document.getElementById('renumber-input');
+      const output = document.getElementById('renumber-output');
+      const batchExec = document.getElementById('renumber-batch-exec');
+      const batchLogs = document.getElementById('renumber-batch-logs');
+      const dryRun = document.getElementById('renumber-dry-run');
+      if (input && input.value.trim()) parts.push('--input=' + input.value.trim());
+      if (output && output.value.trim()) parts.push('--output=' + output.value.trim());
+      if (batchExec && batchExec.value.trim()) parts.push('--batch-executions=' + batchExec.value.trim());
+      else parts.push('--batch-executions=3');
+      if (batchLogs && batchLogs.value.trim()) parts.push('--batch-logs=' + batchLogs.value.trim());
+      else parts.push('--batch-logs=3');
+      if (dryRun && dryRun.checked) parts.push('--dry-run');
+      const cmd = parts.join(' ');
+      const el = document.getElementById('node-renumber');
+      const single = document.getElementById('node-renumber-single-code');
+      if (el) el.textContent = cmd;
+      if (single) single.textContent = cmd;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      updateBatchRefresh('batch-full');
+      updateRenumberCommand();
+    });
+  </script>
+</body>
+</html>

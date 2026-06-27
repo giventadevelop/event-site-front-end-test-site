@@ -1,0 +1,53 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+- **References:**
+  - See `src/components/EventList.tsx` for a reference implementation.
+  - See `src/app/admin/page.tsx` for the logic that fetches the data and passes props.
+
+- **Confirmation Modal Standards**
+  - **Component Structure:** Use the `Modal` component as the base. The content should be centered and include a clear question, the name of the item being acted upon, and a warning that the action is irreversible.
+  - **Button Styling:**
+    - The primary, destructive action (e.g., "Confirm Delete") should have a red background (`bg-red-500`) to signify a warning.
+    - The "Cancel" button should use the standard, non-destructive teal style (`bg-teal-100`).
+    - Both buttons should include icons (`FaTrashAlt`, `FaTimes`) for better visual communication.
+  - **State Management:**
+    - Use a state variable (e.g., `deletingItem`) to hold the object to be deleted. This also controls the modal's visibility.
+    - Set this state variable to `null` to close the modal.
+  - **Example Implementation:**
+    ```tsx
+    // State to manage the modal
+    const [deletingTicketType, setDeletingTicketType] = useState<EventTicketTypeDTO | null>(null);
+
+    // JSX for the modal
+    {deletingTicketType && (
+      <Modal open={!!deletingTicketType} onClose={() => setDeletingTicketType(null)} title="Confirm Deletion">
+        <div className="text-center">
+          <p className="text-lg">
+            Are you sure you want to delete the ticket type: <strong>{deletingTicketType.name}</strong>?
+          </p>
+          <p className="text-sm text-gray-500 mt-2">This action cannot be undone.</p>
+          <div className="mt-6 flex justify-center gap-4">
+            <button
+              onClick={() => setDeletingTicketType(null)}
+              className="bg-teal-100 hover:bg-teal-200 text-teal-800 px-4 py-2 rounded-md flex items-center gap-2"
+              disabled={isPending}
+            >
+              <FaTimes /> Cancel
+            </button>
+            <button
+              onClick={confirmDelete}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md flex items-center gap-2"
+              disabled={isPending}
+            >
+              <FaTrashAlt /> {isPending ? 'Deleting...' : 'Confirm Delete'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+    )}
+    ```
+  - **References:**
+    - See `src/app/admin/events/[id]/ticket-types/list/TicketTypeListClient.tsx` for a reference implementation.

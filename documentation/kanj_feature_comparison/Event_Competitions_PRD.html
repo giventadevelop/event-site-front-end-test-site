@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Product Requirements Document: Event Competitions — generic multi-competition events (youth, adult, mixed) with registrations and published winners.">
+    <title>Event Competitions — PRD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px 20px 48px;
+            background: #fff;
+        }
+        h1 {
+            font-size: 2.1em;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 12px;
+            margin-bottom: 8px;
+        }
+        .doc-meta {
+            color: #555;
+            font-size: 0.95em;
+            margin-bottom: 20px;
+        }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 {
+            font-size: 1.55em;
+            border-left: 4px solid #0066cc;
+            padding-left: 14px;
+            margin-top: 32px;
+            margin-bottom: 14px;
+        }
+        h3 { font-size: 1.2em; color: #333; margin-top: 18px; margin-bottom: 10px; }
+        h4 { font-size: 1.05em; color: #444; margin-top: 14px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        li { margin-bottom: 8px; }
+        a { color: #0066cc; }
+        a:focus { outline: 2px solid #0066cc; outline-offset: 2px; }
+
+        .lead {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 18px 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.08);
+        }
+
+        .toc {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 24px 0;
+        }
+        .toc h2 { margin-top: 0; border: none; padding: 0; font-size: 1.25em; }
+        .toc ul { margin: 12px 0 0 20px; }
+        .toc a { font-weight: 600; }
+
+        .section-container {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 22px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-container.usage {
+            background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%);
+            border-left-color: #7b1fa2;
+        }
+        .section-container.parameters {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left-color: #ff9800;
+        }
+        .section-container.output {
+            background: linear-gradient(135deg, #e6ffe6 0%, #ccffcc 100%);
+            border-left-color: #28a745;
+        }
+        .section-container.gap {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left-color: #e65100;
+        }
+        .section-container.schema {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+            border-left-color: #0066cc;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            padding: 12px 20px;
+            margin: -20px -20px 18px -20px;
+            border-radius: 8px 8px 0 0;
+            font-size: 1.15em;
+            font-weight: bold;
+        }
+        .section-container.usage .section-header {
+            background: linear-gradient(135deg, #7b1fa2 0%, #6a1b9a 100%);
+        }
+        .section-container.parameters .section-header {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+        .section-container.output .section-header {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+        }
+        .section-container.gap .section-header {
+            background: linear-gradient(135deg, #e65100 0%, #bf360c 100%);
+        }
+        .section-container.schema .section-header {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 14px 0;
+            font-size: 0.92em;
+            background: #fff;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+        thead th {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: #fff;
+            text-align: left;
+            padding: 12px 14px;
+            font-weight: 600;
+        }
+        tbody td {
+            padding: 11px 14px;
+            border-bottom: 1px solid #e0e8f0;
+            vertical-align: top;
+        }
+        tbody tr:hover { background: #f5faff; }
+        tbody tr:last-child td { border-bottom: none; }
+
+        code, .code-inline {
+            background: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 7px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: Consolas, 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        pre, .pre-block {
+            background: #e8f4f8;
+            color: #0d3b66;
+            border: 1px solid #b8d4e3;
+            padding: 14px 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: Consolas, 'Courier New', monospace;
+            font-size: 0.85em;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin: 12px 0;
+        }
+
+        .info-box {
+            background: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            padding: 14px 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+            font-size: 0.95em;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 14px 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+            font-size: 0.95em;
+        }
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 14px 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+            font-size: 0.95em;
+        }
+
+        .companion {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 14px 18px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .mermaid-note {
+            font-size: 0.9em;
+            color: #555;
+            font-style: italic;
+            margin: 8px 0 14px;
+        }
+
+        .file-checklist { list-style: none; margin-left: 0; padding: 0; }
+        .file-checklist li {
+            padding: 8px 12px 8px 28px;
+            margin-bottom: 6px;
+            background: #fff;
+            border-radius: 6px;
+            border: 1px solid #e0e8f0;
+            position: relative;
+        }
+        .file-checklist li::before {
+            content: "☐";
+            position: absolute;
+            left: 8px;
+            color: #0066cc;
+        }
+
+        .prompt-block {
+            border: 1px solid #b8d4e3;
+            border-radius: 8px;
+            margin: 14px 0;
+            overflow: hidden;
+        }
+        .prompt-block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: #e8f4f8;
+            border-bottom: 1px solid #b8d4e3;
+        }
+        .prompt-block-body {
+            padding: 14px;
+            white-space: pre-wrap;
+            font-size: 0.9em;
+            line-height: 1.5;
+            background: #fff;
+        }
+        .copy-button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        .copy-button:hover { background: #0052a3; }
+        .copy-button.copied { background: #28a745; }
+    </style>
+</head>
+<body>
+
+    <h1>Event Competitions — Product Requirements Document</h1>
+    <p class="doc-meta">
+        <strong>Version:</strong> 2.0 &nbsp;|&nbsp;
+        <strong>Status:</strong> Draft for review &nbsp;|&nbsp;
+        <strong>Document date:</strong> May 21, 2026<br>
+        <strong>Reference site:</strong> <a href="https://www.kanj.org/kgt-26" target="_blank" rel="noopener noreferrer">KANJ KGT'26 — Youth Festival</a><br>
+        <strong>Target stack:</strong> Next.js 15 App Router, Rust backend API, Clerk auth, Stripe (optional), multi-tenant (<code class="code-inline">tenant_id</code>)
+    </p>
+
+    <div class="companion" style="background: #d4edda; border-left-color: #28a745; margin-top: 16px;">
+        <p><strong>Layer-specific PRDs (recommended for implementation):</strong> This file remains the full single-document reference. For engineering by codebase, use the split docs in <a href="event_competitions/generic_prd.html"><code>event_competitions/</code></a>:</p>
+        <ul>
+            <li><a href="event_competitions/generic_prd.html">generic_prd.html</a> — index, phases, open questions</li>
+            <li><a href="event_competitions/database_schema_prd.html">database_schema_prd.html</a> — PostgreSQL DDL (<code>Latest_Schema_Post__Blob_Claude_12.sql</code>)</li>
+            <li><a href="event_competitions/backend_prd.html">backend_prd.html</a> — <code>malayalees-us-site-boot</code> (JHipster REST, Liquibase)</li>
+            <li><a href="event_competitions/frontend_prd.html">frontend_prd.html</a> — <code>mosc-temp-poc-1</code> (proxy, pages, Stripe webhook)</li>
+            <li><a href="event_competitions/batch_job_prd.html">batch_job_prd.html</a> — <code>event-site-manager-batch-jobs</code> (optional P4 emails)</li>
+        </ul>
+    </div>
+
+    <div class="lead">
+        <p><strong>Purpose:</strong> Define optional <strong>Event Competitions</strong> on any <code class="code-inline">event_details</code> record: competition catalog, registrations (YOUTH parent/child, ADULT self, or MIXED), fees, and <strong>published winners</strong> (placement, prizes, photos). <a href="https://www.kanj.org/kgt-26" target="_blank" rel="noopener noreferrer">KANJ KGT</a> is documented as a <strong>YOUTH preset</strong> in §2b—not the product name.</p>
+        <p><strong>Non-breaking rule:</strong> <code class="code-inline">is_competition_event = false</code> by default; all existing events keep ticket types and Stripe checkout unchanged.</p>
+    </div>
+
+    <div class="companion">
+        <p><strong>Related documentation:</strong></p>
+        <ul>
+            <li><a href="KANJ_vs_OurSite_Comparison.html">KANJ_vs_OurSite_Comparison.html</a> — general KANJ vs our platform</li>
+            <li><a href="KANJ_vs_OurSite_Analysis.md">KANJ_vs_OurSite_Analysis.md</a> — extended markdown analysis</li>
+            <li><a href="../event_sports_arts_competition/Event_Sports_Arts_Competition_Results_Feature_Requirements.html">Event Sports &amp; Arts Competition Results</a> — separate sports/arts results on events (orthogonal feature)</li>
+        </ul>
+    </div>
+
+    <nav class="toc" aria-label="Table of contents">
+        <h2>Contents</h2>
+        <ul>
+            <li><a href="#executive-summary">1. Executive summary</a></li>
+            <li><a href="#audience-modes">2. Audience modes</a></li>
+            <li><a href="#kgt-youth-preset">2b. KGT youth preset (KANJ reference)</a></li>
+            <li><a href="#current-baseline">3. Current application baseline</a></li>
+            <li><a href="#user-roles">4. User roles and stories</a></li>
+            <li><a href="#functional-requirements">5. Functional requirements</a></li>
+            <li><a href="#data-model">6. Data model (tables &amp; ERD)</a></li>
+            <li><a href="#api-layer">7. API and proxy layer</a></li>
+            <li><a href="#dtos">8. TypeScript DTOs</a></li>
+            <li><a href="#pages-routes">9. Pages and routes</a></li>
+            <li><a href="#components">10. Components</a></li>
+            <li><a href="#integration">11. Integration &amp; compatibility</a></li>
+            <li><a href="#phases">12. Implementation phases</a></li>
+            <li><a href="#open-questions">13. Open questions</a></li>
+            <li><a href="#appendix">14. Appendix</a></li>
+        </ul>
+    </nav>
+
+    <!-- 1. Executive summary -->
+    <h2 id="executive-summary">1. Executive summary</h2>
+
+    <div class="section-container usage">
+        <div class="section-header">Problem and solution</div>
+        <p>Organizations run events with <strong>one or many competitions</strong>—youth festivals (parents register children), adult talent nights (competitors register themselves), or <strong>mixed</strong> programs. After judging, organizers publish <strong>winners</strong> with placement, prize details, and photos.</p>
+        <p>Our platform supports <strong>ticket types</strong>, Stripe checkout, and optional <code class="code-inline">isSportsEvent</code> scorecards. It does <strong>not</strong> support a competition catalog, participant profiles, structured registrations, or rich published winners.</p>
+        <p><strong>Proposed solution:</strong> <code class="code-inline">is_competition_event</code> on <code class="code-inline">event_details</code> plus <code class="code-inline">event_competition_*</code> tables, REST APIs, routes under <code class="code-inline">/events/[id]/competitions/</code>, and <code class="code-inline">audience_mode</code> (YOUTH | ADULT | MIXED) on settings.</p>
+    </div>
+
+    <div class="section-container parameters">
+        <div class="section-header">Scope</div>
+        <h4>In scope (v1 PRD)</h4>
+        <ul>
+            <li>Admin: enable competition mode; <code class="code-inline">audience_mode</code>; days/venues; deadline; results with prizes/photos</li>
+            <li>Admin: CRUD competition catalog (individual/group, fees, capacity)</li>
+            <li>Guardian (YOUTH/MIXED): child participants; register; pay; view registrations</li>
+            <li>Competitor (ADULT/MIXED): self-registration; view own registrations</li>
+            <li>Public: hub, schedule, rules, winners board + gallery</li>
+        </ul>
+        <h4>Out of scope (v1 suggestions)</h4>
+        <ul>
+            <li>Full duplicate of KANJ Wix member portal</li>
+            <li>Automated soundtrack upload workflow (email-only per KANJ today)</li>
+            <li>Judge scoring app / live tabulation</li>
+            <li>Waitlist and lottery when capacity exceeded (phase 4)</li>
+        </ul>
+    </div>
+
+    <h2 id="audience-modes">2. Audience modes</h2>
+    <div class="section-container usage">
+        <div class="section-header">event_competition_settings.audience_mode</div>
+        <table>
+            <thead><tr><th scope="col">Mode</th><th scope="col">Registration actor</th><th scope="col">Participant</th></tr></thead>
+            <tbody>
+                <tr><td><strong>YOUTH</strong></td><td>Parent/guardian</td><td><code class="code-inline">participant_type = CHILD</code></td></tr>
+                <tr><td><strong>ADULT</strong></td><td>Competitor (self)</td><td><code class="code-inline">participant_type = ADULT</code></td></tr>
+                <tr><td><strong>MIXED</strong></td><td>Both flows</td><td>Child + adult; per-competition <code class="code-inline">eligible_audience</code></td></tr>
+            </tbody>
+        </table>
+        <p>UI branches: when <code class="code-inline">audience_mode !== YOUTH</code>, hide child-only forms; when <code class="code-inline">YOUTH</code>, show guardian consent and grade fields. See <a href="event_competitions/frontend_prd.html">frontend PRD</a> <code class="code-inline">RegistrationWizard</code>.</p>
+    </div>
+
+    <!-- 2b. KGT youth preset -->
+    <h2 id="kgt-youth-preset">2b. KGT youth preset (KANJ reference)</h2>
+
+    <div class="section-container">
+        <div class="section-header">Sources</div>
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">URL</th>
+                    <th scope="col">Content used in this PRD</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><a href="https://www.kanj.org/kgt-26" target="_blank" rel="noopener noreferrer">kanj.org/kgt-26</a></td>
+                    <td>Festival name, two festival days, two venues, Parent Portal registration, deadline Feb 22, 2026 (may close early)</td>
+                </tr>
+                <tr>
+                    <td><a href="https://www.kanj.org/youth-festival-rules-regulations" target="_blank" rel="noopener noreferrer">Rules &amp; regulations</a></td>
+                    <td>Categories 1–4 by grade, pricing, group rules, points, champion rules, conduct/disclaimer</td>
+                </tr>
+                <tr>
+                    <td><a href="https://www.kanj.org/youth-festival-event-guidelines-temp" target="_blank" rel="noopener noreferrer">Event guidelines</a></td>
+                    <td>Competition list, solo vs group, time limits, judgment criteria weights</td>
+                </tr>
+                <tr>
+                    <td><a href="https://www.kanj.org/youth-festival-schedule" target="_blank" rel="noopener noreferrer">Schedule</a></td>
+                    <td>Published as images on KANJ; PRD recommends structured schedule + optional PDF/image attachment</td>
+                </tr>
+                <tr>
+                    <td><a href="https://www.kanj.org/youth-festival-faq" target="_blank" rel="noopener noreferrer">FAQ</a></td>
+                    <td>Parent-facing Q&amp;A pattern (content blocks in our app)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section-container">
+        <div class="section-header">KGT'26 landing page (May 2026 scrape)</div>
+        <table>
+            <thead>
+                <tr><th scope="col">Element</th><th scope="col">Detail</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Event name</strong></td><td>KGT'26 — KANJ Youth Festival</td></tr>
+                <tr><td><strong>Day 1</strong></td><td>March 14, 2026 — Cedar Hill Preparatory School, 152 Cedar Grove Ln, Somerset, NJ 08873</td></tr>
+                <tr><td><strong>Day 2</strong></td><td>March 22, 2026 — Franklin Middle School</td></tr>
+                <tr><td><strong>Registration</strong></td><td>Via <strong>Parent Portal</strong> (authenticated parents); deadline February 22, 2026; may close earlier based on volume</td></tr>
+                <tr><td><strong>Walk-ins</strong></td><td>Not allowed</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section-container parameters">
+        <div class="section-header">Grade categories (KANJ pattern)</div>
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Category</th>
+                    <th scope="col">Grade range</th>
+                    <th scope="col">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Category 1</td><td>1st – 3rd grade</td><td>Based on current school grade</td></tr>
+                <tr><td>Category 2</td><td>4th – 6th grade</td><td></td></tr>
+                <tr><td>Category 3</td><td>7th – 10th grade</td><td></td></tr>
+                <tr><td>Category 4</td><td>11th grade and above</td><td>No upper age limit on KANJ rules text</td></tr>
+            </tbody>
+        </table>
+        <p>Events are <strong>gender-neutral</strong> (all participants compete together). False category representation leads to disqualification.</p>
+    </div>
+
+    <div class="section-container parameters">
+        <div class="section-header">Registration and pricing (KANJ)</div>
+        <ul>
+            <li><strong>Individual events:</strong> $15 per event per child</li>
+            <li><strong>Group events:</strong> $15 per participant; group leader registers and pays; organizer collects member names separately</li>
+            <li><strong>Group size:</strong> minimum 3, maximum 10 participants</li>
+            <li><strong>Group category:</strong> determined by the <strong>highest</strong> category among members (e.g. mix of Cat 1–3 → group competes as Cat 3)</li>
+            <li><strong>One category per participant</strong> for individual track; group may assign different effective category</li>
+            <li><strong>Minimum participants:</strong> event/category may be cancelled if fewer than 3 registrations</li>
+        </ul>
+    </div>
+
+    <div class="section-container output">
+        <div class="section-header">Results and awards (KANJ)</div>
+        <table>
+            <thead>
+                <tr><th scope="col">Placement</th><th scope="col">Points</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>1st place</td><td>5</td></tr>
+                <tr><td>2nd place</td><td>3</td></tr>
+                <tr><td>3rd place</td><td>1</td></tr>
+            </tbody>
+        </table>
+        <p><strong>KANJ Got Talent Champion:</strong> highest total points in Categories 1–3 (male or female); <strong>group event points do not count</strong> toward champion award.</p>
+    </div>
+
+    <div class="section-container">
+        <div class="section-header">Sample competition catalog (from KANJ guidelines)</div>
+        <p>Representative sub-events to seed admin catalog (not exhaustive):</p>
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Competition</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Track</th>
+                    <th scope="col">Time limit (min)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Cinematic Dance</td><td>Solo</td><td>Performing Arts</td><td>6</td></tr>
+                <tr><td>Cinematic Dance — Group</td><td>Group</td><td>Performing Arts</td><td>6</td></tr>
+                <tr><td>Classical Dance (Bharatanatyam / Mohiniyattam)</td><td>Solo</td><td>Performing Arts</td><td>5</td></tr>
+                <tr><td>Classical Dance — Group</td><td>Group</td><td>Performing Arts</td><td>6</td></tr>
+                <tr><td>Classical Music</td><td>Solo</td><td>Performing Arts</td><td>6</td></tr>
+                <tr><td>Indian / Light Music</td><td>Solo</td><td>Performing Arts</td><td>5</td></tr>
+                <tr><td>Instrumental Music (String / Wind)</td><td>Solo</td><td>Performing Arts</td><td>3</td></tr>
+                <tr><td>Painting — Watercolor</td><td>Solo</td><td>Arts &amp; Literary</td><td>60</td></tr>
+                <tr><td>Creative — KANJ Got Talent</td><td>Solo</td><td>Performing Arts</td><td>4</td></tr>
+                <tr><td>Folk Dance (Nadodi Nritham)</td><td>Solo</td><td>Performing Arts</td><td>5</td></tr>
+            </tbody>
+        </table>
+        <p>Judgment criteria (e.g. choreography 40%, execution 30%, overall 20%, time 10%) can be stored in <code class="code-inline">event_competition.judgment_criteria_json</code> for display only in v1.</p>
+    </div>
+
+    <div class="section-container usage">
+        <div class="section-header">Target user flows (our application)</div>
+        <p class="mermaid-note">Flow diagram (conceptual):</p>
+        <pre class="pre-block">PUBLIC PARENT FLOW
+  Festival landing (/events/{id}/competitions)
+    → Sign in (Clerk) if registering
+    → Add/select child profiles
+    → Browse competitions (filter by day, category, type)
+    → Add to registration cart
+    → Review + pay (Stripe) or confirm ($0)
+    → Confirmation + "My registrations"
+
+PUBLIC ANONYMOUS
+  View schedule, rules, published results (no PII)
+
+ADMIN FLOW
+  Enable is_competition_event on event
+    → Configure festival days &amp; settings
+    → CRUD competitions
+    → Monitor registrations / export
+    → Enter results → Publish results</pre>
+    </div>
+
+    <!-- 3. Current baseline -->
+    <h2 id="current-baseline">3. Current application baseline</h2>
+
+    <div class="section-container schema">
+        <div class="section-header">Existing event model</div>
+        <p>From <code class="code-inline">EventDetailsDTO</code> (<code class="code-inline">src/types/index.ts</code>) and <code class="code-inline">EventForm.tsx</code>:</p>
+        <table>
+            <thead>
+                <tr><th scope="col">Capability</th><th scope="col">Today</th><th scope="col">Competition event</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Event CRUD</td><td>Admin <code class="code-inline">EventForm</code></td><td>+ <code class="code-inline">isCompetitionEvent</code> checkbox</td></tr>
+                <tr><td>Registration</td><td>Ticket types → cart → Stripe → QR ticket</td><td><strong>Separate</strong> competition registration cart (no ticket types)</td></tr>
+                <tr><td><code class="code-inline">isSportsEvent</code></td><td>Team sports scorecards</td><td>Orthogonal; keep separate</td></tr>
+                <tr><td>Arts results doc</td><td>Planned <code class="code-inline">event_arts_competition_result</code></td><td>Use <code class="code-inline">event_competition_result</code> for multi-competition festivals</td></tr>
+                <tr><td>Auth</td><td>Clerk + <code class="code-inline">user_profile</code></td><td>Parent = logged-in user</td></tr>
+                <tr><td>Multi-tenant</td><td><code class="code-inline">tenant_id</code> on entities</td><td>All new tables include <code class="code-inline">tenant_id</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="warning-box">
+        <strong>Critical:</strong> Do not overload <code class="code-inline">event_ticket_type</code> for competition slots. Ticket inventory and competition capacity are different concepts.
+    </div>
+
+    <!-- 4. User roles -->
+    <h2 id="user-roles">4. User roles and stories</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">Role</th>
+                <th scope="col">User stories</th>
+                <th scope="col">Auth</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Guardian / parent</strong></td>
+                <td>YOUTH or MIXED: child profiles; register children; pay; view family registrations; view published winners</td>
+                <td>Clerk for registration</td>
+            </tr>
+            <tr>
+                <td><strong>Competitor</strong></td>
+                <td>ADULT or MIXED: self-register; pay; view own registrations</td>
+                <td>Clerk for registration</td>
+            </tr>
+            <tr>
+                <td><strong>Team captain</strong></td>
+                <td>GROUP competitions: register team; pay; manage member list</td>
+                <td>Clerk</td>
+            </tr>
+            <tr>
+                <td><strong>Admin</strong></td>
+                <td>
+                    <ul>
+                        <li>Enable Event Competitions on an event</li>
+                        <li>Define festival days (date, venue)</li>
+                        <li>CRUD competitions (fees, capacity, category, type)</li>
+                        <li>List/filter/export registrations</li>
+                        <li>Enter placements and points; publish/unpublish results</li>
+                        <li>Configure champion rules and registration deadline</li>
+                    </ul>
+                </td>
+                <td>Admin role via <code class="code-inline">user_profile.user_role</code></td>
+            </tr>
+            <tr>
+                <td><strong>Public visitor</strong></td>
+                <td>Read schedule, rules, published results without seeing other families' PII</td>
+                <td>Public routes in middleware</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- 5. Functional requirements -->
+    <h2 id="functional-requirements">5. Functional requirements</h2>
+
+    <h3 id="fr-event-flag">5.1 Event classification</h3>
+    <div class="section-container">
+        <div class="section-header">FR-1 — Event Competitions flag</div>
+        <ul>
+            <li><strong>FR-1.1:</strong> Add <code class="code-inline">is_competition_event</code> (boolean, default <code class="code-inline">false</code>) on <code class="code-inline">event_details</code>.</li>
+            <li><strong>FR-1.2:</strong> Admin toggles flag in event create/edit form (alongside existing <code class="code-inline">isSportsEvent</code>).</li>
+            <li><strong>FR-1.3:</strong> When <code class="code-inline">true</code>, public event page shows prominent <strong>Event Competitions</strong> entry (hub link, register CTA).</li>
+            <li><strong>FR-1.4:</strong> When <code class="code-inline">true</code>, standard ticket purchase UI is hidden or secondary (configurable: <code class="code-inline">event_competition_settings.allow_ticket_sales</code> default false).</li>
+        </ul>
+    </div>
+
+    <h3 id="fr-days">5.2 Festival days (multi-venue)</h3>
+    <div class="section-container">
+        <div class="section-header">FR-2 — Festival days</div>
+        <ul>
+            <li><strong>FR-2.1:</strong> Admin can add 1..n festival days per event: label (e.g. "Day 1"), date, venue name, address, sort order, optional notes.</li>
+            <li><strong>FR-2.2:</strong> Public hub displays all days with venue details (KGT'26 two-location pattern).</li>
+            <li><strong>FR-2.3:</strong> Competitions may optionally link to a festival day and optional start/end time for schedule grid.</li>
+        </ul>
+    </div>
+
+    <h3 id="fr-competitions">5.3 Competition catalog</h3>
+    <div class="section-container parameters">
+        <div class="section-header">FR-3 — Competitions</div>
+        <table>
+            <thead>
+                <tr><th scope="col">Field</th><th scope="col">Required</th><th scope="col">Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code class="code-inline">name</code></td><td>Yes</td><td>Display name (e.g. "Classical Dance — Group")</td></tr>
+                <tr><td><code class="code-inline">description</code></td><td>No</td><td>Rich text / markdown</td></tr>
+                <tr><td><code class="code-inline">competition_type</code></td><td>Yes</td><td><code class="code-inline">INDIVIDUAL</code> | <code class="code-inline">GROUP</code></td></tr>
+                <tr><td><code class="code-inline">category_code</code></td><td>Yes</td><td><code class="code-inline">CAT_1</code> … <code class="code-inline">CAT_4</code> or min/max grade</td></tr>
+                <tr><td><code class="code-inline">track</code></td><td>No</td><td>e.g. PERFORMING_ARTS, ARTS_LITERARY</td></tr>
+                <tr><td><code class="code-inline">fee_amount</code></td><td>Yes</td><td>Decimal; 0.00 allowed</td></tr>
+                <tr><td><code class="code-inline">max_participants</code></td><td>No</td><td>Capacity; null = unlimited</td></tr>
+                <tr><td><code class="code-inline">min_group_size</code> / <code class="code-inline">max_group_size</code></td><td>Group only</td><td>Default 3 / 10 per KANJ</td></tr>
+                <tr><td><code class="code-inline">time_limit_minutes</code></td><td>No</td><td>For schedule display</td></tr>
+                <tr><td><code class="code-inline">requires_soundtrack</code></td><td>No</td><td>Flag; instructions in content block</td></tr>
+                <tr><td><code class="code-inline">is_active</code></td><td>Yes</td><td>Hide from catalog when false</td></tr>
+                <tr><td><code class="code-inline">display_order</code></td><td>No</td><td>Sort in UI</td></tr>
+                <tr><td><code class="code-inline">judgment_criteria_json</code></td><td>No</td><td>JSON for public guidelines page</td></tr>
+            </tbody>
+        </table>
+        <p><strong>FR-3.1:</strong> Group category resolution: effective category = max category among registered children in group (configurable in settings).</p>
+    </div>
+
+    <h3 id="fr-participants">5.4 Participant profiles</h3>
+    <div class="section-container">
+        <div class="section-header">FR-4 — event_competition_participant</div>
+        <ul>
+            <li><strong>FR-4.1 (YOUTH):</strong> Guardian creates multiple <code class="code-inline">CHILD</code> participants linked to <code class="code-inline">guardian_user_profile_id</code>.</li>
+            <li><strong>FR-4.2 (ADULT):</strong> Competitor creates or reuses one <code class="code-inline">ADULT</code> self-linked participant (or uses <code class="code-inline">user_profile</code> directly per implementation).</li>
+            <li><strong>FR-4.3:</strong> Fields: name, optional DOB; grade/school for YOUTH; <code class="code-inline">division_label</code> / age bracket for ADULT.</li>
+            <li><strong>FR-4.4:</strong> Deactivate only; no hard-delete if registrations exist.</li>
+            <li><strong>FR-4.5:</strong> Public site never lists full PII; use <code class="code-inline">display_name</code> on results per privacy setting.</li>
+        </ul>
+    </div>
+
+    <h3 id="fr-registration">5.5 Registration</h3>
+    <div class="section-container parameters">
+        <div class="section-header">FR-5 — Registration workflow</div>
+        <ul>
+            <li><strong>FR-5.1:</strong> Registration cart separate from ticket cart; line items = (participant, competition) pairs.</li>
+            <li><strong>FR-5.1b:</strong> Branch wizard by <code class="code-inline">audience_mode</code>: YOUTH = parent + children; ADULT = self (+ team members for GROUP); MIXED = both.</li>
+            <li><strong>FR-5.2:</strong> Enforce global registration deadline from <code class="code-inline">event_competition_settings.registration_deadline</code>.</li>
+            <li><strong>FR-5.3:</strong> Enforce per-competition capacity (<code class="code-inline">max_participants</code>).</li>
+            <li><strong>FR-5.4:</strong> Prevent duplicate registration: same child + same competition.</li>
+            <li><strong>FR-5.5:</strong> Validate child grade/category against competition category rules (with admin override flag optional).</li>
+            <li><strong>FR-5.6:</strong> Group registration: one "group leader" registration record + <code class="code-inline">event_competition_group_member</code> rows for each child.</li>
+            <li><strong>FR-5.7:</strong> Status workflow: <code class="code-inline">PENDING_PAYMENT</code> → <code class="code-inline">CONFIRMED</code> | <code class="code-inline">CANCELLED</code>.</li>
+            <li><strong>FR-5.8:</strong> Payment: Stripe metadata <code class="code-inline">registrationType: event_competition</code>, <code class="code-inline">competitionRegistrationIds</code>; or admin confirm with $0.</li>
+            <li><strong>FR-5.9:</strong> No walk-in registrations (UI + API reject after deadline).</li>
+        </ul>
+    </div>
+
+    <h3 id="fr-results">5.6 Results and published winners</h3>
+    <div class="section-container output">
+        <div class="section-header">FR-6 — event_competition_result</div>
+        <ul>
+            <li><strong>FR-6.1:</strong> Admin enters results per competition: <code class="code-inline">participant_profile_id</code> (or group), <code class="code-inline">display_name</code>, <code class="code-inline">placement</code> (1/2/3+), optional <code class="code-inline">placement_label</code>, <code class="code-inline">points_awarded</code>, notes.</li>
+            <li><strong>FR-6.2:</strong> <code class="code-inline">prize_title</code>, <code class="code-inline">prize_details</code> for public winner cards.</li>
+            <li><strong>FR-6.3:</strong> Winner photo via <code class="code-inline">winner_media_id</code> (FK <code class="code-inline">event_medias</code>) and/or <code class="code-inline">winner_photo_url</code> — same admin upload pattern as event gallery.</li>
+            <li><strong>FR-6.4:</strong> Publish: <code class="code-inline">is_published</code>, <code class="code-inline">published_at</code>; public route <code class="code-inline">/events/[id]/competitions/winners</code>.</li>
+            <li><strong>FR-6.5:</strong> Public <strong>winners board</strong>: cards with photo, name (per <code class="code-inline">results_display_mode</code>), placement, prize; optional <strong>winners gallery</strong> grid for 1st place.</li>
+            <li><strong>FR-6.6:</strong> Optional champion rollup when enabled (YOUTH: exclude group points per KGT preset).</li>
+            <li><strong>FR-6.7:</strong> Privacy: stricter default for YOUTH (initials vs full name). See <a href="../event_sports_arts_competition/Event_Sports_Arts_Competition_Results_Feature_Requirements.html">Sports/Arts Results</a> for orthogonal <code class="code-inline">is_sports_event</code> scorecards.</li>
+        </ul>
+    </div>
+
+    <h3 id="fr-content">5.7 Festival content (CMS-lite)</h3>
+    <div class="section-container">
+        <div class="section-header">FR-7 — Content blocks</div>
+        <ul>
+            <li><strong>FR-7.1:</strong> Event-scoped content blocks: <code class="code-inline">RULES</code>, <code class="code-inline">FAQ</code>, <code class="code-inline">GUIDELINES</code>, <code class="code-inline">DISCLAIMER</code> (markdown/HTML).</li>
+            <li><strong>FR-7.2:</strong> Optional schedule PDF URL or image URL (KANJ uses images today).</li>
+            <li><strong>FR-7.3:</strong> Eligibility text configurable per tenant/event (KANJ: Kerala origin, tristate, Malayalee parent).</li>
+        </ul>
+    </div>
+
+    <!-- 6. Data model -->
+    <h2 id="data-model">6. Data model (tables &amp; ERD)</h2>
+
+    <div class="section-container schema">
+        <div class="section-header">Entity relationship (conceptual)</div>
+        <pre class="pre-block">event_details (1) ──&lt; (N) event_competition_day
+event_details (1) ──&lt; (1) event_competition_settings
+event_details (1) ──&lt; (N) event_competition
+event_details (1) ──&lt; (N) event_competition_content_block
+
+user_profile (1) ──&lt; (N) event_competition_participant
+
+event_competition_participant (1) ──&lt; (N) event_competition_registration
+event_competition (1) ──&lt; (N) event_competition_registration
+event_competition_registration (1) ──&lt; (N) event_competition_group_member  [GROUP only]
+
+event_competition (1) ──&lt; (N) event_competition_result
+event_competition_participant (1) ──&lt; (N) event_competition_result  [INDIVIDUAL]
+event_competition_registration (1) ──&lt; (0..1) event_competition_result  [GROUP]</pre>
+    </div>
+
+    <h3>6.1 Alter existing table</h3>
+    <div class="section-container schema">
+        <div class="section-header">event_details</div>
+<pre>ALTER TABLE public.event_details
+    ADD COLUMN is_competition_event boolean DEFAULT false NOT NULL;
+
+COMMENT ON COLUMN public.event_details.is_competition_event IS
+    'When true, event uses Event Competitions registration flow (child profiles + competitions), not default ticket checkout.';
+
+CREATE INDEX idx_event_details__is_competition_event
+    ON public.event_details(is_competition_event)
+    WHERE is_competition_event = true;</pre>
+    </div>
+
+    <h3>6.2 New tables (SQL sketches)</h3>
+
+    <div class="section-container schema">
+        <div class="section-header">event_competition_settings (1:1 per event)</div>
+<pre>CREATE TABLE public.event_competition_settings (
+    id                  BIGSERIAL PRIMARY KEY,
+    tenant_id           VARCHAR(64) NOT NULL,
+    event_id            BIGINT NOT NULL UNIQUE,
+    audience_mode       VARCHAR(20) DEFAULT 'YOUTH' NOT NULL,
+    registration_mode   VARCHAR(32) DEFAULT 'PARENT_CHILD' NOT NULL,
+    registration_deadline TIMESTAMPTZ,
+    registration_open   BOOLEAN DEFAULT true NOT NULL,
+    allow_ticket_sales  BOOLEAN DEFAULT false NOT NULL,
+    points_first        INT DEFAULT 5 NOT NULL,
+    points_second       INT DEFAULT 3 NOT NULL,
+    points_third        INT DEFAULT 1 NOT NULL,
+    champion_enabled  BOOLEAN DEFAULT true NOT NULL,
+    champion_exclude_group_points BOOLEAN DEFAULT true NOT NULL,
+    champion_max_category INT DEFAULT 3,
+    results_display_mode VARCHAR(32) DEFAULT 'FULL_NAME',
+    eligibility_text    TEXT,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_event_competition_settings__event
+        FOREIGN KEY (event_id) REFERENCES public.event_details(id) ON DELETE CASCADE
+);</pre>
+    </div>
+
+    <div class="section-container schema">
+        <div class="section-header">event_competition_day</div>
+<pre>CREATE TABLE public.event_competition_day (
+    id            BIGSERIAL PRIMARY KEY,
+    tenant_id     VARCHAR(64) NOT NULL,
+    event_id      BIGINT NOT NULL,
+    day_label     VARCHAR(100) NOT NULL,
+    event_date    DATE NOT NULL,
+    venue_name    VARCHAR(255) NOT NULL,
+    venue_address VARCHAR(500),
+    sort_order    INT DEFAULT 0 NOT NULL,
+    notes         TEXT,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_event_competition_day__event
+        FOREIGN KEY (event_id) REFERENCES public.event_details(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_event_competition_day__event_id ON public.event_competition_day(event_id);</pre>
+    </div>
+
+    <div class="section-container schema">
+        <div class="section-header">event_competition</div>
+<pre>CREATE TABLE public.event_competition (
+    id                      BIGSERIAL PRIMARY KEY,
+    tenant_id               VARCHAR(64) NOT NULL,
+    event_id                BIGINT NOT NULL,
+    festival_day_id         BIGINT,
+    name                    VARCHAR(255) NOT NULL,
+    description             TEXT,
+    competition_type        VARCHAR(20) NOT NULL
+        CHECK (competition_type IN ('INDIVIDUAL', 'GROUP')),
+    category_code           VARCHAR(20) NOT NULL,
+    track                   VARCHAR(50),
+    fee_amount              NUMERIC(10,2) DEFAULT 0 NOT NULL,
+    max_participants        INT,
+    min_group_size          INT DEFAULT 3,
+    max_group_size          INT DEFAULT 10,
+    time_limit_minutes      INT,
+    requires_soundtrack     BOOLEAN DEFAULT false NOT NULL,
+    judgment_criteria_json  TEXT,
+    display_order           INT DEFAULT 0 NOT NULL,
+    is_active               BOOLEAN DEFAULT true NOT NULL,
+    created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_event_competition__event
+        FOREIGN KEY (event_id) REFERENCES public.event_details(id) ON DELETE CASCADE,
+    CONSTRAINT fk_event_competition__day
+        FOREIGN KEY (festival_day_id) REFERENCES public.event_competition_day(id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_event_competition__event_id ON public.event_competition(event_id);</pre>
+    </div>
+
+    <div class="section-container schema">
+        <div class="section-header">event_competition_participant</div>
+<pre>CREATE TABLE public.event_competition_participant (
+    id              BIGSERIAL PRIMARY KEY,
+    tenant_id       VARCHAR(64) NOT NULL,
+    user_profile_id BIGINT NOT NULL,
+    clerk_user_id   VARCHAR(255) NOT NULL,
+    first_name      VARCHAR(100) NOT NULL,
+    last_name       VARCHAR(100) NOT NULL,
+    date_of_birth   DATE,
+    current_grade   INT NOT NULL,
+    school_name     VARCHAR(255),
+    is_active       BOOLEAN DEFAULT true NOT NULL,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_event_competition_participant__user_profile
+        FOREIGN KEY (user_profile_id) REFERENCES public.user_profile(id)
+);
+
+CREATE INDEX idx_event_competition_participant__clerk_user
+    ON public.event_competition_participant(tenant_id, clerk_user_id);</pre>
+    </div>
+
+    <div class="section-container schema">
+        <div class="section-header">event_competition_registration</div>
+<pre>CREATE TABLE public.event_competition_registration (
+    id                  BIGSERIAL PRIMARY KEY,
+    tenant_id           VARCHAR(64) NOT NULL,
+    event_id            BIGINT NOT NULL,
+    competition_id      BIGINT NOT NULL,
+    participant_profile_id    BIGINT NOT NULL,
+    registration_status VARCHAR(32) NOT NULL DEFAULT 'PENDING_PAYMENT',
+    fee_amount          NUMERIC(10,2) NOT NULL,
+    effective_category  VARCHAR(20),
+    stripe_payment_intent_id VARCHAR(255),
+    group_leader_registration_id BIGINT,
+    registered_by_user_profile_id BIGINT NOT NULL,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT ux_event_comp_reg__participant_competition
+        UNIQUE (competition_id, participant_profile_id),
+    CONSTRAINT fk_event_comp_reg__competition
+        FOREIGN KEY (competition_id) REFERENCES public.event_competition(id),
+    CONSTRAINT fk_event_comp_reg__participant
+        FOREIGN KEY (participant_profile_id) REFERENCES public.event_competition_participant(id)
+);</pre>
+        <p>For <strong>GROUP</strong> events: one row per child with same <code class="code-inline">group_leader_registration_id</code> pointing to the leader's registration id, or separate group header table in v1.1 if needed.</p>
+    </div>
+
+    <div class="section-container schema">
+        <div class="section-header">event_competition_result</div>
+<pre>CREATE TABLE public.event_competition_result (
+    id                  BIGSERIAL PRIMARY KEY,
+    tenant_id           VARCHAR(64) NOT NULL,
+    event_id            BIGINT NOT NULL,
+    competition_id      BIGINT NOT NULL,
+    participant_profile_id    BIGINT,
+    registration_id     BIGINT,
+    display_name        VARCHAR(200) NOT NULL,
+    placement             INT,
+    placement_label     VARCHAR(50),
+    prize_title         VARCHAR(255),
+    prize_details       TEXT,
+    points_awarded        INT NOT NULL DEFAULT 0,
+    winner_photo_url    VARCHAR(1024),
+    winner_media_id     BIGINT,
+    notes                 TEXT,
+    is_published          BOOLEAN DEFAULT false NOT NULL,
+    published_at          TIMESTAMPTZ,
+    created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_event_comp_result__competition
+        FOREIGN KEY (competition_id) REFERENCES public.event_competition(id) ON DELETE CASCADE
+);</pre>
+    </div>
+
+    <div class="section-container schema">
+        <div class="section-header">event_competition_content_block</div>
+<pre>CREATE TABLE public.event_competition_content_block (
+    id          BIGSERIAL PRIMARY KEY,
+    tenant_id   VARCHAR(64) NOT NULL,
+    event_id    BIGINT NOT NULL,
+    block_type  VARCHAR(32) NOT NULL,
+    title       VARCHAR(255),
+    body_markdown TEXT NOT NULL,
+    sort_order  INT DEFAULT 0 NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT ux_event_comp_content__event_type UNIQUE (event_id, block_type)
+);</pre>
+    </div>
+
+    <h3>6.3 Table summary</h3>
+    <table>
+        <thead>
+            <tr><th scope="col">Table</th><th scope="col">Purpose</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code class="code-inline">event_details</code> (alter)</td><td><code class="code-inline">is_competition_event</code> flag</td></tr>
+            <tr><td><code class="code-inline">event_competition_settings</code></td><td>Deadlines, points, champion rules, eligibility</td></tr>
+            <tr><td><code class="code-inline">event_competition_day</code></td><td>Multi-day / multi-venue schedule</td></tr>
+            <tr><td><code class="code-inline">event_competition</code></td><td>Sub-event catalog</td></tr>
+            <tr><td><code class="code-inline">event_competition_participant</code></td><td>Children per parent account</td></tr>
+            <tr><td><code class="code-inline">event_competition_registration</code></td><td>Registrations + payment linkage</td></tr>
+            <tr><td><code class="code-inline">event_competition_group_member</code></td><td>Optional; group members (v1.1 if not in v1)</td></tr>
+            <tr><td><code class="code-inline">event_competition_result</code></td><td>Placements and points</td></tr>
+            <tr><td><code class="code-inline">event_competition_content_block</code></td><td>Rules, FAQ, guidelines</td></tr>
+        </tbody>
+    </table>
+
+    <!-- 7. API -->
+    <h2 id="api-layer">7. API and proxy layer</h2>
+
+    <div class="info-box">
+        Follow project rules: all frontend calls use <code class="code-inline">/api/proxy/*</code>; use <code class="code-inline">createProxyHandler</code> from <code class="code-inline">src/lib/proxyHandler.ts</code>; server actions use <code class="code-inline">fetchWithJwtRetry</code>; PATCH may use direct backend per existing patterns.
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">Resource</th>
+                <th scope="col">Backend path (Rust)</th>
+                <th scope="col">Next.js proxy</th>
+                <th scope="col">Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>Festival settings</td><td><code class="code-inline">/api/competitions-settings</code></td><td><code class="code-inline">/api/proxy/competitions-settings</code></td><td>GET by eventId; PATCH</td></tr>
+            <tr><td>Festival days</td><td><code class="code-inline">/api/competitions-days</code></td><td><code class="code-inline">/api/proxy/competitions-days</code></td><td>CRUD; filter <code class="code-inline">eventId.equals</code></td></tr>
+            <tr><td>Competitions</td><td><code class="code-inline">/api/event-competition-competitions</code></td><td><code class="code-inline">/api/proxy/event-competitions</code></td><td>CRUD; public list active only</td></tr>
+            <tr><td>Child profiles</td><td><code class="code-inline">/api/event-competition-child-profiles</code></td><td><code class="code-inline">/api/proxy/event-competition-participants</code></td><td>Scoped to current user on public routes</td></tr>
+            <tr><td>Registrations</td><td><code class="code-inline">/api/event-competition-competition-registrations</code></td><td><code class="code-inline">/api/proxy/event-competition-registrations</code></td><td>POST bulk confirm; admin list all</td></tr>
+            <tr><td>Results</td><td><code class="code-inline">/api/event-competition-competition-results</code></td><td><code class="code-inline">/api/proxy/event-competition-results</code></td><td>Filter <code class="code-inline">isPublished.equals=true</code> for public</td></tr>
+            <tr><td>Content blocks</td><td><code class="code-inline">/api/competitions-content-blocks</code></td><td><code class="code-inline">/api/proxy/competitions-content-blocks</code></td><td>Public read</td></tr>
+        </tbody>
+    </table>
+
+    <div class="section-container parameters">
+        <div class="section-header">Server actions (proposed file layout)</div>
+        <ul class="file-checklist">
+            <li><code class="code-inline">src/app/events/[id]/competitions/ApiServerActions.ts</code> — public reads + parent mutations</li>
+            <li><code class="code-inline">src/app/admin/events/[id]/competitions/ApiServerActions.ts</code> — admin CRUD</li>
+            <li><code class="code-inline">src/pages/api/proxy/event-competitions/[...slug].ts</code> — proxy slug routes (one per resource)</li>
+        </ul>
+    </div>
+
+    <div class="section-container gap">
+        <div class="section-header">Stripe (optional v1)</div>
+        <p>New endpoint or extend payment-intent metadata:</p>
+<pre>{
+  "registrationType": "event_competition",
+  "eventId": "123",
+  "competitionRegistrationIds": "1,2,3",
+  "tenantId": "...",
+  "paymentMethodDomainId": "..."
+}</pre>
+        <p>Webhook handler confirms registrations on <code class="code-inline">payment_intent.succeeded</code> (same idempotency pattern as ticket transactions).</p>
+    </div>
+
+    <!-- 8. DTOs -->
+    <h2 id="dtos">8. TypeScript DTOs</h2>
+
+    <div class="section-container schema">
+        <div class="section-header">Add to src/types/index.ts</div>
+<pre>/** Event Competitions day (venue + date) */
+export interface EventCompetitionDayDTO {
+  id?: number;
+  tenantId?: string;
+  eventId: number;
+  dayLabel: string;
+  eventDate: string; // ISO date YYYY-MM-DD
+  venueName: string;
+  venueAddress?: string;
+  sortOrder?: number;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Competition catalog item */
+export interface EventCompetitionDTO {
+  id?: number;
+  tenantId?: string;
+  eventId: number;
+  festivalDayId?: number;
+  name: string;
+  description?: string;
+  competitionType: 'INDIVIDUAL' | 'GROUP';
+  categoryCode: string;
+  track?: string;
+  feeAmount: number;
+  maxParticipants?: number;
+  minGroupSize?: number;
+  maxGroupSize?: number;
+  timeLimitMinutes?: number;
+  requiresSoundtrack?: boolean;
+  judgmentCriteriaJson?: string;
+  displayOrder?: number;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Child profile (parent-owned) */
+export interface EventCompetitionParticipantDTO {
+  id?: number;
+  tenantId?: string;
+  userProfileId: number;
+  clerkUserId: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth?: string;
+  currentGrade: number;
+  schoolName?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Registration line */
+export interface EventCompetitionRegistrationDTO {
+  id?: number;
+  tenantId?: string;
+  eventId: number;
+  competitionId: number;
+  childProfileId: number;
+  registrationStatus: 'PENDING_PAYMENT' | 'CONFIRMED' | 'CANCELLED';
+  feeAmount: number;
+  effectiveCategory?: string;
+  stripePaymentIntentId?: string;
+  groupLeaderRegistrationId?: number;
+  registeredByUserProfileId: number;
+  createdAt?: string;
+  updatedAt?: string;
+  /** Expanded for UI */
+  competition?: EventCompetitionDTO;
+  childProfile?: EventCompetitionParticipantDTO;
+}
+
+/** Published result row */
+export interface EventCompetitionResultDTO {
+  id?: number;
+  tenantId?: string;
+  eventId: number;
+  competitionId: number;
+  childProfileId?: number;
+  registrationId?: number;
+  placement?: 1 | 2 | 3;
+  pointsAwarded: number;
+  notes?: string;
+  isPublished?: boolean;
+  publishedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Extend EventDetailsDTO */
+// isCompetitionEvent?: boolean;</pre>
+    </div>
+
+    <!-- 9. Pages -->
+    <h2 id="pages-routes">9. Pages and routes</h2>
+
+    <h3>9.1 Public routes</h3>
+    <table>
+        <thead>
+            <tr><th scope="col">Route</th><th scope="col">Page</th><th scope="col">Auth</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code class="code-inline">/events/[id]</code></td><td>Extend existing event detail: Event Competitions banner + links when flag set</td><td>Public</td></tr>
+            <tr><td><code class="code-inline">/events/[id]/competitions</code></td><td>Hub: days, schedule, rules links, register CTA</td><td>Public</td></tr>
+            <tr><td><code class="code-inline">/events/[id]/competitions/register</code></td><td>Wizard: children → pick competitions → review → pay</td><td>Clerk required</td></tr>
+            <tr><td><code class="code-inline">/events/[id]/competitions/my-registrations</code></td><td>Parent dashboard for this event</td><td>Clerk required</td></tr>
+            <tr><td><code class="code-inline">/events/[id]/competitions/results</code></td><td>Published results board</td><td>Public</td></tr>
+            <tr><td><code class="code-inline">/events/[id]/competitions/rules</code></td><td>Rules / FAQ / guidelines (content blocks)</td><td>Public</td></tr>
+        </tbody>
+    </table>
+
+    <h3>9.2 Admin routes (under <code class="code-inline">src/app/admin/events/[id]/</code>)</h3>
+    <table>
+        <thead>
+            <tr><th scope="col">Route</th><th scope="col">Purpose</th><th scope="col">Nav button color (unique)</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code class="code-inline">.../competitions/settings</code></td><td>Flag, deadline, points, champion, eligibility</td><td>Cyan</td></tr>
+            <tr><td><code class="code-inline">.../competitions/days</code></td><td>CRUD festival days</td><td>Sky</td></tr>
+            <tr><td><code class="code-inline">.../competitions/competitions/list</code></td><td>Competition catalog grid</td><td>Purple</td></tr>
+            <tr><td><code class="code-inline">.../competitions/competitions/[id]/edit</code></td><td>Create/edit competition</td><td>Blue</td></tr>
+            <tr><td><code class="code-inline">.../competitions/registrations</code></td><td>List, filter, export CSV</td><td>Teal</td></tr>
+            <tr><td><code class="code-inline">.../competitions/results</code></td><td>Enter results, publish toggle</td><td>Orange</td></tr>
+        </tbody>
+    </table>
+    <p>Add buttons to existing event admin navigation grid (same pattern as tickets/media pages per admin home button group rules).</p>
+
+    <!-- 10. Components -->
+    <h2 id="components">10. Components</h2>
+
+    <table>
+        <thead>
+            <tr><th scope="col">Component</th><th scope="col">Path</th><th scope="col">Responsibility</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code class="code-inline">EventCompetitionHub</code></td><td><code class="code-inline">src/components/competitions/EventCompetitionHub.tsx</code></td><td>Public landing sections</td></tr>
+            <tr><td><code class="code-inline">EventCompetitionDaySchedule</code></td><td><code class="code-inline">src/components/competitions/EventCompetitionDaySchedule.tsx</code></td><td>Day/venue/competition schedule table</td></tr>
+            <tr><td><code class="code-inline">ChildProfileForm</code> / <code class="code-inline">ChildProfileList</code></td><td><code class="code-inline">src/components/competitions/</code></td><td>CRUD children</td></tr>
+            <tr><td><code class="code-inline">CompetitionCatalog</code></td><td><code class="code-inline">src/components/competitions/CompetitionCatalog.tsx</code></td><td>Filter by category, day, type</td></tr>
+            <tr><td><code class="code-inline">CompetitionRegistrationCart</code></td><td><code class="code-inline">src/components/competitions/CompetitionRegistrationCart.tsx</code></td><td>Line items + fee total</td></tr>
+            <tr><td><code class="code-inline">CompetitionRegistrationCheckout</code></td><td><code class="code-inline">src/components/competitions/CompetitionRegistrationCheckout.tsx</code></td><td>Stripe or $0 confirm</td></tr>
+            <tr><td><code class="code-inline">PublishedWinnersView</code></td><td><code class="code-inline">src/components/competitions/PublishedWinnersView.tsx</code></td><td>Winners board + prize cards + photos</td></tr>
+            <tr><td><code class="code-inline">EventCompetitionForm</code></td><td><code class="code-inline">src/components/admin/competitions/EventCompetitionForm.tsx</code></td><td>Admin competition CRUD</td></tr>
+            <tr><td><code class="code-inline">CompetitionRegistrationAdminTable</code></td><td><code class="code-inline">src/components/admin/competitions/CompetitionRegistrationAdminTable.tsx</code></td><td>Admin list + filters</td></tr>
+            <tr><td><code class="code-inline">CompetitionResultsEditor</code></td><td><code class="code-inline">src/components/admin/competitions/CompetitionResultsEditor.tsx</code></td><td>Placements entry + publish</td></tr>
+        </tbody>
+    </table>
+
+    <div class="section-container usage">
+        <div class="section-header">Reuse existing patterns</div>
+        <ul>
+            <li><code class="code-inline">EventForm.tsx</code> — add <code class="code-inline">isCompetitionEvent</code> checkbox next to <code class="code-inline">isSportsEvent</code></li>
+            <li>Form validation — <code class="code-inline">form_validation_styling.mdc</code> (refs, onBlur, error summary)</li>
+            <li>Pagination — <code class="code-inline">pagination_footer_styling.mdc</code> on admin lists</li>
+            <li>Admin buttons — <code class="code-inline">admin_home_button_groups_styling.mdc</code></li>
+            <li>Currency — <code class="code-inline">numerical_value_display.mdc</code> for fees</li>
+        </ul>
+    </div>
+
+    <!-- 11. Integration -->
+    <h2 id="integration">11. Integration &amp; compatibility</h2>
+
+    <table>
+        <thead>
+            <tr><th scope="col">Existing feature</th><th scope="col">When <code class="code-inline">is_competition_event=false</code></th><th scope="col">When <code class="code-inline">true</code></th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Ticket types &amp; checkout</td><td>No change</td><td>Hide primary ticket UI; optional <code class="code-inline">allow_ticket_sales</code></td></tr>
+            <tr><td>Stripe webhooks</td><td>Ticket transactions only</td><td>Add branch for <code class="code-inline">registrationType=event_competition</code></td></tr>
+            <tr><td><code class="code-inline">isSportsEvent</code></td><td>Unchanged</td><td>Independent; both flags can be false</td></tr>
+            <tr><td>Arts/sports results HTML doc</td><td>N/A</td><td>Keep separate tables; avoid mixing semantics</td></tr>
+            <tr><td>Clerk middleware</td><td>Existing public routes</td><td>Add <code class="code-inline">/events/*/competitions/register</code> as protected; hub/results public</td></tr>
+            <tr><td>Multi-tenant</td><td><code class="code-inline">tenant_id</code> on all queries</td><td>Same; proxy injects tenant</td></tr>
+            <tr><td>Admin event pages</td><td>Tickets, media, etc.</td><td>New competitions sub-nav buttons</td></tr>
+        </tbody>
+    </table>
+
+    <div class="success-box">
+        <strong>Regression test checklist:</strong> Normal ticketed event → buy ticket → QR works. Enable competition mode on a <em>different</em> event → register participant → no impact on ticket inventory.
+    </div>
+
+    <!-- 12. Phases -->
+    <h2 id="phases">12. Implementation phases</h2>
+
+    <table>
+        <thead>
+            <tr><th scope="col">Phase</th><th scope="col">Deliverables</th><th scope="col">Est. effort</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>P0 — Foundation</strong></td><td>This PRD approved; DB migrations; OpenAPI; DTOs in shared types</td><td>1–2 weeks backend</td></tr>
+            <tr><td><strong>P1 — Admin catalog</strong></td><td>Flag on event; settings; days; competitions CRUD; content blocks</td><td>2–3 weeks full-stack</td></tr>
+            <tr><td><strong>P2 — Parent registration</strong></td><td>Child profiles; catalog browse; cart; confirm; optional Stripe</td><td>2–3 weeks full-stack</td></tr>
+            <tr><td><strong>P3 — Results</strong></td><td>Admin results entry; publish; public results board; champion</td><td>1–2 weeks</td></tr>
+            <tr><td><strong>P4 — Polish</strong></td><td>Emails, CSV export, waitlist, schedule PDF, soundtrack tracking</td><td>Backlog</td></tr>
+        </tbody>
+    </table>
+
+    <!-- 13. Open questions -->
+    <h2 id="open-questions">13. Open questions (stakeholder sign-off)</h2>
+
+    <div class="section-container gap">
+        <div class="section-header">Decisions needed before P1</div>
+        <ol>
+            <li><strong>Fees:</strong> Per-competition fee only (KANJ model) vs optional single "festival pass" bundle?</li>
+            <li><strong>Payment:</strong> Is Stripe required at launch, or admin manual confirm / pay-at-door acceptable for v1?</li>
+            <li><strong>Categories:</strong> Fixed four grade bands (KANJ) vs tenant-configurable categories in DB?</li>
+            <li><strong>Group billing:</strong> One paying group leader vs per-parent split for group members?</li>
+            <li><strong>Privacy:</strong> Public results show full child name, first + last initial, or anonymous placement codes?</li>
+            <li><strong>Eligibility:</strong> Enforce Malayalee/Kerala rules in software, or display-only honor code?</li>
+            <li><strong>Max placements:</strong> 3 only vs extended podium?</li>
+            <li><strong>Winner photos:</strong> Required before publish or optional?</li>
+            <li><strong>Ticket coexistence:</strong> Can <code class="code-inline">is_competition_event</code> coexist with ticket sales (<code class="code-inline">allow_ticket_sales=true</code>)?</li>
+            <li><strong>MIXED cart:</strong> Same Stripe cart for tickets + competitions or separate?</li>
+        </ol>
+    </div>
+
+    <!-- 14. Appendix -->
+    <h2 id="appendix">14. Appendix</h2>
+
+    <h3 id="appendix-comparison">14.1 KANJ vs our platform — feature mapping</h3>
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">KANJ capability</th>
+                <th scope="col">Our PRD mapping</th>
+                <th scope="col">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>Parent Portal login</td><td>Clerk sign-in + parent account</td><td>Exists</td></tr>
+            <tr><td>Register child for competitions</td><td><code class="code-inline">event_competition_registration</code> + register wizard</td><td>New</td></tr>
+            <tr><td>Multi-day / multi-venue</td><td><code class="code-inline">event_competition_day</code></td><td>New</td></tr>
+            <tr><td>Grade categories 1–4</td><td><code class="code-inline">category_code</code> on competitions + child grade</td><td>New</td></tr>
+            <tr><td>Individual / group events</td><td><code class="code-inline">competition_type</code></td><td>New</td></tr>
+            <tr><td>$15 per event fee</td><td><code class="code-inline">fee_amount</code> + Stripe</td><td>New (optional pay)</td></tr>
+            <tr><td>Rules / FAQ / guidelines pages</td><td><code class="code-inline">event_competition_content_block</code></td><td>New</td></tr>
+            <tr><td>Schedule images</td><td>Structured schedule + optional media URL</td><td>New (better)</td></tr>
+            <tr><td>Published results</td><td><code class="code-inline">event_competition_result</code> + public page</td><td>New</td></tr>
+            <tr><td>Points &amp; champion</td><td><code class="code-inline">event_competition_settings</code></td><td>New</td></tr>
+            <tr><td>Adult ticket checkout</td><td>Unchanged when flag off</td><td>Exists</td></tr>
+        </tbody>
+    </table>
+
+    <h3 id="appendix-files">14.2 Implementation file checklist</h3>
+    <div class="section-container output">
+        <div class="section-header">Engineering checklist</div>
+        <h4>Backend (Rust / DB)</h4>
+        <ul class="file-checklist">
+            <li>Migrations for all <code class="code-inline">event_competition_*</code> tables + <code class="code-inline">is_competition_event</code></li>
+            <li>OpenAPI / REST handlers per resource</li>
+            <li>Criteria filters: <code class="code-inline">eventId.equals</code>, <code class="code-inline">tenantId.equals</code></li>
+        </ul>
+        <h4>Next.js proxy</h4>
+        <ul class="file-checklist">
+            <li><code class="code-inline">src/pages/api/proxy/competitions-days/[...slug].ts</code></li>
+            <li><code class="code-inline">src/pages/api/proxy/event-competitions/[...slug].ts</code></li>
+            <li><code class="code-inline">src/pages/api/proxy/event-competition-participants/[...slug].ts</code></li>
+            <li><code class="code-inline">src/pages/api/proxy/event-competition-registrations/[...slug].ts</code></li>
+            <li><code class="code-inline">src/pages/api/proxy/event-competition-results/[...slug].ts</code></li>
+            <li><code class="code-inline">src/pages/api/proxy/competitions-settings/[...slug].ts</code></li>
+            <li><code class="code-inline">src/pages/api/proxy/competitions-content-blocks/[...slug].ts</code></li>
+        </ul>
+        <h4>Frontend — public</h4>
+        <ul class="file-checklist">
+            <li><code class="code-inline">src/app/events/[id]/competitions/page.tsx</code></li>
+            <li><code class="code-inline">src/app/events/[id]/competitions/register/page.tsx</code></li>
+            <li><code class="code-inline">src/app/events/[id]/competitions/my-registrations/page.tsx</code></li>
+            <li><code class="code-inline">src/app/events/[id]/competitions/results/page.tsx</code></li>
+            <li><code class="code-inline">src/components/competitions/*.tsx</code> (6+ components)</li>
+        </ul>
+        <h4>Frontend — admin</h4>
+        <ul class="file-checklist">
+            <li><code class="code-inline">src/app/admin/events/[id]/competitions/**</code> (6 sub-routes)</li>
+            <li><code class="code-inline">src/components/admin/competitions/*.tsx</code></li>
+            <li>Update <code class="code-inline">EventForm.tsx</code> + <code class="code-inline">EventDetailsDTO</code></li>
+            <li>Admin event hub: add navigation buttons</li>
+        </ul>
+        <h4>Config</h4>
+        <ul class="file-checklist">
+            <li><code class="code-inline">src/middleware.ts</code> — public vs protected competitions paths</li>
+            <li><code class="code-inline">next.config.mjs</code> — env if needed</li>
+        </ul>
+    </div>
+
+    <h3 id="appendix-ai">14.3 AI implementation prompt (optional)</h3>
+    <div class="prompt-block">
+        <div class="prompt-block-header">
+            <strong>Prompt for implementation agent</strong>
+            <button type="button" class="copy-button" onclick="copyPrompt(this)" aria-label="Copy prompt to clipboard">Copy</button>
+        </div>
+        <div class="prompt-block-body" id="prompt-implementation-01">Implement the Event Competitions feature per documentation/kanj_feature_comparison/Event_Competitions_PRD.html.
+
+Constraints:
+- Add is_competition_event to event_details; default false.
+- New tables: event_competition_settings, event_competition_day, event_competition, event_competition_participant, event_competition_registration, event_competition_result, event_competition_content_block.
+- Do NOT use event_ticket_type for child competition slots.
+- Public routes under /events/[id]/competitions/*; admin under /admin/events/[id]/competitions/*.
+- Use createProxyHandler for all /api/proxy/event-competition-* routes; fetchWithJwtRetry in server actions.
+- Follow admin_home_button_groups_styling and form_validation_styling cursor rules.
+- Clerk auth for parent registration flows.
+
+Phases: P0 schema → P1 admin catalog → P2 registration wizard (YOUTH/ADULT) → P3 winners + photos.</div>
+    </div>
+
+    <div class="info-box">
+        <strong>Document control:</strong> v2.0 — generic Event Competitions (May 21, 2026). Layer PRDs: <a href="event_competitions/generic_prd.html">event_competitions/</a>.
+    </div>
+
+    <script>
+        function copyPrompt(btn) {
+            var el = document.getElementById('prompt-implementation-01');
+            if (!el) return;
+            var text = el.textContent || el.innerText;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function() {
+                    btn.classList.add('copied');
+                    btn.textContent = 'Copied!';
+                    setTimeout(function() {
+                        btn.classList.remove('copied');
+                        btn.textContent = 'Copy';
+                    }, 2000);
+                });
+            }
+        }
+    </script>
+
+</body>
+</html>

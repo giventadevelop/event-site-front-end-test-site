@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Category &amp; Year — Frontend Enhancements PRD (v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Category &amp; Year — Frontend Enhancements PRD</h1>
+    <p class="doc-meta">
+        <strong>Project:</strong> <code>mosc-temp</code> (Next.js 15) &nbsp;|&nbsp; <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 17, 2026<br>
+        <strong>Baseline:</strong> <a href="../gallery_feature_and_album/FRONTEND_PRD_GALLERY_ALBUM_FEATURE.md">FRONTEND_PRD_GALLERY_ALBUM_FEATURE.md</a> &nbsp;|&nbsp;
+        <strong>Routes:</strong> <a href="urls_and_routes_enhancements.html">urls_and_routes_enhancements.html</a> &nbsp;|&nbsp;
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a>
+    </p>
+
+    <div class="lead">
+        <p>Updates types, admin forms, and public album cards so gallery UI matches the <strong>MOSC redesign mockup</strong> while loading data from <code>/api/proxy/gallery-albums</code> instead of hardcoded arrays.</p>
+    </div>
+
+    <h2>1. Type definitions — src/types/index.ts</h2>
+    <pre>export interface GalleryCategoryDTO {
+  id?: number;
+  tenantId?: string;
+  slug: string;
+  displayName: string;
+  description?: string;
+  sortOrder?: number;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface GalleryAlbumDTO {
+  // ... existing fields ...
+  albumYear?: number | null;
+  galleryCategoryId?: number | null;
+  galleryCategory?: GalleryCategoryDTO | null;
+}</pre>
+
+    <h2>2. New / updated components</h2>
+    <table>
+        <thead><tr><th>Component</th><th>Path</th><th>Purpose</th></tr></thead>
+        <tbody>
+            <tr><td><code>MoscGalleryAlbumCard.tsx</code></td><td><code>src/components/gallery/</code> (new)</td><td>Shared redesign card: cover, count badge, category pill, title, year, View Album CTA</td></tr>
+            <tr><td><code>GalleryAlbumCard.tsx</code></td><td><code>src/app/gallery/components/</code></td><td>Refactor to use shared card or align styling with MOSC</td></tr>
+            <tr><td><code>GalleryCategorySelect.tsx</code></td><td><code>src/components/admin/gallery/</code> (new)</td><td>Admin dropdown — loads active categories via server action</td></tr>
+        </tbody>
+    </table>
+
+    <h3>MoscGalleryAlbumCard — props</h3>
+    <pre>interface MoscGalleryAlbumCardProps {
+  title: string;
+  coverImageUrl?: string | null;
+  totalMediaCount: number;
+  categoryDisplayName?: string | null;
+  albumYear?: number | null;
+  href?: string;           // MOSC: link to album page
+  onViewAlbum?: () => void; // Main /gallery: open slideshow
+  variant?: 'mosc-redesign' | 'main-gallery';
+}</pre>
+
+    <h3>Card layout (match mockup)</h3>
+    <ol>
+        <li><strong>Image area:</strong> relative container; cover with <code>object-cover</code> or contain per design rules</li>
+        <li><strong>Count badge:</strong> top-right pill — <code>{n} photos</code> (dark red / syro-red styling on MOSC)</li>
+        <li><strong>Body:</strong> category pill (<code>bg-syro-red/10 text-syro-red rounded-full</code>)</li>
+        <li><strong>Title:</strong> line-clamp-2, syro-blue / heading font</li>
+        <li><strong>Year:</strong> display <code>albumYear</code> as string; hide if null</li>
+        <li><strong>CTA:</strong> “View Album” + chevron — Link or button</li>
+    </ol>
+
+    <h2>3. Public gallery — /gallery</h2>
+    <h3>GalleryAlbumCard.tsx changes</h3>
+    <ul>
+        <li>Remove <code>format(createdAt, 'MMM dd, yyyy')</code> as primary date — use <code>album.albumYear</code></li>
+        <li>Render category pill when <code>album.galleryCategory?.displayName</code> present</li>
+        <li>Keep existing slideshow modal for View Album (main app pattern)</li>
+        <li>Apply MOSC warm styling optionally via variant prop</li>
+    </ul>
+
+    <h3>ApiServerActions.ts</h3>
+    <ul>
+        <li>No structural change to fetch loop; album DTO will include new fields from backend</li>
+        <li>Optional: add <code>fetchGalleryCategoriesServer()</code> for admin dropdown</li>
+        <li>Graceful fallback: missing category/year → omit pill/year line</li>
+    </ul>
+
+    <h2>4. MOSC redesign gallery — replace static data</h2>
+    <p>File: <code>src/app/mosc-redesign/(syro)/gallery/page.tsx</code></p>
+
+    <div class="section-container">
+        <div class="section-header">Server component pattern</div>
+        <pre>// page.tsx — async server component
+import { fetchAlbumsForGallery } from '@/app/gallery/ApiServerActions';
+import { MoscGalleryAlbumCard } from '@/components/gallery/MoscGalleryAlbumCard';
+
+export default async function GalleryPage() {
+  const { albumsWithMedia } = await fetchAlbumsForGallery(0, 50);
+  // Map to cards; href strategy — see urls PRD (static route map or slideshow)
+}</pre>
+    </div>
+
+    <div class="warning-box">
+        <strong>Href strategy (v1.0):</strong> Maintain a static map <code>albumId → /mosc-redesign/gallery/{slug}</code> for migrated albums until <code>slug</code> column exists. New DB-only albums can open slideshow modal or a generic <code>/gallery?albumId=</code> viewer.
+    </div>
+
+    <h2>5. Admin UI</h2>
+    <h3>AdminAlbumEditClient.tsx + create form</h3>
+    <table>
+        <thead><tr><th>Field</th><th>Control</th><th>Validation</th></tr></thead>
+        <tbody>
+            <tr><td><code>albumYear</code></td><td>Number input, min 1900 max 2100</td><td>Optional; onBlur validate range</td></tr>
+            <tr><td><code>galleryCategoryId</code></td><td>Select from active categories + “None”</td><td>Optional</td></tr>
+            <tr><td><code>title</code></td><td>Existing</td><td>Required</td></tr>
+            <tr><td><code>coverImageUrl</code></td><td>Existing</td><td>URL format</td></tr>
+        </tbody>
+    </table>
+
+    <h3>ApiServerActions — admin/gallery/albums</h3>
+    <ul>
+        <li>Include <code>albumYear</code> and <code>galleryCategoryId</code> in create/update payloads</li>
+        <li>PATCH via direct backend pattern (existing <code>updateAlbumServer</code>)</li>
+        <li>Add <code>fetchGalleryCategoriesForAdminServer()</code> — GET proxy categories sorted by sortOrder</li>
+    </ul>
+
+    <h3>Optional: Admin category list (G2 stretch)</h3>
+    <table>
+        <thead><tr><th>Route</th><th>File</th></tr></thead>
+        <tbody>
+            <tr><td><code>/admin/gallery/categories</code></td><td><code>src/app/admin/gallery/categories/page.tsx</code></td></tr>
+            <tr><td><code>/admin/gallery/categories/new</code></td><td>create form</td></tr>
+            <tr><td><code>/admin/gallery/categories/[id]/edit</code></td><td>edit form</td></tr>
+        </tbody>
+    </table>
+    <p>v1.0 minimum: seeded categories + read-only list in admin docs; album form dropdown only.</p>
+
+    <h2>6. withTenantId / proxy</h2>
+    <ul>
+        <li>Category POST/PATCH bodies include <code>tenantId</code> via <code>withTenantId</code></li>
+        <li>Do not add <code>tenantId.equals</code> from client when calling proxy (handler injects)</li>
+        <li>New proxy: <code>/api/proxy/gallery-categories</code></li>
+    </ul>
+
+    <h2>7. Styling references</h2>
+    <table>
+        <thead><tr><th>Pattern</th><th>Reference file</th></tr></thead>
+        <tbody>
+            <tr><td>MOSC card grid + gradient container</td><td><code>mosc-redesign/(syro)/gallery/page.tsx</code></td></tr>
+            <tr><td>Category pill</td><td>Same file — <code>bg-syro-red/10 text-syro-red rounded-full</code></td></tr>
+            <tr><td>Media gallery grid (admin)</td><td><code>.cursor/rules/media_gallery_grid_style.mdc</code></td></tr>
+            <tr><td>Image containment (cover)</td><td><code>.cursor/rules/image_containment_prevention_hero_images_cards.mdc</code></td></tr>
+        </tbody>
+    </table>
+
+    <h2>8. Testing checklist</h2>
+    <ul>
+        <li>Album with category + year renders pill and “2019” on card</li>
+        <li>Album without category/year — no pill, no year line, no layout shift</li>
+        <li>Admin save persists fields; reload edit form shows values</li>
+        <li>MOSC gallery page loads from API when backend available; empty state if API down</li>
+        <li>Photo count badge matches <code>totalMediaCount</code></li>
+        <li>Mobile: card grid responsive (existing grid classes)</li>
+    </ul>
+
+    <div class="info-box">
+        <strong>Next:</strong> <a href="data_migration_enhancements_prd.html">Data migration</a> ·
+        <a href="implementation_roadmap.html">Implementation roadmap</a>
+    </div>
+
+</body>
+</html>

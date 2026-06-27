@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Ticketing System Analysis - Comparison with Tito & QR Scanning Implementation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-left: 15px;
+            border-left: 4px solid #3498db;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        .feature-comparison {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .feature-comparison th {
+            background: #3498db;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        .feature-comparison td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        .feature-comparison tr:hover {
+            background: #f8f9fa;
+        }
+        .status-yes {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .status-partial {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        .status-no {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .code-block code {
+            color: #ecf0f1;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+        }
+        .recommendation {
+            background: #d4edda;
+            padding: 15px;
+            border-left: 4px solid #28a745;
+            margin: 20px 0;
+        }
+        .warning {
+            background: #f8d7da;
+            padding: 15px;
+            border-left: 4px solid #dc3545;
+            margin: 20px 0;
+        }
+        ul, ol {
+            margin-left: 30px;
+            margin-top: 10px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .implementation-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .step {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 3px solid #3498db;
+            border-radius: 3px;
+        }
+        .step-number {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .test-scenario {
+            background: #e7f3ff;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border: 1px solid #b3d9ff;
+        }
+        .test-scenario h4 {
+            color: #0066cc;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Event Ticketing System Analysis</h1>
+        <p><strong>Date:</strong> January 2026</p>
+        <p><strong>Purpose:</strong> Compare our ticketing system with Tito platform, analyze current QR scanning implementation, and propose improvements for comprehensive event ticketing solution.</p>
+
+        <h2>1. Feature Comparison: Our System vs Tito</h2>
+
+        <table class="feature-comparison">
+            <thead>
+                <tr>
+                    <th>Feature Category</th>
+                    <th>Feature</th>
+                    <th>Tito</th>
+                    <th>Our System</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td rowspan="4"><strong>Event Management</strong></td>
+                    <td>Event Creation & Editing</td>
+                    <td>✅ Full-featured</td>
+                    <td>✅ Full-featured</td>
+                    <td class="status-yes">✅ Complete</td>
+                </tr>
+                <tr>
+                    <td>Customizable Event Pages</td>
+                    <td>✅ Yes</td>
+                    <td>✅ Yes (with media uploads)</td>
+                    <td class="status-yes">✅ Complete</td>
+                </tr>
+                <tr>
+                    <td>Event Branding</td>
+                    <td>✅ Yes</td>
+                    <td>✅ Yes</td>
+                    <td class="status-yes">✅ Complete</td>
+                </tr>
+                <tr>
+                    <td>Event Templates</td>
+                    <td>✅ Yes</td>
+                    <td>⚠️ Limited</td>
+                    <td class="status-partial">⚠️ Partial</td>
+                </tr>
+                <tr>
+                    <td rowspan="5"><strong>Ticket Management</strong></td>
+                    <td>Multiple Ticket Types</td>
+                    <td>✅ Yes</td>
+                    <td>✅ Yes</td>
+                    <td class="status-yes">✅ Complete</td>
+                </tr>
+                <tr>
+                    <td>Pricing & Inventory</td>
+                    <td>✅ Yes</td>
+                    <td>✅ Yes</td>
+                    <td class="status-yes">✅ Complete</td>
+                </tr>
+                <tr>
+                    <td>Early Bird Pricing</td>
+                    <td>✅ Yes</td>
+                    <td>⚠️ Via discount codes</td>
+                    <td class="status-partial">⚠️ Partial</td>
+                </tr>
+                <tr>
+                    <td>Ticket Availability Windows</td>
+                    <td>✅ Yes</td>
+                    <td>⚠️ Limited</td>
+                    <td class="status-partial">⚠️ Partial</td>
+                </tr>
+                <tr>
+                    <td>Waitlist Management</td>
+                    <td>✅ Yes</td>
+                    <td>❌ No</td>
+                    <td class="status-no">❌ Missing</td>
+                </tr>
+                <tr>
+                    <td rowspan="4"><strong>Sales & Distribution</strong></td>
+                    <td>Embeddable Widget</td>
+                    <td>✅ Yes</td>
+                    <td>❌ No</td>
+                    <td class="status-no">❌ Missing</td>
+                </tr>
+                <tr>
+                    <td>Direct Website Integration</td>
+                    <td>✅ Yes</td>
+                    <td>✅ Yes (full page)</td>
+                    <td class="status-yes">✅ Complete</td>
+                </tr>
+                <tr>
+                    <td>Social Media Integration</td>
+                    <td>✅ Yes</td>
+                    <td>⚠️ Limited</td>
+                    <td class="status-partial">⚠️ Partial</td>
+                </tr>
+                <tr>
+                    <td>Affiliate/Partner Sales</td>
+                    <td>✅ Yes</td>
+                    <td>❌ No</td>
+                    <td class="status-no">❌ Missing</td>
+                </tr>
+                <tr>
+                    <td rowspan="5"><strong>Payment Processing</strong></td>
+                    <td>Stripe Integration</td>
+                    <td>✅ Yes</td>
+                    <td>✅ Yes</td>
+                    <td class="status-yes">✅ Complete</td>
+                </tr>
+                <tr>
+                    <td>Multiple Payment Methods</td>
+                    <td>✅ Cards, Apple Pay, Google Pay</td>
+                    <td>✅ Cards, Apple Pay, Google Pay</td>
+                    <td class="status-yes">✅ Complete</td>
+                </tr>
+                <tr>
+                    <td>Multi-Currency Support</td>
+                    <td>✅ Yes</td>
+                    <td>✅ Yes</td>
+                    <td class="status-yes">✅ Complete</td>
+                </tr>
+                <tr>
+                    <td>Payment Plans/Installments</td>
+                    <td>✅ Yes</td>
+                    <td>❌ No</td>
+                    <td class="status-no">❌ Missing</td>
+                </tr>
+                <tr>
+                    <td>Refund Processing</td>
+                    <td>✅ Automated</td>
+                    <td>✅ Manual (admin-initiated)</td>
+                    <td class="status-partial">⚠️ Partial</td>
+                </tr>
+                <tr>
+                    <td rowspan="4"><strong>Discount Codes</strong></td>
+                    <td>Percentage Discounts</td>
+                    <td>✅ Yes</td>
+                    <td>✅ Yes</td>
+                    <td class="status-yes">✅ Complete</td>
+                </tr>
+                <tr>
+                    <td>Fixed Amount Discounts</td>
+                    <td>✅ Yes</td>
+                    <td>✅ Yes</td>
+                    <td class="status-yes">✅ Complete</td>
+                </tr>
+                <tr>
+                    <td>Usage Limits</td>
+                    <td>✅ Yes</td>
+                    <td>✅ Yes</td>
+                    <td class="status-yes">✅ Complete</td>
+                </tr>
+                <tr>
+                    <td>Time-Based Discounts</td>
+                    <td>✅ Yes</td>
+                    <td>⚠️ Limited</td>
+                    <td class="status-partial">⚠️ Partial</td>
+                </tr>
+                <tr>
+                    <td rowspan="6"><strong>Attendee Management</strong></td>
+                    <td>Attendee Data Collection</td>
+                    <td>✅ Yes</td>
+                    <td>✅ Yes</td>
+                    <td class="status-yes">✅ Complete</td>
+                </tr>
+                <tr>
+                    <td>Custom Registration Fields</td>
+                    <td>✅ Yes</td>
+                    <td>⚠️ Limited</td>
+                    <td class="status-partial">⚠️ Partial</td>
+                </tr>
+                <tr>
+                    <td>Attendee Communication</td>
+                    <td>✅ Email, SMS</td>
+                    <td>✅ Email</td>
+                    <td class="status-partial">⚠️ Partial</td>
+                </tr>
+                <tr>
+                    <td>Attendee Segmentation</td>
+                    <td>✅ Yes</td>
+                    <td>⚠️ Limited</td>
+                    <td class="status-partial">⚠️ Partial</td>
+                </tr>
+                <tr>
+                    <td>Attendee Export</td>
+                    <td>✅ CSV, Excel</td>
+                    <td>✅ CSV (via reports)</td>
+                    <td class="status-partial">⚠️ Partial</td>
+                </tr>
+                <tr>
+                    <td>Attendee Search & Filter</td>
+                    <td>✅ Advanced</td>
+                    <td>✅ Basic (email, name, transaction ID)</td>
+                    <td class="status-partial">⚠️ Partial</td>
+                </tr>
+                <tr>
+                    <td rowspan="5"><strong>Check-In & QR Scanning</strong></td>
+                    <td>QR Code Generation</td>
+                    <td>✅ Yes</td>
+                    <td>✅ Yes</td>
+                    <td class="status-yes">✅ Complete</td>
+                </tr>
+                <tr>
+                    <td>Mobile QR Scanner App</td>
+                    <td>✅ Native App</td>
+                    <td>❌ No</td>
+                    <td class="status-no">❌ Missing</td>
+                </tr>
+                <tr>
+                    <td>Web-Based QR Scanner</td>
+                    <td>✅ Yes</td>
+                    <td>⚠️ Manual check-in only</td>
+                    <td class="status-partial">⚠️ Partial</td>
+                </tr>
+                <tr>
+                    <td>Camera-Based Scanning</td>
+                    <td>✅ Yes</td>
+                    <td>❌ No</td>
+                    <td class="status-no">❌ Missing</td>
+                </tr>
+                <tr>
+                    <td>Check-In History & Analytics</td>
+                    <td>✅ Yes</td>
+                    <td>✅ Yes (basic)</td>
+                    <td class="status-partial">⚠️ Partial</td>
+                </tr>
+                <tr>
+                    <td rowspan="4"><strong>Reporting & Analytics</strong></td>
+                    <td>Sales Reports</td>
+                    <td>✅ Comprehensive</td>
+                    <td>✅ Basic</td>
+                    <td class="status-partial">⚠️ Partial</td>
+                </tr>
+                <tr>
+                    <td>Attendee Demographics</td>
+                    <td>✅ Yes</td>
+                    <td>✅ Yes</td>
+                    <td class="status-yes">✅ Complete</td>
+                </tr>
+                <tr>
+                    <td>Real-Time Analytics</td>
+                    <td>✅ Yes</td>
+                    <td>✅ Yes (statistics dashboard)</td>
+                    <td class="status-yes">✅ Complete</td>
+                </tr>
+                <tr>
+                    <td>Export Formats</td>
+                    <td>✅ CSV, Excel, PDF</td>
+                    <td>✅ CSV, Excel (planned)</td>
+                    <td class="status-partial">⚠️ Partial</td>
+                </tr>
+                <tr>
+                    <td rowspan="3"><strong>API & Integrations</strong></td>
+                    <td>REST API</td>
+                    <td>✅ Full Admin API</td>
+                    <td>✅ Yes (via proxy)</td>
+                    <td class="status-yes">✅ Complete</td>
+                </tr>
+                <tr>
+                    <td>Webhooks</td>
+                    <td>✅ Yes</td>
+                    <td>✅ Yes (Stripe webhooks)</td>
+                    <td class="status-yes">✅ Complete</td>
+                </tr>
+                <tr>
+                    <td>Third-Party Integrations</td>
+                    <td>✅ Many (Zapier, etc.)</td>
+                    <td>⚠️ Limited</td>
+                    <td class="status-partial">⚠️ Partial</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="highlight">
+            <strong>Summary:</strong> Our system covers approximately <strong>75%</strong> of Tito's core features. The main gaps are in QR scanning (camera-based), embeddable widgets, waitlist management, and advanced attendee segmentation.
+        </div>
+
+        <h2>2. Current QR Scanning Implementation Analysis</h2>
+
+        <h3>2.1 Current Implementation</h3>
+        <div class="implementation-section">
+            <p><strong>Location:</strong> <code>/admin/qrcode-scan/tickets/events/[eventId]/transactions/[transactionId]</code></p>
+
+            <h4>Current Features:</h4>
+            <ul>
+                <li><strong>QR Code Generation:</strong> ✅ Implemented - QR codes are generated server-side and stored in <code>qrCodeImageUrl</code> field</li>
+                <li><strong>QR Code Display:</strong> ✅ Implemented - QR codes are displayed on ticket success pages (desktop and mobile)</li>
+                <li><strong>Manual Check-In:</strong> ✅ Implemented - Admin can manually check in attendees via form</li>
+                <li><strong>Check-In Status Tracking:</strong> ✅ Implemented - Tracks <code>checkInStatus</code>, <code>checkInTime</code>, <code>numberOfGuestsCheckedIn</code></li>
+                <li><strong>QR Code Validation Page:</strong> ✅ Implemented - Page displays ticket details when QR code is scanned</li>
+            </ul>
+
+            <h4>Current Limitations:</h4>
+            <ul>
+                <li>❌ <strong>No Camera-Based Scanning:</strong> Cannot scan QR codes using device camera</li>
+                <li>❌ <strong>No Mobile Scanner App:</strong> No dedicated mobile app for scanning</li>
+                <li>❌ <strong>No Browser-Based Scanner:</strong> Cannot use web camera to scan QR codes</li>
+                <li>⚠️ <strong>Manual Process:</strong> Requires admin to manually enter transaction ID or copy-paste QR code data</li>
+                <li>⚠️ <strong>No Batch Scanning:</strong> Cannot scan multiple tickets quickly</li>
+            </ul>
+        </div>
+
+        <h3>2.2 Current Check-In Flow</h3>
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>QR Code Generation:</strong> When a ticket is purchased, a QR code is generated and stored in the database
+        </div>
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>QR Code Display:</strong> QR code is shown to the attendee on the success page and sent via email
+        </div>
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Manual Check-In:</strong> Admin navigates to <code>/admin/qrcode-scan/tickets/events/[eventId]/transactions/[transactionId]</code> and manually enters transaction details
+        </div>
+        <div class="step">
+            <span class="step-number">4</span>
+            <strong>Status Update:</strong> Admin uses the check-in form to update <code>checkInStatus</code>, <code>numberOfGuestsCheckedIn</code>, and <code>checkInTime</code>
+        </div>
+
+        <h2>3. Proposed QR Scanning Solution</h2>
+
+        <h3>3.1 Recommended Approach: Browser-Based QR Scanner</h3>
+        <div class="recommendation">
+            <strong>Recommended Library:</strong> <code>react-qr-reader</code> or <code>@zxing/library</code> with <code>react-qr-scanner</code>
+            <br><br>
+            <strong>Why Browser-Based?</strong>
+            <ul>
+                <li>✅ No need for native mobile app development</li>
+                <li>✅ Works on both desktop (webcam) and mobile (camera)</li>
+                <li>✅ Faster to implement than native app</li>
+                <li>✅ Cross-platform compatibility</li>
+                <li>✅ Easy to update and maintain</li>
+            </ul>
+        </div>
+
+        <h3>3.2 Implementation Plan</h3>
+
+        <h4>Step 1: Create QR Scanner Component</h4>
+        <div class="code-block">
+<code>// src/components/qr/QrScanner.tsx
+"use client";
+import { useState, useRef, useEffect } from 'react';
+import dynamic from "next/dynamic";
+
+// Dynamically import QR reader to avoid SSR issues
+const QrReader = dynamic(() => import("react-qr-reader"), { ssr: false });
+
+interface QrScannerProps {
+  onScan: (data: string | null) => void;
+  onError: (error: Error) => void;
+  delay?: number;
+}
+
+export default function QrScanner({ onScan, onError, delay = 300 }: QrScannerProps) {
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
+
+  const handleScan = (data: string | null) => {
+    if (data) {
+      onScan(data);
+    }
+  };
+
+  const handleError = (err: Error) => {
+    console.error('QR Scanner Error:', err);
+    onError(err);
+  };
+
+  return (
+    &lt;div className="relative w-full max-w-md mx-auto"&gt;
+      &lt;QrReader
+        delay={delay}
+        onScan={handleScan}
+        onError={handleError}
+        facingMode={facingMode}
+        style={{ width: '100%' }}
+      /&gt;
+      &lt;button
+        onClick={() => setFacingMode(facingMode === 'user' ? 'environment' : 'user')}
+        className="absolute top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg"
+      &gt;
+        Switch Camera
+      &lt;/button&gt;
+    &lt;/div&gt;
+  );
+}</code>
+        </div>
+
+        <h4>Step 2: Create QR Verification API Endpoint</h4>
+        <div class="code-block">
+<code>// src/app/api/qr/verify/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { fetchWithJwtRetry } from '@/lib/proxyHandler';
+
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const qrData = searchParams.get('data');
+
+  if (!qrData) {
+    return NextResponse.json({ valid: false, error: 'No QR data provided' }, { status: 400 });
+  }
+
+  try {
+    // Parse QR data (could be transaction ID, URL, or encoded JSON)
+    // Example: Extract transaction ID from QR code
+    const transactionId = extractTransactionId(qrData);
+
+    if (!transactionId) {
+      return NextResponse.json({ valid: false, error: 'Invalid QR code format' }, { status: 400 });
+    }
+
+    // Fetch transaction details
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+    const response = await fetchWithJwtRetry(
+      `${API_BASE_URL}/api/event-ticket-transactions/${transactionId}`,
+      { cache: 'no-store' }
+    );
+
+    if (!response.ok) {
+      return NextResponse.json({ valid: false, error: 'Ticket not found' }, { status: 404 });
+    }
+
+    const transaction = await response.json();
+
+    // Validate ticket
+    const isValid = validateTicket(transaction);
+
+    return NextResponse.json({
+      valid: isValid,
+      transaction: isValid ? transaction : null,
+      message: isValid ? 'Ticket valid - Access granted' : 'Invalid ticket'
+    });
+  } catch (error) {
+    console.error('QR Verification Error:', error);
+    return NextResponse.json({ valid: false, error: 'Verification failed' }, { status: 500 });
+  }
+}
+
+function extractTransactionId(qrData: string): string | null {
+  // Handle different QR code formats:
+  // 1. Direct transaction ID
+  // 2. URL with transaction ID (e.g., /admin/qrcode-scan/.../transactions/123)
+  // 3. Encoded JSON with transaction ID
+
+  // Try to extract from URL
+  const urlMatch = qrData.match(/transactions\/(\d+)/);
+  if (urlMatch) return urlMatch[1];
+
+  // Try to parse as JSON
+  try {
+    const parsed = JSON.parse(qrData);
+    return parsed.transactionId || parsed.id || null;
+  } catch {
+    // Not JSON, try as direct ID
+    return /^\d+$/.test(qrData) ? qrData : null;
+  }
+}
+
+function validateTicket(transaction: any): boolean {
+  // Check if ticket is valid for check-in
+  if (!transaction) return false;
+  if (transaction.status === 'REFUNDED') return false;
+  if (transaction.status === 'CANCELLED') return false;
+  // Add more validation as needed
+  return true;
+}</code>
+        </div>
+
+        <h4>Step 3: Create Admin QR Scanner Page</h4>
+        <div class="code-block">
+<code>// src/app/admin/qr-scanner/page.tsx
+"use client";
+import { useState } from 'react';
+import QrScanner from '@/components/qr/QrScanner';
+import { useRouter } from 'next/navigation';
+
+export default function AdminQrScannerPage() {
+  const [scanResult, setScanResult] = useState&lt;string | null&gt;(null);
+  const [verificationResult, setVerificationResult] = useState&lt;any&gt;(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState&lt;string | null&gt;(null);
+  const router = useRouter();
+
+  const handleScan = async (data: string | null) => {
+    if (!data) return;
+
+    setScanResult(data);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/qr/verify?data=${encodeURIComponent(data)}`);
+      const result = await response.json();
+
+      setVerificationResult(result);
+
+      if (result.valid && result.transaction) {
+        // Redirect to check-in page
+        const eventId = result.transaction.eventId;
+        const transactionId = result.transaction.id;
+        router.push(`/admin/qrcode-scan/tickets/events/${eventId}/transactions/${transactionId}`);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleError = (err: Error) => {
+    setError(`Scanner error: ${err.message}`);
+  };
+
+  return (
+    &lt;div className="max-w-4xl mx-auto px-4 py-8"&gt;
+      &lt;h1 className="text-3xl font-bold mb-6"&gt;QR Code Scanner&lt;/h1&gt;
+
+      &lt;div className="bg-white rounded-lg shadow-md p-6 mb-6"&gt;
+        &lt;QrScanner onScan={handleScan} onError={handleError} /&gt;
+      &lt;/div&gt;
+
+      {loading && (
+        &lt;div className="text-center py-4"&gt;
+          &lt;div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"&gt;&lt;/div&gt;
+          &lt;p className="mt-2"&gt;Verifying ticket...&lt;/p&gt;
+        &lt;/div&gt;
+      )}
+
+      {error && (
+        &lt;div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"&gt;
+          &lt;strong&gt;Error:&lt;/strong&gt; {error}
+        &lt;/div&gt;
+      )}
+
+      {verificationResult && (
+        &lt;div className={`p-4 rounded-lg ${
+          verificationResult.valid
+            ? 'bg-green-100 border border-green-400 text-green-700'
+            : 'bg-red-100 border border-red-400 text-red-700'
+        }`}&gt;
+          &lt;h3 className="font-bold text-lg mb-2"&gt;
+            {verificationResult.valid ? '✅ Ticket Valid' : '❌ Invalid Ticket'}
+          &lt;/h3&gt;
+          &lt;p&gt;{verificationResult.message}&lt;/p&gt;
+          {verificationResult.transaction && (
+            &lt;div className="mt-4"&gt;
+              &lt;p&gt;&lt;strong&gt;Transaction ID:&lt;/strong&gt; {verificationResult.transaction.id}&lt;/p&gt;
+              &lt;p&gt;&lt;strong&gt;Attendee:&lt;/strong&gt; {verificationResult.transaction.firstName} {verificationResult.transaction.lastName}&lt;/p&gt;
+              &lt;p&gt;&lt;strong&gt;Status:&lt;/strong&gt; {verificationResult.transaction.status}&lt;/p&gt;
+            &lt;/div&gt;
+          )}
+        &lt;/div&gt;
+      )}
+    &lt;/div&gt;
+  );
+}</code>
+        </div>
+
+        <h4>Step 4: Alternative Implementation Using @zxing/library</h4>
+        <div class="code-block">
+<code>// Alternative: Using @zxing/library for more control
+// src/components/qr/ZxingQrScanner.tsx
+"use client";
+import { useEffect, useRef, useState } from 'react';
+import { BrowserMultiFormatReader } from '@zxing/library';
+
+export default function ZxingQrScanner({ onScan, onError }: { onScan: (data: string) => void; onError: (error: Error) => void }) {
+  const videoRef = useRef&lt;HTMLVideoElement&gt;(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const codeReaderRef = useRef&lt;BrowserMultiFormatReader | null&gt;(null);
+
+  useEffect(() => {
+    if (!videoRef.current) return;
+
+    const codeReader = new BrowserMultiFormatReader();
+    codeReaderRef.current = codeReader;
+
+    const startScanning = async () => {
+      try {
+        setIsScanning(true);
+        const result = await codeReader.decodeFromVideoDevice(
+          undefined,
+          videoRef.current!,
+          (result, error) => {
+            if (result) {
+              onScan(result.getText());
+            }
+            if (error && error.name !== 'NotFoundException') {
+              onError(error);
+            }
+          }
+        );
+      } catch (err: any) {
+        onError(err);
+        setIsScanning(false);
+      }
+    };
+
+    startScanning();
+
+    return () => {
+      if (codeReaderRef.current) {
+        codeReaderRef.current.reset();
+      }
+    };
+  }, [onScan, onError]);
+
+  return (
+    &lt;div className="relative w-full max-w-md mx-auto"&gt;
+      &lt;video ref={videoRef} className="w-full rounded-lg" /&gt;
+      {isScanning && (
+        &lt;div className="absolute inset-0 border-4 border-blue-500 rounded-lg pointer-events-none"&gt;
+          &lt;div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white bg-black bg-opacity-50 px-4 py-2 rounded"&gt;
+            Scanning...
+          &lt;/div&gt;
+        &lt;/div&gt;
+      )}
+    &lt;/div&gt;
+  );
+}</code>
+        </div>
+
+        <h3>3.3 QR Code Format Standardization</h3>
+        <div class="highlight">
+            <strong>Recommendation:</strong> Standardize QR code data format to include:
+            <ul>
+                <li>Transaction ID</li>
+                <li>Event ID</li>
+                <li>Verification token (optional, for security)</li>
+            </ul>
+
+            <strong>Format Options:</strong>
+            <ol>
+                <li><strong>URL Format:</strong> <code>https://yourdomain.com/admin/qrcode-scan/tickets/events/{eventId}/transactions/{transactionId}</code></li>
+                <li><strong>JSON Format:</strong> <code>{"transactionId": 123, "eventId": 456, "token": "abc123"}</code></li>
+                <li><strong>Encoded Format:</strong> Base64 encoded JSON</li>
+            </ol>
+        </div>
+
+        <h2>4. End-to-End Testing Strategy</h2>
+
+        <h3>4.1 Test Scenarios</h3>
+
+        <div class="test-scenario">
+            <h4>Scenario 1: Complete Ticket Purchase Flow</h4>
+            <ol>
+                <li>Create an event with ticket types</li>
+                <li>Purchase tickets via desktop browser (Stripe Checkout)</li>
+                <li>Purchase tickets via mobile browser (Apple Pay/Google Pay)</li>
+                <li>Verify QR codes are generated and displayed</li>
+                <li>Verify confirmation emails are sent</li>
+                <li>Verify transaction appears in admin panel</li>
+            </ol>
+        </div>
+
+        <div class="test-scenario">
+            <h4>Scenario 2: QR Code Scanning Flow</h4>
+            <ol>
+                <li>Open admin QR scanner page</li>
+                <li>Grant camera permissions</li>
+                <li>Scan QR code from ticket (mobile device showing QR code)</li>
+                <li>Verify ticket details are displayed</li>
+                <li>Verify check-in form is accessible</li>
+                <li>Perform check-in</li>
+                <li>Verify check-in status is updated</li>
+            </ol>
+        </div>
+
+        <div class="test-scenario">
+            <h4>Scenario 3: Check-In Management</h4>
+            <ol>
+                <li>Access check-in page via scanned QR code</li>
+                <li>Verify transaction details are correct</li>
+                <li>Update number of guests checking in</li>
+                <li>Mark as checked in</li>
+                <li>Verify check-in time is recorded</li>
+                <li>Verify check-in appears in reports</li>
+            </ol>
+        </div>
+
+        <div class="test-scenario">
+            <h4>Scenario 4: Refund Processing</h4>
+            <ol>
+                <li>Purchase a ticket</li>
+                <li>Navigate to admin tickets list</li>
+                <li>Initiate refund with reason</li>
+                <li>Verify Stripe refund is processed</li>
+                <li>Verify transaction status is updated to REFUNDED</li>
+                <li>Verify refund amount is recorded</li>
+                <li>Verify refunded ticket cannot be checked in</li>
+            </ol>
+        </div>
+
+        <div class="test-scenario">
+            <h4>Scenario 5: Reporting & Analytics</h4>
+            <ol>
+                <li>Create event and sell multiple tickets</li>
+                <li>Check in some attendees</li>
+                <li>Refund some tickets</li>
+                <li>Navigate to event statistics dashboard</li>
+                <li>Verify sales statistics are accurate</li>
+                <li>Verify check-in statistics are accurate</li>
+                <li>Export data to CSV (when implemented)</li>
+            </ol>
+        </div>
+
+        <h3>4.2 Testing Tools & Methods</h3>
+        <ul>
+            <li><strong>Manual Testing:</strong> Use actual devices (iOS, Android, Desktop browsers)</li>
+            <li><strong>QR Code Generators:</strong> Use online QR code generators to create test QR codes</li>
+            <li><strong>Stripe Test Mode:</strong> Use Stripe test cards for payment testing</li>
+            <li><strong>Browser DevTools:</strong> Test camera access and QR scanning in different browsers</li>
+            <li><strong>Postman/API Testing:</strong> Test API endpoints directly</li>
+        </ul>
+
+        <h3>4.3 Test Checklist</h3>
+        <div class="implementation-section">
+            <h4>Pre-Event Testing:</h4>
+            <ul>
+                <li>✅ Event creation and configuration</li>
+                <li>✅ Ticket type setup</li>
+                <li>✅ Discount code creation</li>
+                <li>✅ Payment flow (desktop and mobile)</li>
+                <li>✅ QR code generation</li>
+                <li>✅ Email notifications</li>
+            </ul>
+
+            <h4>Event Day Testing:</h4>
+            <ul>
+                <li>✅ QR scanner access and camera permissions</li>
+                <li>✅ QR code scanning accuracy</li>
+                <li>✅ Check-in process</li>
+                <li>✅ Multiple check-ins (same ticket)</li>
+                <li>✅ Invalid QR code handling</li>
+                <li>✅ Refunded ticket rejection</li>
+            </ul>
+
+            <h4>Post-Event Testing:</h4>
+            <ul>
+                <li>✅ Sales reports accuracy</li>
+                <li>✅ Check-in reports accuracy</li>
+                <li>✅ Data export functionality</li>
+                <li>✅ Refund processing</li>
+            </ul>
+        </div>
+
+        <h2>5. Implementation Priority</h2>
+
+        <div class="implementation-section">
+            <h3>High Priority (Critical for Event Day):</h3>
+            <ol>
+                <li><strong>Browser-Based QR Scanner</strong> - Essential for check-in</li>
+                <li><strong>QR Code Format Standardization</strong> - Ensures reliable scanning</li>
+                <li><strong>Real-Time Verification API</strong> - Fast ticket validation</li>
+            </ol>
+
+            <h3>Medium Priority (Enhancements):</h3>
+            <ol>
+                <li><strong>Batch Scanning Mode</strong> - Scan multiple tickets quickly</li>
+                <li><strong>Check-In Analytics Dashboard</strong> - Real-time check-in stats</li>
+                <li><strong>Offline Mode</strong> - Work without internet (sync later)</li>
+            </ol>
+
+            <h3>Low Priority (Nice to Have):</h3>
+            <ol>
+                <li><strong>Native Mobile App</strong> - Better performance, but browser solution works</li>
+                <li><strong>Advanced Reporting</strong> - More detailed analytics</li>
+                <li><strong>Waitlist Management</strong> - For sold-out events</li>
+            </ol>
+        </div>
+
+        <h2>6. Recommended Next Steps</h2>
+
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Install Required Packages:</strong>
+            <div class="code-block">
+<code>npm install react-qr-reader
+# OR
+npm install @zxing/library @zxing/browser</code>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Implement QR Scanner Component:</strong> Create the scanner component as shown in Section 3.2
+        </div>
+
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Create Verification API:</strong> Implement the QR verification endpoint
+        </div>
+
+        <div class="step">
+            <span class="step-number">4</span>
+            <strong>Create Admin Scanner Page:</strong> Build the admin interface for scanning
+        </div>
+
+        <div class="step">
+            <span class="step-number">5</span>
+            <strong>Standardize QR Format:</strong> Update QR code generation to use standardized format
+        </div>
+
+        <div class="step">
+            <span class="step-number">6</span>
+            <strong>Test End-to-End:</strong> Follow test scenarios in Section 4
+        </div>
+
+        <div class="step">
+            <span class="step-number">7</span>
+            <strong>Deploy & Train:</strong> Deploy to production and train event staff on QR scanning
+        </div>
+
+        <h2>7. Conclusion</h2>
+
+        <div class="recommendation">
+            <p><strong>Our ticketing system is well-positioned</strong> with approximately 75% feature parity with Tito. The main gap is in QR scanning capabilities, which can be addressed with a browser-based solution.</p>
+
+            <p><strong>Key Strengths:</strong></p>
+            <ul>
+                <li>✅ Comprehensive ticket management</li>
+                <li>✅ Stripe payment integration</li>
+                <li>✅ Discount code system</li>
+                <li>✅ Basic reporting and analytics</li>
+                <li>✅ Refund processing</li>
+            </ul>
+
+            <p><strong>Key Improvements Needed:</strong></p>
+            <ul>
+                <li>🔧 Browser-based QR scanner (high priority)</li>
+                <li>🔧 QR code format standardization</li>
+                <li>🔧 Enhanced reporting features</li>
+                <li>🔧 Waitlist management (future)</li>
+            </ul>
+
+            <p><strong>Recommended Timeline:</strong> Browser-based QR scanner can be implemented in 1-2 weeks, making the system fully functional for event day operations.</p>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #ddd;">
+
+        <p style="text-align: center; color: #666; font-size: 14px;">
+            Generated: January 2026 | Event Ticketing System Analysis Report
+        </p>
+    </div>
+</body>
+</html>
+
+

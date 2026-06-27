@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TestSprite Test Report - 12/29/2025, 1:21:01 PM</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        .summary {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .summary-card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid;
+        }
+        .summary-card.total { border-left-color: #3b82f6; }
+        .summary-card.passed { border-left-color: #10b981; }
+        .summary-card.failed { border-left-color: #ef4444; }
+        .summary-card.filtered { border-left-color: #f59e0b; }
+        .summary-card h3 {
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6b7280;
+            margin-bottom: 10px;
+        }
+        .summary-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #1f2937;
+        }
+        .summary-card.total .number { color: #3b82f6; }
+        .summary-card.passed .number { color: #10b981; }
+        .summary-card.failed .number { color: #ef4444; }
+        .summary-card.filtered .number { color: #f59e0b; }
+        .test-section {
+            padding: 30px;
+        }
+        .test-item {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: box-shadow 0.2s;
+        }
+        .test-item:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .test-item.passed {
+            border-left: 4px solid #10b981;
+            background: #f0fdf4;
+        }
+        .test-item.failed {
+            border-left: 4px solid #ef4444;
+            background: #fef2f2;
+        }
+        .test-item.filtered {
+            border-left: 4px solid #f59e0b;
+            background: #fffbeb;
+        }
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        .test-title {
+            flex: 1;
+        }
+        .test-title h3 {
+            font-size: 1.3em;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+        .test-title .test-id {
+            font-family: monospace;
+            font-size: 0.85em;
+            color: #6b7280;
+            margin-right: 10px;
+        }
+        .test-status-badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+        .test-status-badge.passed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .test-status-badge.failed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .test-status-badge.filtered {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .test-description {
+            color: #6b7280;
+            margin: 10px 0;
+            font-size: 0.95em;
+        }
+        .test-error {
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+        .test-error h4 {
+            color: #991b1b;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+        .test-error-content {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #374151;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #f9fafb;
+            border-radius: 4px;
+        }
+        .test-note {
+            margin-top: 10px;
+            padding: 10px;
+            background: #fef3c7;
+            border-left: 3px solid #f59e0b;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #92400e;
+        }
+        .test-visualization {
+            margin-top: 10px;
+        }
+        .test-visualization a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+        .test-visualization a:hover {
+            text-decoration: underline;
+        }
+        .error-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            background: #fee2e2;
+            color: #991b1b;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+        .warning-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            background: #fef3c7;
+            color: #92400e;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+        code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            text-align: center;
+            color: #6b7280;
+            border-top: 1px solid #e9ecef;
+            font-size: 0.9em;
+        }
+        .filter-info {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #92400e;
+        }
+        .filter-info h4 {
+            margin-bottom: 8px;
+            color: #78350f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 TestSprite Test Report</h1>
+            <p>Generated: 12/29/2025, 1:21:01 PM</p>
+            <p>Project: mosc-temp</p>
+        </div>
+
+        <div class="summary">
+            <h2>📊 Test Summary</h2>
+            <div class="summary-grid">
+                <div class="summary-card total">
+                    <h3>Total Tests</h3>
+                    <div class="number">25</div>
+                </div>
+                <div class="summary-card passed">
+                    <h3>Passed</h3>
+                    <div class="number">19</div>
+                </div>
+                <div class="summary-card failed">
+                    <h3>Failed</h3>
+                    <div class="number">6</div>
+                </div>
+                <div class="summary-card filtered">
+                    <h3>Filtered</h3>
+                    <div class="number">0</div>
+                    <p style="font-size: 0.8em; margin-top: 5px; color: #6b7280;">Expected warnings</p>
+                </div>
+            </div>
+            <div style="margin-top: 20px; text-align: center;">
+                <h3 style="color: #1f2937;">Success Rate: <span style="color: #f59e0b">76.0%</span></h3>
+            </div>
+        </div>
+
+        
+
+        <div class="test-section">
+            <h2 style="margin-bottom: 20px; color: #1f2937;">📋 Test Results</h2>
+            
+            <div class="test-item passed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">59279abc-96f1-453d-b4fd-9a29ea60b10f</span>
+                            PUBLIC-001-Homepage Load and Components
+                        </h3>
+                        <p class="test-description">Verify homepage loads successfully with all main sections visible (Hero, Events, Services, About, etc.)</p>
+                    </div>
+                    <span class="test-status-badge passed">
+                        PASSED
+                    </span>
+                </div>
+
+                
+
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031446639315//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item passed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">d0399f67-a5d4-452c-9848-4db878072040</span>
+                            PUBLIC-002-Events Listing Page Load
+                        </h3>
+                        <p class="test-description">Verify events listing page loads and displays event cards with pagination</p>
+                    </div>
+                    <span class="test-status-badge passed">
+                        PASSED
+                    </span>
+                </div>
+
+                
+
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031563615486//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item passed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">b4d9457f-02de-4fd8-9f9b-3895104aa338</span>
+                            PUBLIC-003-Event Details Page Load
+                        </h3>
+                        <p class="test-description">Verify event details page loads successfully with all event information</p>
+                    </div>
+                    <span class="test-status-badge passed">
+                        PASSED
+                    </span>
+                </div>
+
+                
+
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031523763918//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item passed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">fc8e2f61-6b78-47b2-afad-64ea95b3384f</span>
+                            PUBLIC-004-Gallery Page Load
+                        </h3>
+                        <p class="test-description">Verify gallery page loads successfully with tabs and media grid</p>
+                    </div>
+                    <span class="test-status-badge passed">
+                        PASSED
+                    </span>
+                </div>
+
+                
+
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031557271792//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item passed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">60dd997a-2c85-4e60-95e3-b402bd338d56</span>
+                            PUBLIC-005-Gallery Tab Switching
+                        </h3>
+                        <p class="test-description">Verify gallery tabs can be switched between Albums and Event Based Galleries</p>
+                    </div>
+                    <span class="test-status-badge passed">
+                        PASSED
+                    </span>
+                </div>
+
+                
+
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031606698068//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">52f287ac-c19a-491d-83ba-22715fa7e42f</span>
+                            PUBLIC-006-About Page Load via Dropdown
+                        </h3>
+                        <p class="test-description">Verify about page loads successfully via About dropdown menu</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content"><br>Browser Console Logs:<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_CONNECTION_CLOSED (at https://fonts.googleapis.com/css?family=Epilogue:300,400,500,600,700|Sora:400,500,600,700&display=swap:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_CONNECTION_CLOSED (at https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css:0:0)<br><span class="warning-badge">WARNING</span> Image with src "/images/hero_section/default_hero_section_second_column_poster.webp" was detected as the Largest Contentful Paint (LCP). Please add the "priority" property if this image is above the fold.<br>Read more: https://nextjs.org/docs/api-reference/next/image#priority (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fee43fae6623544d193ab0c26deca1d95?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/hero_section/default_hero_section_second_column_poster.webp" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/loading_events.jpg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdXdXpodVBsSFVNdmJSMmh4bFJ1TnZBT3NQIn0.0yeuxUIPtwi8sIGP6evrz8V0Dj6plogCPedpdygoKm0-C1LbRpFsCVkLBjXinrM-HUSCsSZ6D0brL4Ps6pmnyDQPq8f0Pudps0duF3ZV0ql8DLt4-Z10nq885xdt8aoU1PZf1HkqXTNdlpg2XmzKOOIMamYBEAoXuTqodSgPIIiwnTiO_6Mu83iaYFKwC65TDTpT5jaCXrecKHYTmufczMHUPqaY_hcTl788wWmmFuUH8GaxOft4PDR3Zq0-bFwogKTEJ8fl7VZkyV2MwVq-e6Y9Xyidc8e7n5xtyogaCLViGiaCSbufGQ0rfTbSwm6BLMnbO7TWAQG3BXLjRhfgpA:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:1:220031)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/176703148070963//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item passed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">cedf02c2-0795-4fd7-8f35-02023d0ba3bf</span>
+                            PUBLIC-007-Contact Page Load via Dropdown
+                        </h3>
+                        <p class="test-description">Verify contact section loads successfully via Contact dropdown menu</p>
+                    </div>
+                    <span class="test-status-badge passed">
+                        PASSED
+                    </span>
+                </div>
+
+                
+
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031447547299//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item passed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">7016fa36-3864-4661-b1ed-8131ab115b73</span>
+                            PUBLIC-008-Polls Listing Page Load
+                        </h3>
+                        <p class="test-description">Verify polls listing page loads successfully</p>
+                    </div>
+                    <span class="test-status-badge passed">
+                        PASSED
+                    </span>
+                </div>
+
+                
+
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031532828511//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item passed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">45b8ce0d-f2d8-402d-9193-39e72d866d3a</span>
+                            PUBLIC-009-Poll Details Page Load
+                        </h3>
+                        <p class="test-description">Verify poll details page loads successfully with poll information</p>
+                    </div>
+                    <span class="test-status-badge passed">
+                        PASSED
+                    </span>
+                </div>
+
+                
+
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031510113308//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item passed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">936bd772-5086-4776-b539-332a38bdddaa</span>
+                            PUBLIC-010-Calendar Page Load
+                        </h3>
+                        <p class="test-description">Verify calendar page loads successfully</p>
+                    </div>
+                    <span class="test-status-badge passed">
+                        PASSED
+                    </span>
+                </div>
+
+                
+
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031547943803//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item passed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">e31770f5-5c4f-4cea-a5dd-a7b1cf70b22f</span>
+                            PUBLIC-011-Pricing Page Load
+                        </h3>
+                        <p class="test-description">Verify pricing page loads successfully with membership plans</p>
+                    </div>
+                    <span class="test-status-badge passed">
+                        PASSED
+                    </span>
+                </div>
+
+                
+
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031480924052//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item passed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">9ffe3e8f-2178-4be8-b3b2-35ddb7b9a123</span>
+                            PUBLIC-012-Sponsors Listing Page Load
+                        </h3>
+                        <p class="test-description">Verify sponsors listing page loads successfully</p>
+                    </div>
+                    <span class="test-status-badge passed">
+                        PASSED
+                    </span>
+                </div>
+
+                
+
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031663752258//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item passed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">a9ce0be3-b3da-46af-8091-b3bd2e48ca93</span>
+                            PUBLIC-013-Sponsor Details Page Load
+                        </h3>
+                        <p class="test-description">Verify sponsor details page loads successfully</p>
+                    </div>
+                    <span class="test-status-badge passed">
+                        PASSED
+                    </span>
+                </div>
+
+                
+
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031463043661//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item passed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">f970a00a-ef98-4dd5-ae26-1a21cefeeeb3</span>
+                            PUBLIC-014-Focus Groups Listing Page Load
+                        </h3>
+                        <p class="test-description">Verify focus groups listing page loads successfully</p>
+                    </div>
+                    <span class="test-status-badge passed">
+                        PASSED
+                    </span>
+                </div>
+
+                
+
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031557263545//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item passed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">a86543ee-40d9-48f0-adbc-d2e75466e59b</span>
+                            PUBLIC-015-Focus Group Details Page Load
+                        </h3>
+                        <p class="test-description">Verify focus group details page loads successfully</p>
+                    </div>
+                    <span class="test-status-badge passed">
+                        PASSED
+                    </span>
+                </div>
+
+                
+
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031614740869//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item passed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">e1ca0986-3b0f-4c20-88d8-a4590d786c18</span>
+                            PUBLIC-016-MOSC Homepage Load
+                        </h3>
+                        <p class="test-description">Verify MOSC homepage loads successfully</p>
+                    </div>
+                    <span class="test-status-badge passed">
+                        PASSED
+                    </span>
+                </div>
+
+                
+
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/176703148312345//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">f296cbbc-fe79-4678-a39d-7739c30fb592</span>
+                            PUBLIC-017-MOSC Gallery Page Load
+                        </h3>
+                        <p class="test-description">Verify MOSC gallery page loads successfully</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content"><br>Browser Console Logs:<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_CONNECTION_CLOSED (at https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css:0:0)<br><span class="warning-badge">WARNING</span> Image with src "/images/hero_section/default_hero_section_second_column_poster.webp" was detected as the Largest Contentful Paint (LCP). Please add the "priority" property if this image is above the fold.<br>Read more: https://nextjs.org/docs/api-reference/next/image#priority (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fee43fae6623544d193ab0c26deca1d95?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/hero_section/default_hero_section_second_column_poster.webp" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/loading_events.jpg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdXdXp1Z3QwOVJFcUc0ejZ6bFhuZVZyQ3JkIn0.1DVUlbnV2OBF0ETMmJsQ9V1opag2v4y5bSyxBAy0WQbnk9X5itaLP1gPpSl8JDW_2zWE5t82nxszdKib4p7JEe0fGvaK_x4M4bbU9eUo6mKHBOMIfgOMoEq_cm-maAQUOkP1bKw-9rQQ0pf2e5-fxChbn8T_-rwqiwDTEU7doCW0rpWpCJYZeOvWiRkT4Xw2dqNnuNtxaLNkt2JFVxEFZb4RhSwCNfy-ie5swFypCIlg7Pd7-DLematpgs31Nl_t6bLhHBuKxrn1cpgDQXQbUieO6paUHBq3myXLblyeUG1T1o3xxuVxIxz5xVWHeaG7izuSxleZGcQxTLHA36gzKQ:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:1:220031)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031487440663//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item passed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">d3f9695b-e00b-4edd-bd25-224752ed20be</span>
+                            PUBLIC-018-Charity Theme Page Load
+                        </h3>
+                        <p class="test-description">Verify charity theme page loads successfully</p>
+                    </div>
+                    <span class="test-status-badge passed">
+                        PASSED
+                    </span>
+                </div>
+
+                
+
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031625544253//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item passed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">6b6a3473-6d98-4503-9e8b-88858b51c0c7</span>
+                            PUBLIC-019-Navigation Menu Functionality
+                        </h3>
+                        <p class="test-description">Verify navigation menu works correctly across public pages</p>
+                    </div>
+                    <span class="test-status-badge passed">
+                        PASSED
+                    </span>
+                </div>
+
+                
+
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031815760337//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">5d8e4949-54b8-44a9-a15b-7527b04f8e13</span>
+                            PUBLIC-020-Footer Visibility and Links
+                        </h3>
+                        <p class="test-description">Verify footer is visible and functional on public pages</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content">Footer visibility and content verified on homepage and events page. Navigation to gallery and other pages failed, blocking further testing. Reporting issue and stopping test.<br>Browser Console Logs:<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at http://localhost:3000/_next/static/css/app/layout.css?v=1767031352816:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at http://localhost:3000/_next/static/css/app/page.css?v=1767031352816:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at https://fonts.googleapis.com/css?family=Epilogue:300,400,500,600,700|Sora:400,500,600,700&display=swap:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at https://images.pexels.com/photos/15308719/pexels-photo-15308719.jpeg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at https://images.pexels.com/photos/10902685/pexels-photo-10902685.jpeg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at http://localhost:3000/_next/static/chunks/app/not-found.js:0:0)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/hero_section/default_hero_section_second_column_poster.webp" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)<br><span class="warning-badge">WARNING</span> Image with src "https://eventapp-media-bucket.s3.us-east-2.amazonaws.com/media/tenantId/tenant_demo_001/executive-team-members/latha_krishnan_1757093444035_7cfd3510.jpeg" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)<br><span class="warning-badge">WARNING</span> Image with src "https://eventapp-media-bucket.s3.us-east-2.amazonaws.com/media/tenantId/tenant_demo_001/executive-team-members/Manoj_Kizhakkoot_1757093467818_a471c9c7.png" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdXdXkwZm05Tmt1QVZxM1V4NDNvY3Z0VlZqIn0.dnIDX3-AEa3gYBkjOJ4AXVddXqKZyoxhDjXoxLDSPuB5C2jq4wmzwjOBknLAlyPYwzkknP9oj4-5DTnrTr3rs8O0uvLXPtZcOlnTmjA8BXo6RyN-V-JsKCrg8BuBJWWMCYM1JWF0MWxkgFpCVpv967pz0PghpGl5V6VdK2yLwvMlsSw6-6-dkgGmJN4v7d6BiIGtiYXo63doFn_fTIifFHDWoEJP6oCrBlnaOLMxIwV0t_HdhWNYa89AN2v8c8Yao5qd_J0o852H4QEiX9Q0X8dkQjXSSwdyl8uJxGLJq1C_yA7-4O-1rmT5FLC7R0JpwAmi3TWEoQXdtDng5ctyUQ:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:1:220031)<br><span class="warning-badge">WARNING</span> Image with src "https://eventapp-media-bucket.s3.us-east-2.amazonaws.com/media/tenantId/tenant_demo_001/executive-team-members/arun_sadasivan_1757093414753_3e098d44.jpeg" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)<br><span class="warning-badge">WARNING</span> Image with src "/images/hero_section/default_hero_section_second_column_poster.webp" was detected as the Largest Contentful Paint (LCP). Please add the "priority" property if this image is above the fold.<br>Read more: https://nextjs.org/docs/api-reference/next/image#priority (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767032114579532//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">75cf763d-c479-45be-a43c-262aa8d8c94d</span>
+                            PUBLIC-021-Responsive Design - Mobile View
+                        </h3>
+                        <p class="test-description">Verify public pages are responsive and work on mobile viewport</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content">Testing stopped due to navigation issue on mobile viewport preventing access to About page. Homepage, Events, and Gallery pages tested successfully for mobile responsiveness. Further testing halted.<br>Browser Console Logs:<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at https://images.pexels.com/photos/15308719/pexels-photo-15308719.jpeg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at http://localhost:3000/images/loading_events.jpg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at http://localhost:3000/images/testimonial-samanta.jpg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at http://localhost:3000/_next/static/chunks/webpack.js?v=1767031343042:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_CONNECTION_CLOSED (at https://fonts.googleapis.com/css?family=Epilogue:300,400,500,600,700|Sora:400,500,600,700&display=swap:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at http://localhost:3000/_next/static/chunks/app/layout.js:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at http://localhost:3000/_next/static/chunks/app/not-found.js:0:0)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fee43fae6623544d193ab0c26deca1d95?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/hero_section/default_hero_section_second_column_poster.webp" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/loading_events.jpg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdXdXpheXhDWXZwVk5WSDhZb2hLZHZ1WXM2In0.FLZRj02HMYZ44MYSQnRZaqOUU76EqisFwWnctqaTKJgy_60LnkkwOarh1H5kC5ROnFxeu7MJDo_zwVD_cnIEKQoKGOdaezfkhgQR1NuwfU_5sLzSObUGpehbxQg6hUwC471WuYH4vT88abTOSjFARxAq25O9L53IvdI6QDe0Fl9V9Q9CqZ6xf7AQva6g1_5tfGnkQFluzKWJaYse4JqXWt9miJcE9f0pkEL2dyKXROVvyb_ZrBvxhc4bo976M5eEztqzPtQVoK1Lq8RD4aZ3H3mJaDM0QBpInv3fToNGDL4sd7RULa0Aqqd0mAokGpfYKaEQsRCrCBuUzxyTpLeUSQ:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:1:220031)<br><span class="warning-badge">WARNING</span> Detected <code>scroll-behavior: smooth</code> on the <code><html></code> element. In a future version, Next.js will no longer automatically disable smooth scrolling during route transitions. To prepare for this change, add <code>data-scroll-behavior="smooth"</code> to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031673768103//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item passed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">fe9a3503-0410-4ff7-a7e5-503277d0d3d5</span>
+                            PUBLIC-022-Search Functionality on Events Page
+                        </h3>
+                        <p class="test-description">Verify search functionality works on events listing page</p>
+                    </div>
+                    <span class="test-status-badge passed">
+                        PASSED
+                    </span>
+                </div>
+
+                
+
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031868547706//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">c810b44a-8c1d-4a8b-8d50-d0aa5616f2b9</span>
+                            PUBLIC-023-Pagination on Events Page
+                        </h3>
+                        <p class="test-description">Verify pagination controls work correctly on events listing page</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content">Pagination controls verification on events listing page could not be completed because no pagination controls or event listings were found on the page. The page content and extracted data confirm the absence of these elements.<br>Browser Console Logs:<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at http://localhost:3000/_next/static/css/app/layout.css?v=1767031352815:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at http://localhost:3000/_next/static/css/app/page.css?v=1767031352815:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at https://fonts.googleapis.com/css?family=Epilogue:300,400,500,600,700|Sora:400,500,600,700&display=swap:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at http://localhost:3000/images/loading_events.jpg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at http://localhost:3000/images/testimonial-samanta.jpg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at https://images.pexels.com/photos/15308719/pexels-photo-15308719.jpeg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at https://images.pexels.com/photos/10902685/pexels-photo-10902685.jpeg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at http://localhost:3000/_next/static/chunks/webpack.js?v=1767031352815:0:0)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031530014398//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">625692c0-fde0-4002-ba1b-88b2541e5c55</span>
+                            PUBLIC-024-Gallery Search and Filter
+                        </h3>
+                        <p class="test-description">Verify search and filter functionality works on gallery page</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content">The search functionality on the gallery page works correctly by filtering results based on the search query 'test1'. However, the date filter inputs do not support direct text input, preventing full testing of date filters. Additionally, the 'Clear search' button does not reset the gallery to show all items, indicating a broken filter reset functionality. Due to these issues, the filter functionality cannot be fully verified. Reporting these issues and stopping further testing is recommended.<br>Browser Console Logs:<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at http://localhost:3000/_next/static/css/app/layout.css?v=1767031352815:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at https://fonts.googleapis.com/css?family=Epilogue:300,400,500,600,700|Sora:400,500,600,700&display=swap:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at http://localhost:3000/_next/static/css/app/page.css?v=1767031352815:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at http://localhost:3000/images/loading_events.jpg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at https://images.pexels.com/photos/15308719/pexels-photo-15308719.jpeg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at https://images.pexels.com/photos/10902685/pexels-photo-10902685.jpeg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at https://images.pexels.com/photos/20556421/pexels-photo-20556421.jpeg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at http://localhost:3000/images/testimonial-samanta.jpg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at http://localhost:3000/_next/static/chunks/webpack.js?v=1767031352815:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdXdktMbFJXNzdEdzBKVUpJVHF2N1FiTU0zIn0.542BZqwbHLNEWvhYel57OfzsAc5MqddZ48579_XZE2YuKRkDk9XbpJfCYmS8TYO_AYX1oqWpaVhQAtNThhZRctATsmG6yxvrQ_A9KaErvctbhLv1CLY-xicg4MrrU-1P_mQxpKgD2OoTX1b1zvpicsjDeTWBCdiE1xHMzqySxyp4H4sdtHmc_Q4zHh5AP6sFx1d3XKg6ml3zbQH39l675poNxCG30IWCPotfKGLidPj7yYPP5_FcQt6NcBKNlLYHtZfAFZyzx4qIXDocOli_WBQQyxpgKWempRqlTJfttgERJcEZ9-2BnJ7DhmfTD7DImEQDID2zvnkuNBnHw_igwQ:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:1:220031)<br><span class="warning-badge">WARNING</span> Image with src "https://eventapp-media-bucket.s3.us-east-2.amazonaws.com/dev/media/email_header_image_1766886018171_7021ef4c.jpeg" was detected as the Largest Contentful Paint (LCP). Please add the "priority" property if this image is above the fold.<br>Read more: https://nextjs.org/docs/api-reference/next/image#priority (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/utils/warn-once.js:15:20)<br><span class="warning-badge">WARNING</span> The specified value "12/01/2025" does not conform to the required format, "yyyy-MM-dd". (at :6328:0)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031895979124//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item passed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">f46815ca-23c5-427a-962c-821aad759847</span>
+                            PUBLIC-025-Event Media Gallery Display
+                        </h3>
+                        <p class="test-description">Verify event media gallery displays correctly on event details page</p>
+                    </div>
+                    <span class="test-status-badge passed">
+                        PASSED
+                    </span>
+                </div>
+
+                
+
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1767031584372198//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+        </div>
+
+        <div class="footer">
+            <p>Generated by TestSprite HTML Report Generator</p>
+            <p>This report shows all test results without filtering (unfiltered report)</p>
+            <p style="margin-top: 10px; font-size: 0.85em;">
+                <strong>How to use this report:</strong><br>
+                Review failed tests below. Copy the error details and share with Cursor AI to fix issues.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

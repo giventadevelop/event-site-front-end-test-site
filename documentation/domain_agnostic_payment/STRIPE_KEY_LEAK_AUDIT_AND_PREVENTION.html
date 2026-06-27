@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe API Key Leak Audit & Prevention Guide</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #e74c3c;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .alert {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .alert-info {
+            background-color: #d1ecf1;
+            border-color: #0c5460;
+            color: #0c5460;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .alert-critical {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+            font-weight: bold;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #e83e8c;
+        }
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+        .code-block {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .risk-high {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .risk-medium {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .risk-low {
+            color: #28a745;
+        }
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+        .checklist li:before {
+            content: "✅ ";
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Stripe API Key Leak Audit & Prevention Guide</h1>
+        
+        <div class="alert alert-danger">
+            <strong>🔴 CRITICAL SECURITY INCIDENT:</strong> Live Stripe API key detected as publicly available online.
+        </div>
+
+        <h2>Executive Summary</h2>
+        <p>
+            <strong>Status</strong>: Live Stripe API key (<code>sk_live_51JoBNqK5BrggeAHM...oP67X</code>) detected as publicly available by Stripe.
+        </p>
+
+        <h3>Confirmed Safe</h3>
+        <ul class="checklist">
+            <li>Not in Git/GitHub (documentation folder is in .gitignore)</li>
+            <li>Not in codebase (keys are encrypted in database)</li>
+            <li>Scripts don't log keys in plain text</li>
+        </ul>
+
+        <div class="alert alert-warning">
+            <strong>Most Likely Source</strong>: AWS Amplify Environment Variables
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #dee2e6;">
+
+        <h2>Potential Leak Sources (Ranked by Likelihood)</h2>
+
+        <div class="section">
+            <h3>1. AWS Amplify Environment Variables <span class="risk-high">⚠️ HIGHEST RISK</span></h3>
+            <p><strong>Why This Is Likely</strong>:</p>
+            <ul>
+                <li>You mentioned copying/pasting keys into AWS Amplify console</li>
+                <li>AWS Amplify build logs may expose environment variables</li>
+                <li>AWS CloudWatch logs may contain environment variable values</li>
+                <li>Browser clipboard history/extensions may have captured the key</li>
+            </ul>
+
+            <p><strong>How to Check</strong>:</p>
+            <div class="code-block">
+                <pre><code># Check AWS Amplify build logs
+aws amplify list-apps
+aws amplify get-app --app-id &lt;your-app-id&gt;
+
+# Check CloudWatch logs for environment variable exposure
+aws logs describe-log-groups --log-group-name-prefix "/aws/amplify"
+aws logs filter-log-events --log-group-name "/aws/amplify/&lt;app-name&gt;/build" --filter-pattern "sk_live"</code></pre>
+            </div>
+
+            <p><strong>What to Do</strong>:</p>
+            <ol>
+                <li>Review all AWS Amplify build logs</li>
+                <li>Check CloudWatch logs for any environment variable dumps</li>
+                <li>Review browser history/clipboard if you copied the key</li>
+                <li>Check if any browser extensions captured clipboard data</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h3>2. Browser Clipboard/History <span class="risk-medium">⚠️ MEDIUM RISK</span></h3>
+            <p><strong>Potential Exposures</strong>:</p>
+            <ul>
+                <li>Browser clipboard history (if enabled)</li>
+                <li>Browser extensions that capture clipboard data</li>
+                <li>Password managers that may have stored the key</li>
+                <li>Browser developer tools console (if key was pasted there)</li>
+            </ul>
+
+            <p><strong>How to Check</strong>:</p>
+            <ul>
+                <li>Clear browser clipboard history</li>
+                <li>Review browser extensions (especially clipboard managers)</li>
+                <li>Check password manager for stored keys</li>
+                <li>Review browser console history</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3>3. Cloud Storage Backups (Carbonite) <span class="risk-medium">⚠️ LOW-MEDIUM RISK</span></h3>
+            <p><strong>Potential Exposures</strong>:</p>
+            <ul>
+                <li>If Carbonite indexes file contents, the key could be in searchable backup</li>
+                <li>If backup was shared or accessed by unauthorized party</li>
+                <li>If Carbonite web interface exposes file contents</li>
+            </ul>
+
+            <p><strong>What to Do</strong>:</p>
+            <ul>
+                <li>Review Carbonite access logs</li>
+                <li>Check if backup files are accessible via web interface</li>
+                <li>Verify Carbonite encryption settings</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3>4. Email/Chat/File Sharing <span class="risk-medium">⚠️ MEDIUM RISK</span></h3>
+            <p><strong>Potential Exposures</strong>:</p>
+            <ul>
+                <li>If properties files were emailed to team members</li>
+                <li>If files were shared via cloud storage (Google Drive, Dropbox, OneDrive)</li>
+                <li>If files were shared via chat (Slack, Teams, etc.)</li>
+                <li>If files were uploaded to documentation sites</li>
+            </ul>
+
+            <p><strong>What to Do</strong>:</p>
+            <ul>
+                <li>Search email for "stripe-config" or "sk_live"</li>
+                <li>Review shared cloud storage folders</li>
+                <li>Check chat history for file shares</li>
+                <li>Review any documentation sites where files might have been uploaded</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3>5. Local File System Exposure <span class="risk-low">⚠️ LOW RISK</span></h3>
+            <p><strong>Potential Exposures</strong>:</p>
+            <ul>
+                <li>If local files were indexed by search engines (unlikely but possible)</li>
+                <li>If files were in a shared network drive</li>
+                <li>If files were on a compromised machine</li>
+            </ul>
+
+            <p><strong>What to Do</strong>:</p>
+            <ul>
+                <li>Run antivirus scan</li>
+                <li>Check for malware/keyloggers</li>
+                <li>Review file system permissions</li>
+                <li>Check if files are in any shared locations</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3>6. Build Artifacts/Deployment Packages <span class="risk-low">⚠️ LOW RISK</span></h3>
+            <p><strong>Potential Exposures</strong>:</p>
+            <ul>
+                <li>If properties files were included in Docker images</li>
+                <li>If files were in JAR/WAR files</li>
+                <li>If files were in deployment packages uploaded to cloud storage</li>
+            </ul>
+
+            <p><strong>What to Do</strong>:</p>
+            <ul>
+                <li>Check Docker image layers for properties files</li>
+                <li>Review deployment packages</li>
+                <li>Check if any build artifacts were publicly accessible</li>
+            </ul>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #dee2e6;">
+
+        <h2>Immediate Actions Required</h2>
+
+        <div class="alert alert-critical">
+            <h3>1. Rotate Stripe Keys IMMEDIATELY 🔴 CRITICAL</h3>
+            <div class="code-block">
+                <pre><code># In Stripe Dashboard:
+# 1. Go to https://dashboard.stripe.com/apikeys
+# 2. Revoke the compromised key: sk_live_51JoBNqK5BrggeAHM...oP67X
+# 3. Create a new live secret key
+# 4. Update database with new encrypted key</code></pre>
+            </div>
+        </div>
+
+        <h3>2. Audit Stripe Account Activity</h3>
+        <div class="code-block">
+            <pre><code># Check for unauthorized activity:
+# 1. Review all charges in Stripe Dashboard
+# 2. Check for new connected accounts
+# 3. Review API usage logs
+# 4. Check for refunds or payouts
+# 5. Review webhook events for suspicious activity</code></pre>
+        </div>
+
+        <h3>3. Update Database with New Key</h3>
+        <p>After rotating the key, update your database:</p>
+        <div class="code-block">
+            <pre><code>-- Encrypt new key using your encryption utility
+-- Then update payment_provider_config table
+UPDATE payment_provider_config
+SET provider_secret_key_encrypted = '&lt;new_encrypted_key&gt;',
+    updated_at = NOW()
+WHERE tenant_id = 'tenant_demo_002'
+  AND provider_name = 'STRIPE';</code></pre>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #dee2e6;">
+
+        <h2>Prevention Strategy</h2>
+
+        <h3>1. Environment Variable Management</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>✅ DO</th>
+                    <th>❌ DON'T</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <ul>
+                            <li>Use AWS Secrets Manager or Parameter Store for sensitive keys</li>
+                            <li>Use environment variables only for non-sensitive configuration</li>
+                            <li>Never log environment variables in build scripts</li>
+                            <li>Use AWS IAM roles instead of hardcoded keys when possible</li>
+                        </ul>
+                    </td>
+                    <td>
+                        <ul>
+                            <li>Copy/paste keys directly into AWS Amplify console</li>
+                            <li>Store keys in properties files (even if in .gitignore)</li>
+                            <li>Log environment variables in build logs</li>
+                            <li>Share keys via email/chat</li>
+                        </ul>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2. Secure Key Storage</h3>
+        <div class="code-block">
+            <pre><code># Use AWS Secrets Manager
+aws secretsmanager create-secret \
+  --name "stripe/live/secret-key" \
+  --secret-string "sk_live_..."
+
+# Reference in application
+application:
+  payment:
+    stripe:
+      secret-key: ${aws.secretsmanager:stripe/live/secret-key}</code></pre>
+        </div>
+
+        <h3>3. Build Script Security</h3>
+        <div class="code-block">
+            <pre><code># Never log sensitive values
+function Write-SecureValue {
+    param($value)
+    if ($value -and $value.Length -gt 8) {
+        return $value.Substring(0, 4) + "***" + $value.Substring($value.Length - 4)
+    }
+    return "***"
+}
+
+# Use masked logging
+Write-Host "Secret Key: $(Write-SecureValue $secretKey)"</code></pre>
+        </div>
+
+        <h3>4. Git Security</h3>
+        <p>Update .gitignore with these patterns:</p>
+        <div class="code-block">
+            <pre><code># Add these patterns
+**/stripe-config*.properties
+**/givebutter-config*.properties
+**/*-config*.properties
+**/*-config-prod.properties
+**/*-config-dev.properties
+documentation/INSERT_STRIPE_PAYMENT_DETAILS_TO_DB/*.properties
+documentation/INSERT_STRIPE_PAYMENT_DETAILS_TO_DB/*-config*.sql</code></pre>
+        </div>
+
+        <h3>5. Pre-commit Hook</h3>
+        <div class="code-block">
+            <pre><code>#!/bin/sh
+# Check for exposed keys before commit
+if git diff --cached | grep -E "sk_live_|sk_test_|pk_live_|pk_test_"; then
+    echo "ERROR: Stripe keys detected in staged files!"
+    exit 1
+fi</code></pre>
+        </div>
+
+        <h3>6. Code Scanning</h3>
+        <div class="code-block">
+            <pre><code># GitHub Actions / GitLab CI
+- name: Scan for secrets
+  uses: trufflesecurity/trufflehog@main
+  with:
+    path: ./
+    base: ${{ github.event.repository.default_branch }}</code></pre>
+        </div>
+
+        <h3>7. AWS Amplify Best Practices</h3>
+        <div class="alert alert-info">
+            <strong>Instead of Console Entry:</strong>
+            <ol>
+                <li><strong>Use AWS Secrets Manager</strong>:
+                    <div class="code-block">
+                        <pre><code># Store in Secrets Manager
+aws secretsmanager create-secret \
+  --name "amplify/stripe-secret-key" \
+  --secret-string "sk_live_..."
+
+# Reference in amplify.yml
+env:
+  STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}</code></pre>
+                    </div>
+                </li>
+                <li><strong>Use Environment Variables from Secrets Manager</strong>:
+                    <ul>
+                        <li>Configure Amplify to pull from Secrets Manager</li>
+                        <li>Never paste keys directly in console</li>
+                    </ul>
+                </li>
+                <li><strong>Review Build Logs</strong>:
+                    <ul>
+                        <li>Ensure build logs don't echo environment variables</li>
+                        <li>Use masked logging in build scripts</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #dee2e6;">
+
+        <h2>File Cleanup Checklist</h2>
+
+        <h3>Files to Secure/Remove:</h3>
+        <ol>
+            <li>
+                <code>documentation/INSERT_STRIPE_PAYMENT_DETAILS_TO_DB/stripe-config.properties</code>
+                <ul>
+                    <li><strong>Action</strong>: Delete or move to secure location outside repo</li>
+                    <li><strong>Replace with</strong>: <code>stripe-config.properties.template</code> (with placeholders)</li>
+                </ul>
+            </li>
+            <li>
+                <code>documentation/INSERT_STRIPE_PAYMENT_DETAILS_TO_DB/stripe-config-prod.properties</code>
+                <ul>
+                    <li><strong>Action</strong>: Delete immediately</li>
+                    <li><strong>Replace with</strong>: Template file</li>
+                </ul>
+            </li>
+            <li>
+                Any other <code>*-config*.properties</code> files with real keys
+                <ul>
+                    <li><strong>Action</strong>: Audit and remove all</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h3>Template Files (Safe to Keep):</h3>
+        <ul class="checklist">
+            <li><code>stripe-config.properties.template</code> (with placeholders like <code>sk_live_YOUR_KEY_HERE</code>)</li>
+            <li><code>README-STRIPE-CONFIG.md</code> (documentation only, no real keys)</li>
+        </ul>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #dee2e6;">
+
+        <h2>Long-Term Security Improvements</h2>
+
+        <h3>1. Implement Secret Rotation</h3>
+        <div class="code-block">
+            <pre><code>// Automatically rotate keys every 90 days
+@Scheduled(cron = "0 0 0 1 * ?") // Monthly
+public void rotateStripeKeys() {
+    // Generate new key in Stripe
+    // Update database
+    // Verify old key is revoked
+}</code></pre>
+        </div>
+
+        <h3>2. Key Access Auditing</h3>
+        <div class="code-block">
+            <pre><code>// Log all key usage
+@Aspect
+public class StripeKeyUsageAspect {
+    @Around("execution(* StripePaymentAdapter.*(..))")
+    public Object logKeyUsage(ProceedingJoinPoint joinPoint) {
+        log.info("Stripe key accessed: {}", 
+            SecurityContextHolder.getContext().getAuthentication().getName());
+        return joinPoint.proceed();
+    }
+}</code></pre>
+        </div>
+
+        <h3>3. Environment Variable Validation</h3>
+        <div class="code-block">
+            <pre><code>// Validate keys are not exposed
+@Component
+public class KeyExposureValidator {
+    @PostConstruct
+    public void validateKeys() {
+        String key = System.getenv("STRIPE_SECRET_KEY");
+        if (key != null && key.contains("sk_live_")) {
+            log.warn("⚠️ Live Stripe key detected in environment variable - ensure it's not logged!");
+        }
+    }
+}</code></pre>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #dee2e6;">
+
+        <h2>AWS Amplify Specific Recommendations</h2>
+
+        <h3>1. Use AWS Secrets Manager Integration</h3>
+        <div class="code-block">
+            <pre><code># amplify.yml
+version: 1
+backend:
+  phases:
+    build:
+      commands:
+        - |
+          # Fetch from Secrets Manager
+          export STRIPE_SECRET_KEY=$(aws secretsmanager get-secret-value \
+            --secret-id stripe/live/secret-key \
+            --query SecretString --output text)</code></pre>
+        </div>
+
+        <h3>2. Review Amplify Build Logs</h3>
+        <ul>
+            <li>Check if environment variables are logged</li>
+            <li>Ensure build scripts don't echo sensitive values</li>
+            <li>Use AWS CloudWatch Insights to search for key exposure</li>
+        </ul>
+
+        <h3>3. Use Amplify Environment Variables (Securely)</h3>
+        <ul>
+            <li>Store in AWS Systems Manager Parameter Store (encrypted)</li>
+            <li>Reference in Amplify console (not paste directly)</li>
+            <li>Use IAM roles for access</li>
+        </ul>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #dee2e6;">
+
+        <h2>Monitoring & Detection</h2>
+
+        <h3>1. Set Up Stripe Alerts</h3>
+        <div class="code-block">
+            <pre><code># In Stripe Dashboard:
+# 1. Go to Settings > Developers > Webhooks
+# 2. Add webhook for: api_key.rotated, api_key.created
+# 3. Set up email alerts for suspicious activity</code></pre>
+        </div>
+
+        <h3>2. Regular Key Audits</h3>
+        <div class="code-block">
+            <pre><code># Monthly audit script
+#!/bin/bash
+# Check for exposed keys in:
+# - Git history
+# - Build logs
+# - Documentation
+# - Environment variables</code></pre>
+        </div>
+
+        <h3>3. Automated Scanning</h3>
+        <div class="code-block">
+            <pre><code># Add to CI/CD
+- name: Secret Scanning
+  run: |
+    gitleaks detect --source . --verbose
+    trufflehog filesystem . --json</code></pre>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #dee2e6;">
+
+        <h2>Summary: Most Likely Source</h2>
+
+        <div class="alert alert-warning">
+            <p>Based on your description, <strong>AWS Amplify Environment Variables</strong> is the most likely source because:</p>
+            <ol>
+                <li>✅ You mentioned copying/pasting into Amplify console</li>
+                <li>✅ Amplify build logs may expose environment variables</li>
+                <li>✅ Browser clipboard/extensions may have captured the key</li>
+                <li>✅ CloudWatch logs may contain the key if it was logged</li>
+            </ol>
+        </div>
+
+        <h3>Next Steps</h3>
+        <ol>
+            <li>Rotate the Stripe key immediately</li>
+            <li>Review AWS Amplify build logs and CloudWatch logs</li>
+            <li>Check browser clipboard history and extensions</li>
+            <li>Implement AWS Secrets Manager for future key storage</li>
+            <li>Add secret scanning to CI/CD pipeline</li>
+        </ol>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #dee2e6;">
+
+        <h2>Questions for Stripe Support</h2>
+
+        <p>While Stripe typically doesn't reveal exact sources, you can ask:</p>
+        <ol>
+            <li>"When was the key first detected as exposed?"</li>
+            <li>"Are there any patterns in how the key was used that might indicate the source?"</li>
+            <li>"Can you provide any geographic/IP information about key usage?"</li>
+            <li>"What type of unauthorized activity was detected?"</li>
+        </ol>
+        <p>This information can help narrow down when/where the leak occurred.</p>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #dee2e6;">
+
+        <p style="color: #6c757d; font-size: 0.9em;">
+            <strong>Document Version:</strong> 1.0<br>
+            <strong>Created:</strong> <span id="date"></span><br>
+            <strong>Related Documentation:</strong> 
+            <a href="README-STRIPE-CONFIG.html">README-STRIPE-CONFIG.html</a>
+        </p>
+    </div>
+
+    <script>
+        document.getElementById('date').textContent = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    </script>
+</body>
+</html>

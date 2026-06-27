@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PRD: News Portal – Frontend (Next.js)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+      h1, h2, h3, h4 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+      h1 { font-size: 2.3rem; margin-bottom: 0.75rem; }
+      h2 { font-size: 1.7rem; margin-top: 2.5rem; }
+      h3 { font-size: 1.3rem; margin-top: 1.8rem; }
+      h4 { font-size: 1.1rem; margin-top: 1.2rem; }
+      p, li { line-height: 1.75; font-size: 1rem; }
+      ul, ol { margin-left: 1.4rem; }
+      table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+      th, td { border: 1px solid rgba(42, 32, 23, 0.15); padding: 0.75rem; vertical-align: top; }
+      th { background: rgba(213, 201, 182, 0.35); font-weight: 600; }
+      code, pre {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+      }
+      pre { padding: 1rem; line-height: 1.6; overflow-x: auto; }
+      code.inline { padding: 0.15rem 0.35rem; font-size: 0.95rem; display: inline-block; }
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .divider { height: 1px; background: rgba(42, 32, 23, 0.12); margin: 2rem 0; }
+      .callout {
+        border-left: 4px solid #8b7d6b;
+        background: rgba(213, 201, 182, 0.3);
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
+        margin: 1.8rem 0;
+      }
+      .toc ol { list-style: decimal; }
+      .toc a { color: #1f4c8f; text-decoration: none; }
+      .toc a:hover { text-decoration: underline; }
+      footer { margin-top: 4rem; text-align: center; font-size: 0.9rem; color: #7a7066; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Draft · News Portal Frontend</span>
+      <h1>PRD: News Portal – Frontend (Next.js)</h1>
+      <p>
+        <strong>Project:</strong> MCEFEE Multi-Tenant Event Management Platform<br />
+        <strong>Document Version:</strong> 1.0<br />
+        <strong>Date:</strong> January 2026<br />
+        <strong>Status:</strong> Draft
+      </p>
+
+      <div class="divider"></div>
+
+      <h2 id="executive-summary">Executive Summary</h2>
+      <p>
+        This document defines the <strong>frontend</strong> requirements for the News Portal feature in the Next.js application
+        (<code class="inline">mosc-temp</code>). It covers public news pages (landing, category, article detail), navigation integration,
+        and the admin dashboard for editors to manage articles, categories, section images, and flash news. All API access
+        follows <code class="inline">nextjs_api_routes.mdc</code> (proxy + server actions). UI must follow
+        <code class="inline">.cursor/rules/ui_style_guide.mdc</code> and <code class="inline">mosc_styling_standards.mdc</code>.
+      </p>
+
+      <h2 id="table-of-contents">Table of Contents</h2>
+      <nav class="toc">
+        <ol>
+          <li><a href="#routes">Routes &amp; Pages</a></li>
+          <li><a href="#public-pages">Public News Pages</a></li>
+          <li><a href="#admin-dashboard">Admin Dashboard</a></li>
+          <li><a href="#api-integration">API Integration</a></li>
+          <li><a href="#ui-standards">UI Standards</a></li>
+          <li><a href="#menu-integration">Menu Integration</a></li>
+        </ol>
+      </nav>
+
+      <div class="divider"></div>
+
+      <section id="routes">
+        <h2>1. Routes &amp; Pages</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Route</th>
+              <th>Type</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="inline">/news</code></td>
+              <td>Public</td>
+              <td>News landing: Flash carousel, section blocks (Main News, Featured News, Most Read, Press Release) with configurable section images and article lists; right sidebar (promotional block) for video, “More Videos,” or banner ads.</td>
+            </tr>
+            <tr>
+              <td><code class="inline">/news/category/[slug]</code></td>
+              <td>Public</td>
+              <td>Category listing with pagination (e.g. main-news, featured-news, most-read, press-release).</td>
+            </tr>
+            <tr>
+              <td><code class="inline">/news/[slug]</code></td>
+              <td>Public</td>
+              <td>Single article detail (by slug).</td>
+            </tr>
+            <tr>
+              <td><code class="inline">/news/live</code></td>
+              <td>Public</td>
+              <td>Live video page: embeds the currently configured live stream (e.g. YouTube Live) from admin config.</td>
+            </tr>
+            <tr>
+              <td><code class="inline">/admin/news</code></td>
+              <td>Admin</td>
+              <td>News admin hub: links to articles, categories, section config, sidebar promotions (rotating banners), flash items, live stream.</td>
+            </tr>
+            <tr>
+              <td><code class="inline">/admin/news/articles</code></td>
+              <td>Admin</td>
+              <td>List/create/edit news articles.</td>
+            </tr>
+            <tr>
+              <td><code class="inline">/admin/news/categories</code></td>
+              <td>Admin</td>
+              <td>Manage news categories.</td>
+            </tr>
+            <tr>
+              <td><code class="inline">/admin/news/sections</code></td>
+              <td>Admin</td>
+              <td>Edit section display config: image (and optional title) per section (flash_news, main_news, featured_news, most_read, press_release, sidebar_promotional_block).</td>
+            </tr>
+            <tr>
+              <td><code class="inline">/admin/news/sidebar-promotions</code></td>
+              <td>Admin</td>
+              <td>Manage rotating banner ads for the right sidebar: add/edit items (image URL, link URL, display order, display duration in seconds for slideshow timer), valid_from/valid_to, is_active. Displayed as slideshow with timer on public news pages.</td>
+            </tr>
+            <tr>
+              <td><code class="inline">/admin/news/flash</code></td>
+              <td>Admin</td>
+              <td>Manage flash news items (carousel/ticker).</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="public-pages">
+        <div class="divider"></div>
+        <h2>2. Public News Pages</h2>
+        <h3>Landing (<code class="inline">/news</code>)</h3>
+        <ul>
+          <li>Fetch: section config (for section images/titles), <strong>sidebar promotions</strong> (active rotating banners for right column slideshow), flash items, and recent articles per section/category.</li>
+          <li>Layout: Flash News carousel at top; then blocks for Main News, Featured News, Press Release – each with optional section banner image and list of articles (image, title, date, excerpt). <strong>Right sidebar:</strong> rotating banner ads/promotions as a <strong>slideshow with timer</strong> (each slide shown for its <code class="inline">display_duration_seconds</code>), plus optional social/video block.</li>
+          <li>Links: Section titles link to <code class="inline">/news/category/[slug]</code>; article cards link to <code class="inline">/news/[slug]</code>.</li>
+        </ul>
+        <h3>Category (<code class="inline">/news/category/[slug]</code>)</h3>
+        <ul>
+          <li>Fetch: articles for category (by slug), paginated; optional section config for that category’s block.</li>
+          <li>Layout: Paginated list/grid of articles; pagination controls per project pagination footer styling.</li>
+        </ul>
+        <h3>Article (<code class="inline">/news/[slug]</code>)</h3>
+        <ul>
+          <li>Fetch: single article by slug (title, body, featured image, date, author, categories).</li>
+          <li>Layout: Article header (image, title, date, author), body content; optional “Back to News” / category links.</li>
+        </ul>
+        <h3>Live Video (<code class="inline">/news/live</code>)</h3>
+        <ul>
+          <li>Fetch: current live stream config (embed_url, title, is_active) from backend (e.g. <code class="inline">/api/proxy/news-live-stream-config</code> or single active record).</li>
+          <li>Layout: Full-width or centred embed container (e.g. YouTube iframe from <code class="inline">embed_url</code>), optional title above; if no active stream, show a friendly “No live stream at the moment” message.</li>
+        </ul>
+        <p>Public pages may use direct <code class="inline">fetch</code> to proxy endpoints if routes are in middleware public/ignored lists; otherwise use server components that fetch via server actions or proxy with JWT where required.</p>
+      </section>
+
+      <section id="admin-dashboard">
+        <div class="divider"></div>
+        <h2>3. Admin Dashboard</h2>
+        <p>Admin news area must be <strong>user-friendly and self-guiding</strong> so editors can update news and section images regularly without developer help.</p>
+        <h3>Admin Hub (<code class="inline">/admin/news</code>)</h3>
+        <ul>
+          <li>Button group or card links to: Articles, Categories, Section Images, Sidebar Promotions (rotating banners), Flash News, Live Stream (per admin home button groups styling).</li>
+        </ul>
+        <h3>Articles</h3>
+        <ul>
+          <li>List articles with filters (category, status); create/edit form with title, slug, excerpt, body, featured image, category selection, published_at, status.</li>
+          <li>Validation and form styling per form_validation_styling.mdc; server actions in <code class="inline">ApiServerActions.ts</code> for create/update/delete.</li>
+        </ul>
+        <h3>Categories</h3>
+        <ul>
+          <li>List categories; create/edit name, slug, description, display_order, is_active.</li>
+        </ul>
+        <h3>Section Images (<code class="inline">/admin/news/sections</code>)</h3>
+        <ul>
+          <li>One row/card per section key: flash_news, main_news, featured_news, most_read, press_release, sidebar_promotional_block.</li>
+          <li>Each row: section label, optional title override, image upload or URL input, save button. Editors update each section’s image independently. The <code class="inline">sidebar_promotional_block</code> row controls the right sidebar’s section-level title/banner override; <strong>rotating banner ads</strong> are managed on <code class="inline">/admin/news/sidebar-promotions</code>.</li>
+          <li>Use PATCH to backend for section config; follow PATCH direct-backend pattern from nextjs_api_routes (service JWT) where applicable.</li>
+        </ul>
+        <h3>Sidebar Promotions – Rotating Banners (<code class="inline">/admin/news/sidebar-promotions</code>)</h3>
+        <ul>
+          <li>List promotional items (banner image, link, display order, <strong>display duration (seconds)</strong> per slide, valid_from/valid_to, is_active). Add/edit/delete items. Display duration controls how long each slide is shown in the <strong>slideshow with timer</strong> on the public news page right sidebar.</li>
+          <li>Public news landing fetches active promotions (filtered by tenant, is_active, valid date range), orders by display_order, and renders a slideshow that auto-advances after <code class="inline">display_duration_seconds</code> per slide.</li>
+        </ul>
+        <h3>Flash News</h3>
+        <ul>
+          <li>List flash items; add/edit headline, link (URL or article), display order, valid_from/valid_to, is_active.</li>
+        </ul>
+        <h3>Live Stream (<code class="inline">/admin/news/live</code>)</h3>
+        <ul>
+          <li>Single form or card: embed URL (e.g. YouTube embed src for live stream), optional title, is_active toggle. Saving updates the current live stream config so <code class="inline">/news/live</code> shows this embed. User-friendly labels (e.g. “Paste YouTube Live embed URL here”) so editors can update without developer help.</li>
+        </ul>
+        <p>All admin API calls must use server actions and <code class="inline">fetchWithJwtRetry</code> for backend; no direct fetch from client components to backend (nextjs_api_routes.mdc).</p>
+      </section>
+
+      <section id="api-integration">
+        <div class="divider"></div>
+        <h2>4. API Integration</h2>
+        <ul>
+          <li><strong>Proxy routes:</strong> Add <code class="inline">/api/proxy/news-articles</code>, <code class="inline">/api/proxy/news-categories</code>, <code class="inline">/api/proxy/news-section-config</code>, <code class="inline">/api/proxy/news-flash</code>, <code class="inline">/api/proxy/news-live-stream-config</code> using <code class="inline">createProxyHandler</code> from <code class="inline">src/lib/proxyHandler.ts</code>. Do not add <code class="inline">tenantId.equals</code> in client/server when calling proxy (proxy injects tenant).</li>
+          <li><strong>Server actions:</strong> Place in <code class="inline">ApiServerActions.ts</code> under the relevant app segment (e.g. <code class="inline">src/app/news/</code> for public, <code class="inline">src/app/admin/news/</code> for admin). Use <code class="inline">fetchWithJwtRetry</code> for any direct backend call from server actions.</li>
+          <li><strong>Public reads:</strong> For public pages, if proxy is in public/ignored routes, client components may fetch proxy URLs with <code class="inline">getAppUrl()</code> for absolute URL in server context; relative URLs in client.</li>
+          <li><strong>DTOs:</strong> Import types from <code class="inline">@/types</code>; no local DTO declaration in API routes (nextjs_api_routes.mdc).</li>
+        </ul>
+      </section>
+
+      <section id="ui-standards">
+        <div class="divider"></div>
+        <h2>5. UI Standards</h2>
+        <ul>
+          <li><strong>General:</strong> Follow <code class="inline">.cursor/rules/ui_style_guide.mdc</code> and <code class="inline">mosc_styling_standards.mdc</code> (colors, typography, spacing, sacred design elements).</li>
+          <li><strong>Admin:</strong> Pagination per pagination_footer_styling.mdc; buttons per admin_action_buttons_styling.mdc and admin_home_button_groups_styling.mdc; icons per icons_buttons_styles.mdc (inline SVG, no react-icons for medium action icons).</li>
+          <li><strong>Forms:</strong> Validation, error display, scroll-to-error, onBlur validation per form_validation_styling.mdc.</li>
+          <li><strong>Images:</strong> Section/hero images that must not be cropped: use object-contain and h-auto container per image_containment_prevention.mdc.</li>
+          <li><strong>Media grids:</strong> If news admin uses media grids, follow media_gallery_grid_style.mdc.</li>
+        </ul>
+      </section>
+
+      <section id="menu-integration">
+        <div class="divider"></div>
+        <h2>6. Menu Integration</h2>
+        <p>Add “News” as a menu or submenu item in the main site navigation (e.g. in <code class="inline">src/components/Header.tsx</code> or equivalent) linking to <code class="inline">/news</code>. Placement (top-level vs under a parent) to be decided; ensure route is accessible to public (public or ignored as needed in middleware).</p>
+      </section>
+
+      <footer>
+        <p>News Portal PRD – Frontend · MCEFEE Platform</p>
+      </footer>
+    </main>
+  </body>
+</html>

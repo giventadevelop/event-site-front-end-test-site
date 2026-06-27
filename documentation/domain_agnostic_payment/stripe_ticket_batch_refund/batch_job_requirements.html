@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Batch Job Requirements: Stripe Ticket Batch Refund</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+
+      h1 {
+        font-size: 2.1rem;
+        margin-bottom: 0.75rem;
+      }
+
+      h2 {
+        font-size: 1.6rem;
+        margin-top: 2.5rem;
+      }
+
+      h3 {
+        font-size: 1.2rem;
+        margin-top: 1.6rem;
+      }
+
+      p,
+      li {
+        line-height: 1.75;
+        font-size: 1rem;
+      }
+
+      ul,
+      ol {
+        margin-left: 1.4rem;
+      }
+
+      code.inline {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+        padding: 0.15rem 0.35rem;
+        font-size: 0.95rem;
+        display: inline-block;
+      }
+
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .divider {
+        height: 1px;
+        background: rgba(42, 32, 23, 0.12);
+        margin: 2rem 0;
+      }
+
+      pre {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+        padding: 1rem;
+        line-height: 1.6;
+        overflow-x: auto;
+        font-size: 0.9rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5rem 0;
+        font-size: 0.95rem;
+      }
+
+      th,
+      td {
+        border: 1px solid rgba(42, 32, 23, 0.15);
+        padding: 0.75rem;
+        vertical-align: top;
+      }
+
+      th {
+        background: rgba(213, 201, 182, 0.35);
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Batch Jobs · January 2026</span>
+      <h1>Batch Job Requirements: Stripe Ticket Batch Refund</h1>
+      <p>
+        This document defines the batch job implementation for processing Stripe ticket refunds asynchronously.
+        The job is triggered on-demand via the backend REST API and processes refunds in batches to handle large
+        volumes efficiently. It applies to the batch job repository at
+        <code class="inline">E:\project_workspace\event-site-manager-batch-jobs</code> and integrates with the
+        backend at <code class="inline">E:\project_workspace\malayalees-us-site-boot</code>.
+      </p>
+
+      <div class="divider"></div>
+
+      <h2>1. Job Type & Trigger</h2>
+      <ul>
+        <li><strong>Job Type:</strong> On-demand (triggered via API, NOT scheduled)</li>
+        <li><strong>Job Name:</strong> <code class="inline">StripeTicketBatchRefundJob</code></li>
+        <li><strong>Trigger Method:</strong> Backend REST endpoint calls batch job service</li>
+        <li><strong>Trigger Endpoint:</strong> <code class="inline">POST /api/cron/stripe-ticket-batch-refund</code> (in backend)</li>
+        <li><strong>Job ID Format:</strong> <code class="inline">stripe-batch-refund-{timestamp}-{eventId}</code></li>
+      </ul>
+
+      <h2>2. Job Parameters</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Type</th>
+            <th>Required</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code class="inline">eventId</code></td>
+            <td>Long</td>
+            <td>Yes</td>
+            <td>Event ID to process refunds for</td>
+          </tr>
+          <tr>
+            <td><code class="inline">tenantId</code></td>
+            <td>String</td>
+            <td>Yes</td>
+            <td>Tenant ID for data isolation</td>
+          </tr>
+          <tr>
+            <td><code class="inline">jobId</code></td>
+            <td>String</td>
+            <td>Yes</td>
+            <td>Unique job identifier</td>
+          </tr>
+          <tr>
+            <td><code class="inline">startDate</code></td>
+            <td>LocalDateTime</td>
+            <td>No</td>
+            <td>Optional start date filter for purchase date</td>
+          </tr>
+          <tr>
+            <td><code class="inline">endDate</code></td>
+            <td>LocalDateTime</td>
+            <td>No</td>
+            <td>Optional end date filter for purchase date</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>3. Job Processing Steps</h2>
+      <h3>3.1 Initialization Phase</h3>
+      <ol>
+        <li>Read job parameters (eventId, tenantId, jobId, optional date filters)</li>
+        <li>Validate parameters (eventId and tenantId are required)</li>
+        <li>Query total count of eligible tickets</li>
+        <li>Initialize job status tracking (processed count, success count, failure count)</li>
+        <li>Set job status to <code class="inline">IN_PROGRESS</code></li>
+      </ol>
+
+      <h3>3.2 Ticket Query Phase</h3>
+      <ul>
+        <li><strong>Query:</strong> Select eligible tickets matching criteria</li>
+        <li><strong>Criteria:</strong>
+          <ul>
+            <li><code class="inline">event_id = :eventId</code></li>
+            <li><code class="inline">tenant_id = :tenantId</code></li>
+            <li><code class="inline">stripe_payment_intent_id IS NOT NULL</code></li>
+            <li><code class="inline">status != 'REFUNDED'</code></li>
+            <li><code class="inline">stripe_payment_status IN ('succeeded', 'paid')</code></li>
+            <li><code class="inline">(startDate IS NULL OR purchase_date >= :startDate)</code></li>
+            <li><code class="inline">(endDate IS NULL OR purchase_date <= :endDate)</code></li>
+          </ul>
+        </li>
+        <li><strong>Ordering:</strong> <code class="inline">ORDER BY created_at ASC</code> (process oldest first)</li>
+        <li><strong>Batch Size:</strong> Process in chunks of 100-500 tickets per batch</li>
+      </ul>
+
+      <h3>3.3 Refund Processing Phase</h3>
+      <p>For each ticket in the eligible list:</p>
+      <ol>
+        <li><strong>Validate Ticket:</strong>
+          <ul>
+            <li>Verify ticket still meets eligibility criteria (idempotency check)</li>
+            <li>Skip if already refunded (status = 'REFUNDED')</li>
+            <li>Skip if stripePaymentIntentId is null</li>
+          </ul>
+        </li>
+        <li><strong>Call Stripe Refund API:</strong>
+          <ul>
+            <li>Endpoint: <code class="inline">stripe.refunds.create()</code></li>
+            <li>Parameters:
+              <ul>
+                <li><code class="inline">payment_intent</code>: Ticket's <code class="inline">stripePaymentIntentId</code></li>
+                <li><code class="inline">reason</code>: <code class="inline">"requested_by_customer"</code> (optional)</li>
+                <li><code class="inline">metadata</code>: Include ticket transaction ID and job ID</li>
+              </ul>
+            </li>
+            <li>Handle Stripe API response</li>
+          </ul>
+        </li>
+        <li><strong>Update Database:</strong>
+          <ul>
+            <li>Only update if Stripe refund succeeds</li>
+            <li>Set <code class="inline">status = 'REFUNDED'</code></li>
+            <li>Set <code class="inline">refund_amount = refund.amount / 100</code> (convert cents to dollars)</li>
+            <li>Set <code class="inline">refund_date = NOW()</code></li>
+            <li>Set <code class="inline">refund_reason = 'Event canceled - Batch refund'</code></li>
+            <li>Set <code class="inline">stripe_payment_status = 'refunded'</code></li>
+            <li>Set <code class="inline">updated_at = NOW()</code></li>
+          </ul>
+        </li>
+        <li><strong>Log Result:</strong>
+          <ul>
+            <li>Success: Log ticket ID, refund ID, amount</li>
+            <li>Failure: Log ticket ID, error message, error type</li>
+            <li>Increment success or failure counter</li>
+          </ul>
+        </li>
+        <li><strong>Update Progress:</strong>
+          <ul>
+            <li>Increment processed count</li>
+            <li>Update job status with progress percentage</li>
+            <li>Log progress every 10-50 tickets (configurable)</li>
+          </ul>
+        </li>
+      </ol>
+
+      <h2>4. Error Handling</h2>
+      <h3>4.1 Stripe API Errors</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Error Type</th>
+            <th>Handling Strategy</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Already refunded</td>
+            <td>Skip ticket</td>
+            <td>Log warning, increment skipped count, continue</td>
+          </tr>
+          <tr>
+            <td>Invalid payment intent</td>
+            <td>Mark as failed</td>
+            <td>Log error, increment failure count, continue</td>
+          </tr>
+          <tr>
+            <td>Rate limit exceeded</td>
+            <td>Retry with backoff</td>
+            <td>Wait and retry (exponential backoff), max 3 retries</td>
+          </tr>
+          <tr>
+            <td>Insufficient funds</td>
+            <td>Mark as failed</td>
+            <td>Log error, increment failure count, continue</td>
+          </tr>
+          <tr>
+            <td>Network timeout</td>
+            <td>Retry</td>
+            <td>Retry up to 3 times, then mark as failed</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>4.2 Database Errors</h3>
+      <ul>
+        <li><strong>Update failure:</strong> Log error, mark transaction as failed, continue processing</li>
+        <li><strong>Connection error:</strong> Retry database operation, fail job if persistent</li>
+        <li><strong>Constraint violation:</strong> Log error, skip ticket, continue</li>
+      </ul>
+
+      <h3>4.3 Job-Level Errors</h3>
+      <ul>
+        <li><strong>Critical errors:</strong> Set job status to <code class="inline">FAILED</code>, log error, stop processing</li>
+        <li><strong>Partial failures:</strong> Continue processing, report failures in completion summary</li>
+        <li><strong>No eligible tickets:</strong> Set status to <code class="inline">COMPLETED</code> with message "No eligible tickets found"</li>
+      </ul>
+
+      <h2>5. Progress Tracking</h2>
+      <h3>5.1 Status Updates</h3>
+      <ul>
+        <li>Update job status at key milestones:
+          <ul>
+            <li><code class="inline">STARTED</code> - Job initiated</li>
+            <li><code class="inline">IN_PROGRESS</code> - Processing tickets</li>
+            <li><code class="inline">COMPLETED</code> - All tickets processed</li>
+            <li><code class="inline">FAILED</code> - Critical error occurred</li>
+          </ul>
+        </li>
+        <li>Log progress every N tickets (configurable, default: 50)</li>
+        <li>Include in log: processed count, success count, failure count, percentage complete</li>
+      </ul>
+
+      <h3>5.2 Metrics Tracking</h3>
+      <ul>
+        <li><strong>Total Tickets:</strong> Count of eligible tickets</li>
+        <li><strong>Processed:</strong> Number of tickets processed (success + failure)</li>
+        <li><strong>Successful:</strong> Number of successful refunds</li>
+        <li><strong>Failed:</strong> Number of failed refunds</li>
+        <li><strong>Skipped:</strong> Number of tickets skipped (already refunded, etc.)</li>
+        <li><strong>Total Refund Amount:</strong> Sum of all successful refund amounts</li>
+      </ul>
+
+      <h2>6. Database Updates</h2>
+      <h3>6.1 Transaction Update</h3>
+      <pre><code>UPDATE event_ticket_transaction
+SET status = 'REFUNDED',
+    refund_amount = :refundAmount,
+    refund_date = :refundDate,
+    refund_reason = 'Event canceled - Batch refund',
+    stripe_payment_status = 'refunded',
+    updated_at = NOW()
+WHERE id = :transactionId
+  AND status != 'REFUNDED'  -- Idempotency check
+  AND tenant_id = :tenantId;</code></pre>
+
+      <h3>6.2 Update Conditions</h3>
+      <ul>
+        <li>Only update if Stripe refund API call succeeds</li>
+        <li>Use database transaction for atomicity</li>
+        <li>Include idempotency check (status != 'REFUNDED')</li>
+        <li>Include tenant_id in WHERE clause for safety</li>
+        <li>Verify update affected exactly 1 row</li>
+      </ul>
+
+      <h2>7. Stripe API Integration</h2>
+      <h3>7.1 Refund API Call</h3>
+      <pre><code>Refund refund = stripe.refunds().create(
+    RefundCreateParams.builder()
+        .setPaymentIntent(ticket.getStripePaymentIntentId())
+        .setReason(RefundCreateParams.Reason.REQUESTED_BY_CUSTOMER)
+        .putMetadata("ticket_transaction_id", ticket.getId().toString())
+        .putMetadata("batch_job_id", jobId)
+        .putMetadata("event_id", eventId.toString())
+        .putMetadata("refund_reason", "Event canceled - Batch refund")
+        .build()
+);</code></pre>
+
+      <h3>7.2 Rate Limiting</h3>
+      <ul>
+        <li>Stripe API rate limit: 100 requests per second (check current limits)</li>
+        <li>Implement throttling: Process max 50-80 refunds per second</li>
+        <li>Add delay between batches if needed</li>
+        <li>Handle 429 (Too Many Requests) with exponential backoff</li>
+      </ul>
+
+      <h3>7.3 Retry Logic</h3>
+      <ul>
+        <li>Retry on transient errors (network, timeout, rate limit)</li>
+        <li>Max retries: 3 attempts</li>
+        <li>Backoff strategy: Exponential (1s, 2s, 4s)</li>
+        <li>Do not retry on permanent errors (invalid payment intent, already refunded)</li>
+      </ul>
+
+      <h2>8. Job Completion</h2>
+      <h3>8.1 Completion Summary</h3>
+      <ul>
+        <li>Generate completion summary with:
+          <ul>
+            <li>Total tickets processed</li>
+            <li>Successful refunds count</li>
+            <li>Failed refunds count</li>
+            <li>Skipped tickets count</li>
+            <li>Total refund amount</li>
+            <li>List of failed ticket IDs with error messages</li>
+            <li>Job duration (start time to end time)</li>
+          </ul>
+        </li>
+        <li>Set job status to <code class="inline">COMPLETED</code></li>
+        <li>Log completion summary</li>
+      </ul>
+
+      <h3>8.2 Failure Reporting</h3>
+      <ul>
+        <li>Store failed ticket details in job execution context or separate table</li>
+        <li>Include: ticket ID, error message, error type, timestamp</li>
+        <li>Allow administrators to view failed tickets and retry individually if needed</li>
+      </ul>
+
+      <h2>9. Audit Logging</h2>
+      <ul>
+        <li>Log job start: jobId, eventId, tenantId, ticket count, start time</li>
+        <li>Log each refund attempt: ticket ID, Stripe refund ID, amount, status</li>
+        <li>Log errors: ticket ID, error type, error message, timestamp</li>
+        <li>Log job completion: end time, summary statistics</li>
+        <li>Use structured logging (JSON format recommended)</li>
+        <li>Include correlation ID (jobId) in all log entries</li>
+      </ul>
+
+      <h2>10. Performance Considerations</h2>
+      <ul>
+        <li><strong>Batch Processing:</strong> Process 100-500 tickets per batch to avoid memory issues</li>
+        <li><strong>Database Connections:</strong> Use connection pooling, close connections properly</li>
+        <li><strong>Stripe API:</strong> Implement rate limiting and throttling</li>
+        <li><strong>Memory Management:</strong> Stream tickets instead of loading all into memory</li>
+        <li><strong>Timeout Handling:</strong> Set appropriate timeouts for Stripe API calls</li>
+        <li><strong>Parallel Processing:</strong> Consider parallel processing for large batches (future enhancement)</li>
+      </ul>
+
+      <h2>11. Idempotency</h2>
+      <ul>
+        <li>Job should be idempotent: Running the same job twice should not cause duplicate refunds</li>
+        <li>Check ticket status before processing: Skip if already refunded</li>
+        <li>Use database constraints: Ensure status updates are atomic</li>
+        <li>Track processed tickets: Maintain list of processed ticket IDs in job context</li>
+      </ul>
+
+      <h2>12. Database Schema Reference</h2>
+      <ul>
+        <li><strong>Table:</strong> <code class="inline">event_ticket_transaction</code></li>
+        <li><strong>Schema File:</strong> <code class="inline">code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></li>
+        <li><strong>Key Fields:</strong>
+          <ul>
+            <li><code class="inline">id</code> - Primary key</li>
+            <li><code class="inline">event_id</code> - Foreign key to event_details</li>
+            <li><code class="inline">tenant_id</code> - Tenant isolation</li>
+            <li><code class="inline">stripe_payment_intent_id</code> - Required for Stripe refund</li>
+            <li><code class="inline">status</code> - Transaction status</li>
+            <li><code class="inline">final_amount</code> - Amount to refund</li>
+            <li><code class="inline">refund_amount</code> - Refunded amount</li>
+            <li><code class="inline">refund_date</code> - Refund timestamp</li>
+            <li><code class="inline">refund_reason</code> - Reason for refund</li>
+            <li><code class="inline">stripe_payment_status</code> - Stripe payment status</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h2>13. Implementation Structure</h2>
+      <h3>13.1 Job Configuration</h3>
+      <ul>
+        <li><strong>Job Class:</strong> <code class="inline">StripeTicketBatchRefundJob</code></li>
+        <li><strong>Step Class:</strong> <code class="inline">StripeTicketBatchRefundStep</code></li>
+        <li><strong>Reader:</strong> <code class="inline">EligibleTicketReader</code> - Reads tickets from database</li>
+        <li><strong>Processor:</strong> <code class="inline">StripeRefundProcessor</code> - Processes Stripe refund API calls</li>
+        <li><strong>Writer:</strong> <code class="inline">RefundStatusWriter</code> - Updates database with refund status</li>
+      </ul>
+
+      <h3>13.2 Dependencies</h3>
+      <ul>
+        <li>Stripe Java SDK for API calls</li>
+        <li>Spring Batch for job orchestration</li>
+        <li>Spring Data JPA for database access</li>
+        <li>SLF4J/Logback for logging</li>
+      </ul>
+
+      <h2>14. Testing Requirements</h2>
+      <ul>
+        <li>Unit tests for processor logic</li>
+        <li>Unit tests for writer logic</li>
+        <li>Integration tests with test Stripe account</li>
+        <li>Test with small batch (1-10 tickets)</li>
+        <li>Test with medium batch (100-500 tickets)</li>
+        <li>Test error scenarios (Stripe API errors, database errors)</li>
+        <li>Test idempotency (run job twice, verify no duplicate refunds)</li>
+        <li>Test rate limiting and retry logic</li>
+        <li>Test with events that have no eligible tickets</li>
+      </ul>
+
+      <h2>15. Monitoring & Observability</h2>
+      <ul>
+        <li>Job execution metrics: duration, ticket count, success rate</li>
+        <li>Stripe API metrics: call count, error rate, response time</li>
+        <li>Database metrics: update count, error count</li>
+        <li>Alert on high failure rates (>10% failures)</li>
+        <li>Alert on job failures</li>
+        <li>Dashboard for job status and statistics</li>
+      </ul>
+
+      <div class="divider"></div>
+
+      <h2>Reference Implementation</h2>
+      <ul>
+        <li><strong>Similar Job:</strong> Stripe Fees and Tax Update batch job (if exists)</li>
+        <li><strong>Single Refund Logic:</strong> Reference frontend <code class="inline">ApiServerActions.ts</code> for Stripe refund pattern</li>
+        <li><strong>Backend Endpoint:</strong> <code class="inline">POST /api/cron/stripe-ticket-batch-refund</code></li>
+        <li><strong>Database Schema:</strong> <code class="inline">code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></li>
+      </ul>
+    </main>
+  </body>
+</html>

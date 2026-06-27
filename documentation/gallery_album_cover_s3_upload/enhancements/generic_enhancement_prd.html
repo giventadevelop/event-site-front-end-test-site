@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Cover S3 Upload — Enhancement PRD (Index v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; background: #fff; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        a { color: #0066cc; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .toc { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 24px 0; }
+        .toc h2 { margin-top: 0; border: none; padding: 0; font-size: 1.25em; }
+        .layer-cards { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 20px 0; }
+        @media (min-width: 640px) { .layer-cards { grid-template-columns: 1fr 1fr; } }
+        .layer-card { background: #fff; border: 2px solid #b8d4e3; border-radius: 8px; padding: 16px; }
+        .layer-card h3 { margin-top: 0; color: #0052a3; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .section-container.usage { background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%); border-left-color: #7b1fa2; }
+        .section-container.usage .section-header { background: linear-gradient(135deg, #7b1fa2 0%, #6a1b9a 100%); }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; border-radius: 6px; overflow: hidden; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        tbody tr:hover { background: #f5faff; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.9em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px 16px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px 16px; border-radius: 6px; margin: 16px 0; }
+        .companion { background: #d4edda; border-left: 4px solid #28a745; padding: 14px 18px; border-radius: 8px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Cover S3 Upload — Enhancement PRD (Index v1.0)</h1>
+    <p class="doc-meta">
+        <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 18, 2026 &nbsp;|&nbsp; <strong>Status:</strong> Draft<br>
+        <strong>Baseline:</strong> <a href="../../gallery_feature_and_album/FRONTEND_PRD_GALLERY_ALBUM_FEATURE.md">Gallery Album Feature PRD</a> &nbsp;|&nbsp;
+        <strong>Related:</strong> <a href="../../gallery_porting/GALLERY_STATIC_TO_DYNAMIC_PORTING_GUIDE.html">Static → Dynamic Gallery Porting</a> &nbsp;|&nbsp;
+        <a href="../../gallery_album_category_year_enhancements/generic_enhancement_prd.html">Category &amp; Year Enhancements</a><br>
+        <strong>Repos:</strong> <code>mosc-temp</code> (frontend + porting scripts) · <code>malayalees-us-site-boot</code> (backend S3 upload)
+    </p>
+
+    <div class="lead">
+        <p>Gallery albums store a cover thumbnail in <code>gallery_album.cover_image_url</code>. Today admins can paste a URL or pick cover from album media already on S3. Static gallery import sets <strong>local Next.js paths</strong> (<code>/images/mosc/gallery/...</code>) instead of S3 URLs. Production and CDN deployments need covers uploaded to <strong>AWS S3</strong> using the same pipeline as focus groups, sponsors, and event media.</p>
+        <p><strong>Non-breaking rule:</strong> Existing <code>cover_image_url</code> values (local paths, external URLs, or S3) continue to work. New upload flow adds S3-backed covers without schema migration in v1.0.</p>
+    </div>
+
+    <div class="companion">
+        <p><strong>Reference implementation to clone:</strong> Focus group cover upload — backend <code>/api/event-medias/upload/focus-group-cover-image</code>, proxy <code>src/pages/api/proxy/event-medias/upload/focus-group-cover-image.ts</code>, UI <code>src/components/FocusGroupCoverImageUpload.tsx</code>.</p>
+    </div>
+
+    <nav class="toc" aria-label="Enhancement PRD index">
+        <h2>Enhancement layer PRDs</h2>
+        <div class="layer-cards">
+            <div class="layer-card">
+                <h3><a href="gap_analysis_prd.html">Gap analysis</a></h3>
+                <p>Current cover flows vs target; static import URL mode; admin UI gaps.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="database_schema_enhancements_prd.html">Database schema (v1.0)</a></h3>
+                <p>No required DDL; optional <code>cover_media_id</code> FK in v1.1.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="backend_enhancements_prd.html">Backend enhancements</a></h3>
+                <p>New multipart upload endpoint, S3 path, <code>event_media</code> + album PATCH.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="frontend_enhancements_prd.html">Frontend enhancements</a></h3>
+                <p>Cover upload component, admin edit/create, media page server actions.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="data_migration_enhancements_prd.html">Data migration &amp; porting</a></h3>
+                <p>S3 cover backfill for static import; CLI flags and batch order.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="implementation_roadmap.html">Implementation roadmap</a></h3>
+                <p>Phases C0–C4, cross-repo order, test checklist.</p>
+            </div>
+        </div>
+    </nav>
+
+    <h2 id="executive-summary">Executive summary</h2>
+    <div class="section-container usage">
+        <div class="section-header">Problem and solution</div>
+        <p><strong>Problem:</strong> Album covers are often stored as plain text URLs or static site paths. There is no dedicated “upload cover to S3” action on album create/edit (unlike focus groups). Static porting script defaults to URL mode, so 29 MOSC albums reference <code>/images/mosc/gallery/{slug}/...</code> which may not resolve in production if assets are not bundled or if the gallery is served from a different host.</p>
+        <p><strong>Solution (v1.0):</strong> Add <code>POST /api/event-medias/upload/gallery-album-cover-image</code> (backend) + Next.js proxy + <code>GalleryAlbumCoverImageUpload</code> component. After upload, backend sets <code>gallery_album.cover_image_url</code> to the S3 <code>fileUrl</code> and optionally creates an <code>event_media</code> row linked to the album. Extend porting script with <code>--upload-covers</code> to push cover files to S3 post-import.</p>
+    </div>
+
+    <h2 id="schema-backend-verdict">Schema &amp; backend — quick verdict</h2>
+    <table>
+        <thead><tr><th>Layer</th><th>Change required?</th><th>Summary</th></tr></thead>
+        <tbody>
+            <tr><td><strong>PostgreSQL schema</strong></td><td><strong>No</strong> (v1.0)</td><td><code>cover_image_url varchar(2048)</code> already stores S3 HTTPS URLs (see focus_group examples in seed data).</td></tr>
+            <tr><td><strong>Spring Boot backend</strong></td><td><strong>Yes</strong></td><td>New upload handler + S3 path generator (mirror focus-group-cover-image).</td></tr>
+            <tr><td><strong>Next.js frontend</strong></td><td><strong>Yes</strong></td><td>Upload UI, proxy route, server actions; replace URL-only fields.</td></tr>
+            <tr><td><strong>Porting scripts</strong></td><td><strong>Yes</strong> (optional phase)</td><td>Upload cover files from <code>public/images/mosc/gallery/</code> to S3 after album import.</td></tr>
+        </tbody>
+    </table>
+
+    <h2 id="phases">Enhancement phases (C0–C4)</h2>
+    <table>
+        <thead><tr><th>Phase</th><th>Depends on</th><th>Deliverable</th><th>PRD</th></tr></thead>
+        <tbody>
+            <tr><td><strong>C0 — Docs</strong></td><td>—</td><td>This PRD pack; stakeholder sign-off on S3 path convention</td><td>This index</td></tr>
+            <tr><td><strong>C1 — Backend + proxy</strong></td><td>C0</td><td>Upload endpoint, S3 path, album cover update</td><td><a href="backend_enhancements_prd.html">Backend</a></td></tr>
+            <tr><td><strong>C2 — Admin UI</strong></td><td>C1</td><td>Cover upload on edit; preview; remove manual URL as primary</td><td><a href="frontend_enhancements_prd.html">Frontend</a></td></tr>
+            <tr><td><strong>C3 — Media page hardening</strong></td><td>C1</td><td>“Set as cover” via server action; ensure S3 URLs only</td><td>Frontend</td></tr>
+            <tr><td><strong>C4 — Static import S3 covers</strong></td><td>C1</td><td><code>--upload-covers</code> in gallery porting CLI</td><td><a href="data_migration_enhancements_prd.html">Data migration</a></td></tr>
+        </tbody>
+    </table>
+
+    <h2 id="success-criteria">Success criteria</h2>
+    <ul>
+        <li>Admin uploads a JPEG/PNG cover on album edit → file appears in S3 → <code>cover_image_url</code> is HTTPS S3 URL.</li>
+        <li>Public <code>/gallery</code> and admin album list render cover from S3 (Next.js <code>images.remotePatterns</code> already allow bucket).</li>
+        <li>“Set as cover” from album media grid updates album when media is already on S3.</li>
+        <li>Static import can optionally upload all 29 cover images to S3 and replace local paths.</li>
+        <li>No regression for albums that already have valid cover URLs.</li>
+    </ul>
+
+    <div class="info-box">
+        <strong>Related docs:</strong>
+        <a href="gap_analysis_prd.html">Gap analysis</a> ·
+        <a href="implementation_roadmap.html">Implementation roadmap</a> ·
+        <a href="../../focus_group_requirements/focus-group-cover-image-upload-plan.md">Focus group cover upload plan</a> ·
+        <a href="../../gallery_porting/GALLERY_STATIC_TO_DYNAMIC_PORTING_GUIDE.html">Gallery porting guide</a>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Fees, Taxes, and Revenue Calculation Analysis</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+        }
+        .summary-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .code-block {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 15px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .field-name {
+            font-family: 'Courier New', monospace;
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .recommendation {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Stripe Fees, Taxes, and Revenue Calculation Analysis</h1>
+        <p><strong>Document Date:</strong> January 11, 2026</p>
+        <p><strong>Purpose:</strong> Analyze Stripe fee and tax capture, revenue calculation definitions, and provide recommendations for implementation.</p>
+
+        <div class="summary-box">
+            <h2>Executive Summary</h2>
+            <p>This document analyzes the current state of Stripe fee and tax capture in the event ticketing system, explains the differences between Gross Revenue, Total Revenue, and Net Revenue, and provides recommendations for capturing missing Stripe fee and tax data.</p>
+        </div>
+
+        <h2>1. Current Database State</h2>
+        <p>Analysis of transaction records shows that <span class="field-name">stripe_fee_amount</span> and <span class="field-name">stripe_amount_tax</span> fields are consistently <strong>NULL</strong> or <strong>0.00</strong> for all transactions, including real Stripe payment intents.</p>
+
+        <h3>1.1 Database Schema Fields</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Field Name</th>
+                    <th>Database Column</th>
+                    <th>Type</th>
+                    <th>Current State</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="field-name">totalAmount</span></td>
+                    <td><code>total_amount</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>✅ Populated</td>
+                    <td>Base ticket prices before discounts/fees/taxes</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">platformFeeAmount</span></td>
+                    <td><code>platform_fee_amount</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>✅ Populated</td>
+                    <td>Platform fee (calculated from tenant settings)</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">discountAmount</span></td>
+                    <td><code>discount_amount</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>✅ Populated</td>
+                    <td>Discount applied to transaction</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">taxAmount</span></td>
+                    <td><code>tax_amount</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>⚠️ Often 0.00</td>
+                    <td>Tax amount (if calculated by system)</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">finalAmount</span></td>
+                    <td><code>final_amount</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>✅ Populated</td>
+                    <td>Final amount customer paid (from Stripe)</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">stripeFeeAmount</span></td>
+                    <td><code>stripe_fee_amount</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>❌ NULL/0.00</td>
+                    <td>Stripe processing fee (from Stripe balance transaction)</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">stripeAmountTax</span></td>
+                    <td><code>stripe_amount_tax</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>❌ NULL/0.00</td>
+                    <td>Tax collected by Stripe (if Stripe Tax enabled)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>2. Revenue Calculation Definitions</h2>
+
+        <h3>2.1 Gross Revenue</h3>
+        <div class="info-box">
+            <p><strong>Definition:</strong> Sum of <span class="field-name">totalAmount</span> (base ticket prices before discounts, fees, and taxes)</p>
+            <p><strong>Formula:</strong> <code>Gross Revenue = Σ(totalAmount)</code></p>
+            <p><strong>Represents:</strong> Total sales value before any deductions</p>
+        </div>
+
+        <h3>2.2 Total Revenue</h3>
+        <div class="info-box">
+            <p><strong>Definition:</strong> Sum of <span class="field-name">finalAmount</span> (what the customer actually paid, after discounts, may include taxes)</p>
+            <p><strong>Formula:</strong> <code>Total Revenue = Σ(finalAmount)</code></p>
+            <p><strong>Represents:</strong> Total amount collected from customers</p>
+            <p><strong>Note:</strong> This is the amount Stripe charged the customer. It may include taxes if Stripe Tax is enabled.</p>
+        </div>
+
+        <h3>2.3 Net Revenue</h3>
+        <div class="info-box">
+            <p><strong>Definition:</strong> What the event organizer receives after all deductions</p>
+            <p><strong>Current Formula:</strong> <code>Net Revenue = Gross Revenue - Discounts - Refunds - Platform Fees</code></p>
+            <p><strong>Represents:</strong> Amount available to event organizer after platform takes its cut</p>
+        </div>
+
+        <div class="warning-box">
+            <h3>⚠️ Important Note: Stripe Fees and Net Revenue</h3>
+            <p><strong>Stripe fees are NOT deducted in Net Revenue calculation because:</strong></p>
+            <ul>
+                <li>Stripe automatically deducts processing fees before depositing money to your account</li>
+                <li>The amount you receive in your Stripe account is already net of Stripe fees</li>
+                <li><strong>Net Revenue</strong> represents what the event organizer receives from the platform, not what they receive from Stripe</li>
+                <li>Stripe fees are a separate cost that occurs at the payment processing level</li>
+            </ul>
+            <p><strong>However,</strong> for accounting and reporting purposes, tracking Stripe fees separately is valuable to understand total costs.</p>
+        </div>
+
+        <h2>3. Current Implementation Analysis</h2>
+
+        <h3>3.1 Stripe Fee Capture</h3>
+        <p>The system has infrastructure to capture Stripe fees via webhook:</p>
+        <ul>
+            <li><strong>Webhook Handler:</strong> <code>src/app/api/webhooks/stripe/route.ts</code></li>
+            <li><strong>Function:</strong> <code>handleChargeFeeUpdate()</code></li>
+            <li><strong>Trigger:</strong> <code>charge.succeeded</code> event</li>
+            <li><strong>Method:</strong> Retrieves fee from Stripe Balance Transaction API</li>
+        </ul>
+
+        <div class="code-block">
+// Webhook handler retrieves Stripe fee from balance transaction
+const balanceTx = await stripe.balanceTransactions.retrieve(charge.balance_transaction);
+const feeAmount = balanceTx.fee / 100; // Convert from cents to dollars
+
+// Updates transaction via PATCH
+const patchPayload = {
+    id: transaction.id,
+    stripeFeeAmount: feeAmount,
+};
+</div>
+
+        <h3>3.2 Why Stripe Fees Are Not Being Captured</h3>
+        <div class="warning-box">
+            <p><strong>Possible Reasons:</strong></p>
+            <ol>
+                <li><strong>Webhook Not Triggering:</strong> The <code>charge.succeeded</code> event may not be properly configured or received</li>
+                <li><strong>Timing Issue:</strong> The webhook may fire before the transaction record exists in the database</li>
+                <li><strong>Balance Transaction Missing:</strong> The charge may not have a balance_transaction ID available yet</li>
+                <li><strong>Webhook Processing Failure:</strong> Errors in webhook processing may be silently failing</li>
+                <li><strong>Test Mode vs Production:</strong> Stripe behavior differs between test and live modes</li>
+            </ol>
+        </div>
+
+        <h3>3.3 Tax Capture</h3>
+        <p><strong>Current State:</strong> Tax is not being captured from Stripe. The <span class="field-name">tax_amount</span> field exists but is typically 0.00, and <span class="field-name">stripe_amount_tax</span> is not being populated.</p>
+
+        <p><strong>Stripe Tax Options:</strong></p>
+        <ul>
+            <li><strong>Stripe Tax:</strong> If enabled, Stripe automatically calculates and collects tax based on customer location</li>
+            <li><strong>Manual Tax:</strong> System calculates tax separately and includes it in the payment amount</li>
+            <li><strong>No Tax:</strong> Tax is not collected (current implementation appears to use this)</li>
+        </ul>
+
+        <h2>4. Revenue Calculation Formulas</h2>
+
+        <h3>4.1 Recommended Formulas</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Formula</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Gross Revenue</strong></td>
+                    <td><code>Σ(totalAmount)</code></td>
+                    <td>Base ticket prices before any deductions</td>
+                </tr>
+                <tr>
+                    <td><strong>Total Revenue</strong></td>
+                    <td><code>Σ(finalAmount)</code></td>
+                    <td>What customers paid (includes tax if Stripe Tax enabled)</td>
+                </tr>
+                <tr>
+                    <td><strong>Net Revenue</strong></td>
+                    <td><code>Gross Revenue - Discounts - Refunds - Platform Fees</code></td>
+                    <td>What event organizer receives (before Stripe fees, which are already deducted by Stripe)</td>
+                </tr>
+                <tr>
+                    <td><strong>Total Stripe Fees</strong></td>
+                    <td><code>Σ(stripeFeeAmount)</code></td>
+                    <td>For reporting/accounting purposes only (already deducted by Stripe)</td>
+                </tr>
+                <tr>
+                    <td><strong>Amount Received from Stripe</strong></td>
+                    <td><code>Total Revenue - Total Stripe Fees</code></td>
+                    <td>Actual amount deposited to Stripe account</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="recommendation">
+            <h3>✅ Current Implementation is Correct</h3>
+            <p>The current Net Revenue calculation (<code>Gross Revenue - Discounts - Refunds - Platform Fees</code>) is appropriate because:</p>
+            <ul>
+                <li>Stripe fees are already deducted by Stripe before depositing funds</li>
+                <li>Net Revenue represents the event organizer's share after platform fees</li>
+                <li>Stripe fees are a separate payment processing cost</li>
+            </ul>
+            <p><strong>However,</strong> tracking Stripe fees separately is valuable for accounting and cost analysis.</p>
+        </div>
+
+        <h2>5. Capturing Stripe Fees and Tax</h2>
+
+        <h3>5.1 Current Webhook Implementation</h3>
+        <p>The webhook handler <code>handleChargeFeeUpdate()</code> is designed to capture Stripe fees, but it's not working as expected. The function:</p>
+        <ol>
+            <li>Listens for <code>charge.succeeded</code> events</li>
+            <li>Retrieves the balance transaction from Stripe</li>
+            <li>Extracts the fee amount</li>
+            <li>Updates the transaction record via PATCH</li>
+        </ol>
+
+        <h3>5.2 Recommendations for Webhook Fix</h3>
+        <div class="recommendation">
+            <h4>1. Verify Webhook Configuration</h4>
+            <ul>
+                <li>Ensure <code>charge.succeeded</code> event is enabled in Stripe Dashboard</li>
+                <li>Verify webhook endpoint URL is correct and accessible</li>
+                <li>Check webhook signature verification is working</li>
+            </ul>
+
+            <h4>2. Improve Error Handling</h4>
+            <ul>
+                <li>Add retry logic for failed webhook processing</li>
+                <li>Log all webhook events for debugging</li>
+                <li>Add alerting for webhook processing failures</li>
+            </ul>
+
+            <h4>3. Handle Timing Issues</h4>
+            <ul>
+                <li>The webhook handler already has retry logic (5 retries with 4-second delays)</li>
+                <li>Consider increasing retry count or delay if transactions are not found</li>
+                <li>Ensure transaction creation happens before webhook processing</li>
+            </ul>
+        </div>
+
+        <h3>5.3 Batch Job Approach</h3>
+        <div class="info-box">
+            <p><strong>Yes, a batch job can retrieve missing Stripe fees and tax data.</strong></p>
+            <p><strong>Location:</strong> <code>E:\project_workspace\event-site-manager-batch-jobs</code></p>
+        </div>
+
+        <h4>5.3.1 Batch Job Implementation Strategy</h4>
+        <ol>
+            <li><strong>Query Transactions:</strong> Find all transactions where <code>stripe_fee_amount IS NULL</code> and <code>stripe_payment_intent_id IS NOT NULL</code></li>
+            <li><strong>Retrieve from Stripe:</strong> For each transaction, retrieve the PaymentIntent from Stripe</li>
+            <li><strong>Get Balance Transaction:</strong> Retrieve the charge's balance transaction to get the fee</li>
+            <li><strong>Get Tax Amount:</strong> If Stripe Tax is enabled, retrieve tax from PaymentIntent or CheckoutSession</li>
+            <li><strong>Update Database:</strong> Update transaction records with retrieved values</li>
+        </ol>
+
+        <div class="code-block">
+// Batch Job Pseudo-Code
+async function updateMissingStripeFees() {
+    // 1. Query transactions missing Stripe fee data
+    const transactions = await db.query(`
+        SELECT id, stripe_payment_intent_id, stripe_checkout_session_id
+        FROM event_ticket_transaction
+        WHERE stripe_fee_amount IS NULL
+        AND stripe_payment_intent_id IS NOT NULL
+        AND status = 'COMPLETED'
+    `);
+
+    for (const txn of transactions) {
+        try {
+            // 2. Retrieve PaymentIntent from Stripe
+            const pi = await stripe.paymentIntents.retrieve(txn.stripe_payment_intent_id);
+
+            // 3. Get charge and balance transaction
+            const charges = await stripe.charges.list({
+                payment_intent: txn.stripe_payment_intent_id,
+                limit: 1
+            });
+
+            if (charges.data.length > 0) {
+                const charge = charges.data[0];
+                if (charge.balance_transaction) {
+                    const balanceTx = await stripe.balanceTransactions.retrieve(
+                        charge.balance_transaction
+                    );
+                    const stripeFeeAmount = balanceTx.fee / 100;
+
+                    // 4. Get tax amount (if available)
+                    let stripeAmountTax = null;
+                    if (pi.metadata?.tax_amount) {
+                        stripeAmountTax = parseFloat(pi.metadata.tax_amount);
+                    } else if (txn.stripe_checkout_session_id) {
+                        const session = await stripe.checkout.sessions.retrieve(
+                            txn.stripe_checkout_session_id
+                        );
+                        stripeAmountTax = session.total_details?.amount_tax
+                            ? session.total_details.amount_tax / 100
+                            : null;
+                    }
+
+                    // 5. Update database
+                    await db.update('event_ticket_transaction', {
+                        stripe_fee_amount: stripeFeeAmount,
+                        stripe_amount_tax: stripeAmountTax
+                    }, { id: txn.id });
+                }
+            }
+        } catch (error) {
+            console.error(`Failed to update transaction ${txn.id}:`, error);
+        }
+    }
+}
+</div>
+
+        <h4>5.3.2 Batch Job Considerations</h4>
+        <ul>
+            <li><strong>Rate Limiting:</strong> Stripe API has rate limits; implement delays between requests</li>
+            <li><strong>Error Handling:</strong> Some transactions may not have charges (refunded, cancelled)</li>
+            <li><strong>Idempotency:</strong> Ensure batch job can be run multiple times safely</li>
+            <li><strong>Scheduling:</strong> Run daily or weekly to catch any missed webhook updates</li>
+            <li><strong>Historical Data:</strong> Batch job can backfill all historical transactions</li>
+        </ul>
+
+        <h3>5.4 Tax Capture Options</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Option</th>
+                    <th>Description</th>
+                    <th>Implementation</th>
+                    <th>Pros</th>
+                    <th>Cons</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Stripe Tax</strong></td>
+                    <td>Stripe automatically calculates and collects tax</td>
+                    <td>Enable in Stripe Dashboard, tax included in PaymentIntent/CheckoutSession</td>
+                    <td>Automatic, accurate, handles multiple jurisdictions</td>
+                    <td>Requires Stripe Tax subscription, additional fee</td>
+                </tr>
+                <tr>
+                    <td><strong>Manual Calculation</strong></td>
+                    <td>System calculates tax based on location</td>
+                    <td>Calculate tax in checkout flow, include in total</td>
+                    <td>Full control, no Stripe Tax fee</td>
+                    <td>Complex implementation, must maintain tax rules</td>
+                </tr>
+                <tr>
+                    <td><strong>No Tax</strong></td>
+                    <td>Tax is not collected (current state)</td>
+                    <td>No tax calculation</td>
+                    <td>Simplest implementation</td>
+                    <td>May violate tax laws in some jurisdictions</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>6. Field Relevance and Importance</h2>
+
+        <h3>6.1 Stripe Fee Amount (<span class="field-name">stripe_fee_amount</span>)</h3>
+        <div class="info-box">
+            <p><strong>Relevance: HIGH</strong></p>
+            <p><strong>Why Important:</strong></p>
+            <ul>
+                <li><strong>Accounting:</strong> Need to track payment processing costs for financial records</li>
+                <li><strong>Cost Analysis:</strong> Understand total cost of processing payments</li>
+                <li><strong>Reporting:</strong> Provide detailed cost breakdown in analytics</li>
+                <li><strong>Reconciliation:</strong> Match Stripe deposits with transaction records</li>
+            </ul>
+            <p><strong>Impact on Net Revenue:</strong> Already deducted by Stripe, but should be tracked for reporting</p>
+        </div>
+
+        <h3>6.2 Stripe Tax Amount (<span class="field-name">stripe_amount_tax</span>)</h3>
+        <div class="info-box">
+            <p><strong>Relevance: MEDIUM to HIGH (depends on tax strategy)</strong></p>
+            <p><strong>Why Important:</strong></p>
+            <ul>
+                <li><strong>Compliance:</strong> Required for tax reporting and remittance</li>
+                <li><strong>Transparency:</strong> Show customers what they're paying in taxes</li>
+                <li><strong>Accounting:</strong> Track tax collected separately from revenue</li>
+            </ul>
+            <p><strong>Impact on Revenue:</strong> Tax is included in <span class="field-name">finalAmount</span> but should be tracked separately for accounting</p>
+        </div>
+
+        <h3>6.3 Platform Fee Amount (<span class="field-name">platform_fee_amount</span>)</h3>
+        <div class="info-box">
+            <p><strong>Relevance: HIGH</strong></p>
+            <p><strong>Why Important:</strong></p>
+            <ul>
+                <li><strong>Revenue Share:</strong> Core business metric - platform's revenue</li>
+                <li><strong>Net Revenue Calculation:</strong> Used to calculate what event organizers receive</li>
+                <li><strong>Currently Working:</strong> ✅ This field is properly populated</li>
+            </ul>
+        </div>
+
+        <h2>7. Payment Flow Analysis</h2>
+
+        <h3>7.1 Event Ticket Purchase Flow</h3>
+        <p><strong>Pages:</strong> <code>http://localhost:3000/events/[id]/checkout</code></p>
+        <ol>
+            <li>Customer selects tickets and applies discount codes</li>
+            <li>System calculates <span class="field-name">totalAmount</span> (base ticket prices)</li>
+            <li>System calculates <span class="field-name">discountAmount</span> (if discount applied)</li>
+            <li>System calculates <span class="field-name">platformFeeAmount</span> (from tenant settings)</li>
+            <li>Stripe Checkout Session is created with final amount</li>
+            <li>Customer completes payment via Stripe</li>
+            <li>Webhook <code>payment_intent.succeeded</code> creates transaction record</li>
+            <li>Webhook <code>charge.succeeded</code> should update <span class="field-name">stripeFeeAmount</span> (not working)</li>
+        </ol>
+
+        <h3>7.2 Membership Subscription Flow</h3>
+        <p><strong>Pages:</strong> <code>http://localhost:3000/membership</code></p>
+        <p><strong>Note:</strong> Membership subscriptions use a different payment model (recurring payments) and may have different fee structures.</p>
+
+        <h2>8. Recommendations</h2>
+
+        <h3>8.1 Immediate Actions</h3>
+        <div class="recommendation">
+            <ol>
+                <li><strong>Fix Webhook Processing:</strong>
+                    <ul>
+                        <li>Verify <code>charge.succeeded</code> webhook is configured in Stripe Dashboard</li>
+                        <li>Add comprehensive logging to webhook handler</li>
+                        <li>Test webhook processing with test transactions</li>
+                    </ul>
+                </li>
+                <li><strong>Implement Batch Job:</strong>
+                    <ul>
+                        <li>Create batch job to backfill missing Stripe fees</li>
+                        <li>Schedule batch job to run daily to catch any missed updates</li>
+                        <li>Include error handling and retry logic</li>
+                    </ul>
+                </li>
+                <li><strong>Tax Strategy Decision:</strong>
+                    <ul>
+                        <li>Decide whether to use Stripe Tax or manual tax calculation</li>
+                        <li>If using Stripe Tax, enable it in Stripe Dashboard</li>
+                        <li>Update checkout flow to capture tax amounts</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <h3>8.2 Revenue Calculation Recommendations</h3>
+        <div class="recommendation">
+            <p><strong>Current Net Revenue calculation is correct.</strong> Do NOT deduct Stripe fees from Net Revenue because:</p>
+            <ul>
+                <li>Stripe fees are already deducted by Stripe before deposit</li>
+                <li>Net Revenue represents event organizer's share after platform fees</li>
+                <li>Stripe fees are a separate payment processing cost</li>
+            </ul>
+            <p><strong>However,</strong> provide Stripe fee data separately in analytics for accounting purposes.</p>
+        </div>
+
+        <h3>8.3 Analytics Display Recommendations</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Display Location</th>
+                    <th>Calculation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Gross Revenue</td>
+                    <td>Sales Analytics, Tickets List</td>
+                    <td>Σ(totalAmount)</td>
+                </tr>
+                <tr>
+                    <td>Total Revenue</td>
+                    <td>Sales Analytics (primary metric)</td>
+                    <td>Σ(finalAmount)</td>
+                </tr>
+                <tr>
+                    <td>Net Revenue</td>
+                    <td>Sales Analytics, Tickets List</td>
+                    <td>Gross - Discounts - Refunds - Platform Fees</td>
+                </tr>
+                <tr>
+                    <td>Total Stripe Fees</td>
+                    <td>Sales Analytics (separate line item)</td>
+                    <td>Σ(stripeFeeAmount) - for information only</td>
+                </tr>
+                <tr>
+                    <td>Amount Received</td>
+                    <td>Sales Analytics (optional)</td>
+                    <td>Total Revenue - Total Stripe Fees</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>9. Implementation Checklist</h2>
+        <div class="info-box">
+            <h3>Backend (E:\project_workspace\malayalees-us-site-boot)</h3>
+            <ul>
+                <li>✅ Verify webhook endpoint is properly configured</li>
+                <li>✅ Add logging to webhook fee update handler</li>
+                <li>✅ Ensure PATCH endpoint accepts <code>stripeFeeAmount</code> and <code>stripeAmountTax</code> fields</li>
+                <li>✅ Verify statistics endpoint calculation logic (if needed)</li>
+            </ul>
+
+            <h3>Frontend (Current Project)</h3>
+            <ul>
+                <li>✅ Net Revenue calculation already updated to include platform fees</li>
+                <li>✅ Display Stripe fees separately in analytics (optional enhancement)</li>
+                <li>✅ Verify transaction DTO includes all fee fields</li>
+            </ul>
+
+            <h3>Batch Jobs (E:\project_workspace\event-site-manager-batch-jobs)</h3>
+            <ul>
+                <li>⏳ Create batch job to retrieve missing Stripe fees</li>
+                <li>⏳ Create batch job to retrieve missing tax amounts (if using Stripe Tax)</li>
+                <li>⏳ Schedule batch job to run daily</li>
+                <li>⏳ Add error handling and logging</li>
+            </ul>
+        </div>
+
+        <h2>10. Conclusion</h2>
+        <div class="summary-box">
+            <p><strong>Key Findings:</strong></p>
+            <ol>
+                <li>Current Net Revenue calculation is <strong>correct</strong> - Stripe fees should NOT be deducted because they're already deducted by Stripe</li>
+                <li>Stripe fee capture infrastructure exists but is not working (webhook issue)</li>
+                <li>Tax capture is not implemented (requires decision on tax strategy)</li>
+                <li>Batch job approach is viable for retrieving missing data</li>
+                <li>Stripe fee tracking is important for accounting but doesn't affect Net Revenue calculation</li>
+            </ol>
+
+            <p><strong>Next Steps:</strong></p>
+            <ol>
+                <li>Fix webhook processing for Stripe fee capture</li>
+                <li>Implement batch job to backfill missing Stripe fees</li>
+                <li>Decide on tax strategy and implement accordingly</li>
+                <li>Update analytics to display Stripe fees separately (for information)</li>
+            </ol>
+        </div>
+
+        <h2>11. References</h2>
+        <ul>
+            <li><strong>Webhook Handler:</strong> <code>src/app/api/webhooks/stripe/route.ts</code> - <code>handleChargeFeeUpdate()</code></li>
+            <li><strong>Transaction Creation:</strong> <code>src/app/event/success/ApiServerActions.ts</code> - <code>processStripeSessionServer()</code></li>
+            <li><strong>Sales Analytics:</strong> <code>src/app/admin/sales-analytics/ApiServerActions.ts</code> - <code>calculateSalesMetricsServer()</code></li>
+            <li><strong>Database Schema:</strong> <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></li>
+            <li><strong>Stripe API Documentation:</strong> <a href="https://stripe.com/docs/api/balance_transactions" target="_blank">Balance Transactions API</a></li>
+            <li><strong>Stripe Tax Documentation:</strong> <a href="https://stripe.com/docs/tax" target="_blank">Stripe Tax</a></li>
+        </ul>
+
+        <hr>
+        <p><em>Document generated: January 11, 2026</em></p>
+        <p><em>Last updated: January 11, 2026</em></p>
+    </div>
+</body>
+</html>

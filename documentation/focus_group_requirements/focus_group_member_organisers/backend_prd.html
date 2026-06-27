@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PRD: Focus Group – Member Join &amp; Organisers (Backend)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+      h1, h2, h3, h4 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+      h1 { font-size: 2.3rem; margin-bottom: 0.75rem; }
+      h2 { font-size: 1.7rem; margin-top: 2.5rem; }
+      h3 { font-size: 1.3rem; margin-top: 1.8rem; }
+      h4 { font-size: 1.1rem; margin-top: 1.2rem; }
+      p, li { line-height: 1.75; font-size: 1rem; }
+      ul, ol { margin-left: 1.4rem; }
+      table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+      th, td { border: 1px solid rgba(42, 32, 23, 0.15); padding: 0.75rem; vertical-align: top; }
+      th { background: rgba(213, 201, 182, 0.35); font-weight: 600; }
+      code, pre {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+      }
+      pre { padding: 1rem; line-height: 1.6; overflow-x: auto; }
+      code.inline { padding: 0.15rem 0.35rem; font-size: 0.95rem; display: inline-block; }
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .divider { height: 1px; background: rgba(42, 32, 23, 0.12); margin: 2rem 0; }
+      .callout {
+        border-left: 4px solid #8b7d6b;
+        background: rgba(213, 201, 182, 0.3);
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
+        margin: 1.8rem 0;
+      }
+      .toc ol { list-style: decimal; }
+      .toc a { color: #1f4c8f; text-decoration: none; }
+      .toc a:hover { text-decoration: underline; }
+      footer { margin-top: 4rem; text-align: center; font-size: 0.9rem; color: #7a7066; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Draft · Backend</span>
+      <h1>PRD: Focus Group – Member Join &amp; Organisers (Backend)</h1>
+      <p>
+        <strong>Project:</strong> malayalees-us-site-boot (Spring Boot / JHipster)<br />
+        <strong>Path:</strong> <code class="inline">E:\project_workspace\malayalees-us-site-boot</code><br />
+        <strong>Document Version:</strong> 1.0<br />
+        <strong>Date:</strong> March 2026<br />
+        <strong>Status:</strong> Draft
+      </p>
+
+      <div class="divider"></div>
+
+      <h2 id="requirement">Requirement</h2>
+      <p>
+        Support (1) <strong>self-service join</strong>: an authenticated user can create a focus group membership for
+        themselves (join); (2) <strong>leave</strong>: a user can remove their own membership; (3) <strong>role values</strong>:
+        extend or document <code class="inline">role</code> to include EXECUTIVE and ORGANISER for executive/organising
+        committee; (4) <strong>committee list</strong>: allow the frontend to request members filtered by role (e.g.
+        EXECUTIVE, ORGANISER). No new tables or columns; use existing <code class="inline">focus_group_members</code> table
+        and <code class="inline">role</code> column. Align with the SQL comments in the shared schema file.
+      </p>
+
+      <h2 id="self-service-join">Self-Service Join</h2>
+      <ul>
+        <li>Provide an endpoint or policy so that an <strong>authenticated</strong> user can create a
+          <code class="inline">focus_group_members</code> row for themselves.</li>
+        <li>Example: POST <code class="inline">/api/focus-group-members</code> with body containing
+          <code class="inline">focusGroupId</code> (and <code class="inline">tenantId</code> if not inferred). Backend
+          sets <code class="inline">user_profile_id</code> from the authenticated user (Clerk/session). Default
+          <code class="inline">role=MEMBER</code>, <code class="inline">status=PENDING</code> or <code class="inline">ACTIVE</code>
+          per product policy. Enforce unique (tenant_id, focus_group_id, user_profile_id); return 409 or friendly message
+          if already a member.</li>
+      </ul>
+
+      <h2 id="leave">Leave</h2>
+      <ul>
+        <li>Allow a user to remove their own membership. Example: DELETE <code class="inline">/api/focus-group-members/{id}</code>
+          only when the membership row’s <code class="inline">user_profile_id</code> matches the current user’s profile.
+          Return 403/404 if the user does not own the membership.</li>
+      </ul>
+
+      <h2 id="role-values">Role Values</h2>
+      <ul>
+        <li>Extend or document the <code class="inline">role</code> field to include: <code class="inline">MEMBER</code>,
+          <code class="inline">LEAD</code>, <code class="inline">ADMIN</code>, <code class="inline">EXECUTIVE</code>,
+          <code class="inline">ORGANISER</code>. EXECUTIVE and ORGANISER denote executive/organising committee members.
+          Update enum, validation, or documentation as applicable.</li>
+      </ul>
+
+      <h2 id="committee-list">Committee List</h2>
+      <ul>
+        <li>Support filtering focus group members by role so the frontend can request “committee” members. Options:
+          (a) Add criteria filter e.g. <code class="inline">role.in=EXECUTIVE,ORGANISER</code> on existing
+          GET <code class="inline">/api/focus-group-members</code> (e.g. <code class="inline">focusGroupId.equals=&lt;id&gt;</code>
+          and <code class="inline">role.in=EXECUTIVE,ORGANISER</code>); or (b) expose a dedicated endpoint e.g.
+          GET <code class="inline">/api/focus-groups/{id}/organisers</code> that returns members with role EXECUTIVE or ORGANISER.</li>
+      </ul>
+
+      <h2 id="schema">Schema</h2>
+      <p>
+        No migration required. Use existing <code class="inline">focus_group_members</code> table and
+        <code class="inline">role</code> column. The canonical schema file adds only COMMENTs on
+        <code class="inline">role</code> and <code class="inline">status</code>; align backend validation/docs with
+        those allowed values. Reference: <code class="inline">code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code>.
+      </p>
+
+      <div class="callout">
+        <strong>Backward compatibility:</strong> Existing MEMBER, LEAD, ADMIN roles remain. Adding EXECUTIVE and ORGANISER
+        is additive. Existing API clients that do not use self-service join or committee filter are unchanged.
+      </div>
+
+      <h2 id="references">References</h2>
+      <ul>
+        <li><a href="generic_prd.html">generic_prd.html</a> – Data model and role/status values</li>
+        <li>Entity: <code class="inline">FocusGroupMember</code>, <code class="inline">FocusGroup</code>, <code class="inline">UserProfile</code></li>
+        <li>Resource: <code class="inline">FocusGroupMemberResource</code> (or equivalent)</li>
+      </ul>
+
+      <footer>
+        <p>Focus Group – Member Join &amp; Organisers (Backend) PRD · MCEFEE Platform</p>
+      </footer>
+    </main>
+  </body>
+</html>

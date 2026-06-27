@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Event Date &amp; Location — Implementation Roadmap (v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .checklist { list-style: none; margin-left: 0; padding-left: 0; }
+        .checklist li { padding: 6px 0 6px 28px; position: relative; }
+        .checklist li::before { content: "☐"; position: absolute; left: 0; color: #0066cc; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Event Date &amp; Location — Implementation Roadmap (v1.0)</h1>
+    <p class="doc-meta">
+        <strong>Date:</strong> June 19, 2026 &nbsp;|&nbsp; <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a><br>
+        <strong>Repos:</strong> <code>mosc-temp</code> · <code>malayalees-us-site-boot</code>
+    </p>
+
+    <div class="lead">
+        <p>Cross-repo order for phases <strong>E0–E4</strong>. Backend schema (E1) must deploy before backfill script (E4) or PATCH will fail.</p>
+    </div>
+
+    <h2>1. Phase overview</h2>
+    <table>
+        <thead><tr><th>Phase</th><th>Focus</th><th>Repo</th><th>Shippable?</th></tr></thead>
+        <tbody>
+            <tr><td><strong>E0</strong></td><td>Documentation + SQL templates</td><td>mosc-temp</td><td>Yes — docs only</td></tr>
+            <tr><td><strong>E1</strong></td><td>Schema + GalleryAlbum DTO/API</td><td>boot + SQL</td><td>Yes — backward compatible</td></tr>
+            <tr><td><strong>E2</strong></td><td>Admin album form fields</td><td>mosc-temp</td><td>Yes — needs E1</td></tr>
+            <tr><td><strong>E3</strong></td><td>Public card date formatter</td><td>mosc-temp</td><td>Yes — needs E1 for API data</td></tr>
+            <tr><td><strong>E4</strong></td><td>Parser + backfill + import extend</td><td>mosc-temp scripts</td><td>After E1 deploy</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. E0 — Documentation (this pack)</h2>
+    <ul class="checklist">
+        <li><code>generic_enhancement_prd.html</code></li>
+        <li><code>gap_analysis_prd.html</code></li>
+        <li><code>database_schema_enhancements_prd.html</code></li>
+        <li><code>backend_enhancements_prd.html</code></li>
+        <li><code>frontend_enhancements_prd.html</code></li>
+        <li><code>data_migration_enhancements_prd.html</code></li>
+        <li><code>implementation_roadmap.html</code></li>
+        <li><code>migrations/001–003 SQL</code></li>
+    </ul>
+
+    <h2>3. E1 — Backend (malayalees-us-site-boot)</h2>
+    <div class="section-container">
+        <div class="section-header">Order of work</div>
+        <ol>
+            <li>Apply Liquibase / <code>001_gallery_album_event_date_location_schema.sql</code></li>
+            <li>Extend <code>GalleryAlbum</code> entity + DTO + mapper</li>
+            <li>Add validation in service layer</li>
+            <li>Extend <code>GalleryAlbumCriteria</code> (optional filters)</li>
+            <li>Integration tests</li>
+            <li>Deploy to dev/staging</li>
+            <li>Sync canonical SQL in mosc-temp</li>
+        </ol>
+    </div>
+
+    <h2>4. E2 — Admin UI (mosc-temp)</h2>
+    <ol>
+        <li>Update <code>GalleryAlbumDTO</code> in <code>src/types/index.ts</code></li>
+        <li>Add date + location inputs to <code>AdminAlbumEditClient</code> and create flow</li>
+        <li>Extend <code>ApiServerActions</code> PATCH payloads</li>
+    </ol>
+
+    <h2>5. E3 — Public cards (mosc-temp)</h2>
+    <ol>
+        <li>Create <code>formatGalleryAlbumEventDate.ts</code> + unit tests</li>
+        <li>Update <code>MoscGalleryAlbumCard</code> and <code>GalleryAlbumCard</code></li>
+        <li>Pass new fields from <code>mosc-redesign/(syro)/gallery/page.tsx</code></li>
+        <li>Visual QA: Dharma-Dhamma card shows full legacy date line</li>
+    </ol>
+
+    <h2>6. E4 — Data backfill (mosc-temp scripts)</h2>
+    <ol>
+        <li>Implement <code>parse-manifest-album-date.mjs</code></li>
+        <li>Implement <code>backfill-gallery-album-event-dates.mjs</code></li>
+        <li>Add npm scripts to <code>package.json</code></li>
+        <li>Extend <code>import-static-gallery-to-api.mjs</code> createAlbum</li>
+        <li>Run dry-run → run backfill → verify with SQL</li>
+    </ol>
+
+    <h2>7. Test checklist</h2>
+    <ul class="checklist">
+        <li>GET album returns <code>eventDateStart</code> as ISO date string</li>
+        <li>Card shows <code>October 24–26, 2015, Indore</code> for dharma-dhamma album</li>
+        <li>Card shows <code>2019</code> for year-only albums</li>
+        <li>Admin save with invalid end &lt; start shows validation error</li>
+        <li>Backfill idempotent — second run patches 0 albums</li>
+        <li>New import includes event fields on create</li>
+    </ul>
+
+    <div class="info-box">
+        <strong>Dependency:</strong> Category/year pack (G1–G4) should already be complete before E4 backfill.
+    </div>
+
+</body>
+</html>

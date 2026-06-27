@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="How the Circle Home 6 design system was created with UI UX Pro Max, folder layout, hierarchy, usage in Next.js — Roy and Bindu Productions.">
+    <title>Design System — Creation, Files &amp; Usage (Circle Home 6)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+        }
+        h1 {
+            font-size: 2.5em;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+        }
+        h2 {
+            font-size: 1.8em;
+            border-left: 4px solid #0066cc;
+            padding-left: 15px;
+            margin-top: 28px;
+            margin-bottom: 16px;
+        }
+        h3 { font-size: 1.4em; color: #333; margin-top: 20px; margin-bottom: 10px; }
+        h4 { font-size: 1.2em; color: #555; margin-top: 16px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin: 12px 0 12px 24px; }
+        li { margin-bottom: 8px; }
+        a { color: #0066cc; }
+        a:focus { outline: 2px solid #0066cc; outline-offset: 2px; }
+
+        .toc {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 24px 0;
+        }
+        .toc h2 { margin-top: 0; border: none; padding: 0; font-size: 1.3em; }
+        .toc ul { margin: 12px 0 0 20px; }
+        .toc a { font-weight: 600; }
+
+        .section-intro {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-intro code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+
+        .section-container {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-container.usage {
+            background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%);
+            border-left-color: #9c27b0;
+        }
+        .section-container.parameters {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left-color: #ff9800;
+        }
+        .section-container.output {
+            background: linear-gradient(135deg, #e6ffe6 0%, #ccffcc 100%);
+            border-left-color: #28a745;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            padding: 12px 20px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 8px 8px 0 0;
+            font-size: 1.2em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-header.usage {
+            background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+        }
+        .section-header.parameters {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+        .section-header.output {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+        }
+
+        .parameters-list {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left: 4px solid #ff9800;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .parameters-list code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+
+        .info {
+            background: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            padding: 16px 20px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+        .info code, .info .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 16px 20px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+        .warning code, .warning .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 16px 20px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+
+        .script-name {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+        }
+
+        .code-block, pre, pre code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #b8d4e3;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        tr:hover { background-color: #e3f2fd; transition: background-color 0.2s ease; }
+        td code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+        }
+
+        .command-block {
+            border: 2px solid #2196f3;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+        }
+        .command-block.setup { border-color: #2196f3; }
+        .command-block.advance {
+            border-color: #ff9800;
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        }
+        .command-block.verify {
+            border-color: #4caf50;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        }
+        .command-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.6);
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+        }
+        .command-type { font-weight: bold; color: #1565c0; }
+        .command-block.advance .command-type { color: #e65100; }
+        .command-block.verify .command-type { color: #2e7d32; }
+        .command-header-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .copy-button, .copy-button-template {
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .copy-button { background-color: #0066cc; }
+        .copy-button:hover { background-color: #0052a3; transform: translateY(-1px); }
+        .copy-button.copied { background-color: #28a745; }
+        .copy-button-template { background-color: #6c757d; }
+        .copy-button-template:hover { background-color: #5a6268; }
+        .copy-button-template.copied { background-color: #28a745; }
+
+        .command-parameters {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.5);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .command-parameters h5 {
+            margin: 0 0 12px 0;
+            font-size: 0.9em;
+            color: #333;
+            font-weight: bold;
+        }
+        .parameter-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .parameter-group.single { grid-template-columns: 1fr; }
+        .parameter-input { display: flex; flex-direction: column; gap: 4px; }
+        .parameter-input label { font-size: 0.8em; color: #555; font-weight: 600; }
+        .parameter-input input, .parameter-input select {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            transition: border-color 0.2s ease;
+        }
+        .parameter-input input:focus, .parameter-input select:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+        @media (max-width: 768px) {
+            .parameter-group { grid-template-columns: 1fr; }
+            body { padding: 10px; }
+            h1 { font-size: 1.75em; }
+        }
+
+        .command-content {
+            padding: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #0d3b66;
+            background: #fff;
+            word-break: break-all;
+        }
+        .command-single-line {
+            padding: 12px 15px;
+            background: #e8f4f8;
+            border-top: 1px solid #b8d4e3;
+        }
+        .command-single-line-label {
+            font-size: 0.75em;
+            color: #666;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .command-single-line code {
+            display: block;
+            background: transparent;
+            border: none;
+            padding: 0;
+            color: #0d3b66;
+            font-size: 0.95em;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Design System — Creation, Files &amp; Usage</h1>
+        <p style="margin-bottom:20px;color:#555;font-size:0.95em;"><strong>Scope:</strong> Circle Home 6 / Haru demo reference and UI UX Pro Max workflow in this repository.</p>
+
+        <div class="toc">
+            <h2>Table of Contents</h2>
+            <ul>
+                <li><a href="#purpose">Purpose of this document</a></li>
+                <li><a href="#how-created">How the design system was created</a></li>
+                <li><a href="#files">Files and folder layout</a></li>
+                <li><a href="#hierarchy">Hierarchy (Master vs page overrides)</a></li>
+                <li><a href="#what-changed">What was merged (Pro Max vs demo HTML)</a></li>
+                <li><a href="#how-to-use">How to use when building UI</a></li>
+                <li><a href="#regenerate">Regenerate or extend (command)</a></li>
+                <li><a href="#nextjs">Next.js alignment</a></li>
+                <li><a href="#rules">Relationship to <code class="code-highlight">.cursor/rules/</code></a></li>
+            </ul>
+        </div>
+
+        <div class="section-intro" id="purpose">
+            <h2 style="margin-top:0;border:none;padding:0;">Purpose of this document</h2>
+            <p>
+                This page explains <strong>how</strong> the project design system for the <strong>Haru Circle — Home 6 Film Online</strong> reference was produced using the
+                <strong>UI UX Pro Max</strong> skill (<code class="script-name">search.py</code>), <strong>where</strong> the canonical Markdown files live, and how
+                <strong>developers and AI assistants</strong> should apply them when implementing pages in <strong>Next.js</strong>. It follows the project HTML documentation standard
+                (<code class="code-highlight">html_documentation_styling_guide.mdc</code>).
+            </p>
+        </div>
+
+        <div class="section-container" id="how-created">
+            <div class="section-header">How the design system was created</div>
+            <ol>
+                <li><strong>UI UX Pro Max baseline:</strong> From the repository root, <code class="code-highlight">python .cursor/skills/ui-ux-pro-max/scripts/search.py</code> was run with
+                    <code class="code-highlight">--design-system --persist</code>, a natural-language <strong>query</strong> (video / film / streaming / dark cinematic), and
+                    <code class="code-highlight">-p</code> project name. That produced palette, pattern, and typography <em>suggestions</em> from the skill’s CSV index.
+                </li>
+                <li><strong>Standard layout:</strong> Output was consolidated into <code class="code-highlight">design-system/MASTER.md</code> and
+                    <code class="code-highlight">design-system/pages/home-6-film-online.md</code>. An auto-generated subfolder from the tool was removed so only the canonical paths remain.
+                </li>
+                <li><strong>Demo fidelity pass:</strong> Tokens were merged with the static export
+                    <code class="code-highlight">demo.harutheme.com/circle/home-6/index.html</code> — notably <strong>Nunito Sans</strong> (body) and <strong>Playfair Display</strong> (headings),
+                    and surface hex values (<code class="code-highlight">#1e1e1e</code>, <code class="code-highlight">#161616</code>, <code class="code-highlight">#232323</code>, border <code class="code-highlight">#333333</code>).
+            </ol>
+            <div class="info">
+                <strong>💡</strong> <strong>MASTER.md</strong> states that Pro Max’s generic font pair (e.g. Outfit / Work Sans) is <strong>not</strong> used for this reference; the
+                <strong>demo export fonts and surfaces override</strong> for visual parity.
+            </div>
+        </div>
+
+        <div class="section-container parameters" id="files">
+            <div class="section-header parameters">Files and folder layout</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Path</th>
+                        <th>Role</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code class="code-highlight">design-system/MASTER.md</code></td>
+                        <td>Global source of truth: Pro Max baseline, demo-fidelity typography/surfaces, components, anti-patterns, checklist.</td>
+                    </tr>
+                    <tr>
+                        <td><code class="code-highlight">design-system/pages/home-6-film-online.md</code></td>
+                        <td>Page-specific overrides for Home 6 (section rhythm, layout, film cards, WooCommerce note).</td>
+                    </tr>
+                    <tr>
+                        <td><code class="code-highlight">.cursor/skills/ui-ux-pro-max/scripts/search.py</code></td>
+                        <td>Skill script used to generate or refresh design-system recommendations.</td>
+                    </tr>
+                    <tr>
+                        <td><code class="code-highlight">demo.harutheme.com/circle/home-6/index.html</code></td>
+                        <td>Local reference HTML (WordPress theme export) used to extract real tokens.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section-container usage" id="hierarchy">
+            <div class="section-header usage">Hierarchy (Master vs page overrides)</div>
+            <div class="parameters-list">
+                <p><strong>Rule:</strong></p>
+                <ol>
+                    <li>When building a <strong>specific page</strong>, open <code class="code-highlight">design-system/pages/&lt;page&gt;.md</code> if it exists.</li>
+                    <li>If the page file exists, its rules <strong>override</strong> <code class="code-highlight">MASTER.md</code> for that page only.</li>
+                    <li>If there is no page file, use <code class="code-highlight">MASTER.md</code> exclusively.</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="section-container" id="what-changed">
+            <div class="section-header">What was merged (Pro Max vs demo HTML)</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Aspect</th>
+                        <th>UI UX Pro Max (generated)</th>
+                        <th>Demo (authoritative for this reference)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Headings / body</td>
+                        <td>Suggested pairs (e.g. Outfit / Work Sans)</td>
+                        <td><strong>Playfair Display</strong> + <strong>Nunito Sans</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Surfaces</td>
+                        <td>Black / navy / rose CTA</td>
+                        <td><strong>#1e1e1e</strong>, <strong>#161616</strong>, <strong>#232323</strong>, borders <strong>#333</strong></td>
+                    </tr>
+                    <tr>
+                        <td>CTA accent</td>
+                        <td><code class="code-highlight">#E11D48</code> (retained in Master)</td>
+                        <td>Use for primary actions unless brand changes</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section-container output" id="how-to-use">
+            <div class="section-header output">How to use when building UI</div>
+            <ul>
+                <li><strong>Implementing Home 6–style screens:</strong> Read <code class="code-highlight">design-system/pages/home-6-film-online.md</code>, then fill gaps from <code class="code-highlight">MASTER.md</code>.</li>
+                <li><strong>Other routes:</strong> Use <code class="code-highlight">MASTER.md</code> only, or add a new file under <code class="code-highlight">design-system/pages/</code> with only deviations.</li>
+                <li><strong>AI prompts:</strong> Point the assistant at both files and ask for components that match tokens (fonts, hex, spacing) and the checklist at the bottom of Master.</li>
+                <li><strong>Do not</strong> silently mix unrelated palettes (e.g. MOSC cream theme) on a Home 6 clone unless the product owner explicitly merges brands.</li>
+            </ul>
+        </div>
+
+        <div class="section-container usage" id="regenerate">
+            <div class="section-header usage">Regenerate or extend (command)</div>
+            <p>Run from the <strong>repository root</strong>. Adjust query, project name, and page slug; then merge results into <code class="code-highlight">design-system/</code> as needed.</p>
+            <div class="command-block verify"
+                 data-command-type="verify"
+                 data-command-base="python .cursor/skills/ui-ux-pro-max/scripts/search.py"
+                 data-template-command="python .cursor/skills/ui-ux-pro-max/scripts/search.py &quot;video film streaming dark cinematic landing woocommerce&quot; --design-system --persist -p &quot;Circle Home 6 Film Online&quot; --page &quot;home-6&quot; -f markdown">
+                <div class="command-header">
+                    <span class="command-type">Persist design system</span>
+                    <div class="command-header-buttons">
+                        <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cb-ds-persist-fm')" title="Copy template command">📄 Template</button>
+                        <button type="button" class="copy-button" onclick="copyCommand(this, 'cb-ds-persist-fm')" title="Copy customized command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Customize Parameters:</h5>
+                    <div class="parameter-group">
+                        <div class="parameter-input">
+                            <label for="cb-ds-persist-fm-query">Query:</label>
+                            <input type="text" id="cb-ds-persist-fm-query" value="video film streaming dark cinematic landing woocommerce" oninput="updateCommand('cb-ds-persist-fm', 'query', this.value)" autocomplete="off">
+                        </div>
+                        <div class="parameter-input">
+                            <label for="cb-ds-persist-fm-project">Project (-p):</label>
+                            <input type="text" id="cb-ds-persist-fm-project" value="Circle Home 6 Film Online" oninput="updateCommand('cb-ds-persist-fm', 'project', this.value)" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="parameter-group single">
+                        <div class="parameter-input">
+                            <label for="cb-ds-persist-fm-page">Page (--page):</label>
+                            <input type="text" id="cb-ds-persist-fm-page" value="home-6" oninput="updateCommand('cb-ds-persist-fm', 'page', this.value)" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+                <div class="command-content" id="cb-ds-persist-fm">python .cursor/skills/ui-ux-pro-max/scripts/search.py "video film streaming dark cinematic landing woocommerce" --design-system --persist -p "Circle Home 6 Film Online" --page "home-6" -f markdown</div>
+                <div class="command-single-line">
+                    <div class="command-single-line-label">Windows single-line:</div>
+                    <code id="cb-ds-persist-fm-single-code">python .cursor/skills/ui-ux-pro-max/scripts/search.py "video film streaming dark cinematic landing woocommerce" --design-system --persist -p "Circle Home 6 Film Online" --page "home-6" -f markdown</code>
+                </div>
+            </div>
+            <div class="warning">
+                <strong>⚠️ After re-running:</strong> The tool may write a <strong>new</strong> subfolder under <code class="code-highlight">design-system/</code>. Copy merged content into
+                <code class="code-highlight">MASTER.md</code> / <code class="code-highlight">pages/</code> manually, or delete duplicates — this project keeps a <strong>single</strong> canonical
+                <code class="code-highlight">design-system/MASTER.md</code> at the repo root.
+            </div>
+        </div>
+
+        <div class="section-container" id="nextjs">
+            <div class="section-header">Next.js alignment</div>
+            <ul>
+                <li>See <code class="code-highlight">MASTER.md</code> § Next.js: <code class="code-highlight">reactStrictMode</code>, <code class="code-highlight">Image priority</code> on LCP hero only, video poster/captions.</li>
+                <li>Stack search (optional): <code class="code-highlight">python ... search.py "your topic" --stack nextjs -n 5</code></li>
+            </ul>
+        </div>
+
+        <div class="section-container parameters" id="rules">
+            <div class="section-header parameters">Relationship to <code style="background:transparent;border:none;color:#fff;padding:0;">.cursor/rules/</code></div>
+            <p>
+                Project-wide rules (e.g. <code class="code-highlight">mosc_styling_standards.mdc</code>, <code class="code-highlight">icons_buttons_styles.mdc</code>) still apply for
+                <strong>this app’s</strong> global UI. The <strong>design-system</strong> folder describes the <strong>Haru Home 6 reference</strong> rebuild;
+                reconcile conflicts explicitly (brand owner decides).
+            </p>
+        </div>
+
+        <div class="success">
+            <strong>Related HTML doc:</strong>
+            <a href="UI_UX_PRO_MAX_CURSOR_AND_NEXTJS_GUIDE.html">UI_UX_PRO_MAX_CURSOR_AND_NEXTJS_GUIDE.html</a> — installing CLI, Cursor skill, and <code class="code-highlight">--persist</code> basics.
+        </div>
+    </main>
+
+    <script>
+        const commandParams = {};
+
+        function escapeQueryForCmd(s) {
+            if (!s) return '';
+            return String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        }
+
+        function updateCommand(commandId, paramName, paramValue) {
+            if (!commandParams[commandId]) commandParams[commandId] = {};
+            commandParams[commandId][paramName] = paramValue;
+
+            const commandElement = document.getElementById(commandId);
+            if (!commandElement) return;
+
+            const block = commandElement.closest('.command-block');
+            if (!block) return;
+
+            let command = '';
+
+            if (commandId === 'cb-ds-persist-fm') {
+                const q = commandParams[commandId].query != null ? commandParams[commandId].query : 'video film streaming dark cinematic landing woocommerce';
+                const p = commandParams[commandId].project != null ? commandParams[commandId].project : 'Circle Home 6 Film Online';
+                const page = (commandParams[commandId].page || '').trim();
+                command = 'python .cursor/skills/ui-ux-pro-max/scripts/search.py "' + escapeQueryForCmd(q) + '" --design-system --persist -p "' + escapeQueryForCmd(p) + '"';
+                if (page) {
+                    command += ' --page "' + escapeQueryForCmd(page) + '"';
+                }
+                command += ' -f markdown';
+            }
+
+            commandElement.textContent = command;
+            const singleLineCode = document.getElementById(commandId + '-single-code');
+            if (singleLineCode) singleLineCode.textContent = command;
+        }
+
+        function fallbackCopy(text, button) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'absolute';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                if (button) {
+                    button.classList.add('copied');
+                    const isTemplate = button.classList.contains('copy-button-template');
+                    button.textContent = '✓ Copied!';
+                    setTimeout(function () {
+                        button.classList.remove('copied');
+                        button.textContent = isTemplate ? '📄 Template' : '📋 Copy';
+                    }, 2000);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+            document.body.removeChild(ta);
+        }
+
+        function copyCommand(button, commandId) {
+            const commandElement = document.getElementById(commandId);
+            if (!commandElement) return;
+            const commandText = commandElement.textContent.trim();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(commandText).then(function () {
+                    button.classList.add('copied');
+                    button.textContent = '✓ Copied!';
+                    setTimeout(function () {
+                        button.classList.remove('copied');
+                        button.textContent = '📋 Copy';
+                    }, 2000);
+                }).catch(function () {
+                    fallbackCopy(commandText, button);
+                });
+            } else {
+                fallbackCopy(commandText, button);
+            }
+        }
+
+        function copyTemplateCommand(button, commandId) {
+            const commandBlock = button.closest('.command-block');
+            if (!commandBlock) return;
+            let templateCommand = commandBlock.getAttribute('data-template-command');
+            if (!templateCommand) {
+                const commandElement = document.getElementById(commandId);
+                if (!commandElement) return;
+                templateCommand = commandElement.textContent.trim();
+            }
+            templateCommand = templateCommand.replace(/&quot;/g, '"');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(templateCommand).then(function () {
+                    button.classList.add('copied');
+                    button.textContent = '✓ Copied!';
+                    setTimeout(function () {
+                        button.classList.remove('copied');
+                        button.textContent = '📄 Template';
+                    }, 2000);
+                }).catch(function () {
+                    fallbackCopy(templateCommand, button);
+                });
+            } else {
+                fallbackCopy(templateCommand, button);
+            }
+        }
+
+        function initializeCommands() {
+            document.querySelectorAll('.command-block[data-command-base]').forEach(function (block) {
+                const commandContent = block.querySelector('.command-content');
+                if (!commandContent || !commandContent.id) return;
+                const commandId = commandContent.id;
+
+                block.querySelectorAll('.parameter-input input, .parameter-input select').forEach(function (input) {
+                    const inputId = input.id;
+                    if (!inputId || inputId.indexOf(commandId + '-') !== 0) return;
+                    const paramName = inputId.substring(commandId.length + 1);
+                    if (!commandParams[commandId]) commandParams[commandId] = {};
+                    if (input.tagName === 'SELECT') {
+                        commandParams[commandId][paramName] = input.value;
+                    } else {
+                        commandParams[commandId][paramName] = input.value || '';
+                    }
+                });
+                updateCommand(commandId, '_init', '');
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            initializeCommands();
+        });
+    </script>
+</body>
+</html>

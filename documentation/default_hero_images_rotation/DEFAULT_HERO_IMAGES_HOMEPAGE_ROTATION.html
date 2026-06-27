@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Default hero images for multi-tenant satellite deployments — hybrid cloud + bundled fallback, shared resolver, homepage and charity hero rotation fix.">
+    <title>Default Hero Images — Homepage &amp; Satellite Hero Rotation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        h1 {
+            font-size: 2.5em;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            color: #1a1a2e;
+        }
+        h2 {
+            font-size: 1.8em;
+            border-left: 4px solid #0066cc;
+            padding-left: 15px;
+            margin-top: 40px;
+            color: #1a1a2e;
+        }
+        h3 { font-size: 1.4em; color: #333; margin-top: 25px; }
+        h4 { font-size: 1.2em; color: #555; }
+        .toc {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border: 1px solid #b8d4e3;
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px 25px;
+            margin: 25px 0;
+        }
+        .toc h2 { border-left: none; padding-left: 0; margin-top: 0; font-size: 1.4em; color: #0066cc; }
+        .toc ol { margin: 0; padding-left: 20px; }
+        .toc li { margin: 8px 0; }
+        .toc a { color: #0066cc; text-decoration: none; font-weight: 500; }
+        .toc a:hover { text-decoration: underline; }
+        code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+        pre {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #b8d4e3;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        pre code { background: transparent; border: none; padding: 0; color: #0d3b66; }
+        .script-name {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+        }
+        .section-container {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-container.usage {
+            background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%);
+            border-left-color: #9c27b0;
+        }
+        .section-container.parameters {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left-color: #ff9800;
+        }
+        .section-container.output {
+            background: linear-gradient(135deg, #e6ffe6 0%, #ccffcc 100%);
+            border-left-color: #28a745;
+        }
+        .section-header {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            padding: 12px 20px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 8px 8px 0 0;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .section-header.usage { background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%); }
+        .section-header.parameters { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); }
+        .section-header.output { background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%); }
+        .section-intro {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-intro code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+        }
+        .parameters-list {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left: 4px solid #ff9800;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .parameters-list code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            border-radius: 5px;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .info code, .info .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 5px;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .warning code, .warning .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            border-radius: 5px;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .success code, .success .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        tr:hover { background-color: #e3f2fd; transition: background-color 0.2s ease; }
+        td code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+        .flow-diagram {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            line-height: 1.45;
+        }
+        .command-block {
+            border: 2px solid #2196f3;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .command-block.setup {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-color: #2196f3;
+        }
+        .command-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: rgba(255,255,255,0.6);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .command-type { font-weight: bold; color: #333; }
+        .command-header-buttons { display: flex; gap: 8px; }
+        .copy-button, .copy-button-template {
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .copy-button { background-color: #0066cc; }
+        .copy-button:hover { background-color: #0052a3; }
+        .copy-button-template { background-color: #6c757d; }
+        .copy-button-template:hover { background-color: #5a6268; }
+        .copy-button.copied, .copy-button-template.copied { background-color: #28a745; }
+        .command-parameters {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.5);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .command-parameters h5 { margin: 0 0 12px 0; font-size: 0.9em; color: #333; }
+        .parameter-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .parameter-group.single { grid-template-columns: 1fr; }
+        .parameter-input { display: flex; flex-direction: column; gap: 4px; }
+        .parameter-input label { font-size: 0.8em; color: #555; font-weight: 600; }
+        .parameter-input input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .parameter-input input:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+        .command-content {
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #0d3b66;
+            word-break: break-all;
+        }
+        .command-single-line {
+            padding: 12px 15px;
+            background: #e8f4f8;
+            border-top: 1px solid #b8d4e3;
+        }
+        .command-single-line-label {
+            font-size: 0.75em;
+            color: #555;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+        .command-single-line code {
+            display: block;
+            word-break: break-all;
+        }
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            h1 { font-size: 1.8em; }
+            .parameter-group { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1 id="top">Default hero images — homepage &amp; satellite hero rotation</h1>
+
+    <div class="section-intro">
+        <p>
+            This document describes the <strong>hybrid default hero image architecture</strong> implemented for
+            <strong>multi-tenant satellite deployments</strong> (one Next.js codebase, many <code class="code-highlight">NEXT_PUBLIC_TENANT_ID</code> values).
+            It covers the shared resolver, homepage slideshow rotation fix, charity hero parity, onboarding seeding,
+            admin configuration, and the platform-wide emergency fallback asset.
+        </p>
+        <p>
+            <strong>Related:</strong>
+            <a href="../satellite_configuration/SATELLITE_CONFIG_RUNTIME_ARCHITECTURE.html">Satellite configuration runtime</a> ·
+            <a href="hero-image-selection-overlay-logic.md">Hero image selection &amp; overlay logic</a> ·
+            <a href="DEFAULT_HERO_IMAGES_DATABASE_PRD.md">Database PRD</a> ·
+            <a href="DEFAULT_HERO_IMAGES_BACKEND_APPLICATION_PRD.md">Backend application PRD</a> ·
+            <a href="DEFAULT_HERO_IMAGES_FRONTEND_ADMIN_PRD.md">Frontend admin PRD</a>
+        </p>
+    </div>
+
+    <nav class="toc" aria-label="Table of contents">
+        <h2>Table of contents</h2>
+        <ol>
+            <li><a href="#problem">Problem before the fix</a></li>
+            <li><a href="#architecture">Hybrid architecture (cloud + bundled)</a></li>
+            <li><a href="#resolver">Shared resolver &amp; fallback chain</a></li>
+            <li><a href="#homepage">Homepage hero rotation (<code>HeroSection.tsx</code>)</a></li>
+            <li><a href="#charity">Charity hero section</a></li>
+            <li><a href="#satellite">Satellite / multi-tenant behavior</a></li>
+            <li><a href="#tenant-settings">Tenant settings fields</a></li>
+            <li><a href="#onboarding">Onboarding &amp; seed script</a></li>
+            <li><a href="#admin">Admin UI (tenant management)</a></li>
+            <li><a href="#surfaces">Other surfaces (events, checkout, success)</a></li>
+            <li><a href="#files">Key source files</a></li>
+            <li><a href="#backend">Backend requirements</a></li>
+            <li><a href="#testing">Verification checklist</a></li>
+        </ol>
+    </nav>
+
+    <h2 id="problem">Problem before the fix</h2>
+    <div class="section-container">
+        <div class="section-header">What was broken or inconsistent</div>
+        <ul>
+            <li><strong>Single hardcoded default</strong> — Homepage used <code>/images/hero_section/default_hero_section_second_column_poster.webp</code> baked into <code class="code-highlight">src/components/HeroSection.tsx</code>. Every satellite deploy would need different files under <code>public/</code>, which does not scale for multi-tenant.</li>
+            <li><strong>Missing JPEG fallback</strong> — Event, checkout, and success pages referenced <code>/images/default_placeholder_hero_image.jpeg</code>, which was <strong>not in the repo</strong>, causing broken images on those surfaces.</li>
+            <li><strong>Charity hero drift</strong> — <code class="code-highlight">src/components/charity-sections/HeroSection.tsx</code> used Builder.io CDN URLs as fallback instead of tenant-scoped settings.</li>
+            <li><strong>No tenant defaults when events absent</strong> — When no upcoming event had <code>isHomePageHeroImage</code> media, rotation could show nothing useful or the wrong brand for a new satellite tenant.</li>
+        </ul>
+    </div>
+
+    <div class="warning">
+        <strong>Do not bundle per-tenant hero images in <code>public/</code> per satellite deploy.</strong>
+        Use cloud URLs in <code>tenant_settings</code> (primary) plus <strong>one</strong> small emergency asset in the repo (safety net). Do not download S3 objects to server disk at runtime — serve HTTPS CDN URLs and let the browser cache them (same pattern as <code class="code-highlight">logoImageUrl</code>).
+    </div>
+
+    <h2 id="architecture">Hybrid architecture (cloud + bundled)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Layer</th>
+                <th>Storage</th>
+                <th>When used</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Primary</strong></td>
+                <td>Per-tenant HTTPS URLs in <code>tenant_settings</code> (S3 under <code>tenants/{tenantId}/hero-defaults/</code>)</td>
+                <td>No upcoming events, hero media missing, tenant onboarding branding, optional trailing slides when events exist</td>
+            </tr>
+            <tr>
+                <td><strong>Emergency</strong></td>
+                <td><code>/images/hero_section/hero_images/fallback/default-hero.webp</code> in <code>public/</code></td>
+                <td>Tenant settings API down, broken S3 URL, first paint before settings load, empty tenant pool</td>
+            </tr>
+            <tr>
+                <td><strong>Event media</strong></td>
+                <td><code>event-medias</code> with <code>isHomePageHeroImage</code></td>
+                <td>First choice for homepage slideshow when upcoming events qualify (see overlay doc)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="section-container usage">
+        <div class="section-header usage">Resolution flow</div>
+        <pre class="flow-diagram">Upcoming event hero URLs (isHomePageHeroImage)
+        |
+        v
+   Any valid event images?
+    /              \
+  Yes              No
+   |                |
+   |                +--> Tenant defaultHeroImageUrls (from settings)
+   |                           |
+   |                      Pool empty?
+   |                       /        \
+   |                     No          Yes
+   |                      |            |
+   +-- optional append --+            +--> BUNDLED_EMERGENCY_HERO_IMAGE
+   (if includeWithEvents)              (/images/hero_section/hero_images/fallback/default-hero.webp)
+        |
+        v
+   Slideshow / random / single (display mode)
+        |
+        v
+   onError on &lt;img&gt; --> bundled fallback</pre>
+    </div>
+
+    <h2 id="resolver">Shared resolver &amp; fallback chain</h2>
+    <div class="section-intro">
+        <p>All hero surfaces use helpers in <code class="script-name">src/lib/hero/defaultHeroImages.ts</code>:</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Function / constant</th>
+                <th>Purpose</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>BUNDLED_EMERGENCY_HERO_IMAGE</code></td>
+                <td><code>'/images/hero_section/hero_images/fallback/default-hero.webp'</code> — single platform-wide emergency asset</td>
+            </tr>
+            <tr>
+                <td><code>parseTenantDefaultHeroUrls()</code></td>
+                <td>Reads <code>defaultHeroImageUrls</code> array or <code>defaultHeroImageUrlsJson</code> string from tenant settings</td>
+            </tr>
+            <tr>
+                <td><code>resolveHeroImages()</code></td>
+                <td>Homepage slideshow: events → tenant defaults → bundled; returns <code>imageUrls</code>, <code>durationsMs</code>, <code>defaultSlideCount</code></td>
+            </tr>
+            <tr>
+                <td><code>resolveSingleHeroFallbackUrl()</code></td>
+                <td>Single-image surfaces (checkout, success, tickets): prefers event URL, then tenant default, then bundled</td>
+            </tr>
+            <tr>
+                <td><code>applyTenantDisplayMode()</code></td>
+                <td><code>slideshow</code> (all URLs), <code>random</code> (one per resolve), <code>single</code> (first URL only)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="parameters-list">
+        <p><strong>Tenant settings fields (frontend DTO)</strong></p>
+        <ul>
+            <li><code>defaultHeroImageUrlsJson</code> — JSON array of HTTPS URLs (ordered for slideshow)</li>
+            <li><code>defaultHeroDisplayMode</code> — <code>slideshow</code> | <code>random</code> | <code>single</code></li>
+            <li><code>defaultHeroIncludeWithEvents</code> — when <code>true</code>, append tenant default slides after event hero images (legacy behavior, now explicit)</li>
+        </ul>
+    </div>
+
+    <h2 id="homepage">Homepage hero rotation (<code>HeroSection.tsx</code>)</h2>
+    <div class="section-container">
+        <div class="section-header">Main homepage (<code>src/components/HeroSection.tsx</code>)</div>
+        <p><code>DynamicHeroImage</code> was updated to:</p>
+        <ol>
+            <li>Wait for both <code>useFilteredEvents('hero')</code> <strong>and</strong> <code>useTenantSettings()</code> before initializing slides (avoids flashing wrong defaults).</li>
+            <li>Build <code>eventImageUrls</code> from upcoming events with hero media (existing recurrence / date logic preserved).</li>
+            <li>Call <code>resolveHeroImages({ eventImageUrls, tenantSettings })</code> to produce the final <code>dynamicImages</code> array and durations.</li>
+            <li>Track <code>failedImageUrls</code> and use <code>onError</code> on images to fall back to <code>BUNDLED_EMERGENCY_HERO_IMAGE</code> when a CDN URL fails.</li>
+            <li>Keep existing rotation timers, pause/hover, and overlay logic tied to <code>upcomingEvents</code> (see <a href="hero-image-selection-overlay-logic.md">overlay specification</a>).</li>
+        </ol>
+    </div>
+
+    <div class="info">
+        <strong>Rotation behavior:</strong> Event slides use per-media <code>homePageHeroDisplayDurationSeconds</code> (default 8s). Tenant default slides use a fixed 8s interval. Display mode <code>random</code> picks one tenant URL when there are no event images; with events, appended defaults still follow <code>includeWithEvents</code>.
+    </div>
+
+    <h2 id="charity">Charity hero section</h2>
+    <div class="section-container usage">
+        <div class="section-header usage"><code>charity-sections/HeroSection.tsx</code></div>
+        <p>The charity homepage hero uses the <strong>same resolver</strong> as the main hero:</p>
+        <ul>
+            <li>Imports <code>resolveHeroImages</code> and <code>BUNDLED_EMERGENCY_HERO_IMAGE</code>.</li>
+            <li>Loads tenant settings via <code>useTenantSettings()</code>.</li>
+            <li>When <strong>no events</strong> are returned from the proxy, explicitly calls <code>resolveHeroImages({ eventImageUrls: [], tenantSettings })</code> (fixes empty rotation).</li>
+            <li>On fetch error, same resolver path instead of Builder.io CDN fallback.</li>
+        </ul>
+    </div>
+
+    <h2 id="satellite">Satellite / multi-tenant behavior</h2>
+    <div class="section-container">
+        <div class="section-header">One codebase, many tenants</div>
+        <p>
+            Each Amplify app (primary or satellite) sets <code>NEXT_PUBLIC_TENANT_ID</code>. Tenant settings are loaded once by
+            <code class="code-highlight">TenantSettingsProvider</code>, which normalizes <code>defaultHeroImageUrlsJson</code> into
+            <code>defaultHeroImageUrls</code> for client components.
+        </p>
+        <p>
+            Hero URLs are <strong>not</strong> read from <code>config/satellites.json</code> or <code>public/images</code> per tenant.
+            Branding changes are a <strong>settings + S3 update</strong>, not a redeploy.
+        </p>
+    </div>
+
+    <div class="info">
+        <strong>Server-side fallback:</strong> Pages that render on the server use <code>getTenantHeroFallbackUrl()</code> in
+        <code class="script-name">src/lib/hero/getTenantHeroFallback.ts</code> (fetches tenant settings with service JWT).
+        Client pages use <code>useHeroFallbackUrl()</code> from <code class="script-name">src/hooks/useHeroFallbackUrl.ts</code>.
+    </div>
+
+    <h2 id="tenant-settings">Tenant settings fields</h2>
+    <div class="section-container parameters">
+        <div class="section-header parameters">DTO locations</div>
+        <ul>
+            <li><code>src/types/index.ts</code> — <code>TenantSettingsDTO</code></li>
+            <li><code>src/app/admin/tenant-management/types.ts</code> — admin form types</li>
+        </ul>
+    </div>
+
+    <h2 id="onboarding">Onboarding &amp; seed script</h2>
+    <div class="section-intro">
+        <p>When onboarding a new <code>tenant_id</code>:</p>
+        <ol>
+            <li>Copy template pack from <code>s3://eventapp-media-bucket/tenant-templates/default-hero/</code> to <code>tenants/{tenantId}/hero-defaults/</code>.</li>
+            <li>Seed <code>tenant_settings</code> with public HTTPS URLs via script or admin create flow.</li>
+        </ol>
+    </div>
+
+    <div class="section-container usage">
+        <div class="section-header usage">Seed tenant default hero URLs</div>
+
+        <div class="command-block setup"
+             data-command-type="setup"
+             data-command-base="node scripts/seed-tenant-default-hero-images.js"
+             data-template-command="node scripts/seed-tenant-default-hero-images.js">
+            <div class="command-header">
+                <span class="command-type">Onboarding Script</span>
+                <div class="command-header-buttons">
+                    <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'seed-hero')" title="Copy template command">📄 Template</button>
+                    <button type="button" class="copy-button" onclick="copyCommand(this, 'seed-hero')" title="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>🔧 Customize parameters (set as env vars before running):</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="seed-hero-tenant-id">TENANT_ID:</label>
+                        <input type="text" id="seed-hero-tenant-id" placeholder="tenant_demo_002" value="tenant_demo_002" oninput="updateSeedHeroCommand()">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="seed-hero-api-url">NEXT_PUBLIC_API_BASE_URL:</label>
+                        <input type="text" id="seed-hero-api-url" placeholder="http://localhost:8080" value="http://localhost:8080" oninput="updateSeedHeroCommand()">
+                    </div>
+                </div>
+                <div class="parameter-group single">
+                    <div class="parameter-input">
+                        <label for="seed-hero-urls">DEFAULT_HERO_IMAGE_URLS (comma-separated):</label>
+                        <input type="text" id="seed-hero-urls" placeholder="https://eventapp-media-bucket.s3.us-east-2.amazonaws.com/tenants/..." value="" oninput="updateSeedHeroCommand()">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="seed-hero">$env:TENANT_ID="tenant_demo_002"; $env:NEXT_PUBLIC_API_BASE_URL="http://localhost:8080"; $env:API_JWT_USER="your_user"; $env:API_JWT_PASS="your_pass"; node scripts/seed-tenant-default-hero-images.js</div>
+            <div class="command-single-line">
+                <div class="command-single-line-label">Windows PowerShell single-line:</div>
+                <code id="seed-hero-single-code">$env:TENANT_ID="tenant_demo_002"; $env:NEXT_PUBLIC_API_BASE_URL="http://localhost:8080"; $env:API_JWT_USER="your_user"; $env:API_JWT_PASS="your_pass"; node scripts/seed-tenant-default-hero-images.js</code>
+            </div>
+        </div>
+    </div>
+
+    <div class="success">
+        <strong>Alternative — create tenant settings:</strong> Set <code class="code-highlight">DEFAULT_HERO_TEMPLATE_URLS</code> or
+        <code class="code-highlight">AMPLIFY_DEFAULT_HERO_TEMPLATE_URLS</code> (comma-separated, supports <code>{tenantId}</code> in URLs).
+        <code class="code-highlight">createTenantSetting()</code> in <code class="script-name">ApiServerActions.ts</code> calls
+        <code>getOnboardingDefaultHeroPayload()</code> to pre-fill hero fields on create.
+    </div>
+
+    <h2 id="admin">Admin UI (tenant management)</h2>
+    <div class="section-container output">
+        <div class="section-header output">Customization tab — Default Homepage Hero Images</div>
+        <p>Path: <strong>Admin → Tenant Management → Settings → Customization</strong></p>
+        <p><code class="script-name">TenantSettingsForm.tsx</code> provides:</p>
+        <ul>
+            <li>Textarea — one HTTPS URL per line (order = slideshow order)</li>
+            <li>Display mode — <code>slideshow</code> / <code>random</code> / <code>single</code></li>
+            <li>Checkbox — <code>defaultHeroIncludeWithEvents</code></li>
+            <li>Thumbnail preview row for entered URLs</li>
+        </ul>
+        <p>On save, URLs serialize to <code>defaultHeroImageUrlsJson</code> via <code>serializeDefaultHeroImageUrls()</code>.</p>
+    </div>
+
+    <div class="info">
+        <strong>Admin Phase 2:</strong> Multi-file upload, dedicated <strong>Homepage Hero</strong> tab, reorder, and setup walkthrough —
+        see <a href="DEFAULT_HERO_IMAGES_FRONTEND_ADMIN_PRD.md">DEFAULT_HERO_IMAGES_FRONTEND_ADMIN_PRD.md</a>
+        (requires backend <code>POST /api/tenant-settings/upload/default-hero-image</code>).
+    </div>
+
+    <h2 id="surfaces">Other surfaces (events, checkout, success)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Surface</th>
+                <th>Pattern</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Events list / detail / tickets</td>
+                <td><code>useHeroFallbackUrl()</code> or <code>BUNDLED_EMERGENCY_HERO_IMAGE</code>; removed missing JPEG path</td>
+            </tr>
+            <tr>
+                <td>Checkout / donation server data</td>
+                <td><code>getTenantHeroFallbackUrl()</code> passed to client as default hero URL</td>
+            </tr>
+            <tr>
+                <td>Payment success / QR / membership success</td>
+                <td><code>useHeroFallbackUrl(preferredEventUrl)</code></td>
+            </tr>
+            <tr>
+                <td>Stripe success API routes</td>
+                <td>Server <code>getTenantHeroFallbackUrl()</code> for email/receipt hero context</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 id="files">Key source files</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>File</th>
+                <th>Role</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td><code>src/lib/hero/defaultHeroImages.ts</code></td><td>Resolver, parse, serialize, display modes</td></tr>
+            <tr><td><code>src/lib/hero/getTenantHeroFallback.ts</code></td><td>Server-side single fallback URL</td></tr>
+            <tr><td><code>src/hooks/useHeroFallbackUrl.ts</code></td><td>Client hook via tenant settings</td></tr>
+            <tr><td><code>src/components/HeroSection.tsx</code></td><td>Main homepage slideshow</td></tr>
+            <tr><td><code>src/components/charity-sections/HeroSection.tsx</code></td><td>Charity homepage slideshow</td></tr>
+            <tr><td><code>src/components/TenantSettingsProvider.tsx</code></td><td>Normalizes hero URL JSON</td></tr>
+            <tr><td><code>public/images/hero_section/hero_images/fallback/default-hero.webp</code></td><td>Emergency bundled asset</td></tr>
+            <tr><td><code>scripts/seed-tenant-default-hero-images.js</code></td><td>Onboarding PATCH script</td></tr>
+            <tr><td><code>src/app/admin/tenant-management/components/TenantSettingsForm.tsx</code></td><td>Admin hero pool UI</td></tr>
+        </tbody>
+    </table>
+
+    <h2 id="backend">Backend requirements</h2>
+    <div class="section-container parameters">
+        <div class="section-header parameters">Spring Boot / PostgreSQL</div>
+        <p>Add to <code>tenant_settings</code>:</p>
+        <ul>
+            <li><code>default_hero_image_urls_json</code> (TEXT / VARCHAR)</li>
+            <li><code>default_hero_display_mode</code> (VARCHAR, default <code>slideshow</code>)</li>
+            <li><code>default_hero_include_with_events</code> (BOOLEAN, default <code>true</code>)</li>
+        </ul>
+        <p>Full specs:</p>
+        <ul>
+            <li><a href="DEFAULT_HERO_IMAGES_DATABASE_PRD.md">DEFAULT_HERO_IMAGES_DATABASE_PRD.md</a> — migration, columns, seed SQL</li>
+            <li><a href="DEFAULT_HERO_IMAGES_BACKEND_APPLICATION_PRD.md">DEFAULT_HERO_IMAGES_BACKEND_APPLICATION_PRD.md</a> — entity, DTO, REST API, validation</li>
+            <li><a href="DEFAULT_HERO_IMAGES_FRONTEND_ADMIN_PRD.md">DEFAULT_HERO_IMAGES_FRONTEND_ADMIN_PRD.md</a> — admin tab, multi-upload, reorder</li>
+        </ul>
+    </div>
+
+    <div class="info">
+        Until backend columns exist, the frontend still works: resolver falls back to <code>/images/hero_section/hero_images/fallback/default-hero.webp</code> when tenant settings omit hero fields.
+    </div>
+
+    <h2 id="testing">Verification checklist</h2>
+    <div class="section-container output">
+        <div class="section-header output">Manual test plan</div>
+        <ul>
+            <li>Homepage with <strong>upcoming event hero media</strong> — event slides rotate; overlays match current event.</li>
+            <li>Homepage with <strong>no events</strong> — tenant default URLs rotate (or random/single per mode); else bundled webp.</li>
+            <li><strong>New satellite tenant</strong> after onboarding script — settings contain URLs; homepage shows tenant branding without redeploy.</li>
+            <li><strong>Broken S3 URL</strong> in pool — <code>onError</code> shows bundled fallback on homepage.</li>
+            <li>Event checkout / success pages — no 404 for old <code>default_placeholder_hero_image.jpeg</code>; hero shows event or tenant or bundled image.</li>
+            <li>Admin form — save URLs, reload edit page, previews and homepage reflect changes.</li>
+            <li>Charity route — same resolver behavior when events list is empty.</li>
+        </ul>
+    </div>
+
+    <p><a href="#top">Back to top</a></p>
+
+    <script>
+        const commandParams = {};
+
+        function fallbackCopy(text, button) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                button.classList.add('copied');
+                const orig = button.textContent;
+                button.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.textContent = orig;
+                }, 2000);
+            } catch (e) {
+                console.error('Copy failed', e);
+            }
+            document.body.removeChild(ta);
+        }
+
+        function copyToClipboard(text, button, resetLabel) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    button.classList.add('copied');
+                    button.textContent = '✓ Copied!';
+                    setTimeout(() => {
+                        button.classList.remove('copied');
+                        button.textContent = resetLabel;
+                    }, 2000);
+                }).catch(() => fallbackCopy(text, button));
+            } else {
+                fallbackCopy(text, button);
+            }
+        }
+
+        function copyCommand(button, commandId) {
+            const el = document.getElementById(commandId);
+            if (!el) return;
+            copyToClipboard(el.textContent.trim(), button, '📋 Copy');
+        }
+
+        function copyTemplateCommand(button, commandId) {
+            const block = button.closest('.command-block');
+            let cmd = block ? block.getAttribute('data-template-command') : '';
+            if (cmd) cmd = cmd.replace(/&quot;/g, '"');
+            else {
+                const el = document.getElementById(commandId);
+                cmd = el ? el.textContent.trim() : '';
+            }
+            copyToClipboard(cmd, button, '📄 Template');
+        }
+
+        function updateSeedHeroCommand() {
+            const tenantId = document.getElementById('seed-hero-tenant-id').value.trim() || 'tenant_demo_002';
+            const apiUrl = document.getElementById('seed-hero-api-url').value.trim() || 'http://localhost:8080';
+            const urls = document.getElementById('seed-hero-urls').value.trim();
+            let cmd = '$env:TENANT_ID="' + tenantId + '"; $env:NEXT_PUBLIC_API_BASE_URL="' + apiUrl + '"; $env:API_JWT_USER="your_user"; $env:API_JWT_PASS="your_pass"';
+            if (urls) {
+                cmd += '; $env:DEFAULT_HERO_IMAGE_URLS="' + urls + '"';
+            }
+            cmd += '; node scripts/seed-tenant-default-hero-images.js';
+            const content = document.getElementById('seed-hero');
+            const single = document.getElementById('seed-hero-single-code');
+            if (content) content.textContent = cmd;
+            if (single) single.textContent = cmd;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSeedHeroCommand();
+        });
+    </script>
+</body>
+</html>

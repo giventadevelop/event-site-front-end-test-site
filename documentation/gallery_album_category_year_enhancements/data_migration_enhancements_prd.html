@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Category &amp; Year — Data Migration &amp; Seed PRD (v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Category &amp; Year — Data Migration &amp; Seed PRD</h1>
+    <p class="doc-meta">
+        <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 17, 2026<br>
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a> &nbsp;|&nbsp;
+        <strong>Schema:</strong> <a href="database_schema_enhancements_prd.html">database_schema_enhancements_prd.html</a>
+    </p>
+
+    <div class="lead">
+        <p>Scripts and procedures to seed <strong>gallery_category</strong> rows, backfill <strong>album_year</strong> and category on existing albums, and optionally import static MOSC gallery albums into the database with linked media.</p>
+        <p><strong>Implemented SQL:</strong> <code>migrations/</code> folder — see <code>migrations/README.md</code> for apply order (001–005 + rollback).</p>
+    </div>
+
+    <h2>1. Migration phases</h2>
+    <table>
+        <thead><tr><th>Step</th><th>Action</th><th>Environment</th></tr></thead>
+        <tbody>
+            <tr><td>M1</td><td>Run DDL (<code>migrations/001_gallery_category_schema.sql</code> or Liquibase)</td><td>All</td></tr>
+            <tr><td>M2</td><td>Seed categories (<code>migrations/002_seed_gallery_category.sql</code>)</td><td>Dev / staging / prod</td></tr>
+            <tr><td>M3</td><td>Backfill albums (<code>migrations/004_backfill_gallery_album_category_year.sql</code>)</td><td>As needed</td></tr>
+            <tr><td>M4</td><td>Import static MOSC albums (<code>migrations/003_import_mosc_static_albums_metadata.sql</code>)</td><td>MOSC tenant only</td></tr>
+            <tr><td>M5</td><td>Verify (<code>migrations/005_verify_gallery_category_migration.sql</code>)</td><td>QA</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. Seed gallery_category (SQL template)</h2>
+    <div class="section-container">
+        <div class="section-header">Implemented: <code>migrations/002_seed_gallery_category.sql</code></div>
+<pre>-- See migrations/002_seed_gallery_category.sql (8 categories from static MOSC gallery page)
+INSERT INTO public.gallery_category
+    (tenant_id, slug, display_name, sort_order, is_active, created_at, updated_at)
+VALUES
+    (:tenant_id, 'ecumenical-visits', 'Ecumenical Visits', 10, true, now(), now()),
+    (:tenant_id, 'major-events', 'Major Events', 20, true, now(), now()),
+    (:tenant_id, 'receptions', 'Receptions', 30, true, now(), now()),
+    (:tenant_id, 'liturgical-events', 'Liturgical Events', 40, true, now(), now())
+    -- plus special-events, private-audiences, church-visits, conferences
+ON CONFLICT (tenant_id, slug) DO NOTHING;</pre>
+    </div>
+
+    <h2>3. Sample album backfill (static → DB mapping)</h2>
+    <p>Extract from <code>src/app/mosc-redesign/(syro)/gallery/page.tsx</code>. Example UPDATE after albums exist in DB:</p>
+    <pre>-- Example: set year + category on album matched by title
+UPDATE public.gallery_album ga
+SET album_year = 2019,
+    gallery_category_id = (
+        SELECT id FROM public.gallery_category gc
+        WHERE gc.tenant_id = ga.tenant_id
+          AND gc.slug = 'ecumenical-visits'
+    ),
+    updated_at = now()
+WHERE ga.tenant_id = 'tenant_mosc_xxx'
+  AND ga.title ILIKE '%Russia visit%';</pre>
+
+    <h2>4. Static album import manifest (reference rows)</h2>
+    <table>
+        <thead><tr><th>Static id</th><th>title</th><th>date (year)</th><th>category</th><th>photoCount</th><th>Static route</th></tr></thead>
+        <tbody>
+            <tr><td><code>russia-visit</code></td><td>Russia visit of H.H Baselios Marthoma Mathews III</td><td>2019</td><td>Ecumenical Visits</td><td>60</td><td><code>/mosc-redesign/gallery/russia-visit</code></td></tr>
+            <tr><td><code>vatican-visit</code></td><td>VATICAN VISIT OF HIS HOLINESS</td><td>2023</td><td>Ecumenical Visits</td><td>42</td><td><code>/mosc-redesign/gallery/vatican-visit</code></td></tr>
+            <tr><td><code>enthronement-mathews-iii</code></td><td>ENTHRONEMENT CEREMONY…</td><td>2021</td><td>Major Events</td><td>48</td><td><code>/mosc-redesign/gallery/enthronement-mathews-iii</code></td></tr>
+            <tr><td><code>reception-mathews-iii</code></td><td>RECEPTION TO HIS HOLINESS…</td><td>2021</td><td>Receptions</td><td>36</td><td><code>/mosc-redesign/gallery/reception-mathews-iii</code></td></tr>
+            <tr><td><code>st-matrona-relics</code></td><td>His Holiness… St. Matrona…</td><td>2019</td><td>Liturgical Events</td><td>1</td><td><code>/mosc-redesign/gallery/st-matrona-relics</code></td></tr>
+        </tbody>
+    </table>
+    <p>Complete manifest: audit full <code>albums</code> array in gallery page (~30+ entries) before M4 script.</p>
+
+    <h2>5. Optional import script approach (M4)</h2>
+    <ol>
+        <li>Parse static manifest JSON (generated from gallery page)</li>
+        <li>POST <code>/api/gallery-albums</code> with title, coverImageUrl, albumYear, galleryCategoryId, isPublic, displayOrder</li>
+        <li>Upload or link <code>event_media</code> rows with <code>album_id</code> for each photo path under <code>public/images/mosc/gallery/</code></li>
+        <li>Store static id → db id map in JSON for href resolution in frontend</li>
+    </ol>
+
+    <div class="warning-box">
+        <strong>Media import scope:</strong> Full photo import is large (60+ files per album). v1.0 may import **album metadata only** (cover + count from static) and attach media incrementally via existing admin media UI.
+    </div>
+
+    <h2>6. Existing demo albums (tenant_demo_002)</h2>
+    <p>Sample rows in export SQL (e.g. “Chicago Malayalee Association”) have no category/year. Options:</p>
+    <ul>
+        <li>Leave null — cards omit pill/year</li>
+        <li>Admin manually assigns category/year after G2 deploy</li>
+        <li>One-off SQL for demo tenant QA data</li>
+    </ul>
+
+    <h2>7. Rollback</h2>
+    <p>Implemented: <code>migrations/rollback_gallery_category_v1.sql</code></p>
+    <ul>
+        <li>Drop FK and columns: <code>ALTER TABLE gallery_album DROP COLUMN gallery_category_id, DROP COLUMN album_year;</code></li>
+        <li>Drop table: <code>DROP TABLE gallery_category;</code></li>
+        <li>Frontend falls back to pre-v1.0 card (no pill/year)</li>
+    </ul>
+
+    <h2>8. Verification queries</h2>
+    <pre>-- Categories per tenant
+SELECT slug, display_name, sort_order FROM gallery_category
+ WHERE tenant_id = :tenant AND is_active = true ORDER BY sort_order;
+
+-- Albums missing year or category (public)
+SELECT id, title, album_year, gallery_category_id FROM gallery_album
+ WHERE tenant_id = :tenant AND is_public = true
+   AND (album_year IS NULL OR gallery_category_id IS NULL);
+
+-- Album with category join
+SELECT ga.title, ga.album_year, gc.display_name, gc.slug
+FROM gallery_album ga
+LEFT JOIN gallery_category gc ON gc.id = ga.gallery_category_id
+WHERE ga.tenant_id = :tenant AND ga.is_public = true;</pre>
+
+    <div class="info-box">
+        <strong>Next:</strong> <a href="implementation_roadmap.html">Implementation roadmap</a>
+    </div>
+
+</body>
+</html>

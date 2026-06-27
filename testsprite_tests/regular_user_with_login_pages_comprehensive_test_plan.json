@@ -1,0 +1,771 @@
+[
+  {
+    "id": "USER-001",
+    "title": "User Login and Authentication",
+    "description": "Verify regular user can successfully log in and access authenticated pages",
+    "category": "sanity",
+    "priority": "Critical",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to sign-in page (/sign-in)"
+      },
+      {
+        "type": "action",
+        "description": "Wait for Clerk sign-in form to load (look for email input field)"
+      },
+      {
+        "type": "action",
+        "description": "Fill in email input field with user email from environment variable TEST_USER_EMAIL (required for user tests)"
+      },
+      {
+        "type": "action",
+        "description": "Fill in password input field with user password from environment variable TEST_USER_PASSWORD (required for user tests)"
+      },
+      {
+        "type": "action",
+        "description": "Click sign-in button or submit form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify successful login (redirected away from /sign-in page, user menu/profile visible)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is authenticated (profile avatar or user menu visible in header)"
+      }
+    ]
+  },
+  {
+    "id": "USER-002",
+    "title": "Homepage Access After Login",
+    "description": "Verify homepage loads correctly for authenticated user",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to homepage (/)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors (HTTP 200, no console errors)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify main sections are visible: Hero section, Live Events section, Featured Events section"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user profile avatar/menu is visible in header (indicating authenticated state)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify navigation menu is visible and functional"
+      }
+    ]
+  },
+  {
+    "id": "USER-003",
+    "title": "Profile Page Access",
+    "description": "Verify user can access profile page and view personal details",
+    "category": "functional",
+    "priority": "Critical",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to profile page (/profile)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify profile page loads without errors (HTTP 200, no console errors)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify profile form is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify profile form fields are visible: First Name, Last Name, Email, Phone, Address fields"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify existing profile data is displayed (if profile exists)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify Save button is visible"
+      }
+    ]
+  },
+  {
+    "id": "USER-004",
+    "title": "Profile Edit - Personal Information",
+    "description": "Verify user can edit personal information fields in profile",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to profile page (/profile)"
+      },
+      {
+        "type": "action",
+        "description": "Wait for profile form to load"
+      },
+      {
+        "type": "action",
+        "description": "Locate First Name input field"
+      },
+      {
+        "type": "action",
+        "description": "Clear First Name field and enter new test value (e.g., 'TestFirstName')"
+      },
+      {
+        "type": "action",
+        "description": "Locate Last Name input field"
+      },
+      {
+        "type": "action",
+        "description": "Clear Last Name field and enter new test value (e.g., 'TestLastName')"
+      },
+      {
+        "type": "action",
+        "description": "Locate Phone input field"
+      },
+      {
+        "type": "action",
+        "description": "Clear Phone field and enter test phone number (e.g., '555-123-4567')"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify form fields accept input and display entered values"
+      }
+    ]
+  },
+  {
+    "id": "USER-005",
+    "title": "Profile Edit - Address Information",
+    "description": "Verify user can edit address information in profile",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to profile page (/profile)"
+      },
+      {
+        "type": "action",
+        "description": "Wait for profile form to load"
+      },
+      {
+        "type": "action",
+        "description": "Scroll to address section if needed"
+      },
+      {
+        "type": "action",
+        "description": "Locate Address Line 1 input field"
+      },
+      {
+        "type": "action",
+        "description": "Clear Address Line 1 field and enter test address (e.g., '123 Test Street')"
+      },
+      {
+        "type": "action",
+        "description": "Locate City input field"
+      },
+      {
+        "type": "action",
+        "description": "Clear City field and enter test city (e.g., 'Test City')"
+      },
+      {
+        "type": "action",
+        "description": "Locate State input field"
+      },
+      {
+        "type": "action",
+        "description": "Clear State field and enter test state (e.g., 'TS')"
+      },
+      {
+        "type": "action",
+        "description": "Locate Zip Code input field"
+      },
+      {
+        "type": "action",
+        "description": "Clear Zip Code field and enter test zip code (e.g., '12345')"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify all address fields accept input and display entered values"
+      }
+    ]
+  },
+  {
+    "id": "USER-006",
+    "title": "Profile Save - Save Changes",
+    "description": "Verify user can save profile changes successfully",
+    "category": "functional",
+    "priority": "Critical",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to profile page (/profile)"
+      },
+      {
+        "type": "action",
+        "description": "Wait for profile form to load"
+      },
+      {
+        "type": "action",
+        "description": "Make a small change to First Name field (e.g., add 'Updated' suffix)"
+      },
+      {
+        "type": "action",
+        "description": "Locate Save button"
+      },
+      {
+        "type": "action",
+        "description": "Click Save button"
+      },
+      {
+        "type": "action",
+        "description": "Wait for save operation to complete (look for success message or dialog)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify success message or confirmation dialog appears (e.g., 'Profile saved successfully')"
+      },
+      {
+        "type": "action",
+        "description": "Refresh page or navigate away and back to profile page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify saved changes persist (First Name field shows updated value)"
+      }
+    ]
+  },
+  {
+    "id": "USER-007",
+    "title": "Events Listing Page Access",
+    "description": "Verify authenticated user can access events listing page",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to events listing page (/events)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors (HTTP 200, no console errors)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page title and header are visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify events grid/list container is present"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify search/filter functionality is visible (if present)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user profile avatar/menu is visible in header"
+      }
+    ]
+  },
+  {
+    "id": "USER-008",
+    "title": "Event Details Page Access",
+    "description": "Verify authenticated user can view event details",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to events listing page (/events)"
+      },
+      {
+        "type": "action",
+        "description": "Wait for event cards to load"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first available event card (if events exist)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify event details page loads without errors (HTTP 200, no console errors)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify event title is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify event date and time information is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user profile avatar/menu is visible in header"
+      }
+    ]
+  },
+  {
+    "id": "USER-009",
+    "title": "Gallery Page Access",
+    "description": "Verify authenticated user can access gallery page",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to gallery page (/gallery)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors (HTTP 200, no console errors)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify gallery page title and header are visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify gallery grid/container is present"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify search/filter functionality is visible (if present)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user profile avatar/menu is visible in header"
+      }
+    ]
+  },
+  {
+    "id": "USER-010",
+    "title": "Gallery Search and Filter",
+    "description": "Verify authenticated user can search and filter gallery items",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to gallery page (/gallery)"
+      },
+      {
+        "type": "action",
+        "description": "Wait for gallery page to load"
+      },
+      {
+        "type": "action",
+        "description": "Locate search input field"
+      },
+      {
+        "type": "action",
+        "description": "Enter search term in search field (e.g., 'test')"
+      },
+      {
+        "type": "action",
+        "description": "Click search button or wait for search to execute"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify search results update (gallery items filtered or message displayed)"
+      },
+      {
+        "type": "action",
+        "description": "Click clear/reset button to clear search"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify gallery resets to show all items"
+      }
+    ]
+  },
+  {
+    "id": "USER-011",
+    "title": "About Page Access",
+    "description": "Verify authenticated user can access about page via dropdown menu",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to homepage (/)"
+      },
+      {
+        "type": "action",
+        "description": "Locate 'About' menu item in navigation"
+      },
+      {
+        "type": "action",
+        "description": "Hover over or click 'About' menu item to reveal dropdown"
+      },
+      {
+        "type": "action",
+        "description": "Wait for dropdown menu to appear"
+      },
+      {
+        "type": "action",
+        "description": "Click 'About Us' link from dropdown menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page scrolls to about section or about page loads"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify about section content is visible"
+      }
+    ]
+  },
+  {
+    "id": "USER-012",
+    "title": "Contact Page Access",
+    "description": "Verify authenticated user can access contact section",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to homepage (/)"
+      },
+      {
+        "type": "action",
+        "description": "Locate 'Contact' menu item in navigation"
+      },
+      {
+        "type": "action",
+        "description": "Click 'Contact' menu item"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page scrolls to contact section or contact page loads"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify contact form or contact information is visible"
+      }
+    ]
+  },
+  {
+    "id": "USER-013",
+    "title": "Polls Page Access",
+    "description": "Verify authenticated user can access polls page",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to polls page (/polls)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors (HTTP 200, no console errors)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify polls page title and header are visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify polls list or container is present"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user profile avatar/menu is visible in header"
+      }
+    ]
+  },
+  {
+    "id": "USER-014",
+    "title": "Calendar Page Access",
+    "description": "Verify authenticated user can access calendar page",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to calendar page (/calendar)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors (HTTP 200, no console errors)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify calendar page title and header are visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify calendar component or container is present"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user profile avatar/menu is visible in header"
+      }
+    ]
+  },
+  {
+    "id": "USER-015",
+    "title": "Pricing Page Access",
+    "description": "Verify authenticated user can access pricing page",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to pricing page (/pricing)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors (HTTP 200, no console errors)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify pricing page title and header are visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify pricing plans or pricing information is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user profile avatar/menu is visible in header"
+      }
+    ]
+  },
+  {
+    "id": "USER-016",
+    "title": "Navigation - Profile Link from Features Menu",
+    "description": "Verify user can navigate to profile page from Features dropdown menu",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to homepage (/)"
+      },
+      {
+        "type": "action",
+        "description": "Locate 'Features' menu item in navigation"
+      },
+      {
+        "type": "action",
+        "description": "Hover over or click 'Features' menu item to reveal dropdown"
+      },
+      {
+        "type": "action",
+        "description": "Wait for dropdown menu to appear"
+      },
+      {
+        "type": "action",
+        "description": "Click 'Profile' link from Features dropdown menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify navigation to profile page (/profile) is successful"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify profile form is visible"
+      }
+    ]
+  },
+  {
+    "id": "USER-017",
+    "title": "User Sign Out",
+    "description": "Verify user can successfully sign out",
+    "category": "functional",
+    "priority": "Critical",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Ensure user is logged in (navigate to any authenticated page)"
+      },
+      {
+        "type": "action",
+        "description": "Locate user profile avatar/menu in header"
+      },
+      {
+        "type": "action",
+        "description": "Click on user profile avatar to open dropdown menu"
+      },
+      {
+        "type": "action",
+        "description": "Wait for dropdown menu to appear"
+      },
+      {
+        "type": "action",
+        "description": "Locate 'Sign Out' button or link in dropdown menu"
+      },
+      {
+        "type": "action",
+        "description": "Click 'Sign Out' button"
+      },
+      {
+        "type": "action",
+        "description": "Wait for sign-out process to complete"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is signed out (redirected to homepage or sign-in page)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user profile avatar/menu is no longer visible (replaced with Sign In button)"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to profile page (/profile)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify profile page redirects to sign-in or shows unauthenticated state"
+      }
+    ]
+  },
+  {
+    "id": "USER-018",
+    "title": "Post-Logout Public Page Access",
+    "description": "Verify public pages are still accessible after logout",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Ensure user is signed out (from previous test)"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to homepage (/)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify homepage loads without errors (HTTP 200, no console errors)"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to events listing page (/events)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify events page loads without errors"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to gallery page (/gallery)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify gallery page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify Sign In button is visible in header (not profile avatar)"
+      }
+    ]
+  },
+  {
+    "id": "USER-019",
+    "title": "Re-Login After Logout",
+    "description": "Verify user can log in again after signing out",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Ensure user is signed out"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to sign-in page (/sign-in)"
+      },
+      {
+        "type": "action",
+        "description": "Wait for Clerk sign-in form to load"
+      },
+      {
+        "type": "action",
+        "description": "Fill in email input field with user email from environment variable TEST_USER_EMAIL"
+      },
+      {
+        "type": "action",
+        "description": "Fill in password input field with user password from environment variable TEST_USER_PASSWORD"
+      },
+      {
+        "type": "action",
+        "description": "Click sign-in button or submit form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify successful login (redirected away from /sign-in page)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user profile avatar/menu is visible in header"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to profile page (/profile)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify profile page loads and displays user information"
+      }
+    ]
+  },
+  {
+    "id": "USER-020",
+    "title": "Profile Page - Email Subscription Toggle",
+    "description": "Verify user can toggle email subscription status in profile",
+    "category": "functional",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to profile page (/profile)"
+      },
+      {
+        "type": "action",
+        "description": "Wait for profile form to load"
+      },
+      {
+        "type": "action",
+        "description": "Scroll to email subscription section if needed"
+      },
+      {
+        "type": "action",
+        "description": "Locate email subscription checkbox or toggle"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify email subscription checkbox/toggle is visible"
+      },
+      {
+        "type": "action",
+        "description": "Toggle email subscription checkbox (check if unchecked, uncheck if checked)"
+      },
+      {
+        "type": "action",
+        "description": "Click Save button"
+      },
+      {
+        "type": "action",
+        "description": "Wait for save operation to complete"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify success message appears"
+      }
+    ]
+  }
+]
+

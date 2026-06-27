@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Cover S3 — Database Schema PRD (v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d4edda; border-left: 4px solid #28a745; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Cover S3 — Database Schema PRD</h1>
+    <p class="doc-meta">
+        <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 18, 2026<br>
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a> &nbsp;|&nbsp;
+        <strong>Canonical schema:</strong> <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code>
+    </p>
+
+    <div class="lead">
+        <p><strong>Verdict for v1.0:</strong> No PostgreSQL schema migration is required to store S3 cover URLs. The existing <code>gallery_album.cover_image_url</code> column is sufficient (same pattern as <code>focus_group.cover_image_url</code>).</p>
+    </div>
+
+    <div class="info-box">
+        <strong>No DDL required for MVP.</strong> Backend upload writes HTTPS S3 URL into <code>cover_image_url</code>. Optional v1.1 adds traceability via <code>cover_media_id</code>.
+    </div>
+
+    <h2>1. Existing schema (no change)</h2>
+    <div class="section-container">
+        <div class="section-header"><code>gallery_album</code> — relevant columns</div>
+        <table>
+            <thead><tr><th>Column</th><th>Type</th><th>Purpose</th></tr></thead>
+            <tbody>
+                <tr><td><code>cover_image_url</code></td><td><code>varchar(2048) NULL</code></td><td>Thumbnail for public/admin cards. Stores S3 HTTPS URL, CloudFront URL, or legacy local path.</td></tr>
+                <tr><td><code>id</code></td><td><code>bigint PK</code></td><td>Used in S3 path segment <code>album-id/{id}</code></td></tr>
+                <tr><td><code>tenant_id</code></td><td><code>varchar(255) NOT NULL</code></td><td>Tenant isolation; S3 path segment</td></tr>
+            </tbody>
+        </table>
+        <p>Column comment (already in schema):</p>
+        <pre>COMMENT ON COLUMN public.gallery_album.cover_image_url IS
+  'URL to cover image (references event_media.file_url). Used as album thumbnail in gallery view.';</pre>
+    </div>
+
+    <h2>2. Related table — <code>event_media</code></h2>
+    <p>Album photos (and optionally cover uploads) live in <code>event_media</code> with:</p>
+    <ul>
+        <li><code>album_id</code> → FK to <code>gallery_album.id</code></li>
+        <li><code>file_url</code> → S3 object URL</li>
+        <li><code>event_media_type</code> → e.g. <code>gallery</code> (existing album upload flow)</li>
+        <li><code>storage_type</code> → <code>S3</code></li>
+    </ul>
+    <p>Cover upload may create a dedicated <code>event_media</code> row OR only update <code>gallery_album.cover_image_url</code> (focus group pattern updates entity URL and may still create media — follow backend implementation in focus-group handler).</p>
+
+    <h2>3. Optional v1.1 — <code>cover_media_id</code> (not required for MVP)</h2>
+    <div class="warning-box">
+        Defer unless product needs “which media row is the cover?” for delete/replace logic or presign refresh.
+    </div>
+<pre>-- Optional future migration (v1.1)
+ALTER TABLE public.gallery_album
+  ADD COLUMN cover_media_id bigint NULL;
+
+ALTER TABLE public.gallery_album
+  ADD CONSTRAINT fk_gallery_album_cover_media
+  FOREIGN KEY (cover_media_id) REFERENCES public.event_media(id) ON DELETE SET NULL;
+
+CREATE INDEX idx_gallery_album_cover_media_id
+  ON public.gallery_album (cover_media_id) WHERE (cover_media_id IS NOT NULL);
+
+COMMENT ON COLUMN public.gallery_album.cover_media_id IS
+  'Optional FK to event_media used as album cover; cover_image_url remains denormalized display URL.';</pre>
+
+    <h2>4. What we explicitly do NOT add (v1.0)</h2>
+    <table>
+        <thead><tr><th>Candidate column</th><th>Why skip</th></tr></thead>
+        <tbody>
+            <tr><td><code>cover_pre_signed_url</code> on <code>gallery_album</code></td><td>Covers use stable/public S3 URLs like focus groups; presign pattern is for <code>event_media</code> thumbnails on official documents</td></tr>
+            <tr><td>Separate <code>gallery_album_cover</code> table</td><td>Over-normalized; URL on album matches existing PRD</td></tr>
+            <tr><td>BLOB column for image bytes</td><td>All media in S3 per platform standard</td></tr>
+        </tbody>
+    </table>
+
+    <h2>5. Liquibase / canonical schema policy</h2>
+    <ul>
+        <li><strong>v1.0:</strong> No Liquibase changes in <code>malayalees-us-site-boot</code>.</li>
+        <li><strong>v1.1 (if <code>cover_media_id</code> approved):</strong> Add incremental migration + update <code>Latest_Schema_Post__Blob_Claude_12.sql</code> per <code>database_schema_guidelines.mdc</code>.</li>
+    </ul>
+
+    <p><a href="generic_enhancement_prd.html">← Back to index</a></p>
+
+</body>
+</html>

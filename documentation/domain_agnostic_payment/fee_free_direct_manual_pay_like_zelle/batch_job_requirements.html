@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Batch Job Requirements: Fee-Free Manual Payments</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+
+      h1 {
+        font-size: 2.1rem;
+        margin-bottom: 0.75rem;
+      }
+
+      h2 {
+        font-size: 1.6rem;
+        margin-top: 2.5rem;
+      }
+
+      h3 {
+        font-size: 1.2rem;
+        margin-top: 1.6rem;
+      }
+
+      p,
+      li {
+        line-height: 1.75;
+        font-size: 1rem;
+      }
+
+      ul,
+      ol {
+        margin-left: 1.4rem;
+      }
+
+      code.inline {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+        padding: 0.15rem 0.35rem;
+        font-size: 0.95rem;
+        display: inline-block;
+      }
+
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .divider {
+        height: 1px;
+        background: rgba(42, 32, 23, 0.12);
+        margin: 2rem 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Batch Jobs · January 14, 2026</span>
+      <h1>PRD: Batch Job Requirements for Manual Payment Reporting</h1>
+      <p>
+        This PRD defines the batch job scope for aggregating fee-free manual payment data into a reporting table,
+        exposing summary APIs for the admin dashboard, and ensuring the backend can serve summary metrics. It applies
+        to the batch job repository at <code class="inline">E:\project_workspace\event-site-manager-batch-jobs</code>
+        and integrates with the backend at <code class="inline">E:\project_workspace\malayalees-us-site-boot</code>.
+        Notification features are out of scope.
+      </p>
+
+      <div class="divider"></div>
+
+      <h2>1. Goals &amp; Non-Goals</h2>
+      <h3>Goals</h3>
+      <ul>
+        <li>Nightly aggregation of manual payment data into a reporting table.</li>
+        <li>Provide dashboard-ready summaries grouped by event, status, and payment method.</li>
+        <li>Expose backend APIs to fetch summary data for admin dashboards.</li>
+        <li>Keep data consistent with tenant isolation.</li>
+      </ul>
+      <h3>Non-Goals</h3>
+      <ul>
+        <li>No reminder/notification emails for pending requests.</li>
+        <li>No auto-void or expiry enforcement for manual payments.</li>
+        <li>No cross-tenant aggregation.</li>
+      </ul>
+
+      <h2>2. Data Sources &amp; Tables</h2>
+      <ul>
+        <li><code class="inline">manual_payment_request</code> (source of manual payment records)</li>
+        <li><code class="inline">event_details</code> (to verify event_id and manual payment eligibility)</li>
+        <li><code class="inline">manual_payment_summary_report</code> (target reporting table)</li>
+      </ul>
+
+      <h2>3. Batch Job: Manual Payment Summary Aggregation</h2>
+      <ul>
+        <li>Schedule: nightly (e.g., 2:00 AM tenant-local).</li>
+        <li>Input: manual_payment_request rows where event_id is not null.</li>
+        <li>Grouping keys: tenant_id, event_id, payment_method_type, status, snapshot_date.</li>
+        <li>Metrics: total_amount (sum of amount_due), transaction_count (row count).</li>
+        <li>Filtering: only include events with manual payments enabled.</li>
+        <li>Output: insert new snapshot rows into <code class="inline">manual_payment_summary_report</code>.</li>
+      </ul>
+
+      <h2>4. Backend APIs (to be implemented)</h2>
+      <p>These APIs live in the backend and are consumed via proxy routes in the frontend.</p>
+      <ul>
+        <li><code class="inline">GET /api/manual-payment-summary</code></li>
+        <li>Query params: <code class="inline">tenantId.equals</code>, <code class="inline">eventId.equals</code>, <code class="inline">snapshotDate.equals</code>, <code class="inline">status.equals</code></li>
+        <li>Returns summary rows for the admin dashboard.</li>
+      </ul>
+
+      <h2>5. Admin Dashboard Consumption</h2>
+      <ul>
+        <li>Frontend uses proxy routes per <code class="inline">cursor_rules/nextjs_api_routes.mdc</code>.</li>
+        <li>Dashboard should show totals grouped by status and method per event.</li>
+        <li>UI must follow <code class="inline">@ui_style_guide.mdc</code> styling.</li>
+      </ul>
+
+      <h2>6. Retention Policy</h2>
+      <ul>
+        <li>Keep daily snapshots for 18 months; archive thereafter.</li>
+        <li>Retention policy is documented in the schema for <code class="inline">manual_payment_summary_report</code>.</li>
+      </ul>
+
+      <h2>7. Audit & Monitoring</h2>
+      <ul>
+        <li>Log failed aggregation runs and store job status metadata.</li>
+        <li>Surface batch job health in admin analytics dashboard.</li>
+        <li>Record last successful snapshot date per tenant for monitoring.</li>
+      </ul>
+    </main>
+  </body>
+</html>

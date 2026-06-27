@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Category &amp; Year — Backend Enhancements PRD (v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Category &amp; Year — Backend Enhancements PRD</h1>
+    <p class="doc-meta">
+        <strong>Project:</strong> <code>malayalees-us-site-boot</code> &nbsp;|&nbsp; <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 17, 2026<br>
+        <strong>Depends on:</strong> <a href="database_schema_enhancements_prd.html">database_schema_enhancements_prd.html</a><br>
+        <strong>Baseline:</strong> <a href="../gallery_feature_and_album/BACKEND_PRD_GALLERY_ALBUM_FEATURE.md">BACKEND_PRD_GALLERY_ALBUM_FEATURE.md</a> &nbsp;|&nbsp;
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a>
+    </p>
+
+    <div class="lead">
+        <p>Extends existing <code>GalleryAlbum</code> REST resource with <strong>category</strong> and <strong>album year</strong> fields, adds a new <strong>GalleryCategory</strong> CRUD resource, and documents criteria filters for public gallery queries.</p>
+    </div>
+
+    <h2>1. New REST resource</h2>
+    <table>
+        <thead><tr><th>REST path</th><th>Entity</th><th>Notes</th></tr></thead>
+        <tbody>
+            <tr><td><code>/api/gallery-categories</code></td><td><code>GalleryCategory</code></td><td>Full JHipster stack; tenant-scoped; admin + public read</td></tr>
+        </tbody>
+    </table>
+
+    <div class="section-container">
+        <div class="section-header">JHipster file checklist — GalleryCategory</div>
+        <ul>
+            <li><code>domain/GalleryCategory.java</code></li>
+            <li><code>repository/GalleryCategoryRepository.java</code></li>
+            <li><code>service/dto/GalleryCategoryDTO.java</code></li>
+            <li><code>service/mapper/GalleryCategoryMapper.java</code></li>
+            <li><code>service/impl/GalleryCategoryServiceImpl.java</code></li>
+            <li><code>service/criteria/GalleryCategoryCriteria.java</code></li>
+            <li><code>service/GalleryCategoryQueryService.java</code></li>
+            <li><code>web/rest/GalleryCategoryResource.java</code></li>
+            <li><code>web/rest/GalleryCategoryResourceIT.java</code></li>
+        </ul>
+    </div>
+
+    <h2>2. DTO field extensions</h2>
+    <table>
+        <thead><tr><th>DTO</th><th>New / extended fields</th></tr></thead>
+        <tbody>
+            <tr><td><code>GalleryAlbumDTO</code></td><td><code>albumYear</code> (Integer), <code>galleryCategoryId</code> (Long), optional nested <code>galleryCategory</code> (GalleryCategoryDTO on GET)</td></tr>
+            <tr><td><code>GalleryCategoryDTO</code></td><td><code>id</code>, <code>tenantId</code>, <code>slug</code>, <code>displayName</code>, <code>description</code>, <code>sortOrder</code>, <code>isActive</code>, timestamps</td></tr>
+        </tbody>
+    </table>
+
+    <h3>GalleryAlbumDTO — OpenAPI fragment</h3>
+    <pre>{
+  "id": 8332,
+  "tenantId": "tenant_demo_002",
+  "title": "Russia visit of H.H Baselios Marthoma Mathews III",
+  "coverImageUrl": "https://...",
+  "albumYear": 2019,
+  "galleryCategoryId": 101,
+  "galleryCategory": {
+    "id": 101,
+    "slug": "ecumenical-visits",
+    "displayName": "Ecumenical Visits"
+  },
+  "isPublic": true,
+  "displayOrder": 0
+}</pre>
+
+    <h2>3. GalleryAlbum entity / mapper changes</h2>
+    <ul>
+        <li>Add <code>@ManyToOne GalleryCategory galleryCategory</code> on <code>GalleryAlbum</code> (lazy)</li>
+        <li>Map <code>albumYear</code> as <code>Integer</code> column</li>
+        <li>On GET list/detail: optionally eager-fetch category for public gallery (or separate join in query service)</li>
+        <li>POST/PATCH: accept <code>galleryCategoryId</code> and <code>albumYear</code>; validate year range 1900–2100</li>
+        <li>On PATCH: allow <code>galleryCategoryId: null</code> to clear category</li>
+    </ul>
+
+    <h2>4. Criteria filters (GalleryAlbumCriteria)</h2>
+    <table>
+        <thead><tr><th>Filter</th><th>Example</th><th>Use case</th></tr></thead>
+        <tbody>
+            <tr><td><code>galleryCategoryId.equals</code></td><td><code>101</code></td><td>Filter albums by category</td></tr>
+            <tr><td><code>albumYear.equals</code></td><td><code>2019</code></td><td>Filter by visit year</td></tr>
+            <tr><td><code>albumYear.greaterThanOrEqual</code></td><td><code>2020</code></td><td>Year range (future UI)</td></tr>
+            <tr><td><code>albumYear.lessThanOrEqual</code></td><td><code>2023</code></td><td>Year range (future UI)</td></tr>
+            <tr><td><code>tenantId.equals</code></td><td>from env</td><td>Existing multi-tenant</td></tr>
+            <tr><td><code>isPublic.equals</code></td><td><code>true</code></td><td>Public gallery</td></tr>
+        </tbody>
+    </table>
+
+    <h2>5. GalleryCategoryCriteria</h2>
+    <table>
+        <thead><tr><th>Filter</th><th>Example</th></tr></thead>
+        <tbody>
+            <tr><td><code>tenantId.equals</code></td><td>tenant id</td></tr>
+            <tr><td><code>isActive.equals</code></td><td><code>true</code></td></tr>
+            <tr><td><code>slug.equals</code></td><td><code>ecumenical-visits</code></td></tr>
+            <tr><td>sort</td><td><code>sortOrder,asc</code></td></tr>
+        </tbody>
+    </table>
+
+    <h2>6. Optional: media count on album list (v1.0 nice-to-have)</h2>
+    <p>Frontend currently N+1 fetches media per album in <code>fetchAlbumsForGallery</code>. Backend optional enhancement:</p>
+    <ul>
+        <li><strong>Option A (defer):</strong> Keep frontend loop — no backend change</li>
+        <li><strong>Option B:</strong> Add read-only DTO field <code>mediaCount</code> populated in query service via subquery/COUNT join</li>
+        <li><strong>Option C:</strong> Dedicated <code>GET /api/gallery-albums/with-stats</code> composite endpoint</li>
+    </ul>
+    <p><strong>Recommendation:</strong> Option A for v1.0; Option B in v1.1 if performance matters.</p>
+
+    <h2>7. Validation rules</h2>
+    <table>
+        <thead><tr><th>Rule</th><th>HTTP</th><th>Message</th></tr></thead>
+        <tbody>
+            <tr><td><code>albumYear</code> not in 1900–2100</td><td>400</td><td>Album year must be between 1900 and 2100</td></tr>
+            <tr><td><code>galleryCategoryId</code> points to wrong tenant</td><td>400</td><td>Category not found for tenant</td></tr>
+            <tr><td><code>galleryCategoryId</code> inactive category</td><td>400</td><td>Category is not active (admin POST/PATCH only)</td></tr>
+            <tr><td>Duplicate slug per tenant (category)</td><td>409</td><td>Category slug already exists</td></tr>
+        </tbody>
+    </table>
+
+    <h2>8. Authorization</h2>
+    <table>
+        <thead><tr><th>Endpoint</th><th>Public read</th><th>Admin write</th></tr></thead>
+        <tbody>
+            <tr><td><code>GET /api/gallery-albums</code></td><td>Yes (with JWT via proxy)</td><td>—</td></tr>
+            <tr><td><code>POST/PATCH/DELETE /api/gallery-albums</code></td><td>No</td><td>Admin role</td></tr>
+            <tr><td><code>GET /api/gallery-categories</code></td><td>Yes (<code>isActive=true</code>)</td><td>—</td></tr>
+            <tr><td><code>POST/PATCH/DELETE /api/gallery-categories</code></td><td>No</td><td>Admin role</td></tr>
+        </tbody>
+    </table>
+
+    <h2>9. mosc-temp proxy routes</h2>
+    <ul>
+        <li>Add <code>src/pages/api/proxy/gallery-categories/index.ts</code> — <code>createProxyHandler({ backendPath: '/api/gallery-categories' })</code></li>
+        <li>Add <code>src/pages/api/proxy/gallery-categories/[...slug].ts</code> — same pattern as gallery-albums</li>
+        <li>Existing <code>gallery-albums</code> proxies automatically forward new JSON fields once backend deployed</li>
+    </ul>
+
+    <h2>10. Integration tests</h2>
+    <ul>
+        <li>Create category → create album with categoryId + albumYear → GET returns nested category</li>
+        <li>PATCH album to change year and category</li>
+        <li>Filter <code>albumYear.equals=2019</code> returns expected set</li>
+        <li>DELETE category sets album FK to NULL (ON DELETE SET NULL)</li>
+    </ul>
+
+    <div class="info-box">
+        <strong>Next:</strong> <a href="frontend_enhancements_prd.html">Frontend enhancements</a> ·
+        <a href="urls_and_routes_enhancements.html">URLs &amp; routes</a>
+    </div>
+
+</body>
+</html>

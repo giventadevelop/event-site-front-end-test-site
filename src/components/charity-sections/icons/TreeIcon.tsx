@@ -1,0 +1,6 @@
+import * as React from "react";
+import type { SVGProps } from "react";
+const Component = (props: SVGProps<SVGSVGElement>) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 35 40.25" {...props}><defs><mask xmlns="http://www.w3.org/2000/svg" id="prefix__a" width={36} height={42} x={-0.22} y={-0.863} maskUnits="userSpaceOnUse" style={{
+      maskType: "luminance"
+    }}><path fill="#fff" d="M35-.003H0v40.25h35z" /></mask></defs><g xmlns="http://www.w3.org/2000/svg" mask="url(#prefix__a)"><path fill="currentColor" d="M17.452 40.247c-.671 0-1.247-.58-1.247-1.25v-6.93H1.151c-.48 0-.863-.29-1.055-.68-.192-.38-.192-.86.096-1.25l9.876-13.29H6.712c-.479 0-.863-.29-1.055-.67-.287-.29-.191-.77.096-1.16L16.493.477c.479-.57 1.438-.57 1.918 0l10.835 14.54c.288.39.288.87.096 1.26-.191.38-.575.67-1.054.67h-3.357l9.877 13.29c.288.38.288.86.096 1.25s-.575.67-1.055.67H23.493c-.671 0-1.247-.57-1.247-1.25 0-.67.576-1.25 1.247-1.25h7.959l-9.877-13.19a1.19 1.19 0 0 1-.096-1.25c.192-.39.576-.68 1.055-.68h3.356l-8.438-11.36-8.343 11.36h3.357c.479 0 .863.29 1.054.68.192.38.192.86-.095 1.25l-9.877 13.19h13.904c.671 0 1.247.58 1.247 1.25v8.09c0 .67-.576 1.25-1.247 1.25" /></g></svg>;
+export default Component;

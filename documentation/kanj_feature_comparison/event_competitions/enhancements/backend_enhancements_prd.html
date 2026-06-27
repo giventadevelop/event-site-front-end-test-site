@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Competitions — Backend Enhancements PRD (v2.1)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .section-container.usage { background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%); border-left-color: #7b1fa2; }
+        .section-container.usage .section-header { background: linear-gradient(135deg, #7b1fa2 0%, #6a1b9a 100%); }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Event Competitions — Backend Enhancements PRD</h1>
+    <p class="doc-meta">
+        <strong>Project:</strong> <code>malayalees-us-site-boot</code> &nbsp;|&nbsp; <strong>Version:</strong> 2.1 &nbsp;|&nbsp; <strong>Date:</strong> June 6, 2026<br>
+        <strong>Depends on:</strong> <a href="database_schema_enhancements_prd.html">database_schema_enhancements_prd.html</a><br>
+        <strong>Baseline:</strong> <a href="../backend_prd.html">backend_prd.html</a> &nbsp;|&nbsp;
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a>
+    </p>
+
+    <div class="lead">
+        <p>Extends the seven existing REST resources with v2.1 fields, a new <strong>EventCompetitionGroupMember</strong> resource, enhanced registration validation, and composite endpoints for team and bulk checkout.</p>
+    </div>
+
+    <h2>1. New REST resource</h2>
+    <table>
+        <thead><tr><th>REST path</th><th>Entity</th><th>Notes</th></tr></thead>
+        <tbody>
+            <tr><td><code>/api/event-competition-group-members</code></td><td><code>EventCompetitionGroupMember</code></td><td>Full JHipster stack (E1); CRUD + criteria on <code>registrationId.equals</code></td></tr>
+        </tbody>
+    </table>
+
+    <div class="section-container usage">
+        <div class="section-header">JHipster file checklist — EventCompetitionGroupMember</div>
+        <ul>
+            <li><code>domain/EventCompetitionGroupMember.java</code></li>
+            <li><code>repository/EventCompetitionGroupMemberRepository.java</code></li>
+            <li><code>service/dto/EventCompetitionGroupMemberDTO.java</code></li>
+            <li><code>service/mapper/EventCompetitionGroupMemberMapper.java</code></li>
+            <li><code>service/impl/EventCompetitionGroupMemberServiceImpl.java</code></li>
+            <li><code>service/criteria/EventCompetitionGroupMemberCriteria.java</code></li>
+            <li><code>service/EventCompetitionGroupMemberQueryService.java</code></li>
+            <li><code>web/rest/EventCompetitionGroupMemberResource.java</code></li>
+            <li><code>web/rest/EventCompetitionGroupMemberResourceIT.java</code></li>
+        </ul>
+    </div>
+
+    <h2>2. DTO field extensions (existing resources)</h2>
+    <table>
+        <thead><tr><th>DTO</th><th>New fields</th></tr></thead>
+        <tbody>
+            <tr><td><code>EventCompetitionDTO</code></td><td><code>disciplineCode</code>, <code>minAge</code>, <code>maxAge</code>, <code>minGrade</code>, <code>maxGrade</code>, <code>maxPlacements</code>, <code>registrationDeadline</code>, <code>rulesMarkdown</code>, <code>requiresTeamName</code></td></tr>
+            <tr><td><code>EventCompetitionRegistrationDTO</code></td><td><code>teamName</code>, <code>teamDisplayName</code>, optional embedded <code>groupMembers[]</code> on read</td></tr>
+            <tr><td><code>EventCompetitionSettingsDTO</code></td><td><code>pointsFourth</code>, <code>defaultMaxPlacements</code></td></tr>
+            <tr><td><code>EventCompetitionGroupMemberDTO</code></td><td><code>registrationId</code>, <code>participantProfileId</code>, <code>memberRole</code>, <code>sortOrder</code></td></tr>
+        </tbody>
+    </table>
+
+    <h2>3. Composite endpoints (recommended)</h2>
+    <div class="section-container">
+        <div class="section-header">Registration orchestration</div>
+        <table>
+            <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+            <tbody>
+                <tr><td><code>POST</code></td><td><code>/api/event-competition-registrations/team</code></td><td>Atomic: leader registration + N group members + optional Stripe PI metadata</td></tr>
+                <tr><td><code>POST</code></td><td><code>/api/event-competition-registrations/bulk</code></td><td>Cart: multiple competitions, one participant (parent multi-select)</td></tr>
+                <tr><td><code>GET</code></td><td><code>/api/event-competitions/{id}/eligibility-check</code></td><td>Query: <code>participantId</code> → eligible boolean + reasons[]</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>POST /team — request body (illustrative)</h3>
+    <pre>{
+  "eventId": 42,
+  "competitionId": 101,
+  "leaderParticipantProfileId": 5001,
+  "registeredByUserProfileId": 900,
+  "teamName": "St. Mary's U12",
+  "teamDisplayName": "St. Mary's U12 Soccer",
+  "feeAmount": 75.00,
+  "members": [
+    { "participantProfileId": 5001, "memberRole": "CAPTAIN", "sortOrder": 0 },
+    { "participantProfileId": 5002, "memberRole": "MEMBER", "sortOrder": 1 },
+    { "participantProfileId": 5003, "memberRole": "MEMBER", "sortOrder": 2 }
+  ]
+}</pre>
+
+    <h2>4. Enhanced validation — EventCompetitionRegistrationServiceImpl</h2>
+    <p>Extend existing <code>validateRegistration()</code> in <code>EventCompetitionRegistrationServiceImpl</code>:</p>
+    <table>
+        <thead><tr><th>Rule</th><th>HTTP</th><th>Message pattern</th></tr></thead>
+        <tbody>
+            <tr><td>Per-competition <code>registration_deadline</code> (fallback to settings)</td><td>400</td><td>Registration closed for this competition</td></tr>
+            <tr><td>Age from DOB vs <code>min_age</code>/<code>max_age</code></td><td>400</td><td>Participant age outside eligible range</td></tr>
+            <tr><td><code>current_grade</code> vs <code>min_grade</code>/<code>max_grade</code></td><td>400</td><td>Grade not eligible for this competition</td></tr>
+            <tr><td>GROUP: member count &lt; <code>min_group_size</code></td><td>400</td><td>Team roster below minimum size</td></tr>
+            <tr><td>GROUP: member count &gt; <code>max_group_size</code> (existing partial)</td><td>400</td><td>Team roster exceeds maximum</td></tr>
+            <tr><td><code>requires_team_name</code> and empty <code>team_name</code></td><td>400</td><td>Team name required</td></tr>
+            <tr><td>Duplicate participant on same competition</td><td>409</td><td>Already registered (existing unique constraint)</td></tr>
+            <tr><td>Capacity <code>max_participants</code></td><td>409</td><td>Competition full (existing)</td></tr>
+        </tbody>
+    </table>
+
+    <h2>5. Results service enhancements</h2>
+    <ul>
+        <li>On save: <code>placement &lt;= competition.maxPlacements</code></li>
+        <li>Auto-fill <code>points_awarded</code> from settings: 1→<code>points_first</code>, 2→<code>points_second</code>, 3→<code>points_third</code>, 4→<code>points_fourth</code></li>
+        <li>On publish: reject duplicate <code>(competition_id, placement)</code> among published rows</li>
+        <li>GROUP results: prefer <code>team_display_name</code> on leader registration when <code>participant_profile_id</code> is null</li>
+        <li>Optional: <code>POST /api/event-competition-results/publish-by-competition/{competitionId}</code> bulk publish</li>
+    </ul>
+
+    <h2>6. Criteria query extensions</h2>
+    <pre>GET /api/event-competitions?eventId.equals=42&amp;disciplineCode.equals=SONG&amp;isActive.equals=true
+GET /api/event-competition-group-members?registrationId.equals=8801&amp;sort=sortOrder,asc
+GET /api/event-competitions/101/eligibility-check?participantId=5001</pre>
+
+    <h2>7. Security &amp; tenancy</h2>
+    <div class="info-box">
+        <ul>
+            <li><strong>Team captain:</strong> may POST <code>/team</code> only when <code>registered_by_user_profile_id</code> matches JWT user profile and competition is GROUP.</li>
+            <li><strong>Guardian:</strong> group member participants must have <code>guardian_user_profile_id</code> matching caller (YOUTH).</li>
+            <li><strong>Group member CRUD:</strong> admin or registration owner until status is CONFIRMED.</li>
+            <li><strong>Public read:</strong> competitions with new fields; published results unchanged.</li>
+        </ul>
+    </div>
+
+    <h2>8. OpenAPI &amp; tests</h2>
+    <table>
+        <thead><tr><th>Task</th><th>File</th></tr></thead>
+        <tbody>
+            <tr><td>Regenerate OpenAPI</td><td><code>documentation/Swagger_API_Docs/api-docs.json</code> (frontend sync)</td></tr>
+            <tr><td>Team registration IT</td><td><code>EventCompetitionRegistrationResourceIT</code> — happy path + min/max roster</td></tr>
+            <tr><td>Eligibility IT</td><td>Age/grade boundary cases</td></tr>
+            <tr><td>Group member IT</td><td><code>EventCompetitionGroupMemberResourceIT</code></td></tr>
+            <tr><td>Results placement IT</td><td>4th place + duplicate placement rejection</td></tr>
+        </tbody>
+    </table>
+
+    <div class="warning-box">
+        Composite endpoints may live on <code>EventCompetitionRegistrationResource</code> as <code>@PostMapping("/team")</code> with custom service method — avoid breaking standard CRUD paths.
+    </div>
+
+</body>
+</html>

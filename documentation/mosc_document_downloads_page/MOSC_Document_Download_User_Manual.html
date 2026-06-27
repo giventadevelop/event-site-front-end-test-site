@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="User manual: MOSC.in migration — download scripts, manifest, bulk upload to official documents. Commands with copy buttons.">
+    <title>MOSC Document Downloads &amp; Migration — User Manual</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+            background-color: #fff;
+        }
+        h1 {
+            color: #1a1a1a;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 10px;
+            margin-top: 0;
+            font-size: 2.2em;
+        }
+        h2 {
+            color: #0066cc;
+            margin-top: 32px;
+            border-left: 4px solid #0066cc;
+            padding-left: 12px;
+            font-size: 1.5em;
+        }
+        h3 {
+            color: #333;
+            margin-top: 22px;
+            font-size: 1.2em;
+        }
+        .toc {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border: 1px solid #b8d4e3;
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin: 24px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.08);
+        }
+        .toc h2 {
+            margin-top: 0;
+            border: none;
+            padding: 0;
+        }
+        .toc ul { margin: 10px 0 0 0; padding-left: 20px; }
+        .toc a { color: #0066cc; font-weight: 600; }
+        a { color: #0066cc; }
+        .section-intro {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-intro code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+        }
+        .section-container {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-container.parameters {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left-color: #ff9800;
+        }
+        .section-container.usage {
+            background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%);
+            border-left-color: #9c27b0;
+        }
+        .section-container.output {
+            background: linear-gradient(135deg, #e6ffe6 0%, #ccffcc 100%);
+            border-left-color: #28a745;
+        }
+        .section-header {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            padding: 12px 20px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 8px 8px 0 0;
+            font-size: 1.15em;
+            font-weight: bold;
+        }
+        .section-header.parameters {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+        .section-header.usage {
+            background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+        }
+        .section-header.output {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+        }
+        .parameters-list {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left: 4px solid #ff9800;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .parameters-list code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+        .script-name {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .info code, .info .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .warning code, .warning .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        code, .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre, .code-block {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #b8d4e3;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        pre code {
+            background: transparent;
+            border: none;
+            padding: 0;
+            color: #0d3b66;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        tr:hover { background-color: #e3f2fd; transition: background-color 0.2s ease; }
+        td code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+        }
+        .command-block {
+            border-radius: 8px;
+            border: 2px solid #2196f3;
+            margin: 20px 0;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+        }
+        .command-block.setup {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-color: #2196f3;
+        }
+        .command-block.verify {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-color: #4caf50;
+        }
+        .command-block.advance {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-color: #ff9800;
+        }
+        .command-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: rgba(255,255,255,0.6);
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+        }
+        .command-type { font-weight: bold; color: #0d3b66; }
+        .command-header-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+        .copy-button, .copy-button-template {
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .copy-button {
+            background-color: #0066cc;
+            color: white;
+        }
+        .copy-button:hover { background-color: #0052a3; }
+        .copy-button.copied { background-color: #28a745; }
+        .copy-button-template {
+            background-color: #6c757d;
+            color: white;
+        }
+        .copy-button-template:hover { background-color: #5a6268; }
+        .copy-button-template.copied { background-color: #28a745; }
+        .command-parameters {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.5);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .command-parameters h5 {
+            margin: 0 0 12px 0;
+            font-size: 0.9em;
+            color: #333;
+        }
+        .parameter-group {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            max-width: 640px;
+        }
+        .parameter-input label {
+            font-size: 0.8em;
+            color: #555;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .parameter-input input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .parameter-input input:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+        .command-content {
+            padding: 12px 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #0d3b66;
+            word-break: break-all;
+            background: #fff;
+        }
+        .command-single-line {
+            padding: 12px 15px;
+            background: #e8f4f8;
+            border-top: 1px solid #b8d4e3;
+        }
+        .command-single-line-label {
+            font-size: 0.75em;
+            color: #666;
+            margin-bottom: 6px;
+        }
+        .command-single-line code {
+            display: block;
+            white-space: pre-wrap;
+            word-break: break-all;
+            background: transparent;
+            border: none;
+            padding: 0;
+            color: #0d3b66;
+        }
+        .catalog-grid {
+            display: grid;
+            gap: 16px;
+            margin-top: 16px;
+        }
+        @media (max-width: 768px) {
+            body { padding: 12px; }
+            .command-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>MOSC Document Downloads &amp; Migration — User Manual</h1>
+        <p><strong>Catalog / operator guide</strong> for the migration toolkit under <code class="code-highlight">scripts/mosc-in-migration/</code>. HTML version of the README; use the copy buttons for Windows-friendly single-line commands.</p>
+
+        <nav class="toc" aria-label="Table of contents">
+            <h2>Table of contents</h2>
+            <ul>
+                <li><a href="#overview">1. Overview</a></li>
+                <li><a href="#legal">2. Legal, copyright &amp; ethics</a></li>
+                <li><a href="#folder">3. Download folder</a></li>
+                <li><a href="#command-catalog">4. Command catalog (copy)</a></li>
+                <li><a href="#manifest-params">5. Manifest parameters</a></li>
+                <li><a href="#mirror-mode">6. Title-folder mirror mode</a></li>
+                <li><a href="#steps">7. Step-by-step workflow</a></li>
+                <li><a href="#bulk-upload">8. Bulk load in the admin app</a></li>
+                <li><a href="#upload-auth-prereq">9. Upload authorization prerequisite (backend)</a></li>
+                <li><a href="#npm">10. npm shortcuts</a></li>
+                <li><a href="#troubleshooting">11. Troubleshooting</a></li>
+                <li><a href="#files">12. Files in the repo</a></li>
+                <li><a href="#changelog">13. Changelog</a></li>
+            </ul>
+        </nav>
+
+        <section id="overview" class="section-intro">
+            <h2 style="border:none;padding:0;margin-top:0;color:#0066cc;">Overview</h2>
+            <p>One-off tooling migrates official documents from the legacy site (<code class="code-highlight">mosc.in</code>) into this app’s <strong>official document library</strong> (categories, year bundles, bulk upload). Scripts run <strong>outside</strong> the Next.js browser.</p>
+            <p><strong>Bulk load</strong> in the admin UI is the upload feature this ties to — not a separate “World Cup” feature. Flow: <strong>download with script → local folder → bulk upload</strong> at <code class="code-highlight">/admin/official-documents</code>.</p>
+        </section>
+
+        <section id="legal" class="warning">
+            <h3 style="margin-top:0;">Legal, copyright &amp; ethics</h3>
+            <ol>
+                <li>You must have the <strong>right</strong> to copy and republish each file.</li>
+                <li>Comply with <code class="code-highlight">mosc.in</code> terms of service.</li>
+                <li><strong>robots.txt:</strong> The downloader respects <code class="code-highlight">Disallow</code> for <code class="code-highlight">User-agent: *</code>. Use <code class="code-highlight">--ignore-robots</code> only for local debugging.</li>
+                <li><strong>Rate limits:</strong> Default <code class="code-highlight">delayMs</code> 1500 ms between requests; increase if needed.</li>
+                <li><strong>No crawling:</strong> Only explicit URLs in your manifest — no site spidering.</li>
+            </ol>
+        </section>
+
+        <section id="folder" class="section-container">
+            <div class="section-header">📁 Download folder (default)</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Setting</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Default root</td>
+                        <td><code>C:\E_Drive\code_backup\mosc_downloads</code></td>
+                    </tr>
+                    <tr>
+                        <td>Override</td>
+                        <td>Environment variable <code>MOSC_DOWNLOAD_ROOT</code></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p>Layout on disk:</p>
+            <pre class="code-block"><code>&lt;MOSC_DOWNLOAD_ROOT&gt;/&lt;categorySlug&gt;/&lt;year&gt;/&lt;filename&gt;</code></pre>
+            <p class="success" style="margin-top:12px;"><strong>Example:</strong> <code class="code-highlight">C:\E_Drive\code_backup\mosc_downloads\synod-minutes\2024\minutes-jan.pdf</code> — matches how you select files for one category + year in bulk upload.</p>
+        </section>
+
+        <section id="command-catalog" class="section-container usage">
+            <div class="section-header usage">📋 Command catalog — copy to clipboard</div>
+            <p>Customize the <strong>manifest path</strong> if your <code class="code-highlight">url-list.json</code> lives elsewhere. Commands are <strong>single-line</strong> for Windows CMD/PowerShell.</p>
+
+            <h3>Dry run (Node)</h3>
+            <div class="command-block verify"
+                 data-command-type="verify"
+                 data-command-base="node scripts/mosc-in-migration/fetch-urls.mjs"
+                 data-template-command="node scripts/mosc-in-migration/fetch-urls.mjs --manifest scripts/mosc-in-migration/url-list.json --dry-run">
+                <div class="command-header">
+                    <span class="command-type">Dry run — verify paths only</span>
+                    <div class="command-header-buttons">
+                        <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cmd-node-dry')" title="Copy template command">📄 Template</button>
+                        <button type="button" class="copy-button" onclick="copyCommand(this, 'cmd-node-dry')" title="Copy customized command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Customize parameters</h5>
+                    <div class="parameter-group">
+                        <div class="parameter-input">
+                            <label for="cmd-node-dry-manifest">Manifest file path (relative to repo root)</label>
+                            <input type="text" id="cmd-node-dry-manifest" value="scripts/mosc-in-migration/url-list.json" placeholder="scripts/mosc-in-migration/url-list.json" oninput="updateMigrationCommand('cmd-node-dry', 'manifest', this.value)">
+                        </div>
+                    </div>
+                </div>
+                <div class="command-content" id="cmd-node-dry">node scripts/mosc-in-migration/fetch-urls.mjs --manifest scripts/mosc-in-migration/url-list.json --dry-run</div>
+                <div class="command-single-line" id="cmd-node-dry-single">
+                    <div class="command-single-line-label">Windows single-line</div>
+                    <code id="cmd-node-dry-single-code">node scripts/mosc-in-migration/fetch-urls.mjs --manifest scripts/mosc-in-migration/url-list.json --dry-run</code>
+                </div>
+            </div>
+
+            <h3>Download (Node)</h3>
+            <div class="command-block advance"
+                 data-command-type="advance"
+                 data-command-base="node scripts/mosc-in-migration/fetch-urls.mjs"
+                 data-template-command="node scripts/mosc-in-migration/fetch-urls.mjs --manifest scripts/mosc-in-migration/url-list.json">
+                <div class="command-header">
+                    <span class="command-type">Fetch files (writes to MOSC_DOWNLOAD_ROOT)</span>
+                    <div class="command-header-buttons">
+                        <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cmd-node-fetch')" title="Copy template command">📄 Template</button>
+                        <button type="button" class="copy-button" onclick="copyCommand(this, 'cmd-node-fetch')" title="Copy customized command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Customize parameters</h5>
+                    <div class="parameter-group">
+                        <div class="parameter-input">
+                            <label for="cmd-node-fetch-manifest">Manifest file path (relative to repo root)</label>
+                            <input type="text" id="cmd-node-fetch-manifest" value="scripts/mosc-in-migration/url-list.json" placeholder="scripts/mosc-in-migration/url-list.json" oninput="updateMigrationCommand('cmd-node-fetch', 'manifest', this.value)">
+                        </div>
+                    </div>
+                </div>
+                <div class="command-content" id="cmd-node-fetch">node scripts/mosc-in-migration/fetch-urls.mjs --manifest scripts/mosc-in-migration/url-list.json</div>
+                <div class="command-single-line" id="cmd-node-fetch-single">
+                    <div class="command-single-line-label">Windows single-line</div>
+                    <code id="cmd-node-fetch-single-code">node scripts/mosc-in-migration/fetch-urls.mjs --manifest scripts/mosc-in-migration/url-list.json</code>
+                </div>
+            </div>
+
+            <h3>Optional flags (append manually after copy)</h3>
+            <div class="parameters-list">
+                <p><strong>Add to the end of the command:</strong></p>
+                <ul>
+                    <li><code class="code-highlight">--skip-existing</code> — skip if file already exists</li>
+                    <li><code class="code-highlight">--ignore-robots</code> — only for local testing (not production)</li>
+                </ul>
+            </div>
+
+            <h3>npm scripts (from repo root)</h3>
+            <div class="command-block setup"
+                 data-command-base="npm run mosc:migration:dry"
+                 data-template-command="npm run mosc:migration:dry">
+                <div class="command-header">
+                    <span class="command-type">npm — dry run (uses url-list.example.json)</span>
+                    <div class="command-header-buttons">
+                        <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cmd-npm-dry')" title="Copy template command">📄 Template</button>
+                        <button type="button" class="copy-button" onclick="copyCommand(this, 'cmd-npm-dry')" title="Copy command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Note</h5>
+                    <p style="margin:0;font-size:0.9em;">Fixed in <code class="code-highlight">package.json</code>: uses <code class="code-highlight">url-list.example.json</code> for dry-run. For real lists, prefer the Node commands above with <code class="code-highlight">url-list.json</code>.</p>
+                </div>
+                <div class="command-content" id="cmd-npm-dry">npm run mosc:migration:dry</div>
+                <div class="command-single-line">
+                    <div class="command-single-line-label">Windows single-line</div>
+                    <code id="cmd-npm-dry-single-code">npm run mosc:migration:dry</code>
+                </div>
+            </div>
+
+            <div class="command-block setup"
+                 data-command-base="npm run mosc:migration:fetch"
+                 data-template-command="npm run mosc:migration:fetch">
+                <div class="command-header">
+                    <span class="command-type">npm — fetch (expects url-list.json)</span>
+                    <div class="command-header-buttons">
+                        <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cmd-npm-fetch')" title="Copy template command">📄 Template</button>
+                        <button type="button" class="copy-button" onclick="copyCommand(this, 'cmd-npm-fetch')" title="Copy command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Note</h5>
+                    <p style="margin:0;font-size:0.9em;">Copy <code class="code-highlight">url-list.example.json</code> → <code class="code-highlight">url-list.json</code> and edit before running.</p>
+                </div>
+                <div class="command-content" id="cmd-npm-fetch">npm run mosc:migration:fetch</div>
+                <div class="command-single-line">
+                    <div class="command-single-line-label">Windows single-line</div>
+                    <code id="cmd-npm-fetch-single-code">npm run mosc:migration:fetch</code>
+                </div>
+            </div>
+
+            <div class="command-block advance"
+                 data-command-base="npm run mosc:migration:mirror:dry"
+                 data-template-command="npm run mosc:migration:mirror:dry">
+                <div class="command-header">
+                    <span class="command-type">npm — hierarchy mirror dry run (title/subtitle folders)</span>
+                    <div class="command-header-buttons">
+                        <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cmd-npm-mirror-dry')" title="Copy template command">📄 Template</button>
+                        <button type="button" class="copy-button" onclick="copyCommand(this, 'cmd-npm-mirror-dry')" title="Copy command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Note</h5>
+                    <p style="margin:0;font-size:0.9em;">Traverses <code class="code-highlight">https://mosc.in/downloads/</code> and nested pages, showing the planned hierarchical folder paths.</p>
+                </div>
+                <div class="command-content" id="cmd-npm-mirror-dry">npm run mosc:migration:mirror:dry</div>
+                <div class="command-single-line">
+                    <div class="command-single-line-label">Windows single-line</div>
+                    <code id="cmd-npm-mirror-dry-single-code">npm run mosc:migration:mirror:dry</code>
+                </div>
+            </div>
+
+            <div class="command-block advance"
+                 data-command-base="npm run mosc:migration:mirror"
+                 data-template-command="npm run mosc:migration:mirror">
+                <div class="command-header">
+                    <span class="command-type">npm — hierarchy mirror download (requested run)</span>
+                    <div class="command-header-buttons">
+                        <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cmd-npm-mirror')" title="Copy template command">📄 Template</button>
+                        <button type="button" class="copy-button" onclick="copyCommand(this, 'cmd-npm-mirror')" title="Copy command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Note</h5>
+                    <p style="margin:0;font-size:0.9em;">Runs with <code class="code-highlight">--ignore-robots --skip-existing</code> and writes into <code class="code-highlight">mosc-in-downloads-by-title</code>.</p>
+                </div>
+                <div class="command-content" id="cmd-npm-mirror">npm run mosc:migration:mirror</div>
+                <div class="command-single-line">
+                    <div class="command-single-line-label">Windows single-line</div>
+                    <code id="cmd-npm-mirror-single-code">npm run mosc:migration:mirror</code>
+                </div>
+            </div>
+
+            <div class="command-block advance"
+                 data-command-base="npm run mosc:migration:upload:mirror:dry"
+                 data-template-command="npm run mosc:migration:upload:mirror:dry">
+                <div class="command-header">
+                    <span class="command-type">npm — mirror auto-upload dry run</span>
+                    <div class="command-header-buttons">
+                        <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cmd-npm-upload-mirror-dry')" title="Copy template command">📄 Template</button>
+                        <button type="button" class="copy-button" onclick="copyCommand(this, 'cmd-npm-upload-mirror-dry')" title="Copy command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Note</h5>
+                    <p style="margin:0;font-size:0.9em;">Parses <code class="code-highlight">_mirror-report-*.json</code>, maps category folders, and prints planned API uploads without writing.</p>
+                </div>
+                <div class="command-content" id="cmd-npm-upload-mirror-dry">npm run mosc:migration:upload:mirror:dry</div>
+                <div class="command-single-line">
+                    <div class="command-single-line-label">Windows single-line</div>
+                    <code id="cmd-npm-upload-mirror-dry-single-code">npm run mosc:migration:upload:mirror:dry</code>
+                </div>
+            </div>
+
+            <div class="warning">
+                <strong>Upload fails with "Admin access required"?</strong>
+                Check the backend prerequisite section:
+                <a href="#upload-auth-prereq">Upload authorization prerequisite (backend)</a>.
+            </div>
+
+            <div class="command-block advance"
+                 data-command-base="npm run mosc:migration:upload:mirror"
+                 data-template-command="npm run mosc:migration:upload:mirror">
+                <div class="command-header">
+                    <span class="command-type">npm — mirror auto-upload execute</span>
+                    <div class="command-header-buttons">
+                        <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cmd-npm-upload-mirror')" title="Copy template command">📄 Template</button>
+                        <button type="button" class="copy-button" onclick="copyCommand(this, 'cmd-npm-upload-mirror')" title="Copy command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Note</h5>
+                    <p style="margin:0;font-size:0.9em;">Uploads each mirrored file via tenant official-document API, then patches hierarchy metadata + priority ranking for tree display and priority-first pagination.</p>
+                </div>
+                <div class="command-content" id="cmd-npm-upload-mirror">npm run mosc:migration:upload:mirror</div>
+                <div class="command-single-line">
+                    <div class="command-single-line-label">Windows single-line</div>
+                    <code id="cmd-npm-upload-mirror-single-code">npm run mosc:migration:upload:mirror</code>
+                </div>
+            </div>
+        </section>
+
+        <section id="manifest-params" class="section-container parameters">
+            <div class="section-header parameters">⚙️ Manifest (<code class="script-name">url-list.json</code>) fields</div>
+            <div class="parameters-list">
+                <p><strong>Per asset (in <code>items</code> array):</strong></p>
+                <ul>
+                    <li><code>url</code> — full HTTPS URL to the file</li>
+                    <li><code>categorySlug</code> — must match <code class="code-highlight">/admin/official-document-categories</code></li>
+                    <li><code>year</code> — calendar year</li>
+                    <li><code>filename</code> — optional rename</li>
+                </ul>
+                <p><strong>Optional top-level:</strong> <code>delayMs</code>, <code>userAgent</code>, <code>siteOrigin</code> (for <code>robots.txt</code>), <code>fetchRobotsTxt</code>.</p>
+            </div>
+        </section>
+
+        <section id="mirror-mode" class="section-container output">
+            <div class="section-header output">🗂 Title-folder mirror mode</div>
+            <p>Use <code class="script-name">mirror-downloads-tree.mjs</code> when you want the local download folders to follow the site’s title structure (main title -> sub-title -> files), instead of only <code class="code-highlight">&lt;categorySlug&gt;/&lt;year&gt;</code>.</p>
+            <p>Example source pages:</p>
+            <ul>
+                <li><a href="https://mosc.in/downloads/" target="_blank" rel="noopener noreferrer">https://mosc.in/downloads/</a></li>
+                <li><a href="https://mosc.in/downloads/form-for-preparing-financial-statements-by-institutions-for-the-year-ended/" target="_blank" rel="noopener noreferrer">https://mosc.in/downloads/form-for-preparing-financial-statements-by-institutions-for-the-year-ended/</a></li>
+            </ul>
+            <p>Output root:</p>
+            <pre class="code-block"><code>C:\E_Drive\code_backup\mosc_downloads\mosc-in-downloads-by-title\&lt;top-title&gt;\&lt;sub-title&gt;\&lt;file-label&gt;\&lt;filename&gt;</code></pre>
+            <div class="info">
+                This mode is best when operators want a human-readable “website-like” folder mirror for manual review and selective upload.
+            </div>
+        </section>
+
+        <section id="steps" class="section-container">
+            <div class="section-header">🛠 Step-by-step workflow</div>
+            <ol>
+                <li>Copy <code class="script-name">url-list.example.json</code> → <code class="script-name">url-list.json</code> and list permitted URLs.</li>
+                <li>Run a <strong>dry run</strong> (command catalog above); confirm output paths.</li>
+                <li>Run the <strong>fetch</strong> command; check <code class="code-highlight">_robots_snapshot.txt</code> and <code class="code-highlight">_fetch-report-*.json</code> under the download root.</li>
+                <li>If you need title/sub-title folder hierarchy, run mirror mode dry run then mirror download.</li>
+                <li>Proceed to <a href="#bulk-upload">bulk upload</a> in the app, or run auto-upload script for mirrored folders.</li>
+            </ol>
+        </section>
+
+        <section id="bulk-upload" class="section-container output">
+            <div class="section-header output">📤 Bulk load — admin UI</div>
+            <p>Backend route: <code class="code-highlight">POST /api/proxy/event-medias/upload/bulk-tenant-official</code></p>
+            <ol>
+                <li>Open <code class="code-highlight">/admin/official-documents</code> as tenant admin.</li>
+                <li>Choose <strong>category</strong> (slug = folder under downloads).</li>
+                <li>Set <strong>year</strong> to match the subfolder.</li>
+                <li>Select files from <code class="code-highlight">...\mosc_downloads\&lt;categorySlug&gt;\&lt;year&gt;\</code></li>
+                <li>Submit <strong>bulk upload</strong>.</li>
+            </ol>
+            <div class="info">
+                <strong>Tenant:</strong> <code class="code-highlight">NEXT_PUBLIC_TENANT_ID</code> must match your environment. Create categories first at <code class="code-highlight">/admin/official-document-categories</code> if needed.
+            </div>
+        </section>
+
+        <section id="upload-auth-prereq" class="section-container usage">
+            <div class="section-header usage">🔐 Upload authorization prerequisite (backend)</div>
+            <p>If real mirror upload fails with <code class="code-highlight">Admin access required</code>, this is a <strong>backend authorization issue</strong> (not a frontend/script issue).</p>
+            <div class="warning">
+                <strong>Required backend behavior:</strong>
+                <ul>
+                    <li>Service JWT used by migration scripts must resolve to admin authorities (<code class="code-highlight">ROLE_ADMIN</code> at minimum).</li>
+                    <li><code class="code-highlight">jwtadmin</code> (or service subject) must map to admin authorities in backend JWT-to-authority conversion.</li>
+                </ul>
+            </div>
+            <h3>Recommended backend fix order</h3>
+            <ol>
+                <li><strong>Preferred:</strong> issue service JWT with role claim containing <code class="code-highlight">ROLE_ADMIN</code> (or authority expected by <code class="code-highlight">requireAdmin()</code>).</li>
+                <li><strong>Fallback workaround:</strong> in <code class="code-highlight">ClerkJwtAuthenticationFilter</code> (or equivalent), if subject is <code class="code-highlight">jwtadmin</code>, inject <code class="code-highlight">ROLE_ADMIN</code> authority.</li>
+            </ol>
+            <h3>Backend ticket prompt (copy/paste)</h3>
+            <pre class="code-block"><code>We need a backend auth fix for MOSC migration uploads.
+
+Context:
+- Upload endpoint: POST /api/event-medias/upload/tenant-official-document
+- Failure: 400 "Admin access required" from EventMediaResource.requireAdmin()
+- Service auth user: jwtadmin
+- Current authentication succeeds, but Granted Authorities is empty.
+
+Please implement:
+1) Preferred fix:
+   - Ensure service JWT for jwtadmin contains admin role/authority claim
+     (e.g., authorities or roles includes ROLE_ADMIN), and
+   - Backend JWT-to-GrantedAuthority mapping consumes this claim.
+
+2) Safe fallback workaround:
+   - In ClerkJwtAuthenticationFilter (or equivalent JWT auth converter),
+     if subject == "jwtadmin", add SimpleGrantedAuthority("ROLE_ADMIN")
+     before creating Authentication.
+
+Acceptance criteria:
+- jwtadmin can upload via /api/event-medias/upload/tenant-official-document
+  without "Admin access required".
+- Security logs show ROLE_ADMIN in Granted Authorities for jwtadmin.
+- Non-jwtadmin users are unchanged.
+- Add unit/integration test for authority mapping.</code></pre>
+        </section>
+
+        <section id="npm">
+            <h2>npm shortcuts</h2>
+            <p>Defined in <code class="code-highlight">package.json</code>:</p>
+            <pre class="code-block"><code>"mosc:migration:dry": "node scripts/mosc-in-migration/fetch-urls.mjs --manifest scripts/mosc-in-migration/url-list.example.json --dry-run",
+"mosc:migration:fetch": "node scripts/mosc-in-migration/fetch-urls.mjs --manifest scripts/mosc-in-migration/url-list.json",
+"mosc:migration:fetch:mosc-in": "node scripts/mosc-in-migration/fetch-urls.mjs --manifest scripts/mosc-in-migration/url-list.mosc-in.generated.json --ignore-robots --skip-existing",
+"mosc:migration:mirror:dry": "node scripts/mosc-in-migration/mirror-downloads-tree.mjs --dry-run",
+"mosc:migration:mirror": "node scripts/mosc-in-migration/mirror-downloads-tree.mjs --ignore-robots --skip-existing",
+"mosc:migration:upload:mirror:dry": "node scripts/mosc-in-migration/upload-mirror-to-official-docs.mjs --dry-run",
+"mosc:migration:upload:mirror": "node scripts/mosc-in-migration/upload-mirror-to-official-docs.mjs"</code></pre>
+        </section>
+
+        <section id="troubleshooting">
+            <h2>Troubleshooting</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Issue</th>
+                        <th>What to do</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>SKIP (robots)</code></td>
+                        <td>Path blocked by robots — obtain file legally; do not use <code>--ignore-robots</code> in production.</td>
+                    </tr>
+                    <tr>
+                        <td>HTTP 403 / 401</td>
+                        <td>Server may block bots — manual download or permission from owner.</td>
+                    </tr>
+                    <tr>
+                        <td>Wrong category in app</td>
+                        <td>Align <code>categorySlug</code> with tenant categories.</td>
+                    </tr>
+                    <tr>
+                        <td>Upload fails</td>
+                        <td>Check JWT env (<code>API_JWT_USER</code> / <code>API_JWT_PASS</code>) and proxy logs.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="files">
+            <h2>Files in <code class="code-highlight">scripts/mosc-in-migration/</code></h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>File</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code class="script-name">config.mjs</code></td>
+                        <td>Default download root and user-agent template</td>
+                    </tr>
+                    <tr>
+                        <td><code class="script-name">robots.mjs</code></td>
+                        <td>Minimal <code>robots.txt</code> parsing</td>
+                    </tr>
+                    <tr>
+                        <td><code class="script-name">fetch-urls.mjs</code></td>
+                        <td>Manifest-driven downloader</td>
+                    </tr>
+                    <tr>
+                        <td><code class="script-name">url-list.example.json</code></td>
+                        <td>Example manifest — copy to <code class="code-highlight">url-list.json</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="script-name">url-list.mosc-in.generated.json</code></td>
+                        <td>Generated list from MOSC downloads traversal (direct files)</td>
+                    </tr>
+                    <tr>
+                        <td><code class="script-name">mirror-downloads-tree.mjs</code></td>
+                        <td>Traversal downloader that creates nested title/subtitle folders</td>
+                    </tr>
+                    <tr>
+                        <td><code class="script-name">upload-mirror-to-official-docs.mjs</code></td>
+                        <td>Auto-upload from mirrored folder tree; stores hierarchy metadata + priority ranking in official-document records</td>
+                    </tr>
+                    <tr>
+                        <td><code class="script-name">README.md</code></td>
+                        <td>Markdown source for this manual</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="changelog" class="info">
+            <h2 style="margin-top:0;">Changelog</h2>
+            <ul>
+                <li><strong>2026-03</strong> — Migration kit, default download folder, bulk-upload docs; this HTML manual added.</li>
+                <li><strong>2026-03</strong> — Added hierarchical mirror mode docs and commands (<code class="code-highlight">mosc:migration:mirror:dry</code> / <code class="code-highlight">mosc:migration:mirror</code>).</li>
+                <li><strong>2026-03</strong> — Added automated mirror upload commands (<code class="code-highlight">mosc:migration:upload:mirror:dry</code> / <code class="code-highlight">mosc:migration:upload:mirror</code>) and hierarchy/priority metadata notes.</li>
+            </ul>
+        </section>
+
+        <footer style="margin-top:40px;padding-top:20px;border-top:1px solid #ddd;color:#666;font-size:0.9em;">
+            <p>Source: <code class="code-highlight">scripts/mosc-in-migration/README.md</code> · Styling: project <code class="code-highlight">html_documentation_styling_guide.mdc</code></p>
+        </footer>
+    </main>
+
+    <script>
+        const commandParams = {};
+
+        function buildMigrationNodeCommand(commandId) {
+            const manifest = (commandParams[commandId] && commandParams[commandId].manifest
+                ? commandParams[commandId].manifest
+                : 'scripts/mosc-in-migration/url-list.json').trim();
+            const base = 'node scripts/mosc-in-migration/fetch-urls.mjs';
+            let cmd = base + ' --manifest ' + manifest;
+            if (commandId === 'cmd-node-dry') cmd += ' --dry-run';
+            return cmd;
+        }
+
+        function updateMigrationCommand(commandId, paramName, paramValue) {
+            if (!commandParams[commandId]) commandParams[commandId] = {};
+            commandParams[commandId][paramName] = paramValue;
+            const el = document.getElementById(commandId);
+            if (!el) return;
+            const cmd = buildMigrationNodeCommand(commandId);
+            el.textContent = cmd;
+            const single = document.getElementById(commandId + '-single-code');
+            if (single) single.textContent = cmd;
+        }
+
+        function copyCommand(button, commandId) {
+            const commandElement = document.getElementById(commandId);
+            if (!commandElement) return;
+            const commandText = commandElement.textContent.trim();
+            doCopy(commandText, button, false);
+        }
+
+        function copyTemplateCommand(button, commandId) {
+            const block = button.closest('.command-block');
+            if (!block) return;
+            let templateCommand = block.getAttribute('data-template-command');
+            if (!templateCommand) {
+                const commandElement = document.getElementById(commandId);
+                if (!commandElement) return;
+                templateCommand = commandElement.textContent.trim();
+            }
+            templateCommand = templateCommand.replace(/&quot;/g, '"');
+            doCopy(templateCommand, button, true);
+        }
+
+        function doCopy(text, button, isTemplate) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function () {
+                    button.classList.add('copied');
+                    button.textContent = '✓ Copied!';
+                    setTimeout(function () {
+                        button.classList.remove('copied');
+                        button.textContent = isTemplate ? '📄 Template' : '📋 Copy';
+                    }, 2000);
+                }).catch(function () {
+                    fallbackCopy(text, button, isTemplate);
+                });
+            } else {
+                fallbackCopy(text, button, isTemplate);
+            }
+        }
+
+        function fallbackCopy(text, button, isTemplate) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                button.classList.add('copied');
+                button.textContent = '✓ Copied!';
+                setTimeout(function () {
+                    button.classList.remove('copied');
+                    button.textContent = isTemplate ? '📄 Template' : '📋 Copy';
+                }, 2000);
+            } catch (e) {
+                console.error(e);
+            }
+            document.body.removeChild(ta);
+        }
+
+        function initializeCommands() {
+            ['cmd-node-dry', 'cmd-node-fetch'].forEach(function (commandId) {
+                const input = document.getElementById(commandId + '-manifest');
+                if (input) {
+                    if (!commandParams[commandId]) commandParams[commandId] = {};
+                    commandParams[commandId].manifest = input.value;
+                    updateMigrationCommand(commandId, 'manifest', input.value);
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeCommands);
+    </script>
+</body>
+</html>

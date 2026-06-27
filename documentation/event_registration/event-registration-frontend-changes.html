@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Event Registration Enhancements - Frontend Changes</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; line-height: 1.5; color: #1f2937; }
+    h1, h2 { color: #0f172a; }
+    code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; }
+    .owner { background: #f0fdf4; padding: 10px 12px; border-left: 4px solid #16a34a; }
+  </style>
+</head>
+<body>
+  <h1>Event Registration Enhancements - Frontend Changes</h1>
+  <p>Frontend implementation details for the Next.js project.</p>
+
+  <h2>Pages Updated</h2>
+  <ul>
+    <li><code>src/app/events/[id]/register/page.tsx</code></li>
+    <li><code>src/app/events/[id]/register/success/page.tsx</code></li>
+  </ul>
+
+  <h2>Register Page Changes</h2>
+  <ul>
+    <li>Added notes textarea with <code>maxLength=1500</code> and live character counter.</li>
+    <li>Added attachment picker for max 2 files with remove action.</li>
+    <li>Client validation for file type and size (10MB each).</li>
+    <li>Submit flow changed to:
+      <ol>
+        <li>Create attendee via <code>/api/proxy/event-attendees</code></li>
+        <li>Upload each file via <code>/api/proxy/event-attendee-attachments/upload</code></li>
+      </ol>
+    </li>
+    <li>UI styling improved with branded background gradients, card surfaces, and stronger action button treatments.</li>
+  </ul>
+
+  <h2>Success Page Changes</h2>
+  <ul>
+    <li>Added notes display section.</li>
+    <li>Added uploaded attachments section with metadata and file link.</li>
+    <li>Added attachment fetch:
+      <code>/api/proxy/event-attendee-attachments?attendeeId.equals={attendeeId}</code>
+    </li>
+    <li>Improved visual hierarchy and CTA button styles.</li>
+  </ul>
+
+  <h2>Type and API Proxy Changes</h2>
+  <ul>
+    <li>Added <code>EventAttendeeAttachmentDTO</code> in <code>src/types/index.ts</code>.</li>
+    <li>Added proxy routes:
+      <ul>
+        <li><code>src/pages/api/proxy/event-attendee-attachments/index.ts</code></li>
+        <li><code>src/pages/api/proxy/event-attendee-attachments/[...slug].ts</code></li>
+        <li><code>src/pages/api/proxy/event-attendee-attachments/upload.ts</code></li>
+      </ul>
+    </li>
+  </ul>
+
+  <h2>Frontend Test Checklist</h2>
+  <ul>
+    <li>Register with notes only.</li>
+    <li>Register with 1 file.</li>
+    <li>Register with 2 files.</li>
+    <li>Try 3 files (must fail validation).</li>
+    <li>Try unsupported extension (must fail validation).</li>
+    <li>Verify notes and attachments render on success page.</li>
+  </ul>
+
+  <div class="owner">
+    <h2>Ownership</h2>
+    <p><strong>Frontend Team:</strong> Implement/maintain UI and proxy integration exactly as documented.</p>
+  </div>
+</body>
+</html>

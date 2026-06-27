@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Competitions — Database Schema Enhancements (v2.1)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .section-container.schema { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left-color: #0066cc; }
+        .section-container.parameters { background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%); border-left-color: #ff9800; }
+        .section-container.parameters .section-header { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; overflow-x: auto; font-family: Consolas, monospace; font-size: 0.82em; line-height: 1.45; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Event Competitions — Database Schema Enhancements (v2.1)</h1>
+    <p class="doc-meta">
+        <strong>Layer:</strong> PostgreSQL / Liquibase &nbsp;|&nbsp; <strong>Date:</strong> June 6, 2026<br>
+        <strong>Baseline:</strong> <a href="../database_schema_prd.html">database_schema_prd.html</a> (v2.0) &nbsp;|&nbsp;
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a><br>
+        <strong>Canonical SQL:</strong> <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code>
+    </p>
+
+    <div class="lead">
+        <p>Incremental DDL for v2.1. Apply via Liquibase changelog in <code>malayalees-us-site-boot</code>, then sync canonical SQL. All new columns are nullable or have safe defaults — no data migration required for existing rows.</p>
+    </div>
+
+    <h2>1. Summary of deltas</h2>
+    <table>
+        <thead><tr><th>Table</th><th>Change type</th><th>Columns / constraints</th></tr></thead>
+        <tbody>
+            <tr><td><code>event_competition</code></td><td>ALTER ADD</td><td><code>discipline_code</code>, <code>min_age</code>, <code>max_age</code>, <code>min_grade</code>, <code>max_grade</code>, <code>max_placements</code>, <code>registration_deadline</code>, <code>rules_markdown</code>, <code>requires_team_name</code></td></tr>
+            <tr><td><code>event_competition_registration</code></td><td>ALTER ADD</td><td><code>team_name</code>, <code>team_display_name</code></td></tr>
+            <tr><td><code>event_competition_settings</code></td><td>ALTER ADD</td><td><code>points_fourth</code>, <code>default_max_placements</code></td></tr>
+            <tr><td><code>event_competition_group_member</code></td><td>ALTER ADD + activate</td><td><code>member_role</code>, <code>sort_order</code>; unique index; JHipster entity</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. event_competition — new columns</h2>
+    <div class="section-container schema">
+        <div class="section-header">ALTER TABLE event_competition</div>
+<pre>ALTER TABLE public.event_competition
+    ADD COLUMN IF NOT EXISTS discipline_code character varying(32),
+    ADD COLUMN IF NOT EXISTS min_age integer,
+    ADD COLUMN IF NOT EXISTS max_age integer,
+    ADD COLUMN IF NOT EXISTS min_grade integer,
+    ADD COLUMN IF NOT EXISTS max_grade integer,
+    ADD COLUMN IF NOT EXISTS max_placements integer DEFAULT 3 NOT NULL,
+    ADD COLUMN IF NOT EXISTS registration_deadline timestamp without time zone,
+    ADD COLUMN IF NOT EXISTS rules_markdown text,
+    ADD COLUMN IF NOT EXISTS requires_team_name boolean DEFAULT false NOT NULL;
+
+ALTER TABLE public.event_competition
+    ADD CONSTRAINT chk_event_competition__discipline
+        CHECK (discipline_code IS NULL OR discipline_code IN (
+            'SONG', 'SPEECH', 'DANCE', 'MUSIC', 'SPORTS', 'ART', 'OTHER'
+        ));
+
+ALTER TABLE public.event_competition
+    ADD CONSTRAINT chk_event_competition__age_bounds
+        CHECK (min_age IS NULL OR max_age IS NULL OR min_age &lt;= max_age);
+
+ALTER TABLE public.event_competition
+    ADD CONSTRAINT chk_event_competition__grade_bounds
+        CHECK (min_grade IS NULL OR max_grade IS NULL OR min_grade &lt;= max_grade);
+
+ALTER TABLE public.event_competition
+    ADD CONSTRAINT chk_event_competition__max_placements
+        CHECK (max_placements &gt;= 1 AND max_placements &lt;= 20);
+
+COMMENT ON COLUMN public.event_competition.discipline_code IS
+    'Normalized competition discipline for catalog filtering and icons.';
+COMMENT ON COLUMN public.event_competition.rules_markdown IS
+    'Per-competition regulations shown on public detail page.';
+COMMENT ON COLUMN public.event_competition.registration_deadline IS
+    'Optional per-competition cutoff; falls back to event_competition_settings.registration_deadline.';</pre>
+    </div>
+
+    <h3>discipline_code reference</h3>
+    <table>
+        <thead><tr><th>Code</th><th>Example use</th><th>Typical type</th></tr></thead>
+        <tbody>
+            <tr><td><code>SONG</code></td><td>Solo / group song</td><td>INDIVIDUAL or GROUP</td></tr>
+            <tr><td><code>SPEECH</code></td><td>Oratory, declamation</td><td>INDIVIDUAL</td></tr>
+            <tr><td><code>DANCE</code></td><td>Classical, folk, group dance</td><td>INDIVIDUAL or GROUP</td></tr>
+            <tr><td><code>MUSIC</code></td><td>Instrumental</td><td>INDIVIDUAL or GROUP</td></tr>
+            <tr><td><code>SPORTS</code></td><td>Soccer, relay teams</td><td>GROUP</td></tr>
+            <tr><td><code>ART</code></td><td>Drawing, painting</td><td>INDIVIDUAL</td></tr>
+            <tr><td><code>OTHER</code></td><td>Quiz, special categories</td><td>Either</td></tr>
+        </tbody>
+    </table>
+
+    <h2>3. event_competition_registration — team fields</h2>
+    <pre>ALTER TABLE public.event_competition_registration
+    ADD COLUMN IF NOT EXISTS team_name character varying(200),
+    ADD COLUMN IF NOT EXISTS team_display_name character varying(200);
+
+COMMENT ON COLUMN public.event_competition_registration.team_name IS
+    'Internal team label for GROUP leader registration (captain-entered).';
+COMMENT ON COLUMN public.event_competition_registration.team_display_name IS
+    'Public label on results board; defaults to team_name when null.';</pre>
+
+    <h2>4. event_competition_settings — extended scoring</h2>
+    <pre>ALTER TABLE public.event_competition_settings
+    ADD COLUMN IF NOT EXISTS points_fourth integer DEFAULT 0 NOT NULL,
+    ADD COLUMN IF NOT EXISTS default_max_placements integer DEFAULT 3 NOT NULL;
+
+ALTER TABLE public.event_competition_settings
+    ADD CONSTRAINT chk_event_competition_settings__default_placements
+        CHECK (default_max_placements &gt;= 1 AND default_max_placements &lt;= 20);</pre>
+    <p>When admin creates a new competition, frontend/backend pre-fills <code>max_placements</code> from <code>default_max_placements</code>. Champion rollup continues to use <code>points_first</code> … <code>points_third</code> plus <code>points_fourth</code> when enabled.</p>
+
+    <h2>5. event_competition_group_member — activate &amp; extend</h2>
+    <div class="section-container parameters">
+        <div class="section-header">v2.0 table exists — v2.1 adds roles and ordering</div>
+<pre>ALTER TABLE public.event_competition_group_member
+    ADD COLUMN IF NOT EXISTS member_role character varying(20) DEFAULT 'MEMBER' NOT NULL,
+    ADD COLUMN IF NOT EXISTS sort_order integer DEFAULT 0 NOT NULL,
+    ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT now() NOT NULL;
+
+ALTER TABLE public.event_competition_group_member
+    ADD CONSTRAINT chk_event_comp_group_member__role
+        CHECK (member_role IN ('CAPTAIN', 'MEMBER'));
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_event_comp_group_member__reg_participant
+    ON public.event_competition_group_member(registration_id, participant_profile_id);
+
+CREATE INDEX IF NOT EXISTS idx_event_comp_group_member__registration
+    ON public.event_competition_group_member(registration_id);</pre>
+    </div>
+
+    <h2>6. Validation rules (service layer — not all in DB)</h2>
+    <table>
+        <thead><tr><th>Rule</th><th>Enforcement</th></tr></thead>
+        <tbody>
+            <tr><td>GROUP roster count between <code>min_group_size</code> and <code>max_group_size</code></td><td>Backend before payment confirm</td></tr>
+            <tr><td>Exactly one CAPTAIN per GROUP registration (optional)</td><td>Backend on team create</td></tr>
+            <tr><td>Age from <code>date_of_birth</code> within <code>min_age</code>/<code>max_age</code></td><td>Backend + wizard pre-check API</td></tr>
+            <tr><td><code>current_grade</code> within bounds for YOUTH</td><td>Backend + wizard</td></tr>
+            <tr><td>Unique published <code>(competition_id, placement)</code></td><td>Backend on publish</td></tr>
+            <tr><td><code>placement &lt;= max_placements</code></td><td>Backend on result save</td></tr>
+            <tr><td><code>requires_team_name</code> → <code>team_name</code> not empty</td><td>Backend on GROUP register</td></tr>
+        </tbody>
+    </table>
+
+    <h2>7. Liquibase changelog spec</h2>
+    <div class="info-box">
+        <p><strong>File:</strong> <code>src/main/resources/config/liquibase/changelog/YYYYMMDD_added_event_competition_v21_enhancements.xml</code></p>
+        <p><strong>Order:</strong> (1) <code>event_competition_settings</code> columns → (2) <code>event_competition</code> columns + checks → (3) <code>event_competition_registration</code> team columns → (4) <code>event_competition_group_member</code> columns + indexes.</p>
+        <p><strong>Rollback:</strong> Drop added columns in reverse order; preserve v2.0 data.</p>
+    </div>
+
+    <h2>8. Sync checklist</h2>
+    <table>
+        <thead><tr><th>Step</th><th>Owner</th></tr></thead>
+        <tbody>
+            <tr><td>Apply Liquibase on dev/staging</td><td>Backend</td></tr>
+            <tr><td>Update <code>Latest_Schema_Post__Blob_Claude_12.sql</code> CREATE/ALTER blocks</td><td>Platform</td></tr>
+            <tr><td>Regenerate JHipster entities / DTOs for new fields</td><td>Backend</td></tr>
+            <tr><td>Extend <code>src/types/index.ts</code> in mosc-temp</td><td>Frontend</td></tr>
+        </tbody>
+    </table>
+
+    <div class="warning-box">
+        <strong>Do not</strong> rename v2.0 tables or drop existing columns. v2.1 is additive only.
+    </div>
+
+</body>
+</html>

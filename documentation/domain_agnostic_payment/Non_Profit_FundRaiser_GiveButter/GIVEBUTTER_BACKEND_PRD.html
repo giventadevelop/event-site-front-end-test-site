@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Givebutter Backend Integration PRD - Spring Boot</title>
+    <style>
+        body {
+            font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+            background: #f4f2ed;
+            color: #2b241e;
+            margin: 0;
+            padding: 2.5rem 0;
+        }
+        main {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 22px 48px -20px rgba(43, 34, 28, 0.25);
+            padding: 3rem;
+        }
+        h1, h2, h3, h4 {
+            font-family: "Crimson Text", Georgia, serif;
+            color: #2b241e;
+        }
+        h1 { font-size: 2.2rem; margin-bottom: 0.6rem; }
+        h2 { font-size: 1.6rem; margin-top: 2.2rem; border-left: 4px solid #8b7d6b; padding-left: 15px; }
+        h3 { font-size: 1.25rem; margin-top: 1.5rem; }
+        h4 { font-size: 1.05rem; margin-top: 1rem; }
+        p, li { font-size: 1rem; line-height: 1.75; }
+        ul, ol { margin-left: 1.3rem; }
+        code { font-family: "JetBrains Mono", Consolas, monospace; background: #f6f1e6; padding: 0.12rem 0.4rem; border-radius: 6px; }
+        .tag { display: inline-block; background: #8b7d6b; color: #fff; padding: 0.25rem 0.7rem; border-radius: 999px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 10px; }
+        .divider { height: 1px; background: rgba(42,32,23,0.12); margin: 1.9rem 0; }
+        .callout { border-left: 4px solid #8b7d6b; background: rgba(213,201,182,0.3); padding: 1rem 1.2rem; border-radius: 12px; margin: 1.6rem 0; }
+        .warning { border-left: 4px solid #A67C52; background: rgba(255,244,230,0.5); padding: 1rem 1.2rem; border-radius: 12px; margin: 1.6rem 0; }
+        .success { border-left: 4px solid #4A6741; background: rgba(240,249,240,0.5); padding: 1rem 1.2rem; border-radius: 12px; margin: 1.6rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+        th, td { border: 1px solid rgba(42,32,23,0.15); padding: 0.75rem; text-align: left; vertical-align: top; }
+        th { background: rgba(213,201,182,0.35); font-weight: 600; }
+        pre { background: #2D2A26; color: #F5F1E8; padding: 15px; border-radius: 5px; overflow-x: auto; margin: 15px 0; font-family: "JetBrains Mono", Consolas, monospace; font-size: 0.9em; }
+        .meta { background: #EDE7D3; padding: 15px; border-radius: 5px; margin-bottom: 30px; border-left: 4px solid #8b7d6b; }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="meta">
+            <p><strong>Document Type:</strong> Backend Product Requirements Document (PRD)</p>
+            <p><strong>Project:</strong> Givebutter Backend Integration</p>
+            <p><strong>Repository:</strong> <code>E:\project_workspace\malayalees-us-site-boot</code></p>
+            <p><strong>Version:</strong> 1.0</p>
+            <p><strong>Date:</strong> January 2025</p>
+            <p><strong>Status:</strong> <span class="tag">Enhancement</span></p>
+        </div>
+
+        <h1>Givebutter Backend Integration PRD<br><small style="font-size: 0.5em; color: #7b7067;">Spring Boot Implementation</small></h1>
+
+        <div class="divider"></div>
+
+        <h2>1. Overview</h2>
+        <p>This PRD details the backend implementation of Givebutter integration for zero-fee fundraising and Mass offerings. The implementation follows the existing Stripe payment adapter pattern, ensuring consistency and maintainability.</p>
+
+        <div class="success">
+            <strong>✅ Architecture Pattern:</strong> Multi-tenant, database-driven configuration matching Stripe implementation. All credentials stored encrypted in <code>payment_provider_config</code> table, retrieved dynamically at runtime.
+        </div>
+
+        <h2>2. Database Schema Changes</h2>
+
+        <h3>2.1 Add GIVEBUTTER to Provider Enum</h3>
+        <pre><code>-- Migration: Add GIVEBUTTER to payment_provider_type enum
+ALTER TYPE payment_provider_type ADD VALUE IF NOT EXISTS 'GIVEBUTTER';
+
+-- Verify enum values
+SELECT unnest(enum_range(NULL::payment_provider_type));
+-- Should include: STRIPE, PAYPAL, ACP, AP2, SQUARE, CRYPTO, GIVEBUTTER</code></pre>
+
+        <h3>2.2 Payment Provider Config Structure</h3>
+        <p>The existing <code>payment_provider_config</code> table supports Givebutter configuration:</p>
+        <ul>
+            <li><strong>config_data:</strong> Encrypted JSON containing API key: <code>{"api_key": "gb_live_xxx"}</code></li>
+            <li><strong>webhook_secret:</strong> Encrypted Givebutter webhook secret</li>
+            <li><strong>metadata:</strong> JSONB containing Givebutter-specific config (campaign IDs, use case, preset amounts, etc.)</li>
+        </ul>
+
+        <h3>2.3 Example Configuration</h3>
+        <pre><code>-- Configure Givebutter for Mass Offerings
+INSERT INTO payment_provider_config (
+    tenant_id,
+    provider_type,
+    provider_name,
+    is_active,
+    is_primary,
+    priority,
+    config_data,        -- Encrypted: {"api_key": "gb_live_xxx"}
+    webhook_secret,     -- Encrypted: Givebutter webhook secret
+    supports_wallets,
+    supports_subscriptions,
+    supports_refunds,
+    metadata
+) VALUES (
+    'tenant_demo_001',
+    'GIVEBUTTER',
+    'Givebutter Mass Offerings',
+    true,
+    false,              -- Not primary (Stripe is primary for tickets)
+    1,                  -- Priority for OFFERING use case
+    encrypt('{"api_key": "gb_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}'),
+    encrypt('whsec_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'),
+    true,               -- Supports Apple Pay, Google Pay
+    true,               -- Supports recurring offerings
+    true,               -- Supports refunds
+    '{
+        "supportsZeroFee": true,
+        "useCase": "OFFERING",
+        "apiBaseUrl": "https://api.givebutter.com/v1",
+        "campaignId": "campaign_123abc",
+        "presetAmounts": [5, 10, 25, 50],
+        "allowCustomAmount": true,
+        "allowPrayerIntention": true,
+        "allowAnonymous": true,
+        "recurringEnabled": true
+    }'::jsonb
+);</code></pre>
+
+        <div class="warning">
+            <strong>⚠️ Important:</strong> No static configuration in <code>application.properties</code>. All credentials must be stored per tenant in the database, encrypted, and retrieved dynamically.
+        </div>
+
+        <h2>3. Core Components</h2>
+
+        <h3>3.1 GivebutterPaymentAdapter</h3>
+        <p><strong>Purpose:</strong> Implements <code>PaymentAdapter</code> interface for Givebutter payment processing.</p>
+
+        <h4>Key Responsibilities:</h4>
+        <ul>
+            <li>Retrieve tenant's Givebutter configuration from database</li>
+            <li>Decrypt API key and webhook secret</li>
+            <li>Call Givebutter API to create donations</li>
+            <li>Handle Givebutter API responses</li>
+            <li>Return payment session with checkout URL</li>
+        </ul>
+
+        <h4>Implementation Pattern:</h4>
+        <pre><code>@Service
+@RequiredArgsConstructor
+@Slf4j
+public class GivebutterPaymentAdapter implements PaymentAdapter {
+
+    private final PaymentProviderConfigRepository configRepository;
+    private final EncryptionService encryptionService;
+    private final RestTemplate restTemplate;
+
+    @Override
+    public PaymentSession initializePayment(PaymentInitializeRequest request) {
+        // 1. Resolve tenant's Givebutter configuration dynamically
+        PaymentProviderConfig config = resolveProviderConfig(
+            request.getTenantId(),
+            request.getPaymentType()  // OFFERING or DONATION
+        );
+
+        // 2. Decrypt API key from encrypted config_data
+        String apiKey = decryptApiKey(config);
+
+        // 3. Extract Givebutter-specific config from metadata
+        Map&lt;String, Object&gt; metadata = config.getMetadata();
+        String campaignId = (String) metadata.get("campaignId");
+
+        // 4. Build Givebutter donation request
+        GivebutterDonationRequest gbRequest = buildDonationRequest(request, campaignId);
+
+        // 5. Call Givebutter API with tenant-specific credentials
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + apiKey);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        ResponseEntity&lt;GivebutterDonationResponse&gt; response =
+            restTemplate.postForEntity(
+                "https://api.givebutter.com/v1/donations",
+                new HttpEntity&lt;&gt;(gbRequest, headers),
+                GivebutterDonationResponse.class
+            );
+
+        // 6. Return payment session
+        return PaymentSession.builder()
+            .providerType(ProviderType.GIVEBUTTER)
+            .providerTransactionId(response.getBody().getDonationId())
+            .sessionUrl(response.getBody().getCheckoutUrl())
+            .build();
+    }
+
+    private PaymentProviderConfig resolveProviderConfig(
+        String tenantId,
+        PaymentType paymentType
+    ) {
+        // Determine use case based on payment type
+        String useCase = null;
+        if (PaymentType.OFFERING.equals(paymentType)) {
+            useCase = "OFFERING";
+        } else if (PaymentType.DONATION.equals(paymentType)) {
+            useCase = "DONATION_ZERO_FEE";
+        }
+
+        // Query for Givebutter config matching tenant and use case
+        List&lt;PaymentProviderConfig&gt; configs = configRepository
+            .findByTenantIdAndProviderType(tenantId, ProviderType.GIVEBUTTER);
+
+        if (useCase != null) {
+            return configs.stream()
+                .filter(c -&gt; {
+                    Map&lt;String, Object&gt; meta = c.getMetadata();
+                    return useCase.equals(meta.get("useCase"));
+                })
+                .findFirst()
+                .orElseThrow(() -&gt; new PaymentException(
+                    "Givebutter not configured for tenant: " + tenantId
+                ));
+        }
+
+        return configs.stream()
+            .filter(PaymentProviderConfig::getIsActive)
+            .findFirst()
+            .orElseThrow(() -&gt; new PaymentException(
+                "Givebutter not configured for tenant: " + tenantId
+            ));
+    }
+}</code></pre>
+
+        <h3>3.2 PaymentOrchestrationService Updates</h3>
+        <p><strong>Purpose:</strong> Route payment requests to appropriate provider adapter based on payment type and event configuration.</p>
+
+        <h4>Routing Logic:</h4>
+        <pre><code>private ProviderType determineProvider(PaymentInitializeRequest request) {
+    // For OFFERING payment type, prefer Givebutter if configured
+    if (PaymentType.OFFERING.equals(request.getPaymentType())) {
+        boolean hasGivebutter = configRepository
+            .existsByTenantIdAndProviderType(
+                request.getTenantId(),
+                ProviderType.GIVEBUTTER
+            );
+
+        if (hasGivebutter) {
+            return ProviderType.GIVEBUTTER;
+        }
+    }
+
+    // For TICKET_SALE payment type, check if event is configured as fundraiser
+    if (PaymentType.TICKET_SALE.equals(request.getPaymentType())) {
+        // Check event metadata for fundraiser configuration
+        if (request.getEventId() != null) {
+            EventDetails event = eventRepository.findById(request.getEventId())
+                .orElse(null);
+
+            if (event != null) {
+                // Parse metadata JSON string (stored as TEXT, not JSONB)
+                Map&lt;String, Object&gt; metadata = parseMetadata(event.getMetadata());
+                if (metadata != null) {
+                    // Check if event is marked as fundraiser/charity event
+                    Boolean isFundraiserEvent =
+                        (Boolean) metadata.get("isFundraiserEvent");
+                    Boolean isCharityEvent =
+                        (Boolean) metadata.get("isCharityEvent");
+
+                    // Check donationConfig for zero-fee provider preference
+                    Map&lt;String, Object&gt; donationConfig =
+                        (Map&lt;String, Object&gt;) metadata.get("donationConfig");
+
+                    if ((Boolean.TRUE.equals(isFundraiserEvent) ||
+                         Boolean.TRUE.equals(isCharityEvent)) &&
+                        donationConfig != null) {
+
+                        Boolean useZeroFeeProvider =
+                            (Boolean) donationConfig.get("useZeroFeeProvider");
+
+                        if (Boolean.TRUE.equals(useZeroFeeProvider)) {
+                            String zeroFeeProvider =
+                                (String) donationConfig.get("zeroFeeProvider");
+
+                            if ("GIVEBUTTER".equals(zeroFeeProvider)) {
+                                boolean hasGivebutter = configRepository
+                                    .existsByTenantIdAndProviderType(
+                                        request.getTenantId(),
+                                        ProviderType.GIVEBUTTER
+                                    );
+
+                                if (hasGivebutter) {
+                                    // Route ticketed fundraiser event to Givebutter
+                                    return ProviderType.GIVEBUTTER;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // For DONATION payment type, check if zero-fee provider is configured
+    if (PaymentType.DONATION.equals(request.getPaymentType())) {
+        // Check event metadata for zero-fee configuration
+        if (request.getEventId() != null) {
+            EventDetails event = eventRepository.findById(request.getEventId())
+                .orElse(null);
+
+            if (event != null) {
+                // Parse metadata JSON string (stored as TEXT, not JSONB)
+                Map&lt;String, Object&gt; metadata = parseMetadata(event.getMetadata());
+                if (metadata != null) {
+                    Map&lt;String, Object&gt; donationConfig =
+                        (Map&lt;String, Object&gt;) metadata.get("donationConfig");
+
+                    if (donationConfig != null) {
+                        Boolean useZeroFeeProvider =
+                            (Boolean) donationConfig.get("useZeroFeeProvider");
+
+                        if (Boolean.TRUE.equals(useZeroFeeProvider)) {
+                            String zeroFeeProvider =
+                                (String) donationConfig.get("zeroFeeProvider");
+
+                            if ("GIVEBUTTER".equals(zeroFeeProvider)) {
+                                boolean hasGivebutter = configRepository
+                                    .existsByTenantIdAndProviderType(
+                                        request.getTenantId(),
+                                        ProviderType.GIVEBUTTER
+                                    );
+
+                                if (hasGivebutter) {
+                                    return ProviderType.GIVEBUTTER;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Default to Stripe (primary provider for regular tickets)
+    return ProviderType.STRIPE;
+}
+
+/**
+ * Parse metadata JSON string from TEXT column.
+ * Metadata is stored as TEXT (not JSONB) matching existing codebase pattern.
+ */
+private Map&lt;String, Object&gt; parseMetadata(String metadataJson) {
+    if (metadataJson == null || metadataJson.trim().isEmpty()) {
+        return null;
+    }
+    try {
+        ObjectMapper objectMapper = new ObjectMapper();
+        return objectMapper.readValue(metadataJson, new TypeReference&lt;Map&lt;String, Object&gt;&gt;() {});
+    } catch (Exception e) {
+        log.warn("Failed to parse event metadata JSON: {}", metadataJson, e);
+        return null;
+    }
+}</code></pre>
+
+        <div class="callout">
+            <strong>✅ Ticketed Fundraiser Events:</strong> When an event is marked as a fundraiser/charity event (<code>isFundraiserEvent: true</code> or <code>isCharityEvent: true</code> in event metadata) and configured with <code>donationConfig.useZeroFeeProvider: true</code> and <code>donationConfig.zeroFeeProvider: "GIVEBUTTER"</code>, ticket sales will route to Givebutter instead of Stripe, enabling zero-fee ticket processing for nonprofit fundraisers.
+        </div>
+
+        <h3>3.3 GivebutterWebhookController</h3>
+        <p><strong>Purpose:</strong> Handle webhook events from Givebutter for payment status updates.</p>
+
+        <h4>Endpoint:</h4>
+        <pre><code>@RestController
+@RequestMapping("/api/webhooks/givebutter")
+@RequiredArgsConstructor
+@Slf4j
+public class GivebutterWebhookController {
+
+    private final PaymentProviderConfigRepository configRepository;
+    private final EncryptionService encryptionService;
+    private final PaymentOrchestrationService orchestrationService;
+
+    @PostMapping
+    public ResponseEntity&lt;?&gt; handleWebhook(
+        @RequestHeader(value = "X-Givebutter-Signature", required = false) String signature,
+        @RequestBody String payload,
+        HttpServletRequest request
+    ) {
+        // 1. Parse webhook payload to extract tenant_id
+        GivebutterWebhookEvent event = objectMapper.readValue(
+            payload,
+            GivebutterWebhookEvent.class
+        );
+
+        // 2. Extract tenant_id from donation metadata or campaign
+        String tenantId = extractTenantId(event);
+
+        // 3. Retrieve webhook secret from database (per tenant)
+        PaymentProviderConfig config = configRepository
+            .findByTenantIdAndProviderType(tenantId, ProviderType.GIVEBUTTER)
+            .orElse(null);
+
+        // 4. Decrypt webhook secret
+        String webhookSecret = decryptWebhookSecret(config);
+
+        // 5. Verify webhook signature
+        if (!verifySignature(payload, signature, webhookSecret)) {
+            return ResponseEntity.status(401).body("Invalid signature");
+        }
+
+        // 6. Process webhook event
+        orchestrationService.processGivebutterWebhook(event, tenantId);
+
+        return ResponseEntity.ok().build();
+    }
+}</code></pre>
+
+        <h4>Webhook Events Supported:</h4>
+        <ul>
+            <li><code>donation.completed</code> - Donation succeeded</li>
+            <li><code>donation.updated</code> - Donation updated</li>
+            <li><code>donation.refunded</code> - Donation refunded</li>
+        </ul>
+
+        <h2>4. API Endpoints</h2>
+
+        <h3>4.1 Payment Initialization</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Endpoint</th>
+                    <th>Method</th>
+                    <th>Request Body</th>
+                    <th>Response</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>/api/payments/initialize</code></td>
+                    <td>POST</td>
+                    <td><code>PaymentInitializeRequest</code><br/>- paymentType: TICKET_SALE (for fundraisers), OFFERING, or DONATION<br/>- amount, currency, items<br/>- customerEmail, customerName<br/>- eventId (required for fundraiser routing)<br/>- metadata (prayerIntention, isRecurring, etc.)</td>
+                    <td><code>PaymentSessionResponse</code><br/>- transactionId<br/>- providerType: GIVEBUTTER<br/>- sessionUrl (Givebutter checkout URL)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>4.2 Payment Status</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Endpoint</th>
+                    <th>Method</th>
+                    <th>Response</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>/api/payments/{transactionId}</code></td>
+                    <td>GET</td>
+                    <td><code>PaymentStatusResponse</code><br/>- transactionId<br/>- status (SUCCEEDED, PENDING, FAILED)<br/>- amount, processingFee (0 for zero-fee)<br/>- metadata</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>4.3 Webhooks</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Endpoint</th>
+                    <th>Method</th>
+                    <th>Headers</th>
+                    <th>Body</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>/api/webhooks/givebutter</code></td>
+                    <td>POST</td>
+                    <td><code>X-Givebutter-Signature</code></td>
+                    <td>Givebutter webhook event JSON</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>5. DTOs and Models</h2>
+
+        <h3>5.1 GivebutterDonationRequest</h3>
+        <pre><code>@Data
+@Builder
+public class GivebutterDonationRequest {
+    private BigDecimal amount;
+    private String campaignId;
+    private String donorEmail;
+    private String donorName;
+    private Boolean anonymous;
+    private Boolean recurring;
+    private String recurringFrequency; // "monthly", "weekly", etc.
+    private Map&lt;String, String&gt; customFields; // For prayer intentions
+    private Map&lt;String, Object&gt; metadata; // tenant_id, event_id, etc.
+}</code></pre>
+
+        <h3>5.2 GivebutterDonationResponse</h3>
+        <pre><code>@Data
+public class GivebutterDonationResponse {
+    private String donationId;
+    private String checkoutUrl;
+    private BigDecimal amount;
+    private String status;
+    private String campaignId;
+}</code></pre>
+
+        <h3>5.3 GivebutterWebhookEvent</h3>
+        <pre><code>@Data
+public class GivebutterWebhookEvent {
+    private String type; // "donation.completed", "donation.updated", etc.
+    private GivebutterDonation donation;
+    private GivebutterCampaign campaign;
+}
+
+@Data
+public class GivebutterDonation {
+    private String id;
+    private BigDecimal amount;
+    private String campaignId;
+    private String donorEmail;
+    private String donorName;
+    private Boolean anonymous;
+    private Map&lt;String, String&gt; customFields;
+    private Map&lt;String, Object&gt; metadata;
+    private String status;
+}</code></pre>
+
+        <h2>6. Error Handling</h2>
+
+        <h3>6.1 Error Scenarios</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>HTTP Status</th>
+                    <th>Response</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Givebutter not configured for tenant</td>
+                    <td>404</td>
+                    <td><code>{"error": "Givebutter not configured for tenant"}</code></td>
+                </tr>
+                <tr>
+                    <td>Invalid API key</td>
+                    <td>401</td>
+                    <td><code>{"error": "Givebutter API authentication failed"}</code></td>
+                </tr>
+                <tr>
+                    <td>Invalid webhook signature</td>
+                    <td>401</td>
+                    <td><code>{"error": "Invalid webhook signature"}</code></td>
+                </tr>
+                <tr>
+                    <td>Givebutter API error</td>
+                    <td>502</td>
+                    <td><code>{"error": "Givebutter API error", "details": "..."}</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>7. Security Considerations</h2>
+
+        <h3>7.1 Credential Storage</h3>
+        <ul>
+            <li>API keys encrypted using AES-256-GCM before storage</li>
+            <li>Webhook secrets encrypted separately</li>
+            <li>No credentials in application.properties or environment variables</li>
+            <li>Per-tenant encryption keys (if supported by EncryptionService)</li>
+        </ul>
+
+        <h3>7.2 Webhook Security</h3>
+        <ul>
+            <li>Verify HMAC-SHA256 signature for all webhook requests</li>
+            <li>Retrieve webhook secret dynamically by tenant_id</li>
+            <li>Log all webhook events for audit trail</li>
+            <li>Idempotent webhook processing (check for duplicate events)</li>
+        </ul>
+
+        <h3>7.3 API Security</h3>
+        <ul>
+            <li>API keys never exposed to frontend</li>
+            <li>All Givebutter API calls made from backend only</li>
+            <li>Rate limiting on webhook endpoints</li>
+            <li>Input validation on all DTOs</li>
+        </ul>
+
+        <h2>8. Testing Requirements</h2>
+
+        <h3>8.1 Unit Tests</h3>
+        <ul>
+            <li>GivebutterPaymentAdapter initialization logic</li>
+            <li>Config retrieval and decryption</li>
+            <li>Donation request building</li>
+            <li>Webhook signature verification</li>
+            <li>Tenant ID extraction from webhook payload</li>
+        </ul>
+
+        <h3>8.2 Integration Tests</h3>
+        <ul>
+            <li>End-to-end payment initialization flow</li>
+            <li>Webhook processing with mock Givebutter responses</li>
+            <li>Multi-tenant configuration scenarios</li>
+            <li>Error handling for API failures</li>
+        </ul>
+
+        <h3>8.3 Test Data</h3>
+        <ul>
+            <li>Use Stripe test cards for Givebutter transactions (Givebutter uses Stripe for processing)</li>
+            <li>Test webhook payloads from Givebutter documentation</li>
+            <li>Mock Givebutter API responses for different scenarios</li>
+        </ul>
+
+        <h2>9. Implementation Checklist</h2>
+
+        <h3>Phase 1: Foundation</h3>
+        <ul>
+            <li>✅ Add GIVEBUTTER to payment_provider_type enum</li>
+            <li>✅ Create GivebutterPaymentAdapter class</li>
+            <li>✅ Implement config retrieval logic</li>
+            <li>✅ Implement API key decryption</li>
+            <li>✅ Create Givebutter API client (RestTemplate)</li>
+        </ul>
+
+        <h3>Phase 2: Payment Flow</h3>
+        <ul>
+            <li>✅ Implement initializePayment method</li>
+            <li>✅ Build Givebutter donation request</li>
+            <li>✅ Handle Givebutter API responses</li>
+            <li>✅ Update PaymentOrchestrationService routing</li>
+            <li>✅ Create payment transaction records</li>
+        </ul>
+
+        <h3>Phase 3: Webhooks</h3>
+        <ul>
+            <li>✅ Create GivebutterWebhookController</li>
+            <li>✅ Implement webhook signature verification</li>
+            <li>✅ Implement tenant ID extraction</li>
+            <li>✅ Process donation.completed events</li>
+            <li>✅ Process donation.updated events</li>
+            <li>✅ Process donation.refunded events</li>
+            <li>✅ Update payment transaction status</li>
+        </ul>
+
+        <h3>Phase 4: Testing & Documentation</h3>
+        <ul>
+            <li>✅ Write unit tests</li>
+            <li>✅ Write integration tests</li>
+            <li>✅ Update Swagger API documentation</li>
+            <li>✅ Test with Givebutter sandbox/test environment</li>
+            <li>✅ Document configuration steps</li>
+        </ul>
+
+        <h2>10. Dependencies</h2>
+        <ul>
+            <li><strong>Spring Boot:</strong> Existing web starter (RestTemplate/WebClient)</li>
+            <li><strong>Jackson:</strong> JSON serialization/deserialization</li>
+            <li><strong>EncryptionService:</strong> Existing service for credential encryption</li>
+            <li><strong>PaymentProviderConfigRepository:</strong> Existing repository for config access</li>
+            <li><strong>PaymentTransactionRepository:</strong> Existing repository for transaction storage</li>
+        </ul>
+
+        <h2>11. Event Configuration for Fundraiser Events</h2>
+
+        <h3>11.1 Marking Events as Fundraisers</h3>
+        <p>To route ticketed events to Givebutter, events must be configured with fundraiser metadata. The <code>metadata</code> column is of type <code>TEXT</code> (not JSONB) and stores JSON as a string, matching the existing codebase pattern.</p>
+        <pre><code>-- Update event_details metadata to mark as fundraiser (stored as JSON string)
+UPDATE event_details
+SET metadata = '{"isFundraiserEvent":true,"donationConfig":{"useZeroFeeProvider":true,"zeroFeeProvider":"GIVEBUTTER","givebutterCampaignId":"campaign_fundraiser_123","presets":[25,50,100,250],"minAmount":10,"defaultAmount":50,"allowCustom":true}}'
+WHERE id = {event_id};
+
+-- Alternative: Use isCharityEvent flag
+UPDATE event_details
+SET metadata = '{"isCharityEvent":true,"donationConfig":{"useZeroFeeProvider":true,"zeroFeeProvider":"GIVEBUTTER","givebutterCampaignId":"campaign_fundraiser_123"}}'
+WHERE id = {event_id};
+
+-- Note: In application code (Spring Boot), parse JSON string using Jackson ObjectMapper:
+-- ObjectMapper mapper = new ObjectMapper();
+-- Map&lt;String, Object&gt; metadata = mapper.readValue(event.getMetadata(), Map.class);
+-- Boolean isFundraiser = (Boolean) metadata.get("isFundraiserEvent");</code></pre>
+
+        <h3>11.2 Event Metadata Structure</h3>
+        <p><strong>Stored as JSON string in TEXT column:</strong></p>
+        <pre><code>{
+    "isFundraiserEvent": true,  // or "isCharityEvent": true
+    "donationConfig": {
+        "useZeroFeeProvider": true,
+        "zeroFeeProvider": "GIVEBUTTER",
+        "givebutterCampaignId": "campaign_fundraiser_123",
+        "presets": [25, 50, 100, 250],
+        "minAmount": 10,
+        "defaultAmount": 50,
+        "allowCustom": true
+    }
+}</code></pre>
+
+        <div class="warning">
+            <strong>⚠️ Important:</strong> The <code>metadata</code> column uses <code>TEXT</code> type (not JSONB) to match the existing codebase pattern (see <code>user_payment_transaction.metadata text</code>). Parse JSON in application code using Jackson ObjectMapper.
+        </div>
+
+        <div class="success">
+            <strong>✅ Routing Behavior:</strong> When an event has <code>isFundraiserEvent: true</code> (or <code>isCharityEvent: true</code>) and <code>donationConfig.useZeroFeeProvider: true</code> with <code>zeroFeeProvider: "GIVEBUTTER"</code>, all ticket sales (<code>TICKET_SALE</code> payment type) for that event will route to Givebutter instead of Stripe, enabling zero-fee processing for nonprofit fundraisers.
+        </div>
+
+        <h3>11.3 Fallback Behavior</h3>
+        <p>If Givebutter is not configured for the tenant, or if the event is not marked as a fundraiser, ticket sales will fall back to Stripe (default behavior).</p>
+
+        <h2>12. References</h2>
+        <ul>
+            <li><strong>Generic PRD:</strong> <code>GIVEBUTTER_INTEGRATION_PRD.html</code></li>
+            <li><strong>Setup Guide:</strong> <code>GIVEBUTTER_DEVELOPER_SETUP_GUIDE.html</code></li>
+            <li><strong>Backend PRD:</strong> <code>PRD_backend.html</code></li>
+            <li><strong>Database Schema:</strong> <code>code_html_template/SQLS/Latest_Schema_Post__Blob_Claude_11.sql</code></li>
+            <li><strong>Givebutter API Docs:</strong> <a href="https://docs.givebutter.com">https://docs.givebutter.com</a></li>
+            <li><strong>Swagger API Docs:</strong> <code>documentation/Swagger_API_Docs/api-docs.json</code></li>
+        </ul>
+
+        <footer style="margin-top: 3rem; text-align: center; font-size: 0.9rem; color: #7b7067;">
+            <p>Document owner: Backend Lead · Updated January 2025</p>
+        </footer>
+    </main>
+</body>
+</html>
+

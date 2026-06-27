@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Competitions — Batch Job PRD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%); border-left: 4px solid #ff9800; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; margin: 12px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Event Competitions — Batch Job PRD</h1>
+    <p class="doc-meta">
+        <strong>Project:</strong> <code>event-site-manager-batch-jobs</code> (Spring Batch)<br>
+        <strong>Date:</strong> May 21, 2026 &nbsp;|&nbsp; <strong>Phase:</strong> P4 (optional)<br>
+        <strong>Index:</strong> <a href="generic_prd.html">generic_prd.html</a>
+    </p>
+
+    <div class="warning-box">
+        <p><strong>v1 position:</strong> Batch is <strong>not required</strong> for core competition registration. Sync via REST + Stripe webhook (<a href="frontend_prd.html">frontend_prd.html</a>). Do not block P0–P3.</p>
+    </div>
+
+    <div class="lead">
+        <p>Optional emails: registration confirmed, <strong>winners published</strong> (include link to <code>/events/[id]/competitions/winners</code>), nightly registration summary. Reuse donation / manual-payment batch patterns.</p>
+    </div>
+
+    <h2>1. Proposed jobs (P4)</h2>
+    <table>
+        <thead><tr><th>Job</th><th>Trigger</th></tr></thead>
+        <tbody>
+            <tr><td>Registration confirmation email</td><td>After Stripe confirms <code>event_competition</code> registrations</td></tr>
+            <tr><td>Winners published notification</td><td>Admin publishes results; optional highlight top placements</td></tr>
+            <tr><td>Registration summary report</td><td>Optional cron to organizers</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. API surface (illustrative)</h2>
+    <div class="section-container">
+        <div class="section-header">Batch controller routes</div>
+<pre>POST /batch-jobs/api/batch-jobs/event-competition-registration-email
+Body: { eventId, registrationIds, tenantId, templateId? }
+
+POST /batch-jobs/api/batch-jobs/event-competition-winners-published-email
+Body: { eventId, tenantId, templateId? }
+
+POST /batch-jobs/api/batch-jobs/event-competition-registration-summary
+Body: { eventId, tenantId, recipientEmail }</pre>
+    </div>
+
+    <h2>3. Out of scope (batch v1)</h2>
+    <ul>
+        <li>Waitlist processor</li>
+        <li>Stripe webhooks in batch project</li>
+        <li>Replacing sync registration API</li>
+    </ul>
+
+</body>
+</html>

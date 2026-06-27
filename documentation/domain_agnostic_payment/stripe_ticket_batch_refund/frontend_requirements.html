@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Frontend Requirements: Stripe Ticket Batch Refund</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+
+      h1 {
+        font-size: 2.1rem;
+        margin-bottom: 0.75rem;
+      }
+
+      h2 {
+        font-size: 1.6rem;
+        margin-top: 2.5rem;
+      }
+
+      h3 {
+        font-size: 1.2rem;
+        margin-top: 1.6rem;
+      }
+
+      p,
+      li {
+        line-height: 1.75;
+        font-size: 1rem;
+      }
+
+      ul,
+      ol {
+        margin-left: 1.4rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5rem 0;
+        font-size: 0.95rem;
+      }
+
+      th,
+      td {
+        border: 1px solid rgba(42, 32, 23, 0.15);
+        padding: 0.75rem;
+        vertical-align: top;
+      }
+
+      th {
+        background: rgba(213, 201, 182, 0.35);
+        font-weight: 600;
+      }
+
+      code.inline {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+        padding: 0.15rem 0.35rem;
+        font-size: 0.95rem;
+        display: inline-block;
+      }
+
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .divider {
+        height: 1px;
+        background: rgba(42, 32, 23, 0.12);
+        margin: 2rem 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Frontend · January 2026</span>
+      <h1>Frontend Requirements: Stripe Ticket Batch Refund</h1>
+      <p>
+        This document specifies the UI/UX and client requirements for the batch refund feature in the Next.js frontend.
+        Align all UI with <code class="inline">@ui_style_guide.mdc</code> and follow the pattern established in the
+        sales analytics batch job trigger section.
+      </p>
+
+      <div class="divider"></div>
+
+      <h2>1. Page Location & Context</h2>
+      <ul>
+        <li><strong>Target Page:</strong> <code class="inline">/admin/events/[id]/tickets/list</code></li>
+        <li><strong>File Path:</strong> <code class="inline">src/app/admin/events/[id]/tickets/list/page.tsx</code></li>
+        <li><strong>Event ID Source:</strong> Extracted from URL params (<code class="inline">params.id</code>)</li>
+        <li><strong>Placement:</strong> Add batch refund section above or below the ticket table, after statistics dashboard</li>
+      </ul>
+
+      <h2>2. UI Component Structure</h2>
+      <h3>2.1 Batch Refund Section Container</h3>
+      <ul>
+        <li>Collapsible section (similar to sales analytics page)</li>
+        <li>Default state: Collapsed (hidden)</li>
+        <li>Toggle button: "Show Batch Refund Options" / "Hide Batch Refund Options"</li>
+        <li>Styling: White background, gray border, rounded corners</li>
+        <li>Reference: <code class="inline">src/app/admin/sales-analytics/SalesAnalyticsClient.tsx</code> lines 448-597</li>
+      </ul>
+
+      <h3>2.2 Section Header</h3>
+      <ul>
+        <li>Title: "Stripe Ticket Batch Refund"</li>
+        <li>Toggle button on the right side of header</li>
+        <li>Icon: Sync/Refresh icon (FaSync from react-icons/fa)</li>
+        <li>Styling: Follow admin page header patterns</li>
+      </ul>
+
+      <h3>2.3 Information Banner</h3>
+      <ul>
+        <li>Blue background banner explaining the batch refund process</li>
+        <li>Text: "This batch job will refund all eligible Stripe tickets for this event. The job runs asynchronously in the background and will return a job ID when started."</li>
+        <li>Warning: "Only tickets with Stripe payments (not manual payments) will be refunded."</li>
+        <li>Styling: <code class="inline">bg-blue-50 border-2 border-blue-200 rounded-lg p-4</code></li>
+      </ul>
+
+      <h3>2.4 Eligibility Summary</h3>
+      <ul>
+        <li>Display count of eligible tickets (optional - can be fetched from backend)</li>
+        <li>Show criteria: "Tickets with Stripe payments that are not already refunded"</li>
+        <li>Styling: Info box with gray background</li>
+      </ul>
+
+      <h2>3. State Management</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>State Variable</th>
+            <th>Type</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code class="inline">showBatchRefundSection</code></td>
+            <td>boolean</td>
+            <td>Controls visibility of batch refund options</td>
+          </tr>
+          <tr>
+            <td><code class="inline">batchRefundLoading</code></td>
+            <td>boolean</td>
+            <td>Loading state during API call</td>
+          </tr>
+          <tr>
+            <td><code class="inline">batchRefundSuccess</code></td>
+            <td>boolean</td>
+            <td>Success state after job trigger</td>
+          </tr>
+          <tr>
+            <td><code class="inline">batchRefundError</code></td>
+            <td>string | null</td>
+            <td>Error message if job trigger fails</td>
+          </tr>
+          <tr>
+            <td><code class="inline">batchRefundResponse</code></td>
+            <td>StripeTicketBatchRefundResponse | null</td>
+            <td>Response data with job ID and status</td>
+          </tr>
+          <tr>
+            <td><code class="inline">showConfirmDialog</code></td>
+            <td>boolean</td>
+            <td>Controls confirmation dialog visibility</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>4. Confirmation Dialog</h2>
+      <ul>
+        <li><strong>Trigger:</strong> When user clicks "Trigger Batch Refund" button</li>
+        <li><strong>Content:</strong>
+          <ul>
+            <li>Title: "Confirm Batch Refund"</li>
+            <li>Message: "Are you sure you want to refund all eligible tickets for this event? This action cannot be undone."</li>
+            <li>Ticket count: "X eligible tickets will be refunded"</li>
+            <li>Warning: "This will process refunds via Stripe. Manual payments will not be refunded."</li>
+          </ul>
+        </li>
+        <li><strong>Actions:</strong>
+          <ul>
+            <li>Cancel button: Close dialog, do nothing</li>
+            <li>Confirm button: Proceed with batch refund trigger</li>
+          </ul>
+        </li>
+        <li><strong>Styling:</strong> Follow dialog button patterns from <code class="inline">dialog_button_styling.mdc</code></li>
+        <li><strong>Reference:</strong> Similar to refund modal in <code class="inline">TicketTableClient.tsx</code></li>
+      </ul>
+
+      <h2>5. Trigger Button</h2>
+      <ul>
+        <li><strong>Label:</strong> "Trigger Batch Refund" (default) / "Starting Batch Job..." (loading)</li>
+        <li><strong>Icon:</strong> FaSync (default) / FaSpinner with animate-spin (loading)</li>
+        <li><strong>Styling:</strong>
+          <ul>
+            <li>Full-width button: <code class="inline">w-full flex-shrink-0 h-14 rounded-xl</code></li>
+            <li>Background: <code class="inline">bg-red-100 hover:bg-red-200</code> (red for destructive action)</li>
+            <li>Text: <code class="inline">text-red-700 font-semibold</code></li>
+            <li>Icon container: <code class="inline">w-10 h-10 rounded-lg bg-red-200</code></li>
+            <li>Disabled state: <code class="inline">disabled:opacity-50 disabled:cursor-not-allowed</code></li>
+            <li>Hover effect: <code class="inline">hover:scale-105 transition-all duration-300</code></li>
+          </ul>
+        </li>
+        <li><strong>Disabled When:</strong> Loading state is true</li>
+        <li><strong>Reference:</strong> Follow admin action button pattern from <code class="inline">admin_action_buttons_styling.mdc</code></li>
+      </ul>
+
+      <h2>6. Status Messages</h2>
+      <h3>6.1 Success Message</h3>
+      <ul>
+        <li><strong>Display When:</strong> <code class="inline">batchRefundSuccess && batchRefundResponse</code></li>
+        <li><strong>Styling:</strong> <code class="inline">bg-green-50 border-2 border-green-200 rounded-lg p-4</code></li>
+        <li><strong>Content:</strong>
+          <ul>
+            <li>Icon: FaCheckCircle (green)</li>
+            <li>Title: "Batch refund job started successfully!"</li>
+            <li>Details:
+              <ul>
+                <li>Job ID: <code class="inline">{batchRefundResponse.jobId}</code></li>
+                <li>Status: <code class="inline">{batchRefundResponse.status}</code></li>
+                <li>Estimated Records: <code class="inline">{batchRefundResponse.estimatedRecords}</code></li>
+                <li>Estimated Completion: <code class="inline">{new Date(batchRefundResponse.estimatedCompletionTime).toLocaleString()}</code></li>
+                <li>Message: <code class="inline">{batchRefundResponse.message}</code></li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+
+      <h3>6.2 Error Message</h3>
+      <ul>
+        <li><strong>Display When:</strong> <code class="inline">batchRefundError</code> is not null</li>
+        <li><strong>Styling:</strong> <code class="inline">bg-red-50 border-2 border-red-200 rounded-lg p-4</code></li>
+        <li><strong>Content:</strong>
+          <ul>
+            <li>Icon: FaExclamationTriangle (red)</li>
+            <li>Title: "Error"</li>
+            <li>Message: <code class="inline">{batchRefundError}</code></li>
+          </ul>
+        </li>
+        <li><strong>Error Handling:</strong> Map technical errors to user-friendly messages (similar to sales analytics)</li>
+      </ul>
+
+      <h2>7. API Integration</h2>
+      <h3>7.1 Server Action</h3>
+      <ul>
+        <li><strong>File:</strong> <code class="inline">src/app/admin/events/[id]/tickets/list/ApiServerActions.ts</code></li>
+        <li><strong>Function:</strong> <code class="inline">triggerStripeTicketBatchRefundServer()</code></li>
+        <li><strong>Signature:</strong>
+          <pre><code>export async function triggerStripeTicketBatchRefundServer(
+  request: StripeTicketBatchRefundRequest = {}
+): Promise&lt;StripeTicketBatchRefundResponse&gt;</code></pre>
+        </li>
+        <li><strong>Implementation:</strong>
+          <ul>
+            <li>Validate request parameters (eventId required)</li>
+            <li>Prepare payload with eventId, tenantId (from environment)</li>
+            <li>Call backend endpoint: <code class="inline">POST ${API_BASE_URL}/api/cron/stripe-ticket-batch-refund</code></li>
+            <li>Use <code class="inline">fetchWithJwtRetry</code> from <code class="inline">@/lib/proxyHandler</code></li>
+            <li>Handle errors and return user-friendly messages</li>
+            <li>Return response with job ID and status</li>
+          </ul>
+        </li>
+        <li><strong>Reference:</strong> <code class="inline">src/app/admin/sales-analytics/ApiServerActions.ts</code> lines 785-926</li>
+      </ul>
+
+      <h3>7.2 Request/Response Types</h3>
+      <pre><code>export interface StripeTicketBatchRefundRequest {
+  eventId: number; // Required: Event ID from URL params
+  tenantId?: string; // Optional: Defaults to NEXT_PUBLIC_TENANT_ID
+  startDate?: string; // Optional: ISO 8601 format (future enhancement)
+  endDate?: string; // Optional: ISO 8601 format (future enhancement)
+}
+
+export interface StripeTicketBatchRefundResponse {
+  jobId: string;
+  status: 'STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+  tenantId: string | null;
+  eventId: number | null;
+  estimatedRecords: number | null;
+  estimatedCompletionTime: string | null;
+  message: string;
+}</code></pre>
+
+      <h3>7.3 API Call Pattern</h3>
+      <ul>
+        <li>Follow <code class="inline">nextjs_api_routes.mdc</code> rules</li>
+        <li>Use <code class="inline">fetchWithJwtRetry</code> for backend calls (NOT proxy endpoint)</li>
+        <li>Direct backend call: <code class="inline">${API_BASE_URL}/api/cron/stripe-ticket-batch-refund</code></li>
+        <li>Method: POST</li>
+        <li>Headers: <code class="inline">Content-Type: application/json</code></li>
+        <li>Body: JSON stringified request payload</li>
+        <li>Cache: <code class="inline">cache: 'no-store'</code></li>
+      </ul>
+
+      <h2>8. Event Handler</h2>
+      <h3>8.1 Handle Trigger Function</h3>
+      <ul>
+        <li><strong>Function:</strong> <code class="inline">handleTriggerBatchRefund()</code></li>
+        <li><strong>Steps:</strong>
+          <ol>
+            <li>Set loading state to true</li>
+            <li>Clear previous errors and success states</li>
+            <li>Prepare request payload with eventId from URL params</li>
+            <li>Call server action: <code class="inline">triggerStripeTicketBatchRefundServer(request)</code></li>
+            <li>On success: Set response, success state, clear loading</li>
+            <li>On error: Set error message, clear loading</li>
+          </ol>
+        </li>
+        <li><strong>Reference:</strong> <code class="inline">src/app/admin/sales-analytics/SalesAnalyticsClient.tsx</code> lines 330-414</li>
+      </ul>
+
+      <h2>9. Component Integration</h2>
+      <h3>9.1 Page Component Updates</h3>
+      <ul>
+        <li>Add batch refund section after statistics dashboard</li>
+        <li>Before ticket table or after (designer's choice)</li>
+        <li>Pass eventId from server component to client component if needed</li>
+        <li>Ensure proper state management and error boundaries</li>
+      </ul>
+
+      <h3>9.2 Client Component</h3>
+      <ul>
+        <li>Create or extend existing client component for batch refund UI</li>
+        <li>Can be added directly to <code class="inline">page.tsx</code> or as separate component</li>
+        <li>Use 'use client' directive if creating separate component</li>
+        <li>Import required icons: <code class="inline">FaSync, FaSpinner, FaCheckCircle, FaExclamationTriangle</code></li>
+      </ul>
+
+      <h2>10. UI Standards Compliance</h2>
+      <ul>
+        <li>Follow <code class="inline">@ui_style_guide.mdc</code> for all styling</li>
+        <li>Use admin action button patterns from <code class="inline">admin_action_buttons_styling.mdc</code></li>
+        <li>Use dialog patterns from <code class="inline">dialog_button_styling.mdc</code> for confirmation</li>
+        <li>Follow color coding: Red for destructive actions (refund)</li>
+        <li>Ensure accessibility: ARIA labels, keyboard navigation, screen reader support</li>
+        <li>Responsive design: Works on mobile, tablet, desktop</li>
+      </ul>
+
+      <h2>11. Error Handling</h2>
+      <ul>
+        <li>Map backend errors to user-friendly messages</li>
+        <li>Handle network errors gracefully</li>
+        <li>Display validation errors (invalid eventId, etc.)</li>
+        <li>Show timeout errors if job trigger takes too long</li>
+        <li>Reference error handling pattern from sales analytics (lines 831-926)</li>
+      </ul>
+
+      <h2>12. Testing Considerations</h2>
+      <ul>
+        <li>Test with events that have no eligible tickets</li>
+        <li>Test with events that have many eligible tickets</li>
+        <li>Test error scenarios (invalid eventId, network errors)</li>
+        <li>Test confirmation dialog (cancel and confirm flows)</li>
+        <li>Test loading states and button disabled states</li>
+        <li>Test success and error message display</li>
+        <li>Verify eventId is correctly passed from URL params</li>
+      </ul>
+
+      <div class="divider"></div>
+
+      <h2>Reference Files</h2>
+      <ul>
+        <li><strong>Sales Analytics Batch Job:</strong> <code class="inline">src/app/admin/sales-analytics/SalesAnalyticsClient.tsx</code> (lines 448-597)</li>
+        <li><strong>Sales Analytics API:</strong> <code class="inline">src/app/admin/sales-analytics/ApiServerActions.ts</code> (lines 785-926)</li>
+        <li><strong>Single Refund:</strong> <code class="inline">src/app/admin/events/[id]/tickets/list/ApiServerActions.ts</code> (lines 8-80)</li>
+        <li><strong>Ticket List Page:</strong> <code class="inline">src/app/admin/events/[id]/tickets/list/page.tsx</code></li>
+        <li><strong>UI Style Guide:</strong> <code class="inline">@ui_style_guide.mdc</code></li>
+        <li><strong>Next.js API Routes:</strong> <code class="inline">nextjs_api_routes.mdc</code></li>
+      </ul>
+    </main>
+  </body>
+</html>

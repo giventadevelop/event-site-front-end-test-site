@@ -1,0 +1,1886 @@
+================================================================================
+PRODUCT REQUIREMENTS DOCUMENT
+Frontend Integration with Backend Clerk Authentication System
+================================================================================
+
+Document Version: 1.0
+Created: October 13, 2025
+Project: Malayalees US Site - Backend Authentication Integration
+Frontend Location: C:\Users\gain\git\malayalees-us-site
+Backend Location: C:\Users\gain\git\malayalees-us-site-boot
+
+================================================================================
+1. EXECUTIVE SUMMARY
+================================================================================
+
+OBJECTIVE:
+----------
+Refactor the existing Next.js frontend application to authenticate through the
+newly implemented backend Clerk authentication system instead of directly using
+Clerk client libraries. This creates a single source of truth for authentication
+across all frontend applications, enables centralized user management, and
+provides multi-tenant support.
+
+CURRENT STATE:
+--------------
+✅ Frontend: Next.js application with Clerk client SDK
+✅ Frontend: Direct authentication to Clerk servers
+✅ Frontend: Clerk components for sign-in/sign-up
+✅ Frontend: Social login (Google, etc.) via Clerk
+✅ Backend: Complete Clerk authentication API (Tasks 3-28 ✅)
+✅ Backend: 11 REST endpoints for auth + admin + webhooks
+✅ Backend: Multi-tenant architecture
+✅ Backend: JWT token generation and validation
+
+FUTURE STATE (THIS INTEGRATION):
+---------------------------------
+🎯 Frontend: Uses backend APIs for all authentication
+🎯 Frontend: Maintains existing UI/UX (minimal user-facing changes)
+🎯 Frontend: JWT tokens from backend for API calls
+🎯 Frontend: Social login flows through backend
+🎯 Backend: Single source of truth for user authentication
+🎯 Backend: Centralized user management and audit trail
+🎯 Backend: Multi-tenant support across domains
+
+KEY BENEFITS:
+-------------
+✅ Centralized Authentication: One backend handles all authentication
+✅ Multi-Tenant Support: Same backend serves multiple frontend apps
+✅ Domain Agnostic: Any domain can authenticate through this backend
+✅ Audit Trail: Complete logging of authentication events
+✅ User Management: Admin APIs for user management
+✅ Scalability: Backend can handle multiple frontend applications
+✅ Security: Centralized security policies and updates
+
+SCOPE:
+------
+IN SCOPE:
+✅ Replace Clerk client SDK with backend API calls
+✅ Implement new authentication flow using backend endpoints
+✅ Handle JWT token storage and management
+✅ Implement social login through backend
+✅ Error handling and user feedback
+✅ Multi-tenant configuration
+
+OUT OF SCOPE:
+❌ UI/UX redesign (keep existing design)
+❌ New features beyond authentication
+❌ Backend modifications (backend is complete)
+❌ Database schema changes
+❌ Clerk dashboard configuration (already done)
+
+================================================================================
+2. ARCHITECTURE OVERVIEW
+================================================================================
+
+CURRENT ARCHITECTURE:
+---------------------
+┌──────────────┐          ┌──────────────────┐
+│   Next.js    │ ────────>│  Clerk Servers   │
+│   Frontend   │ <────────│  (Direct Auth)   │
+└──────────────┘          └──────────────────┘
+      │
+      │ (API Calls with JWT)
+      ↓
+┌──────────────┐
+│   Backend    │
+│   Spring Boot│
+└──────────────┘
+
+PROBLEMS:
+- Frontend tightly coupled to Clerk
+- No centralized user management
+- No audit trail
+- Cannot support multiple tenants easily
+- Backend not involved in authentication
+
+NEW ARCHITECTURE:
+-----------------
+┌──────────────┐          ┌──────────────────┐
+│   Next.js    │ ────────>│  Backend API     │
+│   Frontend   │ <────────│  Spring Boot     │
+└──────────────┘          └──────────────────┘
+                                  │
+                                  │ (Clerk Integration)
+                                  ↓
+                          ┌──────────────────┐
+                          │  Clerk Servers   │
+                          │  (User Store)    │
+                          └──────────────────┘
+
+BENEFITS:
+✅ Backend controls authentication flow
+✅ Centralized user management
+✅ Complete audit trail
+✅ Multi-tenant support
+✅ Domain agnostic
+✅ Single source of truth
+
+AUTHENTICATION FLOW:
+--------------------
+1. User clicks "Sign In" on frontend
+2. Frontend sends credentials to Backend API
+3. Backend authenticates with Clerk
+4. Backend creates user_profile record (if new user)
+5. Backend generates JWT token
+6. Backend returns JWT + user info to frontend
+7. Frontend stores JWT for subsequent API calls
+8. Frontend uses JWT for all protected API calls
+
+COMPONENT INTERACTION:
+----------------------
+Frontend Components:
+├── Sign In Page
+├── Sign Up Page
+├── Social Login Buttons
+├── User Profile
+├── Auth Context/Provider
+└── Protected Routes
+
+Backend Endpoints:
+├── POST /api/auth/sign-up
+├── POST /api/auth/sign-in
+├── POST /api/auth/sign-in/social
+├── POST /api/auth/sign-out
+├── POST /api/auth/refresh-token
+├── POST /api/auth/verify-token
+└── GET  /api/auth/user
+
+================================================================================
+3. BACKEND API ENDPOINTS REFERENCE
+================================================================================
+
+BASE URL:
+---------
+Development: http://localhost:8080
+Production: https://api.your-domain.com
+
+AUTHENTICATION ENDPOINTS:
+-------------------------
+
+3.1 SIGN UP (Email/Password)
+----------------------------
+Endpoint: POST /api/auth/sign-up
+Headers:
+  Content-Type: application/json
+
+Request Body:
+{
+  "email": "user@example.com",
+  "password": "SecurePassword123!",
+  "firstName": "John",
+  "lastName": "Doe",
+  "tenantId": "tenant_demo_001"  // Optional, can be determined by domain
+}
+
+Response (200 OK):
+{
+  "accessToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "rt_2mK5Dz9...",
+  "expiresIn": 3600,  // seconds (1 hour)
+  "tokenType": "Bearer",
+  "user": {
+    "id": 123,
+    "userId": "user_2mK5...",  // Clerk user ID
+    "email": "user@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "userRole": "USER",
+    "userStatus": "ACTIVE",
+    "tenantId": "tenant_demo_001",
+    "profileImageUrl": null,
+    "createdAt": "2025-10-13T10:00:00Z",
+    "updatedAt": "2025-10-13T10:00:00Z"
+  }
+}
+
+Error Response (409 Conflict - Email exists):
+{
+  "type": "https://api.clerk.com/problem/authentication-error",
+  "title": "Clerk Authentication Error",
+  "status": 409,
+  "detail": "Email already exists",
+  "errorCode": "AUTH_005",
+  "message": "error.clerk.emailExists",
+  "path": "/api/auth/sign-up"
+}
+
+Error Response (400 Bad Request - Validation error):
+{
+  "type": "about:blank",
+  "title": "Method argument not valid",
+  "status": 400,
+  "detail": "Validation failed",
+  "fieldErrors": [
+    {
+      "objectName": "signUpRequest",
+      "field": "email",
+      "message": "Email is required"
+    },
+    {
+      "objectName": "signUpRequest",
+      "field": "password",
+      "message": "Password must be at least 8 characters"
+    }
+  ]
+}
+
+3.2 SIGN IN (Email/Password)
+-----------------------------
+Endpoint: POST /api/auth/sign-in
+Headers:
+  Content-Type: application/json
+
+Request Body:
+{
+  "email": "user@example.com",
+  "password": "SecurePassword123!",
+  "tenantId": "tenant_demo_001"  // Optional, can be determined by domain
+}
+
+Response (200 OK):
+{
+  "accessToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "rt_2mK5Dz9...",
+  "expiresIn": 3600,
+  "tokenType": "Bearer",
+  "user": {
+    "id": 123,
+    "userId": "user_2mK5...",
+    "email": "user@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "userRole": "USER",
+    "userStatus": "ACTIVE",
+    "tenantId": "tenant_demo_001"
+  }
+}
+
+Error Response (401 Unauthorized):
+{
+  "type": "https://api.clerk.com/problem/authentication-error",
+  "title": "Clerk Authentication Error",
+  "status": 401,
+  "detail": "Invalid credentials",
+  "errorCode": "AUTH_001",
+  "message": "error.clerk.invalidCredentials",
+  "path": "/api/auth/sign-in"
+}
+
+3.3 SOCIAL SIGN IN (Google, Facebook, etc.)
+--------------------------------------------
+Endpoint: POST /api/auth/sign-in/social
+Headers:
+  Content-Type: application/json
+
+Request Body:
+{
+  "provider": "google",  // or "facebook", "github", etc.
+  "idToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",  // OAuth token from provider
+  "tenantId": "tenant_demo_001"
+}
+
+Response (200 OK):
+{
+  "accessToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "rt_2mK5Dz9...",
+  "expiresIn": 3600,
+  "tokenType": "Bearer",
+  "user": {
+    "id": 123,
+    "userId": "user_2mK5...",
+    "email": "user@gmail.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "userRole": "USER",
+    "userStatus": "ACTIVE",
+    "tenantId": "tenant_demo_001",
+    "profileImageUrl": "https://lh3.googleusercontent.com/..."
+  }
+}
+
+3.4 REFRESH TOKEN
+------------------
+Endpoint: POST /api/auth/refresh-token
+Headers:
+  Content-Type: application/json
+
+Request Body:
+{
+  "refreshToken": "rt_2mK5Dz9..."
+}
+
+Response (200 OK):
+{
+  "accessToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "rt_NEW_TOKEN...",  // New refresh token (rotation)
+  "expiresIn": 3600,
+  "tokenType": "Bearer"
+}
+
+Error Response (401 Unauthorized - Token expired):
+{
+  "type": "https://api.clerk.com/problem/authentication-error",
+  "title": "Clerk Authentication Error",
+  "status": 401,
+  "detail": "Token expired",
+  "errorCode": "AUTH_002",
+  "message": "error.clerk.tokenExpired",
+  "path": "/api/auth/refresh-token"
+}
+
+3.5 GET CURRENT USER
+---------------------
+Endpoint: GET /api/auth/user
+Headers:
+  Authorization: Bearer <accessToken>
+  X-Tenant-ID: tenant_demo_001
+
+Response (200 OK):
+{
+  "id": 123,
+  "userId": "user_2mK5...",
+  "email": "user@example.com",
+  "firstName": "John",
+  "lastName": "Doe",
+  "userRole": "USER",
+  "userStatus": "ACTIVE",
+  "tenantId": "tenant_demo_001",
+  "profileImageUrl": null,
+  "createdAt": "2025-10-13T10:00:00Z",
+  "updatedAt": "2025-10-13T10:00:00Z"
+}
+
+3.6 SIGN OUT
+-------------
+Endpoint: POST /api/auth/sign-out
+Headers:
+  Authorization: Bearer <accessToken>
+  Content-Type: application/json
+
+Request Body:
+{
+  "refreshToken": "rt_2mK5Dz9..."
+}
+
+Response (200 OK):
+{
+  "success": true,
+  "message": "Successfully signed out"
+}
+
+3.7 VERIFY TOKEN
+-----------------
+Endpoint: POST /api/auth/verify-token
+Headers:
+  Content-Type: application/json
+
+Request Body:
+{
+  "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+
+Response (200 OK):
+{
+  "valid": true,
+  "userId": "user_2mK5...",
+  "email": "user@example.com",
+  "expiresAt": "2025-10-13T11:00:00Z"
+}
+
+Response (401 Unauthorized - Invalid token):
+{
+  "valid": false,
+  "error": "Token invalid",
+  "errorCode": "AUTH_003"
+}
+
+================================================================================
+4. FRONTEND INTEGRATION STRATEGY
+================================================================================
+
+4.1 MIGRATION APPROACH
+-----------------------
+Phase 1: Setup (Week 1)
+✅ Install HTTP client library (axios/fetch)
+✅ Create API service layer
+✅ Configure environment variables
+✅ Create auth context/provider
+
+Phase 2: Core Authentication (Week 2)
+✅ Implement sign-up flow
+✅ Implement sign-in flow
+✅ Implement token management
+✅ Update auth context
+
+Phase 3: Social Login (Week 3)
+✅ Implement Google OAuth flow
+✅ Implement other social providers
+✅ Update social login buttons
+
+Phase 4: Protected Routes (Week 4)
+✅ Update route protection
+✅ Implement token refresh
+✅ Handle expired tokens
+✅ Error handling
+
+Phase 5: Testing & Deployment (Week 5)
+✅ Integration testing
+✅ User acceptance testing
+✅ Performance testing
+✅ Production deployment
+
+4.2 TECHNOLOGY STACK
+---------------------
+Frontend Framework: Next.js (App Router or Pages Router)
+State Management: React Context API / Redux / Zustand
+HTTP Client: Axios / Fetch API
+Storage: localStorage / sessionStorage / Cookies
+Auth Library: Custom (remove @clerk/nextjs dependency)
+
+4.3 ENVIRONMENT CONFIGURATION
+------------------------------
+Create `.env.local` file:
+
+# Backend API Configuration
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+NEXT_PUBLIC_TENANT_ID=tenant_demo_001
+
+# Production
+# NEXT_PUBLIC_API_BASE_URL=https://api.your-domain.com
+# NEXT_PUBLIC_TENANT_ID=tenant_production_001
+
+# OAuth Configuration (if needed for social login)
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id
+NEXT_PUBLIC_FACEBOOK_APP_ID=your-facebook-app-id
+
+# Feature Flags
+NEXT_PUBLIC_ENABLE_SOCIAL_LOGIN=true
+NEXT_PUBLIC_ENABLE_MULTI_TENANT=true
+
+4.4 PROJECT STRUCTURE
+----------------------
+src/
+├── services/
+│   ├── api/
+│   │   ├── client.ts              # Axios/Fetch client setup
+│   │   ├── auth.service.ts        # Authentication API calls
+│   │   └── user.service.ts        # User-related API calls
+│   └── auth/
+│       ├── token.service.ts       # JWT token management
+│       └── storage.service.ts     # Token storage
+├── contexts/
+│   └── AuthContext.tsx            # Authentication context
+├── hooks/
+│   ├── useAuth.ts                 # Auth hook
+│   └── useProtectedRoute.ts       # Route protection hook
+├── components/
+│   ├── auth/
+│   │   ├── SignInForm.tsx         # Sign-in form
+│   │   ├── SignUpForm.tsx         # Sign-up form
+│   │   ├── SocialLoginButton.tsx  # Social login buttons
+│   │   └── ProtectedRoute.tsx     # Route wrapper
+│   └── common/
+│       └── ErrorMessage.tsx       # Error display
+├── types/
+│   ├── auth.types.ts              # Auth-related types
+│   └── user.types.ts              # User-related types
+└── utils/
+    ├── api.utils.ts               # API utilities
+    └── auth.utils.ts              # Auth utilities
+
+================================================================================
+5. CODE IMPLEMENTATION GUIDE
+================================================================================
+
+5.1 API CLIENT SETUP
+---------------------
+File: src/services/api/client.ts
+
+import axios, { AxiosInstance, AxiosError } from 'axios';
+import { tokenService } from '../auth/token.service';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || 'tenant_demo_001';
+
+class ApiClient {
+  private client: AxiosInstance;
+
+  constructor() {
+    this.client = axios.create({
+      baseURL: API_BASE_URL,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Tenant-ID': TENANT_ID,
+      },
+    });
+
+    // Request interceptor - Add JWT token
+    this.client.interceptors.request.use(
+      (config) => {
+        const token = tokenService.getAccessToken();
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+
+    // Response interceptor - Handle token refresh
+    this.client.interceptors.response.use(
+      (response) => response,
+      async (error: AxiosError) => {
+        const originalRequest = error.config;
+
+        // If 401 and we have a refresh token, try to refresh
+        if (error.response?.status === 401 && !originalRequest?._retry) {
+          originalRequest._retry = true;
+
+          try {
+            const refreshToken = tokenService.getRefreshToken();
+            if (refreshToken) {
+              const response = await axios.post(
+                `${API_BASE_URL}/api/auth/refresh-token`,
+                { refreshToken }
+              );
+
+              const { accessToken, refreshToken: newRefreshToken } = response.data;
+              tokenService.setTokens(accessToken, newRefreshToken);
+
+              // Retry original request with new token
+              originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+              return this.client(originalRequest);
+            }
+          } catch (refreshError) {
+            // Refresh failed, redirect to login
+            tokenService.clearTokens();
+            window.location.href = '/sign-in';
+            return Promise.reject(refreshError);
+          }
+        }
+
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  public getClient(): AxiosInstance {
+    return this.client;
+  }
+}
+
+export const apiClient = new ApiClient().getClient();
+
+5.2 AUTHENTICATION SERVICE
+---------------------------
+File: src/services/api/auth.service.ts
+
+import { apiClient } from './client';
+import {
+  SignUpRequest,
+  SignUpResponse,
+  SignInRequest,
+  SignInResponse,
+  SocialSignInRequest,
+  RefreshTokenRequest,
+  RefreshTokenResponse,
+  SignOutRequest,
+  User,
+} from '@/types/auth.types';
+
+class AuthService {
+  /**
+   * Sign up with email and password
+   */
+  async signUp(data: SignUpRequest): Promise<SignUpResponse> {
+    const response = await apiClient.post<SignUpResponse>('/api/auth/sign-up', data);
+    return response.data;
+  }
+
+  /**
+   * Sign in with email and password
+   */
+  async signIn(data: SignInRequest): Promise<SignInResponse> {
+    const response = await apiClient.post<SignInResponse>('/api/auth/sign-in', data);
+    return response.data;
+  }
+
+  /**
+   * Sign in with social provider (Google, Facebook, etc.)
+   */
+  async socialSignIn(data: SocialSignInRequest): Promise<SignInResponse> {
+    const response = await apiClient.post<SignInResponse>('/api/auth/sign-in/social', data);
+    return response.data;
+  }
+
+  /**
+   * Refresh access token
+   */
+  async refreshToken(refreshToken: string): Promise<RefreshTokenResponse> {
+    const response = await apiClient.post<RefreshTokenResponse>('/api/auth/refresh-token', {
+      refreshToken,
+    });
+    return response.data;
+  }
+
+  /**
+   * Sign out
+   */
+  async signOut(refreshToken: string): Promise<void> {
+    await apiClient.post('/api/auth/sign-out', { refreshToken });
+  }
+
+  /**
+   * Get current user
+   */
+  async getCurrentUser(): Promise<User> {
+    const response = await apiClient.get<User>('/api/auth/user');
+    return response.data;
+  }
+
+  /**
+   * Verify token validity
+   */
+  async verifyToken(token: string): Promise<boolean> {
+    try {
+      const response = await apiClient.post('/api/auth/verify-token', { token });
+      return response.data.valid;
+    } catch (error) {
+      return false;
+    }
+  }
+}
+
+export const authService = new AuthService();
+
+5.3 TOKEN MANAGEMENT SERVICE
+-----------------------------
+File: src/services/auth/token.service.ts
+
+class TokenService {
+  private readonly ACCESS_TOKEN_KEY = 'accessToken';
+  private readonly REFRESH_TOKEN_KEY = 'refreshToken';
+  private readonly TOKEN_EXPIRY_KEY = 'tokenExpiry';
+
+  /**
+   * Store tokens in localStorage
+   */
+  setTokens(accessToken: string, refreshToken: string, expiresIn?: number): void {
+    localStorage.setItem(this.ACCESS_TOKEN_KEY, accessToken);
+    localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
+
+    if (expiresIn) {
+      const expiryTime = Date.now() + expiresIn * 1000;
+      localStorage.setItem(this.TOKEN_EXPIRY_KEY, expiryTime.toString());
+    }
+  }
+
+  /**
+   * Get access token
+   */
+  getAccessToken(): string | null {
+    return localStorage.getItem(this.ACCESS_TOKEN_KEY);
+  }
+
+  /**
+   * Get refresh token
+   */
+  getRefreshToken(): string | null {
+    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
+  }
+
+  /**
+   * Check if token is expired
+   */
+  isTokenExpired(): boolean {
+    const expiryTime = localStorage.getItem(this.TOKEN_EXPIRY_KEY);
+    if (!expiryTime) return true;
+
+    return Date.now() >= parseInt(expiryTime, 10);
+  }
+
+  /**
+   * Clear all tokens
+   */
+  clearTokens(): void {
+    localStorage.removeItem(this.ACCESS_TOKEN_KEY);
+    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+    localStorage.removeItem(this.TOKEN_EXPIRY_KEY);
+  }
+
+  /**
+   * Check if user is authenticated
+   */
+  isAuthenticated(): boolean {
+    const token = this.getAccessToken();
+    return !!token && !this.isTokenExpired();
+  }
+}
+
+export const tokenService = new TokenService();
+
+5.4 AUTHENTICATION CONTEXT
+---------------------------
+File: src/contexts/AuthContext.tsx
+
+'use client';
+
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { authService } from '@/services/api/auth.service';
+import { tokenService } from '@/services/auth/token.service';
+import {
+  User,
+  SignUpRequest,
+  SignInRequest,
+  SocialSignInRequest,
+} from '@/types/auth.types';
+
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  error: string | null;
+  signUp: (data: SignUpRequest) => Promise<void>;
+  signIn: (data: SignInRequest) => Promise<void>;
+  socialSignIn: (data: SocialSignInRequest) => Promise<void>;
+  signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+  clearError: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load user on mount if token exists
+  useEffect(() => {
+    loadUser();
+  }, []);
+
+  const loadUser = async () => {
+    if (tokenService.isAuthenticated()) {
+      try {
+        const userData = await authService.getCurrentUser();
+        setUser(userData);
+      } catch (err) {
+        console.error('Failed to load user:', err);
+        tokenService.clearTokens();
+      }
+    }
+    setLoading(false);
+  };
+
+  const signUp = async (data: SignUpRequest) => {
+    try {
+      setError(null);
+      setLoading(true);
+
+      const response = await authService.signUp(data);
+
+      // Store tokens
+      tokenService.setTokens(
+        response.accessToken,
+        response.refreshToken,
+        response.expiresIn
+      );
+
+      // Set user
+      setUser(response.user);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.detail || 'Sign up failed';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signIn = async (data: SignInRequest) => {
+    try {
+      setError(null);
+      setLoading(true);
+
+      const response = await authService.signIn(data);
+
+      // Store tokens
+      tokenService.setTokens(
+        response.accessToken,
+        response.refreshToken,
+        response.expiresIn
+      );
+
+      // Set user
+      setUser(response.user);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.detail || 'Sign in failed';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const socialSignIn = async (data: SocialSignInRequest) => {
+    try {
+      setError(null);
+      setLoading(true);
+
+      const response = await authService.socialSignIn(data);
+
+      // Store tokens
+      tokenService.setTokens(
+        response.accessToken,
+        response.refreshToken,
+        response.expiresIn
+      );
+
+      // Set user
+      setUser(response.user);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.detail || 'Social sign in failed';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      const refreshToken = tokenService.getRefreshToken();
+      if (refreshToken) {
+        await authService.signOut(refreshToken);
+      }
+    } catch (err) {
+      console.error('Sign out error:', err);
+    } finally {
+      tokenService.clearTokens();
+      setUser(null);
+    }
+  };
+
+  const refreshUser = async () => {
+    try {
+      const userData = await authService.getCurrentUser();
+      setUser(userData);
+    } catch (err) {
+      console.error('Failed to refresh user:', err);
+    }
+  };
+
+  const clearError = () => setError(null);
+
+  const value: AuthContextType = {
+    user,
+    loading,
+    error,
+    signUp,
+    signIn,
+    socialSignIn,
+    signOut,
+    refreshUser,
+    clearError,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
+
+5.5 SIGN IN COMPONENT
+----------------------
+File: src/components/auth/SignInForm.tsx
+
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+
+export default function SignInForm() {
+  const router = useRouter();
+  const { signIn, error, clearError } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    clearError();
+    setLoading(true);
+
+    try {
+      await signIn({
+        email,
+        password,
+        tenantId: process.env.NEXT_PUBLIC_TENANT_ID!,
+      });
+
+      // Redirect to dashboard on success
+      router.push('/dashboard');
+    } catch (err) {
+      console.error('Sign in error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium">
+          Email
+        </label>
+        <input
+          id="email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="password" className="block text-sm font-medium">
+          Password
+        </label>
+        <input
+          id="password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+        />
+      </div>
+
+      {error && (
+        <div className="text-red-600 text-sm">{error}</div>
+      )}
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+      >
+        {loading ? 'Signing in...' : 'Sign In'}
+      </button>
+    </form>
+  );
+}
+
+5.6 GOOGLE SOCIAL LOGIN
+------------------------
+File: src/components/auth/GoogleLoginButton.tsx
+
+'use client';
+
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+
+export default function GoogleLoginButton() {
+  const { socialSignIn } = useAuth();
+  const router = useRouter();
+
+  const handleGoogleLogin = async () => {
+    try {
+      // Option 1: Use Google Sign-In SDK
+      // @ts-ignore
+      const auth2 = window.gapi?.auth2?.getAuthInstance();
+      const googleUser = await auth2.signIn();
+      const idToken = googleUser.getAuthResponse().id_token;
+
+      // Send to backend
+      await socialSignIn({
+        provider: 'google',
+        idToken,
+        tenantId: process.env.NEXT_PUBLIC_TENANT_ID!,
+      });
+
+      router.push('/dashboard');
+    } catch (err) {
+      console.error('Google login error:', err);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleGoogleLogin}
+      className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 py-2 rounded-md hover:bg-gray-50"
+    >
+      <img src="/google-icon.svg" alt="Google" className="w-5 h-5" />
+      Continue with Google
+    </button>
+  );
+}
+
+5.7 PROTECTED ROUTE WRAPPER
+----------------------------
+File: src/components/auth/ProtectedRoute.tsx
+
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+
+export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/sign-in');
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  return <>{children}</>;
+}
+
+5.8 TYPE DEFINITIONS
+---------------------
+File: src/types/auth.types.ts
+
+export interface User {
+  id: number;
+  userId: string;  // Clerk user ID
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  userRole: 'GUEST' | 'USER' | 'MANAGER' | 'ADMIN' | 'SUPER_ADMIN';
+  userStatus: 'ACTIVE' | 'SUSPENDED' | 'DELETED' | 'PENDING';
+  tenantId: string;
+  profileImageUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SignUpRequest {
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  tenantId: string;
+}
+
+export interface SignUpResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  tokenType: string;
+  user: User;
+}
+
+export interface SignInRequest {
+  email: string;
+  password: string;
+  tenantId: string;
+}
+
+export interface SignInResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  tokenType: string;
+  user: User;
+}
+
+export interface SocialSignInRequest {
+  provider: 'google' | 'facebook' | 'github' | 'apple';
+  idToken: string;
+  tenantId: string;
+}
+
+export interface RefreshTokenRequest {
+  refreshToken: string;
+}
+
+export interface RefreshTokenResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  tokenType: string;
+}
+
+export interface SignOutRequest {
+  refreshToken: string;
+}
+
+export interface TokenValidationResponse {
+  valid: boolean;
+  userId?: string;
+  email?: string;
+  expiresAt?: string;
+}
+
+================================================================================
+6. SOCIAL LOGIN INTEGRATION
+================================================================================
+
+6.1 GOOGLE OAUTH FLOW
+----------------------
+Step 1: Load Google SDK
+------------------------
+Add to _document.tsx or layout.tsx:
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+Step 2: Initialize Google
+--------------------------
+File: src/utils/google-auth.ts
+
+export const initializeGoogleAuth = () => {
+  return new Promise((resolve, reject) => {
+    // @ts-ignore
+    window.gapi.load('auth2', () => {
+      // @ts-ignore
+      window.gapi.auth2
+        .init({
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+          scope: 'profile email',
+        })
+        .then(resolve)
+        .catch(reject);
+    });
+  });
+};
+
+export const getGoogleIdToken = async (): Promise<string> => {
+  // @ts-ignore
+  const auth2 = window.gapi.auth2.getAuthInstance();
+  const googleUser = await auth2.signIn();
+  return googleUser.getAuthResponse().id_token;
+};
+
+Step 3: Use in Component
+-------------------------
+import { getGoogleIdToken } from '@/utils/google-auth';
+import { useAuth } from '@/contexts/AuthContext';
+
+const handleGoogleLogin = async () => {
+  try {
+    const idToken = await getGoogleIdToken();
+
+    await socialSignIn({
+      provider: 'google',
+      idToken,
+      tenantId: process.env.NEXT_PUBLIC_TENANT_ID!,
+    });
+
+    router.push('/dashboard');
+  } catch (error) {
+    console.error('Google login failed:', error);
+  }
+};
+
+6.2 ALTERNATIVE: GOOGLE ONE TAP
+--------------------------------
+File: src/components/auth/GoogleOneTap.tsx
+
+'use client';
+
+import { useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+
+export default function GoogleOneTap() {
+  const { socialSignIn } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    // @ts-ignore
+    if (window.google) {
+      // @ts-ignore
+      window.google.accounts.id.initialize({
+        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse,
+      });
+
+      // @ts-ignore
+      window.google.accounts.id.prompt();
+    }
+  }, []);
+
+  const handleCredentialResponse = async (response: any) => {
+    try {
+      await socialSignIn({
+        provider: 'google',
+        idToken: response.credential,
+        tenantId: process.env.NEXT_PUBLIC_TENANT_ID!,
+      });
+
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Google One Tap failed:', error);
+    }
+  };
+
+  return null;
+}
+
+================================================================================
+7. MULTI-TENANT SUPPORT
+================================================================================
+
+7.1 TENANT CONFIGURATION
+-------------------------
+Tenants can be determined by:
+1. Subdomain (e.g., tenant1.your-domain.com)
+2. Domain (e.g., different-domain.com)
+3. Environment variable
+4. User selection
+
+7.2 SUBDOMAIN-BASED TENANT
+---------------------------
+File: src/utils/tenant.utils.ts
+
+export const getTenantFromSubdomain = (): string => {
+  if (typeof window === 'undefined') return process.env.NEXT_PUBLIC_TENANT_ID!;
+
+  const hostname = window.location.hostname;
+
+  // Extract subdomain
+  const parts = hostname.split('.');
+
+  // If subdomain exists (e.g., tenant1.your-domain.com)
+  if (parts.length >= 3) {
+    const subdomain = parts[0];
+    return `tenant_${subdomain}`;
+  }
+
+  // Default tenant
+  return process.env.NEXT_PUBLIC_TENANT_ID!;
+};
+
+7.3 DOMAIN MAPPING
+------------------
+File: src/config/tenant.config.ts
+
+export const DOMAIN_TENANT_MAP: Record<string, string> = {
+  'localhost:3000': 'tenant_demo_001',
+  'app1.your-domain.com': 'tenant_app1',
+  'app2.your-domain.com': 'tenant_app2',
+  'custom-domain.com': 'tenant_custom',
+};
+
+export const getTenantFromDomain = (): string => {
+  if (typeof window === 'undefined') return process.env.NEXT_PUBLIC_TENANT_ID!;
+
+  const hostname = window.location.host; // includes port
+  return DOMAIN_TENANT_MAP[hostname] || process.env.NEXT_PUBLIC_TENANT_ID!;
+};
+
+7.4 UPDATE AUTH SERVICE
+-----------------------
+Modify authService to automatically include tenant:
+
+import { getTenantFromDomain } from '@/config/tenant.config';
+
+class AuthService {
+  private getTenantId(): string {
+    return getTenantFromDomain();
+  }
+
+  async signUp(data: Omit<SignUpRequest, 'tenantId'>): Promise<SignUpResponse> {
+    const response = await apiClient.post<SignUpResponse>('/api/auth/sign-up', {
+      ...data,
+      tenantId: this.getTenantId(),
+    });
+    return response.data;
+  }
+
+  // Similar for other methods...
+}
+
+================================================================================
+8. ERROR HANDLING
+================================================================================
+
+8.1 ERROR TYPES
+----------------
+Backend returns RFC 7807 Problem Details format:
+
+{
+  "type": "https://api.clerk.com/problem/authentication-error",
+  "title": "Clerk Authentication Error",
+  "status": 401,
+  "detail": "Invalid credentials",
+  "errorCode": "AUTH_001",
+  "message": "error.clerk.invalidCredentials",
+  "path": "/api/auth/sign-in"
+}
+
+8.2 ERROR CODE MAPPING
+-----------------------
+File: src/utils/error-messages.ts
+
+export const ERROR_MESSAGES: Record<string, string> = {
+  // Authentication errors
+  AUTH_001: 'Invalid email or password. Please try again.',
+  AUTH_002: 'Your session has expired. Please sign in again.',
+  AUTH_003: 'Invalid authentication token.',
+  AUTH_004: 'User not found.',
+  AUTH_005: 'An account with this email already exists.',
+  AUTH_006: 'Invalid tenant configuration.',
+  AUTH_007: 'You do not have permission to access this resource.',
+  AUTH_008: 'Too many requests. Please try again later.',
+  AUTH_009: 'Webhook signature verification failed.',
+  AUTH_010: 'Social login failed. Please try again.',
+
+  // Default
+  DEFAULT: 'An unexpected error occurred. Please try again.',
+};
+
+export const getErrorMessage = (errorCode?: string): string => {
+  if (!errorCode) return ERROR_MESSAGES.DEFAULT;
+  return ERROR_MESSAGES[errorCode] || ERROR_MESSAGES.DEFAULT;
+};
+
+8.3 ERROR DISPLAY COMPONENT
+----------------------------
+File: src/components/common/ErrorMessage.tsx
+
+'use client';
+
+import { getErrorMessage } from '@/utils/error-messages';
+
+interface ErrorMessageProps {
+  error: any;
+  onDismiss?: () => void;
+}
+
+export default function ErrorMessage({ error, onDismiss }: ErrorMessageProps) {
+  if (!error) return null;
+
+  const errorCode = error?.response?.data?.errorCode;
+  const errorDetail = error?.response?.data?.detail;
+  const message = getErrorMessage(errorCode) || errorDetail || error.message;
+
+  return (
+    <div className="bg-red-50 border border-red-200 rounded-md p-4">
+      <div className="flex items-start">
+        <div className="flex-shrink-0">
+          <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+          </svg>
+        </div>
+        <div className="ml-3 flex-1">
+          <p className="text-sm text-red-800">{message}</p>
+          {errorCode && (
+            <p className="text-xs text-red-600 mt-1">Error Code: {errorCode}</p>
+          )}
+        </div>
+        {onDismiss && (
+          <button
+            onClick={onDismiss}
+            className="ml-3 flex-shrink-0 text-red-400 hover:text-red-600"
+          >
+            <span className="sr-only">Dismiss</span>
+            ×
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+================================================================================
+9. TESTING GUIDE
+================================================================================
+
+9.1 UNIT TESTS
+---------------
+File: __tests__/services/auth.service.test.ts
+
+import { authService } from '@/services/api/auth.service';
+import { apiClient } from '@/services/api/client';
+
+jest.mock('@/services/api/client');
+
+describe('AuthService', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('signIn', () => {
+    it('should sign in successfully', async () => {
+      const mockResponse = {
+        data: {
+          accessToken: 'mock-token',
+          refreshToken: 'mock-refresh',
+          expiresIn: 3600,
+          user: { id: 1, email: 'test@example.com' },
+        },
+      };
+
+      (apiClient.post as jest.Mock).mockResolvedValue(mockResponse);
+
+      const result = await authService.signIn({
+        email: 'test@example.com',
+        password: 'password',
+        tenantId: 'tenant_demo_001',
+      });
+
+      expect(result).toEqual(mockResponse.data);
+      expect(apiClient.post).toHaveBeenCalledWith('/api/auth/sign-in', {
+        email: 'test@example.com',
+        password: 'password',
+        tenantId: 'tenant_demo_001',
+      });
+    });
+
+    it('should handle sign in error', async () => {
+      const mockError = {
+        response: {
+          data: {
+            errorCode: 'AUTH_001',
+            detail: 'Invalid credentials',
+          },
+        },
+      };
+
+      (apiClient.post as jest.Mock).mockRejectedValue(mockError);
+
+      await expect(
+        authService.signIn({
+          email: 'test@example.com',
+          password: 'wrong',
+          tenantId: 'tenant_demo_001',
+        })
+      ).rejects.toEqual(mockError);
+    });
+  });
+});
+
+9.2 INTEGRATION TESTS
+----------------------
+File: __tests__/integration/auth-flow.test.tsx
+
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { AuthProvider } from '@/contexts/AuthContext';
+import SignInForm from '@/components/auth/SignInForm';
+import { authService } from '@/services/api/auth.service';
+
+jest.mock('@/services/api/auth.service');
+
+describe('Authentication Flow', () => {
+  it('should sign in user successfully', async () => {
+    const mockSignIn = jest.fn().mockResolvedValue({
+      accessToken: 'mock-token',
+      refreshToken: 'mock-refresh',
+      user: { id: 1, email: 'test@example.com' },
+    });
+
+    (authService.signIn as jest.Mock) = mockSignIn;
+
+    render(
+      <AuthProvider>
+        <SignInForm />
+      </AuthProvider>
+    );
+
+    const emailInput = screen.getByLabelText(/email/i);
+    const passwordInput = screen.getByLabelText(/password/i);
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
+
+    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+    fireEvent.change(passwordInput, { target: { value: 'password123' } });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(mockSignIn).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        password: 'password123',
+        tenantId: expect.any(String),
+      });
+    });
+  });
+});
+
+9.3 E2E TESTS (Playwright/Cypress)
+-----------------------------------
+File: e2e/auth.spec.ts
+
+import { test, expect } from '@playwright/test';
+
+test.describe('Authentication', () => {
+  test('should sign in with valid credentials', async ({ page }) => {
+    await page.goto('http://localhost:3000/sign-in');
+
+    await page.fill('input[type="email"]', 'test@example.com');
+    await page.fill('input[type="password"]', 'SecurePassword123!');
+    await page.click('button[type="submit"]');
+
+    await expect(page).toHaveURL('http://localhost:3000/dashboard');
+    await expect(page.locator('text=Welcome')).toBeVisible();
+  });
+
+  test('should show error with invalid credentials', async ({ page }) => {
+    await page.goto('http://localhost:3000/sign-in');
+
+    await page.fill('input[type="email"]', 'test@example.com');
+    await page.fill('input[type="password"]', 'wrongpassword');
+    await page.click('button[type="submit"]');
+
+    await expect(page.locator('text=/Invalid email or password/i')).toBeVisible();
+  });
+
+  test('should sign in with Google', async ({ page }) => {
+    await page.goto('http://localhost:3000/sign-in');
+
+    await page.click('button:has-text("Continue with Google")');
+
+    // Mock Google OAuth flow
+    // ...
+
+    await expect(page).toHaveURL('http://localhost:3000/dashboard');
+  });
+});
+
+================================================================================
+10. DEPLOYMENT CHECKLIST
+================================================================================
+
+10.1 PRE-DEPLOYMENT
+-------------------
+Backend:
+✅ Backend deployed and accessible
+✅ CORS configured for frontend domain
+✅ SSL/TLS certificates installed
+✅ Rate limiting enabled
+✅ Clerk production credentials configured
+✅ Database migrations applied
+
+Frontend:
+✅ Environment variables configured
+✅ API base URL pointing to production backend
+✅ Tenant ID configured
+✅ Google OAuth credentials (production)
+✅ Error handling tested
+✅ Token refresh working
+✅ Protected routes working
+
+10.2 DEPLOYMENT STEPS
+----------------------
+1. Update environment variables:
+   NEXT_PUBLIC_API_BASE_URL=https://api.your-domain.com
+   NEXT_PUBLIC_TENANT_ID=tenant_production_001
+   NEXT_PUBLIC_GOOGLE_CLIENT_ID=production-client-id
+
+2. Build frontend:
+   npm run build
+
+3. Test production build locally:
+   npm run start
+
+4. Deploy to hosting (Vercel/Netlify/AWS):
+   vercel deploy --prod
+   # or
+   netlify deploy --prod
+
+5. Verify deployment:
+   - Test sign-up flow
+   - Test sign-in flow
+   - Test social login
+   - Test protected routes
+   - Test token refresh
+   - Test sign-out
+
+10.3 POST-DEPLOYMENT
+--------------------
+✅ Monitor error logs
+✅ Check authentication success rate
+✅ Verify token refresh working
+✅ Test from multiple devices/browsers
+✅ Verify social login working
+✅ Check performance metrics
+✅ Update documentation
+
+================================================================================
+11. TROUBLESHOOTING
+================================================================================
+
+11.1 COMMON ISSUES
+------------------
+Issue: "Network Error" or CORS error
+Solution:
+- Verify backend CORS configuration includes frontend domain
+- Check API_BASE_URL is correct
+- Ensure backend is running and accessible
+
+Issue: "401 Unauthorized" on protected routes
+Solution:
+- Check if access token is stored correctly
+- Verify token is being sent in Authorization header
+- Check if token refresh is working
+- Verify backend JWT validation
+
+Issue: Token refresh loop
+Solution:
+- Check if refresh token is stored correctly
+- Verify refresh endpoint is working
+- Ensure _retry flag is set to prevent infinite loops
+
+Issue: Social login not working
+Solution:
+- Verify OAuth client ID is correct
+- Check redirect URIs in Google/Facebook console
+- Ensure idToken is being sent to backend
+- Check backend social login configuration
+
+Issue: "Invalid tenant" error
+Solution:
+- Verify NEXT_PUBLIC_TENANT_ID is set correctly
+- Check tenant determination logic
+- Ensure backend has tenant configured
+
+11.2 DEBUGGING TIPS
+-------------------
+1. Enable debug logging in API client:
+   console.log('Request:', config);
+   console.log('Response:', response);
+
+2. Check Network tab in browser DevTools:
+   - Verify request headers (Authorization, X-Tenant-ID)
+   - Check response status codes
+   - Inspect error responses
+
+3. Test backend endpoints directly:
+   curl -X POST http://localhost:8080/api/auth/sign-in \
+     -H "Content-Type: application/json" \
+     -d '{"email":"test@example.com","password":"password"}'
+
+4. Verify token format:
+   console.log('Access Token:', tokenService.getAccessToken());
+   // Should be: eyJhbGci...
+
+================================================================================
+12. MIGRATION TIMELINE
+================================================================================
+
+Week 1: Setup & Infrastructure
+-------------------------------
+Day 1-2: Project setup
+✅ Install dependencies
+✅ Create service layer structure
+✅ Configure environment variables
+
+Day 3-4: API client
+✅ Implement API client with interceptors
+✅ Implement token service
+✅ Test API connectivity
+
+Day 5: Auth context
+✅ Create auth context
+✅ Implement auth provider
+
+Week 2: Core Authentication
+----------------------------
+Day 1-2: Sign Up
+✅ Create sign-up form
+✅ Integrate with backend API
+✅ Handle errors
+✅ Test sign-up flow
+
+Day 3-4: Sign In
+✅ Create sign-in form
+✅ Integrate with backend API
+✅ Handle errors
+✅ Test sign-in flow
+
+Day 5: Token Management
+✅ Implement token refresh
+✅ Handle expired tokens
+✅ Test token lifecycle
+
+Week 3: Social Login & Advanced Features
+-----------------------------------------
+Day 1-2: Google OAuth
+✅ Integrate Google Sign-In
+✅ Handle OAuth callback
+✅ Test Google login
+
+Day 3: Other Social Providers
+✅ Implement Facebook login (if needed)
+✅ Implement GitHub login (if needed)
+
+Day 4-5: User Profile & Sign Out
+✅ Fetch current user
+✅ Display user profile
+✅ Implement sign-out
+✅ Clear tokens on sign-out
+
+Week 4: Protected Routes & Error Handling
+------------------------------------------
+Day 1-2: Route Protection
+✅ Implement protected route wrapper
+✅ Handle unauthorized access
+✅ Redirect to sign-in
+
+Day 3-4: Error Handling
+✅ Create error display components
+✅ Map error codes to messages
+✅ User-friendly error messages
+
+Day 5: Testing
+✅ Unit tests
+✅ Integration tests
+✅ Manual testing
+
+Week 5: Testing & Deployment
+-----------------------------
+Day 1-2: Integration Testing
+✅ End-to-end testing
+✅ Cross-browser testing
+✅ Mobile testing
+
+Day 3: Performance Testing
+✅ Load testing
+✅ Token refresh testing
+✅ Error scenario testing
+
+Day 4: User Acceptance Testing
+✅ QA testing
+✅ Stakeholder review
+✅ Bug fixes
+
+Day 5: Production Deployment
+✅ Deploy to production
+✅ Monitor deployment
+✅ Verify all flows
+✅ Documentation update
+
+================================================================================
+13. SUCCESS METRICS
+================================================================================
+
+13.1 TECHNICAL METRICS
+-----------------------
+✅ Authentication Success Rate: >99%
+✅ API Response Time: <200ms (p95)
+✅ Token Refresh Success Rate: >99.9%
+✅ Error Rate: <0.1%
+✅ Uptime: >99.9%
+
+13.2 USER METRICS
+------------------
+✅ Sign-up Completion Rate: >80%
+✅ Sign-in Success Rate: >95%
+✅ Social Login Adoption: >50%
+✅ Session Duration: Average 30+ minutes
+✅ Bounce Rate: <20%
+
+13.3 BUSINESS METRICS
+---------------------
+✅ User Acquisition: Track new users
+✅ User Retention: Track active users
+✅ Authentication Errors: Track and reduce
+✅ Support Tickets: Track auth-related issues
+
+================================================================================
+14. SUPPORT & DOCUMENTATION
+================================================================================
+
+14.1 DEVELOPER RESOURCES
+------------------------
+Backend API Documentation:
+http://localhost:8080/swagger-ui/index.html
+
+Backend API Docs (Production):
+https://api.your-domain.com/swagger-ui/index.html
+
+API Integration Guide:
+/documentation/clerk_integration/API_Integration_Guide.md
+
+Postman Collection:
+/documentation/clerk_integration/Postman_Collection_Guide.md
+
+14.2 INTERNAL DOCUMENTATION
+---------------------------
+Location: C:\Users\gain\git\malayalees-us-site\docs\
+├── AUTH_INTEGRATION.md (this document)
+├── API_REFERENCE.md (generated)
+├── TROUBLESHOOTING.md
+└── CHANGELOG.md
+
+14.3 SUPPORT CHANNELS
+---------------------
+Technical Issues:
+- Slack: #tech-support
+- Email: dev-team@your-domain.com
+
+Backend Issues:
+- Backend Team: backend-team@your-domain.com
+- GitHub Issues: https://github.com/your-org/backend/issues
+
+Frontend Issues:
+- Frontend Team: frontend-team@your-domain.com
+- GitHub Issues: https://github.com/your-org/frontend/issues
+
+================================================================================
+15. APPENDIX
+================================================================================
+
+15.1 GLOSSARY
+-------------
+JWT: JSON Web Token - Token format for authentication
+OAuth: Open Authorization - Protocol for social login
+Clerk: Third-party authentication service
+Tenant: Isolated user environment in multi-tenant system
+CORS: Cross-Origin Resource Sharing - Security mechanism
+API: Application Programming Interface
+SDK: Software Development Kit
+
+15.2 RELATED DOCUMENTS
+----------------------
+- Backend PRD: /documentation/clerk_integration/PRD.txt
+- Backend API Guide: /documentation/clerk_integration/API_Integration_Guide.md
+- Security Audit: /documentation/clerk_integration/Security_Audit_Guide.md
+- Production Deployment: /documentation/clerk_integration/Production_Deployment_Guide.md
+
+15.3 VERSION HISTORY
+--------------------
+Version 1.0 - October 13, 2025
+- Initial document
+- Complete frontend integration guide
+- Code examples for all flows
+- Testing guide
+- Deployment checklist
+
+15.4 CONTACT INFORMATION
+------------------------
+Document Owner: Development Team
+Last Updated: October 13, 2025
+Next Review: November 13, 2025
+
+For questions or suggestions:
+Email: dev-team@your-domain.com
+Slack: #auth-integration
+
+================================================================================
+END OF DOCUMENT
+================================================================================
+
+

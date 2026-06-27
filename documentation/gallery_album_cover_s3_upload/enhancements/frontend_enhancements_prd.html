@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Cover S3 — Frontend Enhancements PRD (v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Cover S3 — Frontend Enhancements PRD</h1>
+    <p class="doc-meta">
+        <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 18, 2026<br>
+        <strong>Repo:</strong> <code>mosc-temp</code> &nbsp;|&nbsp;
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a>
+    </p>
+
+    <div class="lead">
+        <p>Replace manual “Cover Image URL” text entry with an S3 upload control on admin album pages, following <code>FocusGroupCoverImageUpload</code>. Keep “set cover from existing album photo” on the media management page.</p>
+    </div>
+
+    <h2>1. New component</h2>
+    <div class="section-container">
+        <div class="section-header"><code>GalleryAlbumCoverImageUpload.tsx</code></div>
+        <p><strong>Location:</strong> <code>src/components/admin/gallery/GalleryAlbumCoverImageUpload.tsx</code> (or <code>src/components/GalleryAlbumCoverImageUpload.tsx</code>)</p>
+        <p><strong>Props:</strong></p>
+        <ul>
+            <li><code>albumId: number</code> — required (album must exist before upload)</li>
+            <li><code>currentImageUrl?: string</code></li>
+            <li><code>onImageUploaded: (url: string) => void</code></li>
+            <li><code>onError: (message: string) => void</code></li>
+            <li><code>disabled?: boolean</code></li>
+        </ul>
+        <p><strong>Behavior:</strong> Clone <code>FocusGroupCoverImageUpload.tsx</code> — drag/drop, file picker, 10 MB limit, image/* validation, success toast, preview thumbnail.</p>
+        <p><strong>Upload URL (browser → Next proxy):</strong></p>
+        <pre>/api/proxy/event-medias/upload/gallery-album-cover-image?albumId={id}&amp;title=Gallery Album Cover Image&amp;description=Cover image for gallery album&amp;isPublic=true</pre>
+        <p>On success: read <code>response.fileUrl</code>, call <code>onImageUploaded(fileUrl)</code>. Backend already updated <code>gallery_album.cover_image_url</code>; parent form should sync local state.</p>
+    </div>
+
+    <h2>2. Server actions (<code>ApiServerActions.ts</code>)</h2>
+    <table>
+        <thead><tr><th>Function</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>
+            <tr><td><code>setAlbumCoverImageServer(albumId, coverImageUrl)</code></td><td>Exists</td><td>Keep for “set from existing media” flow</td></tr>
+            <tr><td><code>uploadGalleryAlbumCoverServer</code></td><td>New (optional)</td><td>If multipart cannot run from client: accept FormData in server action and forward to proxy with JWT — prefer client→proxy pattern used by focus group unless rules require server-only</td></tr>
+        </tbody>
+    </table>
+    <div class="info-box">
+        Focus group uses <strong>client component → same-origin proxy</strong> for multipart. Gallery cover should match unless project policy changes. “Set as cover” on media page should move to <code>setAlbumCoverImageServer</code> (server action) instead of client <code>fetch('/api/proxy/gallery-albums/...')</code>.
+    </div>
+
+    <h2>3. Admin pages to update</h2>
+    <table>
+        <thead><tr><th>Page</th><th>File</th><th>Change</th></tr></thead>
+        <tbody>
+            <tr><td>Album edit</td><td><code>AdminAlbumEditClient.tsx</code></td><td>Replace URL input with <code>GalleryAlbumCoverImageUpload</code> + optional read-only URL display; keep advanced “paste URL” collapsed (optional)</td></tr>
+            <tr><td>Album create modal</td><td><code>AdminAlbumListClient.tsx</code></td><td>Step 1: create album without cover → Step 2: redirect to edit with upload OR show upload disabled until save returns <code>id</code></td></tr>
+            <tr><td>Album media</td><td><code>AlbumMediaClientPage.tsx</code></td><td>Refactor <code>handleSetCoverImage</code> to server action; show badge on current cover photo</td></tr>
+            <tr><td>Public gallery</td><td><code>GalleryAlbumCard.tsx</code>, <code>/gallery</code></td><td>No change if <code>coverImageUrl</code> is S3 — ensure <code>next.config.mjs</code> remotePatterns includes bucket (already configured for event media)</td></tr>
+        </tbody>
+    </table>
+
+    <h2>4. UX requirements</h2>
+    <ul>
+        <li>Show current cover preview (16:9 or card aspect) with “Replace” affordance.</li>
+        <li>Loading spinner during upload; disable form submit while uploading.</li>
+        <li>On upload success, update form state <code>coverImageUrl</code> without requiring separate Save (backend already persisted) OR auto-save on upload — document chosen behavior in implementation.</li>
+        <li>Recommended dimensions hint: 800×600 or 1200×800 JPG/PNG (match static MOSC gallery art).</li>
+        <li>Error dialog for invalid type/size (reuse <code>ErrorDialog</code> from focus group component).</li>
+    </ul>
+
+    <h2>5. Create-album flow constraint</h2>
+    <div class="warning-box">
+        Upload requires <code>albumId</code>. For “create with cover in one step”, either: (A) create album first via POST then upload cover on returned id, or (B) defer cover upload to edit page only. <strong>Recommend (A)</strong> in create modal: after successful create, if user selected a file, immediately call upload endpoint before closing modal.
+    </div>
+
+    <h2>6. DTO / types</h2>
+    <p>No change to <code>GalleryAlbumDTO</code> — <code>coverImageUrl?: string</code> already sufficient.</p>
+
+    <h2>7. Acceptance tests (manual)</h2>
+    <ol>
+        <li>Edit album → upload PNG → preview updates → DB <code>cover_image_url</code> is S3 HTTPS.</li>
+        <li>Public <code>/gallery</code> shows new cover (hard refresh).</li>
+        <li>Media page → “Set as cover” on existing photo → album cover updates.</li>
+        <li>Upload invalid PDF → error message, no DB change.</li>
+        <li>Album without cover → fallback to first album media or placeholder (existing public behavior).</li>
+    </ol>
+
+    <p><a href="generic_enhancement_prd.html">← Back to index</a></p>
+
+</body>
+</html>

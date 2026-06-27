@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Step-by-step guide to installing the Impeccable design skill globally on a Windows machine so it is available to Cursor IDE in every project, including mosc-temp. Covers installation paths, the npx skills CLI, the cursor-cli vs Cursor IDE detection caveat, parameter-customizable PowerShell commands, verification, usage in chat, the 23 sub-commands, optional standalone CLI, and maintenance.">
+  <title>Install the Impeccable Skill Globally for Cursor IDE on Windows</title>
+  <style>
+    :root {
+      --text: #333;
+      --code-bg: #e8f4f8;
+      --code-text: #0d3b66;
+      --code-border: #b8d4e3;
+      --blue-accent: #0066cc;
+      --blue-accent-dark: #0052a3;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--text);
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #fff;
+    }
+
+    h1 {
+      font-size: 2em;
+      color: #1a1a1a;
+      border-bottom: 3px solid var(--blue-accent);
+      padding-bottom: 0.5rem;
+      margin-top: 0;
+    }
+
+    h2 {
+      font-size: 1.5em;
+      color: var(--blue-accent);
+      border-left: 4px solid var(--blue-accent);
+      padding-left: 15px;
+      margin-top: 2rem;
+    }
+
+    h3 {
+      font-size: 1.2em;
+      color: #444;
+      margin-top: 1.25rem;
+    }
+
+    h4 {
+      font-size: 1.05em;
+      color: #555;
+      margin-top: 1rem;
+    }
+
+    .meta {
+      color: #666;
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+    }
+
+    /* ----- Code, inline ----- */
+    code, .code-inline, .code-highlight {
+      background-color: var(--code-bg);
+      color: var(--code-text);
+      padding: 2px 6px;
+      border-radius: 3px;
+      border: 1px solid var(--code-border);
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+
+    /* ----- Code blocks ----- */
+    pre.code-block, pre {
+      background-color: var(--code-bg);
+      color: var(--code-text);
+      padding: 15px;
+      border-radius: 5px;
+      border: 1px solid var(--code-border);
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 15px 0;
+    }
+
+    pre code, pre.code-block code {
+      background-color: transparent;
+      color: var(--code-text);
+      padding: 0;
+      border: none;
+    }
+
+    /* ----- Script name pill ----- */
+    .script-name {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      display: inline-block;
+      box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+      border: none;
+      font-size: 0.9em;
+    }
+
+    /* ----- Table of contents ----- */
+    .toc {
+      background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+      border-left: 4px solid var(--blue-accent);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+    }
+    .toc h2 {
+      margin-top: 0;
+      border: none;
+      padding: 0;
+      color: var(--blue-accent);
+      font-size: 1.3em;
+    }
+    .toc ul {
+      margin: 0.5rem 0;
+      padding-left: 1.25rem;
+    }
+    .toc a {
+      color: var(--blue-accent);
+      text-decoration: none;
+    }
+    .toc a:hover { text-decoration: underline; }
+
+    /* ----- Section containers ----- */
+    .section-container {
+      background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+      border-left: 4px solid var(--blue-accent);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+    }
+    .section-container.parameters {
+      background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+      border-left-color: #ff9800;
+    }
+    .section-container.output {
+      background: linear-gradient(135deg, #e6ffe6 0%, #ccffcc 100%);
+      border-left-color: #28a745;
+    }
+    .section-container.usage {
+      background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%);
+      border-left-color: #9c27b0;
+    }
+
+    .section-header {
+      background: linear-gradient(135deg, var(--blue-accent) 0%, var(--blue-accent-dark) 100%);
+      color: white;
+      padding: 12px 20px;
+      margin: -20px -20px 20px -20px;
+      border-radius: 8px 8px 0 0;
+      font-size: 1.2em;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-header.parameters {
+      background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    }
+    .section-header.output {
+      background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+    }
+    .section-header.usage {
+      background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+    }
+
+    /* ----- Section intro ----- */
+    .section-intro {
+      background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+      border-left: 4px solid var(--blue-accent);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+    }
+
+    /* ----- Parameters list ----- */
+    .parameters-list {
+      background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+      border-left: 4px solid #ff9800;
+      border-radius: 8px;
+      padding: 15px 20px;
+      margin: 15px 0;
+    }
+    .parameters-list strong {
+      color: #ff9800;
+      font-weight: bold;
+    }
+
+    /* ----- Info / warning / success / error boxes ----- */
+    .info {
+      background: #d1ecf1;
+      border: 1px solid #0c5460;
+      border-left-width: 4px;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    .warning {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-left-width: 4px;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    .success {
+      background: #d4edda;
+      border: 1px solid #28a745;
+      border-left-width: 4px;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    .error {
+      background: #f8d7da;
+      border: 1px solid #dc3545;
+      border-left-width: 4px;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+
+    .info code, .info .code-highlight,
+    .warning code, .warning .code-highlight,
+    .success code, .success .code-highlight,
+    .error code, .error .code-highlight {
+      background-color: var(--code-bg);
+      color: var(--code-text);
+      padding: 2px 6px;
+      border-radius: 3px;
+      border: 1px solid var(--code-border);
+      font-family: 'Courier New', monospace;
+    }
+
+    /* ----- Tables ----- */
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 15px 0;
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: linear-gradient(135deg, var(--blue-accent) 0%, var(--blue-accent-dark) 100%);
+      color: white;
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 0.9em;
+      letter-spacing: 0.5px;
+    }
+    tr:nth-child(even) { background-color: #f8f9fa; }
+    tr:hover {
+      background-color: #e3f2fd;
+      transition: background-color 0.2s ease;
+    }
+    td code {
+      background-color: var(--code-bg);
+      color: var(--code-text);
+      padding: 3px 8px;
+      border-radius: 3px;
+      border: 1px solid var(--code-border);
+      font-family: 'Courier New', monospace;
+    }
+
+    /* ----- Command blocks ----- */
+    .command-block {
+      border: 2px solid var(--blue-accent);
+      border-radius: 8px;
+      margin: 20px 0;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .command-block.setup {
+      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+      border-color: #2196f3;
+    }
+    .command-block.expedite {
+      background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+      border-color: #9c27b0;
+    }
+    .command-block.advance {
+      background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+      border-color: #ff9800;
+    }
+    .command-block.verify {
+      background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+      border-color: #4caf50;
+    }
+    .command-block.default {
+      background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+      border-color: var(--blue-accent);
+    }
+
+    .command-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      background: rgba(255,255,255,0.55);
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+    .command-type {
+      font-weight: bold;
+      color: #333;
+      font-size: 0.95em;
+    }
+    .command-header-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Parameter inputs */
+    .command-parameters {
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.55);
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+    .command-parameters h5 {
+      margin: 0 0 12px 0;
+      font-size: 0.9em;
+      color: #333;
+      font-weight: bold;
+    }
+    .parameter-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .parameter-group.single {
+      grid-template-columns: 1fr;
+    }
+    .parameter-input {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .parameter-input label {
+      font-size: 0.8em;
+      color: #555;
+      font-weight: 600;
+    }
+    .parameter-input input {
+      padding: 8px 12px;
+      border: 2px solid #ddd;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+      transition: border-color 0.2s ease;
+      background: white;
+      color: #222;
+    }
+    .parameter-input input:focus {
+      outline: none;
+      border-color: var(--blue-accent);
+      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+    }
+    .parameter-input input::placeholder {
+      color: #999;
+      font-style: italic;
+    }
+
+    /* Command body */
+    .command-content {
+      background-color: var(--code-bg);
+      color: var(--code-text);
+      padding: 15px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.95em;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border-bottom: 1px solid var(--code-border);
+    }
+
+    /* Windows single-line */
+    .command-single-line {
+      background-color: var(--code-bg);
+      padding: 12px 15px;
+      border-top: 1px solid var(--code-border);
+    }
+    .command-single-line-label {
+      font-size: 0.75em;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    .command-single-line code {
+      display: block;
+      background-color: white;
+      color: var(--code-text);
+      border: 1px solid var(--code-border);
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Copy buttons */
+    .copy-button {
+      background-color: var(--blue-accent);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85em;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+    .copy-button:hover {
+      background-color: var(--blue-accent-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .copy-button.copied { background-color: #28a745; }
+
+    .copy-button-template {
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85em;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+    .copy-button-template:hover {
+      background-color: #5a6268;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .copy-button-template.copied { background-color: #28a745; }
+
+    .copy-button:focus, .copy-button-template:focus {
+      outline: 2px solid #ffeb3b;
+      outline-offset: 2px;
+    }
+
+    /* Prompt block (for chat invocations) */
+    .prompt-block {
+      border: 2px solid #6c757d;
+      border-radius: 8px;
+      margin: 15px 0;
+      overflow: hidden;
+      background: white;
+    }
+    .prompt-block-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 14px;
+      background: linear-gradient(135deg, #495057 0%, #343a40 100%);
+      color: white;
+      font-size: 0.85em;
+      font-weight: bold;
+      letter-spacing: 0.3px;
+    }
+    .prompt-block-body {
+      padding: 12px 14px;
+      background-color: var(--code-bg);
+      color: var(--code-text);
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Misc */
+    ul, ol { margin-left: 20px; }
+    li { margin-bottom: 6px; }
+    hr { border: none; border-top: 1px solid #ddd; margin: 2rem 0; }
+
+    footer.doc-footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid #ddd;
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    @media (max-width: 768px) {
+      body { padding: 10px; }
+      .command-block { font-size: 0.9em; }
+      .parameter-group { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <main>
+    <h1>Install the Impeccable Skill Globally for Cursor IDE on Windows</h1>
+    <p class="meta">Location: <code class="code-inline">documentation/cursor_skills/INSTALL_IMPECCABLE_SKILL_GLOBAL_GUIDE.html</code> &middot; Audience: developers using Cursor IDE on Windows who want one design-skill install to apply to every project on the machine.</p>
+
+    <nav class="toc" aria-label="Table of contents">
+      <h2>Table of contents</h2>
+      <ul>
+        <li><a href="#overview">1. What is Impeccable?</a></li>
+        <li><a href="#prereqs">2. Prerequisites</a></li>
+        <li><a href="#paths">3. Cursor skill paths on this machine</a></li>
+        <li><a href="#install">4. Installation, step by step</a>
+          <ul>
+            <li><a href="#install-1">4.1 Install via <code class="code-inline">npx skills add</code></a></li>
+            <li><a href="#install-2">4.2 Verify where it landed</a></li>
+            <li><a href="#install-3">4.3 Copy into the Cursor IDE skills folder</a></li>
+            <li><a href="#install-4">4.4 Final verification</a></li>
+          </ul>
+        </li>
+        <li><a href="#why-two-step">5. Why the two-step install (cursor-cli vs Cursor IDE)</a></li>
+        <li><a href="#usage">6. How to use Impeccable in this project (or any project)</a></li>
+        <li><a href="#commands">7. The 23 Impeccable sub-commands</a></li>
+        <li><a href="#detect">8. Optional: standalone CLI for anti-pattern detection</a></li>
+        <li><a href="#maintenance">9. Maintenance: list, update, remove</a></li>
+        <li><a href="#caveats">10. Caveats and limitations</a></li>
+        <li><a href="#troubleshoot">11. Troubleshooting</a></li>
+        <li><a href="#refs">12. References</a></li>
+      </ul>
+    </nav>
+
+    <!-- 1. Overview -->
+    <section id="overview" aria-labelledby="h-overview">
+      <h2 id="h-overview">1. What is Impeccable?</h2>
+      <div class="section-intro">
+        <p><strong>Impeccable</strong> is a design-focused agent skill (one <code class="code-inline">SKILL.md</code> + 7 reference docs + 23 sub-commands + a regex anti-pattern linter) that teaches your AI coding harness to design like a senior product designer. It builds on Anthropic&rsquo;s original <code class="code-inline">frontend-design</code> skill and ships under Apache 2.0. Once installed globally, the skill is available to Cursor IDE in <strong>every project</strong> on this machine without per-project setup.</p>
+        <p>The skill includes references for typography, color &amp; contrast, spatial design, motion, interaction, responsive design, UX writing, and a brand-vs-product register. The 23 commands include <code class="code-inline">craft</code>, <code class="code-inline">audit</code>, <code class="code-inline">critique</code>, <code class="code-inline">polish</code>, <code class="code-inline">distill</code>, <code class="code-inline">animate</code>, <code class="code-inline">bolder</code>, <code class="code-inline">quieter</code>, and more.</p>
+      </div>
+    </section>
+
+    <!-- 2. Prerequisites -->
+    <section id="prereqs" aria-labelledby="h-prereqs">
+      <h2 id="h-prereqs">2. Prerequisites</h2>
+
+      <div class="section-container parameters">
+        <div class="section-header parameters">&#9881;&#65039; Prerequisites</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Requirement</th>
+              <th>Why it matters</th>
+              <th>How to verify / enable</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Node.js + npx</strong></td>
+              <td>The <code>skills</code> CLI is invoked via <code>npx</code>; it clones the skill repo and copies files.</td>
+              <td>Run <code>node --version</code> and <code>npx --version</code> in PowerShell. Both should print versions (Node v20+ recommended; this machine has Node v22, npx 11).</td>
+            </tr>
+            <tr>
+              <td><strong>Cursor Nightly channel</strong></td>
+              <td>Agent Skills is a Beta feature served on Nightly first.</td>
+              <td>Cursor &rarr; Settings &rarr; Beta &rarr; switch channel to <em>Nightly</em>, then restart Cursor.</td>
+            </tr>
+            <tr>
+              <td><strong>Agent Skills enabled</strong></td>
+              <td>Without this toggle, Cursor will not load <code>SKILL.md</code> files from <code>~/.cursor/skills/</code>.</td>
+              <td>Cursor &rarr; Settings &rarr; Rules &rarr; enable <em>Agent Skills</em>.</td>
+            </tr>
+            <tr>
+              <td><strong>PowerShell</strong></td>
+              <td>This guide&rsquo;s commands are written for PowerShell on Windows (the project&rsquo;s default shell).</td>
+              <td>Open Cursor terminal &mdash; it should default to PowerShell.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info">
+        <strong>&#128161; Sanity check:</strong> If the existing global skill <code class="code-inline">html-documentation-styling</code> already shows up in your Cursor agent context (it lives at <code class="code-inline">C:\Users\&lt;you&gt;\.cursor\skills\html-documentation-styling</code>), then both the Nightly channel and Agent Skills toggle are already in place &mdash; Impeccable will be discovered the same way.
+      </div>
+    </section>
+
+    <!-- 3. Paths -->
+    <section id="paths" aria-labelledby="h-paths">
+      <h2 id="h-paths">3. Cursor skill paths on this machine</h2>
+
+      <div class="section-container">
+        <div class="section-header">&#128193; Where Cursor looks for skills</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Scope</th>
+              <th>Path on Windows</th>
+              <th>Loaded by</th>
+              <th>Use case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Global (user)</strong></td>
+              <td><code>C:\Users\&lt;you&gt;\.cursor\skills\</code></td>
+              <td><strong>Cursor IDE</strong></td>
+              <td>Skills available in every project &mdash; recommended for Impeccable.</td>
+            </tr>
+            <tr>
+              <td><strong>Project</strong></td>
+              <td><code>&lt;project&gt;\.cursor\skills\</code></td>
+              <td>Cursor IDE</td>
+              <td>Project-specific skills (e.g., <code>html-documentation-styling</code>, <code>ui-ux-pro-max</code>).</td>
+            </tr>
+            <tr>
+              <td><strong>Global (cursor-cli)</strong></td>
+              <td><code>C:\Users\&lt;you&gt;\.agents\skills\</code></td>
+              <td>Cursor CLI agent (and other <code>.agents</code> harnesses)</td>
+              <td>Auto-detected by <code>npx skills</code> when the CLI agent is on the system. Not used by the IDE.</td>
+            </tr>
+            <tr>
+              <td><strong>Cursor managed</strong></td>
+              <td><code>C:\Users\&lt;you&gt;\.cursor\skills-cursor\</code></td>
+              <td>Cursor IDE (built-ins)</td>
+              <td>Skills shipped/managed by Cursor itself. Don&rsquo;t put third-party skills here.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="warning">
+        <strong>&#9888;&#65039; Key point:</strong> The <code class="code-inline">npx skills add</code> CLI auto-detects <code class="code-inline">cursor-cli</code> on this machine and writes to <code class="code-inline">~\.agents\skills\</code>, not <code class="code-inline">~\.cursor\skills\</code>. Cursor IDE only reads <code class="code-inline">~\.cursor\skills\</code>, so we copy the skill there in <a href="#install-3">step 4.3</a>.
+      </div>
+    </section>
+
+    <!-- 4. Installation -->
+    <section id="install" aria-labelledby="h-install">
+      <h2 id="h-install">4. Installation, step by step</h2>
+
+      <div class="section-intro">
+        <p>Run all four steps in <strong>PowerShell</strong> from the Cursor terminal (or any PowerShell window). Each command block has a <strong>Template</strong> button (copies the original sample) and a <strong>Copy</strong> button (copies the customized command using your inputs). The Windows single-line version below each block is the exact string that goes to the clipboard.</p>
+      </div>
+
+      <!-- 4.1 -->
+      <h3 id="install-1">4.1 Install via <code class="code-inline">npx skills add</code></h3>
+      <p>Use the official <code>vercel-labs/skills</code> CLI to fetch and install the Impeccable skill. The defaults below install <code class="script-name">pbakaus/impeccable</code> globally for the <code class="code-inline">cursor</code> agent, copying files (avoids symlinks that need admin on Windows) and skipping prompts.</p>
+
+      <div class="command-block setup"
+           data-command-type="setup"
+           data-command-base="npx -y skills add"
+           data-template-command="npx -y skills add pbakaus/impeccable -g -a cursor --copy -y">
+        <div class="command-header">
+          <span class="command-type">Setup &mdash; Install Skill</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'install-1-add')" title="Copy template command" aria-label="Copy template command to clipboard">&#128196; Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'install-1-add')" title="Copy customized command" aria-label="Copy customized command to clipboard">&#128203; Copy</button>
+          </div>
+        </div>
+        <div class="command-parameters">
+          <h5>&#128295; Customize parameters:</h5>
+          <div class="parameter-group">
+            <div class="parameter-input">
+              <label for="install-1-add-source">Skill source (owner/repo or URL):</label>
+              <input type="text" id="install-1-add-source" placeholder="pbakaus/impeccable" value="pbakaus/impeccable" oninput="updateCommand('install-1-add', 'source', this.value)">
+            </div>
+            <div class="parameter-input">
+              <label for="install-1-add-agent">Agent (use <code>cursor</code> for IDE):</label>
+              <input type="text" id="install-1-add-agent" placeholder="cursor" value="cursor" oninput="updateCommand('install-1-add', 'agent', this.value)">
+            </div>
+          </div>
+          <div class="parameter-group">
+            <div class="parameter-input">
+              <label for="install-1-add-scope">Scope flag:</label>
+              <input type="text" id="install-1-add-scope" placeholder="-g" value="-g" oninput="updateCommand('install-1-add', 'scope', this.value)">
+            </div>
+            <div class="parameter-input">
+              <label for="install-1-add-mode">Install mode flag:</label>
+              <input type="text" id="install-1-add-mode" placeholder="--copy" value="--copy" oninput="updateCommand('install-1-add', 'mode', this.value)">
+            </div>
+          </div>
+        </div>
+        <div class="command-content" id="install-1-add">npx -y skills add pbakaus/impeccable -g -a cursor --copy -y</div>
+        <div class="command-single-line" id="install-1-add-single">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="install-1-add-single-code">npx -y skills add pbakaus/impeccable -g -a cursor --copy -y</code>
+        </div>
+      </div>
+
+      <div class="parameters-list">
+        <p><strong>Parameter notes:</strong></p>
+        <ul>
+          <li><code>source</code> &mdash; the GitHub <code>owner/repo</code>, full URL, or local path of any agent-skills repo (default <code>pbakaus/impeccable</code>).</li>
+          <li><code>agent</code> &mdash; <code>cursor</code> for Cursor IDE, <code>claude-code</code>, <code>codex</code>, etc.</li>
+          <li><code>scope</code> &mdash; <code>-g</code> for global (per user), omit for project-local install into <code>./.agents/skills/</code>.</li>
+          <li><code>mode</code> &mdash; <code>--copy</code> creates independent file copies. Recommended on Windows because the symlink alternative requires Administrator or Developer Mode.</li>
+        </ul>
+      </div>
+
+      <div class="success">
+        <strong>&#9989; Expected result:</strong> Output ends with &ldquo;<code class="code-highlight">Installation complete</code>&rdquo; and shows the install path. On this machine the CLI auto-detected <code class="code-highlight">cursor-cli</code> and wrote to <code class="code-highlight">~\.agents\skills\impeccable</code>.
+      </div>
+
+      <!-- 4.2 -->
+      <h3 id="install-2">4.2 Verify where it landed</h3>
+      <p>Quickly confirm the files exist and check whether they are also in the Cursor IDE skills folder yet (they won&rsquo;t be after step 4.1 alone &mdash; that&rsquo;s expected).</p>
+
+      <div class="command-block verify"
+           data-command-type="verify"
+           data-command-base="if (Test-Path"
+           data-template-command="if (Test-Path &quot;C:\Users\$env:USERNAME\.agents\skills\impeccable&quot;) { dir &quot;C:\Users\$env:USERNAME\.agents\skills\impeccable&quot; }; if (Test-Path &quot;C:\Users\$env:USERNAME\.cursor\skills\impeccable&quot;) { Write-Host &quot;EXISTS in Cursor IDE&quot; } else { Write-Host &quot;NOT yet in Cursor IDE - run step 4.3&quot; }">
+        <div class="command-header">
+          <span class="command-type">Verify &mdash; Check Install Location</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'install-2-where')" title="Copy template command" aria-label="Copy template command to clipboard">&#128196; Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'install-2-where')" title="Copy customized command" aria-label="Copy customized command to clipboard">&#128203; Copy</button>
+          </div>
+        </div>
+        <div class="command-parameters">
+          <h5>&#128295; Customize parameters:</h5>
+          <div class="parameter-group">
+            <div class="parameter-input">
+              <label for="install-2-where-cli-path">cursor-cli path:</label>
+              <input type="text" id="install-2-where-cli-path" placeholder="C:\Users\$env:USERNAME\.agents\skills\impeccable" value="C:\Users\$env:USERNAME\.agents\skills\impeccable" oninput="updateCommand('install-2-where', 'cli-path', this.value)">
+            </div>
+            <div class="parameter-input">
+              <label for="install-2-where-ide-path">Cursor IDE path:</label>
+              <input type="text" id="install-2-where-ide-path" placeholder="C:\Users\$env:USERNAME\.cursor\skills\impeccable" value="C:\Users\$env:USERNAME\.cursor\skills\impeccable" oninput="updateCommand('install-2-where', 'ide-path', this.value)">
+            </div>
+          </div>
+        </div>
+        <div class="command-content" id="install-2-where">if (Test-Path "C:\Users\$env:USERNAME\.agents\skills\impeccable") { dir "C:\Users\$env:USERNAME\.agents\skills\impeccable" }; if (Test-Path "C:\Users\$env:USERNAME\.cursor\skills\impeccable") { Write-Host "EXISTS in Cursor IDE" } else { Write-Host "NOT yet in Cursor IDE - run step 4.3" }</div>
+        <div class="command-single-line" id="install-2-where-single">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="install-2-where-single-code">if (Test-Path "C:\Users\$env:USERNAME\.agents\skills\impeccable") { dir "C:\Users\$env:USERNAME\.agents\skills\impeccable" }; if (Test-Path "C:\Users\$env:USERNAME\.cursor\skills\impeccable") { Write-Host "EXISTS in Cursor IDE" } else { Write-Host "NOT yet in Cursor IDE - run step 4.3" }</code>
+        </div>
+      </div>
+
+      <div class="info">
+        <strong>&#128161; Expected output after step 4.1 only:</strong> a <code class="code-highlight">SKILL.md</code> + <code class="code-highlight">reference/</code> + <code class="code-highlight">scripts/</code> listing under <code class="code-highlight">~\.agents\skills\impeccable</code>, plus the message <code class="code-highlight">NOT yet in Cursor IDE - run step 4.3</code>. That&rsquo;s normal &mdash; proceed to 4.3.
+      </div>
+
+      <!-- 4.3 -->
+      <h3 id="install-3">4.3 Copy into the Cursor IDE skills folder</h3>
+      <p>Cursor IDE only reads <code class="code-inline">~\.cursor\skills\</code>. Because <code>--copy</code> was used in step 4.1 (real files, not symlinks), we can safely copy the folder into the IDE&rsquo;s skills directory. After this command, both <code>cursor-cli</code> and Cursor IDE will see the skill.</p>
+
+      <div class="command-block setup"
+           data-command-type="setup"
+           data-command-base="Copy-Item -Path"
+           data-template-command="Copy-Item -Path &quot;C:\Users\$env:USERNAME\.agents\skills\impeccable&quot; -Destination &quot;C:\Users\$env:USERNAME\.cursor\skills\impeccable&quot; -Recurse -Force">
+        <div class="command-header">
+          <span class="command-type">Setup &mdash; Copy to Cursor IDE</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'install-3-copy')" title="Copy template command" aria-label="Copy template command to clipboard">&#128196; Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'install-3-copy')" title="Copy customized command" aria-label="Copy customized command to clipboard">&#128203; Copy</button>
+          </div>
+        </div>
+        <div class="command-parameters">
+          <h5>&#128295; Customize parameters:</h5>
+          <div class="parameter-group">
+            <div class="parameter-input">
+              <label for="install-3-copy-source">Source path:</label>
+              <input type="text" id="install-3-copy-source" placeholder="C:\Users\$env:USERNAME\.agents\skills\impeccable" value="C:\Users\$env:USERNAME\.agents\skills\impeccable" oninput="updateCommand('install-3-copy', 'source', this.value)">
+            </div>
+            <div class="parameter-input">
+              <label for="install-3-copy-dest">Destination path:</label>
+              <input type="text" id="install-3-copy-dest" placeholder="C:\Users\$env:USERNAME\.cursor\skills\impeccable" value="C:\Users\$env:USERNAME\.cursor\skills\impeccable" oninput="updateCommand('install-3-copy', 'dest', this.value)">
+            </div>
+          </div>
+          <div class="parameter-group single">
+            <div class="parameter-input">
+              <label for="install-3-copy-flags">Copy flags:</label>
+              <input type="text" id="install-3-copy-flags" placeholder="-Recurse -Force" value="-Recurse -Force" oninput="updateCommand('install-3-copy', 'flags', this.value)">
+            </div>
+          </div>
+        </div>
+        <div class="command-content" id="install-3-copy">Copy-Item -Path "C:\Users\$env:USERNAME\.agents\skills\impeccable" -Destination "C:\Users\$env:USERNAME\.cursor\skills\impeccable" -Recurse -Force</div>
+        <div class="command-single-line" id="install-3-copy-single">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="install-3-copy-single-code">Copy-Item -Path "C:\Users\$env:USERNAME\.agents\skills\impeccable" -Destination "C:\Users\$env:USERNAME\.cursor\skills\impeccable" -Recurse -Force</code>
+        </div>
+      </div>
+
+      <!-- 4.4 -->
+      <h3 id="install-4">4.4 Final verification</h3>
+      <p>List globally-installed skills and confirm Impeccable now shows up. The CLI&rsquo;s &ldquo;<code>Agents:</code>&rdquo; line for <code>impeccable</code> may say <em>not linked</em> &mdash; that is fine because Cursor IDE picks up skills via the file copy at <code>~\.cursor\skills\</code>, not via the CLI&rsquo;s symlink registry.</p>
+
+      <div class="command-block verify"
+           data-command-type="verify"
+           data-command-base="npx skills list"
+           data-template-command="npx skills list -g">
+        <div class="command-header">
+          <span class="command-type">Verify &mdash; List Global Skills</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'install-4-list')" title="Copy template command" aria-label="Copy template command to clipboard">&#128196; Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'install-4-list')" title="Copy customized command" aria-label="Copy customized command to clipboard">&#128203; Copy</button>
+          </div>
+        </div>
+        <div class="command-parameters">
+          <h5>&#128295; Customize parameters:</h5>
+          <div class="parameter-group single">
+            <div class="parameter-input">
+              <label for="install-4-list-scope">Scope flag (use <code>-g</code> for global):</label>
+              <input type="text" id="install-4-list-scope" placeholder="-g" value="-g" oninput="updateCommand('install-4-list', 'scope', this.value)">
+            </div>
+          </div>
+        </div>
+        <div class="command-content" id="install-4-list">npx skills list -g</div>
+        <div class="command-single-line" id="install-4-list-single">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="install-4-list-single-code">npx skills list -g</code>
+        </div>
+      </div>
+
+      <div class="section-container output">
+        <div class="section-header output">&#128202; Expected output</div>
+        <pre class="code-block">Global Skills
+
+impeccable                   ~\.agents\skills\impeccable
+  Agents: not linked
+html-documentation-styling   ~\.claude\skills\html-documentation-styling
+  Agents: Claude Code, Cursor</pre>
+        <p style="margin-bottom:0;">Plus, <code>~\.cursor\skills\impeccable\SKILL.md</code> exists (verified by step 4.3). Restart Cursor or open a new chat &mdash; the agent will discover the skill.</p>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- 5. Why two-step -->
+    <section id="why-two-step" aria-labelledby="h-why">
+      <h2 id="h-why">5. Why the two-step install (cursor-cli vs Cursor IDE)</h2>
+      <p>The <code class="code-inline">npx skills</code> CLI from <code>vercel-labs/skills</code> auto-detects which agent harnesses are present on the machine and routes the install accordingly. On this machine it sees the <strong>Cursor CLI</strong> binary and treats the install target as <code class="code-inline">cursor-cli</code>, whose global path is <code class="code-inline">~\.agents\skills\</code> &mdash; a generic location shared with several other CLI agents (Cline, Dexto, Warp, etc.).</p>
+
+      <p>The Cursor <strong>IDE</strong>, however, expects skills under <code class="code-inline">~\.cursor\skills\</code>. They are two different agents with two different skill folders. Step 4.3 closes that gap by putting a real copy of the skill in the IDE&rsquo;s folder. Both copies can co-exist safely &mdash; the CLI and the IDE simply read from different places.</p>
+
+      <div class="info">
+        <strong>&#128161; Could we skip the copy?</strong> Yes &mdash; if you only use the <code>cursor-cli</code> agent and not the IDE, the file at <code>~\.agents\skills\impeccable</code> is enough. But for IDE chat usage (the most common case in this workspace), the copy in step 4.3 is required.
+      </div>
+    </section>
+
+    <!-- 6. Usage -->
+    <section id="usage" aria-labelledby="h-usage">
+      <h2 id="h-usage">6. How to use Impeccable in this project (or any project)</h2>
+
+      <div class="section-container usage">
+        <div class="section-header usage">&#128221; Invoking Impeccable in chat</div>
+        <p>Because the skill lives at <code>~\.cursor\skills\impeccable\</code>, it is automatically available in <strong>every project</strong> on this machine, including <code>mosc-temp</code>. There is no per-project setup required. The agent will trigger the skill automatically when your prompt matches its description (frontend design, audit, polish, etc.), and you can also be explicit by naming a sub-command.</p>
+      </div>
+
+      <h3>6.1 Sample chat prompts (copy &amp; paste into a Cursor chat)</h3>
+
+      <div class="prompt-block">
+        <div class="prompt-block-header">
+          <span>Prompt &mdash; audit a component</span>
+          <button type="button" class="copy-button" onclick="copyPromptText(this, 'prompt-audit-header')" title="Copy prompt to clipboard" aria-label="Copy prompt to clipboard">&#128203; Copy</button>
+        </div>
+        <div class="prompt-block-body" id="prompt-audit-header">Use the impeccable skill to audit @src/components/Header.tsx. Focus on hierarchy, touch targets, accessibility, and any AI-slop tells (Inter, purple-to-blue gradients, nested cards, gray text on tinted backgrounds). Return a prioritized fix list with file/line references.</div>
+      </div>
+
+      <div class="prompt-block">
+        <div class="prompt-block-header">
+          <span>Prompt &mdash; critique a page</span>
+          <button type="button" class="copy-button" onclick="copyPromptText(this, 'prompt-critique-membership')" title="Copy prompt to clipboard" aria-label="Copy prompt to clipboard">&#128203; Copy</button>
+        </div>
+        <div class="prompt-block-body" id="prompt-critique-membership">Run impeccable critique on the Membership page (@src/app/membership/MembershipClient.tsx). I want UX-design feedback: visual hierarchy, scan path, emotional resonance, copy clarity. Don&rsquo;t change code yet &mdash; just give me the critique.</div>
+      </div>
+
+      <div class="prompt-block">
+        <div class="prompt-block-header">
+          <span>Prompt &mdash; polish before shipping</span>
+          <button type="button" class="copy-button" onclick="copyPromptText(this, 'prompt-polish-admin')" title="Copy prompt to clipboard" aria-label="Copy prompt to clipboard">&#128203; Copy</button>
+        </div>
+        <div class="prompt-block-body" id="prompt-polish-admin">Run impeccable polish on the admin dashboard (@src/app/admin/page.tsx and the buttons it renders). Align the buttons with our admin_home_button_groups_styling rule, fix any inconsistent paddings or color uses, and prepare it for ship. List every change you made.</div>
+      </div>
+
+      <div class="prompt-block">
+        <div class="prompt-block-header">
+          <span>Prompt &mdash; first-time project setup</span>
+          <button type="button" class="copy-button" onclick="copyPromptText(this, 'prompt-teach')" title="Copy prompt to clipboard" aria-label="Copy prompt to clipboard">&#128203; Copy</button>
+        </div>
+        <div class="prompt-block-body" id="prompt-teach">Use impeccable teach for this project. Read the existing components, the Tailwind config, and the .cursor/rules/mosc_styling_standards.mdc rule, then write PRODUCT.md and DESIGN.md at the repo root capturing our brand, users, tone, anti-references, color tokens, typography, and component conventions. Ask me anything you cannot infer from the code.</div>
+      </div>
+
+      <div class="info">
+        <strong>&#128161; Recommended one-time per project:</strong> Run <code class="code-highlight">impeccable teach</code> once. The skill enforces a &ldquo;context gate&rdquo; before any design work and will prompt for <code class="code-highlight">PRODUCT.md</code> if it&rsquo;s missing. Having those files makes every later <code class="code-highlight">audit</code> / <code class="code-highlight">polish</code> / <code class="code-highlight">craft</code> session sharply more on-brand.
+      </div>
+    </section>
+
+    <!-- 7. Sub-commands reference -->
+    <section id="commands" aria-labelledby="h-commands">
+      <h2 id="h-commands">7. The 23 Impeccable sub-commands</h2>
+      <p>All sub-commands have a corresponding reference file under <code>~\.cursor\skills\impeccable\reference\&lt;command&gt;.md</code>. Name the sub-command in your prompt (e.g. &ldquo;run impeccable polish on &hellip;&rdquo;) and the agent will load that reference.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>What it does</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>craft</code></td><td>Full shape-then-build flow with visual iteration.</td></tr>
+          <tr><td><code>teach</code></td><td>One-time setup: gather design context, write root <code>PRODUCT.md</code> and <code>DESIGN.md</code>.</td></tr>
+          <tr><td><code>document</code></td><td>Generate root <code>DESIGN.md</code> from existing project code.</td></tr>
+          <tr><td><code>extract</code></td><td>Pull reusable components and tokens into the design system.</td></tr>
+          <tr><td><code>shape</code></td><td>Plan UX/UI before writing code.</td></tr>
+          <tr><td><code>critique</code></td><td>UX design review: hierarchy, clarity, emotional resonance.</td></tr>
+          <tr><td><code>audit</code></td><td>Run technical quality checks (a11y, performance, responsive).</td></tr>
+          <tr><td><code>polish</code></td><td>Final pass, design-system alignment, shipping readiness.</td></tr>
+          <tr><td><code>bolder</code></td><td>Amplify boring designs.</td></tr>
+          <tr><td><code>quieter</code></td><td>Tone down overly bold designs.</td></tr>
+          <tr><td><code>distill</code></td><td>Strip to essence.</td></tr>
+          <tr><td><code>harden</code></td><td>Error handling, i18n, text overflow, edge cases.</td></tr>
+          <tr><td><code>onboard</code></td><td>First-run flows, empty states, activation paths.</td></tr>
+          <tr><td><code>animate</code></td><td>Add purposeful motion.</td></tr>
+          <tr><td><code>colorize</code></td><td>Introduce strategic color.</td></tr>
+          <tr><td><code>typeset</code></td><td>Fix font choices, hierarchy, sizing.</td></tr>
+          <tr><td><code>layout</code></td><td>Fix layout, spacing, visual rhythm.</td></tr>
+          <tr><td><code>delight</code></td><td>Add moments of joy.</td></tr>
+          <tr><td><code>overdrive</code></td><td>Add technically extraordinary effects.</td></tr>
+          <tr><td><code>clarify</code></td><td>Improve unclear UX copy.</td></tr>
+          <tr><td><code>adapt</code></td><td>Adapt for different devices.</td></tr>
+          <tr><td><code>optimize</code></td><td>Performance improvements.</td></tr>
+          <tr><td><code>live</code></td><td>Visual variant mode: iterate on elements in the browser.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 8. Detect CLI -->
+    <section id="detect" aria-labelledby="h-detect">
+      <h2 id="h-detect">8. Optional: standalone CLI for anti-pattern detection</h2>
+      <p>Impeccable also ships a regex-based linter that runs without invoking the agent &mdash; useful in CI or for a quick local scan. It catches 24 issues across AI slop (side-tab borders, purple gradients, bounce easing, dark glows) and general design quality (line length, cramped padding, small touch targets, skipped headings, etc.).</p>
+
+      <div class="command-block verify"
+           data-command-type="verify"
+           data-command-base="npx impeccable detect"
+           data-template-command="npx impeccable detect src/">
+        <div class="command-header">
+          <span class="command-type">Verify &mdash; Anti-Pattern Scan</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'detect-1-scan')" title="Copy template command" aria-label="Copy template command to clipboard">&#128196; Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'detect-1-scan')" title="Copy customized command" aria-label="Copy customized command to clipboard">&#128203; Copy</button>
+          </div>
+        </div>
+        <div class="command-parameters">
+          <h5>&#128295; Customize parameters:</h5>
+          <div class="parameter-group">
+            <div class="parameter-input">
+              <label for="detect-1-scan-target">Target (path or URL):</label>
+              <input type="text" id="detect-1-scan-target" placeholder="src/" value="src/" oninput="updateCommand('detect-1-scan', 'target', this.value)">
+            </div>
+            <div class="parameter-input">
+              <label for="detect-1-scan-flags">Optional flags (e.g. <code>--fast --json</code>):</label>
+              <input type="text" id="detect-1-scan-flags" placeholder="--fast --json" oninput="updateCommand('detect-1-scan', 'flags', this.value)">
+            </div>
+          </div>
+        </div>
+        <div class="command-content" id="detect-1-scan">npx impeccable detect src/</div>
+        <div class="command-single-line" id="detect-1-scan-single">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="detect-1-scan-single-code">npx impeccable detect src/</code>
+        </div>
+      </div>
+
+      <div class="parameters-list">
+        <p><strong>Useful targets:</strong></p>
+        <ul>
+          <li><code>src/</code> &mdash; scan a directory (default).</li>
+          <li><code>index.html</code> &mdash; scan a single HTML file.</li>
+          <li><code>https://example.com</code> &mdash; scan a URL via Puppeteer.</li>
+          <li><code>--fast</code> &mdash; regex-only, skip LLM &amp; browser checks.</li>
+          <li><code>--json</code> &mdash; machine-readable output for CI.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 9. Maintenance -->
+    <section id="maintenance" aria-labelledby="h-maintenance">
+      <h2 id="h-maintenance">9. Maintenance: list, update, remove</h2>
+
+      <h3>9.1 Update Impeccable to the latest version</h3>
+      <p>The CLI re-clones the source and refreshes its registered copy. Because Cursor IDE uses an independent file copy under <code>~\.cursor\skills\impeccable\</code>, run the <code>Copy-Item</code> from <a href="#install-3">step 4.3</a> again afterwards to refresh the IDE-side copy.</p>
+
+      <div class="command-block expedite"
+           data-command-type="expedite"
+           data-command-base="npx skills update"
+           data-template-command="npx skills update impeccable -g -y">
+        <div class="command-header">
+          <span class="command-type">Expedite &mdash; Update Skill</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'maint-1-update')" title="Copy template command" aria-label="Copy template command to clipboard">&#128196; Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'maint-1-update')" title="Copy customized command" aria-label="Copy customized command to clipboard">&#128203; Copy</button>
+          </div>
+        </div>
+        <div class="command-parameters">
+          <h5>&#128295; Customize parameters:</h5>
+          <div class="parameter-group">
+            <div class="parameter-input">
+              <label for="maint-1-update-name">Skill name:</label>
+              <input type="text" id="maint-1-update-name" placeholder="impeccable" value="impeccable" oninput="updateCommand('maint-1-update', 'name', this.value)">
+            </div>
+            <div class="parameter-input">
+              <label for="maint-1-update-flags">Flags:</label>
+              <input type="text" id="maint-1-update-flags" placeholder="-g -y" value="-g -y" oninput="updateCommand('maint-1-update', 'flags', this.value)">
+            </div>
+          </div>
+        </div>
+        <div class="command-content" id="maint-1-update">npx skills update impeccable -g -y</div>
+        <div class="command-single-line" id="maint-1-update-single">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="maint-1-update-single-code">npx skills update impeccable -g -y</code>
+        </div>
+      </div>
+
+      <h3>9.2 Remove Impeccable</h3>
+      <p>Removes the CLI-managed copy. To fully uninstall, also delete the IDE copy at <code>~\.cursor\skills\impeccable</code> manually (see the second command below).</p>
+
+      <div class="command-block expedite"
+           data-command-type="expedite"
+           data-command-base="npx skills remove"
+           data-template-command="npx skills remove impeccable -g -y">
+        <div class="command-header">
+          <span class="command-type">Expedite &mdash; Remove (CLI registry)</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'maint-2-remove')" title="Copy template command" aria-label="Copy template command to clipboard">&#128196; Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'maint-2-remove')" title="Copy customized command" aria-label="Copy customized command to clipboard">&#128203; Copy</button>
+          </div>
+        </div>
+        <div class="command-parameters">
+          <h5>&#128295; Customize parameters:</h5>
+          <div class="parameter-group">
+            <div class="parameter-input">
+              <label for="maint-2-remove-name">Skill name:</label>
+              <input type="text" id="maint-2-remove-name" placeholder="impeccable" value="impeccable" oninput="updateCommand('maint-2-remove', 'name', this.value)">
+            </div>
+            <div class="parameter-input">
+              <label for="maint-2-remove-flags">Flags:</label>
+              <input type="text" id="maint-2-remove-flags" placeholder="-g -y" value="-g -y" oninput="updateCommand('maint-2-remove', 'flags', this.value)">
+            </div>
+          </div>
+        </div>
+        <div class="command-content" id="maint-2-remove">npx skills remove impeccable -g -y</div>
+        <div class="command-single-line" id="maint-2-remove-single">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="maint-2-remove-single-code">npx skills remove impeccable -g -y</code>
+        </div>
+      </div>
+
+      <div class="command-block expedite"
+           data-command-type="expedite"
+           data-command-base="Remove-Item -Path"
+           data-template-command="Remove-Item -Path &quot;C:\Users\$env:USERNAME\.cursor\skills\impeccable&quot; -Recurse -Force">
+        <div class="command-header">
+          <span class="command-type">Expedite &mdash; Remove (Cursor IDE copy)</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'maint-3-purge')" title="Copy template command" aria-label="Copy template command to clipboard">&#128196; Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'maint-3-purge')" title="Copy customized command" aria-label="Copy customized command to clipboard">&#128203; Copy</button>
+          </div>
+        </div>
+        <div class="command-parameters">
+          <h5>&#128295; Customize parameters:</h5>
+          <div class="parameter-group single">
+            <div class="parameter-input">
+              <label for="maint-3-purge-path">IDE skill path:</label>
+              <input type="text" id="maint-3-purge-path" placeholder="C:\Users\$env:USERNAME\.cursor\skills\impeccable" value="C:\Users\$env:USERNAME\.cursor\skills\impeccable" oninput="updateCommand('maint-3-purge', 'path', this.value)">
+            </div>
+          </div>
+        </div>
+        <div class="command-content" id="maint-3-purge">Remove-Item -Path "C:\Users\$env:USERNAME\.cursor\skills\impeccable" -Recurse -Force</div>
+        <div class="command-single-line" id="maint-3-purge-single">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="maint-3-purge-single-code">Remove-Item -Path "C:\Users\$env:USERNAME\.cursor\skills\impeccable" -Recurse -Force</code>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. Caveats -->
+    <section id="caveats" aria-labelledby="h-caveats">
+      <h2 id="h-caveats">10. Caveats and limitations</h2>
+      <div class="warning">
+        <ul>
+          <li><strong>No native slash commands in Cursor.</strong> Cursor IDE doesn&rsquo;t support the <code class="code-highlight">/impeccable craft</code>-style slash command syntax used by Claude Code or Codex. Invoke the skill via natural language (e.g. &ldquo;use impeccable polish on &hellip;&rdquo;).</li>
+          <li><strong>Two file copies, two upgrade steps.</strong> The CLI manages <code class="code-highlight">~\.agents\skills\impeccable</code>; the IDE reads <code class="code-highlight">~\.cursor\skills\impeccable</code>. After every <code class="code-highlight">npx skills update</code>, re-run the <code>Copy-Item</code> from <a href="#install-3">step 4.3</a> to refresh the IDE copy.</li>
+          <li><strong>Symlinks need admin on Windows.</strong> That&rsquo;s why we used <code class="code-highlight">--copy</code> in step 4.1. If you have Windows Developer Mode enabled (or run as Administrator), you can drop <code class="code-highlight">--copy</code> for a single source-of-truth install.</li>
+          <li><strong>Template placeholders in <code>SKILL.md</code> are intentional.</strong> Strings like <code class="code-highlight">{{command_prefix}}</code> and <code class="code-highlight">{{scripts_path}}</code> are resolved at runtime by the agent based on the harness; do not hand-edit them.</li>
+          <li><strong>Skill auto-trigger may collide with your project rules.</strong> If Impeccable&rsquo;s defaults conflict with project conventions (this repo has detailed Cursor rules in <code class="code-highlight">.cursor/rules/</code>), run <code class="code-highlight">impeccable teach</code> once so it captures and respects them in <code class="code-highlight">PRODUCT.md</code> / <code class="code-highlight">DESIGN.md</code>.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 11. Troubleshooting -->
+    <section id="troubleshoot" aria-labelledby="h-trouble">
+      <h2 id="h-trouble">11. Troubleshooting</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Symptom</th>
+            <th>Likely cause</th>
+            <th>Fix</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Cursor agent doesn&rsquo;t mention Impeccable in available skills</td>
+            <td>Cursor not on Nightly, or Agent Skills toggle off, or skill not yet under <code>~\.cursor\skills\</code></td>
+            <td>Verify prerequisites in &sect;2; re-run step 4.3; restart Cursor.</td>
+          </tr>
+          <tr>
+            <td><code>npx skills add</code> says <em>cursor-cli detected</em></td>
+            <td>Expected behavior &mdash; the CLI sees the Cursor CLI binary and uses <code>~\.agents\skills\</code></td>
+            <td>Continue with step 4.3 to copy into the IDE folder. Do not try to override the auto-detect.</td>
+          </tr>
+          <tr>
+            <td><code>npx skills list -g</code> shows <code>Agents: not linked</code> for Impeccable</td>
+            <td>Impeccable was installed by step 4.1 but has no symlink registered to a CLI agent</td>
+            <td>Harmless. Cursor IDE reads from the file copy at <code>~\.cursor\skills\impeccable</code> and will still load it.</td>
+          </tr>
+          <tr>
+            <td>Symlink permission error during install</td>
+            <td>Default install tried symlinks without Administrator/Dev Mode</td>
+            <td>Re-run step 4.1 with <code>--copy</code> (it&rsquo;s in the template) or open PowerShell as Administrator.</td>
+          </tr>
+          <tr>
+            <td>Skill is loaded but ignores brand voice / colors</td>
+            <td>No <code>PRODUCT.md</code> or <code>DESIGN.md</code> at the project root</td>
+            <td>Run <code>impeccable teach</code> in chat once. The skill enforces this gate before designing.</td>
+          </tr>
+          <tr>
+            <td>Update doesn&rsquo;t change behavior in the IDE</td>
+            <td>Updated the CLI registry copy but not the IDE copy</td>
+            <td>After <code>npx skills update</code>, re-run the <code>Copy-Item</code> from step 4.3.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 12. References -->
+    <section id="refs" aria-labelledby="h-refs">
+      <h2 id="h-refs">12. References</h2>
+      <ul>
+        <li><strong>Impeccable repository:</strong> <code>https://github.com/pbakaus/impeccable</code> &mdash; source, releases, issue tracker.</li>
+        <li><strong>Impeccable showcase &amp; case studies:</strong> <code>https://impeccable.style</code></li>
+        <li><strong><code>skills</code> CLI (the <code>npx skills add</code> tool):</strong> <code>https://github.com/vercel-labs/skills</code> &mdash; supports 51+ agents including Cursor, Claude Code, Codex, OpenCode.</li>
+        <li><strong>Cursor Agent Skills docs:</strong> <code>https://cursor.com/docs/context/skills</code></li>
+        <li><strong>Anthropic <code>frontend-design</code> skill</strong> (Impeccable&rsquo;s ancestor): <code>https://github.com/anthropics/skills/tree/main/skills/frontend-design</code></li>
+        <li><strong>Project styling rules referenced by Impeccable&rsquo;s <code>teach</code>:</strong> <code>.cursor/rules/mosc_styling_standards.mdc</code>, <code>.cursor/rules/icons_buttons_styles.mdc</code>, and other rules in <code>.cursor/rules/</code>.</li>
+      </ul>
+    </section>
+
+    <footer class="doc-footer">
+      <p>Document purpose: a reproducible install runbook for adding the Impeccable design skill to Cursor IDE globally on a Windows machine, with the cursor-cli vs IDE detection caveat documented and parameterized PowerShell commands. Update step 4 paths if you migrate to a different user profile or Cursor reorganizes its skills directory.</p>
+    </footer>
+  </main>
+
+  <script>
+    // ===== Command parameter store =====
+    const commandParams = {};
+
+    // ===== Build a command string for a given commandId, using stored params =====
+    function buildCommandString(commandId) {
+      const block = document.getElementById(commandId)?.closest('.command-block');
+      if (!block) return '';
+      const baseCommand = block.getAttribute('data-command-base') || '';
+      const params = commandParams[commandId] || {};
+
+      // ---- Per-block command builders ----
+      // 4.1: npx -y skills add <source> <scope> -a <agent> <mode> -y
+      if (commandId === 'install-1-add') {
+        const source = (params['source'] || '').trim();
+        const scope = (params['scope'] || '').trim();
+        const agent = (params['agent'] || '').trim();
+        const mode = (params['mode'] || '').trim();
+        let cmd = baseCommand; // "npx -y skills add"
+        if (source) cmd += ' ' + source;
+        if (scope) cmd += ' ' + scope;
+        if (agent) cmd += ' -a ' + agent;
+        if (mode) cmd += ' ' + mode;
+        cmd += ' -y';
+        return cmd;
+      }
+
+      // 4.2: composite verify command with two paths
+      if (commandId === 'install-2-where') {
+        const cli = (params['cli-path'] || '').trim();
+        const ide = (params['ide-path'] || '').trim();
+        return 'if (Test-Path "' + cli + '") { dir "' + cli + '" }; ' +
+               'if (Test-Path "' + ide + '") { Write-Host "EXISTS in Cursor IDE" } ' +
+               'else { Write-Host "NOT yet in Cursor IDE - run step 4.3" }';
+      }
+
+      // 4.3: Copy-Item -Path "<src>" -Destination "<dest>" <flags>
+      if (commandId === 'install-3-copy') {
+        const src = (params['source'] || '').trim();
+        const dest = (params['dest'] || '').trim();
+        const flags = (params['flags'] || '').trim();
+        let cmd = 'Copy-Item -Path "' + src + '" -Destination "' + dest + '"';
+        if (flags) cmd += ' ' + flags;
+        return cmd;
+      }
+
+      // 4.4: npx skills list <scope>
+      if (commandId === 'install-4-list') {
+        const scope = (params['scope'] || '').trim();
+        let cmd = 'npx skills list';
+        if (scope) cmd += ' ' + scope;
+        return cmd;
+      }
+
+      // 8: npx impeccable detect <target> [flags]
+      if (commandId === 'detect-1-scan') {
+        const target = (params['target'] || '').trim();
+        const flags = (params['flags'] || '').trim();
+        let cmd = 'npx impeccable detect';
+        if (target) cmd += ' ' + target;
+        if (flags) cmd += ' ' + flags;
+        return cmd;
+      }
+
+      // 9.1: npx skills update <name> <flags>
+      if (commandId === 'maint-1-update') {
+        const name = (params['name'] || '').trim();
+        const flags = (params['flags'] || '').trim();
+        let cmd = 'npx skills update';
+        if (name) cmd += ' ' + name;
+        if (flags) cmd += ' ' + flags;
+        return cmd;
+      }
+
+      // 9.2: npx skills remove <name> <flags>
+      if (commandId === 'maint-2-remove') {
+        const name = (params['name'] || '').trim();
+        const flags = (params['flags'] || '').trim();
+        let cmd = 'npx skills remove';
+        if (name) cmd += ' ' + name;
+        if (flags) cmd += ' ' + flags;
+        return cmd;
+      }
+
+      // 9.3: Remove-Item -Path "<path>" -Recurse -Force
+      if (commandId === 'maint-3-purge') {
+        const path = (params['path'] || '').trim();
+        return 'Remove-Item -Path "' + path + '" -Recurse -Force';
+      }
+
+      // Fallback: return existing element text
+      const el = document.getElementById(commandId);
+      return el ? el.textContent.trim() : baseCommand;
+    }
+
+    // ===== Update display + Windows single-line on every keystroke =====
+    function updateCommand(commandId, paramName, paramValue) {
+      if (!commandParams[commandId]) commandParams[commandId] = {};
+      commandParams[commandId][paramName] = paramValue;
+      const cmd = buildCommandString(commandId);
+      const display = document.getElementById(commandId);
+      if (display) display.textContent = cmd;
+      const single = document.getElementById(commandId + '-single-code');
+      if (single) single.textContent = cmd;
+    }
+
+    // ===== Read current input values into commandParams and refresh the display =====
+    function updateCommandFromParams(commandId) {
+      const cmd = buildCommandString(commandId);
+      const display = document.getElementById(commandId);
+      if (display) display.textContent = cmd;
+      const single = document.getElementById(commandId + '-single-code');
+      if (single) single.textContent = cmd;
+    }
+
+    // ===== Initialize on DOMContentLoaded =====
+    function initializeCommands() {
+      document.querySelectorAll('.command-block[data-command-base]').forEach(function (block) {
+        const commandContent = block.querySelector('.command-content');
+        if (!commandContent) return;
+        const commandId = commandContent.id;
+        if (!commandId) return;
+
+        block.querySelectorAll('.parameter-input input').forEach(function (input) {
+          const inputId = input.id;
+          if (!inputId || !inputId.startsWith(commandId + '-')) return;
+          const paramName = inputId.substring(commandId.length + 1);
+          const paramValue = input.value || '';
+          if (!commandParams[commandId]) commandParams[commandId] = {};
+          commandParams[commandId][paramName] = paramValue;
+        });
+
+        updateCommandFromParams(commandId);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', initializeCommands);
+
+    // ===== Fallback copy for non-Clipboard-API browsers =====
+    function fallbackCopy(text, button) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        document.execCommand('copy');
+        flashCopied(button);
+      } catch (err) {
+        console.error('Fallback copy failed:', err);
+      }
+      document.body.removeChild(ta);
+    }
+
+    function flashCopied(button) {
+      const originalText = button.textContent;
+      button.classList.add('copied');
+      button.textContent = '\u2713 Copied!';
+      setTimeout(function () {
+        button.classList.remove('copied');
+        button.textContent = originalText;
+      }, 2000);
+    }
+
+    // ===== Copy customized command =====
+    function copyCommand(button, commandId) {
+      const el = document.getElementById(commandId);
+      if (!el) return;
+      const text = el.textContent.trim();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          flashCopied(button);
+        }).catch(function (err) {
+          console.error('Copy failed:', err);
+          fallbackCopy(text, button);
+        });
+      } else {
+        fallbackCopy(text, button);
+      }
+    }
+
+    // ===== Copy template command (uses data-template-command on .command-block) =====
+    function copyTemplateCommand(button, commandId) {
+      const block = button.closest('.command-block');
+      if (!block) return;
+      let template = block.getAttribute('data-template-command') || '';
+      if (!template) {
+        const el = document.getElementById(commandId);
+        if (el) template = el.textContent.trim();
+      }
+      template = template.replace(/&quot;/g, '"');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(template).then(function () {
+          flashCopied(button);
+        }).catch(function (err) {
+          console.error('Template copy failed:', err);
+          fallbackCopy(template, button);
+        });
+      } else {
+        fallbackCopy(template, button);
+      }
+    }
+
+    // ===== Copy a prompt block by element id =====
+    function copyPromptText(button, elementId) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      const text = el.textContent.trim();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          flashCopied(button);
+        }).catch(function (err) {
+          console.error('Prompt copy failed:', err);
+          fallbackCopy(text, button);
+        });
+      } else {
+        fallbackCopy(text, button);
+      }
+    }
+  </script>
+</body>
+</html>

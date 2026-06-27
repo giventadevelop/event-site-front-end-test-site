@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TestSprite Test Report - 12/28/2025, 7:12:20 PM</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        .summary {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .summary-card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid;
+        }
+        .summary-card.total { border-left-color: #3b82f6; }
+        .summary-card.passed { border-left-color: #10b981; }
+        .summary-card.failed { border-left-color: #ef4444; }
+        .summary-card.filtered { border-left-color: #f59e0b; }
+        .summary-card h3 {
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6b7280;
+            margin-bottom: 10px;
+        }
+        .summary-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #1f2937;
+        }
+        .summary-card.total .number { color: #3b82f6; }
+        .summary-card.passed .number { color: #10b981; }
+        .summary-card.failed .number { color: #ef4444; }
+        .summary-card.filtered .number { color: #f59e0b; }
+        .test-section {
+            padding: 30px;
+        }
+        .test-item {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: box-shadow 0.2s;
+        }
+        .test-item:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .test-item.passed {
+            border-left: 4px solid #10b981;
+            background: #f0fdf4;
+        }
+        .test-item.failed {
+            border-left: 4px solid #ef4444;
+            background: #fef2f2;
+        }
+        .test-item.filtered {
+            border-left: 4px solid #f59e0b;
+            background: #fffbeb;
+        }
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        .test-title {
+            flex: 1;
+        }
+        .test-title h3 {
+            font-size: 1.3em;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+        .test-title .test-id {
+            font-family: monospace;
+            font-size: 0.85em;
+            color: #6b7280;
+            margin-right: 10px;
+        }
+        .test-status-badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+        .test-status-badge.passed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .test-status-badge.failed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .test-status-badge.filtered {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .test-description {
+            color: #6b7280;
+            margin: 10px 0;
+            font-size: 0.95em;
+        }
+        .test-error {
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+        .test-error h4 {
+            color: #991b1b;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+        .test-error-content {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #374151;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #f9fafb;
+            border-radius: 4px;
+        }
+        .test-note {
+            margin-top: 10px;
+            padding: 10px;
+            background: #fef3c7;
+            border-left: 3px solid #f59e0b;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #92400e;
+        }
+        .test-visualization {
+            margin-top: 10px;
+        }
+        .test-visualization a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+        .test-visualization a:hover {
+            text-decoration: underline;
+        }
+        .error-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            background: #fee2e2;
+            color: #991b1b;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+        .warning-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            background: #fef3c7;
+            color: #92400e;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+        code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            text-align: center;
+            color: #6b7280;
+            border-top: 1px solid #e9ecef;
+            font-size: 0.9em;
+        }
+        .filter-info {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #92400e;
+        }
+        .filter-info h4 {
+            margin-bottom: 8px;
+            color: #78350f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 TestSprite Test Report</h1>
+            <p>Generated: 12/28/2025, 7:12:20 PM</p>
+            <p>Project: mosc-temp</p>
+        </div>
+
+        <div class="summary">
+            <h2>📊 Test Summary</h2>
+            <div class="summary-grid">
+                <div class="summary-card total">
+                    <h3>Total Tests</h3>
+                    <div class="number">15</div>
+                </div>
+                <div class="summary-card passed">
+                    <h3>Passed</h3>
+                    <div class="number">0</div>
+                </div>
+                <div class="summary-card failed">
+                    <h3>Failed</h3>
+                    <div class="number">15</div>
+                </div>
+                <div class="summary-card filtered">
+                    <h3>Filtered</h3>
+                    <div class="number">0</div>
+                    <p style="font-size: 0.8em; margin-top: 5px; color: #6b7280;">Expected warnings</p>
+                </div>
+            </div>
+            <div style="margin-top: 20px; text-align: center;">
+                <h3 style="color: #1f2937;">Success Rate: <span style="color: #ef4444">0.0%</span></h3>
+            </div>
+        </div>
+
+        
+
+        <div class="test-section">
+            <h2 style="margin-bottom: 20px; color: #1f2937;">📋 Test Results</h2>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">58c63802-85bd-41fb-92f4-0949744b856c</span>
+                            TC001-User Authentication via Social Login
+                        </h3>
+                        <p class="test-description">Verify that users can successfully authenticate using social login options and create user profiles.</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content"><br>Browser Console Logs:<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdVbllFVU5EVjRmaWl5dXRyYklWb3RPRHM1In0.IKVZ7k1m3UYMVK6ToWkbbonfXLgP5ypDziQT5T9nv937gz3bqyp8omsWdgD07MO9VLve9yK5lloAQ8BwcYeaNAuZ8E_3EfT0wEH2844TeR44zRAYdIUBZ1HOYPt8MxQNogroxZuHzflLqSn_xHvtxsX15dUX3iRsZJmnT8oZJsQtgm02qKX7ZEOMKd_uT8pzGhPnt6Tn46PP6NE8vpj4EB4DF_L9WM_K_L6B8jw769GjayTub9LphJQkzgcGuPRyjPUJW44RhLSXouBosdFEfP1Qj5KVo6w2hY8gPTIIaXU-Niuvjo0nE3C_fpxguDFTItM46umuRCkHdQ6uVQgYJA:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_INCOMPLETE_CHUNKED_ENCODING (at http://localhost:3000/_next/static/chunks/app/page.js:0:0)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1766966681366013//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">081e08eb-6982-4c0e-8a03-640031c6218a</span>
+                            TC002-Event Creation Workflow
+                        </h3>
+                        <p class="test-description">Test full event creation process including settings configuration, saving, and publishing.</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content">Testing stopped due to critical issue: Missing input fields on Sign In and Sign Up pages prevent login and account creation, blocking event creation process.<br>Browser Console Logs:<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_SOCKET_NOT_CONNECTED (at https://fonts.googleapis.com/css?family=Epilogue:300,400,500,600,700|Sora:400,500,600,700&display=swap:0:0)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fee43fae6623544d193ab0c26deca1d95?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/loading_events.jpg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/hero_section/default_hero_section_second_column_poster.webp" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "/images/hero_section/default_hero_section_second_column_poster.webp" was detected as the Largest Contentful Paint (LCP). Please add the "priority" property if this image is above the fold.<br>Read more: https://nextjs.org/docs/api-reference/next/image#priority (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdVbllmNEpnaWV3V2Fhdm1SalY0ajk5dnpaIn0.JKrUrEXwrcNWffCiY3ocg1R56NV5zTL5jZOUL_KNiHZKp785F6CrPrLR2Oq29yVAimd05VOkJKgkhRv40F3mWyohBDr3J0lVePyw0rTrNuwrCrolXVY9hbmhc58ixWtZvU0LtlYByEx2Eaa0F9Jo1OCQrlZkO3uDof0pPZk-rRLyGixSHnxNp8HXeM1qeJVlblmrWXpC5afRRBT7mW6TSulOGMjnRZCZ2KkoOuiEKFOAy1poreVd2UiF0W1f7RngSC-ubTzdsOhxJqTK6kf2pUbrbyBqlVphIs1LEq87BhEYjKAmEDyIuZh0QlmQF8vdaG4lUMzJlqGNSKY8pmwytg:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole DynamicHeroImage DynamicHeroImage (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole LiveEventsSection LiveEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole FeaturedEventsSection FeaturedEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="warning-badge">WARNING</span> Detected <code>scroll-behavior: smooth</code> on the <code><html></code> element. In a future version, Next.js will no longer automatically disable smooth scrolling during route transitions. To prepare for this change, add <code>data-scroll-behavior="smooth"</code> to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1766966853492381//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">372b68bc-449b-40de-adde-3450aba8e44b</span>
+                            TC003-Event Registration with Successful Stripe Payment
+                        </h3>
+                        <p class="test-description">Validate user registration flow for an event including ticket selection, payment via Stripe, and QR code generation.</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content">The user registration flow for an event including ticket selection, payment via Stripe, and QR code generation could not be fully validated because no registration or ticket selection options were available on the event details pages explored. The home page and event details pages were thoroughly tested for navigation, scrolling, and content visibility. No published events with active registration flows were found, preventing testing of payment and QR code generation steps. The site navigation and interactive elements on the home page and event details pages functioned as expected. To fully validate the registration flow, an event with active registration and payment options needs to be published or enabled. Task is marked as incomplete due to this limitation.<br>Browser Console Logs:<br><span class="warning-badge">WARNING</span> Image with src "/images/hero_section/default_hero_section_second_column_poster.webp" was detected as the Largest Contentful Paint (LCP). Please add the "priority" property if this image is above the fold.<br>Read more: https://nextjs.org/docs/api-reference/next/image#priority (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fee43fae6623544d193ab0c26deca1d95?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/hero_section/default_hero_section_second_column_poster.webp" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/loading_events.jpg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdVbllGdEdrajZSVlJ1VHF4OGo3elBZaFlCIn0.hRxRtqTAQfLOpBwdy_bQa7OCfPQYBEr_Ymhpwlm6DPlEXCyWL2xlEJtll_MSUofO_0psCGu55Hb9cXStamdk5MBU7j9LQl7dVeGMuh0Y93VhM16fWewXNwt3xC9oc9w-hTuG48EhQGlMJEQAoXsEdqsF5MdjlqfaHVjaWYz5MA_RIv4TRGnFmYVltpbSs9I7b4xtwUmjdU3nGnxnrWqHAPtTasByOSCpo9EEIgr215wQeSBEYgr5jvVApc7OaHaf_3NbPQCcep7eJOouoR-14-jmdxZ8YheSKia8G3nayDwWDBWA1cdx1MPjSFJrFPzwTddbPC9fP2wAWklocX8w7g:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole DynamicHeroImage DynamicHeroImage (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole FeaturedEventsSection FeaturedEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole LiveEventsSection LiveEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="warning-badge">WARNING</span> Detected <code>scroll-behavior: smooth</code> on the <code><html></code> element. In a future version, Next.js will no longer automatically disable smooth scrolling during route transitions. To prepare for this change, add <code>data-scroll-behavior="smooth"</code> to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 403 (Forbidden) (at https://s3.amazonaws.com/bucket/performers/1/portrait/yesudas_portrait.jpg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 403 (Forbidden) (at https://s3.amazonaws.com/bucket/performers/3/portrait/zakir_portrait.jpg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 403 (Forbidden) (at https://s3.amazonaws.com/bucket/performers/2/portrait/gopi_portrait.jpg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 403 (Forbidden) (at https://s3.amazonaws.com/bucket/directors/4/photo/anitha_photo.jpg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 403 (Forbidden) (at https://s3.amazonaws.com/bucket/directors/3/photo/suresh_photo.jpg:0:0)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1766967016336905//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">64c70720-c17b-4849-bd07-0e140c2842a9</span>
+                            TC004-Event Registration Payment Failure Handling
+                        </h3>
+                        <p class="test-description">Ensure the system appropriately handles failed Stripe payment attempts during event registration.</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content">No events are currently listed on the events page, so it is not possible to navigate to an event registration page to test Stripe payment failure handling. The task cannot proceed further without available events to register for.<br>Browser Console Logs:<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/loading_events.jpg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdVbllQWndSc1RvV3FtNzdoRTByMjMzNTNWIn0.hdYY0SZl27xkJib5jM9HLNS54tjtUAAVEyJ31coznvzZU_eExKJg-wKmv31HJ0ZFIRYAEQt-IspyxfNFOPzWJXtVdbO1r29jFVjfnvE0QsJh6VuCS_QD9DKrgcrQbhJu5sfYaEXC3wJ8LyxrBg-J8C9Gqye6lMi6zQFLtZXrPG0WnW1HxrzvwUVUHTd1jbcBPkE76jsgYx7YOfoagypDoBOKz2BQnBZ-0e1nw9ao9boRXKx0UrOoWvkWFBPudFua59Zw7kfWcoX0f-SSngfjz5nstYAYhPfXADBFCOtbwWORC5jVewEOh21Zf57h8-pP4ser0MqBV93FRXsbT5Noug:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "/images/hero_section/default_hero_section_second_column_poster.webp" was detected as the Largest Contentful Paint (LCP). Please add the "priority" property if this image is above the fold.<br>Read more: https://nextjs.org/docs/api-reference/next/image#priority (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole DynamicHeroImage DynamicHeroImage (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole LiveEventsSection LiveEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole FeaturedEventsSection FeaturedEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fee43fae6623544d193ab0c26deca1d95?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Detected <code>scroll-behavior: smooth</code> on the <code><html></code> element. In a future version, Next.js will no longer automatically disable smooth scrolling during route transitions. To prepare for this change, add <code>data-scroll-behavior="smooth"</code> to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1766966704025099//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">0c9d68b1-66de-4cfe-b2cd-658c74cf05da</span>
+                            TC005-QR Code Generation and Check-in Verification
+                        </h3>
+                        <p class="test-description">Verify that QR codes generated post-registration are scannable and enable attendee check-in.</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content">No events are currently available for registration on the events page, so it is not possible to complete the event registration, obtain a QR code, or test QR code scanning for check-in. Task cannot be fully completed due to lack of events.<br>Browser Console Logs:<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fee43fae6623544d193ab0c26deca1d95?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/hero_section/default_hero_section_second_column_poster.webp" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/loading_events.jpg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdVbllPOFFFc0FwWEhnMUJMQ3VyQkxRRWczIn0.n1YKxz0Da_W9HB2j4yvYe38FBX6J-d5MXpD3vLz1hy-mKsWAxxwwsahUfadI-4YZFH07tjbGhW0EcgzC8MRslnJ_qLgLzB7rUvRRS-jCFxzARXUU7Rcma3t8kCVJo3Y7pCeKgGivvB4jTqJCC-q9WufFoiVtuADpGID5Q5KKgjMJiIGmaJL3eCmQElYbNlQak2thpnU2UHXZLIBp6aH_5MWj7MC3eIFi5FE3OnvJZ2s_UYW88QlIN3KhxLGKzEd2ng7jC8jaXhf98oY7Ebx9c62BUvb7yDrSic4ST9jJHcLbsrCi9ZHWjEQP646guaZKyi-63j3MvvLadvLZMFTFUw:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole DynamicHeroImage DynamicHeroImage (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole FeaturedEventsSection FeaturedEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole LiveEventsSection LiveEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="warning-badge">WARNING</span> Detected <code>scroll-behavior: smooth</code> on the <code><html></code> element. In a future version, Next.js will no longer automatically disable smooth scrolling during route transitions. To prepare for this change, add <code>data-scroll-behavior="smooth"</code> to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1766966801479591//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">6c51b352-7c70-4a93-8337-dcc81f799f41</span>
+                            TC006-Admin Dashboard Event Analytics Update
+                        </h3>
+                        <p class="test-description">Verify real-time updates of event analytics data in the admin dashboard after registrations and attendance.</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content">The sign-in page is in development mode and does not have the necessary login input fields to proceed with authentication. Without login, it is not possible to access the admin dashboard to verify real-time updates of event analytics data. The task cannot be completed under current conditions.<br>Browser Console Logs:<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fee43fae6623544d193ab0c26deca1d95?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/loading_events.jpg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/hero_section/default_hero_section_second_column_poster.webp" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "/images/hero_section/default_hero_section_second_column_poster.webp" was detected as the Largest Contentful Paint (LCP). Please add the "priority" property if this image is above the fold.<br>Read more: https://nextjs.org/docs/api-reference/next/image#priority (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdVbllvbjJQYlozcXcyd1h2MmxFM1psZzl0In0.EqaYemAvtnIcuOQDOv-WaWdRlMW9cbVnI6qdeC0Y5p3-W5V4u-pG_kMqMUQmIFJnLnDPzpoTVc8_WD3ejG8eFas7CsioZfH-ZVUsBazpB7fy_vpD1EzzJ18N5qIDWwRAfS3HL8AeTEIjN8koZxIRO2Ti3bsneaC2unZwpn-jMJ0gS0zB0yI-aJRDDXHO95Y4sIQA7eBKDml84pDC_YUUWyK6MvG1QD68ZO_dEeCAcHKTAJGp8N9_odzdv0smCNTtnB0yw9aG_5wVq_pELr6btgs0ME9pnoB6icZ6t7GQcI4iUUisyl1_smgUGQeBNOb2GqI4XvSciHYchGGd6joa3A:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole FeaturedEventsSection FeaturedEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole DynamicHeroImage DynamicHeroImage (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole LiveEventsSection LiveEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="warning-badge">WARNING</span> Detected <code>scroll-behavior: smooth</code> on the <code><html></code> element. In a future version, Next.js will no longer automatically disable smooth scrolling during route transitions. To prepare for this change, add <code>data-scroll-behavior="smooth"</code> to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1766966769427811//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">964d6ccf-127c-4adf-bb9d-ebcc405026e3</span>
+                            TC007-Multi-tenant Data Isolation Verification
+                        </h3>
+                        <p class="test-description">Confirm data isolation between tenants to ensure no data leakage across different organizations.</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content">Unable to proceed with tenant isolation testing because the login form is not rendered due to React component errors on the Sign In page. Please fix the login form rendering issue to enable testing.<br>Browser Console Logs:<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/hero_section/default_hero_section_second_column_poster.webp" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/loading_events.jpg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fee43fae6623544d193ab0c26deca1d95?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdVbllLV2liWU1UOVdBeUhRbjlQcm40SGo5In0.eD3oawgjPLv1LC2EEgSNQQuPBYw_YUDPSWQN_YiuHVdK2X9XBCYygyGsKF5H9aW2hWEL-nPCVWlRPPLAZEJTpVGcSw2YxmR1MRxAbdKxNWspTLwzsUYG69Q6oUsmNJI1PWGmJCD202eWB0UlvqASc4HBlDViLnCwKhECFnvq_i6HUTTPhlMpL42SUOpbmYvA-SfJfA0FCiRQjoDDYQihtmXkPFDOi0RIjw6EqLbPpxKgh888AnO_RGxuNqE7zd3mWR69uuFUfocBHi_wLtpdOiUnGNutDoeIxQmH-JebFf1gPW2mKzaRXTeJ7a7FTOpHF6rRLzihZAYgh07Nnq36Aw:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole LiveEventsSection LiveEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole DynamicHeroImage DynamicHeroImage (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole FeaturedEventsSection FeaturedEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="warning-badge">WARNING</span> Detected <code>scroll-behavior: smooth</code> on the <code><html></code> element. In a future version, Next.js will no longer automatically disable smooth scrolling during route transitions. To prepare for this change, add <code>data-scroll-behavior="smooth"</code> to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/176696699595985//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">36c8441b-a7b5-4b20-a07a-7dc7bacf646f</span>
+                            TC008-Advanced Search and Filtering for Events and Registrants
+                        </h3>
+                        <p class="test-description">Test that search and filtering capabilities accurately return relevant events and registrants based on input criteria.</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content">Reported the issue with the clear search functionality preventing event list reset. Stopping further testing until the issue is resolved.<br>Browser Console Logs:<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/hero_section/default_hero_section_second_column_poster.webp" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/loading_events.jpg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdVbllHUnBhR2wzdHZiSzc3WFNycjNnRThEIn0.TZIUSOiIB-n-8L_wqIDPwsvnZEtTMbSurPw6QXiZ0S2z5gHKNRXHLzCUutDYP8HIiiBTgXvXFSYjKcwBG1dKbYBnlltwx2PsjMqC2RPf_ZQZyvr8B2ScfcaRpp3TTxltA_BvccdpEVNzXsRJShYcH0Os55I19rHl1r_PBceyJp0ZIs0jtkcsC0n8K8zdab-LiTUK4PMjV4rGgzRoYiOmHKnoWE2dL3ocsQXKzTphwOdNzfIsUX0Ez8iOwmhChmf7QqmNpvNVFCW-oPBOmZWJzbsszzm26MWWhzNQkdHK3prWb3CFU3ynC8gjH1HG-3g41NrwAflEqyozVcKSMRg8FQ:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fee43fae6623544d193ab0c26deca1d95?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole DynamicHeroImage DynamicHeroImage (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole LiveEventsSection LiveEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole FeaturedEventsSection FeaturedEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="warning-badge">WARNING</span> Detected <code>scroll-behavior: smooth</code> on the <code><html></code> element. In a future version, Next.js will no longer automatically disable smooth scrolling during route transitions. To prepare for this change, add <code>data-scroll-behavior="smooth"</code> to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1766966825576333//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">3eb8ec5d-7e83-44c4-b5f5-c8dd1a518992</span>
+                            TC009-Email Notifications Trigger
+                        </h3>
+                        <p class="test-description">Validate that automated email notifications are sent correctly on registration, payment success, and event updates.</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content">Testing stopped due to lack of active events or checkout options to complete registration and payment. Unable to validate automated email notifications as required.<br>Browser Console Logs:<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fee43fae6623544d193ab0c26deca1d95?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/hero_section/default_hero_section_second_column_poster.webp" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/loading_events.jpg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdVbllQeWhWNGJ6UkMzemJrRFVrN3Q3emxwIn0.xxFcA6PzALK9yVXNu4343MsGtQTllKBqlVs2Jv_PL3ToWGXLCcZEfiqYjKw6jG2b7lcJ8hK219uHZ4W13Ap1svw-HLRHwSooykdp0g9VuzBeHdMMx_UmJ-17e-MtU_jSFtViFXaUmWDW1hvUy6XlLxsT1HzcoKG4jsFJcnM9lvqG4aRheTnfCY9C_Mfw129q-Zli_WWju6O1990khkylsJ3YrBazWmtALIP7j60UeDLBEjvaEfwlIV9xA_dOoxppqaIGX1PE7INte4VrwDxIsiW0ZgtygtIeWvX4J3eRa295Sk8QlKg3XnAyz4Qu8Cf0lKRNzpmOPI54GkeKyXKszA:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole DynamicHeroImage DynamicHeroImage (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole FeaturedEventsSection FeaturedEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole LiveEventsSection LiveEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="warning-badge">WARNING</span> Detected <code>scroll-behavior: smooth</code> on the <code><html></code> element. In a future version, Next.js will no longer automatically disable smooth scrolling during route transitions. To prepare for this change, add <code>data-scroll-behavior="smooth"</code> to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 403 (Forbidden) (at https://s3.amazonaws.com/bucket/performers/2/portrait/gopi_portrait.jpg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 403 (Forbidden) (at https://s3.amazonaws.com/bucket/performers/1/portrait/yesudas_portrait.jpg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 403 (Forbidden) (at https://s3.amazonaws.com/bucket/directors/3/photo/suresh_photo.jpg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 403 (Forbidden) (at https://s3.amazonaws.com/bucket/directors/4/photo/anitha_photo.jpg:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 403 (Forbidden) (at https://s3.amazonaws.com/bucket/performers/3/portrait/zakir_portrait.jpg:0:0)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1766967032236782//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">5d57ab84-cfbe-41c4-bea4-d4403ebde7f9</span>
+                            TC010-Media Upload and Association with Events
+                        </h3>
+                        <p class="test-description">Test media file uploads within event management and verify correct linking and retrieval.</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content"><br>Browser Console Logs:<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/loading_events.jpg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "/images/hero_section/default_hero_section_second_column_poster.webp" was detected as the Largest Contentful Paint (LCP). Please add the "priority" property if this image is above the fold.<br>Read more: https://nextjs.org/docs/api-reference/next/image#priority (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/hero_section/default_hero_section_second_column_poster.webp" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fee43fae6623544d193ab0c26deca1d95?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole DynamicHeroImage DynamicHeroImage (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole FeaturedEventsSection FeaturedEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole LiveEventsSection LiveEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdVbmRkYTRPSGdOSGowNTNCVFo1VkVGOUlYIn0.yNNK2eOE0ZuRXnlMLDDJ1UjXGqsGXB_5vsOttYr-nc9dd-WH4rHLfzaSicmPFJVei804bSCWh3SbZFMKfMl7-BFCNlfwJVTbbiIo2-xqkJtTQWB7qet1GB4zdEp0p_rUXIY8ooXfUkZeuUUm_V1cELrl3WjLt8X_dLN6u4EyJrIGUXtV-MdXEvRNnm2QAMrLVVE4jP5N0pekGAhtsQF5Oc17g3HVn1YyleLMhmcby2b3OqIpMDaL4TRVCfrUU7RFC5YjmooNk88jNwKWW0jhkjwy6AGjRpwZtuoPR3K3BUb_dQ95I9Xh7rjPKTeSdPcn0nBVJnHsR7ja1_2MK_JZFA:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1766966725589627//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">4c173514-9910-4c32-b15d-10de0282d6e5</span>
+                            TC011-Responsive UI Testing
+                        </h3>
+                        <p class="test-description">Verify all user interfaces (event pages, dashboard, forms) render correctly and remain functional on different screen sizes and devices.</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content">The home page was successfully verified on desktop viewport with all main sections visible, aligned, and functional. Navigation and interactive elements worked correctly with no overlapping or accessibility issues. However, the event creation, registration form, and admin dashboard pages were empty and could not be tested for layout or functionality. Responsive testing on tablet and mobile screen sizes was not performed due to task constraints and empty pages. Overall, the task is partially complete with desktop UI verification done but full multi-device responsiveness and all page verifications remain incomplete.<br>Browser Console Logs:<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_SOCKET_NOT_CONNECTED (at https://fonts.googleapis.com/css?family=Epilogue:300,400,500,600,700|Sora:400,500,600,700&display=swap:0:0)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fee43fae6623544d193ab0c26deca1d95?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/loading_events.jpg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/hero_section/default_hero_section_second_column_poster.webp" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "/images/hero_section/default_hero_section_second_column_poster.webp" was detected as the Largest Contentful Paint (LCP). Please add the "priority" property if this image is above the fold.<br>Read more: https://nextjs.org/docs/api-reference/next/image#priority (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdVbllKd29pNjlZWkl3Zzd2U29BY251cFl5In0.zUsII0y6y5onDXfy0lNFNA1Bt9-zUcvxo7uBPSTLv_CHH_hpJBZnScFOD0FuE8YyHkuxbYcUGM6jIHMNKFHNM8hudEOK74V9jiHhLdan28Xf9FxlC0jRB9WBq9jGIbQ5x8I7kWBB8Xqfy6SdSZEKRyZmJmuWHqkk_MWQ5ttmfCcG91t9YMWzdm1TiOGtX3tgj3KqiAGc9OLM5Nr6gyAz4R7WskfUbvyenGz_VNW8xtfmCntahKufnYDMuKamc8L8ewSOq31ZA4O9lio0QisN8ZnrvvBlnPmK5Qachi6-COnF_Srxfl0P0fq5ywLG3nIJy2ZLhfr4bM5nQsBs-28Tyw:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole LiveEventsSection LiveEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole FeaturedEventsSection FeaturedEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole DynamicHeroImage DynamicHeroImage (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 401 (Unauthorized) (at http://localhost:3000/event-creation:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=dvb_37UnYJwoi69YZIwg7vSoAcnupYy:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async window.startClerk (http://localhost:3000/event-creation:40:21) (at https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:1:220031)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 401 (Unauthorized) (at http://localhost:3000/registration:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=dvb_37UnYJwoi69YZIwg7vSoAcnupYy:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async window.startClerk (http://localhost:3000/registration:40:21) (at https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:1:220031)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 401 (Unauthorized) (at http://localhost:3000/admin-dashboard:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=dvb_37UnYJwoi69YZIwg7vSoAcnupYy:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async window.startClerk (http://localhost:3000/admin-dashboard:40:21) (at https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:1:220031)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1766966994886873//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">e9ef34c3-60bd-4a00-b4e4-3755c3eed861</span>
+                            TC012-Profile Management and Update
+                        </h3>
+                        <p class="test-description">Verify users can view and update their profile information successfully.</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content">Unable to verify profile view and update functionality because the login form is not available on the Sign In page. No input fields or buttons to authenticate were found despite multiple attempts. The profile management page cannot be accessed without login. Task is incomplete due to this limitation.<br>Browser Console Logs:<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/loading_events.jpg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fee43fae6623544d193ab0c26deca1d95?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/hero_section/default_hero_section_second_column_poster.webp" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "/images/hero_section/default_hero_section_second_column_poster.webp" was detected as the Largest Contentful Paint (LCP). Please add the "priority" property if this image is above the fold.<br>Read more: https://nextjs.org/docs/api-reference/next/image#priority (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdVblltOUxqSDdpcXpyMFVpNllsbU45YzJ4In0.L3nsqNqxChwaZKjB3SetqkDSks7KXg6sl-IF_VY37KlqxX0S9wo6FJPsLc5UaLJhs95VKo9ViTWzVS-8jbkAEm_q02f22V1ARB5cCL7M-bXL3_YOt4PStPK3bX6n77q5cwGqhjw7OLCDNjWIN9HjfKpORLWimOgm45laoD2Z4f1UdRXSDcuRkDzO6WAfl6Dv0EfXzJqdsJ1BSBHCcb9rBVQiQIGZ0DQYIAuM5-81qHl_kDqUYAL-c_XYv5siyGsNDRUrDaRFHdnmK-Z7NHMwLw4UOGlIgc64L7U95JvPJEsyHKGAvlPQBJowJtOyfAco1kM1GisvSX8FaVs8bctguQ:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole FeaturedEventsSection FeaturedEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole DynamicHeroImage DynamicHeroImage (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole LiveEventsSection LiveEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="warning-badge">WARNING</span> Detected <code>scroll-behavior: smooth</code> on the <code><html></code> element. In a future version, Next.js will no longer automatically disable smooth scrolling during route transitions. To prepare for this change, add <code>data-scroll-behavior="smooth"</code> to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1766967121871883//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">647f1f35-9102-4d2c-98f2-fd4f7661b282</span>
+                            TC013-Admin Usage Metrics and Subscription Management
+                        </h3>
+                        <p class="test-description">Test that admin users can view usage tracking metrics and manage subscription plans per tenant.</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content">Testing stopped due to missing login input fields on the Sign In page, preventing login as tenant admin user and continuation of the test.<br>Browser Console Logs:<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/hero_section/default_hero_section_second_column_poster.webp" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/loading_events.jpg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fee43fae6623544d193ab0c26deca1d95?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdVbllIaEpBMFN0R1NodWptOVV3TXhXWk5XIn0.fHCQ5lPFPvzA9kD8IwUorkQBuo7JHnqm2O1xS7JWYIixNhfddBuUtFeyJtvKsGvuPg3jetcinMeI7o7Q0uYOtG8JBMoa9ImXWv8CincMsTrfRgkFkcunPPMSiAmlnUOsQjPlkoHn6OFnP2cQ7OyaRdDyMgR49sf5vl7WlZsj1UUEGNvRdNQGCcE9KTmWiixaw0wIKUiwTrH5XgTHbsND9ihj3XLlftn7E4KyKW2cmJX5pVf8FBdSinoCoDbukVOzWALyTfEoTElZvTkY-d5lsKQreegA_ZvUvfhl4O6iwT_UOwxjVjWuTTok6d_SuQsJsP2IIXgaGBn3xXaeGG9hDg:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole DynamicHeroImage DynamicHeroImage (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole FeaturedEventsSection FeaturedEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole LiveEventsSection LiveEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="warning-badge">WARNING</span> Detected <code>scroll-behavior: smooth</code> on the <code><html></code> element. In a future version, Next.js will no longer automatically disable smooth scrolling during route transitions. To prepare for this change, add <code>data-scroll-behavior="smooth"</code> to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1766966795481064//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">f5dc81b0-6286-4141-ac1a-121af05ad777</span>
+                            TC014-API Security and Authentication
+                        </h3>
+                        <p class="test-description">Verify API endpoints enforce JWT authentication and reject unauthorized access attempts.</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content">The API endpoints for event attendees and registrations do not visibly enforce JWT authentication via HTTP status codes or error messages in the browser. Both unauthorized and authorized requests returned 'null' responses without explicit 401 Unauthorized or 200 OK status visible on the page. Further testing with API tools to capture HTTP status codes is recommended to conclusively verify JWT enforcement.<br>Browser Console Logs:<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/loading_events.jpg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/hero_section/default_hero_section_second_column_poster.webp" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "/images/hero_section/default_hero_section_second_column_poster.webp" was detected as the Largest Contentful Paint (LCP). Please add the "priority" property if this image is above the fold.<br>Read more: https://nextjs.org/docs/api-reference/next/image#priority (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fee43fae6623544d193ab0c26deca1d95?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdVbllQUTB1Rk5FamIzUUJBNm12bThNZU5iIn0.KfhJbhKetM1VhpFBr5eLOnnBW2fYkCcp8Lu3sHNqB5tLOrqf1yIrLMRtFBxJMAYianIJQA-9witX_WFVgr07FEHVfmKOH-hv54BvvoXwSGpeZhVcX8ZifUS7FLeYQ9kyhDplL7TqebrJl1Bw13LI7kcSbvh2bfid5NEvTD_1HWg_9ZZfzPYq2T7MkrNlnrW16PwTcyRrPMoIjKMf-KZP3434e0_X-WXkZbu2P8QOFcJWD3frIo1VLu2D_sOMLvtbscQMovBkz3jAS6bQg1UaZkPlkHPmN2ZEt3g9hdZ2RAo_rqaKkihxjzl2df4U-pFa96g_MU6jvAkIMgpiKn781g:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole DynamicHeroImage DynamicHeroImage (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole LiveEventsSection LiveEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole FeaturedEventsSection FeaturedEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_INCOMPLETE_CHUNKED_ENCODING (at http://localhost:3000/__nextjs_original-stack-frames:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 401 (Unauthorized) (at http://localhost:3000/api/event-attendees:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 401 (Unauthorized) (at http://localhost:3000/api/event-registrations:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 401 (Unauthorized) (at http://localhost:3000/api/event-attendees?auth_token=valid_jwt_token:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 401 (Unauthorized) (at http://localhost:3000/api/event-registrations?auth_token=valid_jwt_token:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 401 (Unauthorized) (at http://localhost:3000/api/event-attendees:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 401 (Unauthorized) (at http://localhost:3000/api/event-attendees:0:0)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 401 (Unauthorized) (at http://localhost:3000/api/event-attendees?auth_token=valid_jwt_token:0:0)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1766966664312616//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+            <div class="test-item failed">
+                <div class="test-header">
+                    <div class="test-title">
+                        <h3>
+                            <span class="test-id">630a891e-fa60-49be-b7ec-7cf494d1f7bd</span>
+                            TC015-Guest Management During Registration
+                        </h3>
+                        <p class="test-description">Test that users can add, edit, and remove guests during event registration and that guest data is saved.</p>
+                    </div>
+                    <span class="test-status-badge failed">
+                        FAILED
+                    </span>
+                </div>
+
+                
+
+                
+                <div class="test-error">
+                    <h4>❌ Test Error</h4>
+                    <div class="test-error-content">No events available for registration on the events page, so testing of guest addition, editing, removal, and data saving cannot be performed. Task cannot be completed without available events.<br>Browser Console Logs:<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fee43fae6623544d193ab0c26deca1d95?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/hero_section/default_hero_section_second_column_poster.webp" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2Fd7543f582d4f477599d341da96d48e2b?format=webp&width=800" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="warning-badge">WARNING</span> Image with src "http://localhost:3000/images/loading_events.jpg" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Failed to load resource: the server responded with a status of 400 () (at https://humble-monkey-3.clerk.accounts.dev/v1/environment?_clerk_js_version=4.73.14&_method=PATCH&__dev_session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXYiOiJkdmJfMzdVbllMTHN3dUE4dU5TalI5TzU4eEptMUdBIn0.0-PPkR-D6f4Z_7Xq-6y8pgafAaf9F6ud_NlwQ70zr6iLP-KibuYzmT1pOsze9vn1qWtazqvlETlH7lk1RNkIu0pusxp0-ex2e6xST-fspaLk94iyoyUTNPKvNBcLrCTtSVFyXTUuCe0YAFaV6DmBaHMJbUxBbnEvu8Ikg6hcvMLa5pRSmRnetzzHgdU0JEmUXMjBeOi7P9JKUV4Cabfr9BX4Rv1sSNr7m-dc9PTjVO3bpHthmAh5ajRGC8FLiYXKxIydG9QoAiZflXQX9vZD-GEiNzSdwLlUCXPX_n1VhWQltEEKXBGoBZhSsGIt3cmlXbQCB4ZokKieGJ7ToVKyaw:0:0)<br><span class="warning-badge">WARNING</span> e<br>    at o._fetch (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:80419)<br>    at async v._baseMutate (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:81107)<br>    at async Promise.all (index 0)<br>    at async se.<anonymous> (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:219655)<br>    at async se.load (https://humble-monkey-3.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js:2:198712)<br>    at async _IsomorphicClerk.loadClerkJS (webpack-internal:///(app-pages-browser)/./node_modules/@clerk/clerk-react/dist/esm/isomorphicClerk.js:725:9) (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole DynamicHeroImage DynamicHeroImage (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole FeaturedEventsSection FeaturedEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="error-badge">ERROR</span> Cannot update a component (<code>%s</code>) while rendering a different component (<code>%s</code>). To locate the bad setState() call inside <code>%s</code>, follow the stack trace as described in https://react.dev/link/setstate-in-render MobileDebugConsole LiveEventsSection LiveEventsSection (at webpack-internal:///(app-pages-browser)/./node_modules/next/dist/next-devtools/userspace/app/errors/intercept-console-error.js:56:31)<br><span class="warning-badge">WARNING</span> Detected <code>scroll-behavior: smooth</code> on the <code><html></code> element. In a future version, Next.js will no longer automatically disable smooth scrolling during route transitions. To prepare for this change, add <code>data-scroll-behavior="smooth"</code> to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (at webpack-internal:///(app-pages-browser)/./src/components/MobileDebugConsole.tsx:80:33)<br><span class="error-badge">ERROR</span> Failed to load resource: net::ERR_EMPTY_RESPONSE (at http://localhost:3000/api/proxy/event-details?sort=startDate,asc:0:0)</div>
+                </div>
+                
+
+                
+                <div class="test-visualization">
+                    <a href="https://testsprite-videos.s3.us-east-1.amazonaws.com/7448d408-2021-7025-7a01-cbaac18d1469/1766967027573306//tmp/test_task/result.webm" target="_blank">📹 View Test Video/Visualization</a>
+                </div>
+                
+            </div>
+            
+        </div>
+
+        <div class="footer">
+            <p>Generated by TestSprite Error Filtering Script</p>
+            <p>This report shows filtered test results after removing expected Next.js 15 warnings</p>
+            <p style="margin-top: 10px; font-size: 0.85em;">
+                <strong>How to use this report:</strong><br>
+                Review failed tests below. Copy the error details and share with Cursor AI to fix issues.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

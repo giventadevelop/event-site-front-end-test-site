@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Competitions — Enhancement PRD (Index v2.1)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; background: #fff; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        a { color: #0066cc; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .toc { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 24px 0; }
+        .toc h2 { margin-top: 0; border: none; padding: 0; font-size: 1.25em; }
+        .layer-cards { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 20px 0; }
+        @media (min-width: 640px) { .layer-cards { grid-template-columns: 1fr 1fr; } }
+        .layer-card { background: #fff; border: 2px solid #b8d4e3; border-radius: 8px; padding: 16px; }
+        .layer-card h3 { margin-top: 0; color: #0052a3; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .section-container.usage { background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%); border-left-color: #7b1fa2; }
+        .section-container.usage .section-header { background: linear-gradient(135deg, #7b1fa2 0%, #6a1b9a 100%); }
+        .section-container.parameters { background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%); border-left-color: #ff9800; }
+        .section-container.parameters .section-header { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; border-radius: 6px; overflow: hidden; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        tbody tr:hover { background: #f5faff; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.9em; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px 16px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px 16px; border-radius: 6px; margin: 16px 0; }
+        .companion { background: #d4edda; border-left: 4px solid #28a745; padding: 14px 18px; border-radius: 8px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Event Competitions — Enhancement PRD (Index v2.1)</h1>
+    <p class="doc-meta">
+        <strong>Version:</strong> 2.1 &nbsp;|&nbsp; <strong>Date:</strong> June 6, 2026 &nbsp;|&nbsp; <strong>Status:</strong> Draft<br>
+        <strong>Baseline (v2.0):</strong> <a href="../generic_prd.html">generic_prd.html</a> &nbsp;|&nbsp;
+        <strong>Master PRD:</strong> <a href="../../Event_Competitions_PRD.html">Event_Competitions_PRD.html</a><br>
+        <strong>Repos:</strong> <code>mosc-temp</code> (frontend) · <code>malayalees-us-site-boot</code> (backend) · <code>event-site-manager-batch-jobs</code> (batch)
+    </p>
+
+    <div class="lead">
+        <p>This pack extends the <strong>v2.0 Event Competitions</strong> module (already implemented at P0–P3) with a full <strong>per-competition domain</strong>: discipline types (song, speech, sports), eligibility guardrails, multi-child and team-captain registration, roster management, and extended podium (1st–4th+ placements).</p>
+        <p><strong>Non-breaking rule:</strong> All enhancements remain behind <code>is_competition_event = true</code>. Existing ticket checkout and non-competition events are unchanged.</p>
+    </div>
+
+    <div class="companion">
+        <p><strong>Baseline PRD (v2.0):</strong> <a href="../generic_prd.html">Event Competitions Generic Index</a> — original layer PRDs (database, backend, frontend, batch).</p>
+    </div>
+
+    <nav class="toc" aria-label="Enhancement PRD index">
+        <h2>Enhancement layer PRDs</h2>
+        <div class="layer-cards">
+            <div class="layer-card">
+                <h3><a href="gap_analysis_prd.html">Gap analysis</a></h3>
+                <p>Current vs target matrix, file/route inventory, orphan <code>event_competition_group_member</code>.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="database_schema_enhancements_prd.html">Database schema (v2.1)</a></h3>
+                <p>DDL deltas: <code>discipline_code</code>, age/grade bounds, <code>max_placements</code>, team fields, group member roles.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="backend_enhancements_prd.html">Backend enhancements</a></h3>
+                <p>Group member resource, team/bulk registration, eligibility validation, composite endpoints.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="frontend_enhancements_prd.html">Frontend enhancements</a></h3>
+                <p>Competition detail page, wizard refactor, team roster UI, admin guardrails, podium winners.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="batch_job_enhancements_prd.html">Batch job enhancements</a></h3>
+                <p>Team confirmation emails, winners digest, CSV export (E5 optional).</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="urls_and_routes_enhancements.html">URLs &amp; routes</a></h3>
+                <p>Public/admin/proxy route map, deep links, auth matrix.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="implementation_roadmap.html">Implementation roadmap</a></h3>
+                <p>Cross-repo sprint order E0–E5, dependencies, test checklist.</p>
+            </div>
+        </div>
+    </nav>
+
+    <h2 id="executive-summary">Executive summary</h2>
+    <div class="section-container usage">
+        <div class="section-header">Problem and solution</div>
+        <p>The v2.0 implementation delivers admin catalog CRUD, a registration wizard with Stripe checkout, and results entry. Users still experience a <strong>flat competitions hub</strong> without per-competition detail pages, structured discipline types, or team roster flows. Parents cannot easily register <strong>multiple children</strong> for <strong>specific competitions</strong>; team sports (soccer, group dance) lack named rosters despite GROUP type in the schema.</p>
+        <p><strong>Solution (v2.1):</strong> Schema deltas + new APIs for group members and composite team registration; public competition detail routes; wizard branches for parent / self / team captain; admin guardrails (age, grade, discipline, rules); extended podium with configurable <code>max_placements</code> and optional 4th-place points.</p>
+    </div>
+
+    <h2 id="phases">Enhancement phases (E0–E5)</h2>
+    <table>
+        <thead><tr><th>Phase</th><th>Depends on</th><th>Deliverable</th><th>PRD</th></tr></thead>
+        <tbody>
+            <tr><td><strong>E0 — Docs</strong></td><td>—</td><td>Enhancement PRD HTML pack; stakeholder defaults for open questions</td><td>This index + 7 layer PRDs</td></tr>
+            <tr><td><strong>E1 — Schema + API</strong></td><td>E0</td><td>Liquibase v2.1, <code>EventCompetitionGroupMember</code> stack, eligibility validation</td><td><a href="database_schema_enhancements_prd.html">Database</a>, <a href="backend_enhancements_prd.html">Backend</a></td></tr>
+            <tr><td><strong>E2 — Per-competition UX</strong></td><td>E1</td><td>Detail page, hub links, eligibility badges, <code>?competitionId=</code> deep link</td><td><a href="frontend_enhancements_prd.html">Frontend</a></td></tr>
+            <tr><td><strong>E3 — Registration flows</strong></td><td>E2</td><td>Multi-child picker, MIXED actor step, team roster + payment</td><td>Frontend + Backend</td></tr>
+            <tr><td><strong>E4 — Results &amp; podium</strong></td><td>E3</td><td><code>max_placements</code>, 4th place, competition-grouped winners, champion</td><td>All layers</td></tr>
+            <tr><td><strong>E5 — Batch &amp; polish</strong></td><td>E4</td><td>Team/winners emails, CSV export, per-comp admin views</td><td><a href="batch_job_enhancements_prd.html">Batch</a></td></tr>
+        </tbody>
+    </table>
+
+    <h2 id="open-questions">Open questions — recommended defaults (v2.1)</h2>
+    <div class="warning-box">
+        <p>Stakeholders may override these defaults; document decisions in event settings or tenant config.</p>
+        <ol>
+            <li><strong>Per-competition fee vs event pass:</strong> Keep <strong>per-competition fee</strong> (current model). Event-wide pass deferred to a future phase.</li>
+            <li><strong>Stripe at launch:</strong> Required when <code>fee_amount &gt; 0</code>; admin manual confirm allowed for <strong>$0</strong> competitions only.</li>
+            <li><strong>Grade categories:</strong> <strong>Tenant-configurable</strong> via <code>category_code</code> + admin templates — not hard-coded four grades.</li>
+            <li><strong>Group billing:</strong> <strong>Team captain pays</strong> single combined fee (leader registration + roster members linked).</li>
+            <li><strong>Youth public names:</strong> Use <strong>initials + category code</strong> when <code>results_display_mode = PRIVACY_SAFE</code>.</li>
+            <li><strong>Max placements:</strong> <strong>Configurable per competition</strong> (<code>max_placements</code>); default 3, allow 4+.</li>
+            <li><strong>Winner photos:</strong> <strong>Optional</strong> before publish (recommended, not required).</li>
+            <li><strong>Tickets + competitions:</strong> <strong>Separate carts</strong>; use existing <code>allow_ticket_sales</code> flag — no mixed Stripe cart in v2.1.</li>
+            <li><strong>MIXED events actor:</strong> Wizard shows explicit step: Parent | Self | Team captain when <code>audience_mode = MIXED</code>.</li>
+        </ol>
+    </div>
+
+    <h2 id="success-criteria">Success criteria</h2>
+    <ul>
+        <li>Admin creates competitions with discipline, age/grade bounds, rules, and team settings.</li>
+        <li>Public hub lists competitions with links to detail pages showing regulations and register CTA.</li>
+        <li>Parent registers each child per competition; adult self-registers; team captain registers with named roster.</li>
+        <li>Backend rejects ineligible registrations (age, grade, capacity, duplicate, group size).</li>
+        <li>Admin enters and publishes 1st–Nth placements; public winners grouped by competition podium.</li>
+    </ul>
+
+    <div class="info-box">
+        <strong>Related:</strong> <a href="../gap_analysis_prd.html">Gap analysis</a> ·
+        <a href="../KANJ_vs_OurSite_Comparison.html">KANJ vs Our Site</a> ·
+        <a href="implementation_roadmap.html">Implementation roadmap</a>
+    </div>
+
+</body>
+</html>

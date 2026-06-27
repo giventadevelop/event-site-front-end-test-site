@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Cover S3 — Gap Analysis PRD (v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .status-done { color: #155724; font-weight: 600; }
+        .status-partial { color: #856404; font-weight: 600; }
+        .status-missing { color: #721c24; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Cover S3 — Gap Analysis PRD</h1>
+    <p class="doc-meta">
+        <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 18, 2026<br>
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a>
+    </p>
+
+    <div class="lead">
+        <p>Compares <strong>current gallery album cover handling</strong> in mosc-temp against the <strong>target</strong>: S3-backed cover images with admin upload UX matching focus groups and event media.</p>
+    </div>
+
+    <h2>1. Layer implementation status</h2>
+    <table>
+        <thead><tr><th>Layer</th><th>Status</th><th>Evidence</th></tr></thead>
+        <tbody>
+            <tr><td><strong>Database</strong></td><td class="status-done">Done</td><td><code>gallery_album.cover_image_url varchar(2048)</code> in <code>Latest_Schema_Post__Blob_Claude_12.sql</code>; comment references <code>event_media.file_url</code></td></tr>
+            <tr><td><strong>Backend REST</strong></td><td class="status-partial">Partial</td><td><code>PATCH /api/gallery-albums/{id}</code> accepts <code>coverImageUrl</code>; no dedicated cover upload endpoint</td></tr>
+            <tr><td><strong>Backend S3</strong></td><td class="status-partial">Partial</td><td><code>upload-multiple</code> uploads album photos to S3; focus-group pattern exists but not gallery-album cover</td></tr>
+            <tr><td><strong>Next.js proxy</strong></td><td class="status-partial">Partial</td><td><code>/api/proxy/event-medias/upload-multiple</code> yes; <code>gallery-album-cover-image</code> proxy missing</td></tr>
+            <tr><td><strong>Admin UI</strong></td><td class="status-partial">Partial</td><td>Text URL input on create/edit; media page can set cover from existing S3 media</td></tr>
+            <tr><td><strong>Static import</strong></td><td class="status-missing">Gap</td><td><code>import-static-gallery-to-api.mjs</code> sets <code>coverImageUrl</code> to <code>/images/mosc/gallery/...</code> (URL mode, not S3)</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. Requirements vs implementation matrix</h2>
+    <table>
+        <thead><tr><th>Requirement</th><th>Current</th><th>Gap</th><th>Phase</th></tr></thead>
+        <tbody>
+            <tr><td>Upload cover image file to S3</td><td>No dedicated endpoint</td><td>Add <code>upload/gallery-album-cover-image</code></td><td>C1</td></tr>
+            <tr><td>Admin drag-and-drop cover upload</td><td>URL text field only</td><td><code>GalleryAlbumCoverImageUpload</code> component</td><td>C2</td></tr>
+            <tr><td>Preview current cover</td><td>List page thumbnail only</td><td>Inline preview on edit form</td><td>C2</td></tr>
+            <tr><td>Cover from album photo (already on S3)</td><td>“Set cover” on media page</td><td>Move to server action; validate S3 URL</td><td>C3</td></tr>
+            <tr><td>Static import covers on S3</td><td>Local <code>/images/...</code> paths</td><td><code>--upload-covers</code> CLI phase</td><td>C4</td></tr>
+            <tr><td>Trace cover to <code>event_media</code> row</td><td>URL string only</td><td>Optional <code>cover_media_id</code> (v1.1)</td><td>Future</td></tr>
+            <tr><td>Presigned URL refresh for covers</td><td>Not implemented</td><td>Defer; use public S3 URLs or CloudFront like other gallery media</td><td>Future</td></tr>
+        </tbody>
+    </table>
+
+    <h2>3. Reference patterns in codebase</h2>
+    <table>
+        <thead><tr><th>Feature</th><th>Backend endpoint</th><th>Proxy</th><th>UI component</th><th>S3 path pattern</th></tr></thead>
+        <tbody>
+            <tr><td><strong>Focus group cover</strong> (canonical)</td><td><code>/api/event-medias/upload/focus-group-cover-image</code></td><td><code>upload/focus-group-cover-image.ts</code></td><td><code>FocusGroupCoverImageUpload.tsx</code></td><td><code>{profile}/media/tenantId/{tenantId}/focus-groups/focus-group-id/{id}/cover_image_{ts}_{uuid}.ext</code></td></tr>
+            <tr><td>Sponsor banner/logo</td><td><code>/api/event-medias/upload/sponsor-image</code></td><td><code>upload/sponsor.ts</code></td><td><code>ImageUpload.tsx</code></td><td><code>.../sponsor/sponsor_id/{id}/...</code></td></tr>
+            <tr><td>Album gallery photos</td><td><code>/api/event-medias/upload-multiple</code></td><td><code>upload-multiple</code></td><td><code>AlbumMediaClientPage.tsx</code></td><td>Standard gallery media path + PATCH <code>albumId</code></td></tr>
+            <tr><td><strong>Gallery album cover</strong> (target)</td><td class="status-missing">Missing</td><td class="status-missing">Missing</td><td class="status-missing">Missing</td><td><code>.../gallery-album/album-id/{albumId}/cover_{ts}_{uuid}.ext</code></td></tr>
+        </tbody>
+    </table>
+
+    <h2>4. Current file inventory (mosc-temp)</h2>
+    <table>
+        <thead><tr><th>File</th><th>Cover-related behavior</th><th>Gap</th></tr></thead>
+        <tbody>
+            <tr><td><code>src/app/admin/gallery/albums/[id]/edit/AdminAlbumEditClient.tsx</code></td><td><code>coverImageUrl</code> text input; PATCH on save</td><td>No file upload</td></tr>
+            <tr><td><code>src/app/admin/gallery/albums/AdminAlbumListClient.tsx</code></td><td>Create modal with URL field; list shows cover</td><td>No upload on create</td></tr>
+            <tr><td><code>src/app/admin/gallery/albums/ApiServerActions.ts</code></td><td><code>setAlbumCoverImageServer()</code> — direct backend PATCH</td><td>Not wired to UI upload; no multipart</td></tr>
+            <tr><td><code>src/app/admin/gallery/albums/[id]/media/AlbumMediaClientPage.tsx</code></td><td>Upload photos to S3; <code>handleSetCoverImage</code> PATCH via client fetch to proxy</td><td>Should use server action; no upload-for-cover-only</td></tr>
+            <tr><td><code>scripts/gallery-porting/import-static-gallery-to-api.mjs</code></td><td>POST album with <code>coverImageUrl</code> from manifest (local path)</td><td>No S3 upload for covers</td></tr>
+            <tr><td><code>src/components/FocusGroupCoverImageUpload.tsx</code></td><td>Full upload UX</td><td>Template to clone for gallery</td></tr>
+        </tbody>
+    </table>
+
+    <div class="warning-box">
+        <strong>Static import example (current):</strong> <code>cover_image_url='/images/mosc/gallery/enthronement-coptic-pope/et.jpg'</code> — works only when Next.js serves <code>public/</code> on the same origin. Production Amplify/CDN may need S3 URLs for consistency with album photos.
+    </div>
+
+    <div class="info-box">
+        <strong>S3 URL already works in schema:</strong> Focus group seed data uses <code>https://eventapp-media-bucket.s3.us-east-2.amazonaws.com/dev/media/tenantId/.../cover_image_....jpg</code> in <code>cover_image_url</code> — same column type as gallery albums.
+    </div>
+
+    <p><a href="generic_enhancement_prd.html">← Back to index</a></p>
+
+</body>
+</html>

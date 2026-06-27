@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Complete guide for testing Stripe subscription renewals using automated test scripts. Includes all scripts, workflows, troubleshooting, and best practices.">
+    <title>Stripe Subscription Renewal Testing Guide</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+            background-color: #fff;
+        }
+        h1 {
+            color: #1a1a1a;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        h2 {
+            color: #0066cc;
+            margin-top: 30px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #333;
+            margin-top: 25px;
+        }
+        h4 {
+            color: #555;
+            margin-top: 20px;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        ul, ol {
+            margin-left: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px 15px;
+            margin: 15px 0;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            padding: 10px 15px;
+            margin: 15px 0;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 10px 15px;
+            margin: 15px 0;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 10px 15px;
+            margin: 15px 0;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .toc {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .toc ul {
+            list-style-type: none;
+            margin-left: 0;
+        }
+        .toc li {
+            margin-bottom: 5px;
+        }
+        .toc a {
+            color: #0066cc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Subscription Renewal Testing Scripts</h1>
+
+    <p>Automated test scripts for expediting and testing subscription renewal in Stripe test mode.</p>
+
+    <div class="toc">
+        <h2>Table of Contents</h2>
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#quick-command-reference">Quick Command Reference</a></li>
+            <li><a href="#prerequisites">Prerequisites</a></li>
+            <li><a href="#scripts">Scripts</a></li>
+            <li><a href="#quick-start">Quick Start Example</a></li>
+            <li><a href="#testing-workflow">Testing Workflow</a></li>
+            <li><a href="#troubleshooting">Troubleshooting</a></li>
+            <li><a href="#notes">Notes</a></li>
+            <li><a href="#related-documentation">Related Documentation</a></li>
+        </ul>
+    </div>
+
+    <h2 id="quick-command-reference">Quick Command Reference</h2>
+
+    <p>All scripts and commands mentioned in this guide, organized by purpose:</p>
+
+    <div class="section-container">
+        <div class="section-header">📋 Viewing and Inspecting</div>
+        <ul>
+            <li><strong><a href="#view-stripe-subscription">View Stripe Subscription Details</a></strong>
+                <br><code>node scripts/test-subscription-renewal/view-stripe-subscription.js --subscription-id=sub_xxx</code>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section-container">
+        <div class="section-header">⏩ Expediting Subscription Renewal</div>
+        <ul>
+            <li><strong><a href="#advance-existing-subscription">Advance Existing Subscription</a></strong> ⭐ <strong>USE FOR EXISTING SUBSCRIPTIONS</strong>
+                <br><code>node scripts/test-subscription-renewal/advance-existing-subscription.js --subscription-id=sub_xxx --days-to-advance=30</code>
+            </li>
+            <li><strong><a href="#expedite-test-clock">Expedite Using Test Clocks</a></strong> ⭐ <strong>RECOMMENDED FOR NEW SUBSCRIPTIONS</strong>
+                <br><code>node scripts/test-subscription-renewal/expedite-stripe-renewal-test-clock.js --subscription-id=sub_xxx --days-to-advance=30</code>
+            </li>
+            <li><strong><a href="#expedite-legacy">Expedite (Legacy Method)</a></strong> - Limited functionality
+                <br><code>node scripts/test-subscription-renewal/expedite-stripe-renewal.js --subscription-id=sub_xxx --days-to-advance=30</code>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section-container">
+        <div class="section-header">✅ Verification and Testing</div>
+        <ul>
+            <li><strong><a href="#verify-database">Verify Database</a></strong>
+                <br><code>node scripts/test-subscription-renewal/verify-database.js --subscription-id=sub_xxx --tenant-id=tenant_xxx</code>
+            </li>
+            <li><strong><a href="#trigger-batch-job">Trigger Batch Job</a></strong>
+                <br><code>node scripts/test-subscription-renewal/trigger-batch-job.js --tenant-id=tenant_xxx --subscription-id=sub_xxx</code>
+            </li>
+            <li><strong><a href="#full-test-suite">Full Test Suite</a></strong>
+                <br><code>./scripts/test-subscription-renewal/run-full-test.sh --subscription-id=sub_xxx --tenant-id=tenant_xxx --days-to-advance=30</code>
+            </li>
+        </ul>
+    </div>
+
+    <div class="info">
+        <strong>💡 Tip:</strong> Click on any script name above to jump directly to its detailed documentation section below.
+    </div>
+
+    <h2 id="overview">Overview</h2>
+
+    <p>These scripts allow you to test subscription renewal functionality without waiting for the actual billing period to end. They work with Stripe test mode subscriptions to:</p>
+
+    <ol>
+        <li><strong>Expedite renewal</strong> - Advance subscription period dates in Stripe test mode</li>
+        <li><strong>Verify database</strong> - Compare database state with Stripe subscription state</li>
+        <li><strong>Trigger batch job</strong> - Execute batch job on demand for testing</li>
+        <li><strong>Full test suite</strong> - Run all tests in sequence</li>
+    </ol>
+
+    <h2 id="prerequisites">Prerequisites</h2>
+
+    <h3>Environment Variables</h3>
+
+    <pre><code># Required for all scripts
+export STRIPE_SECRET_KEY="sk_test_..."  # Stripe test mode secret key
+export NEXT_PUBLIC_API_BASE_URL="http://localhost:8080"  # Backend API URL
+export NEXT_PUBLIC_API_JWT_USER="jwtadmin"  # Backend JWT username
+export NEXT_PUBLIC_API_JWT_PASS="jwtadmin"  # Backend JWT password
+export NEXT_PUBLIC_APP_URL="http://localhost:3000"  # Next.js app URL (for proxy)
+export NEXT_PUBLIC_TENANT_ID="tenant_demo_002"  # Default tenant ID</code></pre>
+
+    <div class="info">
+        <strong>Note:</strong> The <code>verify-database.js</code> script uses the API proxy endpoint instead of direct database access, so <code>DATABASE_URL</code> is no longer required.
+    </div>
+
+    <h3>Node.js Dependencies</h3>
+
+    <pre><code>npm install --save-dev stripe dotenv</code></pre>
+
+    <p>Or add to <code>package.json</code>:</p>
+    <pre><code>{
+  "devDependencies": {
+    "stripe": "^14.0.0",
+    "dotenv": "^16.0.0"
+  }
+}</code></pre>
+
+    <h2 id="scripts">Scripts</h2>
+
+    <h3 id="view-stripe-subscription">1. View Stripe Subscription Details</h3>
+
+    <p><strong>File:</strong> <code>view-stripe-subscription.js</code></p>
+
+    <p>Retrieves and displays detailed information about a Stripe subscription including dates, status, billing information, and other attributes.</p>
+
+    <pre><code>node scripts/test-subscription-renewal/view-stripe-subscription.js \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93</code></pre>
+
+    <p><strong>Parameters:</strong></p>
+    <ul>
+        <li><code>--subscription-id</code> (required): Stripe subscription ID</li>
+    </ul>
+
+    <p><strong>What it displays:</strong></p>
+    <ul>
+        <li>Subscription status and customer information</li>
+        <li>Current billing period dates (start, end, days until renewal)</li>
+        <li>Billing cycle anchor</li>
+        <li>Billing information (currency, collection method, interval, amount)</li>
+        <li>Subscription items and pricing</li>
+        <li>Cancellation settings</li>
+        <li>Trial information (if applicable)</li>
+        <li>Latest invoice details</li>
+        <li>Payment method information</li>
+        <li>Metadata</li>
+        <li>Additional subscription attributes</li>
+    </ul>
+
+    <p><strong>Output:</strong></p>
+    <ul>
+        <li>Comprehensive subscription details formatted for easy reading</li>
+        <li>All dates in both ISO format and localized format</li>
+        <li>Days until renewal calculation</li>
+    </ul>
+
+    <h3 id="advance-existing-subscription">2. Advance Existing Subscription (For Subscriptions Created Before Test Clock) ⭐ <strong>USE THIS FOR EXISTING SUBSCRIPTIONS</strong></h3>
+
+    <p><strong>File:</strong> <code>advance-existing-subscription.js</code></p>
+
+    <p><strong>For subscriptions that were already created (before test clock setup)</strong>, this script manually advances the subscription period by updating the billing cycle anchor. This works when Test Clocks cannot be used.</p>
+
+    <pre><code>node scripts/test-subscription-renewal/advance-existing-subscription.js \
+  --subscription-id=sub_1Skv22K5BrggeAHMcbl3nErG \
+  --days-to-advance=30</code></pre>
+
+    <p><strong>Parameters:</strong></p>
+    <ul>
+        <li><code>--subscription-id</code> (required): Stripe subscription ID</li>
+        <li><code>--days-to-advance</code> (optional): Number of days to advance (default: 30)</li>
+    </ul>
+
+    <p><strong>What it does:</strong></p>
+    <ol>
+        <li>Retrieves current subscription</li>
+        <li>Calculates new period dates based on days to advance</li>
+        <li>Updates subscription billing cycle anchor to new period start</li>
+        <li>Creates and pays invoice for the new period</li>
+        <li>Verifies final subscription state</li>
+    </ol>
+
+    <p><strong>When to use:</strong></p>
+    <ul>
+        <li>✅ Subscription was created before test clock was set up</li>
+        <li>✅ Subscription is already <code>active</code> or <code>trialing</code></li>
+        <li>✅ You need to advance an existing subscription's period</li>
+    </ul>
+
+    <p><strong>Output:</strong></p>
+    <ul>
+        <li>Updated subscription period dates</li>
+        <li>Invoice creation and payment status</li>
+        <li>Actual days advanced</li>
+    </ul>
+
+    <h3 id="expedite-test-clock">2b. Expedite Stripe Renewal (Using Test Clocks) ⭐ <strong>RECOMMENDED FOR NEW SUBSCRIPTIONS</strong></h3>
+
+    <p><strong>File:</strong> <code>expedite-stripe-renewal-test-clock.js</code></p>
+
+    <p><strong>This is the proper way to test subscription renewals in Stripe test mode for NEW subscriptions.</strong> Uses Stripe Test Clocks to simulate time passing, which automatically triggers subscription renewals, invoice creation, and webhooks.</p>
+
+    <div class="warning">
+        <strong>⚠️ IMPORTANT:</strong> Test Clocks only work for subscriptions created AFTER the test clock is set up. For existing subscriptions, use <code>advance-existing-subscription.js</code> instead.
+    </div>
+
+    <pre><code>node scripts/test-subscription-renewal/expedite-stripe-renewal-test-clock.js \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --days-to-advance=30</code></pre>
+
+    <p><strong>Parameters:</strong></p>
+    <ul>
+        <li><code>--subscription-id</code> (required): Stripe subscription ID</li>
+        <li><code>--days-to-advance</code> (optional): Number of days to advance (default: 30)</li>
+    </ul>
+
+    <p><strong>What it does:</strong></p>
+    <ol>
+        <li>Retrieves current subscription from Stripe</li>
+        <li>Creates or finds existing test clock (attaches customer if needed)</li>
+        <li>Advances test clock by specified number of days</li>
+        <li>Stripe automatically processes subscription renewal</li>
+        <li>Verifies final subscription state</li>
+    </ol>
+
+    <p><strong>Why Test Clocks?</strong></p>
+    <ul>
+        <li>✅ <strong>Proper Stripe feature</strong> - Official way to test time-based events</li>
+        <li>✅ <strong>Automatic processing</strong> - Stripe handles renewals, invoices, and webhooks automatically</li>
+        <li>✅ <strong>Works with incomplete subscriptions</strong> - Can advance time even if subscription isn't fully active</li>
+        <li>✅ <strong>Realistic testing</strong> - Simulates real-world time passing</li>
+        <li>✅ <strong>Webhook triggers</strong> - Automatically sends webhooks as if time actually passed</li>
+    </ul>
+
+    <p><strong>Output:</strong></p>
+    <ul>
+        <li>Test clock creation/retrieval status</li>
+        <li>Time advancement confirmation</li>
+        <li>Updated subscription period dates</li>
+        <li>Actual days advanced</li>
+    </ul>
+
+    <div class="info">
+        <strong>Note:</strong> If your subscription is in <code>incomplete</code> status, you may need to activate it first before using test clocks. Test clocks work best with <code>active</code> subscriptions.
+    </div>
+
+    <h3 id="expedite-legacy">2b. Expedite Stripe Renewal (Legacy Method - Limited)</h3>
+
+    <p><strong>File:</strong> <code>expedite-stripe-renewal.js</code></p>
+
+    <div class="warning">
+        <strong>⚠️ WARNING:</strong> This method has limitations and may not work for all subscription states. Use the Test Clock method above instead.
+    </div>
+
+    <p>This script attempts to advance a subscription by creating and paying invoices, but:</p>
+    <ul>
+        <li>❌ <strong>Doesn't work with <code>incomplete</code> subscriptions</strong> - Cannot update billing cycle anchor</li>
+        <li>❌ <strong>Doesn't actually advance time</strong> - Just completes current period</li>
+        <li>❌ <strong>Requires multiple runs</strong> - May need to run multiple times to advance by desired amount</li>
+        <li>❌ <strong>Limited control</strong> - Cannot precisely control advancement</li>
+    </ul>
+
+    <pre><code>node scripts/test-subscription-renewal/expedite-stripe-renewal.js \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --days-to-advance=30</code></pre>
+
+    <p><strong>When to use:</strong> Only if Test Clocks are not available or you need to test invoice creation specifically.</p>
+
+    <h3 id="verify-database">3. Verify Database</h3>
+
+    <p><strong>File:</strong> <code>verify-database.js</code></p>
+
+    <p>Compares database subscription record with Stripe subscription state.</p>
+
+    <pre><code>node scripts/test-subscription-renewal/verify-database.js \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --tenant-id=tenant_demo_002</code></pre>
+
+    <p><strong>Parameters:</strong></p>
+    <ul>
+        <li><code>--subscription-id</code> (required): Stripe subscription ID</li>
+        <li><code>--tenant-id</code> (optional): Tenant ID (defaults to NEXT_PUBLIC_TENANT_ID)</li>
+    </ul>
+
+    <p><strong>What it does:</strong></p>
+    <ol>
+        <li>Fetches subscription from Stripe</li>
+        <li>Fetches subscription from database via API proxy endpoint (<code>/api/proxy/membership-subscriptions</code>)</li>
+        <li>Compares:
+            <ul>
+                <li><code>currentPeriodStart</code> (period start dates)</li>
+                <li><code>currentPeriodEnd</code> (period end dates)</li>
+                <li><code>subscriptionStatus</code> (subscription status)</li>
+                <li><code>stripeCustomerId</code> (customer ID)</li>
+            </ul>
+        </li>
+        <li>Reports discrepancies (warnings for minor differences, issues for significant differences)</li>
+        <li>Checks reconciliation status</li>
+    </ol>
+
+    <p><strong>Output:</strong></p>
+    <ul>
+        <li>Comparison results (matches, warnings, issues)</li>
+        <li>Reconciliation status</li>
+        <li>Recommendations</li>
+    </ul>
+
+    <h3 id="trigger-batch-job">4. Trigger Batch Job</h3>
+
+    <p><strong>File:</strong> <code>trigger-batch-job.js</code></p>
+
+    <p>Triggers the subscription renewal batch job manually for testing.</p>
+
+    <pre><code>node scripts/test-subscription-renewal/trigger-batch-job.js \
+  --tenant-id=tenant_demo_002 \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --batch-size=10 \
+  --max-subscriptions=100</code></pre>
+
+    <p><strong>Parameters:</strong></p>
+    <ul>
+        <li><code>--tenant-id</code> (required): Tenant ID</li>
+        <li><code>--subscription-id</code> (optional): Filter by specific subscription</li>
+        <li><code>--batch-size</code> (optional): Batch size (default: 10)</li>
+        <li><code>--max-subscriptions</code> (optional): Max subscriptions to process (default: 100)</li>
+    </ul>
+
+    <p><strong>What it does:</strong></p>
+    <ol>
+        <li>Authenticates with backend API</li>
+        <li>Triggers batch job endpoint</li>
+        <li>Reports job execution results</li>
+    </ol>
+
+    <p><strong>Output:</strong></p>
+    <ul>
+        <li>Job execution status</li>
+        <li>Statistics (processed, updated, skipped, errors)</li>
+        <li>Duration</li>
+    </ul>
+
+    <h3 id="full-test-suite">5. Full Test Suite</h3>
+
+    <p><strong>File:</strong> <code>run-full-test.sh</code></p>
+
+    <p>Runs all tests in sequence for complete end-to-end testing.</p>
+
+    <pre><code>chmod +x scripts/test-subscription-renewal/run-full-test.sh
+./scripts/test-subscription-renewal/run-full-test.sh \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --tenant-id=tenant_demo_002 \
+  --days-to-advance=30</code></pre>
+
+    <p><strong>Parameters:</strong></p>
+    <ul>
+        <li><code>--subscription-id</code> (required): Stripe subscription ID</li>
+        <li><code>--tenant-id</code> (optional): Tenant ID (defaults to NEXT_PUBLIC_TENANT_ID)</li>
+        <li><code>--days-to-advance</code> (optional): Days to advance (default: 30)</li>
+    </ul>
+
+    <p><strong>What it does:</strong></p>
+    <ol>
+        <li>Expedites Stripe subscription renewal</li>
+        <li>Waits for webhook processing</li>
+        <li>Verifies database state (before batch job)</li>
+        <li>Triggers batch job</li>
+        <li>Waits for batch job completion</li>
+        <li>Verifies final database state</li>
+    </ol>
+
+    <p><strong>Output:</strong></p>
+    <ul>
+        <li>Complete test results</li>
+        <li>Pass/fail status</li>
+    </ul>
+
+    <h2 id="quick-start">Quick Start Example</h2>
+
+    <pre><code># Set environment variables
+export STRIPE_SECRET_KEY="sk_test_..."
+export DATABASE_URL="postgresql://user:pass@localhost:5432/dbname"
+export NEXT_PUBLIC_API_BASE_URL="http://localhost:8080"
+export API_JWT_USER="jwtadmin"
+export API_JWT_PASS="jwtadmin"
+export NEXT_PUBLIC_TENANT_ID="tenant_demo_002"
+
+# Run full test suite
+./scripts/test-subscription-renewal/run-full-test.sh \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --tenant-id=tenant_demo_002 \
+  --days-to-advance=30</code></pre>
+
+    <h2 id="testing-workflow">Testing Workflow</h2>
+
+    <h3>Step 1: Prepare Test Subscription</h3>
+
+    <p>Ensure you have a test subscription in the database:</p>
+    <pre><code>SELECT id, tenant_id, user_profile_id, membership_plan_id,
+       subscription_status, current_period_start, current_period_end,
+       stripe_subscription_id, stripe_customer_id
+FROM membership_subscription
+WHERE stripe_subscription_id = 'sub_1SeifsK5BrggeAHMBvg2XE93'
+  AND tenant_id = 'tenant_demo_002';</code></pre>
+
+    <h3>Step 2: View Subscription Details (Optional)</h3>
+
+    <p>To check current subscription state before testing:</p>
+    <pre><code>node scripts/test-subscription-renewal/view-stripe-subscription.js \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93</code></pre>
+
+    <h3>Step 3: Run Expedited Renewal</h3>
+
+    <pre><code>node scripts/test-subscription-renewal/expedite-stripe-renewal.js \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --days-to-advance=30</code></pre>
+
+    <h3>Step 4: Verify Webhook Processing</h3>
+
+    <p>Wait 5-10 seconds, then verify database:</p>
+    <pre><code>node scripts/test-subscription-renewal/verify-database.js \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --tenant-id=tenant_demo_002</code></pre>
+
+    <h3>Step 5: Trigger Batch Job</h3>
+
+    <p>If webhook didn't update database, trigger batch job:</p>
+    <pre><code>node scripts/test-subscription-renewal/trigger-batch-job.js \
+  --tenant-id=tenant_demo_002 \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93</code></pre>
+
+    <h3>Step 6: Final Verification</h3>
+
+    <p>Verify database is in sync:</p>
+    <pre><code>node scripts/test-subscription-renewal/verify-database.js \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --tenant-id=tenant_demo_002</code></pre>
+
+    <h2 id="troubleshooting">Troubleshooting</h2>
+
+    <h3>Stripe API Errors</h3>
+
+    <ul>
+        <li><strong>Error: "No such subscription"</strong> - Check subscription ID is correct and in test mode</li>
+        <li><strong>Error: "Invalid API key"</strong> - Verify STRIPE_SECRET_KEY is set and is a test mode key</li>
+        <li><strong>Error: "Cannot update subscription"</strong> - Subscription may be canceled or in invalid state</li>
+    </ul>
+
+    <h3>Database Connection Errors</h3>
+
+    <ul>
+        <li><strong>Error: "Connection refused"</strong> - Check DATABASE_URL and database is running</li>
+        <li><strong>Error: "Authentication failed"</strong> - Verify database credentials</li>
+        <li><strong>Error: "Subscription not found"</strong> - Check subscription exists in database with correct tenant_id</li>
+    </ul>
+
+    <h3>Batch Job Errors</h3>
+
+    <ul>
+        <li><strong>Error: "401 Unauthorized"</strong> - Check API_JWT_USER and API_JWT_PASS</li>
+        <li><strong>Error: "404 Not Found"</strong> - Verify batch job endpoint exists in backend</li>
+        <li><strong>Error: "500 Internal Server Error"</strong> - Check backend logs for details</li>
+    </ul>
+
+    <h2 id="notes">Notes</h2>
+
+    <ul>
+        <li><strong>Test Mode Only:</strong> These scripts only work with Stripe test mode subscriptions</li>
+        <li><strong>Database Safety:</strong> Scripts are read-only for database (except batch job which updates)</li>
+        <li><strong>Webhook Timing:</strong> Allow 5-10 seconds for webhooks to process after expediting</li>
+        <li><strong>Batch Job Timing:</strong> Allow 10-30 seconds for batch job to complete</li>
+    </ul>
+
+    <h2 id="related-documentation">Related Documentation</h2>
+
+    <ul>
+        <li><a href="./SUBSCRIPTION_RENEWAL_BATCH_JOB_ANALYSIS.html">Subscription Renewal Batch Job Analysis</a></li>
+        <li><a href="https://stripe.com/docs/testing" target="_blank">Stripe Test Mode Documentation</a></li>
+        <li><a href="../../Swagger_API_Docs/api-docs.json">Backend API Documentation</a></li>
+    </ul>
+
+</body>
+</html>
+

@@ -1,0 +1,156 @@
+# Task ID: 6
+# Title: Implement discount code functionality
+# Status: done
+# Dependencies: 2 ✅, 5 ✅
+# Priority: medium
+# Description: Add the ability to enter and validate discount codes with real-time price updates.
+# Details:
+- Create discount code input field
+- Implement API call to validate discount codes
+- Update UI to show discount amount when valid code is applied
+- Show appropriate error messages for invalid codes
+- Update total price calculation to include discounts
+- Handle edge cases (expired codes, usage limits, etc.)
+
+- for the manage discount page follow similar you could use  http://localhost:3000/admin/events/6/ticket-types/list  as a reference.
+- Below is the api schema for the rest api schema for the discount codesmake sure to follow the cursor rules for rest api  .cursor\rules\nextjs_api_routes.mdc when implementing the api proxy calls and the rules .cursor\rules\ui_style_guide.mdc for the interface.
+
+"/api/discount-codes/{id}": {
+      "get": {
+        "tags": [
+          "discount-code-resource"
+        ],
+        "operationId": "getDiscountCode",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscountCodeDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "discount-code-resource"
+        ],
+        "operationId": "updateDiscountCode",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscountCodeDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscountCodeDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "discount-code-resource"
+        ],
+        "operationId": "deleteDiscountCode",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "discount-code-resource"
+        ],
+        "operationId": "partialUpdateDiscountCode",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscountCodeDTO"
+              }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscountCodeDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscountCodeDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+-
+# Test Strategy:
+Test with valid and invalid discount codes. Verify price updates correctly. Test all error cases and edge conditions.

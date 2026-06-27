@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADMIN TEST SETUP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.8;
+            color: #2c3e50;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+            font-size: 2.8em;
+            font-weight: 700;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 50px;
+            margin-bottom: 25px;
+            font-size: 2.2em;
+            font-weight: 600;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #555;
+            margin-top: 35px;
+            margin-bottom: 20px;
+            font-size: 1.6em;
+            font-weight: 600;
+        }
+
+        p {
+            margin-bottom: 18px;
+            text-align: justify;
+            font-size: 1.05em;
+        }
+
+        ul, ol {
+            margin: 20px 0;
+            padding-left: 40px;
+        }
+
+        li {
+            margin-bottom: 10px;
+            line-height: 1.8;
+        }
+
+        code {
+            background-color: #f4f4f4;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            color: #e83e8c;
+            border: 1px solid #e1e8ed;
+        }
+
+        pre {
+            background: linear-gradient(135deg, #2d2d2d 0%, #1e1e1e 100%);
+            color: #f8f8f2;
+            padding: 25px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 25px 0;
+            border-left: 5px solid #3498db;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+            font-size: 0.95em;
+            border: none;
+            white-space: pre;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        table thead {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        }
+
+        table th {
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 1.05em;
+        }
+
+        table td {
+            padding: 15px;
+            border-bottom: 1px solid #e1e8ed;
+            background: white;
+        }
+
+        table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+
+        hr {
+            border: none;
+            border-top: 3px solid #ecf0f1;
+            margin: 40px 0;
+            border-radius: 2px;
+        }
+
+        blockquote {
+            border-left: 5px solid #3498db;
+            padding: 15px 25px;
+            margin: 25px 0;
+            background-color: #f8f9fa;
+            color: #555;
+            font-style: italic;
+            border-radius: 4px;
+        }
+
+        strong {
+            color: #2c3e50;
+            font-weight: 700;
+        }
+
+        em {
+            color: #555;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            h2 {
+                font-size: 1.6em;
+            }
+
+            h3 {
+                font-size: 1.3em;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .container {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Pages Test Setup Guide</h1>
+
+<h2>Overview</h2>
+
+<p>This guide explains how to set up and run TestSprite tests for admin pages. Admin pages require authentication with an admin user account.</p>
+
+<h2>Prerequisites</h2>
+
+<ol>
+<li><strong>Admin User Account</strong>: You need an admin user account with ADMIN role in the database</li>
+<li><strong>Admin Credentials</strong>: Email and password for the admin account</li>
+<li><strong>Next.js Dev Server</strong>: Must be running at <code>http://localhost:3000</code> (or custom port)</li>
+<li><strong>TestSprite MCP</strong>: Must be installed and configured</li>
+
+</ol>
+<h2>Admin User Requirements</h2>
+
+<p>The admin user must have:</p>
+<ul>
+<li>✅ Valid Clerk account (can sign in via <code>/sign-in</code>)</li>
+<li>✅ User profile in database with <code>user_role = 'ADMIN'</code></li>
+<li>✅ Profile must match the tenant ID (<code>NEXT_PUBLIC_TENANT_ID</code>)</li>
+
+</ul>
+<h3>How to Create/Verify Admin User</h3>
+
+<ol>
+<li><strong>Sign up</strong> at <code>http://localhost:3000/sign-up</code> (or use existing account)</li>
+<li><strong>Assign ADMIN role</strong> via:</li>
+</ol>
+<ul>
+<li>Admin dashboard: <code>/admin/manage-usage</code> → Edit user → Change Role to <code>ADMIN</code></li>
+<li>Direct database: <code>UPDATE user_profile SET user_role = 'ADMIN' WHERE user_id = '...' AND tenant_id = '...'</code></li>
+</ul>
+<ol>
+<li><strong>Verify</strong> by logging in and checking if <code>/admin</code> page is accessible</li>
+
+</ol>
+<h2>Providing Admin Credentials</h2>
+
+<h3>Method 1: Environment Variables (Recommended)</h3>
+
+<p><strong>Windows PowerShell:</strong></p>
+<pre><code class="language-powershell">$env:TEST_ADMIN_EMAIL=&quot;admin@example.com&quot;
+$env:TEST_ADMIN_PASSWORD=&quot;password123&quot;
+node scripts/run-admin-pages-tests.js</code></pre>
+
+<p><strong>Windows CMD:</strong></p>
+<pre><code class="language-cmd">set TEST_ADMIN_EMAIL=admin@example.com
+set TEST_ADMIN_PASSWORD=password123
+node scripts/run-admin-pages-tests.js</code></pre>
+
+<p><strong>Linux/Mac:</strong></p>
+<pre><code class="language-bash">export TEST_ADMIN_EMAIL=&quot;admin@example.com&quot;
+export TEST_ADMIN_PASSWORD=&quot;password123&quot;
+node scripts/run-admin-pages-tests.js</code></pre>
+
+<h3>Method 2: Command-Line Arguments</h3>
+
+<pre><code class="language-bash">node scripts/run-admin-pages-tests.js --admin-email=admin@example.com --admin-password=password123</code></pre>
+
+<h3>Method 3: .env.local File (Not Recommended)</h3>
+
+<p><strong>⚠️ Security Warning</strong>: Storing credentials in <code>.env.local</code> is not recommended for security reasons. Use environment variables or command-line arguments instead.</p>
+
+<p>If you must use <code>.env.local</code>:</p>
+<pre><code class="language-bash">TEST_ADMIN_EMAIL=admin@example.com
+TEST_ADMIN_PASSWORD=password123</code></pre>
+
+<p>Then run:</p>
+<pre><code class="language-bash">node scripts/run-admin-pages-tests.js</code></pre>
+
+<h2>Running Admin Tests</h2>
+
+<h3>Basic Usage - Sanity Tests</h3>
+
+<pre><code class="language-bash"># With environment variables (recommended)
+$env:TEST_ADMIN_EMAIL=&quot;admin@example.com&quot;
+$env:TEST_ADMIN_PASSWORD=&quot;password123&quot;
+node scripts/run-admin-pages-tests.js</code></pre>
+
+<p>This runs the sanity test plan by default (17 tests, ~5-10 minutes).</p>
+
+<h3>Running Comprehensive Tests</h3>
+
+<pre><code class="language-bash"># Run comprehensive test plan (28 tests, ~15-30 minutes)
+$env:TEST_ADMIN_EMAIL=&quot;admin@example.com&quot;
+$env:TEST_ADMIN_PASSWORD=&quot;password123&quot;
+node scripts/run-admin-pages-tests.js --test-plan=testsprite_tests/admin_pages_comprehensive_test_plan.json</code></pre>
+
+<h3>Custom Test Plan</h3>
+
+<pre><code class="language-bash"># Run sanity tests explicitly
+node scripts/run-admin-pages-tests.js --test-plan=testsprite_tests/admin_pages_sanity_test_plan.json
+
+# Run comprehensive tests
+node scripts/run-admin-pages-tests.js --test-plan=testsprite_tests/admin_pages_comprehensive_test_plan.json</code></pre>
+
+<h3>Custom Base URL</h3>
+
+<pre><code class="language-bash">node scripts/run-admin-pages-tests.js --base-url=http://localhost:3001</code></pre>
+
+<h3>View Help</h3>
+
+<pre><code class="language-bash">node scripts/run-admin-pages-tests.js --help</code></pre>
+
+<h2>Test Plan Structure</h2>
+
+<h3>Sanity Test Plan (17 tests)</h3>
+
+<p>The admin pages sanity test plan includes basic page load verification:</p>
+
+<ol>
+<li><strong>ADMIN-001</strong>: Login and Authentication (Critical)</li>
+</ol>
+<ul>
+<li>Navigates to <code>/sign-in</code></li>
+<li>Fills in admin credentials</li>
+<li>Verifies successful login</li>
+<li>Verifies admin dashboard access</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-002 through ADMIN-017</strong>: Page Load Tests</li>
+</ol>
+<ul>
+<li>Admin Home (<code>/admin</code>)</li>
+<li>Manage Users (<code>/admin/manage-usage</code>)</li>
+<li>Manage Events (<code>/admin/manage-events</code>)</li>
+<li>Event Analytics (<code>/admin/events/dashboard</code>)</li>
+<li>Event Registrations (<code>/admin/events/registrations</code>)</li>
+<li>Poll Management (<code>/admin/polls</code>)</li>
+<li>Focus Groups (<code>/admin/focus-groups</code>)</li>
+<li>Membership Plans (<code>/admin/membership/plans</code>)</li>
+<li>Membership Subscriptions (<code>/admin/membership/subscriptions</code>)</li>
+<li>Bulk Email (<code>/admin/bulk-email</code>)</li>
+<li>Test Stripe (<code>/admin/test-stripe</code>)</li>
+<li>Media Management (<code>/admin/media</code>)</li>
+<li>Executive Committee (<code>/admin/executive-committee</code>)</li>
+<li>Event Sponsors (<code>/admin/event-sponsors</code>)</li>
+<li>Tenant Organizations (<code>/admin/tenant-management/organizations</code>)</li>
+<li>Tenant Settings (<code>/admin/tenant-management/settings</code>)</li>
+
+</ul>
+<h3>Comprehensive Test Plan (28 tests)</h3>
+
+<p>The comprehensive test plan includes functional tests beyond page loads:</p>
+
+<ol>
+<li><strong>ADMIN-001</strong>: Login and Authentication (Critical)</li>
+</ol>
+<ul>
+<li>Same as sanity test</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-002</strong>: Admin Home Page Navigation (Critical)</li>
+</ol>
+<ul>
+<li>Verifies navigation buttons work correctly</li>
+<li>Tests clicking on "Manage Users" and "Manage Events" buttons</li>
+<li>Verifies correct page navigation</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-003</strong>: Manage Users - List and Display (High)</li>
+</ol>
+<ul>
+<li>Verifies user list table displays correctly</li>
+<li>Verifies table headers and columns</li>
+<li>Verifies pagination controls</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-004</strong>: Manage Users - Search and Filter (High)</li>
+</ol>
+<ul>
+<li>Verifies search input field is visible</li>
+<li>Tests search functionality</li>
+<li>Verifies filter options</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-005</strong>: Manage Users - Edit User Role (High)</li>
+</ol>
+<ul>
+<li>Clicks Edit button for a user</li>
+<li>Verifies edit modal opens</li>
+<li>Verifies form fields are visible</li>
+<li>Closes modal without saving</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-006</strong>: Manage Events - List and Display (High)</li>
+</ol>
+<ul>
+<li>Verifies events list displays correctly</li>
+<li>Verifies event cards/rows show proper information</li>
+<li>Verifies pagination controls</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-007</strong>: Manage Events - Future/Past Toggle (Medium)</li>
+</ol>
+<ul>
+<li>Verifies toggle switch is visible</li>
+<li>Tests switching between Future and Past events</li>
+<li>Verifies events list updates</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-008</strong>: Manage Events - Navigate to Event Details (High)</li>
+</ol>
+<ul>
+<li>Clicks on an event card</li>
+<li>Verifies navigation to event details page</li>
+<li>Verifies event information displays</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-009</strong>: Event Details - Navigation Buttons (Medium)</li>
+</ol>
+<ul>
+<li>Verifies navigation button group is visible</li>
+<li>Tests clicking "Tickets" button</li>
+<li>Tests clicking "Media" button</li>
+<li>Verifies correct page navigation</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-010</strong>: Event Tickets List - Display and Pagination (Medium)</li>
+</ol>
+<ul>
+<li>Verifies tickets list displays correctly</li>
+<li>Verifies ticket information columns</li>
+<li>Tests pagination controls</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-011</strong>: Event Media List - Display and Actions (Medium)</li>
+</ol>
+<ul>
+<li>Verifies media grid displays correctly</li>
+<li>Verifies Edit and Delete buttons are visible</li>
+<li>Tests clicking Edit button</li>
+<li>Verifies edit modal opens</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-012</strong>: Media Management - Grid Display (Medium)</li>
+</ol>
+<ul>
+<li>Verifies media grid with gradient background</li>
+<li>Verifies media cards display correctly</li>
+<li>Verifies pagination controls</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-013</strong>: Media Management - Edit Media Modal (Medium)</li>
+</ol>
+<ul>
+<li>Clicks Edit button for media item</li>
+<li>Verifies edit modal opens</li>
+<li>Verifies form fields are visible</li>
+<li>Closes modal without saving</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-014</strong>: Poll Management - List and Create (Medium)</li>
+</ol>
+<ul>
+<li>Verifies polls list displays correctly</li>
+<li>Clicks "Create Poll" button</li>
+<li>Verifies create modal opens</li>
+<li>Verifies form fields are visible</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-015</strong>: Membership Plans - List Display (Medium)</li>
+</ol>
+<ul>
+<li>Verifies membership plans list displays correctly</li>
+<li>Verifies plan information columns</li>
+<li>Verifies create button is visible</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-016</strong>: Membership Subscriptions - List and Filter (Medium)</li>
+</ol>
+<ul>
+<li>Verifies subscriptions list displays correctly</li>
+<li>Verifies subscription information columns</li>
+<li>Verifies filter options</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-017</strong>: Executive Committee - List and Actions (Medium)</li>
+</ol>
+<ul>
+<li>Verifies team members list displays correctly</li>
+<li>Verifies member information</li>
+<li>Verifies action buttons are visible</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-018</strong>: Executive Committee - Create Member Modal (Medium)</li>
+</ol>
+<ul>
+<li>Clicks "Add Member" button</li>
+<li>Verifies create modal opens</li>
+<li>Verifies form fields are visible</li>
+<li>Closes modal without saving</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-019</strong>: Event Sponsors - List and Create (Medium)</li>
+</ol>
+<ul>
+<li>Verifies sponsors list displays correctly</li>
+<li>Clicks "Add Sponsor" button</li>
+<li>Verifies create modal opens</li>
+<li>Verifies form fields are visible</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-020</strong>: Tenant Organizations - List Display (Medium)</li>
+</ol>
+<ul>
+<li>Verifies organizations list displays correctly</li>
+<li>Verifies organization information columns</li>
+<li>Verifies action buttons</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-021</strong>: Tenant Settings - List and View (Medium)</li>
+</ol>
+<ul>
+<li>Verifies settings list displays correctly</li>
+<li>Clicks "View" button for a setting</li>
+<li>Verifies view details page/modal opens</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-022</strong>: Bulk Email - Page Load and Interface (Low)</li>
+</ol>
+<ul>
+<li>Verifies bulk email page loads</li>
+<li>Verifies email interface is visible</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-023</strong>: Test Stripe - Page Load (Low)</li>
+</ol>
+<ul>
+<li>Verifies test Stripe page loads</li>
+<li>Verifies payment testing interface is visible</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-024</strong>: Event Analytics Dashboard - Display (Medium)</li>
+</ol>
+<ul>
+<li>Verifies analytics dashboard loads</li>
+<li>Verifies charts/statistics are displayed</li>
+<li>Verifies filters are visible</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-025</strong>: Event Registrations - List and Details (Medium)</li>
+</ol>
+<ul>
+<li>Verifies registrations list displays correctly</li>
+<li>Verifies registration information columns</li>
+<li>Verifies filter options and pagination</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-026</strong>: Global Contacts - List and Create (Medium)</li>
+</ol>
+<ul>
+<li>Verifies contacts list displays correctly</li>
+<li>Clicks "Add Contact" button</li>
+<li>Verifies create modal opens</li>
+<li>Verifies form fields are visible</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-027</strong>: Global Performers - List Display (Medium)</li>
+</ol>
+<ul>
+<li>Verifies performers list displays correctly</li>
+<li>Verifies performer information</li>
+<li>Verifies action buttons</li>
+
+</ul>
+<ol>
+<li><strong>ADMIN-028</strong>: Admin Navigation - All Pages Accessible (High)</li>
+</ol>
+<ul>
+<li>Tests all navigation buttons from admin home</li>
+<li>Verifies each page loads correctly</li>
+<li>Verifies appropriate content displays</li>
+
+</ul>
+<h2>Test Execution Flow</h2>
+
+<h3>Sanity Tests Flow</h3>
+
+<ol>
+<li><strong>Authentication</strong> (ADMIN-001):</li>
+</ol>
+<ul>
+<li>Navigate to <code>/sign-in</code></li>
+<li>Fill in email and password</li>
+<li>Submit form</li>
+<li>Verify redirect to admin dashboard</li>
+<li>Session is maintained for subsequent tests</li>
+
+</ul>
+<ol>
+<li><strong>Page Load Tests</strong> (ADMIN-002 through ADMIN-017):</li>
+</ol>
+<ul>
+<li>Navigate to each admin page</li>
+<li>Verify page loads without errors</li>
+<li>Verify main components are visible</li>
+<li>No complex interactions (just sanity checks)</li>
+
+</ul>
+<h3>Comprehensive Tests Flow</h3>
+
+<ol>
+<li><strong>Authentication</strong> (ADMIN-001):</li>
+</ol>
+<ul>
+<li>Same as sanity tests</li>
+
+</ul>
+<ol>
+<li><strong>Navigation Tests</strong> (ADMIN-002, ADMIN-008, ADMIN-009, ADMIN-028):</li>
+</ol>
+<ul>
+<li>Test navigation between admin pages</li>
+<li>Verify buttons lead to correct pages</li>
+<li>Verify page transitions work correctly</li>
+
+</ul>
+<ol>
+<li><strong>List Display Tests</strong> (ADMIN-003, ADMIN-006, ADMIN-010, ADMIN-012, etc.):</li>
+</ol>
+<ul>
+<li>Verify data lists/tables display correctly</li>
+<li>Verify columns and headers are visible</li>
+<li>Verify pagination controls work</li>
+
+</ul>
+<ol>
+<li><strong>Form Interaction Tests</strong> (ADMIN-005, ADMIN-013, ADMIN-014, ADMIN-018, ADMIN-019, ADMIN-026):</li>
+</ol>
+<ul>
+<li>Click Create/Edit buttons</li>
+<li>Verify modals open correctly</li>
+<li>Verify form fields are visible</li>
+<li>Close modals without saving (no data modification)</li>
+
+</ul>
+<ol>
+<li><strong>Filter and Search Tests</strong> (ADMIN-004, ADMIN-007, ADMIN-016):</li>
+</ol>
+<ul>
+<li>Verify search input fields are visible</li>
+<li>Test toggle switches (Future/Past events)</li>
+<li>Verify filter options work</li>
+
+</ul>
+<ol>
+<li><strong>Pagination Tests</strong> (ADMIN-010, ADMIN-012):</li>
+</ol>
+<ul>
+<li>Verify pagination controls are visible</li>
+<li>Test clicking Next/Previous buttons</li>
+<li>Verify page updates correctly</li>
+
+</ul>
+<h2>Expected Results</h2>
+
+<h3>Success Criteria</h3>
+
+<ul>
+<li>✅ All pages load without HTTP errors (200 status)</li>
+<li>✅ No console errors (except expected Next.js 15 warnings)</li>
+<li>✅ Main components are visible</li>
+<li>✅ Navigation menu is present</li>
+<li>✅ Page titles/headers are correct</li>
+
+</ul>
+<h3>Common Issues</h3>
+
+<ol>
+<li><strong>Authentication Fails</strong>:</li>
+</ol>
+<ul>
+<li>Check admin credentials are correct</li>
+<li>Verify admin user has ADMIN role in database</li>
+<li>Check tenant ID matches <code>NEXT_PUBLIC_TENANT_ID</code></li>
+<li>Verify Clerk account is active</li>
+
+</ul>
+<ol>
+<li><strong>Page Access Denied</strong>:</li>
+</ol>
+<ul>
+<li>Verify admin user has ADMIN role (not just APPROVED status)</li>
+<li>Check <code>user_profile.user_role = 'ADMIN'</code> in database</li>
+<li>Verify tenant ID matches</li>
+
+</ul>
+<ol>
+<li><strong>Server Not Running</strong>:</li>
+</ol>
+<ul>
+<li>Start Next.js dev server: <code>npm run dev</code></li>
+<li>Verify server is accessible at base URL</li>
+<li>Check for port conflicts</li>
+
+</ul>
+<ol>
+<li><strong>Test Execution Errors</strong>:</li>
+</ol>
+<ul>
+<li>Check TestSprite MCP is installed</li>
+<li>Verify test plan file is valid JSON</li>
+<li>Check lock file: <code>testsprite_tests/tmp/execution.lock</code> (delete if stuck)</li>
+
+</ul>
+<h2>Filtering Test Results</h2>
+
+<p>After running tests, filter expected errors:</p>
+
+<pre><code class="language-bash">node scripts/filter-testsprite-errors.js</code></pre>
+
+<p>This filters out:</p>
+<ul>
+<li>Next.js 15 <code>headers()</code> warnings</li>
+<li>React hydration warnings</li>
+<li>Image aspect ratio warnings</li>
+<li>Network timing errors</li>
+<li>MobileDebugConsole warnings</li>
+
+</ul>
+<h2>Viewing Test Reports</h2>
+
+<pre><code class="language-bash"># View filtered HTML report
+start testsprite_tests\tmp\test_report.html
+
+# Generate unfiltered report (for debugging)
+node scripts/generate-testsprite-html-report-unfiltered.js</code></pre>
+
+<h2>Security Best Practices</h2>
+
+<ol>
+<li><strong>Never commit credentials</strong> to version control</li>
+<li><strong>Use environment variables</strong> instead of hardcoding credentials</li>
+<li><strong>Use test-specific admin account</strong> (not production admin)</li>
+<li><strong>Rotate test credentials</strong> periodically</li>
+<li><strong>Don't share credentials</strong> in chat or documentation</li>
+
+</ol>
+<h2>Troubleshooting</h2>
+
+<h3>"Admin credentials are required" Error</h3>
+
+<p><strong>Solution</strong>: Provide credentials via environment variables or command-line arguments:</p>
+<pre><code class="language-bash">$env:TEST_ADMIN_EMAIL=&quot;admin@example.com&quot;
+$env:TEST_ADMIN_PASSWORD=&quot;password123&quot;
+node scripts/run-admin-pages-tests.js</code></pre>
+
+<h3>"Cannot connect to server" Error</h3>
+
+<p><strong>Solution</strong>:</p>
+<ol>
+<li>Start Next.js dev server: <code>npm run dev</code></li>
+<li>Verify server is running: Open <code>http://localhost:3000</code> in browser</li>
+<li>Check base URL matches server port</li>
+
+</ol>
+<h3>"Authentication failed" Error</h3>
+
+<p><strong>Solution</strong>:</p>
+<ol>
+<li>Verify admin credentials are correct</li>
+<li>Check admin user has ADMIN role in database</li>
+<li>Verify tenant ID matches <code>NEXT_PUBLIC_TENANT_ID</code></li>
+<li>Test login manually in browser first</li>
+
+</ol>
+<h3>"Page access denied" Error</h3>
+
+<p><strong>Solution</strong>:</p>
+<ol>
+<li>Verify <code>user_profile.user_role = 'ADMIN'</code> in database</li>
+<li>Check tenant ID matches</li>
+<li>Verify user profile exists for the tenant</li>
+<li>Log out and log back in after role change</li>
+
+</ol>
+<h2>Related Files</h2>
+
+<h3>Sanity Tests</h3>
+<ul>
+<li>Test Plan: <code>testsprite_tests/admin_pages_sanity_test_plan.json</code></li>
+<li>Test Config: <code>testsprite_tests/admin_pages_test_config.json</code></li>
+<li>Test Script: <code>scripts/run-admin-pages-tests.js</code></li>
+<li>Filter Script: <code>scripts/filter-testsprite-errors.js</code></li>
+
+</ul>
+<h3>Comprehensive Tests</h3>
+<ul>
+<li>Test Plan: <code>testsprite_tests/admin_pages_comprehensive_test_plan.json</code></li>
+<li>Test Config: <code>testsprite_tests/admin_pages_comprehensive_test_config.json</code></li>
+<li>Test Script: <code>scripts/run-admin-pages-tests.js</code> (same script, different test plan)</li>
+<li>Filter Script: <code>scripts/filter-testsprite-errors.js</code></li>
+
+</ul>
+<h2>Test Plan Comparison</h2>
+
+<table>
+<thead><tr><th>Feature</th><th>Sanity Tests</th><th>Comprehensive Tests</th></tr></thead>
+<tbody>
+<tr><td><strong>Number of Tests</strong></td><td>17 tests</td><td>28 tests</td></tr>
+<tr><td><strong>Execution Time</strong></td><td>~5-10 minutes</td><td>~15-30 minutes</td></tr>
+<tr><td><strong>Test Types</strong></td><td>Page loads only</td><td>Page loads + Navigation + Forms + Modals + Pagination + Search</td></tr>
+<tr><td><strong>Interactions</strong></td><td>None (read-only)</td><td>Button clicks, modal opens, form verification</td></tr>
+<tr><td><strong>Data Modification</strong></td><td>None</td><td>None (modals open but don't submit)</td></tr>
+<tr><td><strong>Use Case</strong></td><td>Quick verification that pages are accessible</td><td>Full functional testing of admin interface</td></tr>
+</tbody>
+</table>
+
+<h2>Next Steps</h2>
+
+<p>After sanity tests pass:</p>
+<ol>
+<li>✅ Run comprehensive test plan to verify all functionality</li>
+<li>Add tests for form submissions (with test data)</li>
+<li>Add tests for data modifications (create/edit/delete operations)</li>
+<li>Add tests for complex workflows (multi-step processes)</li>
+<li>Add tests for error handling and edge cases</li>
+
+
+</ol>
+    </div>
+</body>
+</html>

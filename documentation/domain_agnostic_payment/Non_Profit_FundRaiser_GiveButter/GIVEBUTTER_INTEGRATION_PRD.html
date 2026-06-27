@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Givebutter Integration PRD - Zero-Fee Fundraising & Mass Offerings</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #2D2A26;
+            background-color: #F5F1E8;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #8B7D6B;
+            border-bottom: 3px solid #8B7D6B;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        h2 {
+            color: #6B4E3D;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-left: 4px solid #8B7D6B;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #8B7D6B;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+        h4 {
+            color: #A0926B;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        .meta {
+            background: #EDE7D3;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            border-left: 4px solid #8B7D6B;
+        }
+        .meta p {
+            margin: 5px 0;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-ready {
+            background: #4A6741;
+            color: white;
+        }
+        .status-pending {
+            background: #8B4A42;
+            color: white;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .highlight-box {
+            background: #EDE7D3;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #8B7D6B;
+        }
+        .warning-box {
+            background: #FFF4E6;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #A67C52;
+        }
+        .success-box {
+            background: #F0F9F0;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #4A6741;
+        }
+        .code-block {
+            background: #2D2A26;
+            color: #F5F1E8;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .code-block code {
+            color: #F5F1E8;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #8B7D6B;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: #EDE7D3;
+            font-weight: bold;
+            color: #2D2A26;
+        }
+        ul, ol {
+            margin-left: 30px;
+            margin-top: 10px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .tag {
+            display: inline-block;
+            background: #8B7D6B;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="meta">
+            <p><strong>Document Type:</strong> Product Requirements Document (PRD)</p>
+            <p><strong>Project:</strong> Givebutter Integration for Zero-Fee Fundraising & Mass Offerings</p>
+            <p><strong>Version:</strong> 1.0</p>
+            <p><strong>Date:</strong> January 2025</p>
+            <p><strong>Status:</strong> <span class="status-badge status-pending">Enhancement</span></p>
+            <p><strong>Frontend Repository:</strong> <code>E:\project_workspace\mosc-temp</code></p>
+            <p><strong>Backend Repository:</strong> <code>E:\project_workspace\malayalees-us-site-boot</code></p>
+        </div>
+
+        <h1>Givebutter Integration PRD<br><small style="font-size: 0.6em; color: #A0926B;">Zero-Fee Fundraising & Mass Offerings</small></h1>
+
+        <div class="section">
+            <h2>1. Executive Summary</h2>
+            <p>This PRD outlines the integration of Givebutter as a zero-fee payment provider for nonprofit fundraising events and church Mass offerings. The implementation will leverage the existing domain-agnostic payment infrastructure, following the same patterns established for Stripe payments.</p>
+
+            <div class="highlight-box">
+                <h4>Key Objectives</h4>
+                <ul>
+                    <li>Enable zero-fee fundraising for nonprofit events and campaigns</li>
+                    <li>Support Mass offerings and church collections with prayer intentions</li>
+                    <li>Maintain consistency with existing Stripe payment flow architecture</li>
+                    <li>Support multi-tenant configuration with per-tenant Givebutter accounts</li>
+                    <li>Enable recurring donations and offerings</li>
+                    <li>Provide QR code generation for in-person giving</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>2. Background & Context</h2>
+
+            <h3>2.1 Current State</h3>
+            <p>The platform currently supports Stripe payments for ticket sales through a domain-agnostic payment system. The infrastructure includes:</p>
+            <ul>
+                <li>Multi-tenant payment provider configuration (<code>payment_provider_config</code> table)</li>
+                <li>Payment orchestration service for routing payments to appropriate providers</li>
+                <li>Payment transaction tracking (<code>payment_transaction</code> table)</li>
+                <li>Webhook handling for payment status updates</li>
+                <li>Frontend payment components (UniversalPaymentCheckout)</li>
+            </ul>
+
+            <h3>2.2 Business Need</h3>
+            <p>Nonprofit organizations and churches require zero-fee payment processing for:</p>
+            <ul>
+                <li><strong>Fundraising Events:</strong> Charity events, galas, and campaigns where 100% of donations should reach the cause</li>
+                <li><strong>Mass Offerings:</strong> Weekly collections and special offerings with optional prayer intentions</li>
+                <li><strong>Recurring Donations:</strong> Monthly or weekly recurring giving programs</li>
+            </ul>
+
+            <h3>2.3 Why Givebutter</h3>
+            <div class="success-box">
+                <h4>✅ Givebutter Advantages</h4>
+                <ul>
+                    <li><strong>Zero Fees:</strong> True zero-fee model (optional donor tips)</li>
+                    <li><strong>Open REST API:</strong> Direct integration without Zapier dependency</li>
+                    <li><strong>Spring Boot Compatible:</strong> Standard REST API calls with API key authentication</li>
+                    <li><strong>Multi-Tenant Ready:</strong> Works seamlessly with existing tenant-based payment config</li>
+                    <li><strong>Feature Rich:</strong> Supports recurring donations, custom fields (prayer intentions), QR codes, and webhooks</li>
+                    <li><strong>Well Documented:</strong> Comprehensive API documentation</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>3. Scope & Requirements</h2>
+
+            <h3>3.1 In Scope</h3>
+            <ul>
+                <li>Integration of Givebutter as a payment provider type</li>
+                <li>Support for <code>DONATION_ZERO_FEE</code> payment type for fundraising events</li>
+                <li>Support for <code>OFFERING</code> payment type for Mass offerings</li>
+                <li>Multi-tenant configuration (per-tenant Givebutter accounts)</li>
+                <li>Webhook handling for donation status updates</li>
+                <li>Frontend components for donation/offering flows</li>
+                <li>QR code generation for in-person giving</li>
+                <li>Recurring donation/offering support</li>
+                <li>Prayer intention custom fields for Mass offerings</li>
+            </ul>
+
+            <h3>3.2 Out of Scope</h3>
+            <ul>
+                <li>Migration of existing Stripe transactions to Givebutter</li>
+                <li>Givebutter campaign management UI (use Givebutter dashboard)</li>
+                <li>Donor management features (handled by Givebutter)</li>
+                <li>Receipt generation (handled by Givebutter)</li>
+            </ul>
+
+            <h3>3.3 Payment Types Supported</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Payment Type</th>
+                        <th>Use Case</th>
+                        <th>Givebutter Campaign</th>
+                        <th>Features</th>
+                        <th>Event Configuration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>TICKET_SALE</code></td>
+                        <td>Fundraiser/charity events with tickets</td>
+                        <td>Event-specific campaign</td>
+                        <td>Ticket sales, zero fees, event-specific campaign</td>
+                        <td><code>isFundraiserEvent: true</code> + <code>donationConfig.useZeroFeeProvider: true</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>DONATION</code> / <code>DONATION_ZERO_FEE</code></td>
+                        <td>Nonprofit fundraising events</td>
+                        <td>Event-specific campaign</td>
+                        <td>Preset amounts, custom amounts, anonymous option, recurring</td>
+                        <td><code>donationConfig.useZeroFeeProvider: true</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>OFFERING</code></td>
+                        <td>Church Mass offerings</td>
+                        <td>Mass offering campaign</td>
+                        <td>Preset amounts, prayer intentions, QR codes, recurring, anonymous</td>
+                        <td>Always routes to Givebutter if configured</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight-box">
+                <h4>✅ Ticketed Fundraiser Events</h4>
+                <p><strong>Key Feature:</strong> Ticketed events can be configured as fundraisers, routing all ticket sales to Givebutter for zero-fee processing.</p>
+                <p><strong>Configuration:</strong> Set <code>isFundraiserEvent: true</code> (or <code>isCharityEvent: true</code>) in event metadata along with <code>donationConfig.useZeroFeeProvider: true</code> and <code>donationConfig.zeroFeeProvider: "GIVEBUTTER"</code>.</p>
+                <p><strong>Flow:</strong> When users purchase tickets for a fundraiser event, the backend automatically routes the payment to Givebutter instead of Stripe, ensuring zero fees for nonprofit organizations.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>4. Architecture Overview</h2>
+
+            <h3>4.1 System Architecture</h3>
+            <div class="code-block">
+<code>┌─────────────────┐         ┌──────────────────┐         ┌─────────────────┐
+│   Frontend      │         │   Backend        │         │   Givebutter    │
+│   (Next.js)     │────────▶│   (Spring Boot)  │────────▶│   API           │
+│                 │         │                  │         │                 │
+│ - Donation UI   │         │ - Payment        │         │ - Donations     │
+│ - Offering UI   │         │   Orchestration  │         │ - Campaigns     │
+│ - QR Codes      │         │ - Givebutter     │         │ - Webhooks      │
+│                 │         │   Adapter        │         │                 │
+└─────────────────┘         └──────────────────┘         └─────────────────┘
+         │                           │
+         │                           │
+         ▼                           ▼
+┌─────────────────┐         ┌──────────────────┐
+│   Database      │         │   Webhooks       │
+│                 │         │                  │
+│ - payment_      │         │ - donation.      │
+│   provider_     │         │   completed       │
+│   config        │         │ - donation.       │
+│ - payment_      │         │   updated         │
+│   transaction   │         │ - donation.       │
+│                 │         │   refunded        │
+└─────────────────┘         └──────────────────┘</code>
+            </div>
+
+            <h3>4.2 Payment Flow</h3>
+            <ol>
+                <li><strong>Frontend:</strong> User selects donation/offering amount and fills form</li>
+                <li><strong>Frontend:</strong> Calls <code>POST /api/proxy/payments/initialize</code> with payment details</li>
+                <li><strong>Backend:</strong> PaymentOrchestrationService routes to GivebutterPaymentAdapter</li>
+                <li><strong>Backend:</strong> Adapter retrieves tenant's Givebutter config from database</li>
+                <li><strong>Backend:</strong> Adapter calls Givebutter API to create donation</li>
+                <li><strong>Backend:</strong> Returns checkout URL to frontend</li>
+                <li><strong>Frontend:</strong> Redirects user to Givebutter checkout page</li>
+                <li><strong>Givebutter:</strong> Processes payment and sends webhook</li>
+                <li><strong>Backend:</strong> Webhook handler updates payment transaction status</li>
+            </ol>
+
+            <h3>4.3 Multi-Tenant Configuration</h3>
+            <p>Each tenant can have their own Givebutter account configuration stored in <code>payment_provider_config</code>:</p>
+            <ul>
+                <li><strong>API Key:</strong> Encrypted in <code>config_data</code> field</li>
+                <li><strong>Webhook Secret:</strong> Encrypted in <code>webhook_secret</code> field</li>
+                <li><strong>Campaign IDs:</strong> Stored in <code>metadata</code> JSONB field</li>
+                <li><strong>Use Case Routing:</strong> Separate configs for OFFERING vs DONATION_ZERO_FEE</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>5. Database Schema Changes</h2>
+
+            <h3>5.1 Payment Provider Type Enum</h3>
+            <div class="code-block">
+<code>-- Add GIVEBUTTER to payment_provider_type enum
+ALTER TYPE payment_provider_type ADD VALUE IF NOT EXISTS 'GIVEBUTTER';</code>
+            </div>
+
+            <h3>5.2 Payment Type Enum</h3>
+            <p>The following payment types already exist and will be used:</p>
+            <ul>
+                <li><code>TICKET_SALE</code> - Ticket sales (can be routed to Givebutter for fundraiser events)</li>
+                <li><code>DONATION</code> - General donations (can be routed to Givebutter if zero-fee configured)</li>
+                <li><code>OFFERING</code> - Mass offerings and church collections</li>
+            </ul>
+            <p><strong>Note:</strong> <code>DONATION_ZERO_FEE</code> may need to be added if not already present in the enum.</p>
+
+            <h3>5.3 Event Metadata for Fundraiser Events</h3>
+            <p>Events can be marked as fundraisers using metadata fields. The <code>metadata</code> column is of type <code>TEXT</code> (not JSONB) and stores JSON as a string, matching the existing codebase pattern.</p>
+            <div class="code-block">
+<code>-- Mark event as fundraiser and configure Givebutter (stored as JSON string)
+UPDATE event_details
+SET metadata = '{"isFundraiserEvent":true,"donationConfig":{"useZeroFeeProvider":true,"zeroFeeProvider":"GIVEBUTTER","givebutterCampaignId":"campaign_fundraiser_123"}}'
+WHERE id = {event_id};
+
+-- Note: Parse JSON in application code using Jackson ObjectMapper
+-- ObjectMapper mapper = new ObjectMapper();
+-- Map&lt;String, Object&gt; metadata = mapper.readValue(event.getMetadata(), Map.class);</code>
+            </div>
+
+            <div class="warning-box">
+                <h4>⚠️ Metadata Column Type</h4>
+                <p><strong>Uses TEXT (not JSONB):</strong> Following the existing codebase pattern (see <code>user_payment_transaction.metadata text</code>), the <code>metadata</code> column uses <code>TEXT</code> type. JSON data is stored as a string and parsed in application code using Jackson ObjectMapper.</p>
+            </div>
+
+            <h3>5.3 Payment Provider Config Example</h3>
+            <div class="code-block">
+<code>-- Example: Configure Givebutter for Mass Offerings
+INSERT INTO payment_provider_config (
+    tenant_id,
+    provider_type,
+    provider_name,
+    is_active,
+    is_primary,
+    priority,
+    config_data,        -- Encrypted: {"api_key": "gb_live_xxx"}
+    webhook_secret,     -- Encrypted: Givebutter webhook secret
+    supports_wallets,
+    supports_subscriptions,
+    supports_refunds,
+    metadata
+) VALUES (
+    'tenant_demo_001',
+    'GIVEBUTTER',
+    'Givebutter Mass Offerings',
+    true,
+    false,              -- Not primary (Stripe is primary for tickets)
+    1,                  -- Priority for OFFERING use case
+    encrypt('{"api_key": "gb_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}'),
+    encrypt('whsec_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'),
+    true,               -- Supports Apple Pay, Google Pay
+    true,               -- Supports recurring offerings
+    true,               -- Supports refunds
+    '{
+        "supportsZeroFee": true,
+        "useCase": "OFFERING",
+        "apiBaseUrl": "https://api.givebutter.com/v1",
+        "campaignId": "campaign_123abc",
+        "presetAmounts": [5, 10, 25, 50],
+        "allowCustomAmount": true,
+        "allowPrayerIntention": true,
+        "allowAnonymous": true,
+        "recurringEnabled": true
+    }'::jsonb
+);</code>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>6. API Endpoints</h2>
+
+            <h3>6.1 Payment Initialization</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/proxy/payments/initialize</code></td>
+                        <td>POST</td>
+                        <td>Initialize payment session (routes to Givebutter for OFFERING/DONATION_ZERO_FEE)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>6.2 Payment Status</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/proxy/payments/{transactionId}</code></td>
+                        <td>GET</td>
+                        <td>Get payment status by transaction ID</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>6.3 Webhooks</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/webhooks/givebutter</code></td>
+                        <td>POST</td>
+                        <td>Receive Givebutter webhook events (backend Spring Boot endpoint)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>7. Implementation Phases</h2>
+
+            <h3>Phase 1: Backend Foundation (Week 1-2)</h3>
+            <ul>
+                <li>Add GIVEBUTTER to payment_provider_type enum</li>
+                <li>Create GivebutterPaymentAdapter implementing PaymentAdapter interface</li>
+                <li>Implement dynamic config retrieval from payment_provider_config</li>
+                <li>Implement Givebutter API client (REST calls)</li>
+                <li>Update PaymentOrchestrationService to route to Givebutter</li>
+                <li>Create GivebutterWebhookController</li>
+                <li>Implement webhook signature verification</li>
+                <li>Update payment transaction status on webhook events</li>
+            </ul>
+
+            <h3>Phase 2: Frontend Components (Week 2-3)</h3>
+            <ul>
+                <li>Create MassOfferingWidget component</li>
+                <li>Create ZeroFeeFundraiserWidget component</li>
+                <li>Update UniversalPaymentCheckout to support Givebutter</li>
+                <li>Create QR code generation component</li>
+                <li>Add prayer intention input field for offerings</li>
+                <li>Implement recurring donation/offering options</li>
+            </ul>
+
+            <h3>Phase 3: Integration & Testing (Week 3-4)</h3>
+            <ul>
+                <li>End-to-end testing of donation flow</li>
+                <li>End-to-end testing of offering flow</li>
+                <li>Webhook testing with Givebutter</li>
+                <li>Multi-tenant configuration testing</li>
+                <li>QR code generation and scanning testing</li>
+                <li>Recurring donation testing</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>8. Success Criteria</h2>
+            <ul>
+                <li>✅ Zero-fee donations process successfully through Givebutter</li>
+                <li>✅ Mass offerings support prayer intentions and recurring options</li>
+                <li>✅ Webhooks update payment transaction status correctly</li>
+                <li>✅ Multi-tenant configuration works per tenant</li>
+                <li>✅ QR codes generate and scan correctly</li>
+                <li>✅ Payment flow matches Stripe payment UX patterns</li>
+                <li>✅ All payment types (OFFERING, DONATION_ZERO_FEE) route correctly</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>9. Dependencies</h2>
+            <ul>
+                <li><strong>Givebutter Account:</strong> Each tenant needs their own Givebutter account</li>
+                <li><strong>Givebutter API Keys:</strong> API key and webhook secret per tenant</li>
+                <li><strong>Givebutter Campaigns:</strong> Campaign IDs for each use case (OFFERING, DONATION_ZERO_FEE)</li>
+                <li><strong>Database:</strong> Existing payment_provider_config and payment_transaction tables</li>
+                <li><strong>Backend:</strong> Spring Boot payment orchestration infrastructure</li>
+                <li><strong>Frontend:</strong> Next.js payment component infrastructure</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>10. Risks & Mitigations</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Risk</th>
+                        <th>Impact</th>
+                        <th>Mitigation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Givebutter API changes</td>
+                        <td>High</td>
+                        <td>Monitor Givebutter API documentation, version API calls, implement adapter pattern for easy updates</td>
+                    </tr>
+                    <tr>
+                        <td>Webhook delivery failures</td>
+                        <td>Medium</td>
+                        <td>Implement webhook retry logic, log all webhook events, provide manual status update capability</td>
+                    </tr>
+                    <tr>
+                        <td>Multi-tenant config errors</td>
+                        <td>Medium</td>
+                        <td>Validate config on save, provide clear error messages, implement config validation service</td>
+                    </tr>
+                    <tr>
+                        <td>Payment flow inconsistencies</td>
+                        <td>Low</td>
+                        <td>Follow existing Stripe payment patterns, reuse UniversalPaymentCheckout component</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>11. References</h2>
+            <ul>
+                <li><strong>Analysis Document:</strong> <code>FEE_FREE_FUNDRAISER_ANALYSIS.html</code></li>
+                <li><strong>Setup Guide:</strong> <code>GIVEBUTTER_DEVELOPER_SETUP_GUIDE.html</code></li>
+                <li><strong>Backend PRD:</strong> <code>PRD_backend.html</code></li>
+                <li><strong>Database Schema:</strong> <code>code_html_template/SQLS/Latest_Schema_Post__Blob_Claude_11.sql</code></li>
+                <li><strong>Givebutter API Docs:</strong> <a href="https://docs.givebutter.com">https://docs.givebutter.com</a></li>
+                <li><strong>Frontend API Rules:</strong> <code>shared-cursor-rules/nextjs_api_routes.mdc</code></li>
+                <li><strong>UI Style Guide:</strong> <code>shared-cursor-rules/ui_style_guide.mdc</code></li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Encode hero ambient MP4 (silent AAC for Chrome), ffmpeg workflow, FC United home hero video, Clerk static-file matcher, hydration, and playback troubleshooting for MD Strikers.">
+    <title>Home Hero Video — Encoding &amp; Integration Guide</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+        }
+        h1 {
+            font-size: 2.5em;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+        }
+        h2 {
+            font-size: 1.8em;
+            border-left: 4px solid #0066cc;
+            padding-left: 15px;
+            margin-top: 28px;
+            margin-bottom: 16px;
+        }
+        h3 { font-size: 1.4em; color: #333; margin-top: 20px; margin-bottom: 10px; }
+        h4 { font-size: 1.2em; color: #555; margin-top: 16px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        a { color: #0066cc; }
+        a:focus { outline: 2px solid #0066cc; outline-offset: 2px; }
+
+        .toc {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 24px 0;
+        }
+        .toc h2 { margin-top: 0; border: none; padding: 0; font-size: 1.3em; }
+        .toc ul { margin: 12px 0 0 20px; }
+        .toc a { font-weight: 600; }
+
+        .section-intro {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-intro code { background-color: #e8f4f8; color: #0d3b66; padding: 3px 8px; border-radius: 3px; border: 1px solid #b8d4e3; }
+
+        .section-container {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-container.usage {
+            background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%);
+            border-left-color: #9c27b0;
+        }
+        .section-container.parameters {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left-color: #ff9800;
+        }
+        .section-container.output {
+            background: linear-gradient(135deg, #e6ffe6 0%, #ccffcc 100%);
+            border-left-color: #28a745;
+        }
+        .section-header {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            padding: 12px 20px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 8px 8px 0 0;
+            font-size: 1.2em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-header.usage {
+            background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+        }
+        .section-header.parameters {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+        .section-header.output {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+        }
+
+        .parameters-list {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left: 4px solid #ff9800;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .parameters-list code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+
+        .info {
+            background: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            padding: 16px 20px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 16px 20px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 16px 20px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+        .info code, .warning code, .success code,
+        .info .code-highlight, .warning .code-highlight, .success .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+
+        .script-name {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+        }
+
+        code, .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        pre, .code-block {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #b8d4e3;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        pre code { background: transparent; border: none; padding: 0; }
+
+        .command-block {
+            border: 2px solid #2196f3;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        }
+        .command-block.setup { border-color: #2196f3; }
+        .command-block.advance {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-color: #ff9800;
+        }
+        .command-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.5);
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+        }
+        .command-type { font-weight: bold; color: #1565c0; }
+        .command-block.advance .command-type { color: #e65100; }
+        .command-header-buttons { display: flex; gap: 8px; }
+        .copy-button, .copy-button-template {
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .copy-button {
+            background-color: #0066cc;
+            color: white;
+        }
+        .copy-button:hover { background-color: #0052a3; }
+        .copy-button-template {
+            background-color: #6c757d;
+            color: white;
+        }
+        .copy-button-template:hover { background-color: #5a6268; }
+        .copy-button.copied, .copy-button-template.copied {
+            background-color: #28a745;
+        }
+
+        .command-parameters {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.5);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .command-parameters h5 { margin: 0 0 8px 0; font-size: 0.9em; color: #333; }
+
+        .command-content {
+            padding: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            word-break: break-all;
+            color: #0d3b66;
+        }
+        .command-single-line {
+            padding: 12px 15px;
+            background: #e8f4f8;
+            border-top: 1px solid #b8d4e3;
+        }
+        .command-single-line-label {
+            font-size: 0.75em;
+            color: #666;
+            margin-bottom: 6px;
+        }
+        .command-single-line code {
+            display: block;
+            color: #0d3b66;
+            background: transparent;
+            border: none;
+            padding: 0;
+            white-space: pre-wrap;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        tr:hover { background-color: #e3f2fd; transition: background-color 0.2s ease; }
+        td code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            h1 { font-size: 1.8em; }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Home Hero Video — Encoding &amp; Integration Guide</h1>
+        <p><strong>Project:</strong> MD Strikers (FC United home). Documents the ambient hero background video pipeline: source file, <code class="code-highlight">ffmpeg</code> encoding, output asset path, and React components on the homepage.</p>
+
+        <nav class="toc" aria-label="Table of contents">
+            <h2>Table of Contents</h2>
+            <ul>
+                <li><a href="#overview">1. Overview</a></li>
+                <li><a href="#prerequisites">2. Prerequisites</a></li>
+                <li><a href="#usage-script">3. Run encode script (recommended)</a></li>
+                <li><a href="#usage-trim">4. Trim-only ffmpeg (alternative)</a></li>
+                <li><a href="#parameters">5. Script behavior &amp; outputs</a></li>
+                <li><a href="#integration">6. Application integration</a></li>
+                <li><a href="#troubleshooting">7. Playback troubleshooting &amp; fixes</a></li>
+                <li><a href="#reference">8. Files reference</a></li>
+            </ul>
+        </nav>
+
+        <section id="overview" class="section-intro" aria-labelledby="overview-heading">
+            <h2 id="overview-heading">Overview</h2>
+            <p>The homepage hero (<code class="code-highlight">/</code>) uses a <strong>looping muted MP4</strong> as a full-bleed background (similar to ambient hero patterns on marketing sites), with a dark gradient overlay so headline and countdown text stay readable. The first <strong>39 seconds</strong> of the source WhatsApp export are encoded to <code class="code-highlight">1920×1080</code> H.264, with <strong>scale + center crop</strong> to reduce letterboxing from mobile-style source frames.</p>
+            <p>Encoding is performed <strong>locally</strong> with <code class="code-highlight">ffmpeg</code> (not in CI). The repo ships <code class="script-name">encode-hero-video.ps1</code> and the React component <code class="script-name">FcUnitedHeroVideo.tsx</code> that references the generated asset. Output includes a <strong>silent AAC</strong> stereo track (not video-only) for reliable Chrome playback — see <a href="#troubleshooting">Playback troubleshooting &amp; fixes</a>.</p>
+        </section>
+
+        <div class="info">
+            <strong>💡 Web playback hints:</strong> The player uses <code class="code-highlight">autoPlay</code>, <code class="code-highlight">muted</code>, <code class="code-highlight">playsInline</code>, and <code class="code-highlight">preload=&quot;auto&quot;</code>. <strong>Looping</strong> is handled in JavaScript (<code class="code-highlight">ended</code> → seek to 0 + <code class="code-highlight">play()</code>), not only the HTML <code class="code-highlight">loop</code> attribute, for Chrome compatibility. A <strong>poster</strong> image is shown until the video loads or if the file is missing.
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ Prompt-only AI video tools:</strong> Tools that only <em>generate</em> video from prompts (e.g. some “AI editor” products) are <strong>not</strong> a substitute for trimming, cropping, and re-encoding. Use <code class="code-highlight">ffmpeg</code>, DaVinci Resolve, Premiere Pro, or HandBrake for precise cuts and web export.
+        </div>
+
+        <section id="prerequisites" class="section-container parameters" aria-labelledby="prereq-heading">
+            <div class="section-header parameters" id="prereq-heading">⚙️ Prerequisites</div>
+            <ul>
+                <li><strong>ffmpeg</strong> on your PATH. Install on Windows e.g. <code class="code-highlight">winget install Gyan.FFmpeg</code> or Chocolatey <code class="code-highlight">choco install ffmpeg</code>.</li>
+                <li>Source video present at: <code class="code-highlight">public/images/md_strikers_media/md_media/WhatsApp Video 2026-03-24 at 10.56.17 AM.mp4</code></li>
+                <li>Run the encode script from the <strong>repository root</strong> (or ensure paths resolve).</li>
+            </ul>
+        </section>
+
+        <section id="usage-script" class="section-container usage" aria-labelledby="usage-script-heading">
+            <div class="section-header usage" id="usage-script-heading">📋 Encode hero video (PowerShell)</div>
+            <p>Runs <code class="script-name">encode-hero-video.ps1</code>: trims to <strong>39 seconds</strong>, scales to cover <strong>1920×1080</strong>, center-crops, muxes a <strong>silent AAC</strong> stereo track (via <code class="code-highlight">anullsrc</code>), adds <code class="code-highlight">faststart</code> for streaming.</p>
+
+            <div class="command-block setup"
+                 data-command-type="setup"
+                 data-command-base="powershell -ExecutionPolicy Bypass -File scripts/encode-hero-video.ps1"
+                 data-template-command="powershell -ExecutionPolicy Bypass -File scripts/encode-hero-video.ps1">
+                <div class="command-header">
+                    <span class="command-type">Setup — Encode script</span>
+                    <div class="command-header-buttons">
+                        <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cmd-encode-hero')" title="Copy template command">📄 Template</button>
+                        <button type="button" class="copy-button" onclick="copyCommand(this, 'cmd-encode-hero')" title="Copy command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Parameters</h5>
+                    <p style="font-size:0.9em;color:#555;">No CLI arguments — paths are fixed inside the script. Run from repo root.</p>
+                </div>
+                <div class="command-content" id="cmd-encode-hero">powershell -ExecutionPolicy Bypass -File scripts/encode-hero-video.ps1</div>
+                <div class="command-single-line" id="cmd-encode-hero-single">
+                    <div class="command-single-line-label">Windows single-line:</div>
+                    <code id="cmd-encode-hero-single-code">powershell -ExecutionPolicy Bypass -File scripts/encode-hero-video.ps1</code>
+                </div>
+            </div>
+        </section>
+
+        <section id="usage-trim" class="section-container" aria-labelledby="usage-trim-heading">
+            <div class="section-header">✂️ Trim-only (manual reframe)</div>
+            <p>If you prefer to remove letterboxing in DaVinci Resolve / Premiere first, use this <strong>trim-only</strong> one-liner (no crop). It uses <code class="code-highlight">-an</code> (video-only). For Chrome reliability, prefer the main encode script or <a href="#remux-silent-audio">remux silent audio</a> into the result. Adjust paths if needed.</p>
+
+            <div class="command-block advance"
+                 data-command-type="advance"
+                 data-command-base="ffmpeg -y -i &quot;public/images/md_strikers_media/md_media/WhatsApp Video 2026-03-24 at 10.56.17 AM.mp4&quot; -t 39 -c:v libx264 -pix_fmt yuv420p -crf 23 -an -movflags +faststart &quot;public/images/md_strikers_media/md_media/hero-home-ambient.mp4&quot;"
+                 data-template-command="ffmpeg -y -i &quot;public/images/md_strikers_media/md_media/WhatsApp Video 2026-03-24 at 10.56.17 AM.mp4&quot; -t 39 -c:v libx264 -pix_fmt yuv420p -crf 23 -an -movflags +faststart &quot;public/images/md_strikers_media/md_media/hero-home-ambient.mp4&quot;">
+                <div class="command-header">
+                    <span class="command-type">Advance — ffmpeg trim-only</span>
+                    <div class="command-header-buttons">
+                        <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cmd-ffmpeg-trim')" title="Copy template command">📄 Template</button>
+                        <button type="button" class="copy-button" onclick="copyCommand(this, 'cmd-ffmpeg-trim')" title="Copy command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Parameters</h5>
+                    <p style="font-size:0.9em;color:#555;">Fixed paths in command; run from repository root in a shell where <code class="code-highlight">ffmpeg</code> is on PATH.</p>
+                </div>
+                <div class="command-content" id="cmd-ffmpeg-trim">ffmpeg -y -i "public/images/md_strikers_media/md_media/WhatsApp Video 2026-03-24 at 10.56.17 AM.mp4" -t 39 -c:v libx264 -pix_fmt yuv420p -crf 23 -an -movflags +faststart "public/images/md_strikers_media/md_media/hero-home-ambient.mp4"</div>
+                <div class="command-single-line" id="cmd-ffmpeg-trim-single">
+                    <div class="command-single-line-label">Windows single-line:</div>
+                    <code id="cmd-ffmpeg-trim-single-code">ffmpeg -y -i "public/images/md_strikers_media/md_media/WhatsApp Video 2026-03-24 at 10.56.17 AM.mp4" -t 39 -c:v libx264 -pix_fmt yuv420p -crf 23 -an -movflags +faststart "public/images/md_strikers_media/md_media/hero-home-ambient.mp4"</code>
+                </div>
+            </div>
+        </section>
+
+        <section id="parameters" class="section-container parameters" aria-labelledby="parameters-heading">
+            <div class="section-header parameters" id="parameters-heading">⚙️ Script behavior (encode-hero-video.ps1)</div>
+            <div class="parameters-list">
+                <p><strong>What the script does:</strong></p>
+                <ul>
+                    <li><code>ffmpeg</code> <strong>-t 39</strong> — first 39 seconds only.</li>
+                    <li>Video filter: <code class="code-highlight">scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080</code> — fill 16:9 then center crop (typical fix for phone video letterbox).</li>
+                    <li><code class="code-highlight">-c:v libx264 -pix_fmt yuv420p -crf 23 -preset medium</code> — broad browser support.</li>
+                    <li><strong>Audio:</strong> <code class="code-highlight">-f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100</code> with <code class="code-highlight">-map 0:v:0 -map 1:a:0</code>, <code class="code-highlight">-c:a aac -b:a 96k</code>, <code class="code-highlight">-shortest</code> — silent stereo AAC (keeps Chrome from freezing / breaking loop on video-only MP4; in-browser playback stays <strong>muted</strong>).</li>
+                    <li><code class="code-highlight">-movflags +faststart</code> — moov at start for progressive web playback.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="integration" class="section-container output" aria-labelledby="integration-heading">
+            <div class="section-header output" id="integration-heading">📊 Application integration</div>
+            <ul>
+                <li><strong>Component:</strong> <code class="script-name">src/components/fc-united/FcUnitedHeroVideo.tsx</code> — client <code class="code-highlight">&lt;video&gt;</code> with poster <code class="code-highlight">${FC_IMG}/anim-bg-copyright.jpg</code>, source URL constant <code class="code-highlight">HERO_HOME_AMBIENT_MP4</code> = <code class="code-highlight">/images/md_strikers_media/md_media/hero-home-ambient.mp4</code>. Does <strong>not</strong> rely on the HTML <code class="code-highlight">loop</code> attribute alone: <code class="code-highlight">ended</code> seeks to <code class="code-highlight">0</code> and calls <code class="code-highlight">play()</code>; a light <strong>stuck watchdog</strong> recovers if <code class="code-highlight">currentTime</code> stops advancing mid-playback. Only calls <code class="code-highlight">play()</code> when the element is <strong>paused</strong> (avoids disrupting Chrome’s decoder by spamming <code class="code-highlight">play()</code> on every <code class="code-highlight">canplay</code> / <code class="code-highlight">canplaythrough</code>).</li>
+                <li><strong>Page:</strong> <code class="script-name">FcUnitedHomePage.tsx</code> — hero section uses <code class="code-highlight">&lt;FcUnitedHeroVideo /&gt;</code> under an absolute layer, then a gradient overlay for text contrast.</li>
+                <li><strong>Related:</strong> <code class="script-name">FcEventCountdown.tsx</code> defers live clock to <code class="code-highlight">useEffect</code> (<code class="code-highlight">null</code> until mount) so SSR and hydration match — avoids a hydration error that could force a client re-render of the page (previously mistaken for video “freezing”).</li>
+            </ul>
+            <div class="success">
+                <strong>✅ After encoding:</strong> Place <code class="code-highlight">hero-home-ambient.mp4</code> under <code class="code-highlight">public/images/md_strikers_media/md_media/</code> and reload <code class="code-highlight">/</code>. If the file is absent, the poster image displays until the asset exists. For Chrome-specific freezes, see <a href="#troubleshooting">section 7</a>.
+            </div>
+        </section>
+
+        <section id="troubleshooting" class="section-container" aria-labelledby="troubleshooting-heading">
+            <div class="section-header">🔧 Playback troubleshooting &amp; fixes</div>
+            <p id="troubleshooting-intro">These issues were hit in production-style testing (Chrome vs Edge, Clerk middleware, React hydration). Use this section when the hero MP4 404s, stalls mid-playback, or fails to loop.</p>
+
+            <h3 id="fix-chrome-freeze">Chrome: freeze mid-playback &amp; broken loop (video-only MP4)</h3>
+            <p><strong>Symptom:</strong> Microsoft Edge plays the file smoothly; Google Chrome freezes after ~20–40s and/or does not loop. <strong>Cause:</strong> Chrome is sensitive to <strong>video-only</strong> MP4s (<code class="code-highlight">ffmpeg -an</code>): the media pipeline can stall and <code class="code-highlight">loop</code> behavior is unreliable.</p>
+            <p><strong>Fix (encoding):</strong> Mux a <strong>silent AAC</strong> stereo track with the same duration as the video (<code class="code-highlight">anullsrc</code> + <code class="code-highlight">-shortest</code>). The main <code class="script-name">encode-hero-video.ps1</code> already does this. The in-page player remains <strong>muted</strong>; users do not hear audio.</p>
+
+            <h3 id="remux-silent-audio">Quick fix: add silent audio to an existing file (no video re-encode)</h3>
+            <p>If you already have a video-only <code class="code-highlight">hero-home-ambient.mp4</code>, remux with <strong>copy</strong> for video and AAC for audio, then replace the file (or adjust paths). From repository root:</p>
+
+            <div class="command-block setup"
+                 data-command-type="setup"
+                 data-command-base="ffmpeg -y -i &quot;public/images/md_strikers_media/md_media/hero-home-ambient.mp4&quot; -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -b:a 96k -shortest -movflags +faststart &quot;public/images/md_strikers_media/md_media/hero-home-ambient.tmp.mp4&quot;"
+                 data-template-command="ffmpeg -y -i &quot;public/images/md_strikers_media/md_media/hero-home-ambient.mp4&quot; -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -b:a 96k -shortest -movflags +faststart &quot;public/images/md_strikers_media/md_media/hero-home-ambient.tmp.mp4&quot;">
+                <div class="command-header">
+                    <span class="command-type">Remux — silent AAC (copy video)</span>
+                    <div class="command-header-buttons">
+                        <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cmd-remux-aac')" title="Copy template command">📄 Template</button>
+                        <button type="button" class="copy-button" onclick="copyCommand(this, 'cmd-remux-aac')" title="Copy command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 After running</h5>
+                    <p style="font-size:0.9em;color:#555;">Rename the temp file to replace the original, e.g. PowerShell: <code class="code-highlight">Move-Item -Force hero-home-ambient.tmp.mp4 hero-home-ambient.mp4</code> in the same folder.</p>
+                </div>
+                <div class="command-content" id="cmd-remux-aac">ffmpeg -y -i "public/images/md_strikers_media/md_media/hero-home-ambient.mp4" -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -b:a 96k -shortest -movflags +faststart "public/images/md_strikers_media/md_media/hero-home-ambient.tmp.mp4"</div>
+                <div class="command-single-line" id="cmd-remux-aac-single">
+                    <div class="command-single-line-label">Windows single-line:</div>
+                    <code id="cmd-remux-aac-single-code">ffmpeg -y -i "public/images/md_strikers_media/md_media/hero-home-ambient.mp4" -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -b:a 96k -shortest -movflags +faststart "public/images/md_strikers_media/md_media/hero-home-ambient.tmp.mp4"</code>
+                </div>
+            </div>
+
+            <h3 id="fix-clerk-404">Clerk middleware: MP4 returns 404 HTML instead of video</h3>
+            <p><strong>Symptom:</strong> Network tab shows <code class="code-highlight">404</code> for <code class="code-highlight">/images/.../hero-home-ambient.mp4</code> with headers like <code class="code-highlight">x-clerk-auth-reason: protect-rewrite</code> and HTML body instead of binary video.</p>
+            <p><strong>Cause:</strong> Next.js runs Clerk middleware on matched routes. Static extensions must be excluded from the matcher; <code class="code-highlight">.mp4</code> was not originally listed, so Clerk ran <code class="code-highlight">auth.protect()</code> on the asset URL.</p>
+            <p><strong>Fix:</strong> <code class="code-highlight">src/middleware.ts</code> <code class="code-highlight">config.matcher</code> includes video/audio extensions (e.g. <code class="code-highlight">mp4</code>, <code class="code-highlight">webm</code>, <code class="code-highlight">aac</code>) so those requests skip Clerk and Next.js serves <code class="code-highlight">public/</code> files normally.</p>
+
+            <h3 id="fix-hydration">React: hydration mismatch on countdown (not the video file)</h3>
+            <p><strong>Symptom:</strong> Console reports hydration mismatch on <code class="code-highlight">FcEventCountdown</code> (server vs client seconds differ).</p>
+            <p><strong>Fix:</strong> Do not initialize countdown state with <code class="code-highlight">Date.now()</code> on both server and client. Use <code class="code-highlight">null</code> until <code class="code-highlight">useEffect</code> runs, then start the interval — see <code class="script-name">FcEventCountdown.tsx</code>.</p>
+
+            <div class="warning">
+                <strong>⚠️ Avoid:</strong> Calling <code class="code-highlight">video.play()</code> on every <code class="code-highlight">canplay</code> / <code class="code-highlight">canplaythrough</code> / <code class="code-highlight">loadeddata</code> while the clip is already playing — can contribute to stutter. Prefer <strong>play only when paused</strong> plus <strong>visibility</strong> / <strong>ended</strong> handlers (as in <code class="script-name">FcUnitedHeroVideo.tsx</code>).
+            </div>
+        </section>
+
+        <section id="reference" class="section-container" aria-labelledby="reference-heading">
+            <div class="section-header">📁 Files reference</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Artifact</th>
+                        <th>Path / role</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Encode script</td>
+                        <td><code>scripts/encode-hero-video.ps1</code></td>
+                    </tr>
+                    <tr>
+                        <td>Hero video component</td>
+                        <td><code>src/components/fc-united/FcUnitedHeroVideo.tsx</code></td>
+                    </tr>
+                    <tr>
+                        <td>Event countdown (hydration)</td>
+                        <td><code>src/components/fc-united/FcEventCountdown.tsx</code></td>
+                    </tr>
+                    <tr>
+                        <td>Clerk matcher (static video URLs)</td>
+                        <td><code>src/middleware.ts</code> — <code class="code-highlight">config.matcher</code> skips <code class="code-highlight">.mp4</code> etc.</td>
+                    </tr>
+                    <tr>
+                        <td>Home page</td>
+                        <td><code>src/components/fc-united/FcUnitedHomePage.tsx</code></td>
+                    </tr>
+                    <tr>
+                        <td>Source (input)</td>
+                        <td><code>public/images/md_strikers_media/md_media/WhatsApp Video 2026-03-24 at 10.56.17 AM.mp4</code></td>
+                    </tr>
+                    <tr>
+                        <td>Output (generated)</td>
+                        <td><code>public/images/md_strikers_media/md_media/hero-home-ambient.mp4</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <p style="margin-top:32px;font-size:0.9em;color:#666;"><strong>Documentation rule:</strong> Styled per <code class="code-highlight">.cursor/rules/html_documentation_styling_guide.mdc</code> — colored sections, light blue code tokens, command blocks with Template + Copy, Windows single-line commands.</p>
+    </main>
+
+    <script>
+        function copyCommand(button, commandId) {
+            const commandElement = document.getElementById(commandId);
+            if (!commandElement) return;
+            const commandText = commandElement.textContent.trim();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(commandText).then(function () {
+                    button.classList.add('copied');
+                    var t = button.textContent;
+                    button.textContent = '✓ Copied!';
+                    setTimeout(function () {
+                        button.classList.remove('copied');
+                        button.textContent = t;
+                    }, 2000);
+                }).catch(function (err) {
+                    console.error('Copy failed:', err);
+                });
+            }
+        }
+
+        function copyTemplateCommand(button, commandId) {
+            const commandBlock = button.closest('.command-block');
+            if (!commandBlock) return;
+            var templateCommand = commandBlock.getAttribute('data-template-command');
+            if (!templateCommand) {
+                const el = document.getElementById(commandId);
+                if (!el) return;
+                templateCommand = el.textContent.trim();
+            }
+            templateCommand = templateCommand.replace(/&quot;/g, '"');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(templateCommand).then(function () {
+                    button.classList.add('copied');
+                    var t = button.textContent;
+                    button.textContent = '✓ Copied!';
+                    setTimeout(function () {
+                        button.classList.remove('copied');
+                        button.textContent = t;
+                    }, 2000);
+                }).catch(function (err) {
+                    console.error('Copy failed:', err);
+                });
+            }
+        }
+    </script>
+</body>
+</html>

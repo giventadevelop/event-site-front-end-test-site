@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Creator Analytics Dashboard</title>
+  <style>
+    :root {
+      --hero-night-primary: #1a0a2e;
+      --hero-night-secondary: #2d1b4e;
+      --hero-night-tertiary: #1e1b4b;
+      --hero-night-deep: #0f172a;
+
+      --soft-green: #f0fdf4;
+
+      --purple-glass-gradient: linear-gradient(
+        145deg,
+        rgba(196, 181, 253, 0.96) 0%,
+        rgba(167, 139, 250, 0.94) 48%,
+        rgba(183, 148, 252, 0.95) 100%
+      );
+      --purple-glass-border: rgba(237, 233, 254, 0.82);
+      --purple-glass-shadow: 0 4px 14px rgba(76, 29, 149, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+      --purple-glass-shadow-hover: 0 10px 28px rgba(76, 29, 149, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+      --heading-strong: #1e1b4b;
+      --body-primary: #312e81;
+      --body-secondary: #475569;
+      --on-dark-primary: #f8fafc;
+      --on-dark-secondary: rgba(248, 250, 252, 0.92);
+
+      --blue: #3b82f6;
+      --green: #22c55e;
+      --purple: #a855f7;
+      --orange: #f97316;
+      --gold: #f59e0b;
+      --cyan: #22d3ee;
+      --magenta: #e879f9;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Plus Jakarta Sans", "DM Sans", "Poppins", "Segoe UI", Arial, sans-serif;
+      color: var(--on-dark-primary);
+      background:
+        radial-gradient(circle at 12% 18%, rgba(34, 211, 238, 0.1), transparent 35%),
+        radial-gradient(circle at 85% 10%, rgba(232, 121, 249, 0.1), transparent 35%),
+        linear-gradient(140deg, var(--hero-night-primary), var(--hero-night-secondary) 45%, var(--hero-night-tertiary) 72%, var(--hero-night-deep));
+      overflow-x: hidden;
+    }
+
+    .dashboard-shell {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1.25rem 1rem 2rem;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.9rem 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(26, 10, 46, 0.58);
+      backdrop-filter: blur(12px);
+      border-radius: 1rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    .brand-dot {
+      width: 0.7rem;
+      height: 0.7rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--cyan), var(--magenta));
+      box-shadow: 0 0 0 4px rgba(196, 181, 253, 0.2);
+      flex-shrink: 0;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .brand p {
+      margin: 0;
+      color: var(--on-dark-secondary);
+      font-size: 0.8rem;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .chip-btn {
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      background: rgba(109, 40, 217, 0.45);
+      border-radius: 999px;
+      padding: 0.48rem 0.85rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .chip-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(109, 40, 217, 0.8);
+      box-shadow: 0 8px 16px rgba(109, 40, 217, 0.35);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 1rem;
+    }
+
+    .sidebar,
+    .glass-card {
+      background: var(--purple-glass-gradient);
+      border: 1px solid var(--purple-glass-border);
+      box-shadow: var(--purple-glass-shadow);
+      backdrop-filter: blur(18px);
+      border-radius: 1rem;
+    }
+
+    .sidebar {
+      padding: 1rem;
+      height: fit-content;
+      position: sticky;
+      top: 1rem;
+    }
+
+    .rail-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: rgba(255, 255, 255, 0.88);
+      color: #0f172a;
+      border-radius: 999px;
+      padding: 0.35rem 0.7rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.9rem;
+    }
+
+    .rail-mark {
+      width: 1rem;
+      height: 0.42rem;
+      border-radius: 0.25rem;
+      background: #facc15;
+      flex-shrink: 0;
+    }
+
+    .menu {
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .menu a {
+      text-decoration: none;
+      color: var(--body-primary);
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 0.65rem;
+      padding: 0.62rem 0.7rem;
+      transition: background 0.25s ease, transform 0.25s ease;
+      background: rgba(255, 255, 255, 0.28);
+    }
+
+    .menu a.active {
+      background: rgba(99, 102, 241, 0.32);
+      color: var(--heading-strong);
+    }
+
+    .menu a:hover {
+      background: rgba(255, 255, 255, 0.5);
+      transform: translateX(2px);
+    }
+
+    .main {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .main-header {
+      padding: 1rem 1rem 0.2rem;
+    }
+
+    .main-header h2 {
+      margin: 0 0 0.35rem;
+      font-size: clamp(1.5rem, 3vw, 2.15rem);
+      color: var(--on-dark-primary);
+      font-weight: 500;
+      line-height: 1.15;
+    }
+
+    .main-header .accent {
+      background: linear-gradient(90deg, var(--blue), var(--purple));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      font-weight: 600;
+    }
+
+    .main-header p {
+      margin: 0;
+      color: var(--on-dark-secondary);
+      font-size: 0.96rem;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.8rem;
+    }
+
+    .kpi-card {
+      padding: 1rem;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--purple-glass-shadow-hover);
+    }
+
+    .kpi-label {
+      margin: 0 0 0.6rem;
+      color: var(--body-secondary);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .kpi-value {
+      margin: 0;
+      color: var(--heading-strong);
+      font-size: 1.6rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .kpi-meta {
+      margin: 0.6rem 0 0;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .up {
+      color: #166534;
+    }
+
+    .down {
+      color: #9f1239;
+    }
+
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 0.8rem;
+    }
+
+    .panel {
+      padding: 1rem;
+      min-height: 320px;
+    }
+
+    .panel h3 {
+      margin: 0;
+      color: var(--heading-strong);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .panel-sub {
+      margin: 0.35rem 0 1rem;
+      color: var(--body-secondary);
+      font-size: 0.82rem;
+    }
+
+    .chart-shell {
+      height: 230px;
+      border-radius: 0.85rem;
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.3)),
+        repeating-linear-gradient(
+          to right,
+          rgba(79, 70, 229, 0.07),
+          rgba(79, 70, 229, 0.07) 1px,
+          transparent 1px,
+          transparent 52px
+        );
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 22px;
+      height: 140px;
+      width: 100%;
+    }
+
+    .chart-line svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .legend {
+      margin-top: 0.7rem;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: 0.78rem;
+      color: var(--body-primary);
+      font-weight: 600;
+    }
+
+    .dot {
+      width: 0.62rem;
+      height: 0.62rem;
+      border-radius: 999px;
+      display: inline-block;
+      margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+
+    .table-panel {
+      padding: 1rem;
+    }
+
+    .table-shell {
+      overflow: auto;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 0.85rem;
+      background: rgba(255, 255, 255, 0.33);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 520px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 0.72rem 0.78rem;
+      font-size: 0.84rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+      color: var(--body-primary);
+      white-space: nowrap;
+    }
+
+    th {
+      color: var(--heading-strong);
+      font-size: 0.76rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0.22rem 0.58rem;
+      font-size: 0.74rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .badge.high {
+      background: rgba(34, 197, 94, 0.2);
+      color: #166534;
+    }
+
+    .badge.medium {
+      background: rgba(249, 115, 22, 0.2);
+      color: #9a3412;
+    }
+
+    .badge.low {
+      background: rgba(59, 130, 246, 0.2);
+      color: #1d4ed8;
+    }
+
+    @media (max-width: 1120px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+
+      .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .analytics-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .top-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-dot" aria-hidden="true"></span>
+        <div>
+          <h1>Creator Analytics</h1>
+          <p>Premium insights for performance and growth</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="chip-btn" type="button">Last 30 days</button>
+        <button class="chip-btn" type="button">Export CSV</button>
+        <button class="chip-btn" type="button">Create Report</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <span class="rail-eyebrow">
+          <span class="rail-mark" aria-hidden="true"></span>
+          Creator
+        </span>
+        <nav class="menu" aria-label="Dashboard navigation">
+          <a class="active" href="#">Overview</a>
+          <a href="#">Audience</a>
+          <a href="#">Content</a>
+          <a href="#">Revenue</a>
+          <a href="#">Campaigns</a>
+          <a href="#">Settings</a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <section class="main-header">
+          <h2>Creator Performance <span class="accent">Overview</span></h2>
+          <p>Track engagement, conversion, and audience quality with a clean visual hierarchy.</p>
+        </section>
+
+        <section class="kpi-grid">
+          <article class="glass-card kpi-card">
+            <p class="kpi-label">Total Views</p>
+            <p class="kpi-value">1.28M</p>
+            <p class="kpi-meta up">+12.4% vs last month</p>
+          </article>
+          <article class="glass-card kpi-card">
+            <p class="kpi-label">Engagement Rate</p>
+            <p class="kpi-value">8.9%</p>
+            <p class="kpi-meta up">+1.2pp uplift</p>
+          </article>
+          <article class="glass-card kpi-card">
+            <p class="kpi-label">New Followers</p>
+            <p class="kpi-value">24.6K</p>
+            <p class="kpi-meta up">+6.8% growth</p>
+          </article>
+          <article class="glass-card kpi-card">
+            <p class="kpi-label">Revenue</p>
+            <p class="kpi-value">$18,420</p>
+            <p class="kpi-meta down">-3.1% this period</p>
+          </article>
+        </section>
+
+        <section class="analytics-grid">
+          <article class="glass-card panel">
+            <h3>Engagement Trend</h3>
+            <p class="panel-sub">Daily interactions, saves, and shares over the selected period.</p>
+            <div class="chart-shell" role="img" aria-label="Line chart showing engagement trend">
+              <div class="chart-line">
+                <svg viewBox="0 0 1000 320" preserveAspectRatio="none" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="lineA" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stop-color="#3b82f6"></stop>
+                      <stop offset="100%" stop-color="#a855f7"></stop>
+                    </linearGradient>
+                    <linearGradient id="lineB" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stop-color="#22c55e"></stop>
+                      <stop offset="100%" stop-color="#f59e0b"></stop>
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,250 C80,220 140,180 220,190 C300,200 360,120 430,130 C520,145 560,80 640,95 C710,108 780,70 850,84 C910,95 960,62 1000,75"
+                    fill="none" stroke="url(#lineA)" stroke-width="5" stroke-linecap="round"></path>
+                  <path d="M0,275 C90,255 160,232 240,236 C325,241 390,170 470,176 C560,182 610,132 680,139 C760,148 835,120 910,126 C955,129 985,118 1000,112"
+                    fill="none" stroke="url(#lineB)" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 0"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="legend">
+              <span><span class="dot" style="background:#3b82f6"></span>Interactions</span>
+              <span><span class="dot" style="background:#22c55e"></span>Shares</span>
+            </div>
+          </article>
+
+          <article class="glass-card panel">
+            <h3>Audience Quality</h3>
+            <p class="panel-sub">Follower composition by engagement tier.</p>
+            <div class="chart-shell" role="img" aria-label="Audience quality radial summary">
+              <svg viewBox="0 0 260 260" width="100%" height="100%" aria-hidden="true">
+                <circle cx="130" cy="130" r="74" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="26"></circle>
+                <circle cx="130" cy="130" r="74" fill="none" stroke="#22c55e" stroke-width="26" stroke-dasharray="220 245" transform="rotate(-90 130 130)"></circle>
+                <circle cx="130" cy="130" r="48" fill="rgba(255,255,255,0.55)"></circle>
+                <text x="130" y="122" text-anchor="middle" font-size="16" font-weight="700" fill="#1e1b4b">72%</text>
+                <text x="130" y="142" text-anchor="middle" font-size="11" font-weight="600" fill="#312e81">High Quality</text>
+              </svg>
+            </div>
+            <div class="legend">
+              <span><span class="dot" style="background:#22c55e"></span>High Intent</span>
+              <span><span class="dot" style="background:#f59e0b"></span>Warm</span>
+              <span><span class="dot" style="background:#3b82f6"></span>Cold</span>
+            </div>
+          </article>
+        </section>
+
+        <section class="glass-card table-panel">
+          <h3>Top Performing Content</h3>
+          <p class="panel-sub">Most impactful posts based on watch-time, saves, and CTR.</p>
+          <div class="table-shell">
+            <table>
+              <thead>
+                <tr>
+                  <th>Content</th>
+                  <th>Views</th>
+                  <th>Engagement</th>
+                  <th>CTR</th>
+                  <th>Priority</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>How I Plan Viral Reels</td>
+                  <td>382,491</td>
+                  <td>11.8%</td>
+                  <td>4.6%</td>
+                  <td><span class="badge high">High</span></td>
+                </tr>
+                <tr>
+                  <td>Creator Setup Breakdown</td>
+                  <td>219,008</td>
+                  <td>9.4%</td>
+                  <td>3.8%</td>
+                  <td><span class="badge medium">Medium</span></td>
+                </tr>
+                <tr>
+                  <td>Editing Workflow in 5 Steps</td>
+                  <td>174,320</td>
+                  <td>8.7%</td>
+                  <td>3.2%</td>
+                  <td><span class="badge medium">Medium</span></td>
+                </tr>
+                <tr>
+                  <td>Behind the Campaign Launch</td>
+                  <td>102,784</td>
+                  <td>6.1%</td>
+                  <td>2.1%</td>
+                  <td><span class="badge low">Low</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

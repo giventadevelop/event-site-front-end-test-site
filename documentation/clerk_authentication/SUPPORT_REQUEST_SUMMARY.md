@@ -1,0 +1,326 @@
+# Clerk OAuth Issue - Support Request Summary
+
+**Date**: 2025-10-23
+**Instance ID**: `ins_***`
+**Environment**: Production
+**Issue**: OAuth `authorization_invalid` on whitelisted Amplify domain despite correct configuration
+
+---
+
+## Executive Summary
+
+OAuth authentication works perfectly on primary domain (`www.adwiise.com`) but fails with `authorization_invalid` error on AWS Amplify preview domain (`feature-common-clerk.d1508w3f27cyps.amplifyapp.com`), even though:
+- ✅ Domain is in Clerk allowed_origins (verified via API)
+- ✅ Domain is in Google OAuth authorized origins
+- ✅ Google OAuth succeeds and returns authorization code
+- ❌ Clerk rejects the OAuth callback with 403 Forbidden
+
+---
+
+## Architecture
+
+### Multi-Domain Setup
+- **Primary Domain**: `www.adwiise.com` (production)
+- **Preview Domain**: `feature-common-clerk.d1508w3f27cyps.amplifyapp.com` (AWS Amplify)
+- **Development**: `http://localhost:3000`
+
+### Authentication Flow
+```
+User → Amplify Domain → Google OAuth → Clerk Callback → ERROR
+User → Primary Domain → Google OAuth → Clerk Callback → SUCCESS ✅
+```
+
+### Configuration
+
+**Clerk Configuration** (layout.tsx):
+```typescript
+<ClerkProvider
+  publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+  telemetry={false}
+>
+```
+*Note: Standard configuration, no satellite domain props*
+
+---
+
+## Verified Configuration
+
+### 1. Clerk Allowed Origins (Verified via API)
+
+**API Request**:
+```bash
+curl -H "Authorization: Bearer sk_live_..." \
+  https://api.clerk.com/v1/instance
+```
+
+**Response**:
+```json
+{
+  "id": "ins_***",
+  "environment_type": "production",
+  "allowed_origins": [
+    "https://feature-common-clerk.d1508w3f27cyps.amplifyapp.com",
+    "https://www.adwiise.com",
+    "http://localhost:3000"
+  ]
+}
+```
+
+**✅ Confirmed**: Amplify domain IS in allowed origins list
+
+---
+
+### 2. Google OAuth Configuration
+
+**Client ID**: `YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com`
+
+**Authorized JavaScript Origins**:
+```
+https://www.adwiise.com
+https://humble-monkey-3.clerk.accounts.dev
+http://localhost:3000
+http://localhost:8080
+https://feature-common-clerk.d1508w3f27cyps.amplifyapp.com ← Added
+```
+
+**Authorized Redirect URIs**:
+```
+https://clerk.adwiise.com/v1/oauth_callback
+https://humble-monkey-3.clerk.accounts.dev/v1/oauth_callback
+https://feature-common-clerk.d1508w3f27cyps.amplifyapp.com/sso-callback
+```
+
+**✅ Confirmed**: Amplify domain IS in Google OAuth configuration
+
+---
+
+### 3. Clerk Satellite Domains
+
+**Status**: No satellite domains configured (removed after verification failed)
+
+**Screenshot Evidence**: Shows "No satellite domains" in Clerk Dashboard
+
+---
+
+## Error Details
+
+### Network Trace (from Browser DevTools)
+
+**OAuth Request to Google** (Success ✅):
+```
+URL: https://accounts.google.com/o/oauth2/auth
+Parameters:
+  - client_id: 303554160954-0nkuttb13bjlfkpsu02sbm5dr3r5bp1m
+  - redirect_uri: https://clerk.adwiise.com/v1/oauth_callback
+  - response_type: code
+  - scope: openid email profile
+
+Referer: https://feature-common-clerk.d1508w3f27cyps.amplifyapp.com/
+Status: 200 OK
+Result: User authenticates, Google returns authorization code ✅
+```
+
+**OAuth Callback to Clerk** (Failure ❌):
+```
+URL: https://clerk.adwiise.com/v1/oauth_callback
+Parameters:
+  - state: 672o8c8chx792kw52xic0jwjikadokn6ua78o0uo
+  - code: 4/0Ab32j93bH-l4XkIH6tzpTi51ekis1LwpIHc0PGTs9RnMtI7a8chBEVbB1zCEltdmK32fKA
+  - scope: email profile openid
+
+Status: 301 → Redirects to /v1/oauth_callback?err_code=authorization_invalid
+Final Status: 403 Forbidden
+```
+
+**Error Response**:
+```json
+{
+  "errors": [{
+    "message": "Unauthorized request",
+    "long_message": "You are not authorized to perform this request",
+    "code": "authorization_invalid"
+  }],
+  "clerk_trace_id": "3330518b604fb41bd6f5f5afed8efccc"
+}
+```
+
+**Response Headers**:
+```
+x-clerk-instance-id: ins_***
+x-clerk-trace-id: 3330518b604fb41bd6f5f5afed8efccc
+set-cookie: __client_uat=0; Path=/; Domain=adwiise.com; ...
+```
+
+---
+
+## Observed Behavior
+
+### ✅ Working: Primary Domain (`www.adwiise.com`)
+1. User clicks "Sign in with Google"
+2. Redirected to Google OAuth
+3. User authenticates
+4. Google redirects to Clerk callback
+5. **Clerk accepts callback successfully**
+6. User is authenticated and redirected to app
+7. **Result**: OAuth works perfectly
+
+### ❌ Failing: Amplify Domain (`feature-common-clerk.d1508w3f27cyps.amplifyapp.com`)
+1. User clicks "Sign in with Google"
+2. Redirected to Google OAuth (same flow as primary domain)
+3. User authenticates (Google OAuth succeeds)
+4. Google redirects to Clerk callback with authorization code
+5. **Clerk rejects callback with `authorization_invalid`**
+6. User sees error page
+7. **Result**: OAuth fails at Clerk callback stage
+
+---
+
+## Timeline of Investigation
+
+### 1. Initial Configuration (Satellite Domain Approach)
+- Added Amplify domain as Satellite Domain in Clerk Dashboard
+- Domain showed "Unverified" status
+- OAuth failed with `authorization_invalid`
+
+### 2. Removed Satellite Domain
+- Deleted satellite domain from Clerk Dashboard
+- Domain now shows in "No satellite domains" state
+- OAuth still fails with same error
+
+### 3. Verified Allowed Origins
+- Used Clerk API to confirm domain is in `allowed_origins` list
+- Confirmed via API response (see above)
+- OAuth still fails
+
+### 4. Verified Google OAuth Configuration
+- Checked Google Cloud Console
+- Confirmed Amplify domain in "Authorized JavaScript origins"
+- Confirmed redirect URIs include Clerk callback URL
+- OAuth still fails
+
+### 5. Network Trace Analysis
+- Confirmed Google OAuth succeeds (returns auth code)
+- Confirmed Clerk receives callback with valid code
+- Confirmed Clerk rejects callback with 403 Forbidden
+- Error occurs at Clerk backend, not Google
+
+---
+
+## Evidence Summary
+
+| Configuration Item | Status | Evidence |
+|-------------------|--------|----------|
+| Clerk allowed_origins includes Amplify domain | ✅ VERIFIED | API response shows domain in list |
+| Google OAuth origins includes Amplify domain | ✅ VERIFIED | Screenshot from Google Cloud Console |
+| Google OAuth redirect URIs correct | ✅ VERIFIED | Includes `clerk.adwiise.com/v1/oauth_callback` |
+| Clerk publishable key correct | ✅ VERIFIED | `pk_live_***` |
+| Satellite domain removed | ✅ VERIFIED | Dashboard shows "No satellite domains" |
+| Google OAuth succeeds | ✅ VERIFIED | Network trace shows auth code returned |
+| Clerk callback fails | ❌ FAILING | 403 Forbidden with `authorization_invalid` |
+| Primary domain works | ✅ VERIFIED | OAuth succeeds on `www.adwiise.com` |
+
+---
+
+## Hypothesis: Cookie Domain Issue
+
+### Observation
+Looking at the response headers from Clerk callback:
+```
+set-cookie: __client_uat=0; Path=/; Domain=adwiise.com; ...
+```
+
+Clerk is setting cookies for domain `adwiise.com`, but the Amplify domain is `amplifyapp.com`.
+
+### Theory
+1. OAuth initiated from `feature-common-clerk.d1508w3f27cyps.amplifyapp.com`
+2. User redirected to Google OAuth
+3. Google OAuth succeeds, redirects to `clerk.adwiise.com/v1/oauth_callback`
+4. Clerk attempts to validate OAuth state/session
+5. **Clerk looks for cookies set during OAuth initiation**
+6. **Cookies were set for `.amplifyapp.com` domain**
+7. **Clerk callback runs on `clerk.adwiise.com` (different domain)**
+8. **Cross-domain cookie mismatch causes authorization failure**
+
+### Why Primary Domain Works
+- OAuth initiated from `www.adwiise.com`
+- Cookies set for `.adwiise.com` domain
+- Clerk callback runs on `clerk.adwiise.com` (same parent domain)
+- Cookies accessible, state validation succeeds
+
+---
+
+## Questions for Clerk Support
+
+1. **Trace ID Analysis**: Can you check logs for trace ID `3330518b604fb41bd6f5f5afed8efccc` to see the exact rejection reason?
+
+2. **Allowed Origins**: Why does Clerk reject the callback even though:
+   - Domain is in `allowed_origins` (verified via API)
+   - Google OAuth succeeds and returns valid auth code
+   - Same flow works on primary domain?
+
+3. **Cookie Domain**: Are there cookie domain issues when OAuth is initiated from `.amplifyapp.com` but callback is on `.adwiise.com`?
+
+4. **AWS Amplify Support**: Is there special configuration needed for AWS Amplify preview domains?
+
+5. **Multi-Domain Sessions**: Do we need to configure Clerk differently to support cross-domain OAuth (`.amplifyapp.com` → `.adwiise.com`)?
+
+---
+
+## Requested Actions
+
+1. **Check Trace ID Logs**: Please review trace ID `3330518b604fb41bd6f5f5afed8efccc` to identify the specific validation that's failing
+
+2. **Clarify Allowed Origins Behavior**: Does `allowed_origins` cover OAuth callbacks, or is there separate configuration needed?
+
+3. **AWS Amplify Guidance**: Is there documented configuration for AWS Amplify preview URLs with Clerk?
+
+4. **Workaround**: If cross-domain OAuth is not supported, what is the recommended architecture for AWS Amplify preview environments?
+
+---
+
+## Environment Details
+
+**Clerk Instance**:
+- Instance ID: `ins_***`
+- Environment: Production
+- Plan: Pro (recently upgraded)
+
+**Application**:
+- Framework: Next.js 15.1.1
+- Clerk SDK: `@clerk/nextjs` (latest)
+- Hosting: AWS Amplify (preview branch)
+- Domain: `feature-common-clerk.d1508w3f27cyps.amplifyapp.com`
+
+**Environment Variables** (Amplify):
+```bash
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_***
+CLERK_SECRET_KEY=sk_live_***
+```
+
+---
+
+## Attachments
+
+1. **Clerk API Response** (allowed_origins verification)
+2. **Google Cloud Console Screenshot** (OAuth configuration)
+3. **Clerk Dashboard Screenshot** (No satellite domains)
+4. **Browser Network Trace** (OAuth flow showing success at Google, failure at Clerk)
+5. **Error JSON Response** (with trace ID)
+
+---
+
+## Contact Information
+
+**Priority**: High - Blocking AWS Amplify preview environment testing
+
+**Preferred Response Channel**:
+- Clerk Discord: #support
+- Email: [Your email]
+
+**Availability**: Available for real-time troubleshooting
+
+---
+
+**Last Updated**: 2025-10-23
+**Status**: Awaiting Clerk Support Response
+**Trace ID**: `3330518b604fb41bd6f5f5afed8efccc`

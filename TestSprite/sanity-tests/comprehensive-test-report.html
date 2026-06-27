@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Sanity Test Report - Malayalees US Site</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+        .summary {
+            padding: 30px;
+            border-bottom: 2px solid #eee;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .summary-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .summary-card h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .summary-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+        .passed { color: #28a745; }
+        .failed { color: #dc3545; }
+        .total { color: #007bff; }
+        .success-rate { color: #17a2b8; }
+        .skipped { color: #ffc107; }
+        .category-section {
+            padding: 30px;
+            border-bottom: 1px solid #eee;
+        }
+        .category-section:last-child {
+            border-bottom: none;
+        }
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        .category-header h2 {
+            color: #333;
+            font-size: 1.5em;
+        }
+        .category-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9em;
+        }
+        .category-stats span {
+            padding: 5px 10px;
+            border-radius: 4px;
+            background: #f8f9fa;
+        }
+        .test-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border-left: 4px solid;
+            transition: background-color 0.2s;
+        }
+        .test-item:hover {
+            background-color: #f8f9fa;
+        }
+        .test-item.passed {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+        .test-item.failed {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+        }
+        .test-item.skipped {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+        .test-status {
+            font-size: 1.5em;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        .test-info {
+            flex: 1;
+        }
+        .test-info h4 {
+            margin: 0 0 5px 0;
+            color: #333;
+            font-size: 1.1em;
+        }
+        .test-info .test-id {
+            font-family: monospace;
+            font-size: 0.85em;
+            color: #666;
+            margin-right: 10px;
+        }
+        .test-info .test-priority {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.75em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .priority-critical { background: #dc3545; color: white; }
+        .priority-high { background: #fd7e14; color: white; }
+        .priority-medium { background: #ffc107; color: #333; }
+        .priority-low { background: #6c757d; color: white; }
+        .test-info p {
+            margin: 5px 0 0 0;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .test-details {
+            margin-left: auto;
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .test-details .url {
+            font-family: monospace;
+            background: #f1f1f1;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+        .test-details .duration {
+            font-size: 0.8em;
+            color: #666;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+        .timestamp {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        .expandable {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0,0,0,0.02);
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+        .expandable h5 {
+            margin: 0 0 5px 0;
+            color: #333;
+        }
+        .expandable ul {
+            margin: 5px 0 0 20px;
+            color: #666;
+        }
+        .error-details {
+            margin-top: 5px;
+            padding: 5px;
+            background: #fff3cd;
+            border-left: 3px solid #ffc107;
+            font-size: 0.85em;
+        }
+        .missing-elements {
+            color: #dc3545;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Comprehensive Sanity Test Report</h1>
+            <p>Malayalees US Site Event Registration Platform</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">Test Engine: TestSprite API (Cloud) | 45 Tests | 25.0% Success Rate</p>
+        </div>
+
+        <div class="summary">
+            <h2>📊 Test Summary</h2>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <h3>Total Tests</h3>
+                    <div class="number total">45</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Passed</h3>
+                    <div class="number passed">9</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Failed</h3>
+                    <div class="number failed">27</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Skipped</h3>
+                    <div class="number skipped">9</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Success Rate</h3>
+                    <div class="number success-rate">25.0%</div>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="category-section">
+            <div class="category-header">
+                <h2>Public Pages</h2>
+                <div class="category-stats">
+                    <span>Total: 14</span>
+                    <span style="color: #28a745;">Passed: 9</span>
+                    <span style="color: #dc3545;">Failed: 3</span>
+                    <span style="color: #17a2b8;">Rate: 64.3%</span>
+                </div>
+            </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-001</span>
+                            Homepage Load Test
+                            <span class="test-priority priority-critical">critical</span>
+                        </h4>
+                        <p>Error: Page title indicates error: </p>
+                        
+                        
+                        <div class="error-details">
+                            <strong>Errors:</strong> Page title indicates error: 
+                        </div>
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>nav, header, [class*="nav"]</code></li><li><code>main, [class*="main"], [class*="content"]</code></li><li><code>h1, h2, h3, [class*="title"], [class*="heading"]</code></li><li><code>a[href*="/events"], a[href="/events"]</code></li><li><code>a[href*="/gallery"], a[href="/gallery"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/</div>
+                        <div class="duration">21680ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-001-1766341518513.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item passed">
+                    <div class="test-status">✅</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-002</span>
+                            Events Listing Page Test
+                            <span class="test-priority priority-critical">critical</span>
+                        </h4>
+                        <p>Test completed successfully</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>.grid, [class*="grid"]</code></li><li><code>[class*="event"], [class*="card"]</code></li><li><code>input[type="search"], input[type="text"]</code></li><li><code>button, a[href*="/events/"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/events</div>
+                        <div class="duration">8966ms</div>
+                        
+                    </div>
+                </div>
+            
+                <div class="test-item skipped">
+                    <div class="test-status">⏭️</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-003</span>
+                            Event Details Page Test
+                            <span class="test-priority priority-critical">critical</span>
+                        </h4>
+                        <p>Skipped: No events available</p>
+                        
+                        
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/events/1</div>
+                        <div class="duration">0ms</div>
+                        
+                    </div>
+                </div>
+            
+                <div class="test-item passed">
+                    <div class="test-status">✅</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-004</span>
+                            Sponsors Listing Page Test
+                            <span class="test-priority priority-high">high</span>
+                        </h4>
+                        <p>Test completed successfully</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1, h2, [class*="title"], [class*="heading"]</code></li><li><code>[class*="sponsor"], [class*="card"], [class*="grid"], main, [class*="container"]</code></li><li><code>img, [class*="logo"], [class*="image"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/sponsors</div>
+                        <div class="duration">14737ms</div>
+                        
+                    </div>
+                </div>
+            
+                <div class="test-item skipped">
+                    <div class="test-status">⏭️</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-005</span>
+                            Sponsor Details Page Test
+                            <span class="test-priority priority-medium">medium</span>
+                        </h4>
+                        <p>Skipped: No sponsors available</p>
+                        
+                        
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/sponsors/1</div>
+                        <div class="duration">0ms</div>
+                        
+                    </div>
+                </div>
+            
+                <div class="test-item passed">
+                    <div class="test-status">✅</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-006</span>
+                            Gallery Page Test
+                            <span class="test-priority priority-high">high</span>
+                        </h4>
+                        <p>Test completed successfully</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1, h2, [class*="title"], [class*="heading"]</code></li><li><code>[class*="gallery"], [class*="grid"], [class*="container"], main</code></li><li><code>img, [class*="image"], [class*="photo"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/gallery</div>
+                        <div class="duration">9575ms</div>
+                        
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-007</span>
+                            Polls Listing Page Test
+                            <span class="test-priority priority-medium">medium</span>
+                        </h4>
+                        <p>Error: Page errors: Clerk: auth() was called but Clerk can't detect usage of authMiddleware(). Please ensure the following:
+- authMiddleware() is used in your Next.js Middleware.
+- Your Middleware matcher is configured to match this route or page.
+- If you are using the src directory, make sure the Middleware file is inside of it.
+
+For more details, see https://clerk.com/docs/quickstarts/nextjs
+</p>
+                        
+                        <div class="error-details">
+                            <strong class="missing-elements">Missing Elements:</strong> <code>h1</code>, <code>[class*="poll"], [class*="card"]</code>, <code>[class*="vote"], [class*="option"]</code>
+                        </div>
+                        
+                        
+                        <div class="error-details">
+                            <strong>Errors:</strong> Page errors: Clerk: auth() was called but Clerk can't detect usage of authMiddleware(). Please ensure the following:
+- authMiddleware() is used in your Next.js Middleware.
+- Your Middleware matcher is configured to match this route or page.
+- If you are using the src directory, make sure the Middleware file is inside of it.
+
+For more details, see https://clerk.com/docs/quickstarts/nextjs
+
+                        </div>
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>[class*="poll"], [class*="card"]</code></li><li><code>button, a[href*="/polls/"]</code></li><li><code>[class*="vote"], [class*="option"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/polls</div>
+                        <div class="duration">6414ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-007-1766341565707.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item passed">
+                    <div class="test-status">✅</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-008</span>
+                            Calendar Page Test
+                            <span class="test-priority priority-medium">medium</span>
+                        </h4>
+                        <p>Test completed successfully</p>
+                        
+                        <div class="error-details">
+                            <strong class="missing-elements">Missing Elements:</strong> <code>[class*="calendar"]</code>, <code>[class*="event"]</code>
+                        </div>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>[class*="calendar"]</code></li><li><code>button, [class*="month"], [class*="day"]</code></li><li><code>[class*="event"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/calendar</div>
+                        <div class="duration">7881ms</div>
+                        
+                    </div>
+                </div>
+            
+                <div class="test-item passed">
+                    <div class="test-status">✅</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-009</span>
+                            MOSC Homepage Test
+                            <span class="test-priority priority-medium">medium</span>
+                        </h4>
+                        <p>Test completed successfully</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1, h2</code></li><li><code>nav</code></li><li><code>main</code></li><li><code>a[href*="/mosc/"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/mosc</div>
+                        <div class="duration">21565ms</div>
+                        
+                    </div>
+                </div>
+            
+                <div class="test-item passed">
+                    <div class="test-status">✅</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-010</span>
+                            MOSC Holy Synod Page Test
+                            <span class="test-priority priority-medium">medium</span>
+                        </h4>
+                        <p>Test completed successfully</p>
+                        
+                        <div class="error-details">
+                            <strong class="missing-elements">Missing Elements:</strong> <code>[class*="synod"], [class*="member"]</code>
+                        </div>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>[class*="synod"], [class*="member"]</code></li><li><code>img, [class*="image"]</code></li><li><code>a[href*="/holy-synod/"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/mosc/holy-synod</div>
+                        <div class="duration">8789ms</div>
+                        
+                    </div>
+                </div>
+            
+                <div class="test-item passed">
+                    <div class="test-status">✅</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-011</span>
+                            MOSC Gallery Page Test
+                            <span class="test-priority priority-medium">medium</span>
+                        </h4>
+                        <p>Test completed successfully</p>
+                        
+                        <div class="error-details">
+                            <strong class="missing-elements">Missing Elements:</strong> <code>[class*="gallery"], [class*="album"]</code>
+                        </div>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>[class*="gallery"], [class*="album"]</code></li><li><code>img, [class*="image"]</code></li><li><code>a[href*="/gallery/"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/mosc/gallery</div>
+                        <div class="duration">6287ms</div>
+                        
+                    </div>
+                </div>
+            
+                <div class="test-item passed">
+                    <div class="test-status">✅</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-012</span>
+                            MOSC Directory Page Test
+                            <span class="test-priority priority-medium">medium</span>
+                        </h4>
+                        <p>Test completed successfully</p>
+                        
+                        <div class="error-details">
+                            <strong class="missing-elements">Missing Elements:</strong> <code>[class*="directory"], [class*="list"]</code>, <code>input[type="search"], input[type="text"]</code>
+                        </div>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>[class*="directory"], [class*="list"]</code></li><li><code>input[type="search"], input[type="text"]</code></li><li><code>a, button</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/mosc/directory</div>
+                        <div class="duration">7096ms</div>
+                        
+                    </div>
+                </div>
+            
+                <div class="test-item passed">
+                    <div class="test-status">✅</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-013</span>
+                            Charity Theme Page Test
+                            <span class="test-priority priority-low">low</span>
+                        </h4>
+                        <p>Test completed successfully</p>
+                        
+                        <div class="error-details">
+                            <strong class="missing-elements">Missing Elements:</strong> <code>h1</code>
+                        </div>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>main</code></li><li><code>[class*="charity"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/charity-theme</div>
+                        <div class="duration">15911ms</div>
+                        
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-014</span>
+                            Pricing Page Test
+                            <span class="test-priority priority-medium">medium</span>
+                        </h4>
+                        <p>Error: JavaScript console errors: %c%s%c Error in pricing page: background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server   Error: Clerk: auth() was called but Clerk can't detect usage of authMiddleware(). Please ensure the following:
+- authMiddleware() is used in your Next.js Middleware.
+- Your Middleware matcher is configured to match this route or page.
+- If you are using the src directory, make sure the Middleware file is inside of it.
+
+For more details, see https://clerk.com/docs/quickstarts/nextjs
+
+    at PricingPage (about://React/Server/webpack-internal:///(rsc)/./src/app/pricing/page.tsx?6:55:82)
+    at resolveErrorDev (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2379:46)
+    at getOutlinedModel (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:1732:22)
+    at parseModelString (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:1933:15)
+    at Object.eval (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:3038:18)
+    at JSON.parse (<anonymous>)
+    at initializeModelChunk (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:1265:26)
+    at getOutlinedModel (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:1667:11)
+    at parseModelString (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2026:15)
+    at Array.eval (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:3038:18)
+    at JSON.parse (<anonymous>)
+    at initializeModelChunk (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:1265:26)
+    at resolveConsoleEntry (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2666:13)
+    at processFullStringRow (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2906:11)
+    at processFullBinaryRow (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2808:7)
+    at processBinaryChunk (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:3011:15)
+    at progress (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:3275:13)</p>
+                        
+                        <div class="error-details">
+                            <strong class="missing-elements">Missing Elements:</strong> <code>h1</code>, <code>[class*="pricing"], [class*="plan"]</code>, <code>[class*="price"], [class*="feature"]</code>
+                        </div>
+                        
+                        
+                        <div class="error-details">
+                            <strong>Errors:</strong> JavaScript console errors: %c%s%c Error in pricing page: background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server   Error: Clerk: auth() was called but Clerk can't detect usage of authMiddleware(). Please ensure the following:
+- authMiddleware() is used in your Next.js Middleware.
+- Your Middleware matcher is configured to match this route or page.
+- If you are using the src directory, make sure the Middleware file is inside of it.
+
+For more details, see https://clerk.com/docs/quickstarts/nextjs
+
+    at PricingPage (about://React/Server/webpack-internal:///(rsc)/./src/app/pricing/page.tsx?6:55:82)
+    at resolveErrorDev (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2379:46)
+    at getOutlinedModel (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:1732:22)
+    at parseModelString (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:1933:15)
+    at Object.eval (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:3038:18)
+    at JSON.parse (<anonymous>)
+    at initializeModelChunk (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:1265:26)
+    at getOutlinedModel (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:1667:11)
+    at parseModelString (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2026:15)
+    at Array.eval (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:3038:18)
+    at JSON.parse (<anonymous>)
+    at initializeModelChunk (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:1265:26)
+    at resolveConsoleEntry (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2666:13)
+    at processFullStringRow (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2906:11)
+    at processFullBinaryRow (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:2808:7)
+    at processBinaryChunk (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:3011:15)
+    at progress (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.development.js:3275:13)
+                        </div>
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>[class*="pricing"], [class*="plan"]</code></li><li><code>button, a[href*="/sign-up"]</code></li><li><code>[class*="price"], [class*="feature"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/pricing</div>
+                        <div class="duration">13081ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-014-1766341650660.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+        </div>
+        
+        <div class="category-section">
+            <div class="category-header">
+                <h2>Admin Pages</h2>
+                <div class="category-stats">
+                    <span>Total: 24</span>
+                    <span style="color: #28a745;">Passed: 0</span>
+                    <span style="color: #dc3545;">Failed: 17</span>
+                    <span style="color: #17a2b8;">Rate: 0.0%</span>
+                </div>
+            </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-015</span>
+                            Admin Dashboard Access Test
+                            <span class="test-priority priority-critical">critical</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/admin, Final URL: http://localhost:3000/</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1, h2</code></li><li><code>[class*="admin"]</code></li><li><code>nav, [class*="nav"]</code></li><li><code>a[href*="/admin/events"]</code></li><li><code>[class*="grid"], [class*="card"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin</div>
+                        <div class="duration">10595ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-015-1766341661968.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-016</span>
+                            Admin Events Management Hub Test
+                            <span class="test-priority priority-critical">critical</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/admin/manage-events, Final URL: http://localhost:3000/</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>[class*="grid"], [class*="card"]</code></li><li><code>a[href*="/admin/events/new"], button</code></li><li><code>input[type="search"], input[type="text"]</code></li><li><code>table, [class*="table"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/manage-events</div>
+                        <div class="duration">11218ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-016-1766341673698.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item skipped">
+                    <div class="test-status">⏭️</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-017</span>
+                            Admin Event Overview Test
+                            <span class="test-priority priority-critical">critical</span>
+                        </h4>
+                        <p>Skipped: No events available</p>
+                        
+                        
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/events/1</div>
+                        <div class="duration">0ms</div>
+                        
+                    </div>
+                </div>
+            
+                <div class="test-item skipped">
+                    <div class="test-status">⏭️</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-018</span>
+                            Admin Event Edit Page Test
+                            <span class="test-priority priority-critical">critical</span>
+                        </h4>
+                        <p>Skipped: No events available</p>
+                        
+                        
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/events/1/edit</div>
+                        <div class="duration">0ms</div>
+                        
+                    </div>
+                </div>
+            
+                <div class="test-item skipped">
+                    <div class="test-status">⏭️</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-019</span>
+                            Admin Event Media Management Test
+                            <span class="test-priority priority-high">high</span>
+                        </h4>
+                        <p>Skipped: No events available</p>
+                        
+                        
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/events/1/media/list</div>
+                        <div class="duration">0ms</div>
+                        
+                    </div>
+                </div>
+            
+                <div class="test-item skipped">
+                    <div class="test-status">⏭️</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-020</span>
+                            Admin Event Sponsors Management Test
+                            <span class="test-priority priority-high">high</span>
+                        </h4>
+                        <p>Skipped: No events available</p>
+                        
+                        
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/events/1/sponsors</div>
+                        <div class="duration">0ms</div>
+                        
+                    </div>
+                </div>
+            
+                <div class="test-item skipped">
+                    <div class="test-status">⏭️</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-021</span>
+                            Admin Event Ticket Types Management Test
+                            <span class="test-priority priority-critical">critical</span>
+                        </h4>
+                        <p>Skipped: No events available</p>
+                        
+                        
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/events/1/ticket-types/list</div>
+                        <div class="duration">0ms</div>
+                        
+                    </div>
+                </div>
+            
+                <div class="test-item skipped">
+                    <div class="test-status">⏭️</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-022</span>
+                            Admin Event Tickets Management Test
+                            <span class="test-priority priority-critical">critical</span>
+                        </h4>
+                        <p>Skipped: No events available</p>
+                        
+                        
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/events/1/tickets/list</div>
+                        <div class="duration">0ms</div>
+                        
+                    </div>
+                </div>
+            
+                <div class="test-item skipped">
+                    <div class="test-status">⏭️</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-023</span>
+                            Admin Event Performers Management Test
+                            <span class="test-priority priority-high">high</span>
+                        </h4>
+                        <p>Skipped: No events available</p>
+                        
+                        
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/events/1/performers</div>
+                        <div class="duration">0ms</div>
+                        
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-024</span>
+                            Admin Event Contacts Management Test
+                            <span class="test-priority priority-high">high</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/admin/event-contacts, Final URL: http://localhost:3000/</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>table, [class*="table"]</code></li><li><code>button, form</code></li><li><code>input[type="text"], input[type="email"], input[type="tel"]</code></li><li><code>button[type="submit"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/event-contacts</div>
+                        <div class="duration">11150ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-024-1766341685362.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-025</span>
+                            Admin Event Emails Management Test
+                            <span class="test-priority priority-high">high</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/admin/event-emails, Final URL: http://localhost:3000/</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>table, [class*="table"]</code></li><li><code>button, form</code></li><li><code>input[type="email"], input[type="text"]</code></li><li><code>button[type="submit"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/event-emails</div>
+                        <div class="duration">11169ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-025-1766341697034.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-026</span>
+                            Admin Event Program Directors Test
+                            <span class="test-priority priority-high">high</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/admin/event-program-directors, Final URL: http://localhost:3000/</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>table, [class*="table"], [class*="grid"]</code></li><li><code>button, a[href*="/new"]</code></li><li><code>form, input[type="text"]</code></li><li><code>img, [class*="image"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/event-program-directors</div>
+                        <div class="duration">7809ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-026-1766341705351.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-027</span>
+                            Admin Event Registrations Management Test
+                            <span class="test-priority priority-critical">critical</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/admin/events/registrations, Final URL: http://localhost:3000/</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>table, [class*="table"]</code></li><li><code>select, input[type="text"]</code></li><li><code>button</code></li><li><code>[class*="pagination"], [class*="filter"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/events/registrations</div>
+                        <div class="duration">7946ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-027-1766341713800.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-028</span>
+                            Admin Membership Plans Management Test
+                            <span class="test-priority priority-high">high</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/admin/membership/plans, Final URL: http://localhost:3000/</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>table, [class*="table"], [class*="grid"]</code></li><li><code>button, a[href*="/new"]</code></li><li><code>form, input[type="text"], input[type="number"]</code></li><li><code>button[type="submit"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/membership/plans</div>
+                        <div class="duration">7693ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-028-1766341722000.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-029</span>
+                            Admin Membership Subscriptions Test
+                            <span class="test-priority priority-high">high</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/admin/membership/subscriptions, Final URL: http://localhost:3000/</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>table, [class*="table"]</code></li><li><code>button, a[href*="/subscriptions"]</code></li><li><code>select, input[type="text"]</code></li><li><code>[class*="status"], [class*="filter"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/membership/subscriptions</div>
+                        <div class="duration">10070ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-029-1766341732581.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-030</span>
+                            Admin Manage Usage Test
+                            <span class="test-priority priority-high">high</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/admin/manage-usage, Final URL: http://localhost:3000/</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>table, [class*="table"]</code></li><li><code>input[type="search"], select</code></li><li><code>button, form</code></li><li><code>[class*="user"], [class*="profile"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/manage-usage</div>
+                        <div class="duration">11198ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-030-1766341744289.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-031</span>
+                            Admin Executive Committee Management Test
+                            <span class="test-priority priority-medium">medium</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/admin/executive-committee, Final URL: http://localhost:3000/</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>table, [class*="table"], [class*="grid"]</code></li><li><code>button, form</code></li><li><code>input[type="text"], img</code></li><li><code>button[type="submit"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/executive-committee</div>
+                        <div class="duration">7618ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-031-1766341752416.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-032</span>
+                            Admin Focus Groups Management Test
+                            <span class="test-priority priority-medium">medium</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/admin/focus-groups, Final URL: http://localhost:3000/</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>table, [class*="table"], [class*="grid"]</code></li><li><code>a[href*="/new"], button</code></li><li><code>form, input[type="text"]</code></li><li><code>button[type="submit"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/focus-groups</div>
+                        <div class="duration">11548ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-032-1766341764467.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-033</span>
+                            Admin Polls Management Test
+                            <span class="test-priority priority-medium">medium</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/admin/polls, Final URL: http://localhost:3000/</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>table, [class*="table"], [class*="grid"]</code></li><li><code>button, a[href*="/new"]</code></li><li><code>form, input[type="text"]</code></li><li><code>button[type="submit"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/polls</div>
+                        <div class="duration">11333ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-033-1766341776308.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-034</span>
+                            Admin Tenant Management Test
+                            <span class="test-priority priority-medium">medium</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/admin/tenant-management/organizations, Final URL: http://localhost:3000/admin/tenant-management/organizations</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>nav, [class*="tab"]</code></li><li><code>button, form</code></li><li><code>table, [class*="table"]</code></li><li><code>a[href*="/organizations/"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/tenant-management/organizations</div>
+                        <div class="duration">11178ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-034-1766341787988.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-035</span>
+                            Admin Tenant Settings Test
+                            <span class="test-priority priority-medium">medium</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/admin/tenant-management/settings, Final URL: http://localhost:3000/admin/tenant-management/settings</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>form</code></li><li><code>input[type="text"], input[type="email"]</code></li><li><code>button[type="submit"]</code></li><li><code>table, [class*="table"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/tenant-management/settings</div>
+                        <div class="duration">11426ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-035-1766341799929.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-036</span>
+                            Admin Bulk Email Test
+                            <span class="test-priority priority-medium">medium</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/admin/bulk-email, Final URL: http://localhost:3000/</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>form</code></li><li><code>input[type="email"], textarea</code></li><li><code>button[type="submit"]</code></li><li><code>select, input[type="checkbox"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/bulk-email</div>
+                        <div class="duration">9285ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-036-1766341809717.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-037</span>
+                            Admin Tenant Email Addresses Test
+                            <span class="test-priority priority-medium">medium</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/admin/tenant-email-addresses, Final URL: http://localhost:3000/admin/tenant-email-addresses</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>table, [class*="table"]</code></li><li><code>button, form</code></li><li><code>input[type="email"]</code></li><li><code>button[type="submit"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/tenant-email-addresses</div>
+                        <div class="duration">11317ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-037-1766341821545.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-038</span>
+                            Admin QR Code Scanner Test
+                            <span class="test-priority priority-medium">medium</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/admin/qrcode-scan/tickets, Final URL: http://localhost:3000/admin/qrcode-scan/tickets</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>video, canvas, [class*="camera"]</code></li><li><code>button</code></li><li><code>input[type="text"], [class*="scanner"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/admin/qrcode-scan/tickets</div>
+                        <div class="duration">6791ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-038-1766341828845.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+        </div>
+        
+        <div class="category-section">
+            <div class="category-header">
+                <h2>User Pages</h2>
+                <div class="category-stats">
+                    <span>Total: 3</span>
+                    <span style="color: #28a745;">Passed: 0</span>
+                    <span style="color: #dc3545;">Failed: 3</span>
+                    <span style="color: #17a2b8;">Rate: 0.0%</span>
+                </div>
+            </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-039</span>
+                            User Profile Page Test
+                            <span class="test-priority priority-high">high</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/profile, Final URL: http://localhost:3000/profile</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>form</code></li><li><code>input[name="firstName"], input[name="lastName"]</code></li><li><code>input[name="email"]</code></li><li><code>button[type="submit"]</code></li><li><code>img, [class*="avatar"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/profile</div>
+                        <div class="duration">11377ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-039-1766341840737.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-040</span>
+                            User Dashboard Test
+                            <span class="test-priority priority-high">high</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/dashboard, Final URL: http://localhost:3000/dashboard</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1, h2</code></li><li><code>[class*="card"], [class*="grid"]</code></li><li><code>a, button</code></li><li><code>[class*="event"], [class*="ticket"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/dashboard</div>
+                        <div class="duration">12083ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-040-1766341853321.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-041</span>
+                            User Settings Page Test
+                            <span class="test-priority priority-medium">medium</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/settings, Final URL: http://localhost:3000/settings</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>form</code></li><li><code>input, select</code></li><li><code>button[type="submit"]</code></li><li><code>[class*="tab"], nav</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/settings</div>
+                        <div class="duration">7508ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-041-1766341861332.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+        </div>
+        
+        <div class="category-section">
+            <div class="category-header">
+                <h2>Authentication</h2>
+                <div class="category-stats">
+                    <span>Total: 2</span>
+                    <span style="color: #28a745;">Passed: 0</span>
+                    <span style="color: #dc3545;">Failed: 2</span>
+                    <span style="color: #17a2b8;">Rate: 0.0%</span>
+                </div>
+            </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-042</span>
+                            Sign In Page Test
+                            <span class="test-priority priority-critical">critical</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/sign-in, Final URL: http://localhost:3000/sign-in</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1, h2</code></li><li><code>form</code></li><li><code>input[type="email"], input[type="text"]</code></li><li><code>button[type="submit"]</code></li><li><code>a[href*="/sign-up"]</code></li><li><code>[class*="social"], button[type="button"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/sign-in</div>
+                        <div class="duration">10280ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-042-1766341872120.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-043</span>
+                            Sign Up Page Test
+                            <span class="test-priority priority-critical">critical</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/sign-up, Final URL: http://localhost:3000/sign-up</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1, h2</code></li><li><code>form</code></li><li><code>input[type="email"]</code></li><li><code>button[type="submit"]</code></li><li><code>a[href*="/sign-in"]</code></li><li><code>[class*="social"], button[type="button"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/sign-up</div>
+                        <div class="duration">8809ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-043-1766341881443.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+        </div>
+        
+        <div class="category-section">
+            <div class="category-header">
+                <h2>Legal Pages</h2>
+                <div class="category-stats">
+                    <span>Total: 2</span>
+                    <span style="color: #28a745;">Passed: 0</span>
+                    <span style="color: #dc3545;">Failed: 2</span>
+                    <span style="color: #17a2b8;">Rate: 0.0%</span>
+                </div>
+            </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-044</span>
+                            Privacy Policy Page Test
+                            <span class="test-priority priority-low">low</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/privacy, Final URL: http://localhost:3000/privacy</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>main, article</code></li><li><code>p, [class*="content"]</code></li><li><code>nav, [class*="breadcrumb"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/privacy</div>
+                        <div class="duration">6562ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-044-1766341888508.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+                <div class="test-item failed">
+                    <div class="test-status">❌</div>
+                    <div class="test-info">
+                        <h4>
+                            <span class="test-id">sanity-045</span>
+                            Terms of Service Page Test
+                            <span class="test-priority priority-low">low</span>
+                        </h4>
+                        <p>Error: Page returned status 401 Unauthorized. URL: http://localhost:3000/terms, Final URL: http://localhost:3000/terms</p>
+                        
+                        
+                        
+                        <div class="expandable">
+                            <h5>Expected Elements:</h5>
+                            <ul>
+                                <li><code>h1</code></li><li><code>main, article</code></li><li><code>p, [class*="content"]</code></li><li><code>nav, [class*="breadcrumb"]</code></li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <div class="test-details">
+                        <div class="url">/terms</div>
+                        <div class="duration">7707ms</div>
+                        <div style="margin-top: 5px;"><a href="E:\project_workspace\mosc-temp\TestSprite\sanity-tests\screenshots\failure-sanity-045-1766341896730.png" target="_blank" style="font-size: 0.8em; color: #007bff;">📷 Screenshot</a></div>
+                    </div>
+                </div>
+            
+        </div>
+        
+
+        <div class="footer">
+            <p>Generated by Comprehensive TestSprite Sanity Test Suite</p>
+            <p class="timestamp">Report generated on: 12/21/2025, 1:31:36 PM</p>
+            <p class="timestamp">Base URL: http://localhost:3000</p>
+            <p class="timestamp">Test Engine: TestSprite API (Cloud Execution)</p>
+        </div>
+    </div>
+</body>
+</html>

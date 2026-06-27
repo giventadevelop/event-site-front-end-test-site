@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promotion Email Management - Frontend PRD</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+        }
+        .info-box {
+            background: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .task-list {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .task-item {
+            padding: 10px;
+            margin: 8px 0;
+            background: white;
+            border-left: 3px solid #28a745;
+            border-radius: 3px;
+        }
+        .task-item h4 {
+            margin: 0 0 5px 0;
+            color: #28a745;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #e83e8c;
+        }
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .priority-high {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .priority-medium {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .priority-low {
+            color: #28a745;
+        }
+        ul, ol {
+            margin: 10px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Promotion Email Management System - Frontend PRD</h1>
+
+        <div class="info-box">
+            <strong>📋 Project Context:</strong> This project is already in active development phase. All infrastructure,
+            basic development tools, database schema foundation, JSON schema definitions, and API endpoints are already
+            in place. This PRD focuses <strong>exclusively on frontend feature implementation</strong> and does not include
+            any infrastructure setup, basic tooling, API development, or foundational work.
+        </div>
+
+        <h2>1. Overview</h2>
+        <p>
+            This document outlines the frontend implementation requirements for the Promotion Email Management System.
+            The frontend will provide a modern, user-friendly interface for creating, managing, and sending promotion
+            email templates associated with events and discount codes.
+        </p>
+
+        <h2>2. Objectives</h2>
+        <ul>
+            <li>Create intuitive UI for template management (CRUD operations)</li>
+            <li>Implement event and discount code selection</li>
+            <li>Add image upload functionality for email headers/footers</li>
+            <li>Build email sending interface (test and bulk)</li>
+            <li>Create email history/audit trail viewer</li>
+            <li>Ensure responsive design and accessibility</li>
+        </ul>
+
+        <h2>3. Type Definitions (DTOs)</h2>
+
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 1.1: Add DTOs to TypeScript Types</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>File:</strong> <code>src/types/index.ts</code></p>
+                <p><strong>Description:</strong> Add TypeScript interfaces matching backend DTOs</p>
+                <p><strong>Required Interfaces:</strong></p>
+                <ul>
+                    <li><code>PromotionEmailTemplateDTO</code> - Full template data</li>
+                    <li><code>PromotionEmailTemplateFormDTO</code> - Form data for create/update</li>
+                    <li><code>SendPromotionEmailDTO</code> - Email sending request</li>
+                    <li><code>PromotionEmailSentLogDTO</code> - Sent email log entry</li>
+                </ul>
+                <p><strong>Requirements:</strong></p>
+                <ul>
+                    <li>Match backend OpenAPI schema exactly</li>
+                    <li>Include all optional fields with proper types</li>
+                    <li>Add JSDoc comments for documentation</li>
+                    <li>Export all interfaces</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>4. API Proxy Routes</h2>
+
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 2.1: Create Template List/Create Proxy</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>File:</strong> <code>src/pages/api/proxy/promotion-email-templates/index.ts</code></p>
+                <p><strong>Description:</strong> Create proxy handler for GET (list) and POST (create) operations</p>
+                <p><strong>Requirements:</strong></p>
+                <ul>
+                    <li>Use <code>createProxyHandler</code> from <code>@/lib/proxyHandler</code></p>
+                    <li>Set <code>backendPath: '/api/promotion-email-templates'</code></li>
+                    <li>Support query parameters: <code>eventId.equals</code>, <code>isActive.equals</code>, <code>sort</code>, <code>page</code>, <code>size</code></li>
+                    <li>Follow cursor rules: no local DTO declarations, use <code>fetchWithJwtRetry</code></li>
+                </ul>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 2.2: Create Template Get/Update/Delete Proxy</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>File:</strong> <code>src/pages/api/proxy/promotion-email-templates/[...slug].ts</code></p>
+                <p><strong>Description:</strong> Create proxy handler for single template operations</p>
+                <p><strong>Requirements:</strong></p>
+                <ul>
+                    <li>Use <code>createProxyHandler</code> from <code>@/lib/proxyHandler</code></li>
+                    <li>Set <code>backendPath: '/api/promotion-email-templates'</code></li>
+                    <li>Support GET (by ID), PATCH (update), DELETE operations</li>
+                    <li>Handle slug pattern: <code>['id']</code> or <code>['id', 'send-test']</code> or <code>['id', 'send-bulk']</code></li>
+                </ul>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 2.3: Create Email Sending Proxy Routes</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>Files:</strong></p>
+                <ul>
+                    <li><code>src/pages/api/proxy/promotion-email-templates/[id]/send-test.ts</code></li>
+                    <li><code>src/pages/api/proxy/promotion-email-templates/[id]/send-bulk.ts</code></li>
+                </ul>
+                <p><strong>Description:</strong> Create proxy handlers for email sending endpoints</p>
+                <p><strong>Requirements:</strong></p>
+                <ul>
+                    <li>Use <code>createProxyHandler</code> or custom handler</li>
+                    <li>POST method only</li>
+                    <li>Forward request body to backend</li>
+                    <li>Handle errors gracefully</li>
+                </ul>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 2.4: Create Email Log Proxy</h4>
+                <p><strong>Priority:</strong> <span class="priority-medium">MEDIUM</span></p>
+                <p><strong>File:</strong> <code>src/pages/api/proxy/promotion-email-sent-logs/index.ts</code></p>
+                <p><strong>Description:</strong> Create proxy handler for email log queries</p>
+                <p><strong>Requirements:</strong></p>
+                <ul>
+                    <li>Use <code>createProxyHandler</code></li>
+                    <li>Set <code>backendPath: '/api/promotion-email-sent-logs'</code></li>
+                    <li>Support filtering: <code>eventId.equals</code>, <code>templateId.equals</code>, <code>sentAt.greaterThanOrEqual</code>, <code>sentAt.lessThanOrEqual</code>, <code>emailStatus.equals</code></li>
+                    <li>Support pagination: <code>sort</code>, <code>page</code>, <code>size</code></li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>5. Server Actions</h2>
+
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 3.1: Create ApiServerActions.ts</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>File:</strong> <code>src/app/admin/promotion-emails/ApiServerActions.ts</code></p>
+                <p><strong>Description:</strong> Create server actions for all API calls</p>
+                <p><strong>Required Functions:</strong></p>
+                <ul>
+                    <li><code>fetchPromotionEmailTemplatesServer(params)</code> - List templates</li>
+                    <li><code>fetchPromotionEmailTemplateServer(id)</code> - Get template by ID</li>
+                    <li><code>createPromotionEmailTemplateServer(formData)</code> - Create template</li>
+                    <li><code>updatePromotionEmailTemplateServer(id, formData)</code> - Update template</li>
+                    <li><code>deletePromotionEmailTemplateServer(id)</code> - Delete template</li>
+                    <li><code>sendTestEmailServer(templateId, recipientEmail)</code> - Send test email</li>
+                    <li><code>sendBulkEmailServer(templateId, recipientEmails?)</code> - Send bulk email</li>
+                    <li><code>fetchPromotionEmailSentLogsServer(params)</code> - List email logs</li>
+                </ul>
+                <p><strong>Requirements:</strong></p>
+                <ul>
+                    <li>All functions must use <code>fetchWithJwtRetry</code> from <code>@/lib/proxyHandler</code></li>
+                    <li>Use <code>getAppUrl()</code> for absolute URLs</li>
+                    <li>Handle errors with try-catch</li>
+                    <li>Return typed responses</li>
+                    <li>Use <code>withTenantId</code> for DTOs</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>6. UI Components</h2>
+
+        <h3>6.1 Template List Component</h3>
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 4.1: Create PromotionEmailTemplateList Component</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>File:</strong> <code>src/app/admin/promotion-emails/components/PromotionEmailTemplateList.tsx</code></p>
+                <p><strong>Description:</strong> Display list of templates in table or card format</p>
+                <p><strong>Features:</strong></p>
+                <ul>
+                    <li>Display template name, event, subject, status</li>
+                    <li>Filter by event (dropdown)</li>
+                    <li>Search by template name</li>
+                    <li>Sort by created date, name</li>
+                    <li>Pagination</li>
+                    <li>Actions: Edit, Duplicate, Delete, Send Test, Send Bulk</li>
+                </ul>
+                <p><strong>UI Requirements:</strong></p>
+                <ul>
+                    <li>Responsive design (mobile-friendly)</li>
+                    <li>Loading states</li>
+                    <li>Empty state message</li>
+                    <li>Error handling display</li>
+                    <li>Confirmation dialogs for delete</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>6.2 Template Form Component</h3>
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 4.2: Create PromotionEmailTemplateForm Component</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>File:</strong> <code>src/app/admin/promotion-emails/components/PromotionEmailTemplateForm.tsx</code></p>
+                <p><strong>Description:</strong> Form for creating/editing templates</p>
+                <p><strong>Form Fields:</strong></p>
+                <table>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td>Event</td>
+                        <td>Select</td>
+                        <td>Yes</td>
+                        <td>Dropdown of events (filtered by tenant)</td>
+                    </tr>
+                    <tr>
+                        <td>Template Name</td>
+                        <td>Text Input</td>
+                        <td>Yes</td>
+                        <td>Unique name per event</td>
+                    </tr>
+                    <tr>
+                        <td>Subject</td>
+                        <td>Text Input</td>
+                        <td>Yes</td>
+                        <td>Email subject line</td>
+                    </tr>
+                    <tr>
+                        <td>Discount Code</td>
+                        <td>Select</td>
+                        <td>No</td>
+                        <td>Dropdown of discount codes for selected event</td>
+                    </tr>
+                    <tr>
+                        <td>Header Image</td>
+                        <td>Image Upload</td>
+                        <td>No</td>
+                        <td>Upload with preview</td>
+                    </tr>
+                    <tr>
+                        <td>Footer Image</td>
+                        <td>Image Upload</td>
+                        <td>No</td>
+                        <td>Upload with preview (optional)</td>
+                    </tr>
+                    <tr>
+                        <td>Body HTML</td>
+                        <td>Rich Text Editor</td>
+                        <td>Yes</td>
+                        <td>Email body content</td>
+                    </tr>
+                    <tr>
+                        <td>Active Status</td>
+                        <td>Toggle</td>
+                        <td>No</td>
+                        <td>Enable/disable template</td>
+                    </tr>
+                </table>
+                <p><strong>Requirements:</strong></p>
+                <ul>
+                    <li>Form validation (required fields, uniqueness)</li>
+                    <li>Event selector loads events from API</li>
+                    <li>Discount code selector updates when event changes</li>
+                    <li>Option to create new discount code inline</li>
+                    <li>Image upload with drag-and-drop</li>
+                    <li>Image preview before saving</li>
+                    <li>Rich text editor for HTML body</li>
+                    <li>Live preview of email template</li>
+                    <li>Save, Cancel, Send Test buttons</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>6.3 Image Upload Component</h3>
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 4.3: Create ImageUpload Component</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>File:</strong> <code>src/app/admin/promotion-emails/components/ImageUpload.tsx</code></p>
+                <p><strong>Description:</strong> Reusable image upload component</p>
+                <p><strong>Features:</strong></p>
+                <ul>
+                    <li>Drag-and-drop file upload</li>
+                    <li>File selection via button</li>
+                    <li>Image preview</li>
+                    <li>Image validation (size, format)</li>
+                    <li>Upload progress indicator</li>
+                    <li>Error handling</li>
+                    <li>Remove/replace image</li>
+                </ul>
+                <p><strong>Integration:</strong></p>
+                <ul>
+                    <li>Use existing media upload API or S3 upload service</li>
+                    <li>Return S3 URL after upload</li>
+                    <li>Store URL in form state</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>6.4 Email History Component</h3>
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 4.4: Create PromotionEmailHistory Component</h4>
+                <p><strong>Priority:</strong> <span class="priority-medium">MEDIUM</span></p>
+                <p><strong>File:</strong> <code>src/app/admin/promotion-emails/components/PromotionEmailHistory.tsx</code></p>
+                <p><strong>Description:</strong> Display sent email logs</p>
+                <p><strong>Features:</strong></p>
+                <ul>
+                    <li>Table showing: recipient, subject, sent date, status</li>
+                    <li>Filter by event, date range, status</li>
+                    <li>Search by recipient email</li>
+                    <li>Pagination</li>
+                    <li>View email details modal</li>
+                    <li>Resend failed emails</li>
+                </ul>
+                <p><strong>Status Indicators:</strong></p>
+                <ul>
+                    <li>SENT - Green badge</li>
+                    <li>FAILED - Red badge</li>
+                    <li>BOUNCED - Orange badge</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>7. Main Page Implementation</h2>
+
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 5.1: Redesign Promotion Emails Page</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>File:</strong> <code>src/app/admin/promotion-emails/page.tsx</code></p>
+                <p><strong>Description:</strong> Complete redesign of main promotion emails page</p>
+                <p><strong>Page Structure:</strong></p>
+                <ol>
+                    <li><strong>Header Section</strong>
+                        <ul>
+                            <li>Page title: "Promotion Email Management"</li>
+                            <li>Create New Template button</li>
+                            <li>Admin Navigation component</li>
+                        </ul>
+                    </li>
+                    <li><strong>Template Management Section</strong>
+                        <ul>
+                            <li>Template list component</li>
+                            <li>Filters and search</li>
+                            <li>Template actions</li>
+                        </ul>
+                    </li>
+                    <li><strong>Template Form Section</strong>
+                        <ul>
+                            <li>Show/hide based on create/edit mode</li>
+                            <li>Template form component</li>
+                            <li>Form actions</li>
+                        </ul>
+                    </li>
+                    <li><strong>Email History Section</strong>
+                        <ul>
+                            <li>Tab or accordion for history</li>
+                            <li>Email history component</li>
+                        </ul>
+                    </li>
+                </ol>
+                <p><strong>State Management:</strong></p>
+                <ul>
+                    <li>Selected template (for edit mode)</li>
+                    <li>Form mode (create/edit/view)</li>
+                    <li>Loading states</li>
+                    <li>Error messages</li>
+                    <li>Success messages</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>8. Integration with Existing Components</h2>
+
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 6.1: Integrate Event Selector</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>Description:</strong> Use existing event fetching logic</p>
+                <ul>
+                    <li>Reuse <code>fetchEventsFilteredServer</code> from admin API</li>
+                    <li>Filter events by tenant</li>
+                    <li>Display event title and date</li>
+                    <li>Handle event selection</li>
+                </ul>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 6.2: Integrate Discount Code Selector</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>Description:</strong> Fetch and display discount codes for selected event</p>
+                <ul>
+                    <li>Use <code>fetchDiscountCodesForEvent</code> from discount code API</li>
+                    <li>Update dropdown when event changes</li>
+                    <li>Display code, type, value, validity</li>
+                    <li>Option to create new discount code (link to discount code page)</li>
+                </ul>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 6.3: Integrate Rich Text Editor</h4>
+                <p><strong>Priority:</strong> <span class="priority-medium">MEDIUM</span></p>
+                <p><strong>Description:</strong> Add rich text editor for HTML body</p>
+                <ul>
+                    <li>Use React Quill, TinyMCE, or similar library</li>
+                    <li>Support HTML editing</li>
+                    <li>Preview mode</li>
+                    <li>Sanitize HTML output</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>9. User Experience Enhancements</h2>
+
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 7.1: Add Loading States</h4>
+                <p><strong>Priority:</strong> <span class="priority-medium">MEDIUM</span></p>
+                <ul>
+                    <li>Loading spinners for API calls</li>
+                    <li>Skeleton loaders for lists</li>
+                    <li>Disabled buttons during operations</li>
+                </ul>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 7.2: Add Error Handling</h4>
+                <p><strong>Priority:</strong> <span class="priority-medium">MEDIUM</span></p>
+                <ul>
+                    <li>Display error messages clearly</li>
+                    <li>Handle validation errors</li>
+                    <li>Handle network errors</li>
+                    <li>Retry mechanisms</li>
+                </ul>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 7.3: Add Success Feedback</h4>
+                <p><strong>Priority:</strong> <span class="priority-low">LOW</span></p>
+                <ul>
+                    <li>Success toast notifications</li>
+                    <li>Confirmation messages</li>
+                    <li>Auto-refresh lists after operations</li>
+                </ul>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 7.4: Add Form Validation</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <ul>
+                    <li>Client-side validation</li>
+                    <li>Real-time error messages</li>
+                    <li>Required field indicators</li>
+                    <li>Format validation (email, URLs)</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>10. Responsive Design</h2>
+
+        <div class="warning-box">
+            <strong>Responsive Design Requirements:</strong>
+            <ul>
+                <li>Mobile-first approach</li>
+                <li>Breakpoints: sm (640px), md (768px), lg (1024px), xl (1280px)</li>
+                <li>Table should scroll horizontally on mobile</li>
+                <li>Form should stack vertically on mobile</li>
+                <li>Buttons should be full-width on mobile</li>
+                <li>Image upload should work on touch devices</li>
+            </ul>
+        </div>
+
+        <h2>11. Accessibility</h2>
+
+        <div class="warning-box">
+            <strong>Accessibility Requirements:</strong>
+            <ul>
+                <li>Proper ARIA labels on all interactive elements</li>
+                <li>Keyboard navigation support</li>
+                <li>Focus indicators</li>
+                <li>Screen reader support</li>
+                <li>Color contrast compliance (WCAG AA)</li>
+                <li>Alt text for images</li>
+            </ul>
+        </div>
+
+        <h2>12. Cursor Rules Compliance</h2>
+
+        <div class="info-box">
+            <strong>✅ Must Follow Cursor Rules:</strong>
+            <ul>
+                <li><strong>REST API Rules:</strong> Use <code>fetchWithJwtRetry</code> from <code>@/lib/proxyHandler</code></li>
+                <li><strong>DTO Import:</strong> All DTOs imported from <code>@/types</code>, no local declarations</li>
+                <li><strong>Tenant ID:</strong> Use <code>withTenantId</code> utility for all DTOs</li>
+                <li><strong>Query Params:</strong> Use JHipster filter syntax (<code>.equals</code>, <code>.contains</code>)</li>
+                <li><strong>Server Actions:</strong> All API calls in <code>ApiServerActions.ts</code></li>
+                <li><strong>Proxy Handlers:</strong> Use <code>createProxyHandler</code> for all proxy routes</li>
+                <li><strong>Error Handling:</strong> Try-catch blocks with proper error messages</li>
+                <li><strong>Client Components:</strong> No direct API calls, use server actions</li>
+            </ul>
+        </div>
+
+        <h2>13. File Structure</h2>
+
+        <pre>
+src/app/admin/promotion-emails/
+├── page.tsx                          # Main page (redesigned)
+├── ApiServerActions.ts              # Server actions
+├── components/
+│   ├── PromotionEmailTemplateList.tsx
+│   ├── PromotionEmailTemplateForm.tsx
+│   ├── ImageUpload.tsx
+│   └── PromotionEmailHistory.tsx
+└── [id]/
+    └── page.tsx                      # Template detail page (optional)
+
+src/pages/api/proxy/
+├── promotion-email-templates/
+│   ├── index.ts                     # List/Create
+│   └── [...slug].ts                 # Get/Update/Delete
+└── promotion-email-sent-logs/
+    └── index.ts                     # List logs
+
+src/types/
+└── index.ts                         # Add DTOs here
+        </pre>
+
+        <h2>14. Acceptance Criteria</h2>
+
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Overall Acceptance Criteria</h4>
+                <ul>
+                    <li>✅ All DTOs added to types file</li>
+                    <li>✅ All proxy routes created and working</li>
+                    <li>✅ All server actions implemented</li>
+                    <li>✅ Template list displays correctly</li>
+                    <li>✅ Template form works for create/edit</li>
+                    <li>✅ Event selector loads and filters events</li>
+                    <li>✅ Discount code selector updates based on event</li>
+                    <li>✅ Image upload works with preview</li>
+                    <li>✅ Rich text editor integrated</li>
+                    <li>✅ Test email sending works</li>
+                    <li>✅ Bulk email sending works</li>
+                    <li>✅ Email history displays correctly</li>
+                    <li>✅ All filters and search work</li>
+                    <li>✅ Responsive design works on all devices</li>
+                    <li>✅ Error handling is robust</li>
+                    <li>✅ Loading states display correctly</li>
+                    <li>✅ Form validation works</li>
+                    <li>✅ All cursor rules followed</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>15. Dependencies</h2>
+
+        <ul>
+            <li>Existing event fetching APIs</li>
+            <li>Existing discount code APIs</li>
+            <li>Existing image upload service</li>
+            <li>React Quill or TinyMCE (for rich text editor)</li>
+            <li>Existing UI components (Button, Input, Select, etc.)</li>
+            <li>Existing admin navigation component</li>
+        </ul>
+
+        <h2>16. Estimated Effort</h2>
+
+        <table>
+            <tr>
+                <th>Task Category</th>
+                <th>Estimated Time</th>
+            </tr>
+            <tr>
+                <td>Type Definitions (DTOs)</td>
+                <td>1-2 hours</td>
+            </tr>
+            <tr>
+                <td>Proxy API Routes</td>
+                <td>3-4 hours</td>
+            </tr>
+            <tr>
+                <td>Server Actions</td>
+                <td>4-6 hours</td>
+            </tr>
+            <tr>
+                <td>Template List Component</td>
+                <td>6-8 hours</td>
+            </tr>
+            <tr>
+                <td>Template Form Component</td>
+                <td>8-10 hours</td>
+            </tr>
+            <tr>
+                <td>Image Upload Component</td>
+                <td>4-6 hours</td>
+            </tr>
+            <tr>
+                <td>Email History Component</td>
+                <td>4-6 hours</td>
+            </tr>
+            <tr>
+                <td>Main Page Integration</td>
+                <td>4-6 hours</td>
+            </tr>
+            <tr>
+                <td>Rich Text Editor Integration</td>
+                <td>3-4 hours</td>
+            </tr>
+            <tr>
+                <td>UX Enhancements</td>
+                <td>4-6 hours</td>
+            </tr>
+            <tr>
+                <td>Responsive Design</td>
+                <td>3-4 hours</td>
+            </tr>
+            <tr>
+                <td>Testing & Bug Fixes</td>
+                <td>6-8 hours</td>
+            </tr>
+            <tr>
+                <td><strong>Total</strong></td>
+                <td><strong>50-70 hours (~6-9 days)</strong></td>
+            </tr>
+        </table>
+
+        <h2>17. References</h2>
+
+        <ul>
+            <li>Analysis Document: <code>documentation/promotion_email_redesign/PROMOTION_EMAIL_REDESIGN_ANALYSIS.md</code></li>
+            <li>Backend PRD: <code>documentation/promotion_email_redesign/BACKEND_PRD.html</code></li>
+            <li>Cursor Rules: <code>.cursor/rules/nextjs_api_routes.mdc</code></li>
+            <li>Swagger API Docs: <code>documentation/Swagger_API_Docs/api-docs.json</code></li>
+            <li>Existing Components: <code>src/components/</code></li>
+        </ul>
+
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOW TO VERIFY TEST COMPLETION AND TEST PLAN</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.8;
+            color: #2c3e50;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+            font-size: 2.8em;
+            font-weight: 700;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 50px;
+            margin-bottom: 25px;
+            font-size: 2.2em;
+            font-weight: 600;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #555;
+            margin-top: 35px;
+            margin-bottom: 20px;
+            font-size: 1.6em;
+            font-weight: 600;
+        }
+
+        p {
+            margin-bottom: 18px;
+            text-align: justify;
+            font-size: 1.05em;
+        }
+
+        ul, ol {
+            margin: 20px 0;
+            padding-left: 40px;
+        }
+
+        li {
+            margin-bottom: 10px;
+            line-height: 1.8;
+        }
+
+        code {
+            background-color: #f4f4f4;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            color: #e83e8c;
+            border: 1px solid #e1e8ed;
+        }
+
+        pre {
+            background: linear-gradient(135deg, #2d2d2d 0%, #1e1e1e 100%);
+            color: #f8f8f2;
+            padding: 25px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 25px 0;
+            border-left: 5px solid #3498db;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+            font-size: 0.95em;
+            border: none;
+            white-space: pre;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        table thead {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        }
+
+        table th {
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 1.05em;
+        }
+
+        table td {
+            padding: 15px;
+            border-bottom: 1px solid #e1e8ed;
+            background: white;
+        }
+
+        table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+
+        hr {
+            border: none;
+            border-top: 3px solid #ecf0f1;
+            margin: 40px 0;
+            border-radius: 2px;
+        }
+
+        blockquote {
+            border-left: 5px solid #3498db;
+            padding: 15px 25px;
+            margin: 25px 0;
+            background-color: #f8f9fa;
+            color: #555;
+            font-style: italic;
+            border-radius: 4px;
+        }
+
+        strong {
+            color: #2c3e50;
+            font-weight: 700;
+        }
+
+        em {
+            color: #555;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            h2 {
+                font-size: 1.6em;
+            }
+
+            h3 {
+                font-size: 1.3em;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .container {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>How to Verify Test Completion and Ensure Correct Test Plan</h1>
+
+<h2>🔍 <strong>How TestSprite Selects the Test Plan</strong></h2>
+
+<h3><strong>Default Test Plan File</strong></h3>
+
+<p>TestSprite MCP <strong>automatically looks for</strong> this file:</p>
+<pre><code class="language-text">testsprite_tests/testsprite_frontend_test_plan.json</code></pre>
+
+<p><strong>This is the default test plan file</strong> that TestSprite uses when you run:</p>
+<pre><code class="language-bash">node .../testsprite-mcp/dist/index.js generateCodeAndExecute</code></pre>
+
+<h3><strong>How Test Plan Selection Works</strong></h3>
+
+<ol>
+<li><strong>TestSprite looks for</strong>: <code>testsprite_frontend_test_plan.json</code> in the project root or <code>testsprite_tests/</code> directory</li>
+<li><strong>If found</strong>: Uses that file to generate tests</li>
+<li><strong>If not found</strong>: May generate tests based on codebase analysis or fail</li>
+
+</ol>
+<h3><strong>Current Setup</strong></h3>
+
+<p>✅ <strong>We replaced the old test plan</strong> with the public pages test plan:</p>
+<ul>
+<li><strong>Old file</strong>: <code>testsprite_frontend_test_plan.json</code> (backed up as <code>.backup</code>)</li>
+<li><strong>New file</strong>: <code>testsprite_frontend_test_plan.json</code> (now contains public pages tests)</li>
+<li><strong>Source</strong>: Copied from <code>public_pages_sanity_test_plan.json</code></li>
+
+</ul>
+<h2>✅ <strong>How to Verify Which Test Plan is Being Used</strong></h2>
+
+<h3><strong>Method 1: Check the Test Plan File Content</strong></h3>
+
+<pre><code class="language-bash"># View first few lines to see test IDs
+Get-Content testsprite_tests\testsprite_frontend_test_plan.json | Select-Object -First 30</code></pre>
+
+<p><strong>Look for:</strong></p>
+<ul>
+<li>✅ <code>"id": "PUBLIC-001"</code> = Public pages test plan (CORRECT)</li>
+<li>❌ <code>"id": "TC001"</code> = Old comprehensive test plan (WRONG)</li>
+
+</ul>
+<h3><strong>Method 2: Check Test Results</strong></h3>
+
+<p>After tests complete, check <code>test_results.json</code>:</p>
+
+<pre><code class="language-bash"># Check test titles in results
+Get-Content testsprite_tests\tmp\test_results.json | Select-String &quot;title&quot;</code></pre>
+
+<p><strong>Look for:</strong></p>
+<ul>
+<li>✅ <code>"title": "Homepage Load and Components"</code> = Public pages tests (CORRECT)</li>
+<li>❌ <code>"title": "User Authentication via Social Login"</code> = Old tests (WRONG)</li>
+
+</ul>
+<h3><strong>Method 3: Count Test Cases</strong></h3>
+
+<pre><code class="language-bash"># Count test cases in test plan
+(Get-Content testsprite_tests\testsprite_frontend_test_plan.json | ConvertFrom-Json).Count</code></pre>
+
+<p><strong>Expected:</strong></p>
+<ul>
+<li>✅ <strong>8 tests</strong> = Public pages test plan (CORRECT)</li>
+<li>❌ <strong>15+ tests</strong> = Old comprehensive test plan (WRONG)</li>
+
+</ul>
+<h2>🕐 <strong>How to Know When Tests Are Complete</strong></h2>
+
+<h3><strong>Method 1: Check Lock File</strong></h3>
+
+<pre><code class="language-powershell"># Check if execution lock file exists
+Test-Path testsprite_tests\tmp\execution.lock</code></pre>
+
+<ul>
+<li>✅ <strong><code>False</code></strong> = Tests completed (lock file removed)</li>
+<li>❌ <strong><code>True</code></strong> = Tests still running (lock file present)</li>
+
+</ul>
+<h3><strong>Method 2: Check Process Status</strong></h3>
+
+<pre><code class="language-powershell"># Check if TestSprite process is running
+Get-Process | Where-Object {$_.ProcessName -eq &quot;node&quot; -and $_.CommandLine -like &quot;*testsprite*&quot;}</code></pre>
+
+<ul>
+<li>✅ <strong>No results</strong> = Tests completed (process finished)</li>
+<li>❌ <strong>Process found</strong> = Tests still running</li>
+
+</ul>
+<h3><strong>Method 3: Check Test Results File Timestamp</strong></h3>
+
+<pre><code class="language-powershell"># Check when test_results.json was last modified
+Get-ChildItem testsprite_tests\tmp\test_results.json | Select-Object LastWriteTime</code></pre>
+
+<ul>
+<li>✅ <strong>Recent timestamp</strong> (< 5 minutes ago) = Tests just completed</li>
+<li>❌ <strong>Old timestamp</strong> (> 15 minutes ago) = Tests completed earlier</li>
+
+</ul>
+<h3><strong>Method 4: Check Terminal Output</strong></h3>
+
+<p>If you ran tests in foreground (not background), you'll see:</p>
+<pre><code class="language-text">✅ Test execution completed
+The AI assistant will generate a report for you.</code></pre>
+
+<h3><strong>Method 5: Check for HTML Report</strong></h3>
+
+<pre><code class="language-powershell"># Check if HTML report exists and is recent
+Get-ChildItem testsprite_tests\tmp\test_report.html | Select-Object LastWriteTime</code></pre>
+
+<ul>
+<li>✅ <strong>File exists with recent timestamp</strong> = Tests completed</li>
+<li>❌ <strong>File doesn't exist or old</strong> = Tests not completed yet</li>
+
+</ul>
+<h2>📋 <strong>How to Specify Which Test Plan to Use</strong></h2>
+
+<h3><strong>Option 1: Replace Default Test Plan File</strong> (Current Method)</h3>
+
+<pre><code class="language-powershell"># Backup old test plan
+Copy-Item testsprite_tests\testsprite_frontend_test_plan.json testsprite_tests\testsprite_frontend_test_plan.json.backup
+
+# Replace with your test plan
+Copy-Item testsprite_tests\public_pages_sanity_test_plan.json testsprite_tests\testsprite_frontend_test_plan.json -Force</code></pre>
+
+<p><strong>Pros:</strong></p>
+<ul>
+<li>✅ Simple - just replace the file</li>
+<li>✅ Works automatically with TestSprite MCP</li>
+
+</ul>
+<p><strong>Cons:</strong></p>
+<ul>
+<li>❌ Overwrites default test plan</li>
+<li>❌ Need to restore backup for other tests</li>
+
+</ul>
+<h3><strong>Option 2: Use Additional Instructions</strong> (Recommended)</h3>
+
+<p>When calling TestSprite MCP, provide detailed instructions:</p>
+
+<pre><code class="language-typescript">mcp_TestSprite_testsprite_generate_code_and_execute({
+  projectName: &quot;mosc-temp&quot;,
+  projectPath: &quot;E:\\project_workspace\\mosc-temp&quot;,
+  testIds: [],
+  additionalInstruction: `
+    Use the test plan at testsprite_tests/public_pages_sanity_test_plan.json
+
+    Test only these pages:
+    - Homepage (/)
+    - Events listing (/events)
+    - Gallery (/gallery)
+    - About (/about)
+    - Contact (/contact)
+    - Polls (/polls)
+    - Calendar (/calendar)
+    - Pricing (/pricing)
+
+    Do NOT test admin pages, login flows, or complex interactions.
+  `
+})</code></pre>
+
+<p><strong>Pros:</strong></p>
+<ul>
+<li>✅ Doesn't modify default test plan</li>
+<li>✅ Can specify different test plans per run</li>
+<li>✅ More flexible</li>
+
+</ul>
+<p><strong>Cons:</strong></p>
+<ul>
+<li>❌ TestSprite may still use default file if instructions unclear</li>
+
+</ul>
+<h3><strong>Option 3: Reference Test Plan in Chat</strong> (Best Practice)</h3>
+
+<p>When asking Cursor AI to run tests:</p>
+
+<pre><code class="language-text">Use the test plan at testsprite_tests/public_pages_sanity_test_plan.json
+to run public pages sanity tests.</code></pre>
+
+<p><strong>Pros:</strong></p>
+<ul>
+<li>✅ Clear and explicit</li>
+<li>✅ Cursor AI can read the file and use it</li>
+<li>✅ No file modifications needed</li>
+
+</ul>
+<h2>🔄 <strong>Complete Workflow: Verify Test Plan and Completion</strong></h2>
+
+<h3><strong>Step 1: Before Running Tests</strong></h3>
+
+<pre><code class="language-powershell"># Verify which test plan is active
+Get-Content testsprite_tests\testsprite_frontend_test_plan.json | Select-Object -First 5
+
+# Should show: &quot;id&quot;: &quot;PUBLIC-001&quot; (public pages) or &quot;id&quot;: &quot;TC001&quot; (old tests)</code></pre>
+
+<h3><strong>Step 2: Run Tests</strong></h3>
+
+<pre><code class="language-bash"># Via Cursor AI chat (recommended)
+&quot;Run public pages sanity tests using testsprite_tests/public_pages_sanity_test_plan.json&quot;
+
+# Or via command line
+node E:\.npm-cache\_npx\8ddf6bea01b2519d\node_modules\@testsprite\testsprite-mcp\dist\index.js generateCodeAndExecute</code></pre>
+
+<h3><strong>Step 3: Monitor Progress</strong></h3>
+
+<pre><code class="language-powershell"># Check if tests are running (every 30 seconds)
+while ($true) {
+    $lockExists = Test-Path testsprite_tests\tmp\execution.lock
+    $processRunning = Get-Process | Where-Object {$_.ProcessName -eq &quot;node&quot; -and $_.CommandLine -like &quot;*testsprite*&quot;}
+
+    if (-not $lockExists -and -not $processRunning) {
+        Write-Host &quot;✅ Tests completed!&quot;
+        break
+    }
+
+    Write-Host &quot;⏳ Tests still running... ($(Get-Date -Format &#039;HH:mm:ss&#039;))&quot;
+    Start-Sleep -Seconds 30
+}</code></pre>
+
+<h3><strong>Step 4: Verify Test Plan Was Used</strong></h3>
+
+<pre><code class="language-powershell"># Check test results to confirm correct test plan
+$results = Get-Content testsprite_tests\tmp\test_results.json | ConvertFrom-Json
+$results | Select-Object -First 3 title
+
+# Should show:
+# - &quot;Homepage Load and Components&quot;
+# - &quot;Events Listing Page Load&quot;
+# - &quot;Gallery Page Load&quot;
+# NOT:
+# - &quot;User Authentication via Social Login&quot;
+# - &quot;Event Creation Workflow&quot;</code></pre>
+
+<h3><strong>Step 5: Filter and View Results</strong></h3>
+
+<pre><code class="language-bash"># Filter expected errors
+node scripts/filter-testsprite-errors.js
+
+# View HTML report
+start testsprite_tests\tmp\test_report.html</code></pre>
+
+<h2>📊 <strong>Quick Reference: Test Plan Files</strong></h2>
+
+<table>
+<thead><tr><th>File</th><th>Purpose</th><th>When to Use</th></tr></thead>
+<tbody>
+<tr><td><code>testsprite_frontend_test_plan.json</code></td><td><strong>Default test plan</strong> (TestSprite looks for this)</td><td>Default behavior</td></tr>
+<tr><td><code>public_pages_sanity_test_plan.json</code></td><td>Public pages only (8 tests)</td><td>Public pages sanity checks</td></tr>
+<tr><td><code>testsprite_frontend_test_plan.json.backup</code></td><td>Backup of old comprehensive tests</td><td>Restore if needed</td></tr>
+</tbody>
+</table>
+
+<h2>🎯 <strong>Current Status</strong></h2>
+
+<p>✅ <strong>Test Plan</strong>: <code>testsprite_frontend_test_plan.json</code> = Public pages test plan (8 tests)</p>
+<p>✅ <strong>Backup</strong>: <code>testsprite_frontend_test_plan.json.backup</code> = Old comprehensive tests (15 tests)</p>
+<p>✅ <strong>Source</strong>: <code>public_pages_sanity_test_plan.json</code> = Original public pages plan</p>
+
+<h2>⚠️ <strong>Troubleshooting</strong></h2>
+
+<h3><strong>Problem: Tests using wrong test plan</strong></h3>
+
+<p><strong>Solution:</strong></p>
+<pre><code class="language-powershell"># Verify current test plan
+Get-Content testsprite_tests\testsprite_frontend_test_plan.json | Select-String &quot;PUBLIC-001&quot;
+
+# If not found, restore public pages plan
+Copy-Item testsprite_tests\public_pages_sanity_test_plan.json testsprite_tests\testsprite_frontend_test_plan.json -Force</code></pre>
+
+<h3><strong>Problem: Can't tell if tests completed</strong></h3>
+
+<p><strong>Solution:</strong></p>
+<pre><code class="language-powershell"># Check all indicators
+$lockExists = Test-Path testsprite_tests\tmp\execution.lock
+$processRunning = Get-Process | Where-Object {$_.ProcessName -eq &quot;node&quot; -and $_.CommandLine -like &quot;*testsprite*&quot;}
+$resultsTime = (Get-ChildItem testsprite_tests\tmp\test_results.json -ErrorAction SilentlyContinue).LastWriteTime
+
+Write-Host &quot;Lock file exists: $lockExists&quot;
+Write-Host &quot;Process running: $($processRunning -ne $null)&quot;
+Write-Host &quot;Results last updated: $resultsTime&quot;
+
+# If lock doesn&#039;t exist AND no process AND recent results = COMPLETE</code></pre>
+
+<h2>📝 <strong>Summary</strong></h2>
+
+<p><strong>To ensure correct test plan:</strong></p>
+<ol>
+<li>✅ Replace <code>testsprite_frontend_test_plan.json</code> with your desired test plan</li>
+<li>✅ Or reference test plan file in <code>additionalInstruction</code></li>
+<li>✅ Verify test plan by checking first test ID (<code>PUBLIC-001</code> vs <code>TC001</code>)</li>
+
+</ol>
+<p><strong>To verify tests completed:</strong></p>
+<ol>
+<li>✅ Check lock file: <code>Test-Path testsprite_tests\tmp\execution.lock</code> = <code>False</code></li>
+<li>✅ Check process: No TestSprite node process running</li>
+<li>✅ Check results timestamp: Recent <code>LastWriteTime</code> on <code>test_results.json</code></li>
+<li>✅ Check HTML report: File exists with recent timestamp</li>
+
+
+</ol>
+    </div>
+</body>
+</html>

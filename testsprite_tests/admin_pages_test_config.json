@@ -1,0 +1,66 @@
+{
+  "testPlanName": "Admin Pages Sanity Tests",
+  "testPlanDescription": "Simple sanity tests for admin pages - verify all admin pages are accessible after login. Tests require authentication with admin credentials.",
+  "testPlanFile": "testsprite_tests/admin_pages_sanity_test_plan.json",
+  "project": {
+    "name": "mosc-temp",
+    "baseUrl": "http://localhost:3000",
+    "type": "frontend"
+  },
+  "testConfiguration": {
+    "scope": "admin-pages-only",
+    "includePaths": [
+      "/admin",
+      "/admin/manage-usage",
+      "/admin/manage-events",
+      "/admin/events/dashboard",
+      "/admin/events/registrations",
+      "/admin/polls",
+      "/admin/focus-groups",
+      "/admin/membership/plans",
+      "/admin/membership/subscriptions",
+      "/admin/bulk-email",
+      "/admin/test-stripe",
+      "/admin/media",
+      "/admin/executive-committee",
+      "/admin/event-sponsors",
+      "/admin/tenant-management/organizations",
+      "/admin/tenant-management/settings"
+    ],
+    "excludePaths": [
+      "/",
+      "/events",
+      "/gallery",
+      "/about",
+      "/contact",
+      "/polls",
+      "/calendar",
+      "/pricing"
+    ],
+    "testTypes": [
+      "authentication",
+      "page-load",
+      "component-visibility"
+    ],
+    "skipInteractions": true,
+    "skipAuthentication": false,
+    "requireAuthentication": true,
+    "authenticationType": "clerk",
+    "loginUrl": "/sign-in",
+    "skipMenuNavigation": true,
+    "timeout": 20000,
+    "retries": 1
+  },
+  "authentication": {
+    "type": "clerk",
+    "loginUrl": "/sign-in",
+    "credentials": {
+      "email": "{{TEST_ADMIN_EMAIL}}",
+      "password": "{{TEST_ADMIN_PASSWORD}}"
+    },
+    "note": "Admin credentials should be provided via environment variables TEST_ADMIN_EMAIL and TEST_ADMIN_PASSWORD, or passed as command-line arguments"
+  },
+  "additionalInstructions": "Test admin pages only. First test (ADMIN-001) handles login authentication. All subsequent tests assume user is already authenticated. Verify pages load without errors and main components are visible. Do NOT test complex interactions, form submissions, or data modifications. This is a simple sanity check - just verify pages render correctly and are accessible.",
+  "notes": "This configuration requires admin credentials. Set TEST_ADMIN_EMAIL and TEST_ADMIN_PASSWORD environment variables, or pass them via command-line arguments. The test script will handle authentication automatically."
+}
+

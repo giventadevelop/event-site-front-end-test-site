@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Members — Database Schema PRD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; overflow-x: auto; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; margin: 12px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Team Members — Database Schema PRD</h1>
+    <p class="doc-meta">
+        <strong>Index:</strong> <a href="generic_prd.html">generic_prd.html</a> · <strong>Backend:</strong> <a href="backend_prd.html">backend_prd.html</a><br>
+        <strong>Canonical:</strong> <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code><br>
+        <strong>Liquibase:</strong> <code>20260523120000_added_entity_team_groups_and_team_members.xml</code>
+    </p>
+
+    <div class="lead">
+        <p>Two new tables: <code>team_groups</code> (roster/squad metadata) and <code>team_members</code> (members with optional <code>user_profile_id</code>). Baseline columns mirror <code>executive_committee_team_members</code>.</p>
+    </div>
+
+    <h2>1. Entity relationship</h2>
+    <pre>tenant_organization (1) ──&lt; (N) team_groups
+team_groups (1) ──&lt; (N) team_members
+user_profile (0..1) ──&lt; (N) team_members  [optional user_profile_id]</pre>
+
+    <h2>2. team_groups</h2>
+    <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+            <tr><td><code>id</code></td><td>bigint PK</td><td><code>sequence_generator</code></td></tr>
+            <tr><td><code>tenant_id</code></td><td>varchar(255) NOT NULL</td><td>FK → tenant_organization</td></tr>
+            <tr><td><code>team_type</code></td><td>varchar(32) NOT NULL</td><td>SPORTS | MUSIC | OTHER</td></tr>
+            <tr><td><code>name</code></td><td>varchar(255) NOT NULL</td><td>e.g. The First Team</td></tr>
+            <tr><td><code>slug</code></td><td>varchar(100)</td><td>Unique per tenant; URL <code>/team/[slug]</code></td></tr>
+            <tr><td><code>section_label</code></td><td>varchar(64)</td><td>Eyebrow: SQUAD</td></tr>
+            <tr><td><code>headline</code></td><td>varchar(255)</td><td>H2; defaults to name in UI</td></tr>
+            <tr><td><code>description</code></td><td>varchar(2048)</td><td>Optional</td></tr>
+            <tr><td><code>cta_label</code></td><td>varchar(128)</td><td>View all players</td></tr>
+            <tr><td><code>cta_href</code></td><td>varchar(500)</td><td>/team/first-team</td></tr>
+            <tr><td><code>display_order</code></td><td>integer</td><td>Homepage group ordering</td></tr>
+            <tr><td><code>is_active</code></td><td>boolean</td><td>Default true</td></tr>
+        </tbody>
+    </table>
+
+    <h2>3. team_members</h2>
+    <p>Includes all <code>executive_committee_team_members</code> columns plus:</p>
+    <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+            <tr><td><code>team_group_id</code></td><td>bigint NOT NULL</td><td>FK CASCADE</td></tr>
+            <tr><td><code>user_profile_id</code></td><td>bigint NULL</td><td>FK SET NULL</td></tr>
+            <tr><td><code>jersey_number</code></td><td>integer</td><td>Sports badge</td></tr>
+            <tr><td><code>position</code></td><td>varchar(128)</td><td>Position / role</td></tr>
+            <tr><td><code>lineup_subtitle</code></td><td>varchar(128)</td><td>Card subtitle</td></tr>
+            <tr><td><code>instrument</code></td><td>varchar(128)</td><td>Music</td></tr>
+            <tr><td><code>vocal_role</code></td><td>varchar(128)</td><td>Music</td></tr>
+        </tbody>
+    </table>
+
+    <h2>4. tenant_settings migration</h2>
+    <div class="warning-box">
+        <p><strong>Flag split:</strong> Today <code>show_team_members_section_in_home_page</code> drives executive <code>TeamSection</code>. Migration adds <code>show_executive_committee_section_in_home_page</code> backfilled from the existing column so executive visibility is preserved. <code>show_team_members_section_in_home_page</code> then controls the new <code>SquadRosterSection</code>.</p>
+    </div>
+
+    <h2>5. Indexes</h2>
+    <ul>
+        <li><code>idx_team_groups_tenant_id</code>, <code>idx_team_groups_tenant_active</code></li>
+        <li><code>ux_team_groups_tenant_slug</code> (unique where slug set)</li>
+        <li><code>idx_team_members_team_group_id</code>, <code>idx_team_members_tenant_id</code>, <code>idx_team_members_user_profile_id</code></li>
+    </ul>
+
+</body>
+</html>

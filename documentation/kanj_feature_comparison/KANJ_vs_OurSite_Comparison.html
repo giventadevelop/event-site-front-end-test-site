@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Feature comparison between KANJ.org (Kerala Association of New Jersey) and our community event platform: social sharing, event cards, sponsors, contact, chat, ticketing, and design.">
+    <title>KANJ.org vs Our Site — Feature Comparison</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px 20px 48px;
+            background: #fff;
+        }
+        h1 {
+            font-size: 2.2em;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 12px;
+            margin-bottom: 8px;
+        }
+        .doc-meta {
+            color: #555;
+            font-size: 0.95em;
+            margin-bottom: 20px;
+        }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 {
+            font-size: 1.55em;
+            border-left: 4px solid #0066cc;
+            padding-left: 14px;
+            margin-top: 32px;
+            margin-bottom: 14px;
+        }
+        h3 { font-size: 1.2em; color: #333; margin-top: 18px; margin-bottom: 10px; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        li { margin-bottom: 8px; }
+        a { color: #0066cc; }
+        a:focus { outline: 2px solid #0066cc; outline-offset: 2px; }
+
+        .lead {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 18px 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.08);
+        }
+
+        .toc {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 24px 0;
+        }
+        .toc h2 { margin-top: 0; border: none; padding: 0; font-size: 1.25em; }
+        .toc ul { margin: 12px 0 0 20px; }
+        .toc a { font-weight: 600; }
+
+        .section-container {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 22px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-container.strength {
+            background: linear-gradient(135deg, #e6ffe6 0%, #ccffcc 100%);
+            border-left-color: #28a745;
+        }
+        .section-container.gap {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left-color: #ff9800;
+        }
+        .section-container.overview {
+            background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%);
+            border-left-color: #7b1fa2;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            padding: 12px 20px;
+            margin: -20px -20px 18px -20px;
+            border-radius: 8px 8px 0 0;
+            font-size: 1.15em;
+            font-weight: bold;
+        }
+        .section-container.strength .section-header {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+        }
+        .section-container.gap .section-header {
+            background: linear-gradient(135deg, #e65100 0%, #bf360c 100%);
+        }
+        .section-container.overview .section-header {
+            background: linear-gradient(135deg, #7b1fa2 0%, #6a1b9a 100%);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 14px 0;
+            font-size: 0.95em;
+            background: #fff;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+        thead th {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: #fff;
+            text-align: left;
+            padding: 12px 14px;
+            font-weight: 600;
+        }
+        tbody td {
+            padding: 11px 14px;
+            border-bottom: 1px solid #e0e8f0;
+            vertical-align: top;
+        }
+        tbody tr:hover { background: #f5faff; }
+        tbody tr:last-child td { border-bottom: none; }
+
+        .status-kanj { color: #1e7e34; font-weight: 600; }
+        .status-ours { color: #0052a3; font-weight: 600; }
+        .status-gap { color: #c62828; font-weight: 600; }
+        .status-partial { color: #e65100; font-weight: 600; }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-right: 6px;
+        }
+        .badge-kanj { background: #d4edda; color: #155724; }
+        .badge-ours { background: #cce5ff; color: #004085; }
+        .badge-gap { background: #f8d7da; color: #721c24; }
+        .badge-opportunity { background: #fff3cd; color: #856404; }
+
+        code, .code-inline {
+            background: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 7px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: Consolas, 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .pre-block {
+            background: #e8f4f8;
+            color: #0d3b66;
+            border: 1px solid #b8d4e3;
+            padding: 12px 14px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: Consolas, 'Courier New', monospace;
+            font-size: 0.85em;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin: 10px 0;
+        }
+
+        .info-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 14px 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+            font-size: 0.95em;
+        }
+        .companion {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 14px 18px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .priority-list { list-style: none; margin-left: 0; padding: 0; }
+        .priority-list li {
+            padding: 10px 12px 10px 36px;
+            margin-bottom: 8px;
+            background: #fff;
+            border-radius: 6px;
+            border: 1px solid #e0e8f0;
+            position: relative;
+        }
+        .priority-list li::before {
+            content: attr(data-priority);
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            font-weight: 700;
+            color: #0066cc;
+            font-size: 0.85em;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>KANJ.org vs Our Site — Feature Comparison</h1>
+    <p class="doc-meta">
+        <strong>KANJ website:</strong> <a href="https://www.kanj.org/" target="_blank" rel="noopener noreferrer">https://www.kanj.org/</a> (Kerala Association of New Jersey)<br>
+        <strong>Our site:</strong> MOSC community / event platform (this repository)<br>
+        <strong>Document date:</strong> May 19, 2026
+    </p>
+
+    <div class="lead">
+        <p>This page summarizes <strong>observed UX and feature differences</strong> between <a href="https://www.kanj.org/" target="_blank" rel="noopener noreferrer">KANJ.org</a> and our site, with emphasis on gaps we can close and areas where our platform already leads (events, ticketing backend, richer homepage, admin tools).</p>
+        <p>Use the <strong>Key differences you noticed</strong> section below as the primary checklist; later sections add context, recommendations, and strengths.</p>
+    </div>
+
+    <div class="companion">
+        <p><strong>Extended analysis (Markdown):</strong> <a href="KANJ_vs_OurSite_Analysis.md">KANJ_vs_OurSite_Analysis.md</a> — scraped navigation, executive committee, focus groups, polls vs public site scope, and a longer action plan from October 2025.</p>
+    </div>
+
+    <nav class="toc" aria-label="Table of contents">
+        <h2>Contents</h2>
+        <ul>
+            <li><a href="#overview">Site overview</a></li>
+            <li><a href="#summary-table">At-a-glance summary</a></li>
+            <li><a href="#key-differences">Key differences you noticed</a></li>
+            <li><a href="#social-sharing">1. Event social sharing</a></li>
+            <li><a href="#event-card-flip">2. Upcoming events — one-click card detail</a></li>
+            <li><a href="#graphics">3. Graphics and visual density</a></li>
+            <li><a href="#ticketing">4. Ticket purchase pages</a></li>
+            <li><a href="#sponsors">5. Sponsors on homepage vs dedicated page</a></li>
+            <li><a href="#contact-message">6. “Send us a message” vs contact section</a></li>
+            <li><a href="#chat-widget">7. Live chat widget</a></li>
+            <li><a href="#our-strengths">What our site does well</a></li>
+            <li><a href="#recommendations">Recommended priorities</a></li>
+        </ul>
+    </nav>
+
+    <h2 id="overview">Site overview</h2>
+
+    <div class="section-container overview">
+        <div class="section-header">Two sites, different emphasis</div>
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Aspect</th>
+                    <th scope="col">KANJ.org</th>
+                    <th scope="col">Our site</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Primary role</strong></td>
+                    <td>Established community association site (since 1979): culture, programs, calendar, sponsors, contact channels.</td>
+                    <td>Modern event-centric platform: homepage storytelling, featured/upcoming events, Stripe ticketing, admin, optional polls.</td>
+                </tr>
+                <tr>
+                    <td><strong>Homepage</strong></td>
+                    <td>Cleaner, fewer decorative graphics; focus on navigation and upcoming events.</td>
+                    <td>Rich sections (hero split, team, causes, testimonials, sponsors strip, particle background, glass cards).</td>
+                </tr>
+                <tr>
+                    <td><strong>Events</strong></td>
+                    <td>Register/buy from listings; compact interaction patterns (e.g. card flip for details).</td>
+                    <td>Full event detail routes, media galleries, QR/check-in patterns in admin; room to modernize checkout UI.</td>
+                </tr>
+                <tr>
+                    <td><strong>Engagement</strong></td>
+                    <td>Share events socially, “Send us a message” flow, embedded chat widget.</td>
+                    <td>Contact section + forms; no built-in share-to-social or chat widget on public pages today.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2 id="summary-table">At-a-glance summary</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">Feature area</th>
+                <th scope="col">KANJ.org</th>
+                <th scope="col">Our site</th>
+                <th scope="col">Gap / opportunity</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Share event on social</td>
+                <td class="status-kanj">Available</td>
+                <td class="status-gap">Not available</td>
+                <td><span class="badge badge-gap">Gap</span> Add share links or Web Share API on event pages</td>
+            </tr>
+            <tr>
+                <td>Upcoming event details in one click</td>
+                <td class="status-kanj">Card rotates / reveals detail</td>
+                <td class="status-partial">Separate navigation or expand pattern</td>
+                <td><span class="badge badge-opportunity">UX</span> Consider flip, drawer, or inline expand on homepage cards</td>
+            </tr>
+            <tr>
+                <td>Visual / graphic density</td>
+                <td class="status-kanj">Minimal, corporate</td>
+                <td class="status-ours">Rich gradients, hero, particles</td>
+                <td><span class="badge badge-ours">Differentiator</span> Optional “simple mode” if stakeholders want KANJ-like restraint</td>
+            </tr>
+            <tr>
+                <td>Ticket buy experience</td>
+                <td class="status-kanj">Modern, streamlined checkout feel</td>
+                <td class="status-partial">Functional (Stripe) — UI can improve</td>
+                <td><span class="badge badge-opportunity">Polish</span> Redesign ticket/checkout flow</td>
+            </tr>
+            <tr>
+                <td>Sponsors discovery</td>
+                <td class="status-kanj">Dedicated Sponsors nav + page</td>
+                <td class="status-ours">Prominent on homepage (<code>OurSponsorsSection</code>)</td>
+                <td><span class="badge badge-opportunity">IA</span> Add clear “View all sponsors” if we keep homepage strip</td>
+            </tr>
+            <tr>
+                <td>Contact / messaging</td>
+                <td class="status-kanj">“Send us a message” service</td>
+                <td class="status-partial">Contact section only</td>
+                <td><span class="badge badge-gap">Gap</span> Dedicated message form or routed inbox</td>
+            </tr>
+            <tr>
+                <td>Live chat</td>
+                <td class="status-kanj">Chat widget present</td>
+                <td class="status-gap">Not present</td>
+                <td><span class="badge badge-gap">Gap</span> Third-party widget or async support channel</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 id="key-differences">Key differences you noticed</h2>
+    <p>The following seven items are the main comparison points called out for product and design review. Each has its own section with behavior notes and suggested direction for our site.</p>
+
+    <ol>
+        <li><a href="#social-sharing">Social sharing options for events (KANJ yes, ours no)</a></li>
+        <li><a href="#event-card-flip">All upcoming event details in a single click — card rotate on KANJ</a></li>
+        <li><a href="#graphics">Graphics are very minimal on KANJ</a></li>
+        <li><a href="#ticketing">Event ticket buy pages are very modern on KANJ — we can improve ours</a></li>
+        <li><a href="#sponsors">Sponsor details on homepage (ours) vs separate sponsors page button (KANJ)</a></li>
+        <li><a href="#contact-message">“Send us a message” on KANJ vs contact section only on ours</a></li>
+        <li><a href="#chat-widget">Chat widget on KANJ, not on ours</a></li>
+    </ol>
+
+    <!-- 1 Social sharing -->
+    <h2 id="social-sharing">1. Event social sharing</h2>
+    <div class="section-container gap">
+        <div class="section-header">Gap — share event to social networks</div>
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">KANJ.org</th>
+                    <th scope="col">Our site</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Users can share an event through <strong>social sharing options</strong> (spread event links on Facebook, X/Twitter, etc., or native share where supported).</td>
+                    <td>Event pages and listings do <strong>not</strong> currently expose a dedicated “Share this event” control or pre-filled social URLs.</td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Why it matters</h3>
+        <p>Community events grow through word of mouth. One-click sharing reduces friction for members promoting workshops, galas, and fundraisers.</p>
+        <h3>Suggested direction for our site</h3>
+        <ul>
+            <li>Add a share cluster on <code>/events/[id]</code> and on featured/upcoming cards: copy link, Facebook, X, WhatsApp (common for diaspora communities).</li>
+            <li>Use Open Graph / Twitter Card meta tags so shared links show title, date, and image.</li>
+            <li>Optionally use the <strong>Web Share API</strong> on mobile when the browser supports it.</li>
+        </ul>
+        <p><strong>Related code areas:</strong> <code class="code-inline">src/app/events/[id]/page.tsx</code>, <code class="code-inline">FeaturedEventsSection.tsx</code>, <code class="code-inline">UpcomingEventsSection.tsx</code>.</p>
+    </div>
+
+    <!-- 2 Event card flip -->
+    <h2 id="event-card-flip">2. Upcoming events — one-click card detail (rotate)</h2>
+    <div class="section-container gap">
+        <div class="section-header">Gap — instant detail without leaving the list</div>
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">KANJ.org</th>
+                    <th scope="col">Our site</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>On upcoming events, <strong>one click</strong> on the card can <strong>rotate or flip</strong> the card to show full details (date, time, location, register) without a full page load.</td>
+                    <td>Users typically open a <strong>separate event page</strong> or scroll through a longer card; no single-click flip interaction on homepage upcoming strips.</td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Why it matters</h3>
+        <p>Reduces steps for users comparing several events on a phone. KANJ optimizes for quick scanning; our site optimizes for rich detail pages (which is good for SEO and deep content but slower for browse-only visits).</p>
+        <h3>Suggested direction for our site</h3>
+        <ul>
+            <li>Prototype a <strong>3D flip</strong> or <strong>back-face reveal</strong> on upcoming event cards (CSS transform or Framer Motion), with “View full page” on the back.</li>
+            <li>Ensure keyboard accessibility: flip on Enter, focus trap optional, respect <code>prefers-reduced-motion</code>.</li>
+            <li>Keep deep links to <code>/events/[id]</code> for sharing and admin consistency.</li>
+        </ul>
+    </div>
+
+    <!-- 3 Graphics -->
+    <h2 id="graphics">3. Graphics and visual density</h2>
+    <div class="section-container">
+        <div class="section-header">Design philosophy difference</div>
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">KANJ.org</th>
+                    <th scope="col">Our site</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Very minimal graphics</strong> — white space, simple cards, professional association look; fewer decorative elements.</td>
+                    <td><strong>Rich visual design</strong> — hero split layout, particle background, purple glass cards, gradients, animated sections, sponsor imagery on homepage.</td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Takeaway</h3>
+        <p>Neither approach is wrong. KANJ reads as a traditional nonprofit; our site reads as a modern event brand. If leadership wants closer parity with KANJ:</p>
+        <ul>
+            <li>Offer a simplified homepage variant or reduce motion/graphics on key listing pages.</li>
+            <li>Keep rich design on marketing landing areas but use flatter layouts on <code>/events</code> list views.</li>
+        </ul>
+        <p>See also: <code class="code-inline">HeroSection.tsx</code>, <code class="code-inline">HomeParticleBackground.tsx</code>, homepage glass card styles in <code class="code-inline">globals.css</code>.</p>
+    </div>
+
+    <!-- 4 Ticketing -->
+    <h2 id="ticketing">4. Ticket purchase pages</h2>
+    <div class="section-container gap">
+        <div class="section-header">Opportunity — modernize checkout UX</div>
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">KANJ.org</th>
+                    <th scope="col">Our site</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Ticket / registration flows feel <strong>modern</strong>: clear steps, minimal clutter, mobile-friendly buy path aligned with current event-site patterns.</td>
+                    <td>We have <strong>Stripe integration</strong>, ticket types, QR/check-in in admin, and mobile payment flows — strong backend; the <strong>public ticket page UI</strong> can be refreshed to match contemporary checkout (progress, summary sidebar, trust cues).</td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Suggested direction for our site</h3>
+        <ul>
+            <li>Audit checkout from event detail → ticket selection → payment → confirmation; benchmark against KANJ and leading event platforms.</li>
+            <li>Improve typography, spacing, and step indicators; show order summary and fees clearly (see numerical/currency display rules in codebase).</li>
+            <li>Test Payment Request Button / wallet flows on mobile (already documented in project rules).</li>
+        </ul>
+        <p><strong>Related code areas:</strong> Stripe routes under <code class="code-inline">src/app/api/stripe/</code>, event checkout components, ticket type admin.</p>
+    </div>
+
+    <!-- 5 Sponsors -->
+    <h2 id="sponsors">5. Sponsors — homepage vs dedicated page</h2>
+    <div class="section-container">
+        <div class="section-header">Information architecture difference</div>
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">KANJ.org</th>
+                    <th scope="col">Our site</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Sponsors are reached via a <strong>separate navigation item</strong> (e.g. “Sponsors”) and a <strong>dedicated sponsors page</strong> with full sponsor details.</td>
+                    <td><strong>Sponsor details appear on the homepage</strong> via <code class="code-inline">OurSponsorsSection</code> — high visibility for partners; may crowd homepage or duplicate content if a full sponsors page is also needed.</td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Suggested direction for our site</h3>
+        <ul>
+            <li><strong>Keep</strong> homepage sponsor strip for visibility (good for sponsors).</li>
+            <li><strong>Add</strong> a header/footer link “All sponsors” → <code>/sponsors</code> or <code>/gallery</code>-style page with tiers, logos, and contact for sponsorship.</li>
+            <li>Align with KANJ pattern: homepage = teaser, dedicated page = full directory.</li>
+        </ul>
+    </div>
+
+    <!-- 6 Contact message -->
+    <h2 id="contact-message">6. “Send us a message” vs contact section</h2>
+    <div class="section-container gap">
+        <div class="section-header">Gap — structured messaging service</div>
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">KANJ.org</th>
+                    <th scope="col">Our site</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>“Send us a message”</strong> — a distinct service or form flow for inquiries (often routed to the right committee or inbox).</td>
+                    <td><strong>Contact section</strong> on homepage: email, phone, address, social links — but no equivalent branded “message us” workflow with topic routing or ticket-style follow-up.</td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>KANJ also offers (for reference)</h3>
+        <p>Multiple department emails (president@, kidsclub@, careercounseling@, etc.). Our site has general contact info; expanding to <strong>topic-based routing</strong> would narrow the gap.</p>
+        <h3>Suggested direction for our site</h3>
+        <ul>
+            <li>Add <code>/contact</code> or enhance Contact block with a form: name, email, topic (Events, Membership, Sponsorship, Technical), message.</li>
+            <li>Backend: email via SES/SendGrid or store in admin “inquiries” queue.</li>
+            <li>Mirror KANJ label: <strong>“Send us a message”</strong> as primary CTA.</li>
+        </ul>
+        <p><strong>Related code areas:</strong> <code class="code-inline">HomePageClient.tsx</code> contact section, <code class="code-inline">src/app/contact</code> if present.</p>
+    </div>
+
+    <!-- 7 Chat widget -->
+    <h2 id="chat-widget">7. Live chat widget</h2>
+    <div class="section-container gap">
+        <div class="section-header">Gap — real-time chat on public site</div>
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">KANJ.org</th>
+                    <th scope="col">Our site</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Chat widget</strong> embedded (third-party live chat or bot) for immediate questions during browsing.</td>
+                    <td><strong>No chat widget</strong> on public pages; users rely on email, phone, or contact form only.</td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Suggested direction for our site</h3>
+        <ul>
+            <li>Evaluate providers (Intercom, Crisp, Tawk.to, Facebook Messenger plugin) for cost and volunteer staffing.</li>
+            <li>If chat is not staffed, use <strong>async</strong> alternatives: FAQ + “Send us a message” with SLA text (“We reply within 2 business days”).</li>
+            <li>Load widget only after consent if required by privacy policy; keep Clerk/middleware <code>ignoredRoutes</code> in mind for script domains.</li>
+        </ul>
+    </div>
+
+    <h2 id="our-strengths">What our site does well (vs KANJ)</h2>
+    <div class="section-container strength">
+        <div class="section-header">Strengths to preserve while closing gaps</div>
+        <ul>
+            <li><strong>Event platform depth</strong> — Ticket types, Stripe checkout, webhooks, admin event/media/ticket management, QR/check-in patterns.</li>
+            <li><strong>Engaging homepage</strong> — Hero split, featured/live/upcoming events, team, causes, testimonials, cultural workshops, particle + glass UI (recent redesign).</li>
+            <li><strong>Multi-tenant / admin</strong> — Clerk auth, tenant-scoped admin, manage events/usage (KANJ is primarily a marketing + registration site).</li>
+            <li><strong>Polls</strong> — Interactive polling (admin + public patterns in repo); not a KANJ public feature.</li>
+            <li><strong>Media-rich event pages</strong> — Galleries, sponsors on event detail, discount codes (admin).</li>
+            <li><strong>Sponsor visibility</strong> — Homepage sponsor section gives partners immediate exposure (complement with a full sponsors page rather than removing).</li>
+        </ul>
+    </div>
+
+    <h2 id="recommendations">Recommended priorities</h2>
+    <div class="section-container">
+        <div class="section-header">Suggested implementation order</div>
+        <ul class="priority-list">
+            <li data-priority="P1">Event social sharing + OG meta tags on event pages</li>
+            <li data-priority="P1">“Send us a message” form with topic routing</li>
+            <li data-priority="P2">Ticket/checkout UI refresh (modern step flow)</li>
+            <li data-priority="P2">Dedicated sponsors page + nav link (keep homepage strip)</li>
+            <li data-priority="P3">Upcoming event card flip or inline expand on homepage</li>
+            <li data-priority="P3">Chat widget or documented async alternative</li>
+            <li data-priority="P4">Optional simplified visual mode if stakeholders want KANJ-level minimal graphics</li>
+        </ul>
+    </div>
+
+    <div class="info-box">
+        <p><strong>Note:</strong> KANJ also offers focus groups, KANJ Academy courses, calendar page, and extensive executive committee listings — see <a href="KANJ_vs_OurSite_Analysis.md">KANJ_vs_OurSite_Analysis.md</a> for that broader matrix. This HTML doc focuses on the seven UX differences you called out for quick stakeholder review.</p>
+    </div>
+
+    <p class="doc-meta" style="margin-top: 32px;">
+        <strong>Files in this folder:</strong><br>
+        <a href="KANJ_vs_OurSite_Comparison.html">KANJ_vs_OurSite_Comparison.html</a> (this page)<br>
+        <a href="KANJ_vs_OurSite_Analysis.md">KANJ_vs_OurSite_Analysis.md</a> (detailed markdown analysis)
+    </p>
+
+</body>
+</html>

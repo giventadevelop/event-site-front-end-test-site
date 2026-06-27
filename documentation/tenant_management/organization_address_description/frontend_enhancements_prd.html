@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organization Address &amp; Description — Frontend (v2.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; overflow-x: auto; font-family: Consolas, monospace; font-size: 0.82em; line-height: 1.45; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Organization Address &amp; Description — Frontend Enhancements (v2.0)</h1>
+    <p class="doc-meta">
+        <strong>Layer:</strong> Next.js 15 App Router &nbsp;|&nbsp; <strong>Version:</strong> 2.0 &nbsp;|&nbsp; <strong>Date:</strong> June 17, 2026<br>
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a> &nbsp;|&nbsp;
+        <strong>Gap analysis:</strong> <a href="gap_analysis_prd.html">gap_analysis_prd.html</a> &nbsp;|&nbsp;
+        <strong>Backend:</strong> <a href="backend_enhancements_prd.html">backend_enhancements_prd.html</a>
+    </p>
+
+    <div class="lead">
+        <p>v2.0 moves description, full address, and website to <strong><code>tenant_organization</code> only</strong>. Admin forms write identity on the organization form; settings forms keep operational contact (email, phone, social, feature flags). Public pages read via org-first fallback helper.</p>
+    </div>
+
+    <div class="warning-box">
+        <strong>Refactor from v1.0:</strong> If both <code>TenantOrganizationForm</code> and <code>TenantSettingsForm</code> currently edit address/description, remove those fields from settings form and detail views. Do not PATCH deprecated settings identity fields.
+    </div>
+
+    <h2>1. Source of truth (frontend)</h2>
+    <table>
+        <thead><tr><th>Data</th><th>Write (admin)</th><th>Read (public/admin)</th></tr></thead>
+        <tbody>
+            <tr><td>Description, address, website</td><td><code>TenantOrganizationForm</code> → org proxy/PATCH</td><td><code>resolveTenantOrganizationIdentity</code></td></tr>
+            <tr><td>Email, phone, social URLs, toggles</td><td><code>TenantSettingsForm</code> → settings proxy/PATCH</td><td>Settings DTO directly</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. Files to modify</h2>
+    <table>
+        <thead><tr><th>File</th><th>v2.0 change</th></tr></thead>
+        <tbody>
+            <tr><td><code>src/types/index.ts</code></td><td>Identity fields on <code>TenantOrganizationDTO</code> only; mark settings identity fields <code>@deprecated</code> (optional, for TS hints)</td></tr>
+            <tr><td><code>src/app/admin/tenant-management/types.ts</code></td><td>Sync with global types</td></tr>
+            <tr><td><code>src/lib/resolveTenantOrganizationIdentity.ts</code></td><td><strong>New</strong> — org value ?? settings legacy fallback</td></tr>
+            <tr><td><code>src/lib/formatAddress.ts</code></td><td>Reuse for display (already exists or create)</td></tr>
+            <tr><td><code>src/app/admin/tenant-management/components/TenantOrganizationForm.tsx</code></td><td>Description + Address + Website (canonical write path)</td></tr>
+            <tr><td><code>src/app/admin/tenant-management/components/TenantSettingsForm.tsx</code></td><td><strong>Remove</strong> description, address block, city; keep email/phone/social/flags</td></tr>
+            <tr><td><code>src/app/admin/tenant-management/settings/[id]/page.tsx</code> (and view client)</td><td>Remove address/description display; link to org edit if needed</td></tr>
+            <tr><td><code>src/app/admin/tenant-management/organizations/[id]/page.tsx</code></td><td>Display identity fields on org detail</td></tr>
+            <tr><td><code>src/app/admin/tenant-management/organizations/new/page.tsx</code></td><td>Fix <code>initialData</code> to DTO field names</td></tr>
+            <tr><td><code>src/app/admin/tenant-management/ApiServerActions.ts</code></td><td>Org POST/PATCH includes identity; settings actions omit deprecated keys</td></tr>
+            <tr><td><code>src/components/Footer.tsx</code> (and contact/about pages)</td><td>Use <code>resolveTenantOrganizationIdentity</code> for address/description/website</td></tr>
+        </tbody>
+    </table>
+
+    <h2>3. resolveTenantOrganizationIdentity (read fallback)</h2>
+    <pre>// src/lib/resolveTenantOrganizationIdentity.ts
+import type { TenantOrganizationDTO, TenantSettingsDTO } from '@/types';
+
+export type TenantOrganizationIdentity = Pick&lt;
+  TenantOrganizationDTO,
+  'description' | 'addressLine1' | 'addressLine2' | 'city' |
+  'stateProvince' | 'zipCode' | 'country' | 'websiteUrl'
+&gt;;
+
+/** Org-first; settings columns are legacy read fallback until v2.1 DROP. */
+export function resolveTenantOrganizationIdentity(
+  org: TenantOrganizationDTO | null | undefined,
+  settings: TenantSettingsDTO | null | undefined
+): TenantOrganizationIdentity {
+  const pick = (key: keyof TenantOrganizationIdentity) =&gt;
+    (org?.[key] ?? settings?.[key as keyof TenantSettingsDTO] ?? '') as string;
+
+  return {
+    description: pick('description') || null,
+    addressLine1: pick('addressLine1') || null,
+    addressLine2: pick('addressLine2') || null,
+    city: pick('city') || null,
+    stateProvince: pick('stateProvince') || null,
+    zipCode: pick('zipCode') || null,
+    country: pick('country') || null,
+    websiteUrl: pick('websiteUrl') || null,
+  };
+}</pre>
+    <p>Server components: fetch org + settings in parallel (server actions), merge with this helper, pass resolved props to Footer/contact sections.</p>
+
+    <h2>4. TenantOrganizationForm — UI (unchanged layout, sole write path)</h2>
+
+    <h3>4.1 Description</h3>
+    <ul>
+        <li><code>&lt;textarea&gt;</code> bound to <code>description</code>, <code>maxLength={1000}</code>, character counter</li>
+    </ul>
+
+    <h3>4.2 Address Information (mirror ProfileForm field order)</h3>
+    <div class="section-container">
+        <ol>
+            <li><code>addressLine1</code>, <code>addressLine2</code>, <code>city</code>, <code>stateProvince</code>, <code>zipCode</code>, <code>country</code></li>
+        </ol>
+    </div>
+
+    <h3>4.3 Website</h3>
+    <ul>
+        <li><code>websiteUrl</code> — blur normalization to prepend <code>https://</code> if missing scheme</li>
+    </ul>
+
+    <h2>5. TenantSettingsForm — v2.0 scope reduction</h2>
+    <ul>
+        <li><strong>Remove:</strong> description textarea, all address fields, city.</li>
+        <li><strong>Keep:</strong> email, phoneNumber, homepage section toggles, social URLs, hero images, limits, WhatsApp/Twilio, etc.</li>
+        <li>Optional info callout: “Organization description and address are managed under Tenant Organization → Edit.”</li>
+    </ul>
+
+    <h2>6. TypeScript DTO updates</h2>
+    <pre>// TenantOrganizationDTO — canonical identity (write + read)
+description?: string | null;
+addressLine1?: string | null;
+addressLine2?: string | null;
+city?: string | null;
+stateProvince?: string | null;
+zipCode?: string | null;
+country?: string | null;
+websiteUrl?: string | null;
+
+// TenantSettingsDTO — do NOT add new identity fields in v2.0
+// Legacy fields may remain on type for GET/read fallback only:
+/** @deprecated v2.0 — use tenant_organization */
+description?: string | null;
+/** @deprecated v2.0 */
+city?: string | null;
+// addressLine1, addressLine2, stateProvince, zipCode, country — same</pre>
+
+    <h2>7. Submit behavior</h2>
+    <ul>
+        <li>Organization create/update: include all identity fields in POST/PATCH to <code>/api/proxy/tenant-organizations</code>.</li>
+        <li>Settings create/update: <strong>strip</strong> deprecated identity keys from payload before PATCH (defensive, even if backend rejects).</li>
+        <li>Text fields: initialize as <code>''</code>; empty strings on submit per existing tenant form pattern.</li>
+    </ul>
+
+    <h2>8. View / detail pages</h2>
+    <ul>
+        <li><strong>Organization detail:</strong> show description (<code>whitespace-pre-wrap</code>), formatted address, website link.</li>
+        <li><strong>Settings detail:</strong> no address/description; optional link to org record.</li>
+        <li><strong>Footer / contact:</strong> use resolved identity, not settings alone.</li>
+    </ul>
+
+    <h2>9. Validation (client)</h2>
+    <table>
+        <thead><tr><th>Field</th><th>Rule</th></tr></thead>
+        <tbody>
+            <tr><td><code>description</code></td><td>Max 1000 characters (org form only)</td></tr>
+            <tr><td>Address fields</td><td>Max lengths per backend; all optional</td></tr>
+            <tr><td><code>websiteUrl</code></td><td>If set, valid URL or auto-prefix https</td></tr>
+        </tbody>
+    </table>
+
+    <h2>10. Acceptance criteria (v2.0 QA)</h2>
+    <ul>
+        <li>Create/edit organization with full address + description → persists on org record; reload on edit shows values.</li>
+        <li>Settings form has no address/description fields; saving settings does not change org identity.</li>
+        <li>Footer/contact shows address from org; if org empty and settings has legacy address, fallback displays correctly.</li>
+        <li>After DB migration 001, legacy settings-only data appears on org detail and public pages via fallback until org is edited.</li>
+        <li>Character counter stops at 1000 on org description.</li>
+    </ul>
+
+    <div class="info-box">
+        <strong>References:</strong> Address layout — <code>src/components/ProfileForm.tsx</code>. Form validation — <code>form_validation_styling.mdc</code>. Read fallback — <a href="gap_analysis_prd.html">gap_analysis_prd.html</a> § Source of truth.
+    </div>
+
+</body>
+</html>

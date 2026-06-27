@@ -1,0 +1,291 @@
+# Task ID: 11
+# Title: Integrate calendar functionality
+# Status: pending
+# Dependencies: 4 ⏱️
+# Priority: medium
+# Description: Implement automatic calendar entry creation and add-to-calendar links for users.
+# Details:
+- Create calendar entry on event creation
+- Update calendar entry when event is updated
+- Delete calendar entry when event is deleted
+- Implement add-to-calendar button for users
+- Support multiple calendar formats (Google, Outlook, etc.)
+- Add calendar view for upcoming events
+
+below is the calendar api..schema
+"/api/calendar-events/{id}": {
+      "get": {
+        "tags": [
+          "calendar-event-resource"
+        ],
+        "operationId": "getCalendarEvent",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarEventDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "calendar-event-resource"
+        ],
+        "operationId": "updateCalendarEvent",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalendarEventDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarEventDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "calendar-event-resource"
+        ],
+        "operationId": "deleteCalendarEvent",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "calendar-event-resource"
+        ],
+        "operationId": "partialUpdateCalendarEvent",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalendarEventDTO"
+              }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalendarEventDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarEventDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+
+ "/api/calendar-events": {
+      "get": {
+        "tags": [
+          "calendar-event-resource"
+        ],
+        "operationId": "getAllCalendarEvents",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Zero-based page index (0..N)",
+            "required": false,
+            "schema": {
+              "minimum": 0,
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "The size of the page to be returned",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CalendarEventDTO"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "calendar-event-resource"
+        ],
+        "operationId": "createCalendarEvent",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalendarEventDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarEventDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    "CalendarEventDTO": {
+        "required": [
+          "calendarLink",
+          "calendarProvider",
+          "createdAt",
+          "id",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "calendarProvider": {
+            "type": "string"
+          },
+          "externalEventId": {
+            "type": "string"
+          },
+          "calendarLink": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "event": {
+            "$ref": "#/components/schemas/EventDTO"
+          },
+          "createdBy": {
+            "$ref": "#/components/schemas/UserProfileDTO"
+          }
+        }
+      }
+  to implement the api backend call follow the rles as below.
+  Okay looks like need  to following the same standards of API coding using proxy in this page Here is the cursor rule to implement api calls to backend .cursor\rules\nextjs_api_routes.mdc . eg:   create an index.ts file for resource listing and creation endpoints> - Handles requests to the base resource path (e.g., /api/proxy/user-tasks)> - Use [...slug].ts for dynamic resource access
+While implementing crud operations for this page  make sure you follow the rules and see if there is implementation in the path src\pages\api
+First of all remove the Declaration of the type objects like UserProfileDTO any from this file and refer it what is declared in the src\types\index.ts file Where they are already declared. See how api are called in this file src\components\ProfileForm.tsx with this sample code attached.  / Use /by-user/:userId for single profile lookup
+        const url = `/api/proxy/user-profiles/by-user/${userId}`;
+        console.log('Full URL being fetched:', url); // Changed to console.log
+
+
+
+# Test Strategy:
+Test calendar entry creation and updates. Verify add-to-calendar functionality works with different calendar services.

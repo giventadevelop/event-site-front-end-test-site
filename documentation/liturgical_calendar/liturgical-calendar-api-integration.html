@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liturgical Calendar API – Integration Guide</title>
+  <style>
+    :root { --bg: #0f1419; --surface: #1a2332; --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff; --border: #30363d; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; margin: 0; padding: 2rem; }
+    .doc { max-width: 52rem; margin: 0 auto; }
+    h1 { font-size: 1.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-top: 0; }
+    h2 { font-size: 1.25rem; margin-top: 2rem; color: var(--accent); }
+    h3 { font-size: 1.05rem; margin-top: 1.25rem; }
+    p { margin: 0.5rem 0 1rem; color: var(--muted); }
+    code, kbd { background: var(--surface); padding: 0.15em 0.4em; border-radius: 4px; font-size: 0.9em; }
+    pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; font-size: 0.85rem; }
+    pre code { background: none; padding: 0; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; }
+    .note { background: rgba(88, 166, 255, 0.1); border-left: 4px solid var(--accent); padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 0 6px 6px 0; }
+    ul { margin: 0.5rem 0 1rem; padding-left: 1.5rem; color: var(--muted); }
+    a { color: var(--accent); }
+    .toc { margin: 1.5rem 0; padding: 1rem; background: var(--surface); border-radius: 8px; }
+    .toc ul { list-style: none; padding-left: 0; }
+    .toc li { margin: 0.35rem 0; }
+    .toc a { text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="doc">
+    <h1>Liturgical Calendar API – Integration Guide</h1>
+    <p>This document describes the liturgical calendar API used for daily readings in English and Malayalam, how the current frontend invokes and displays it, and how to implement it in a Next.js project.</p>
+
+    <nav class="toc" aria-label="Contents">
+      <h2 id="toc">Contents</h2>
+      <ul>
+        <li><a href="#api-reference">1. API Reference</a></li>
+        <li><a href="#current-frontend">2. Current Frontend (How It’s Invoked & Displayed)</a></li>
+        <li><a href="#nextjs-guide">3. Next.js Implementation Guide</a></li>
+        <li><a href="#ownership">4. API Ownership & Contact</a></li>
+      </ul>
+    </nav>
+
+    <!-- ========== 1. API REFERENCE ========== -->
+    <h2 id="api-reference">1. API Reference</h2>
+
+    <h3>Endpoint</h3>
+    <table>
+      <tr><th>Property</th><th>Value</th></tr>
+      <tr><td>Base URL</td><td><code>https://www.apiwebser.smcimprojects.com/api/</code></td></tr>
+      <tr><td>Path</td><td><code>liturgy</code></td></tr>
+      <tr><td>Full URL</td><td><code>https://www.apiwebser.smcimprojects.com/api/liturgy</code></td></tr>
+      <tr><td>Method</td><td><code>GET</code></td></tr>
+    </table>
+
+    <h3>Query Parameters</h3>
+    <table>
+      <tr><th>Parameter</th><th>Required</th><th>Description</th></tr>
+      <tr><td><code>__</code></td><td>Yes</td><td>Token (supplied by API owner). Current value used in the reference frontend: <code>dmdlMXBVWkNqcS95MkFDVmlEWExZQT09</code></td></tr>
+      <tr><td><code>lng</code></td><td>Yes</td><td>Language code: <code>en</code> (English) or <code>ml</code> (Malayalam)</td></tr>
+    </table>
+
+    <h3>Example Request</h3>
+    <pre><code>GET https://www.apiwebser.smcimprojects.com/api/liturgy?__=dmdlMXBVWkNqcS95MkFDVmlEWExZQT09&amp;lng=en</code></pre>
+
+    <h3>Response Shape</h3>
+    <p>The API returns a JSON object with a <code>message</code> property that is an <strong>array of reading objects</strong>. Each object (and the first item in particular) carries day/season info and per-reading details.</p>
+    <table>
+      <tr><th>Field</th><th>Where</th><th>Description</th></tr>
+      <tr><td><code>message</code></td><td>Root</td><td>Array of reading objects</td></tr>
+      <tr><td><code>liturgy_day_heading</code></td><td>First item (typically)</td><td>Heading for the day (e.g. date or day name)</td></tr>
+      <tr><td><code>season_name</code></td><td>First item (typically)</td><td>Name of the liturgical season</td></tr>
+      <tr><td><code>liturgy_heading</code></td><td>Each item</td><td>Title of the reading</td></tr>
+      <tr><td><code>content_place</code></td><td>Each item</td><td>Reference/location (e.g. book and chapter)</td></tr>
+    </table>
+
+    <h3>Example Response (conceptual)</h3>
+    <pre><code>{
+  "message": [
+    {
+      "liturgy_day_heading": "Thursday, 26 February 2026",
+      "season_name": "Great Lent",
+      "liturgy_heading": "First Reading",
+      "content_place": "Genesis 1:1-5"
+    },
+    {
+      "liturgy_day_heading": "Thursday, 26 February 2026",
+      "season_name": "Great Lent",
+      "liturgy_heading": "Second Reading",
+      "content_place": "Romans 5:1-11"
+    }
+  ]
+}</code></pre>
+
+    <div class="note">
+      <strong>Note:</strong> The token (<code>__</code>) is required. It is currently embedded in client-side code; for production, consider obtaining a dedicated key from the API owner (SMCIM) and, if possible, using it from a server-only layer.
+    </div>
+
+    <!-- ========== 2. CURRENT FRONTEND ========== -->
+    <h2 id="current-frontend">2. Current Frontend (How It’s Invoked & Displayed)</h2>
+
+    <h3>Where the API is configured</h3>
+    <ul>
+      <li><strong>Base URL:</strong> Set in the page via a <code>&lt;constants&gt;</code> element: <code>data-common-api="https://www.apiwebser.smcimprojects.com/api/"</code> (see <code>index.html</code>).</li>
+      <li><strong>Endpoint path:</strong> In <code>assets/scripts/common.js</code>, <code>apiEndpoints.liturgy</code> is <code>"liturgy"</code>.</li>
+    </ul>
+
+    <h3>How it’s invoked</h3>
+    <ul>
+      <li><strong>Script:</strong> <code>assets/scripts/home.js</code>.</li>
+      <li><strong>Function:</strong> <code>fetchLiturgy(language)</code> with <code>language</code> defaulting to <code>'en'</code>.</li>
+      <li><strong>Request:</strong> <code>$.get(commonApiURL + apiEndpoints.liturgy, parameters, callback)</code> with:
+        <ul>
+          <li><code>parameters.__</code> = <code>"dmdlMXBVWkNqcS95MkFDVmlEWExZQT09"</code></li>
+          <li><code>parameters.lng</code> = <code>language</code> (<code>'en'</code> or <code>'ml'</code>)</li>
+        </ul>
+      </li>
+      <li><strong>Language switch:</strong> Buttons with class <code>liturgy-button</code> and <code>data-id="en"</code> or <code>data-id="ml"</code> call <code>fetchLiturgy(selectedLanguage)</code> on click.
+      </li>
+    </ul>
+
+    <h3>Where and how it’s displayed</h3>
+    <ul>
+      <li><strong>Container:</strong> The response is rendered inside an element with id <code>liturgy_readings</code> (<code>#liturgy_readings</code>).</li>
+      <li><strong>Loading:</strong> Before the request, the container is filled with a loader (spinner) HTML.</li>
+      <li><strong>Empty response:</strong> If <code>readings.length === 0</code>, the function returns without updating the container.</li>
+      <li><strong>Structure built in the frontend:</strong>
+        <ul>
+          <li>From the first item: <code>liturgy_day_heading</code> in a <code>&lt;p&gt;</code>, <code>season_name</code> in an <code>&lt;h2&gt;</code>.</li>
+          <li>A <code>&lt;ul class="fa-ul"&gt;</code> with one <code>&lt;li&gt;</code> per reading: Font Awesome list icon (<code>fa-li fa-solid fa-cross</code>), <code>liturgy_heading</code>, and <code>content_place</code> in a <code>&lt;span&gt;</code>.</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h3>HTML structure the current frontend produces</h3>
+    <pre><code>&lt;p&gt;{liturgy_day_heading}&lt;/p&gt;
+&lt;h2&gt;{season_name}&lt;/h2&gt;
+&lt;ul class="fa-ul"&gt;
+  &lt;li&gt;&lt;i class="fa-li fa-solid fa-cross"&gt;&lt;/i&gt;{liturgy_heading}&lt;span&gt; ( {content_place} )&lt;/span&gt;&lt;/li&gt;
+  &lt;!-- one li per reading --&gt;
+&lt;/ul&gt;</code></pre>
+
+    <h3>Section context in the page</h3>
+    <p>The liturgy block lives inside a section with class <code>liturgy</code>, with a heading “Liturgical Calendar” and a main title “Liturgical Calendar”. The dynamic content is intended to go into <code>#liturgy_readings</code>; the existing site may also show a static image in <code>.liturgy-image</code> alongside or above it.</p>
+
+    <!-- ========== 3. NEXT.JS IMPLEMENTATION ========== -->
+    <h2 id="nextjs-guide">3. Next.js Implementation Guide</h2>
+
+    <h3>3.1 Data fetching</h3>
+    <p>You can fetch in two ways:</p>
+    <ul>
+      <li><strong>Client-side:</strong> Use <code>fetch</code> or a data library (e.g. SWR, React Query) inside a Client Component, with <code>lng</code> from state or search params. Same URL and parameters as above.</li>
+      <li><strong>Server-side:</strong> In a Server Component or in <code>getServerSideProps</code> / route handler, call the API with the same URL and query string. Prefer keeping the <code>__</code> token in environment variables (e.g. <code>LITURGY_API_TOKEN</code>) and not in client bundle.</li>
+    </ul>
+
+    <h3>3.2 Environment variable (recommended)</h3>
+    <pre><code># .env.local
+LITURGY_API_TOKEN=dmdlMXBVWkNqcS95MkFDVmlEWExZQT09</code></pre>
+    <p>Use <code>process.env.LITURGY_API_TOKEN</code> only on the server; for client-side fetch, use a Next.js API route that forwards the request with the token.</p>
+
+    <h3>3.3 TypeScript types (example)</h3>
+    <pre><code>type LiturgyReading = {
+  liturgy_day_heading?: string;
+  season_name?: string;
+  liturgy_heading: string;
+  content_place: string;
+};
+
+type LiturgyApiResponse = {
+  message: LiturgyReading[];
+};</code></pre>
+
+    <h3>3.4 Fetch helper (server or client)</h3>
+    <pre><code>const LITURGY_API_BASE = 'https://www.apiwebser.smcimprojects.com/api';
+
+async function fetchLiturgy(lng: 'en' | 'ml', token?: string) {
+  const params = new URLSearchParams({
+    __: token ?? process.env.LITURGY_API_TOKEN ?? '',
+    lng,
+  });
+  const res = await fetch(`${LITURGY_API_BASE}/liturgy?${params}`);
+  if (!res.ok) throw new Error('Liturgy API error');
+  const data: LiturgyApiResponse = await res.json();
+  return data.message;
+}</code></pre>
+
+    <h3>3.5 React component (display)</h3>
+    <p>Structure the UI to match the current frontend behavior: day heading, season name, then list of readings with optional icon and reference.</p>
+    <pre><code>interface LiturgyReadingsProps {
+  readings: LiturgyReading[];
+}
+
+function LiturgyReadings({ readings }: LiturgyReadingsProps) {
+  if (!readings?.length) return null;
+  const first = readings[0];
+  return (
+    &lt;section className="liturgy" aria-label="Liturgical Calendar"&gt;
+      &lt;div className="container"&gt;
+        &lt;h6 className="section-title"&gt;Liturgical Calendar&lt;/h6&gt;
+        &lt;h2&gt;&lt;span className="imp-color"&gt;Liturgical&lt;/span&gt; &lt;span&gt;Calendar&lt;/span&gt;&lt;/h2&gt;
+        &lt;p&gt;{first.liturgy_day_heading}&lt;/p&gt;
+        &lt;h2&gt;{first.season_name}&lt;/h2&gt;
+        &lt;ul className="fa-ul"&gt;
+          {readings.map((r, i) =&gt; (
+            &lt;li key={i}&gt;
+              &lt;i className="fa-li fa-solid fa-cross" aria-hidden /&gt;
+              {r.liturgy_heading}
+              &lt;span&gt; ( {r.content_place} )&lt;/span&gt;
+            &lt;/li&gt;
+          ))}
+        &lt;/ul&gt;
+      &lt;/div&gt;
+    &lt;/section&gt;
+  );
+}</code></pre>
+
+    <h3>3.6 Language toggle</h3>
+    <p>Keep language in state or in URL (e.g. <code>?lng=ml</code>). When the user switches between English and Malayalam, set <code>lng</code> to <code>en</code> or <code>ml</code> and refetch (or pass to a server component). Use the same <code>lng</code> value in the API request.</p>
+
+    <h3>3.7 Loading and error states</h3>
+    <p>While loading, show a spinner or skeleton inside the liturgy section. On error (e.g. <code>!res.ok</code> or empty <code>message</code>), show a friendly message or hide the block, consistent with the current frontend’s early return when <code>readings.length === 0</code>.</p>
+
+    <!-- ========== 4. OWNERSHIP & CONTACT ========== -->
+    <h2 id="ownership">4. API Ownership & Contact</h2>
+    <table>
+      <tr><th>Item</th><th>Detail</th></tr>
+      <tr><td>Owner</td><td>Syro-Malabar Church (via SMCIM – Syro-Malabar Church Internet Mission)</td></tr>
+      <tr><td>Host</td><td><code>apiwebser.smcimprojects.com</code></td></tr>
+      <tr><td>Public docs</td><td>None found; contact SMCIM for official API documentation and terms</td></tr>
+      <tr><td>Contact</td><td>Church commissions page: <a href="https://www.syromalabarchurch.in/commissions/syromalabar-church-internet-mission-smcim" target="_blank" rel="noopener">SMCIM</a>; liturgy content: <a href="https://www.syromalabarliturgy.org/" target="_blank" rel="noopener">Commission for Liturgy</a></td></tr>
+    </table>
+
+    <hr style="border: 0; border-top: 1px solid var(--border); margin: 2rem 0;">
+    <p style="font-size: 0.875rem; color: var(--muted);">Document generated for use by a Next.js frontend. Token and URL are as used in the reference project; obtain and use credentials according to the API owner’s terms.</p>
+  </div>
+</body>
+</html>

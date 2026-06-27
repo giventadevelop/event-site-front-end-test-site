@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Event Date &amp; Location — Frontend Enhancements PRD (v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Event Date &amp; Location — Frontend Enhancements PRD</h1>
+    <p class="doc-meta">
+        <strong>Project:</strong> <code>mosc-temp</code> (Next.js 15) &nbsp;|&nbsp; <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 19, 2026<br>
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a> &nbsp;|&nbsp;
+        <strong>Depends on:</strong> <a href="backend_enhancements_prd.html">Backend E1 deploy</a>
+    </p>
+
+    <div class="lead">
+        <p>Updates types, shared date formatter, admin album forms, and public cards so gallery UI matches the legacy date line (full date, optional range, optional location).</p>
+    </div>
+
+    <h2>1. Type definitions — src/types/index.ts</h2>
+    <pre>export interface GalleryAlbumDTO {
+  // ... existing fields ...
+  albumYear?: number | null;
+  galleryCategoryId?: number | null;
+  galleryCategory?: GalleryCategoryDTO | null;
+  /** ISO date YYYY-MM-DD — event/visit start */
+  eventDateStart?: string | null;
+  /** ISO date YYYY-MM-DD — optional end for multi-day events */
+  eventDateEnd?: string | null;
+  /** City/venue shown after formatted date, e.g. "Indore" */
+  eventLocation?: string | null;
+}</pre>
+
+    <h2>2. Shared formatter — new utility</h2>
+    <div class="section-container">
+        <div class="section-header">src/lib/gallery/formatGalleryAlbumEventDate.ts</div>
+        <pre>export function formatGalleryAlbumEventDate(album: {
+  eventDateStart?: string | null;
+  eventDateEnd?: string | null;
+  eventLocation?: string | null;
+  albumYear?: number | null;
+}): string | null {
+  // 1. If eventDateStart set → format with Intl (en-US, month long, day, year)
+  // 2. Same month + end &gt; start → "October 24–26, 2015" (en-dash)
+  // 3. Single day → "November 25, 2015"
+  // 4. Append ", {eventLocation}" when location present
+  // 5. Else if albumYear → String(albumYear)
+  // 6. Else null (hide date line)
+}</pre>
+    </div>
+
+    <h3>Display examples (must match legacy)</h3>
+    <table>
+        <thead><tr><th>Input</th><th>Output</th></tr></thead>
+        <tbody>
+            <tr><td>start 2015-10-24, end 2015-10-26, loc Indore</td><td><code>October 24–26, 2015, Indore</code></td></tr>
+            <tr><td>start 2015-11-25</td><td><code>November 25, 2015</code></td></tr>
+            <tr><td>start 2015-07-19, loc Beirut</td><td><code>July 19, 2015, Beirut</code></td></tr>
+            <tr><td>albumYear 2019 only</td><td><code>2019</code></td></tr>
+        </tbody>
+    </table>
+
+    <h2>3. Public card components</h2>
+    <table>
+        <thead><tr><th>Component</th><th>Path</th><th>Change</th></tr></thead>
+        <tbody>
+            <tr><td><code>MoscGalleryAlbumCard</code></td><td><code>src/components/gallery/MoscGalleryAlbumCard.tsx</code></td><td>Replace year-only line with <code>formatGalleryAlbumEventDate()</code>; accept optional structured props or preformatted string</td></tr>
+            <tr><td><code>GalleryAlbumCard</code></td><td><code>src/app/gallery/components/GalleryAlbumCard.tsx</code></td><td>Same formatter for main <code>/gallery</code></td></tr>
+            <tr><td>MOSC gallery page</td><td><code>src/app/mosc-redesign/(syro)/gallery/page.tsx</code></td><td>Pass <code>eventDateStart</code>, <code>eventDateEnd</code>, <code>eventLocation</code>, <code>albumYear</code> from API album</td></tr>
+        </tbody>
+    </table>
+
+    <h3>MoscGalleryAlbumCard — updated props</h3>
+    <pre>interface MoscGalleryAlbumCardProps {
+  title: string;
+  coverImageUrl?: string | null;
+  totalMediaCount: number;
+  categoryDisplayName?: string | null;
+  albumYear?: number | null;
+  eventDateStart?: string | null;
+  eventDateEnd?: string | null;
+  eventLocation?: string | null;
+  // ... href, variant, etc.
+}</pre>
+
+    <h2>4. Admin UI</h2>
+    <h3>AdminAlbumEditClient.tsx + create album form</h3>
+    <table>
+        <thead><tr><th>Field</th><th>Control</th><th>Validation</th></tr></thead>
+        <tbody>
+            <tr><td><code>eventDateStart</code></td><td><code>type="date"</code> input</td><td>Optional; if end set, start required</td></tr>
+            <tr><td><code>eventDateEnd</code></td><td><code>type="date"</code> input</td><td>Optional; must be &gt;= start</td></tr>
+            <tr><td><code>eventLocation</code></td><td>Text input, max 256</td><td>Optional; trim on blur</td></tr>
+            <tr><td><code>albumYear</code></td><td>Existing number input</td><td>Auto-sync from start year on blur (optional UX)</td></tr>
+        </tbody>
+    </table>
+
+    <h3>ApiServerActions — admin/gallery/albums</h3>
+    <ul>
+        <li>Include <code>eventDateStart</code>, <code>eventDateEnd</code>, <code>eventLocation</code> in create/update PATCH payloads</li>
+        <li>Send ISO date strings (<code>YYYY-MM-DD</code>) only — no time component</li>
+        <li>Empty strings → omit or send null to clear location/dates</li>
+    </ul>
+
+    <h2>5. Static fallback (moscStaticAlbums)</h2>
+    <p>When API albums unavailable, static slice should pass <code>date</code> from <code>MOSC_STATIC_GALLERY_ALBUMS</code> as a display override OR parse client-side until backfill completes. Recommended: add optional <code>eventDateDisplay?: string</code> prop for static-only fallback using raw <code>album.date</code>.</p>
+
+    <h2>6. Files to touch (checklist)</h2>
+    <ul>
+        <li><code>src/types/index.ts</code> — DTO fields</li>
+        <li><code>src/lib/gallery/formatGalleryAlbumEventDate.ts</code> — new</li>
+        <li><code>src/lib/gallery/formatGalleryAlbumEventDate.test.ts</code> — unit tests (recommended)</li>
+        <li><code>src/components/gallery/MoscGalleryAlbumCard.tsx</code></li>
+        <li><code>src/app/gallery/components/GalleryAlbumCard.tsx</code></li>
+        <li><code>src/app/mosc-redesign/(syro)/gallery/page.tsx</code></li>
+        <li><code>src/app/admin/gallery/albums/[id]/edit/AdminAlbumEditClient.tsx</code></li>
+        <li><code>src/app/admin/gallery/albums/AdminAlbumListClient.tsx</code> — optional date column</li>
+        <li><code>src/app/admin/gallery/albums/ApiServerActions.ts</code></li>
+    </ul>
+
+    <div class="warning-box">
+        <strong>Do not</strong> store formatted legacy strings in <code>description</code> (reserved for <code>static_slug=</code> marker on ported albums).
+    </div>
+
+</body>
+</html>

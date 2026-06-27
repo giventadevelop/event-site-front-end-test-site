@@ -1,0 +1,4558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscription Renewal Webhook Handling - Batch Job Analysis Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #2D2A26;
+            background-color: #F5F1E8;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: #FFFFFF;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(139, 125, 107, 0.1);
+        }
+
+        h1 {
+            font-family: 'Crimson Text', serif;
+            font-size: 2.5em;
+            color: #8B7D6B;
+            margin-bottom: 10px;
+            border-bottom: 3px solid #8B7D6B;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            font-family: 'Crimson Text', serif;
+            font-size: 2em;
+            color: #6B4E3D;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #A0926B;
+            padding-bottom: 8px;
+        }
+
+        h3 {
+            font-family: 'Crimson Text', serif;
+            font-size: 1.5em;
+            color: #8B7D6B;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        h4 {
+            font-family: 'Crimson Text', serif;
+            font-size: 1.25em;
+            color: #6B4E3D;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            background-color: #EDE7D3;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            color: #6B4E3D;
+        }
+
+        pre {
+            background-color: #2D2A26;
+            color: #F5F1E8;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        pre code {
+            background-color: transparent;
+            color: #F5F1E8;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: #FFFFFF;
+        }
+
+        th, td {
+            border: 1px solid #A0926B;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #8B7D6B;
+            color: #FFFFFF;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background-color: #F5F1E8;
+        }
+
+        .info-box {
+            background-color: #EDE7D3;
+            border-left: 4px solid #8B7D6B;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box {
+            background-color: #FFF4E6;
+            border-left: 4px solid #A67C52;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .success-box {
+            background-color: #E8F5E9;
+            border-left: 4px solid #4A6741;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .toc {
+            background-color: #EDE7D3;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+
+        .toc ul {
+            list-style-type: none;
+            margin-left: 0;
+        }
+
+        .toc li {
+            margin-bottom: 8px;
+        }
+
+        .toc a {
+            color: #6B4E3D;
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .badge-primary {
+            background-color: #8B7D6B;
+            color: #FFFFFF;
+        }
+
+        .badge-success {
+            background-color: #4A6741;
+            color: #FFFFFF;
+        }
+
+        .badge-warning {
+            background-color: #A67C52;
+            color: #FFFFFF;
+        }
+
+        .badge-danger {
+            background-color: #8B4A42;
+            color: #FFFFFF;
+        }
+
+        .footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px solid #A0926B;
+            text-align: center;
+            color: #8B7D6B;
+            font-size: 0.9em;
+        }
+
+        /* Flowchart Styles */
+        .flowchart {
+            margin: 30px 0;
+            padding: 20px;
+            background-color: #F5F1E8;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        .flowchart-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            min-width: 600px;
+        }
+
+        .flowchart-box {
+            background-color: #FFFFFF;
+            border: 2px solid #8B7D6B;
+            border-radius: 8px;
+            padding: 15px 20px;
+            min-width: 300px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(139, 125, 107, 0.2);
+            position: relative;
+        }
+
+        .flowchart-box.primary {
+            background-color: #8B7D6B;
+            color: #FFFFFF;
+            border-color: #6B4E3D;
+        }
+
+        .flowchart-box.secondary {
+            background-color: #A0926B;
+            color: #FFFFFF;
+            border-color: #8B7D6B;
+        }
+
+        .flowchart-box.database {
+            background-color: #4A6741;
+            color: #FFFFFF;
+            border-color: #3A5631;
+        }
+
+        .flowchart-arrow {
+            width: 2px;
+            height: 30px;
+            background-color: #8B7D6B;
+            position: relative;
+        }
+
+        .flowchart-arrow::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: -4px;
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 10px solid #8B7D6B;
+        }
+
+        .flowchart-label {
+            font-size: 0.85em;
+            color: #6B4E3D;
+            margin: 5px 0;
+            font-style: italic;
+        }
+
+        /* Horizontal Flowchart */
+        .flowchart-horizontal {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 30px 0;
+            padding: 20px;
+            background-color: #F5F1E8;
+            border-radius: 8px;
+        }
+
+        .flowchart-horizontal .flowchart-box {
+            min-width: 200px;
+        }
+
+        .flowchart-horizontal .flowchart-arrow {
+            width: 30px;
+            height: 2px;
+            background-color: #8B7D6B;
+        }
+
+        .flowchart-horizontal .flowchart-arrow::after {
+            left: auto;
+            right: 0;
+            top: -4px;
+            border-left: 10px solid #8B7D6B;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            border-right: none;
+        }
+
+        /* Status Indicators */
+        .status-indicator {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .status-success {
+            background-color: #4A6741;
+            color: #FFFFFF;
+        }
+
+        .status-warning {
+            background-color: #A67C52;
+            color: #FFFFFF;
+        }
+
+        .status-danger {
+            background-color: #8B4A42;
+            color: #FFFFFF;
+        }
+
+        /* Checklist Styles */
+        .checklist {
+            list-style: none;
+            margin-left: 0;
+        }
+
+        .checklist li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .checklist li::before {
+            content: '☐';
+            position: absolute;
+            left: 0;
+            font-size: 1.2em;
+            color: #8B7D6B;
+        }
+
+        /* Code Block Enhancements */
+        .code-block-title {
+            background-color: #6B4E3D;
+            color: #FFFFFF;
+            padding: 8px 15px;
+            border-radius: 8px 8px 0 0;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-top: 20px;
+            margin-bottom: 0;
+        }
+
+        .code-block-title + pre {
+            margin-top: 0;
+            border-radius: 0 0 8px 8px;
+        }
+
+        /* Scenario Cards */
+        .scenario-card {
+            border: 2px solid #A0926B;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background-color: #FFFFFF;
+        }
+
+        .scenario-card h4 {
+            margin-top: 0;
+            color: #8B7D6B;
+        }
+
+        .scenario-card ul {
+            margin-top: 10px;
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            margin: 20px 0;
+        }
+
+        .comparison-table th {
+            background-color: #8B7D6B;
+            color: #FFFFFF;
+        }
+
+        .comparison-table td:first-child {
+            font-weight: 600;
+            background-color: #EDE7D3;
+        }
+
+        /* Diagram Container */
+        .diagram-container {
+            margin: 30px 0;
+            padding: 20px;
+            background-color: #F5F1E8;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        .diagram-title {
+            font-weight: 600;
+            color: #6B4E3D;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        /* Copy Button Styles */
+        .copyable-code-block {
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .copy-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background-color: #8B7D6B;
+            color: #FFFFFF;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            z-index: 10;
+        }
+
+        .copy-button:hover {
+            background-color: #6B4E3D;
+        }
+
+        .copy-button:active {
+            background-color: #4A3D2E;
+        }
+
+        .copy-button.copied {
+            background-color: #4A6741;
+        }
+
+        .copyable-code-block pre {
+            padding-top: 45px;
+        }
+
+        .command-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .command-tab {
+            background-color: #EDE7D3;
+            border: 2px solid #A0926B;
+            padding: 8px 16px;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6B4E3D;
+            transition: all 0.2s;
+        }
+
+        .command-tab.active {
+            background-color: #6B4E3D;
+            color: #FFFFFF;
+            border-color: #6B4E3D;
+        }
+
+        .command-tab:hover {
+            background-color: #D4C5A9;
+        }
+
+        .command-tab.active:hover {
+            background-color: #5A4A3A;
+        }
+
+        .command-content {
+            display: none;
+        }
+
+        .command-content.active {
+            display: block;
+        }
+    </style>
+    <script>
+        function copyToClipboard(text, button) {
+            // Remove line continuation characters and normalize whitespace for Windows
+            const windowsText = text.replace(/\\\s*\n\s*/g, ' ').replace(/\s+/g, ' ').trim();
+
+            navigator.clipboard.writeText(windowsText).then(() => {
+                const originalText = button.textContent;
+                button.textContent = '✓ Copied!';
+                button.classList.add('copied');
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                button.textContent = '✗ Failed';
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                }, 2000);
+            });
+        }
+
+        function switchCommandTab(tabElement, contentId) {
+            // Remove active class from all tabs and contents
+            const container = tabElement.closest('.copyable-code-block');
+            container.querySelectorAll('.command-tab').forEach(t => t.classList.remove('active'));
+            container.querySelectorAll('.command-content').forEach(c => c.classList.remove('active'));
+
+            // Add active class to clicked tab and corresponding content
+            tabElement.classList.add('active');
+            document.getElementById(contentId).classList.add('active');
+        }
+
+        // Initialize tabs on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.command-tabs').forEach(tabs => {
+                const firstTab = tabs.querySelector('.command-tab.active');
+                if (firstTab) {
+                    const onclickAttr = firstTab.getAttribute('onclick');
+                    if (onclickAttr) {
+                        const match = onclickAttr.match(/'([^']+)'/);
+                        if (match) {
+                            const contentId = match[1];
+                            switchCommandTab(firstTab, contentId);
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Subscription Renewal Webhook Handling - Batch Job Analysis Report <span class="badge badge-primary">v2.0</span></h1>
+
+        <div class="info-box">
+            <strong>Document Information:</strong><br>
+            <strong>Version:</strong> 2.0<br>
+            <strong>Date:</strong> 2025-01-27<br>
+            <strong>Last Updated:</strong> 2025-01-27<br>
+            <strong>Status:</strong> Analysis Only - No Implementation Changes<br>
+            <strong>Author:</strong> Development Team Analysis<br>
+            <strong>Related Projects:</strong><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Frontend: <code>E:\project_workspace\mosc-temp</code><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Backend: <code>E:\project_workspace\malayalees-us-site-boot</code><br>
+            <strong>Key Update:</strong> Added AWS deployment architecture with Spring Batch as separate service from ECS
+        </div>
+
+        <div class="success-box">
+            <strong>✅ Executive Summary</strong>
+            <p>This analysis evaluates the current webhook-based subscription renewal handling approach and proposes a batch job alternative for scaling subscription renewals across multiple tenants. The current system relies on real-time Stripe webhook events (<code>invoice.payment_succeeded</code>, <code>customer.subscription.updated</code>) to update subscription periods. As the user base grows across multiple tenants, this approach may face scalability challenges.</p>
+            <p><strong>Key Findings:</strong></p>
+            <ul>
+                <li>Current webhook approach works well for low-to-medium volume</li>
+                <li>Batch job approach offers better scalability and reliability for high-volume scenarios</li>
+                <li>Hybrid approach (webhooks + batch reconciliation) provides best of both worlds</li>
+                <li>Multi-tenant architecture requires careful consideration of tenant isolation</li>
+                <li><strong>NEW:</strong> Separating batch jobs from ECS REST API reduces resource contention and costs (~62% savings)</li>
+                <li><strong>NEW:</strong> AWS Batch with Fargate provides optimal platform for Spring Batch jobs</li>
+                <li><strong>NEW:</strong> Shared database architecture enables both services to operate independently</li>
+            </ul>
+            <p><strong>Recommendation:</strong> Implement a separated architecture with Spring Batch running on AWS Batch (Fargate) as a separate service from the ECS REST API application. Use hybrid approach with batch job reconciliation as the primary mechanism, with webhooks serving as real-time updates and fallback.</p>
+        </div>
+
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#current-system-analysis">1. Current System Analysis</a></li>
+                <li><a href="#scalability-concerns">2. Scalability Concerns</a></li>
+                <li><a href="#batch-job-approach">3. Batch Job Approach</a></li>
+                <li><a href="#hybrid-approach-recommendation">4. Hybrid Approach Recommendation</a></li>
+                <li><a href="#aws-deployment-architecture">5. AWS Deployment Architecture - Spring Batch as Separate Service</a>
+                    <ul style="margin-left: 20px; margin-top: 5px;">
+                        <li><a href="#aws-deployment-architecture">5.1 Current Architecture (Before Separation)</a></li>
+                        <li><a href="#aws-deployment-architecture">5.2 Proposed Architecture (After Separation)</a></li>
+                        <li><a href="#aws-deployment-architecture">5.3 AWS Services Analysis</a></li>
+                        <li><a href="#aws-deployment-architecture">5.4 Recommended AWS Architecture</a></li>
+                        <li><a href="#aws-deployment-architecture">5.5 Spring Batch Framework Integration</a></li>
+                        <li><a href="#aws-deployment-architecture">5.6 Shared Database Considerations</a></li>
+                        <li><a href="#aws-deployment-architecture">5.7 Email Batch Job Processing</a></li>
+                    </ul>
+                </li>
+                <li><a href="#implementation-architecture">6. Implementation Architecture</a></li>
+                <li><a href="#database-schema-considerations">7. Database Schema Considerations</a></li>
+                <li><a href="#stripe-api-integration">8. Stripe API Integration</a></li>
+                <li><a href="#multi-tenant-considerations">9. Multi-Tenant Considerations</a></li>
+                <li><a href="#performance-analysis">10. Performance Analysis</a></li>
+                <li><a href="#risk-assessment">11. Risk Assessment</a></li>
+                <li><a href="#testing-approach">12. Testing Approach and Strategies</a></li>
+                <li><a href="#implementation-recommendations">13. Implementation Recommendations</a></li>
+                <li><a href="#technical-specifications">14. Technical Specifications</a></li>
+                <li><a href="#monitoring-alerting">15. Monitoring and Alerting</a></li>
+                <li><a href="#aws-deployment-configuration">16. AWS Deployment Configuration</a></li>
+                <li><a href="#conclusion">17. Conclusion</a></li>
+                <li><a href="#automated-testing">18. Automated Testing for Subscription Renewal</a>
+                    <ul style="margin-left: 20px; margin-top: 5px;">
+                        <li><a href="#automated-testing">18.1 Overview</a></li>
+                        <li><a href="#automated-testing">18.2 Prerequisites</a></li>
+                        <li><a href="#automated-testing">18.3 Test Scripts</a></li>
+                        <li><a href="#automated-testing">18.4 Expedited Renewal Testing</a></li>
+                        <li><a href="#automated-testing">18.5 Automated Full Test Suite</a></li>
+                        <li><a href="#automated-testing">18.6 Example Test Scenario</a></li>
+                        <li><a href="#automated-testing">18.7 Troubleshooting</a></li>
+                        <li><a href="#automated-testing">18.8 Best Practices</a></li>
+                        <li><a href="#automated-testing">18.9 Script Reference</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <h2 id="current-system-analysis">1. Current System Analysis</h2>
+
+        <h3>1.1 Current Webhook Flow</h3>
+
+        <p><strong>Current Implementation:</strong></p>
+        <ul>
+            <li>Frontend webhook handler: <code>src/app/api/webhooks/stripe/route.ts</code></li>
+            <li>Backend webhook endpoint: <code>/api/webhooks/stripe</code> (Rust/Spring Boot)</li>
+            <li>Webhook events processed:
+                <ul>
+                    <li><code>checkout.session.completed</code> - Initial subscription creation</li>
+                    <li><code>customer.subscription.created</code> - Subscription created</li>
+                    <li><code>customer.subscription.updated</code> - Subscription updated (renewal, upgrade, downgrade)</li>
+                    <li><code>customer.subscription.deleted</code> - Subscription cancelled</li>
+                    <li><code>invoice.payment_succeeded</code> - Successful recurring payment (renewal)</li>
+                    <li><code>invoice.payment_failed</code> - Failed payment</li>
+                </ul>
+            </li>
+        </ul>
+
+        <div class="diagram-container">
+            <div class="diagram-title">Current Renewal Flow</div>
+            <div class="flowchart-container">
+                <div class="flowchart-box primary">
+                    <strong>1. Stripe Charges Customer</strong><br>
+                    <small>Automatic monthly charge</small>
+                </div>
+                <div class="flowchart-arrow"></div>
+                <div class="flowchart-label">Webhook Event</div>
+                <div class="flowchart-box">
+                    <strong>2. Stripe Sends Webhook</strong><br>
+                    <small>invoice.payment_succeeded</small>
+                </div>
+                <div class="flowchart-arrow"></div>
+                <div class="flowchart-box">
+                    <strong>3. Frontend Webhook Handler</strong><br>
+                    <small>Receives event</small>
+                </div>
+                <div class="flowchart-arrow"></div>
+                <div class="flowchart-box">
+                    <strong>4. Forward to Backend</strong><br>
+                    <small>With JWT authentication</small>
+                </div>
+                <div class="flowchart-arrow"></div>
+                <div class="flowchart-box secondary">
+                    <strong>5. Backend Processes Event</strong><br>
+                    <small>• Find subscription by stripe_subscription_id<br>
+                    • Update current_period_start and current_period_end<br>
+                    • Set subscription_status = 'ACTIVE'<br>
+                    • Send confirmation email</small>
+                </div>
+                <div class="flowchart-arrow"></div>
+                <div class="flowchart-box database">
+                    <strong>6. Database Updated</strong><br>
+                    <small>Real-time update</small>
+                </div>
+            </div>
+        </div>
+
+        <h3>1.2 Current Database Schema</h3>
+
+        <p><strong>membership_subscription Table:</strong></p>
+        <div class="code-block-title">SQL Schema</div>
+        <pre><code>CREATE TABLE public.membership_subscription (
+    id bigint PRIMARY KEY,
+    tenant_id VARCHAR(255) NOT NULL,
+    user_profile_id BIGINT NOT NULL,
+    membership_plan_id BIGINT NOT NULL,
+    subscription_status VARCHAR(20) DEFAULT 'ACTIVE' NOT NULL,
+    current_period_start DATE NOT NULL,
+    current_period_end DATE NOT NULL,
+    trial_start DATE,
+    trial_end DATE,
+    cancel_at_period_end BOOLEAN DEFAULT false NOT NULL,
+    cancelled_at TIMESTAMP,
+    cancellation_reason TEXT,
+    stripe_subscription_id VARCHAR(255),
+    stripe_customer_id VARCHAR(255),
+    payment_provider_config_id BIGINT,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
+);</code></pre>
+
+        <p><strong>Key Fields for Renewal:</strong></p>
+        <ul>
+            <li><code>current_period_start</code> - Start of current billing period</li>
+            <li><code>current_period_end</code> - End of current billing period (renewal date)</li>
+            <li><code>stripe_subscription_id</code> - Stripe subscription identifier</li>
+            <li><code>subscription_status</code> - Current subscription status</li>
+        </ul>
+
+        <h3>1.3 Current Backend Capabilities</h3>
+
+        <p><strong>Backend Infrastructure:</strong></p>
+        <ul>
+            <li><strong>Framework</strong>: Spring Boot (Java) or Rust (based on documentation)</li>
+            <li><strong>Database</strong>: PostgreSQL</li>
+            <li><strong>Multi-Tenant</strong>: Tenant isolation via <code>tenant_id</code> field</li>
+            <li><strong>JWT Authentication</strong>: Service-level JWT for backend API calls</li>
+            <li><strong>Webhook Processing</strong>: Real-time event processing</li>
+        </ul>
+
+        <p><strong>Current Limitations:</strong></p>
+        <ul>
+            <li>Webhook processing is synchronous and blocking</li>
+            <li>No batch processing capability</li>
+            <li>No reconciliation mechanism for missed webhooks</li>
+            <li>Limited retry logic for failed webhook processing</li>
+            <li>No scheduled job infrastructure mentioned</li>
+        </ul>
+
+        <h2 id="scalability-concerns">2. Scalability Concerns</h2>
+
+        <h3>2.1 Webhook Volume Projections</h3>
+
+        <p><strong>Current State:</strong></p>
+        <ul>
+            <li>Low-to-medium subscription volume</li>
+            <li>Webhooks processed in real-time</li>
+            <li>Single backend instance handling all tenants</li>
+        </ul>
+
+        <p><strong>Growth Scenarios:</strong></p>
+
+        <div class="scenario-card">
+            <h4><span class="status-indicator status-success">✅</span> Scenario 1: Small Scale (Current)</h4>
+            <ul>
+                <li>100 subscriptions per tenant</li>
+                <li>10 tenants</li>
+                <li>1,000 total subscriptions</li>
+                <li>~1,000 webhook events/month (renewals)</li>
+                <li>~33 webhook events/day average</li>
+                <li><strong>Status</strong>: ✅ Current approach handles this well</li>
+            </ul>
+        </div>
+
+        <div class="scenario-card">
+            <h4><span class="status-indicator status-warning">⚠️</span> Scenario 2: Medium Scale</h4>
+            <ul>
+                <li>1,000 subscriptions per tenant</li>
+                <li>50 tenants</li>
+                <li>50,000 total subscriptions</li>
+                <li>~50,000 webhook events/month (renewals)</li>
+                <li>~1,667 webhook events/day average</li>
+                <li>~70 webhook events/hour average</li>
+                <li><strong>Status</strong>: ⚠️ Current approach may face bottlenecks</li>
+            </ul>
+        </div>
+
+        <div class="scenario-card">
+            <h4><span class="status-indicator status-danger">❌</span> Scenario 3: Large Scale</h4>
+            <ul>
+                <li>10,000 subscriptions per tenant</li>
+                <li>100 tenants</li>
+                <li>1,000,000 total subscriptions</li>
+                <li>~1,000,000 webhook events/month (renewals)</li>
+                <li>~33,333 webhook events/day average</li>
+                <li>~1,389 webhook events/hour average</li>
+                <li>~23 webhook events/minute average</li>
+                <li><strong>Status</strong>: ❌ Current approach will struggle</li>
+            </ul>
+        </div>
+
+        <h3>2.2 Webhook Processing Challenges</h3>
+
+        <p><strong>1. Webhook Delivery Reliability</strong></p>
+        <ul>
+            <li>Stripe webhooks can be delayed or missed</li>
+            <li>Network issues can cause webhook failures</li>
+            <li>Backend downtime results in missed webhooks</li>
+            <li>Stripe retries webhooks, but not indefinitely</li>
+        </ul>
+
+        <p><strong>2. Concurrent Processing</strong></p>
+        <ul>
+            <li>Multiple webhooks arriving simultaneously</li>
+            <li>Database connection pool exhaustion</li>
+            <li>Race conditions in subscription updates</li>
+            <li>Lock contention on subscription records</li>
+        </ul>
+
+        <p><strong>3. Multi-Tenant Isolation</strong></p>
+        <ul>
+            <li>Each tenant requires separate Stripe account/webhook secret</li>
+            <li>Webhook signature verification per tenant</li>
+            <li>Tenant-specific processing logic</li>
+            <li>Tenant data isolation requirements</li>
+        </ul>
+
+        <p><strong>4. Error Handling</strong></p>
+        <ul>
+            <li>Failed webhook processing requires retry logic</li>
+            <li>Partial updates can cause data inconsistency</li>
+            <li>Dead letter queue for failed webhooks</li>
+            <li>Manual intervention for stuck subscriptions</li>
+        </ul>
+
+        <p><strong>5. Backend Resource Constraints</strong></p>
+        <ul>
+            <li>CPU/memory usage for webhook processing</li>
+            <li>Database connection pool limits</li>
+            <li>API rate limits (Stripe API calls)</li>
+            <li>Network bandwidth for webhook forwarding</li>
+        </ul>
+
+        <h2 id="batch-job-approach">3. Batch Job Approach</h2>
+
+        <h3>3.1 Batch Job Architecture</h3>
+
+        <p><strong>Concept:</strong></p>
+        <p>Instead of relying solely on real-time webhooks, implement a scheduled batch job that:</p>
+        <ol>
+            <li>Queries Stripe API for subscription status</li>
+            <li>Compares with local database records</li>
+            <li>Updates database for any discrepancies</li>
+            <li>Handles renewals, cancellations, and status changes</li>
+        </ol>
+
+        <div class="diagram-container">
+            <div class="diagram-title">Batch Job Flow</div>
+            <div class="flowchart-container">
+                <div class="flowchart-box primary">
+                    <strong>1. Scheduled Job Runs</strong><br>
+                    <small>Daily or multiple times per day</small>
+                </div>
+                <div class="flowchart-arrow"></div>
+                <div class="flowchart-box">
+                    <strong>2. Query Database</strong><br>
+                    <small>Subscriptions with current_period_end approaching</small>
+                </div>
+                <div class="flowchart-arrow"></div>
+                <div class="flowchart-box secondary">
+                    <strong>3. For Each Subscription</strong><br>
+                    <small>a. Fetch from Stripe API<br>
+                    b. Compare with database<br>
+                    c. Update if discrepancies<br>
+                    d. Log changes</small>
+                </div>
+                <div class="flowchart-arrow"></div>
+                <div class="flowchart-box">
+                    <strong>4. Send Notifications</strong><br>
+                    <small>Renewals, failures, etc.</small>
+                </div>
+                <div class="flowchart-arrow"></div>
+                <div class="flowchart-box database">
+                    <strong>5. Generate Report</strong><br>
+                    <small>Reconciliation report</small>
+                </div>
+            </div>
+        </div>
+
+        <h3>3.2 Batch Job Advantages</h3>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Advantage</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>1. Reliability</strong></td>
+                    <td>
+                        ✅ Not dependent on webhook delivery<br>
+                        ✅ Handles missed webhooks automatically<br>
+                        ✅ Can reconcile historical discrepancies<br>
+                        ✅ Works even if webhook infrastructure fails
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>2. Scalability</strong></td>
+                    <td>
+                        ✅ Processes subscriptions in batches<br>
+                        ✅ Can be parallelized across tenants<br>
+                        ✅ Can be distributed across multiple workers<br>
+                        ✅ Can handle millions of subscriptions
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>3. Performance</strong></td>
+                    <td>
+                        ✅ Bulk API calls to Stripe (more efficient)<br>
+                        ✅ Batch database updates<br>
+                        ✅ Reduced database connection overhead<br>
+                        ✅ Optimized query patterns
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>4. Control</strong></td>
+                    <td>
+                        ✅ Can schedule during off-peak hours<br>
+                        ✅ Can prioritize critical tenants<br>
+                        ✅ Can throttle API calls to Stripe<br>
+                        ✅ Can implement retry logic with backoff
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>5. Auditability</strong></td>
+                    <td>
+                        ✅ Complete reconciliation logs<br>
+                        ✅ Change history tracking<br>
+                        ✅ Discrepancy reports<br>
+                        ✅ Performance metrics
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>3.3 Batch Job Disadvantages</h3>
+
+        <p><strong>1. Latency</strong></p>
+        <ul>
+            <li>❌ Not real-time (updates happen on schedule)</li>
+            <li>❌ Delayed status updates</li>
+            <li>❌ Users may see stale subscription status</li>
+        </ul>
+
+        <p><strong>2. Stripe API Rate Limits</strong></p>
+        <ul>
+            <li>❌ Stripe API has rate limits (100 requests/second)</li>
+            <li>❌ Need to implement rate limiting</li>
+            <li>❌ May require multiple API calls per subscription</li>
+        </ul>
+
+        <p><strong>3. Resource Usage</strong></p>
+        <ul>
+            <li>❌ Requires scheduled job infrastructure</li>
+            <li>❌ Database load during batch processing</li>
+            <li>❌ Network bandwidth for API calls</li>
+        </ul>
+
+        <p><strong>4. Complexity</strong></p>
+        <ul>
+            <li>❌ More complex than webhook processing</li>
+            <li>❌ Requires job scheduling system</li>
+            <li>❌ Requires error handling and retry logic</li>
+            <li>❌ Requires monitoring and alerting</li>
+        </ul>
+
+        <h2 id="hybrid-approach-recommendation">4. Hybrid Approach Recommendation</h2>
+
+        <h3>4.1 Recommended Architecture</h3>
+
+        <p><strong>Primary Mechanism: Batch Job</strong></p>
+        <ul>
+            <li>Scheduled batch job runs multiple times per day (e.g., every 6 hours)</li>
+            <li>Processes subscriptions approaching renewal date</li>
+            <li>Updates database with latest Stripe subscription data</li>
+            <li>Handles renewals, cancellations, and status changes</li>
+        </ul>
+
+        <p><strong>Secondary Mechanism: Webhooks</strong></p>
+        <ul>
+            <li>Webhooks continue to process real-time events</li>
+            <li>Provides immediate updates for critical events</li>
+            <li>Serves as fallback for batch job failures</li>
+            <li>Handles non-renewal events (cancellations, upgrades, etc.)</li>
+        </ul>
+
+        <p><strong>Reconciliation Job</strong></p>
+        <ul>
+            <li>Daily reconciliation job compares all active subscriptions</li>
+            <li>Identifies discrepancies between Stripe and database</li>
+            <li>Updates database for any mismatches</li>
+            <li>Generates discrepancy reports</li>
+        </ul>
+
+        <h3>4.2 Hybrid Flow Diagram</h3>
+
+        <div class="diagram-container">
+            <div class="diagram-title">Hybrid Architecture Flow</div>
+            <div class="flowchart-container">
+                <div class="flowchart-box primary" style="min-width: 400px;">
+                    <strong>Stripe Subscriptions</strong>
+                </div>
+                <div class="flowchart-arrow"></div>
+                <div class="flowchart-label">Webhooks (Real-time)</div>
+                <div class="flowchart-box secondary">
+                    <strong>Webhook Handler (Primary)</strong><br>
+                    <small>• Real-time updates<br>
+                    • Critical events</small>
+                </div>
+                <div class="flowchart-arrow"></div>
+                <div class="flowchart-box database">
+                    <strong>Database</strong><br>
+                    <small>membership_subscription</small>
+                </div>
+                <div class="flowchart-arrow"></div>
+                <div class="flowchart-label">Batch Job (Reconciliation)</div>
+                <div class="flowchart-box secondary">
+                    <strong>Scheduled Batch Job</strong><br>
+                    <small>• Every 6 hours<br>
+                    • Processes renewals<br>
+                    • Updates from Stripe API</small>
+                </div>
+                <div class="flowchart-arrow"></div>
+                <div class="flowchart-label">Daily Reconciliation</div>
+                <div class="flowchart-box secondary">
+                    <strong>Daily Reconciliation Job</strong><br>
+                    <small>• Compares all subscriptions<br>
+                    • Fixes discrepancies<br>
+                    • Generates reports</small>
+                </div>
+            </div>
+        </div>
+
+        <h3>4.3 Event Handling Strategy</h3>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Event Type</th>
+                    <th>Handling Mechanism</th>
+                    <th>Examples</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Webhook Events (Real-time)</strong></td>
+                    <td>Processed immediately via webhook handler</td>
+                    <td>
+                        • <code>checkout.session.completed</code><br>
+                        • <code>customer.subscription.deleted</code><br>
+                        • <code>invoice.payment_failed</code><br>
+                        • <code>customer.subscription.updated</code> (non-renewal)
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Batch Job Events (Scheduled)</strong></td>
+                    <td>Processed in batch every 6 hours</td>
+                    <td>
+                        • <code>invoice.payment_succeeded</code> (renewal)<br>
+                        • <code>customer.subscription.updated</code> (renewal)<br>
+                        • Status reconciliation
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Reconciliation Job (Daily)</strong></td>
+                    <td>Daily comparison and fix</td>
+                    <td>
+                        • Compare all active subscriptions with Stripe<br>
+                        • Fix any discrepancies<br>
+                        • Handle missed renewals<br>
+                        • Update stale records
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 id="aws-deployment-architecture">5. AWS Deployment Architecture - Spring Batch as Separate Service</h2>
+
+        <div class="warning-box">
+            <strong>⚠️ Architecture Decision: Separate Batch Service</strong>
+            <p>This section addresses the requirement to run Spring Batch jobs as a <strong>separate service external to the main ECS application</strong>. The goal is to offload batch processing (subscription renewals, email sending) from ECS instances to dedicated batch job services, reducing load on the main REST API application.</p>
+        </div>
+
+        <h3>5.1 Current Architecture (Before Separation)</h3>
+
+        <div class="diagram-container">
+            <div class="diagram-title">Current Architecture - All Processing in ECS</div>
+            <div class="flowchart-container">
+                <div class="flowchart-box primary" style="min-width: 350px;">
+                    <strong>AWS ECS Cluster</strong><br>
+                    <small>Spring Boot REST API Application<br>
+                    • Webhook processing<br>
+                    • REST API endpoints<br>
+                    • Batch jobs (scheduled)<br>
+                    • Email sending<br>
+                    • All in same container</small>
+                </div>
+                <div class="flowchart-arrow"></div>
+                <div class="flowchart-box database">
+                    <strong>PostgreSQL Database</strong><br>
+                    <small>Amazon RDS<br>
+                    Single source of truth</small>
+                </div>
+            </div>
+            <div class="warning-box" style="margin-top: 20px;">
+                <strong>Issues:</strong>
+                <ul>
+                    <li>❌ Batch jobs compete for resources with REST API</li>
+                    <li>❌ Email sending blocks API requests</li>
+                    <li>❌ Scaling ECS affects both API and batch jobs</li>
+                    <li>❌ No independent scaling of batch processing</li>
+                    <li>❌ Resource contention during peak batch times</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>5.2 Proposed Architecture (After Separation)</h3>
+
+        <div class="diagram-container">
+            <div class="diagram-title">Separated Architecture - Batch Jobs as Independent Service</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin: 20px 0;">
+                <div class="flowchart-container">
+                    <div class="flowchart-box primary" style="min-width: 300px;">
+                        <strong>AWS ECS Cluster</strong><br>
+                        <small>Spring Boot REST API<br>
+                        • Webhook processing<br>
+                        • REST API endpoints<br>
+                        • User-facing operations<br>
+                        • Lightweight, fast responses</small>
+                    </div>
+                    <div class="flowchart-arrow"></div>
+                    <div class="flowchart-label">Read/Write</div>
+                </div>
+                <div class="flowchart-container">
+                    <div class="flowchart-box secondary" style="min-width: 300px;">
+                        <strong>AWS Batch / ECS Fargate</strong><br>
+                        <small>Spring Batch Service<br>
+                        • Subscription renewal jobs<br>
+                        • Email batch sending<br>
+                        • Reconciliation jobs<br>
+                        • Scheduled processing</small>
+                    </div>
+                    <div class="flowchart-arrow"></div>
+                    <div class="flowchart-label">Read/Write</div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <div class="flowchart-box database" style="display: inline-block; min-width: 400px;">
+                    <strong>PostgreSQL Database (Amazon RDS)</strong><br>
+                    <small>Single Source of Truth<br>
+                    • Both services connect to same database<br>
+                    • Row-level locking prevents conflicts<br>
+                    • Transaction isolation ensures consistency</small>
+                </div>
+            </div>
+            <div class="success-box" style="margin-top: 20px;">
+                <strong>Benefits:</strong>
+                <ul>
+                    <li>✅ Independent scaling of batch jobs</li>
+                    <li>✅ No resource contention with REST API</li>
+                    <li>✅ Cost optimization (pay only for batch runtime)</li>
+                    <li>✅ Better fault isolation</li>
+                    <li>✅ Dedicated resources for batch processing</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>5.3 AWS Services Analysis for Batch Job Execution</h3>
+
+        <p><strong>Option 1: AWS Batch (Recommended for Large-Scale Batch Processing)</strong></p>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Aspect</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Service Type</strong></td>
+                    <td>Fully managed batch computing service</td>
+                </tr>
+                <tr>
+                    <td><strong>Best For</strong></td>
+                    <td>
+                        • Large-scale batch processing<br>
+                        • Jobs that run for hours or days<br>
+                        • Jobs requiring significant compute resources<br>
+                        • Cost optimization with Spot Instances
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Compute Options</strong></td>
+                    <td>
+                        • AWS Fargate (serverless containers)<br>
+                        • Amazon EC2 (On-Demand, Spot, Reserved)<br>
+                        • Auto-scaling based on job queue
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Job Scheduling</strong></td>
+                    <td>
+                        • EventBridge (CloudWatch Events) for scheduling<br>
+                        • Job queues with priority levels<br>
+                        • Automatic retry on failure
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Cost Model</strong></td>
+                    <td>
+                        • Pay only for compute time used<br>
+                        • Can use Spot Instances (up to 90% savings)<br>
+                        • No idle time costs
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Spring Batch Integration</strong></td>
+                    <td>
+                        • Package Spring Batch app as Docker image<br>
+                        • AWS Batch runs container on schedule<br>
+                        • Job completes and container stops
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Pros</strong></td>
+                    <td>
+                        ✅ Fully managed service<br>
+                        ✅ Automatic scaling<br>
+                        ✅ Cost-effective with Spot Instances<br>
+                        ✅ Built-in job queuing and retry<br>
+                        ✅ No infrastructure management
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Cons</strong></td>
+                    <td>
+                        ❌ Cold start overhead (1-2 minutes)<br>
+                        ❌ Less control over execution environment<br>
+                        ❌ May be overkill for small jobs
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong>Option 2: ECS Fargate Scheduled Tasks (Recommended for Medium-Scale Jobs)</strong></p>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Aspect</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Service Type</strong></td>
+                    <td>Serverless container execution on ECS</td>
+                </tr>
+                <tr>
+                    <td><strong>Best For</strong></td>
+                    <td>
+                        • Medium-scale batch processing<br>
+                        • Jobs running every few hours<br>
+                        • Jobs requiring 15 minutes to 4 hours<br>
+                        • When you already use ECS
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Compute Model</strong></td>
+                    <td>
+                        • Fargate (serverless, no EC2 management)<br>
+                        • Container starts, runs job, stops<br>
+                        • No persistent infrastructure
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Job Scheduling</strong></td>
+                    <td>
+                        • EventBridge (CloudWatch Events) triggers<br>
+                        • ECS RunTask API called on schedule<br>
+                        • Task runs to completion
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Cost Model</strong></td>
+                    <td>
+                        • Pay per vCPU-hour and memory-hour<br>
+                        • Billed only while task is running<br>
+                        • No idle costs
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Spring Batch Integration</strong></td>
+                    <td>
+                        • Package Spring Batch as Docker image<br>
+                        • ECS Task Definition specifies image<br>
+                        • EventBridge triggers task execution
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Pros</strong></td>
+                    <td>
+                        ✅ Serverless (no EC2 management)<br>
+                        ✅ Fast startup (30-60 seconds)<br>
+                        ✅ Simple integration with existing ECS<br>
+                        ✅ Good for scheduled tasks<br>
+                        ✅ Cost-effective for periodic jobs
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Cons</strong></td>
+                    <td>
+                        ❌ 4-hour maximum runtime (Fargate limit)<br>
+                        ❌ Less suitable for very long jobs<br>
+                        ❌ Manual retry logic needed
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong>Option 3: ECS Fargate Long-Running Service (For Continuous Processing)</strong></p>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Aspect</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Service Type</strong></td>
+                    <td>Long-running ECS Fargate service</td>
+                </tr>
+                <tr>
+                    <td><strong>Best For</strong></td>
+                    <td>
+                        • Continuous batch processing<br>
+                        • Jobs that need to run frequently<br>
+                        • When you need persistent connection pooling<br>
+                        • Real-time batch processing requirements
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Compute Model</strong></td>
+                    <td>
+                        • Fargate service always running<br>
+                        • Spring Batch scheduler runs jobs internally<br>
+                        • Container stays alive between jobs
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Job Scheduling</strong></td>
+                    <td>
+                        • Spring Batch @Scheduled annotations<br>
+                        • Internal cron-based scheduling<br>
+                        • Application manages job execution
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Cost Model</strong></td>
+                    <td>
+                        • Pay for all running time<br>
+                        • Billed continuously (even when idle)<br>
+                        • Higher cost than scheduled tasks
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Pros</strong></td>
+                    <td>
+                        ✅ Fast job startup (no cold start)<br>
+                        ✅ Persistent database connections<br>
+                        ✅ Can handle frequent jobs efficiently<br>
+                        ✅ Full control over scheduling
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Cons</strong></td>
+                    <td>
+                        ❌ Higher cost (always running)<br>
+                        ❌ Resource waste during idle time<br>
+                        ❌ Requires service management<br>
+                        ❌ Less cost-effective than scheduled tasks
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>5.4 Recommended AWS Architecture</h3>
+
+        <div class="success-box">
+            <strong>✅ Recommended Approach: AWS Batch with Fargate Compute</strong>
+            <p>For subscription renewal batch jobs, we recommend <strong>AWS Batch with Fargate compute environment</strong> because:</p>
+            <ul>
+                <li>✅ Jobs run every 6 hours (scheduled, not continuous)</li>
+                <li>✅ Jobs complete in 15-60 minutes (well within limits)</li>
+                <li>✅ Cost-effective (pay only for execution time)</li>
+                <li>✅ Automatic scaling and retry</li>
+                <li>✅ No infrastructure management</li>
+                <li>✅ Can handle millions of subscriptions</li>
+            </ul>
+        </div>
+
+        <div class="diagram-container">
+            <div class="diagram-title">Recommended AWS Architecture</div>
+            <div class="flowchart-container">
+                <div class="flowchart-box primary" style="min-width: 350px;">
+                    <strong>AWS ECS Cluster</strong><br>
+                    <small>Spring Boot REST API<br>
+                    • Webhook Handler<br>
+                    • REST Endpoints<br>
+                    • User Operations<br>
+                    • Lightweight Processing</small>
+                </div>
+                <div style="display: flex; justify-content: space-around; width: 100%; margin: 30px 0;">
+                    <div class="flowchart-box secondary" style="min-width: 280px;">
+                        <strong>AWS Batch</strong><br>
+                        <small>Spring Batch Service<br>
+                        • Subscription Renewal Job<br>
+                        • Reconciliation Job<br>
+                        • Scheduled via EventBridge</small>
+                    </div>
+                    <div class="flowchart-box secondary" style="min-width: 280px;">
+                        <strong>AWS Batch / ECS Fargate</strong><br>
+                        <small>Email Batch Service<br>
+                        • Email Sending Jobs<br>
+                        • Bulk Email Processing<br>
+                        • Scheduled via EventBridge</small>
+                    </div>
+                </div>
+                <div class="flowchart-arrow"></div>
+                <div class="flowchart-box database" style="min-width: 400px;">
+                    <strong>Amazon RDS PostgreSQL</strong><br>
+                    <small>Single Source of Truth<br>
+                    • Shared database connection<br>
+                    • Row-level locking<br>
+                    • Transaction isolation</small>
+                </div>
+                <div style="margin-top: 30px; padding: 20px; background-color: #EDE7D3; border-radius: 8px;">
+                    <strong>EventBridge Scheduling:</strong>
+                    <ul style="margin-top: 10px;">
+                        <li><strong>Subscription Renewal Job:</strong> Every 6 hours (0:00, 6:00, 12:00, 18:00 UTC)</li>
+                        <li><strong>Reconciliation Job:</strong> Daily at 2:00 AM UTC</li>
+                        <li><strong>Email Batch Job:</strong> Every hour or on-demand</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <h3>5.5 Spring Batch Framework Integration</h3>
+
+        <p><strong>Spring Batch Overview:</strong></p>
+        <p>Spring Batch is a framework for building robust batch processing applications. It provides:</p>
+        <ul>
+            <li><strong>Job Processing</strong>: Define jobs with steps, readers, processors, and writers</li>
+            <li><strong>Chunk Processing</strong>: Process items in configurable chunks for efficiency</li>
+            <li><strong>Transaction Management</strong>: Automatic transaction boundaries per chunk</li>
+            <li><strong>Error Handling</strong>: Built-in retry and skip logic</li>
+            <li><strong>Job Repository</strong>: Metadata tracking in database</li>
+            <li><strong>Scheduling</strong>: Integration with Spring Scheduler or external schedulers</li>
+        </ul>
+
+        <p><strong>Spring Batch Job Structure:</strong></p>
+        <div class="code-block-title">Java - Spring Batch Job Configuration</div>
+        <pre><code>@Configuration
+@EnableBatchProcessing
+public class SubscriptionRenewalBatchJobConfig {
+
+    @Autowired
+    private JobBuilderFactory jobBuilderFactory;
+
+    @Autowired
+    private StepBuilderFactory stepBuilderFactory;
+
+    @Bean
+    public Job subscriptionRenewalJob() {
+        return jobBuilderFactory.get("subscriptionRenewalJob")
+            .start(renewalStep())
+            .build();
+    }
+
+    @Bean
+    public Step renewalStep() {
+        return stepBuilderFactory.get("renewalStep")
+            .&lt;MembershipSubscription, MembershipSubscription&gt;chunk(100)
+            .reader(subscriptionReader())
+            .processor(subscriptionProcessor())
+            .writer(subscriptionWriter())
+            .faultTolerant()
+            .retryLimit(3)
+            .retry(StripeException.class)
+            .skip(StripeException.class)
+            .skipLimit(10)
+            .build();
+    }
+
+    @Bean
+    public ItemReader&lt;MembershipSubscription&gt; subscriptionReader() {
+        return new JdbcCursorItemReaderBuilder&lt;MembershipSubscription&gt;()
+            .dataSource(dataSource)
+            .sql("SELECT * FROM membership_subscription " +
+                 "WHERE subscription_status IN ('ACTIVE', 'TRIAL') " +
+                 "AND current_period_end &lt;= CURRENT_DATE + INTERVAL '7 days' " +
+                 "AND cancel_at_period_end = false " +
+                 "ORDER BY current_period_end ASC")
+            .rowMapper(new BeanPropertyRowMapper&lt;&gt;(MembershipSubscription.class))
+            .build();
+    }
+
+    @Bean
+    public ItemProcessor&lt;MembershipSubscription, MembershipSubscription&gt; subscriptionProcessor() {
+        return new SubscriptionRenewalProcessor(stripeService);
+    }
+
+    @Bean
+    public ItemWriter&lt;MembershipSubscription&gt; subscriptionWriter() {
+        return new JdbcBatchItemWriterBuilder&lt;MembershipSubscription&gt;()
+            .dataSource(dataSource)
+            .sql("UPDATE membership_subscription " +
+                 "SET current_period_start = :currentPeriodStart, " +
+                 "    current_period_end = :currentPeriodEnd, " +
+                 "    subscription_status = :subscriptionStatus, " +
+                 "    last_reconciliation_at = CURRENT_TIMESTAMP, " +
+                 "    updated_at = CURRENT_TIMESTAMP " +
+                 "WHERE id = :id")
+            .beanMapped()
+            .build();
+    }
+}</code></pre>
+
+        <p><strong>Spring Batch Item Processor:</strong></p>
+        <div class="code-block-title">Java - Subscription Renewal Processor</div>
+        <pre><code>@Component
+public class SubscriptionRenewalProcessor implements ItemProcessor&lt;MembershipSubscription, MembershipSubscription&gt; {
+
+    private final StripeService stripeService;
+    private final ReconciliationLogService reconciliationLogService;
+
+    @Override
+    public MembershipSubscription process(MembershipSubscription subscription) throws Exception {
+        try {
+            // 1. Fetch latest subscription data from Stripe
+            StripeSubscription stripeSub = stripeService.retrieveSubscription(
+                subscription.getStripeSubscriptionId(),
+                subscription.getTenantId()
+            );
+
+            // 2. Compare with local data
+            LocalDate dbPeriodEnd = subscription.getCurrentPeriodEnd();
+            LocalDate stripePeriodEnd = LocalDate.ofEpochDay(
+                stripeSub.getCurrentPeriodEnd()
+            );
+
+            // 3. Update if discrepancy found
+            if (!dbPeriodEnd.equals(stripePeriodEnd)) {
+                subscription.setCurrentPeriodStart(
+                    LocalDate.ofEpochDay(stripeSub.getCurrentPeriodStart())
+                );
+                subscription.setCurrentPeriodEnd(stripePeriodEnd);
+                subscription.setSubscriptionStatus(
+                    mapStripeStatusToLocal(stripeSub.getStatus())
+                );
+                subscription.setLastReconciliationAt(LocalDateTime.now());
+
+                // Log reconciliation
+                reconciliationLogService.logReconciliation(
+                    subscription,
+                    ReconciliationType.BATCH_RENEWAL,
+                    ReconciliationStatus.SUCCESS
+                );
+            }
+
+            return subscription;
+        } catch (StripeException e) {
+            // Log error and skip this subscription
+            reconciliationLogService.logReconciliation(
+                subscription,
+                ReconciliationType.BATCH_RENEWAL,
+                ReconciliationStatus.FAILED,
+                e.getMessage()
+            );
+            throw e; // Will trigger retry
+        }
+    }
+}</code></pre>
+
+        <h3>5.6 Shared Database Considerations</h3>
+
+        <div class="warning-box">
+            <strong>⚠️ Critical: Database Connection Management</strong>
+            <p>Both the main REST API (ECS) and Spring Batch service (AWS Batch) connect to the <strong>same PostgreSQL database</strong>. Proper connection management and transaction isolation are critical to prevent conflicts and ensure data consistency.</p>
+        </div>
+
+        <p><strong>Database Connection Pooling:</strong></p>
+        <ul>
+            <li><strong>REST API (ECS)</strong>: Use HikariCP connection pool (default Spring Boot)</li>
+            <li><strong>Batch Service (AWS Batch)</strong>: Use separate HikariCP connection pool</li>
+            <li><strong>Pool Sizing</strong>:
+                <ul>
+                    <li>REST API: 10-20 connections per instance</li>
+                    <li>Batch Service: 5-10 connections (processes sequentially)</li>
+                </ul>
+            </li>
+            <li><strong>RDS Connection Limits</strong>: Ensure RDS instance can handle total connections</li>
+        </ul>
+
+        <p><strong>Transaction Isolation:</strong></p>
+        <div class="code-block-title">Java - Spring Batch Transaction Configuration</div>
+        <pre><code>@Configuration
+public class BatchDataSourceConfig {
+
+    @Bean
+    @Primary
+    public DataSource batchDataSource() {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:postgresql://your-rds-endpoint:5432/yourdb");
+        config.setUsername("batch_user");
+        config.setPassword("batch_password");
+        config.setMaximumPoolSize(10);
+        config.setMinimumIdle(2);
+        config.setConnectionTimeout(30000);
+        config.setIdleTimeout(600000);
+        config.setMaxLifetime(1800000);
+
+        // Isolation level for batch processing
+        config.addDataSourceProperty("defaultTransactionIsolation",
+            String.valueOf(Connection.TRANSACTION_READ_COMMITTED));
+
+        return new HikariDataSource(config);
+    }
+
+    @Bean
+    public PlatformTransactionManager batchTransactionManager() {
+        DataSourceTransactionManager txManager = new DataSourceTransactionManager();
+        txManager.setDataSource(batchDataSource());
+        txManager.setDefaultTimeout(300); // 5 minutes for batch operations
+        return txManager;
+    }
+}</code></pre>
+
+        <p><strong>Row-Level Locking Strategy:</strong></p>
+        <div class="code-block-title">SQL - Optimistic Locking Pattern</div>
+        <pre><code>-- Use optimistic locking with version column
+ALTER TABLE membership_subscription
+ADD COLUMN version INTEGER DEFAULT 0;
+
+-- Batch job update with version check
+UPDATE membership_subscription
+SET
+    current_period_start = :newPeriodStart,
+    current_period_end = :newPeriodEnd,
+    version = version + 1,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = :id
+  AND version = :expectedVersion; -- Prevents concurrent updates
+
+-- If update affects 0 rows, version conflict occurred
+-- Batch job can retry or skip</code></pre>
+
+        <p><strong>Database Connection String Configuration:</strong></p>
+        <div class="code-block-title">application-batch.yml</div>
+        <pre><code>spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:5432/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-test-query: SELECT 1
+
+  batch:
+    jdbc:
+      initialize-schema: always # Creates Spring Batch metadata tables
+    job:
+      enabled: false # Disable auto-start, use EventBridge trigger
+    table-prefix: BATCH_ # Separate batch metadata tables</code></pre>
+
+        <h3>5.7 Email Batch Job Processing</h3>
+
+        <p><strong>Email Batch Job Requirements:</strong></p>
+        <ul>
+            <li>Extract email sending from main REST API</li>
+            <li>Process emails in batches for efficiency</li>
+            <li>Handle retries for failed emails</li>
+            <li>Track email delivery status</li>
+            <li>Comply with email sending rate limits (Amazon SES)</li>
+        </ul>
+
+        <p><strong>Email Batch Job Architecture:</strong></p>
+        <div class="code-block-title">Java - Email Batch Job Configuration</div>
+        <pre><code>@Configuration
+@EnableBatchProcessing
+public class EmailBatchJobConfig {
+
+    @Bean
+    public Job emailSendingJob() {
+        return jobBuilderFactory.get("emailSendingJob")
+            .start(emailSendingStep())
+            .build();
+    }
+
+    @Bean
+    public Step emailSendingStep() {
+        return stepBuilderFactory.get("emailSendingStep")
+            .&lt;EmailQueue, EmailQueue&gt;chunk(50) // Process 50 emails at a time
+            .reader(emailQueueReader())
+            .processor(emailProcessor())
+            .writer(emailWriter())
+            .faultTolerant()
+            .retryLimit(3)
+            .retry(EmailException.class)
+            .skip(EmailException.class)
+            .skipLimit(100)
+            .build();
+    }
+
+    @Bean
+    public ItemReader&lt;EmailQueue&gt; emailQueueReader() {
+        return new JdbcCursorItemReaderBuilder&lt;EmailQueue&gt;()
+            .dataSource(dataSource)
+            .sql("SELECT * FROM email_queue " +
+                 "WHERE status = 'PENDING' " +
+                 "AND retry_count &lt; 3 " +
+                 "ORDER BY priority DESC, created_at ASC " +
+                 "LIMIT 1000")
+            .rowMapper(new BeanPropertyRowMapper&lt;&gt;(EmailQueue.class))
+            .build();
+    }
+
+    @Bean
+    public ItemProcessor&lt;EmailQueue, EmailQueue&gt; emailProcessor() {
+        return new EmailSendingProcessor(sesService);
+    }
+
+    @Bean
+    public ItemWriter&lt;EmailQueue&gt; emailWriter() {
+        return new JdbcBatchItemWriterBuilder&lt;EmailQueue&gt;()
+            .dataSource(dataSource)
+            .sql("UPDATE email_queue " +
+                 "SET status = :status, " +
+                 "    sent_at = :sentAt, " +
+                 "    error_message = :errorMessage, " +
+                 "    retry_count = :retryCount, " +
+                 "    updated_at = CURRENT_TIMESTAMP " +
+                 "WHERE id = :id")
+            .beanMapped()
+            .build();
+    }
+}</code></pre>
+
+        <p><strong>Email Queue Table Schema:</strong></p>
+        <div class="code-block-title">SQL</div>
+        <pre><code>CREATE TABLE email_queue (
+    id BIGINT PRIMARY KEY,
+    tenant_id VARCHAR(255) NOT NULL,
+    to_email VARCHAR(255) NOT NULL,
+    from_email VARCHAR(255) NOT NULL,
+    subject VARCHAR(500) NOT NULL,
+    body_text TEXT,
+    body_html TEXT,
+    status VARCHAR(20) DEFAULT 'PENDING', -- PENDING, SENT, FAILED
+    priority INTEGER DEFAULT 0, -- Higher priority processed first
+    retry_count INTEGER DEFAULT 0,
+    max_retries INTEGER DEFAULT 3,
+    error_message TEXT,
+    sent_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
+);
+
+CREATE INDEX idx_email_queue_status ON email_queue(status, priority DESC, created_at ASC);
+CREATE INDEX idx_email_queue_tenant ON email_queue(tenant_id, status);</code></pre>
+
+        <h2 id="implementation-architecture">6. Implementation Architecture</h2>
+
+        <h3>6.1 Batch Job Components</h3>
+
+        <p><strong>1. Subscription Renewal Batch Job</strong></p>
+        <div class="code-block-title">TypeScript Pseudo-code</div>
+        <pre><code>// Pseudo-code structure
+class SubscriptionRenewalBatchJob {
+  async execute() {
+    // 1. Query subscriptions approaching renewal
+    const subscriptions = await this.findSubscriptionsApproachingRenewal();
+
+    // 2. Process in batches (e.g., 100 at a time)
+    for (const batch of this.chunk(subscriptions, 100)) {
+      await this.processBatch(batch);
+    }
+  }
+
+  async processBatch(subscriptions: Subscription[]) {
+    // 3. Fetch Stripe subscription data in parallel
+    const stripeData = await Promise.all(
+      subscriptions.map(sub => this.fetchStripeSubscription(sub.stripeSubscriptionId))
+    );
+
+    // 4. Compare and update database
+    for (let i = 0; i < subscriptions.length; i++) {
+      const local = subscriptions[i];
+      const stripe = stripeData[i];
+
+      if (this.needsUpdate(local, stripe)) {
+        await this.updateSubscription(local, stripe);
+      }
+    }
+  }
+}</code></pre>
+
+        <p><strong>2. Stripe API Integration</strong></p>
+        <div class="code-block-title">TypeScript</div>
+        <pre><code>// Fetch subscription from Stripe
+async function fetchStripeSubscription(
+  stripeSubscriptionId: string,
+  tenantId: string
+): Promise<StripeSubscription> {
+  // Get tenant-specific Stripe API key
+  const stripe = getStripeClient(tenantId);
+
+  // Fetch subscription with expanded data
+  const subscription = await stripe.subscriptions.retrieve(
+    stripeSubscriptionId,
+    {
+      expand: ['latest_invoice', 'customer']
+    }
+  );
+
+  return subscription;
+}</code></pre>
+
+        <p><strong>3. Database Update Logic</strong></p>
+        <div class="code-block-title">TypeScript</div>
+        <pre><code>async function updateSubscriptionFromStripe(
+  localSubscription: MembershipSubscriptionDTO,
+  stripeSubscription: StripeSubscription
+) {
+  const updates: Partial<MembershipSubscriptionDTO> = {};
+
+  // Update period dates
+  if (stripeSubscription.current_period_start) {
+    updates.currentPeriodStart = new Date(
+      stripeSubscription.current_period_start * 1000
+    );
+  }
+
+  if (stripeSubscription.current_period_end) {
+    updates.currentPeriodEnd = new Date(
+      stripeSubscription.current_period_end * 1000
+    );
+  }
+
+  // Update status
+  updates.subscriptionStatus = mapStripeStatusToLocal(
+    stripeSubscription.status
+  );
+
+  // Update cancellation info
+  if (stripeSubscription.cancel_at_period_end) {
+    updates.cancelAtPeriodEnd = true;
+  }
+
+  // Apply updates
+  await updateMembershipSubscription(
+    localSubscription.id,
+    updates
+  );
+}</code></pre>
+
+        <h3>5.2 Job Scheduling</h3>
+
+        <p><strong>Option 1: Cron-based Scheduling (Backend)</strong></p>
+        <div class="code-block-title">Rust/Spring Boot</div>
+        <pre><code>// Rust/Spring Boot scheduled job
+#[tokio::main]
+async fn main() {
+    // Schedule job to run every 6 hours
+    tokio::spawn(async {
+        let mut interval = tokio::time::interval(Duration::from_secs(6 * 3600));
+        loop {
+            interval.tick().await;
+            subscription_renewal_batch_job().await;
+        }
+    });
+}</code></pre>
+
+        <p><strong>Option 2: Next.js API Route with Cron Trigger</strong></p>
+        <div class="code-block-title">TypeScript</div>
+        <pre><code>// Next.js API route: /api/cron/subscription-renewal
+export async function GET(req: NextRequest) {
+  // Verify cron secret
+  const authHeader = req.headers.get('authorization');
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return new NextResponse('Unauthorized', { status: 401 });
+  }
+
+  // Run batch job
+  await runSubscriptionRenewalBatchJob();
+
+  return new NextResponse('OK', { status: 200 });
+}</code></pre>
+
+        <p><strong>Option 3: External Cron Service</strong></p>
+        <ul>
+            <li>Use Vercel Cron for Next.js deployments</li>
+            <li>Use AWS EventBridge for AWS deployments</li>
+            <li>Trigger API endpoint on schedule</li>
+        </ul>
+
+        <h3>5.3 Database Query Optimization</h3>
+
+        <p><strong>Query for Subscriptions Approaching Renewal:</strong></p>
+        <div class="code-block-title">SQL</div>
+        <pre><code>-- Find subscriptions that need renewal check
+SELECT
+    id,
+    tenant_id,
+    stripe_subscription_id,
+    current_period_end,
+    subscription_status
+FROM membership_subscription
+WHERE
+    subscription_status IN ('ACTIVE', 'TRIAL')
+    AND current_period_end <= CURRENT_DATE + INTERVAL '7 days'
+    AND cancel_at_period_end = false
+ORDER BY current_period_end ASC
+LIMIT 1000;</code></pre>
+
+        <p><strong>Indexes Required:</strong></p>
+        <div class="code-block-title">SQL</div>
+        <pre><code>-- Index for renewal query
+CREATE INDEX IF NOT EXISTS idx_membership_subscription_renewal_check
+ON membership_subscription(subscription_status, current_period_end, cancel_at_period_end)
+WHERE subscription_status IN ('ACTIVE', 'TRIAL');
+
+-- Index for Stripe subscription lookup
+CREATE INDEX IF NOT EXISTS idx_membership_subscription_stripe_id
+ON membership_subscription(stripe_subscription_id)
+WHERE stripe_subscription_id IS NOT NULL;</code></pre>
+
+        <h2 id="aws-deployment-configuration">16. AWS Deployment Configuration</h2>
+
+        <h3>16.1 AWS Batch Job Definition</h3>
+
+        <p><strong>Create AWS Batch Job Definition:</strong></p>
+        <div class="code-block-title">JSON - AWS Batch Job Definition</div>
+        <pre><code>{
+  "jobDefinitionName": "subscription-renewal-batch-job",
+  "type": "container",
+  "containerProperties": {
+    "image": "your-ecr-repo/subscription-batch-service:latest",
+    "vcpus": 2,
+    "memory": 4096,
+    "jobRoleArn": "arn:aws:iam::account-id:role/BatchJobRole",
+    "environment": [
+      {
+        "name": "SPRING_PROFILES_ACTIVE",
+        "value": "batch,aws"
+      },
+      {
+        "name": "DB_HOST",
+        "value": "your-rds-endpoint.region.rds.amazonaws.com"
+      },
+      {
+        "name": "DB_NAME",
+        "value": "your_database_name"
+      },
+      {
+        "name": "DB_USERNAME",
+        "value": "batch_user"
+      },
+      {
+        "name": "STRIPE_API_KEY",
+        "value": "sk_live_..."
+      },
+      {
+        "name": "AWS_REGION",
+        "value": "us-east-1"
+      }
+    ],
+    "secrets": [
+      {
+        "name": "DB_PASSWORD",
+        "valueFrom": "arn:aws:secretsmanager:region:account-id:secret:db-password"
+      },
+      {
+        "name": "STRIPE_SECRET_KEY",
+        "valueFrom": "arn:aws:secretsmanager:region:account-id:secret:stripe-secret"
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "/aws/batch/subscription-renewal",
+        "awslogs-region": "us-east-1",
+        "awslogs-stream-prefix": "batch"
+      }
+    }
+  },
+  "retryStrategy": {
+    "attempts": 3
+  },
+  "timeout": {
+    "attemptDurationSeconds": 3600
+  }
+}</code></pre>
+
+        <h3>16.2 AWS Batch Compute Environment</h3>
+
+        <p><strong>Create Fargate Compute Environment:</strong></p>
+        <div class="code-block-title">JSON - AWS Batch Compute Environment</div>
+        <pre><code>{
+  "computeEnvironmentName": "subscription-batch-fargate",
+  "type": "MANAGED",
+  "state": "ENABLED",
+  "computeResources": {
+    "type": "FARGATE",
+    "maxvCpus": 16,
+    "subnets": [
+      "subnet-12345678",
+      "subnet-87654321"
+    ],
+    "securityGroupIds": [
+      "sg-12345678"
+    ],
+    "tags": {
+      "Environment": "production",
+      "Service": "batch-processing"
+    }
+  },
+  "serviceRole": "arn:aws:iam::account-id:role/AWSBatchServiceRole"
+}</code></pre>
+
+        <h3>16.3 AWS Batch Job Queue</h3>
+
+        <div class="code-block-title">JSON - AWS Batch Job Queue</div>
+        <pre><code>{
+  "jobQueueName": "subscription-renewal-queue",
+  "state": "ENABLED",
+  "priority": 1,
+  "computeEnvironmentOrder": [
+    {
+      "order": 1,
+      "computeEnvironment": "subscription-batch-fargate"
+    }
+  ]
+}</code></pre>
+
+        <h3>16.4 EventBridge (CloudWatch Events) Scheduling</h3>
+
+        <p><strong>Create EventBridge Rule for Subscription Renewal Job:</strong></p>
+        <div class="code-block-title">JSON - EventBridge Rule</div>
+        <pre><code>{
+  "Name": "subscription-renewal-batch-schedule",
+  "Description": "Triggers subscription renewal batch job every 6 hours",
+  "ScheduleExpression": "cron(0 */6 * * ? *)",
+  "State": "ENABLED",
+  "Targets": [
+    {
+      "Id": "1",
+      "Arn": "arn:aws:batch:region:account-id:job-queue/subscription-renewal-queue",
+      "RoleArn": "arn:aws:iam::account-id:role/EventBridgeBatchRole",
+      "BatchParameters": {
+        "JobDefinition": "subscription-renewal-batch-job",
+        "JobName": "subscription-renewal-{timestamp}",
+        "ArrayProperties": {
+          "Size": 1
+        },
+        "RetryStrategy": {
+          "Attempts": 3
+        }
+      }
+    }
+  ]
+}</code></pre>
+
+        <p><strong>Create EventBridge Rule for Daily Reconciliation:</strong></p>
+        <div class="code-block-title">JSON - Daily Reconciliation Rule</div>
+        <pre><code>{
+  "Name": "subscription-reconciliation-daily",
+  "Description": "Daily reconciliation job at 2 AM UTC",
+  "ScheduleExpression": "cron(0 2 * * ? *)",
+  "State": "ENABLED",
+  "Targets": [
+    {
+      "Id": "1",
+      "Arn": "arn:aws:batch:region:account-id:job-queue/subscription-renewal-queue",
+      "RoleArn": "arn:aws:iam::account-id:role/EventBridgeBatchRole",
+      "BatchParameters": {
+        "JobDefinition": "subscription-reconciliation-batch-job",
+        "JobName": "reconciliation-{timestamp}"
+      }
+    }
+  ]
+}</code></pre>
+
+        <p><strong>Create EventBridge Rule for Email Batch Job:</strong></p>
+        <div class="code-block-title">JSON - Email Batch Rule</div>
+        <pre><code>{
+  "Name": "email-batch-hourly",
+  "Description": "Email batch job every hour",
+  "ScheduleExpression": "cron(0 * * * ? *)",
+  "State": "ENABLED",
+  "Targets": [
+    {
+      "Id": "1",
+      "Arn": "arn:aws:batch:region:account-id:job-queue/email-batch-queue",
+      "RoleArn": "arn:aws:iam::account-id:role/EventBridgeBatchRole",
+      "BatchParameters": {
+        "JobDefinition": "email-batch-job",
+        "JobName": "email-batch-{timestamp}"
+      }
+    }
+  ]
+}</code></pre>
+
+        <h3>16.5 IAM Roles and Policies</h3>
+
+        <p><strong>Batch Job Execution Role:</strong></p>
+        <div class="code-block-title">JSON - IAM Role Policy</div>
+        <pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:*:*:*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": [
+        "arn:aws:secretsmanager:region:account-id:secret:db-password*",
+        "arn:aws:secretsmanager:region:account-id:secret:stripe-secret*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ses:SendEmail",
+        "ses:SendRawEmail"
+      ],
+      "Resource": "*"
+    }
+  ]
+}</code></pre>
+
+        <h3>16.6 Dockerfile for Spring Batch Service</h3>
+
+        <div class="code-block-title">Dockerfile</div>
+        <pre><code># Multi-stage build for Spring Batch service
+FROM maven:3.8.6-openjdk-17-slim AS builder
+
+WORKDIR /app
+
+# Copy pom.xml and download dependencies
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+# Copy source code and build
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+# Runtime stage
+FROM openjdk:17-jre-slim
+
+WORKDIR /app
+
+# Install curl for health checks
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+# Copy built JAR
+COPY --from=builder /app/target/subscription-batch-service-*.jar app.jar
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:8080/actuator/health || exit 1
+
+# Run Spring Batch job (job name passed as environment variable)
+ENTRYPOINT ["java", "-jar", "app.jar", "--spring.batch.job.names=${JOB_NAME}"]</code></pre>
+
+        <h3>16.7 Spring Boot Application Configuration for AWS Batch</h3>
+
+        <div class="code-block-title">application-aws.yml</div>
+        <pre><code>spring:
+  application:
+    name: subscription-batch-service
+
+  profiles:
+    active: batch,aws
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:5432/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+  batch:
+    job:
+      enabled: false # Disable auto-start, use command line or environment variable
+    jdbc:
+      initialize-schema: always
+    table-prefix: BATCH_
+
+# AWS-specific configuration
+aws:
+  region: ${AWS_REGION}
+  secretsmanager:
+    enabled: true
+
+# Logging
+logging:
+  level:
+    org.springframework.batch: INFO
+    com.yourcompany.batch: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always</code></pre>
+
+        <h3>16.8 ECR Repository Setup</h3>
+
+        <p><strong>Create ECR Repository:</strong></p>
+        <div class="code-block-title">Bash - ECR Setup Commands</div>
+        <pre><code># Create ECR repository
+aws ecr create-repository \
+  --repository-name subscription-batch-service \
+  --region us-east-1
+
+# Get login token
+aws ecr get-login-password --region us-east-1 | \
+  docker login --username AWS --password-stdin account-id.dkr.ecr.us-east-1.amazonaws.com
+
+# Build Docker image
+docker build -t subscription-batch-service:latest .
+
+# Tag image
+docker tag subscription-batch-service:latest \
+  account-id.dkr.ecr.us-east-1.amazonaws.com/subscription-batch-service:latest
+
+# Push to ECR
+docker push account-id.dkr.ecr.us-east-1.amazonaws.com/subscription-batch-service:latest</code></pre>
+
+        <h3>16.9 Cost Estimation</h3>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Service</th>
+                    <th>Configuration</th>
+                    <th>Estimated Monthly Cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>AWS Batch (Fargate)</strong></td>
+                    <td>
+                        • 2 vCPU, 4GB RAM<br>
+                        • Runs 4 times/day (6-hour schedule)<br>
+                        • Average runtime: 30 minutes<br>
+                        • Total: 2 hours/day = 60 hours/month
+                    </td>
+                    <td>
+                        • vCPU: 2 × 60 hours × $0.04048 = $4.86<br>
+                        • Memory: 4GB × 60 hours × $0.004445 = $1.07<br>
+                        • <strong>Total: ~$6/month</strong>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Email Batch Job</strong></td>
+                    <td>
+                        • 1 vCPU, 2GB RAM<br>
+                        • Runs 24 times/day (hourly)<br>
+                        • Average runtime: 5 minutes<br>
+                        • Total: 2 hours/day = 60 hours/month
+                    </td>
+                    <td>
+                        • vCPU: 1 × 60 hours × $0.04048 = $2.43<br>
+                        • Memory: 2GB × 60 hours × $0.004445 = $0.53<br>
+                        • <strong>Total: ~$3/month</strong>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Daily Reconciliation</strong></td>
+                    <td>
+                        • 2 vCPU, 4GB RAM<br>
+                        • Runs once/day<br>
+                        • Average runtime: 45 minutes<br>
+                        • Total: 22.5 hours/month
+                    </td>
+                    <td>
+                        • vCPU: 2 × 22.5 hours × $0.04048 = $1.82<br>
+                        • Memory: 4GB × 22.5 hours × $0.004445 = $0.40<br>
+                        • <strong>Total: ~$2.50/month</strong>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Total Monthly Cost</strong></td>
+                    <td colspan="2"><strong>~$11.50/month</strong> (excluding RDS, which is shared)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            <strong>💡 Cost Savings:</strong>
+            <p>Compared to running batch jobs on ECS instances:</p>
+            <ul>
+                <li>ECS t3.medium instance: ~$30/month (always running)</li>
+                <li>AWS Batch Fargate: ~$11.50/month (pay per use)</li>
+                <li><strong>Savings: ~$18.50/month (62% reduction)</strong></li>
+            </ul>
+        </div>
+
+        <h2 id="database-schema-considerations">7. Database Schema Considerations</h2>
+
+        <h3>6.1 Additional Fields for Batch Job</h3>
+
+        <p><strong>Recommended Additions:</strong></p>
+        <div class="code-block-title">SQL Migration</div>
+        <pre><code>ALTER TABLE membership_subscription
+ADD COLUMN last_reconciliation_at TIMESTAMP,
+ADD COLUMN last_stripe_sync_at TIMESTAMP,
+ADD COLUMN reconciliation_status VARCHAR(20) DEFAULT 'PENDING',
+ADD COLUMN reconciliation_error TEXT;
+
+-- Index for reconciliation
+CREATE INDEX IF NOT EXISTS idx_membership_subscription_reconciliation
+ON membership_subscription(reconciliation_status, last_reconciliation_at);</code></pre>
+
+        <p><strong>Fields Purpose:</strong></p>
+        <ul>
+            <li><code>last_reconciliation_at</code> - Track when subscription was last checked</li>
+            <li><code>last_stripe_sync_at</code> - Track when Stripe data was last fetched</li>
+            <li><code>reconciliation_status</code> - Track reconciliation state (PENDING, SUCCESS, FAILED)</li>
+            <li><code>reconciliation_error</code> - Store error messages for failed reconciliations</li>
+        </ul>
+
+        <h3>6.2 Audit Table for Batch Job</h3>
+
+        <p><strong>Recommended Table:</strong></p>
+        <div class="code-block-title">SQL</div>
+        <pre><code>CREATE TABLE membership_subscription_reconciliation_log (
+    id BIGINT PRIMARY KEY,
+    subscription_id BIGINT NOT NULL,
+    tenant_id VARCHAR(255) NOT NULL,
+    reconciliation_type VARCHAR(50) NOT NULL, -- 'BATCH_RENEWAL', 'DAILY_RECONCILIATION', 'WEBHOOK'
+    status VARCHAR(20) NOT NULL, -- 'SUCCESS', 'FAILED', 'SKIPPED'
+    local_period_start DATE,
+    local_period_end DATE,
+    stripe_period_start DATE,
+    stripe_period_end DATE,
+    local_status VARCHAR(20),
+    stripe_status VARCHAR(20),
+    changes_json JSONB, -- Store what changed
+    error_message TEXT,
+    processed_at TIMESTAMP NOT NULL,
+    FOREIGN KEY (subscription_id) REFERENCES membership_subscription(id)
+);
+
+CREATE INDEX idx_reconciliation_log_subscription
+ON membership_subscription_reconciliation_log(subscription_id, processed_at DESC);
+
+CREATE INDEX idx_reconciliation_log_tenant
+ON membership_subscription_reconciliation_log(tenant_id, processed_at DESC);</code></pre>
+
+        <h2 id="stripe-api-integration">8. Stripe API Integration</h2>
+
+        <h3>7.1 Stripe API Rate Limits</h3>
+
+        <p><strong>Stripe Rate Limits:</strong></p>
+        <ul>
+            <li><strong>100 requests per second</strong> (per API key)</li>
+            <li><strong>Burst capacity</strong>: Can handle short spikes</li>
+            <li><strong>Rate limit headers</strong>: <code>Stripe-RateLimit-Limit</code>, <code>Stripe-RateLimit-Remaining</code></li>
+        </ul>
+
+        <p><strong>Batch Job Considerations:</strong></p>
+        <ul>
+            <li>Process subscriptions in batches of 100</li>
+            <li>Implement exponential backoff for rate limit errors</li>
+            <li>Use Stripe's <code>expand</code> parameter to reduce API calls</li>
+            <li>Cache Stripe data when possible</li>
+        </ul>
+
+        <h3>7.2 Multi-Tenant Stripe Integration</h3>
+
+        <p><strong>Tenant-Specific Stripe Accounts:</strong></p>
+        <ul>
+            <li>Each tenant has its own Stripe account</li>
+            <li>Each tenant has its own API keys</li>
+            <li>Webhook secrets are tenant-specific</li>
+        </ul>
+
+        <p><strong>Batch Job Implementation:</strong></p>
+        <div class="code-block-title">TypeScript</div>
+        <pre><code>// Get Stripe client for tenant
+function getStripeClient(tenantId: string): Stripe {
+  const apiKey = getTenantStripeApiKey(tenantId);
+  return new Stripe(apiKey, {
+    apiVersion: '2024-11-20.acacia',
+  });
+}
+
+// Process subscriptions per tenant
+async function processTenantSubscriptions(tenantId: string) {
+  const stripe = getStripeClient(tenantId);
+  const subscriptions = await getTenantSubscriptions(tenantId);
+
+  for (const subscription of subscriptions) {
+    const stripeSub = await stripe.subscriptions.retrieve(
+      subscription.stripeSubscriptionId
+    );
+    await updateSubscription(subscription, stripeSub);
+  }
+}</code></pre>
+
+        <h3>7.3 Stripe Webhook vs API Comparison</h3>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Approach</th>
+                    <th>Advantages</th>
+                    <th>Disadvantages</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Webhook Approach</strong></td>
+                    <td>
+                        ✅ Real-time updates<br>
+                        ✅ No API rate limit concerns<br>
+                        ✅ Stripe pushes data to us
+                    </td>
+                    <td>
+                        ❌ Can be missed or delayed<br>
+                        ❌ Requires webhook infrastructure<br>
+                        ❌ No historical reconciliation
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>API Approach (Batch Job)</strong></td>
+                    <td>
+                        ✅ Reliable (we control when to fetch)<br>
+                        ✅ Can reconcile historical data<br>
+                        ✅ Works even if webhooks fail
+                    </td>
+                    <td>
+                        ❌ Subject to API rate limits<br>
+                        ❌ Requires API calls (cost)<br>
+                        ❌ Not real-time
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Hybrid Approach</strong></td>
+                    <td>
+                        ✅ Best of both worlds<br>
+                        ✅ Real-time for critical events<br>
+                        ✅ Batch for renewals and reconciliation<br>
+                        ✅ Redundancy and reliability
+                    </td>
+                    <td>
+                        ⚠️ More complex to implement<br>
+                        ⚠️ Requires both systems
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 id="multi-tenant-considerations">9. Multi-Tenant Considerations</h2>
+
+        <h3>8.1 Tenant Isolation</h3>
+
+        <p><strong>Database Level:</strong></p>
+        <ul>
+            <li>All queries must filter by <code>tenant_id</code></li>
+            <li>Indexes should include <code>tenant_id</code></li>
+            <li>Foreign key constraints respect tenant boundaries</li>
+        </ul>
+
+        <p><strong>API Level:</strong></p>
+        <ul>
+            <li>Each tenant has separate Stripe account</li>
+            <li>Tenant-specific API keys</li>
+            <li>Tenant-specific webhook secrets</li>
+        </ul>
+
+        <p><strong>Batch Job Level:</strong></p>
+        <ul>
+            <li>Process tenants sequentially or in parallel</li>
+            <li>Tenant-specific error handling</li>
+            <li>Tenant-specific rate limiting</li>
+        </ul>
+
+        <h3>8.2 Tenant Prioritization</h3>
+
+        <p><strong>Priority Levels:</strong></p>
+        <ol>
+            <li><strong>High Priority</strong>: Large tenants with many subscriptions</li>
+            <li><strong>Medium Priority</strong>: Medium-sized tenants</li>
+            <li><strong>Low Priority</strong>: Small tenants with few subscriptions</li>
+        </ol>
+
+        <p><strong>Implementation:</strong></p>
+        <div class="code-block-title">TypeScript</div>
+        <pre><code>// Process tenants by priority
+const tenants = await getTenantsByPriority();
+for (const tenant of tenants) {
+  await processTenantSubscriptions(tenant.id);
+
+  // Rate limiting per tenant
+  await delay(1000); // 1 second between tenants
+}</code></pre>
+
+        <h2 id="performance-analysis">10. Performance Analysis</h2>
+
+        <h3>9.1 Batch Job Performance</h3>
+
+        <p><strong>Processing Time Estimates:</strong></p>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Scale</th>
+                    <th>Subscriptions</th>
+                    <th>Batches</th>
+                    <th>API Calls</th>
+                    <th>Processing Time</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Small Scale</strong></td>
+                    <td>1,000</td>
+                    <td>10 batches</td>
+                    <td>~10 calls</td>
+                    <td>~30 seconds</td>
+                    <td><span class="status-indicator status-success">✅ Very fast</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Medium Scale</strong></td>
+                    <td>50,000</td>
+                    <td>500 batches</td>
+                    <td>~500 calls</td>
+                    <td>~15 minutes</td>
+                    <td><span class="status-indicator status-success">✅ Acceptable</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Large Scale</strong></td>
+                    <td>1,000,000</td>
+                    <td>10,000 batches</td>
+                    <td>~10,000 calls</td>
+                    <td>~5 hours</td>
+                    <td><span class="status-indicator status-warning">⚠️ Needs optimization</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong>Optimization Strategies:</strong></p>
+        <ul>
+            <li>Process only subscriptions approaching renewal (not all)</li>
+            <li>Parallel processing across tenants</li>
+            <li>Incremental processing (process in chunks over time)</li>
+            <li>Cache Stripe data when possible</li>
+        </ul>
+
+        <h3>9.2 Database Performance</h3>
+
+        <p><strong>Query Performance:</strong></p>
+        <ul>
+            <li>Indexed queries: &lt; 10ms per query</li>
+            <li>Batch updates: ~100ms per batch of 100</li>
+            <li>Reconciliation query: ~1 second for 10,000 records</li>
+        </ul>
+
+        <p><strong>Optimization:</strong></p>
+        <ul>
+            <li>Use batch updates instead of individual updates</li>
+            <li>Use database transactions for consistency</li>
+            <li>Index all query fields</li>
+            <li>Partition by tenant_id (if needed)</li>
+        </ul>
+
+        <h2 id="risk-assessment">11. Risk Assessment</h2>
+
+        <h3>10.1 Webhook-Only Approach Risks</h3>
+
+        <p><strong>High Risk:</strong></p>
+        <ul>
+            <li>❌ Missed webhooks → Stale subscription data</li>
+            <li>❌ Backend downtime → Missed renewals</li>
+            <li>❌ Network issues → Failed webhook processing</li>
+            <li>❌ Webhook delivery delays → Delayed updates</li>
+        </ul>
+
+        <p><strong>Medium Risk:</strong></p>
+        <ul>
+            <li>⚠️ Concurrent webhook processing → Race conditions</li>
+            <li>⚠️ Database connection exhaustion</li>
+            <li>⚠️ Stripe webhook retry exhaustion</li>
+        </ul>
+
+        <h3>10.2 Batch Job Approach Risks</h3>
+
+        <p><strong>High Risk:</strong></p>
+        <ul>
+            <li>❌ Stripe API rate limits → Job failures</li>
+            <li>❌ Long processing time → Delayed updates</li>
+            <li>❌ Job failures → Missed renewals</li>
+        </ul>
+
+        <p><strong>Medium Risk:</strong></p>
+        <ul>
+            <li>⚠️ Database performance during batch processing</li>
+            <li>⚠️ Network issues during API calls</li>
+            <li>⚠️ Stripe API downtime</li>
+        </ul>
+
+        <h3>10.3 Hybrid Approach Risks</h3>
+
+        <p><strong>Mitigated Risks:</strong></p>
+        <ul>
+            <li>✅ Webhook failures → Batch job handles</li>
+            <li>✅ Batch job failures → Webhooks handle</li>
+            <li>✅ Missed renewals → Reconciliation job fixes</li>
+            <li>✅ Stale data → Daily reconciliation fixes</li>
+        </ul>
+
+        <p><strong>Remaining Risks:</strong></p>
+        <ul>
+            <li>⚠️ Both systems fail simultaneously (very low probability)</li>
+            <li>⚠️ Stripe API downtime (affects batch job only)</li>
+            <li>⚠️ Database downtime (affects both)</li>
+        </ul>
+
+        <h2 id="testing-approach">12. Testing Approach and Strategies</h2>
+
+        <h3>11.1 Overview</h3>
+
+        <p>Testing subscription renewal functionality presents unique challenges because:</p>
+        <ul>
+            <li><strong>Monthly Renewal Cycle</strong>: Waiting a full month to test renewals is impractical</li>
+            <li><strong>Webhook Dependencies</strong>: Testing requires simulating Stripe webhook events</li>
+            <li><strong>Multi-Tenant Complexity</strong>: Testing across multiple tenants adds complexity</li>
+            <li><strong>Data Consistency</strong>: Ensuring database updates match Stripe subscription state</li>
+        </ul>
+
+        <p>This section provides comprehensive testing strategies that allow testing subscription renewals <strong>without waiting a month</strong>, using Stripe test mode, webhook simulation, and batch job testing.</p>
+
+        <h3>11.2 Stripe Test Mode Setup</h3>
+
+        <h4>11.2.1 Test Mode Configuration</h4>
+
+        <p><strong>Environment Variables:</strong></p>
+        <div class="code-block-title">Bash</div>
+        <pre><code># Test Mode Stripe Keys
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_test_...
+
+# Production Mode Stripe Keys (for comparison)
+STRIPE_SECRET_KEY_PROD=sk_live_...
+STRIPE_PUBLISHABLE_KEY_PROD=pk_live_...</code></pre>
+
+        <p><strong>Test Mode Benefits:</strong></p>
+        <ul>
+            <li>✅ No real charges (uses test cards)</li>
+            <li>✅ Can create subscriptions instantly</li>
+            <li>✅ Can advance subscription billing cycles</li>
+            <li>✅ Can simulate payment failures</li>
+            <li>✅ Can test webhooks locally</li>
+        </ul>
+
+        <h4>11.2.2 Test Card Numbers</h4>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Card Type</th>
+                    <th>Card Number</th>
+                    <th>Use Case</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Successful Payment</strong></td>
+                    <td><code>4242 4242 4242 4242</code></td>
+                    <td>Standard successful payment</td>
+                </tr>
+                <tr>
+                    <td><strong>Card Declined</strong></td>
+                    <td><code>4000 0000 0000 0002</code></td>
+                    <td>Test payment failure</td>
+                </tr>
+                <tr>
+                    <td><strong>Insufficient Funds</strong></td>
+                    <td><code>4000 0000 0000 9995</code></td>
+                    <td>Test insufficient funds scenario</td>
+                </tr>
+                <tr>
+                    <td><strong>Expired Card</strong></td>
+                    <td><code>4000 0000 0000 0069</code></td>
+                    <td>Test expired card scenario</td>
+                </tr>
+                <tr>
+                    <td><strong>3D Secure</strong></td>
+                    <td><code>4000 0027 6000 3184</code></td>
+                    <td>Test 3D Secure authentication</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>11.3 Testing Subscription Renewals Without Waiting</h3>
+
+        <h4>11.3.1 Method 1: Stripe CLI Webhook Forwarding</h4>
+
+        <p><strong>Setup Stripe CLI:</strong></p>
+        <div class="code-block-title">Bash</div>
+        <pre><code># Install Stripe CLI
+# macOS: brew install stripe/stripe-cli/stripe
+# Windows: Download from https://stripe.com/docs/stripe-cli
+
+# Login to Stripe
+stripe login
+
+# Forward webhooks to local server
+stripe listen --forward-to localhost:3000/api/webhooks/stripe</code></pre>
+
+        <p><strong>Trigger Test Subscription Renewal:</strong></p>
+        <div class="code-block-title">Bash</div>
+        <pre><code># Create a test subscription with 1-day billing cycle
+stripe subscriptions create \
+  --customer cus_test_customer \
+  --items[0][price]=price_test_monthly \
+  --billing-cycle-anchor=now \
+  --billing-cycle-anchor-behavior=now
+
+# Advance subscription billing cycle (simulate renewal)
+stripe subscriptions update sub_test_subscription \
+  --billing-cycle-anchor=now \
+  --proration-behavior=none
+
+# Trigger invoice.payment_succeeded webhook manually
+stripe trigger invoice.payment_succeeded \
+  --override subscription=sub_test_subscription</code></pre>
+
+        <h4>11.3.2 Method 2: Stripe Dashboard Test Mode</h4>
+
+        <p><strong>Steps:</strong></p>
+        <ol>
+            <li>Go to Stripe Dashboard → Test Mode</li>
+            <li>Create a test customer</li>
+            <li>Create a test subscription with <strong>daily billing</strong> (for faster testing)</li>
+            <li>Manually trigger renewal:
+                <ul>
+                    <li>Go to Subscriptions → Select subscription</li>
+                    <li>Click "..." → "Update subscription"</li>
+                    <li>Change billing cycle anchor to "now"</li>
+                    <li>Save (triggers renewal immediately)</li>
+                </ul>
+            </li>
+        </ol>
+
+        <p><strong>Daily Billing Setup:</strong></p>
+        <div class="code-block-title">TypeScript</div>
+        <pre><code>// Create test price with daily billing
+const price = await stripe.prices.create({
+  unit_amount: 1000, // $10.00
+  currency: 'usd',
+  recurring: {
+    interval: 'day', // Daily instead of monthly
+    interval_count: 1,
+  },
+  product_data: {
+    name: 'Test Monthly Plan (Daily Billing)',
+  },
+});</code></pre>
+
+        <h4>11.3.3 Method 3: Programmatic Subscription Renewal</h4>
+
+        <p><strong>Create Test Script:</strong></p>
+        <div class="code-block-title">TypeScript - scripts/test-subscription-renewal.ts</div>
+        <pre><code>import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2024-11-20.acacia',
+});
+
+async function testSubscriptionRenewal(subscriptionId: string) {
+  // 1. Get current subscription
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
+  console.log('Current subscription:', {
+    id: subscription.id,
+    current_period_start: new Date(subscription.current_period_start * 1000),
+    current_period_end: new Date(subscription.current_period_end * 1000),
+    status: subscription.status,
+  });
+
+  // 2. Advance billing cycle (simulate renewal)
+  const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
+    billing_cycle_anchor: 'now', // Renew immediately
+    proration_behavior: 'none', // Don't prorate
+  });
+
+  console.log('Updated subscription:', {
+    id: updatedSubscription.id,
+    current_period_start: new Date(updatedSubscription.current_period_start * 1000),
+    current_period_end: new Date(updatedSubscription.current_period_end * 1000),
+    status: updatedSubscription.status,
+  });
+
+  // 3. Trigger invoice creation (if needed)
+  const invoice = await stripe.invoices.create({
+    customer: subscription.customer as string,
+    subscription: subscriptionId,
+    auto_advance: true, // Automatically finalize invoice
+  });
+
+  // 4. Pay invoice (simulates successful payment)
+  const paidInvoice = await stripe.invoices.pay(invoice.id);
+
+  console.log('Invoice paid:', {
+    id: paidInvoice.id,
+    status: paidInvoice.status,
+    amount_paid: paidInvoice.amount_paid,
+  });
+
+  return updatedSubscription;
+}
+
+// Run test
+testSubscriptionRenewal('sub_test_subscription_id')
+  .then(() => console.log('Test completed'))
+  .catch(console.error);</code></pre>
+
+        <h4>11.3.4 Method 4: Mock Webhook Events</h4>
+
+        <p><strong>Create Mock Webhook Handler:</strong></p>
+        <div class="code-block-title">TypeScript - scripts/mock-webhook-renewal.ts</div>
+        <pre><code>// scripts/mock-webhook-renewal.ts
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2024-11-20.acacia',
+});
+
+async function mockSubscriptionRenewalWebhook(subscriptionId: string) {
+  // 1. Fetch subscription from Stripe
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+    expand: ['latest_invoice', 'customer'],
+  });
+
+  // 2. Create mock webhook event payload
+  const mockEvent: Stripe.Event = {
+    id: `evt_test_${Date.now()}`,
+    object: 'event',
+    api_version: '2024-11-20.acacia',
+    created: Math.floor(Date.now() / 1000),
+    type: 'invoice.payment_succeeded',
+    data: {
+      object: {
+        id: subscription.latest_invoice as string,
+        object: 'invoice',
+        subscription: subscriptionId,
+        customer: subscription.customer as string,
+        status: 'paid',
+        amount_paid: subscription.items.data[0].price.unit_amount || 0,
+        period_start: subscription.current_period_start,
+        period_end: subscription.current_period_end,
+      } as Stripe.Invoice,
+      previous_attributes: {},
+    },
+    livemode: false,
+    pending_webhooks: 0,
+    request: {
+      id: `req_test_${Date.now()}`,
+      idempotency_key: null,
+    },
+  };
+
+  // 3. Send to webhook handler
+  const response = await fetch('http://localhost:3000/api/webhooks/stripe', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Stripe-Signature': 'mock_signature', // Will need proper signature for production
+    },
+    body: JSON.stringify(mockEvent),
+  });
+
+  console.log('Webhook response:', await response.text());
+}
+
+// Run mock webhook
+mockSubscriptionRenewalWebhook('sub_test_subscription_id')
+  .then(() => console.log('Mock webhook sent'))
+  .catch(console.error);</code></pre>
+
+        <h3>11.4 Testing Batch Jobs</h3>
+
+        <h4>11.4.1 Manual Batch Job Trigger</h4>
+
+        <p><strong>Create Test Endpoint:</strong></p>
+        <div class="code-block-title">TypeScript - src/app/api/test/subscription-renewal-batch/route.ts</div>
+        <pre><code>import { NextRequest, NextResponse } from 'next/server';
+import { getCachedApiJwt, generateApiJwt } from '@/lib/api/jwt';
+
+export async function POST(req: NextRequest) {
+  // Verify test secret (for security)
+  const authHeader = req.headers.get('authorization');
+  if (authHeader !== `Bearer ${process.env.TEST_SECRET}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    // Trigger batch job manually
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+    const jwt = await getCachedApiJwt() || await generateApiJwt();
+
+    const response = await fetch(`${API_BASE_URL}/api/cron/subscription-renewal`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${jwt}`,
+      },
+      body: JSON.stringify({
+        tenantId: req.body?.tenantId, // Optional: test specific tenant
+        batchSize: 10, // Small batch for testing
+        maxSubscriptions: 100, // Limit for testing
+      }),
+    });
+
+    const result = await response.json();
+    return NextResponse.json(result);
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Batch job failed', details: String(error) },
+      { status: 500 }
+    );
+  }
+}</code></pre>
+
+        <p><strong>Test Batch Job:</strong></p>
+        <div class="code-block-title">Bash</div>
+        <pre><code># Trigger batch job manually
+curl -X POST http://localhost:3000/api/test/subscription-renewal-batch \
+  -H "Authorization: Bearer YOUR_TEST_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"tenantId": "tenant_demo_001"}'</code></pre>
+
+        <h4>11.4.2 Test Data Setup for Batch Job</h4>
+
+        <p><strong>Create Test Subscriptions:</strong></p>
+        <div class="code-block-title">SQL</div>
+        <pre><code>-- Insert test subscriptions with different renewal dates
+INSERT INTO membership_subscription (
+  tenant_id,
+  user_profile_id,
+  membership_plan_id,
+  subscription_status,
+  current_period_start,
+  current_period_end,
+  stripe_subscription_id,
+  stripe_customer_id,
+  created_at,
+  updated_at
+) VALUES
+-- Subscription renewing today
+('tenant_demo_001', 1, 1, 'ACTIVE',
+ CURRENT_DATE - INTERVAL '29 days',
+ CURRENT_DATE, -- Renews today
+ 'sub_test_renew_today',
+ 'cus_test_customer_1',
+ NOW(), NOW()),
+
+-- Subscription renewing tomorrow
+('tenant_demo_001', 2, 1, 'ACTIVE',
+ CURRENT_DATE - INTERVAL '28 days',
+ CURRENT_DATE + INTERVAL '1 day', -- Renews tomorrow
+ 'sub_test_renew_tomorrow',
+ 'cus_test_customer_2',
+ NOW(), NOW()),
+
+-- Subscription renewing in 7 days
+('tenant_demo_001', 3, 1, 'ACTIVE',
+ CURRENT_DATE - INTERVAL '21 days',
+ CURRENT_DATE + INTERVAL '7 days', -- Renews in 7 days
+ 'sub_test_renew_week',
+ 'cus_test_customer_3',
+ NOW(), NOW());</code></pre>
+
+        <h3>11.5 Testing Webhook Processing</h3>
+
+        <h4>11.5.1 Stripe CLI Webhook Testing</h4>
+
+        <p><strong>Listen to Webhooks:</strong></p>
+        <div class="code-block-title">Bash</div>
+        <pre><code># Forward webhooks to local server
+stripe listen --forward-to localhost:3000/api/webhooks/stripe \
+  --events invoice.payment_succeeded,customer.subscription.updated
+
+# In another terminal, trigger test events
+stripe trigger invoice.payment_succeeded
+stripe trigger customer.subscription.updated</code></pre>
+
+        <p><strong>Test Specific Subscription:</strong></p>
+        <div class="code-block-title">Bash</div>
+        <pre><code># Trigger renewal webhook for specific subscription
+stripe trigger invoice.payment_succeeded \
+  --override subscription=sub_test_subscription_id \
+  --override customer=cus_test_customer_id</code></pre>
+
+        <h4>11.5.2 Webhook Event Verification</h4>
+
+        <p><strong>Check Webhook Processing:</strong></p>
+        <div class="code-block-title">TypeScript</div>
+        <pre><code>// scripts/verify-webhook-processing.ts
+async function verifyWebhookProcessing(subscriptionId: string) {
+  // 1. Get subscription from database
+  const dbSubscription = await fetch(
+    `/api/proxy/membership-subscriptions?stripeSubscriptionId.equals=${subscriptionId}`
+  ).then(r => r.json());
+
+  // 2. Get subscription from Stripe
+  const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+
+  // 3. Compare
+  console.log('Database:', {
+    current_period_start: dbSubscription[0].currentPeriodStart,
+    current_period_end: dbSubscription[0].currentPeriodEnd,
+    status: dbSubscription[0].subscriptionStatus,
+  });
+
+  console.log('Stripe:', {
+    current_period_start: new Date(stripeSubscription.current_period_start * 1000),
+    current_period_end: new Date(stripeSubscription.current_period_end * 1000),
+    status: stripeSubscription.status,
+  });
+
+  // 4. Verify match
+  const matches =
+    dbSubscription[0].currentPeriodEnd ===
+    new Date(stripeSubscription.current_period_end * 1000).toISOString().split('T')[0];
+
+  console.log('Match:', matches ? '✅' : '❌');
+}</code></pre>
+
+        <h3>11.6 Testing Reconciliation Job</h3>
+
+        <h4>11.6.1 Create Test Discrepancies</h4>
+
+        <p><strong>Manually Create Discrepancies:</strong></p>
+        <div class="code-block-title">SQL</div>
+        <pre><code>-- Update database to create discrepancy with Stripe
+UPDATE membership_subscription
+SET
+  current_period_end = CURRENT_DATE - INTERVAL '1 day', -- Outdated
+  subscription_status = 'ACTIVE' -- Should be updated
+WHERE stripe_subscription_id = 'sub_test_subscription_id';
+
+-- Run reconciliation job
+-- Verify it fixes the discrepancy</code></pre>
+
+        <h4>11.6.2 Test Reconciliation Logic</h4>
+
+        <p><strong>Reconciliation Test Script:</strong></p>
+        <div class="code-block-title">TypeScript</div>
+        <pre><code>// scripts/test-reconciliation.ts
+async function testReconciliation() {
+  // 1. Get all active subscriptions
+  const subscriptions = await fetch(
+    '/api/proxy/membership-subscriptions?subscriptionStatus.equals=ACTIVE'
+  ).then(r => r.json());
+
+  // 2. For each subscription, compare with Stripe
+  const discrepancies = [];
+
+  for (const sub of subscriptions) {
+    if (!sub.stripeSubscriptionId) continue;
+
+    const stripeSub = await stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
+
+    const dbPeriodEnd = new Date(sub.currentPeriodEnd);
+    const stripePeriodEnd = new Date(stripeSub.current_period_end * 1000);
+
+    if (dbPeriodEnd.getTime() !== stripePeriodEnd.getTime()) {
+      discrepancies.push({
+        subscriptionId: sub.id,
+        stripeSubscriptionId: sub.stripeSubscriptionId,
+        dbPeriodEnd: dbPeriodEnd.toISOString(),
+        stripePeriodEnd: stripePeriodEnd.toISOString(),
+      });
+    }
+  }
+
+  console.log(`Found ${discrepancies.length} discrepancies:`, discrepancies);
+
+  // 3. Trigger reconciliation job
+  await fetch('/api/cron/subscription-reconciliation', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${process.env.TEST_SECRET}` },
+  });
+
+  // 4. Verify discrepancies fixed
+  // (re-run comparison)
+}</code></pre>
+
+        <h3>11.7 Integration Testing</h3>
+
+        <h4>11.7.1 End-to-End Renewal Test</h4>
+
+        <p><strong>Complete Test Flow:</strong></p>
+        <div class="code-block-title">TypeScript</div>
+        <pre><code>// tests/integration/subscription-renewal.test.ts
+describe('Subscription Renewal Integration', () => {
+  let testSubscriptionId: string;
+  let testCustomerId: string;
+
+  beforeEach(async () => {
+    // 1. Create test customer
+    const customer = await stripe.customers.create({
+      email: 'test@example.com',
+      metadata: { test: 'true' },
+    });
+    testCustomerId = customer.id;
+
+    // 2. Create test subscription with daily billing
+    const subscription = await stripe.subscriptions.create({
+      customer: testCustomerId,
+      items: [{ price: 'price_test_daily' }],
+      metadata: {
+        tenantId: 'tenant_demo_001',
+        userProfileId: '1',
+        membershipPlanId: '1',
+      },
+    });
+    testSubscriptionId = subscription.id;
+  });
+
+  afterEach(async () => {
+    // Cleanup
+    await stripe.subscriptions.del(testSubscriptionId);
+    await stripe.customers.del(testCustomerId);
+  });
+
+  test('Subscription renewal updates database', async () => {
+    // 1. Get initial state
+    const initialDbSub = await getSubscriptionFromDb(testSubscriptionId);
+    const initialStripeSub = await stripe.subscriptions.retrieve(testSubscriptionId);
+
+    // 2. Advance billing cycle (simulate renewal)
+    await stripe.subscriptions.update(testSubscriptionId, {
+      billing_cycle_anchor: 'now',
+    });
+
+    // 3. Trigger payment webhook
+    await triggerWebhook('invoice.payment_succeeded', {
+      subscription: testSubscriptionId,
+    });
+
+    // 4. Wait for webhook processing
+    await wait(2000);
+
+    // 5. Verify database updated
+    const updatedDbSub = await getSubscriptionFromDb(testSubscriptionId);
+    const updatedStripeSub = await stripe.subscriptions.retrieve(testSubscriptionId);
+
+    expect(updatedDbSub.currentPeriodEnd).toBe(
+      formatDate(updatedStripeSub.current_period_end)
+    );
+    expect(updatedDbSub.subscriptionStatus).toBe('ACTIVE');
+  });
+
+  test('Batch job processes renewals', async () => {
+    // 1. Set subscription to renew today
+    await updateSubscriptionPeriodEnd(testSubscriptionId, new Date());
+
+    // 2. Run batch job
+    await triggerBatchJob();
+
+    // 3. Verify database updated
+    const dbSub = await getSubscriptionFromDb(testSubscriptionId);
+    const stripeSub = await stripe.subscriptions.retrieve(testSubscriptionId);
+
+    expect(dbSub.currentPeriodEnd).toBe(formatDate(stripeSub.current_period_end));
+  });
+});</code></pre>
+
+        <h3>11.8 Test Data Management</h3>
+
+        <h4>11.8.1 Test Subscription Factory</h4>
+
+        <p><strong>Create Test Data Helper:</strong></p>
+        <div class="code-block-title">TypeScript</div>
+        <pre><code>// tests/helpers/subscription-factory.ts
+export class SubscriptionTestFactory {
+  static async createTestSubscription(options: {
+    tenantId: string;
+    userId: string;
+    planId: number;
+    billingInterval?: 'day' | 'month';
+    trialDays?: number;
+  }) {
+    // 1. Create Stripe customer
+    const customer = await stripe.customers.create({
+      email: `test_${Date.now()}@example.com`,
+      metadata: {
+        tenantId: options.tenantId,
+        userId: options.userId,
+      },
+    });
+
+    // 2. Create Stripe price (if needed)
+    const price = await stripe.prices.create({
+      unit_amount: 1000, // $10.00
+      currency: 'usd',
+      recurring: {
+        interval: options.billingInterval || 'month',
+      },
+      product_data: {
+        name: 'Test Plan',
+      },
+    });
+
+    // 3. Create Stripe subscription
+    const subscription = await stripe.subscriptions.create({
+      customer: customer.id,
+      items: [{ price: price.id }],
+      trial_period_days: options.trialDays || 0,
+      metadata: {
+        tenantId: options.tenantId,
+        userProfileId: options.userId,
+        membershipPlanId: String(options.planId),
+      },
+    });
+
+    // 4. Create database record
+    const dbSubscription = await createMembershipSubscription({
+      tenantId: options.tenantId,
+      userProfileId: parseInt(options.userId),
+      membershipPlanId: options.planId,
+      stripeSubscriptionId: subscription.id,
+      stripeCustomerId: customer.id,
+      subscriptionStatus: options.trialDays ? 'TRIAL' : 'ACTIVE',
+      currentPeriodStart: new Date(subscription.current_period_start * 1000),
+      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+    });
+
+    return {
+      stripe: subscription,
+      database: dbSubscription,
+      customer,
+      price,
+    };
+  }
+
+  static async cleanupTestSubscription(subscriptionId: string) {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    await stripe.subscriptions.del(subscriptionId);
+    await stripe.customers.del(subscription.customer as string);
+    await deleteMembershipSubscription(subscriptionId);
+  }
+}</code></pre>
+
+        <h4>11.8.2 Test Database Seeding</h4>
+
+        <p><strong>Seed Test Data:</strong></p>
+        <div class="code-block-title">SQL</div>
+        <pre><code>-- scripts/seed-test-subscriptions.sql
+-- Create test subscriptions with various states
+
+-- Active subscription renewing today
+INSERT INTO membership_subscription (
+  tenant_id, user_profile_id, membership_plan_id,
+  subscription_status, current_period_start, current_period_end,
+  stripe_subscription_id, stripe_customer_id
+) VALUES (
+  'tenant_demo_001', 1, 1,
+  'ACTIVE', CURRENT_DATE - INTERVAL '29 days', CURRENT_DATE,
+  'sub_test_renew_today_1', 'cus_test_1'
+);
+
+-- Active subscription renewing tomorrow
+INSERT INTO membership_subscription (
+  tenant_id, user_profile_id, membership_plan_id,
+  subscription_status, current_period_start, current_period_end,
+  stripe_subscription_id, stripe_customer_id
+) VALUES (
+  'tenant_demo_001', 2, 1,
+  'ACTIVE', CURRENT_DATE - INTERVAL '28 days', CURRENT_DATE + INTERVAL '1 day',
+  'sub_test_renew_tomorrow_1', 'cus_test_2'
+);
+
+-- Trial subscription ending today
+INSERT INTO membership_subscription (
+  tenant_id, user_profile_id, membership_plan_id,
+  subscription_status, current_period_start, current_period_end,
+  trial_start, trial_end,
+  stripe_subscription_id, stripe_customer_id
+) VALUES (
+  'tenant_demo_001', 3, 1,
+  'TRIAL', CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE + INTERVAL '1 day',
+  CURRENT_DATE - INTERVAL '7 days', CURRENT_DATE,
+  'sub_test_trial_ending', 'cus_test_3'
+);</code></pre>
+
+        <h3>11.9 Testing Checklist</h3>
+
+        <h4>11.9.1 Webhook Testing Checklist</h4>
+
+        <ul class="checklist">
+            <li><strong>Webhook Reception</strong>
+                <ul class="checklist">
+                    <li>Webhook received from Stripe</li>
+                    <li>Webhook signature verified</li>
+                    <li>Webhook forwarded to backend</li>
+                    <li>Webhook processed successfully</li>
+                </ul>
+            </li>
+            <li><strong>Subscription Renewal Webhook</strong>
+                <ul class="checklist">
+                    <li><code>invoice.payment_succeeded</code> webhook received</li>
+                    <li>Database <code>current_period_start</code> updated</li>
+                    <li>Database <code>current_period_end</code> updated</li>
+                    <li>Database <code>subscription_status</code> set to ACTIVE</li>
+                    <li>Reconciliation log created</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h4>11.9.2 Batch Job Testing Checklist</h4>
+
+        <ul class="checklist">
+            <li><strong>Batch Job Execution</strong>
+                <ul class="checklist">
+                    <li>Job runs on schedule</li>
+                    <li>Job processes subscriptions correctly</li>
+                    <li>Job handles errors gracefully</li>
+                    <li>Job logs execution details</li>
+                </ul>
+            </li>
+            <li><strong>Subscription Processing</strong>
+                <ul class="checklist">
+                    <li>Subscriptions approaching renewal identified</li>
+                    <li>Stripe API called for each subscription</li>
+                    <li>Database updated with Stripe data</li>
+                    <li>Discrepancies detected and fixed</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h4>11.9.3 Reconciliation Testing Checklist</h4>
+
+        <ul class="checklist">
+            <li><strong>Reconciliation Job</strong>
+                <ul class="checklist">
+                    <li>Job runs daily</li>
+                    <li>All active subscriptions checked</li>
+                    <li>Discrepancies identified</li>
+                    <li>Discrepancies fixed automatically</li>
+                </ul>
+            </li>
+            <li><strong>Discrepancy Detection</strong>
+                <ul class="checklist">
+                    <li>Period date mismatches detected</li>
+                    <li>Status mismatches detected</li>
+                    <li>Cancellation mismatches detected</li>
+                    <li>Report generated correctly</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>11.10 Testing Tools and Utilities</h3>
+
+        <h4>11.10.1 Stripe CLI Commands</h4>
+
+        <div class="code-block-title">Bash</div>
+        <pre><code># Install Stripe CLI
+brew install stripe/stripe-cli/stripe  # macOS
+# or download from https://stripe.com/docs/stripe-cli
+
+# Login
+stripe login
+
+# Forward webhooks
+stripe listen --forward-to localhost:3000/api/webhooks/stripe
+
+# Trigger test events
+stripe trigger invoice.payment_succeeded
+stripe trigger customer.subscription.updated
+stripe trigger customer.subscription.deleted
+
+# Create test subscription
+stripe subscriptions create \
+  --customer cus_test_customer \
+  --items[0][price]=price_test_monthly
+
+# Update subscription (simulate renewal)
+stripe subscriptions update sub_test_subscription \
+  --billing-cycle-anchor=now</code></pre>
+
+        <h4>11.10.2 Test Scripts</h4>
+
+        <p><strong>Create Test Scripts Directory:</strong></p>
+        <div class="code-block-title">Directory Structure</div>
+        <pre><code>scripts/
+  test-subscription-renewal.ts
+  mock-webhook-renewal.ts
+  verify-webhook-processing.ts
+  test-reconciliation.ts
+  seed-test-subscriptions.ts</code></pre>
+
+        <p><strong>Run Test Scripts:</strong></p>
+        <div class="code-block-title">Bash</div>
+        <pre><code># Run TypeScript test scripts
+npx tsx scripts/test-subscription-renewal.ts
+
+# Run SQL seed scripts
+psql -d your_database -f scripts/seed-test-subscriptions.sql</code></pre>
+
+        <h3>11.11 Testing Best Practices</h3>
+
+        <h4>11.11.1 Test Isolation</h4>
+
+        <ul>
+            <li>✅ Use separate test Stripe account</li>
+            <li>✅ Use test database (not production)</li>
+            <li>✅ Clean up test data after tests</li>
+            <li>✅ Use test-specific tenant IDs</li>
+        </ul>
+
+        <h4>11.11.2 Test Data Management</h4>
+
+        <ul>
+            <li>✅ Create test subscriptions programmatically</li>
+            <li>✅ Use consistent naming conventions</li>
+            <li>✅ Tag test data with metadata</li>
+            <li>✅ Clean up test data automatically</li>
+        </ul>
+
+        <h4>11.11.3 Test Automation</h4>
+
+        <ul>
+            <li>✅ Automate webhook testing</li>
+            <li>✅ Automate batch job testing</li>
+            <li>✅ Automate reconciliation testing</li>
+            <li>✅ Run tests in CI/CD pipeline</li>
+        </ul>
+
+        <h4>11.11.4 Test Monitoring</h4>
+
+        <ul>
+            <li>✅ Log all test executions</li>
+            <li>✅ Track test success/failure rates</li>
+            <li>✅ Monitor test performance</li>
+            <li>✅ Alert on test failures</li>
+        </ul>
+
+        <h2 id="implementation-recommendations">13. Implementation Recommendations</h2>
+
+        <h3>12.1 Phase 1: Enhance Current Webhook System (Week 1-2)</h3>
+
+        <p><strong>Tasks:</strong></p>
+        <ol>
+            <li>Add webhook event logging</li>
+            <li>Implement webhook retry logic</li>
+            <li>Add webhook failure alerts</li>
+            <li>Improve error handling</li>
+        </ol>
+
+        <p><strong>Deliverables:</strong></p>
+        <ul>
+            <li>Enhanced webhook handler</li>
+            <li>Webhook event log table</li>
+            <li>Monitoring and alerting</li>
+        </ul>
+
+        <h3>12.2 Phase 2: Implement Batch Job (Week 3-4)</h3>
+
+        <p><strong>Tasks:</strong></p>
+        <ol>
+            <li>Create batch job infrastructure</li>
+            <li>Implement Stripe API integration</li>
+            <li>Create database update logic</li>
+            <li>Add job scheduling</li>
+        </ol>
+
+        <p><strong>Deliverables:</strong></p>
+        <ul>
+            <li>Batch job service</li>
+            <li>Scheduled job execution</li>
+            <li>Database updates</li>
+            <li>Job monitoring</li>
+        </ul>
+
+        <h3>12.3 Phase 3: Implement Reconciliation Job (Week 5)</h3>
+
+        <p><strong>Tasks:</strong></p>
+        <ol>
+            <li>Create daily reconciliation job</li>
+            <li>Implement discrepancy detection</li>
+            <li>Add reconciliation reporting</li>
+            <li>Create audit logs</li>
+        </ol>
+
+        <p><strong>Deliverables:</strong></p>
+        <ul>
+            <li>Reconciliation job</li>
+            <li>Discrepancy reports</li>
+            <li>Audit log table</li>
+            <li>Monitoring dashboard</li>
+        </ul>
+
+        <h3>12.4 Phase 4: Testing and Optimization (Week 6)</h3>
+
+        <p><strong>Tasks:</strong></p>
+        <ol>
+            <li>Load testing</li>
+            <li>Performance optimization</li>
+            <li>Error handling testing</li>
+            <li>Multi-tenant testing</li>
+        </ol>
+
+        <p><strong>Deliverables:</strong></p>
+        <ul>
+            <li>Performance benchmarks</li>
+            <li>Optimization recommendations</li>
+            <li>Test results</li>
+            <li>Documentation</li>
+        </ul>
+
+        <h2 id="technical-specifications">14. Technical Specifications</h2>
+
+        <h3>13.1 Batch Job API Endpoint</h3>
+
+        <p><strong>Endpoint:</strong> <code>POST /api/cron/subscription-renewal</code></p>
+
+        <p><strong>Authentication:</strong></p>
+        <ul>
+            <li>Cron secret in Authorization header</li>
+            <li>Or JWT authentication for manual triggers</li>
+        </ul>
+
+        <p><strong>Request:</strong></p>
+        <div class="code-block-title">JSON</div>
+        <pre><code>{
+  "tenantId": "optional", // If provided, process only this tenant
+  "batchSize": 100, // Default: 100
+  "maxSubscriptions": 10000 // Default: 10000
+}</code></pre>
+
+        <p><strong>Response:</strong></p>
+        <div class="code-block-title">JSON</div>
+        <pre><code>{
+  "status": "success",
+  "processed": 1000,
+  "updated": 50,
+  "skipped": 950,
+  "errors": 0,
+  "duration": "30s"
+}</code></pre>
+
+        <h3>13.2 Reconciliation Job API Endpoint</h3>
+
+        <p><strong>Endpoint:</strong> <code>POST /api/cron/subscription-reconciliation</code></p>
+
+        <p><strong>Request:</strong></p>
+        <div class="code-block-title">JSON</div>
+        <pre><code>{
+  "tenantId": "optional", // If provided, reconcile only this tenant
+  "dateRange": {
+    "start": "2025-01-01",
+    "end": "2025-01-31"
+  }
+}</code></pre>
+
+        <p><strong>Response:</strong></p>
+        <div class="code-block-title">JSON</div>
+        <pre><code>{
+  "status": "success",
+  "checked": 5000,
+  "discrepancies": 10,
+  "fixed": 10,
+  "errors": 0,
+  "duration": "5m"
+}</code></pre>
+
+        <h2 id="monitoring-alerting">15. Monitoring and Alerting</h2>
+
+        <h3>14.1 Key Metrics</h3>
+
+        <p><strong>Webhook Metrics:</strong></p>
+        <ul>
+            <li>Webhook events received per hour</li>
+            <li>Webhook processing success rate</li>
+            <li>Webhook processing time</li>
+            <li>Failed webhook count</li>
+        </ul>
+
+        <p><strong>Batch Job Metrics:</strong></p>
+        <ul>
+            <li>Batch job execution time</li>
+            <li>Subscriptions processed per batch</li>
+            <li>Subscriptions updated per batch</li>
+            <li>API call count</li>
+            <li>Rate limit errors</li>
+        </ul>
+
+        <p><strong>Reconciliation Metrics:</strong></p>
+        <ul>
+            <li>Subscriptions checked per day</li>
+            <li>Discrepancies found per day</li>
+            <li>Discrepancies fixed per day</li>
+            <li>Reconciliation job duration</li>
+        </ul>
+
+        <h3>14.2 Alerts</h3>
+
+        <p><strong>Critical Alerts:</strong></p>
+        <ul>
+            <li>Batch job failure</li>
+            <li>Reconciliation job failure</li>
+            <li>High discrepancy rate (> 1%)</li>
+            <li>Stripe API rate limit exceeded</li>
+            <li>Database connection pool exhausted</li>
+        </ul>
+
+        <p><strong>Warning Alerts:</strong></p>
+        <ul>
+            <li>Slow batch job execution (> 1 hour)</li>
+            <li>High webhook failure rate (> 5%)</li>
+            <li>Many subscriptions not updated (> 10%)</li>
+        </ul>
+
+        <h2 id="conclusion">17. Conclusion</h2>
+
+        <h3>17.1 Summary</h3>
+
+        <p>This analysis addresses the critical requirement to <strong>separate batch processing from the main ECS REST API application</strong>. The current architecture runs all processing (webhooks, REST API, batch jobs, email sending) in the same ECS cluster, causing resource contention and scalability limitations.</p>
+
+        <p><strong>Key Architectural Changes:</strong></p>
+        <ol>
+            <li><strong>Separation of Concerns</strong>: Spring Batch jobs run as separate service on AWS Batch/Fargate</li>
+            <li><strong>Load Offloading</strong>: Batch processing removed from ECS instances, reducing resource contention</li>
+            <li><strong>Cost Optimization</strong>: Pay-per-use model with AWS Batch (~62% cost savings vs. always-on ECS)</li>
+            <li><strong>Independent Scaling</strong>: Batch jobs scale independently from REST API</li>
+            <li><strong>Shared Database</strong>: Both services connect to same PostgreSQL RDS (single source of truth)</li>
+            <li><strong>Email Processing</strong>: Email batch jobs also extracted to separate service</li>
+        </ol>
+
+        <p><strong>Recommended AWS Architecture:</strong></p>
+        <ul>
+            <li><strong>AWS ECS</strong>: Spring Boot REST API (webhooks, user-facing operations)</li>
+            <li><strong>AWS Batch (Fargate)</strong>: Spring Batch service for subscription renewals and reconciliation</li>
+            <li><strong>AWS Batch (Fargate)</strong>: Email batch service for bulk email processing</li>
+            <li><strong>Amazon RDS PostgreSQL</strong>: Shared database (single source of truth)</li>
+            <li><strong>EventBridge</strong>: Scheduled triggers for batch jobs</li>
+        </ul>
+
+        <h3>17.2 Recommended Approach</h3>
+
+        <div class="success-box">
+            <strong>✅ Implement Separated Architecture:</strong>
+            <ul>
+                <li>✅ <strong>Keep ECS for REST API</strong>: Webhook processing and user-facing operations remain in ECS</li>
+                <li>✅ <strong>Deploy Spring Batch on AWS Batch</strong>: Subscription renewal jobs run on AWS Batch with Fargate compute</li>
+                <li>✅ <strong>Deploy Email Batch on AWS Batch</strong>: Email sending jobs run separately</li>
+                <li>✅ <strong>Use EventBridge for Scheduling</strong>: CloudWatch Events trigger batch jobs on schedule</li>
+                <li>✅ <strong>Shared Database Access</strong>: Both services connect to same RDS PostgreSQL with proper connection pooling</li>
+                <li>✅ <strong>Implement Row-Level Locking</strong>: Prevent concurrent update conflicts</li>
+                <li>✅ <strong>Add Monitoring and Alerting</strong>: CloudWatch logs and metrics for both services</li>
+                <li>✅ <strong>Cost Optimization</strong>: Pay only for batch execution time (~$11.50/month vs. ~$30/month)</li>
+            </ul>
+        </div>
+
+        <h3>17.3 Implementation Phases</h3>
+
+        <p><strong>Phase 1: Spring Batch Service Development</strong></p>
+        <ol>
+            <li>Create separate Spring Boot project for batch processing</li>
+            <li>Implement Spring Batch job configurations (subscription renewal, reconciliation, email)</li>
+            <li>Add database connection pooling and transaction management</li>
+            <li>Implement Stripe API integration for batch processing</li>
+            <li>Add email queue processing logic</li>
+            <li>Create Docker image and push to ECR</li>
+        </ol>
+
+        <p><strong>Phase 2: AWS Infrastructure Setup</strong></p>
+        <ol>
+            <li>Create AWS Batch compute environment (Fargate)</li>
+            <li>Create AWS Batch job queues (subscription renewal, email, reconciliation)</li>
+            <li>Create AWS Batch job definitions</li>
+            <li>Configure EventBridge rules for scheduling</li>
+            <li>Set up IAM roles and policies</li>
+            <li>Configure Secrets Manager for credentials</li>
+            <li>Set up CloudWatch log groups</li>
+        </ol>
+
+        <p><strong>Phase 3: Database Optimization</strong></p>
+        <ol>
+            <li>Add version column for optimistic locking</li>
+            <li>Optimize database indexes for batch queries</li>
+            <li>Configure connection pool sizes (REST API vs. Batch)</li>
+            <li>Implement row-level locking strategies</li>
+            <li>Add reconciliation logging tables</li>
+        </ol>
+
+        <p><strong>Phase 4: Testing and Validation</strong></p>
+        <ol>
+            <li>Test batch jobs locally with Docker</li>
+            <li>Test AWS Batch job execution</li>
+            <li>Validate database connection handling</li>
+            <li>Test concurrent access scenarios</li>
+            <li>Load test with production-like data volumes</li>
+            <li>Validate cost optimization</li>
+        </ol>
+
+        <p><strong>Phase 5: Monitoring and Optimization</strong></p>
+        <ol>
+            <li>Set up CloudWatch dashboards</li>
+            <li>Configure CloudWatch alarms</li>
+            <li>Add batch job execution metrics</li>
+            <li>Monitor database connection usage</li>
+            <li>Optimize batch job performance</li>
+            <li>Fine-tune scheduling and resource allocation</li>
+        </ol>
+
+        <h3>17.4 Benefits of Separated Architecture</h3>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Benefit</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Resource Isolation</strong></td>
+                    <td>Batch jobs don't compete with REST API for CPU/memory</td>
+                </tr>
+                <tr>
+                    <td><strong>Independent Scaling</strong></td>
+                    <td>Scale batch jobs independently based on workload</td>
+                </tr>
+                <tr>
+                    <td><strong>Cost Efficiency</strong></td>
+                    <td>Pay only for batch execution time (~62% savings)</td>
+                </tr>
+                <tr>
+                    <td><strong>Fault Isolation</strong></td>
+                    <td>Batch job failures don't affect REST API availability</td>
+                </tr>
+                <tr>
+                    <td><strong>Better Performance</strong></td>
+                    <td>REST API responds faster without batch job interference</td>
+                </tr>
+                <tr>
+                    <td><strong>Easier Maintenance</strong></td>
+                    <td>Update batch jobs without affecting REST API</td>
+                </tr>
+                <tr>
+                    <td><strong>Scalability</strong></td>
+                    <td>Can handle millions of subscriptions without impacting API</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>17.5 Next Steps</h3>
+
+        <ol>
+            <li><strong>Review this analysis</strong> with backend, DevOps, and architecture teams</li>
+            <li><strong>Approve AWS architecture</strong> and resource allocation</li>
+            <li><strong>Create Spring Batch project</strong> in backend repository</li>
+            <li><strong>Set up AWS infrastructure</strong> (Batch, EventBridge, IAM)</li>
+            <li><strong>Implement Phase 1-5</strong> as outlined above</li>
+            <li><strong>Migrate existing batch logic</strong> from ECS to Spring Batch service</li>
+            <li><strong>Monitor and optimize</strong> performance and costs</li>
+        </ol>
+
+        <h2 id="automated-testing">18. Automated Testing for Subscription Renewal</h2>
+
+        <div class="info-box">
+            <p><strong>Purpose:</strong> This section provides automated scripts and procedures for testing subscription renewal functionality in Stripe test mode without waiting for actual billing periods to elapse.</p>
+        </div>
+
+        <h3>18.1 Overview</h3>
+
+        <p>Testing subscription renewal typically requires waiting for the billing period to end (e.g., 30 days for monthly subscriptions). The automated testing scripts allow you to:</p>
+        <ul>
+            <li><strong>Expedite renewal</strong> - Advance subscription periods in Stripe test mode immediately</li>
+            <li><strong>Verify database state</strong> - Compare database records with Stripe subscription data</li>
+            <li><strong>Trigger batch jobs</strong> - Execute batch jobs on demand for testing</li>
+            <li><strong>End-to-end testing</strong> - Run complete test suites automatically</li>
+        </ul>
+
+        <h3>18.2 Prerequisites</h3>
+
+        <h4>18.2.1 Environment Variables</h4>
+        <div class="copyable-code-block">
+            <div class="command-tabs">
+                <button class="command-tab active" onclick="switchCommandTab(this, 'env-bash')">Bash/Linux</button>
+                <button class="command-tab" onclick="switchCommandTab(this, 'env-windows')">Windows PowerShell</button>
+            </div>
+            <div id="env-bash" class="command-content active">
+                <button class="copy-button" onclick="copyToClipboard('export STRIPE_SECRET_KEY=\"sk_test_...\"\nexport DATABASE_URL=\"postgresql://user:pass@localhost:5432/dbname\"\nexport NEXT_PUBLIC_API_BASE_URL=\"http://localhost:8080\"\nexport API_JWT_USER=\"jwtadmin\"\nexport API_JWT_PASS=\"jwtadmin\"\nexport NEXT_PUBLIC_TENANT_ID=\"tenant_demo_002\"\nexport USE_DATABASE_FALLBACK=\"true\"', this)">Copy</button>
+                <pre><code># Stripe Configuration
+export STRIPE_SECRET_KEY="sk_test_..."  # Stripe test mode secret key
+
+# Database Configuration
+export DATABASE_URL="postgresql://user:pass@localhost:5432/dbname"
+
+# Backend API Configuration
+export NEXT_PUBLIC_API_BASE_URL="http://localhost:8080"
+export API_JWT_USER="jwtadmin"
+export API_JWT_PASS="jwtadmin"
+
+# Tenant Configuration
+export NEXT_PUBLIC_TENANT_ID="tenant_demo_002"
+
+# Batch Job Configuration (Development/Testing)
+export USE_DATABASE_FALLBACK="true"  # Enable database date fallback for testing</code></pre>
+            </div>
+            <div id="env-windows" class="command-content">
+                <button class="copy-button" onclick="copyToClipboard('$env:STRIPE_SECRET_KEY=\"sk_test_...\"\n$env:DATABASE_URL=\"postgresql://user:pass@localhost:5432/dbname\"\n$env:NEXT_PUBLIC_API_BASE_URL=\"http://localhost:8080\"\n$env:API_JWT_USER=\"jwtadmin\"\n$env:API_JWT_PASS=\"jwtadmin\"\n$env:NEXT_PUBLIC_TENANT_ID=\"tenant_demo_002\"\n$env:USE_DATABASE_FALLBACK=\"true\"', this)">Copy</button>
+                <pre><code># Stripe Configuration
+$env:STRIPE_SECRET_KEY="sk_test_..."  # Stripe test mode secret key
+
+# Database Configuration
+$env:DATABASE_URL="postgresql://user:pass@localhost:5432/dbname"
+
+# Backend API Configuration
+$env:NEXT_PUBLIC_API_BASE_URL="http://localhost:8080"
+$env:API_JWT_USER="jwtadmin"
+$env:API_JWT_PASS="jwtadmin"
+
+# Tenant Configuration
+$env:NEXT_PUBLIC_TENANT_ID="tenant_demo_002"
+
+# Batch Job Configuration (Development/Testing)
+$env:USE_DATABASE_FALLBACK="true"  # Enable database date fallback for testing</code></pre>
+            </div>
+        </div>
+
+        <h4>18.2.2 Node.js Dependencies</h4>
+        <div class="code-block-title">package.json</div>
+        <pre><code>{
+  "devDependencies": {
+    "stripe": "^14.0.0",
+    "pg": "^8.11.0"
+  }
+}</code></pre>
+
+        <p>Install dependencies:</p>
+        <div class="copyable-code-block">
+            <button class="copy-button" onclick="copyToClipboard('npm install --save-dev stripe pg', this)">Copy</button>
+            <pre><code>npm install --save-dev stripe pg</code></pre>
+        </div>
+
+        <h3>18.3 Test Scripts</h3>
+
+        <p>All test scripts are located in <code>scripts/test-subscription-renewal/</code>:</p>
+        <ul>
+            <li><code>expedite-stripe-renewal.js</code> - Advance Stripe subscription period</li>
+            <li><code>sync-database-from-stripe.js</code> - Sync database dates from Stripe (NEW)</li>
+            <li><code>verify-database.js</code> - Verify database state matches Stripe</li>
+            <li><code>trigger-batch-job.js</code> - Trigger batch job on demand</li>
+            <li><code>run-full-test.sh</code> - Run complete test suite</li>
+            <li><code>README.md</code> - Detailed script documentation</li>
+        </ul>
+
+        <h3>18.4 Expedited Renewal Testing</h3>
+
+        <h4>18.4.1 Step 1: Expedite Stripe Subscription</h4>
+
+        <p><strong>Script:</strong> <code>expedite-stripe-renewal.js</code></p>
+        <div class="copyable-code-block">
+            <div class="command-tabs">
+                <button class="command-tab active" onclick="switchCommandTab(this, 'expedite-bash')">Bash (Multi-line)</button>
+                <button class="command-tab" onclick="switchCommandTab(this, 'expedite-windows')">Windows (Single-line)</button>
+            </div>
+            <div id="expedite-bash" class="command-content active">
+                <button class="copy-button" onclick="copyToClipboard('node scripts/test-subscription-renewal/expedite-stripe-renewal.js \\\n  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \\\n  --days-to-advance=30', this)">Copy</button>
+                <pre><code>node scripts/test-subscription-renewal/expedite-stripe-renewal.js \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --days-to-advance=30</code></pre>
+            </div>
+            <div id="expedite-windows" class="command-content">
+                <button class="copy-button" onclick="copyToClipboard('node scripts/test-subscription-renewal/expedite-stripe-renewal.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --days-to-advance=30', this)">Copy</button>
+                <pre><code>node scripts/test-subscription-renewal/expedite-stripe-renewal.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --days-to-advance=30</code></pre>
+            </div>
+        </div>
+
+        <p><strong>What it does:</strong></p>
+        <ol>
+            <li>Retrieves current subscription from Stripe</li>
+            <li>Calculates new period dates (advances by specified days)</li>
+            <li>Updates subscription billing cycle anchor</li>
+            <li>Creates and pays invoice for new period</li>
+            <li>Verifies final subscription state</li>
+        </ol>
+
+        <div class="warning-box">
+            <p><strong>Important:</strong> This script only works with Stripe <strong>test mode</strong> subscriptions. It will not work with live mode subscriptions.</p>
+        </div>
+
+        <h4>18.4.2 Step 2: Wait for Webhook Processing</h4>
+
+        <p>After expediting the subscription, Stripe will send webhook events. Allow 5-10 seconds for webhook processing:</p>
+        <div class="copyable-code-block">
+            <div class="command-tabs">
+                <button class="command-tab active" onclick="switchCommandTab(this, 'wait-bash')">Bash</button>
+                <button class="command-tab" onclick="switchCommandTab(this, 'wait-windows')">Windows</button>
+            </div>
+            <div id="wait-bash" class="command-content active">
+                <button class="copy-button" onclick="copyToClipboard('sleep 10', this)">Copy</button>
+                <pre><code>sleep 10</code></pre>
+            </div>
+            <div id="wait-windows" class="command-content">
+                <button class="copy-button" onclick="copyToClipboard('timeout /t 10 /nobreak', this)">Copy</button>
+                <pre><code>timeout /t 10 /nobreak</code></pre>
+            </div>
+        </div>
+
+        <h4>18.4.3 Step 3: Sync Database from Stripe (CRITICAL for Testing)</h4>
+
+        <div class="info-box">
+            <p><strong>Why This Step is Important:</strong> When testing subscription renewals, Stripe dates may be advanced via the expedite script, but the database may not be updated immediately by webhooks. This step ensures the database dates match Stripe dates before testing the batch job.</p>
+        </div>
+
+        <p><strong>Script:</strong> <code>sync-database-from-stripe.js</code></p>
+        <div class="copyable-code-block">
+            <div class="command-tabs">
+                <button class="command-tab active" onclick="switchCommandTab(this, 'sync-bash')">Bash (Multi-line)</button>
+                <button class="command-tab" onclick="switchCommandTab(this, 'sync-windows')">Windows (Single-line)</button>
+            </div>
+            <div id="sync-bash" class="command-content active">
+                <button class="copy-button" onclick="copyToClipboard('node scripts/test-subscription-renewal/sync-database-from-stripe.js \\\n  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \\\n  --tenant-id=tenant_demo_002', this)">Copy</button>
+                <pre><code>node scripts/test-subscription-renewal/sync-database-from-stripe.js \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --tenant-id=tenant_demo_002</code></pre>
+            </div>
+            <div id="sync-windows" class="command-content">
+                <button class="copy-button" onclick="copyToClipboard('node scripts/test-subscription-renewal/sync-database-from-stripe.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002', this)">Copy</button>
+                <pre><code>node scripts/test-subscription-renewal/sync-database-from-stripe.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002</code></pre>
+            </div>
+        </div>
+
+        <p><strong>What it does:</strong></p>
+        <ol>
+            <li>Authenticates with backend API using JWT</li>
+            <li>Fetches subscription from Stripe</li>
+            <li>Fetches subscription from database</li>
+            <li>Compares <code>current_period_start</code> and <code>current_period_end</code> dates</li>
+            <li>Updates database dates to match Stripe dates if different</li>
+            <li>Reports update results</li>
+        </ol>
+
+        <div class="warning-box">
+            <p><strong>Important:</strong> This step is critical when testing batch job renewal logic. The batch job checks if subscription dates are within the renewal window (7 days). If database dates don't match Stripe dates, the batch job may skip the subscription even though it should be processed.</p>
+        </div>
+
+        <h4>18.4.4 Step 4: Verify Database State</h4>
+
+        <p><strong>Script:</strong> <code>verify-database.js</code></p>
+        <div class="copyable-code-block">
+            <div class="command-tabs">
+                <button class="command-tab active" onclick="switchCommandTab(this, 'verify-bash')">Bash (Multi-line)</button>
+                <button class="command-tab" onclick="switchCommandTab(this, 'verify-windows')">Windows (Single-line)</button>
+            </div>
+            <div id="verify-bash" class="command-content active">
+                <button class="copy-button" onclick="copyToClipboard('node scripts/test-subscription-renewal/verify-database.js \\\n  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \\\n  --tenant-id=tenant_demo_002', this)">Copy</button>
+                <pre><code>node scripts/test-subscription-renewal/verify-database.js \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --tenant-id=tenant_demo_002</code></pre>
+            </div>
+            <div id="verify-windows" class="command-content">
+                <button class="copy-button" onclick="copyToClipboard('node scripts/test-subscription-renewal/verify-database.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002', this)">Copy</button>
+                <pre><code>node scripts/test-subscription-renewal/verify-database.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002</code></pre>
+            </div>
+        </div>
+
+        <p><strong>What it does:</strong></p>
+        <ol>
+            <li>Fetches subscription from Stripe</li>
+            <li>Fetches subscription from database</li>
+            <li>Compares:
+                <ul>
+                    <li><code>current_period_start</code></li>
+                    <li><code>current_period_end</code></li>
+                    <li><code>subscription_status</code></li>
+                    <li><code>stripe_customer_id</code></li>
+                </ul>
+            </li>
+            <li>Reports discrepancies and warnings</li>
+            <li>Checks reconciliation status</li>
+        </ol>
+
+        <h4>18.4.5 Step 5: Configure Dev Profile for Database Date Fallback (CRITICAL)</h4>
+
+        <div class="info-box">
+            <p><strong>Why This Step is Required:</strong> The batch job uses different logic in development vs production. In development, it can use database dates as a fallback when Stripe dates are out of sync. This allows testing even when dates don't match perfectly.</p>
+        </div>
+
+        <p><strong>Backend Configuration:</strong> Set the following environment variable in your backend batch job application:</p>
+        <div class="copyable-code-block">
+            <div class="command-tabs">
+                <button class="command-tab active" onclick="switchCommandTab(this, 'dev-env-bash')">Bash/Linux</button>
+                <button class="command-tab" onclick="switchCommandTab(this, 'dev-env-windows')">Windows PowerShell</button>
+            </div>
+            <div id="dev-env-bash" class="command-content active">
+                <button class="copy-button" onclick="copyToClipboard('export USE_DATABASE_FALLBACK=true', this)">Copy</button>
+                <pre><code># Enable database date fallback for testing
+export USE_DATABASE_FALLBACK=true</code></pre>
+            </div>
+            <div id="dev-env-windows" class="command-content">
+                <button class="copy-button" onclick="copyToClipboard('$env:USE_DATABASE_FALLBACK=\"true\"', this)">Copy</button>
+                <pre><code># Enable database date fallback for testing
+$env:USE_DATABASE_FALLBACK="true"</code></pre>
+            </div>
+        </div>
+
+        <p><strong>Or in application-dev.properties:</strong></p>
+        <div class="code-block-title">application-dev.properties</div>
+        <pre><code># Enable database date fallback for testing
+subscription.renewal.use-database-fallback=true</code></pre>
+
+        <p><strong>How Fallback Logic Works:</strong></p>
+        <ul>
+            <li><strong>Development Mode</strong> (<code>USE_DATABASE_FALLBACK=true</code>):
+                <ul>
+                    <li>Batch job checks Stripe dates first (source of truth)</li>
+                    <li>If Stripe date is outside renewal window but database date is within window, batch job uses database date</li>
+                    <li>Logs a warning about date mismatch but processes the subscription</li>
+                    <li>Updates database dates from Stripe during processing (self-healing)</li>
+                </ul>
+            </li>
+            <li><strong>Production Mode</strong> (<code>USE_DATABASE_FALLBACK=false</code> or not set):
+                <ul>
+                    <li>Batch job always uses Stripe dates (source of truth)</li>
+                    <li>If dates mismatch, subscription is skipped</li>
+                    <li>Logs a warning suggesting reconciliation job</li>
+                </ul>
+            </li>
+        </ul>
+
+        <div class="warning-box">
+            <p><strong>Important:</strong> Always set <code>USE_DATABASE_FALLBACK=false</code> in production. The fallback mode is only for testing and development environments.</p>
+        </div>
+
+        <h4>18.4.6 Step 6: Trigger Batch Job (If Needed)</h4>
+
+        <p>If webhook didn't update the database, trigger the batch job manually:</p>
+        <div class="copyable-code-block">
+            <div class="command-tabs">
+                <button class="command-tab active" onclick="switchCommandTab(this, 'batch-bash')">Bash (Multi-line)</button>
+                <button class="command-tab" onclick="switchCommandTab(this, 'batch-windows')">Windows (Single-line)</button>
+            </div>
+            <div id="batch-bash" class="command-content active">
+                <button class="copy-button" onclick="copyToClipboard('node scripts/test-subscription-renewal/trigger-batch-job.js \\\n  --tenant-id=tenant_demo_002 \\\n  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \\\n  --batch-size=10 \\\n  --max-subscriptions=100', this)">Copy</button>
+                <pre><code>node scripts/test-subscription-renewal/trigger-batch-job.js \
+  --tenant-id=tenant_demo_002 \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --batch-size=10 \
+  --max-subscriptions=100</code></pre>
+            </div>
+            <div id="batch-windows" class="command-content">
+                <button class="copy-button" onclick="copyToClipboard('node scripts/test-subscription-renewal/trigger-batch-job.js --tenant-id=tenant_demo_002 --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --batch-size=10 --max-subscriptions=100', this)">Copy</button>
+                <pre><code>node scripts/test-subscription-renewal/trigger-batch-job.js --tenant-id=tenant_demo_002 --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --batch-size=10 --max-subscriptions=100</code></pre>
+            </div>
+        </div>
+
+        <p><strong>What it does:</strong></p>
+        <ol>
+            <li>Authenticates with backend API using JWT</li>
+            <li>Calls batch job endpoint: <code>POST /api/cron/subscription-renewal</code></li>
+            <li>Reports job execution statistics</li>
+        </ol>
+
+        <h4>18.4.7 Step 7: Final Verification</h4>
+
+        <p>After batch job completes, verify database is in sync:</p>
+        <div class="copyable-code-block">
+            <div class="command-tabs">
+                <button class="command-tab active" onclick="switchCommandTab(this, 'final-bash')">Bash (Multi-line)</button>
+                <button class="command-tab" onclick="switchCommandTab(this, 'final-windows')">Windows (Single-line)</button>
+            </div>
+            <div id="final-bash" class="command-content active">
+                <button class="copy-button" onclick="copyToClipboard('# Wait for batch job to complete\nsleep 10\n\n# Verify final state\nnode scripts/test-subscription-renewal/verify-database.js \\\n  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \\\n  --tenant-id=tenant_demo_002', this)">Copy</button>
+                <pre><code># Wait for batch job to complete
+sleep 10
+
+# Verify final state
+node scripts/test-subscription-renewal/verify-database.js \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --tenant-id=tenant_demo_002</code></pre>
+            </div>
+            <div id="final-windows" class="command-content">
+                <button class="copy-button" onclick="copyToClipboard('timeout /t 10 /nobreak >nul && node scripts/test-subscription-renewal/verify-database.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002', this)">Copy</button>
+                <pre><code>timeout /t 10 /nobreak >nul && node scripts/test-subscription-renewal/verify-database.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002</code></pre>
+            </div>
+        </div>
+
+        <h3>18.5 Automated Full Test Suite</h3>
+
+        <p>Run all tests in sequence with a single command:</p>
+        <div class="copyable-code-block">
+            <div class="command-tabs">
+                <button class="command-tab active" onclick="switchCommandTab(this, 'full-bash')">Bash (Multi-line)</button>
+                <button class="command-tab" onclick="switchCommandTab(this, 'full-windows')">Windows (Git Bash)</button>
+            </div>
+            <div id="full-bash" class="command-content active">
+                <button class="copy-button" onclick="copyToClipboard('chmod +x scripts/test-subscription-renewal/run-full-test.sh\n./scripts/test-subscription-renewal/run-full-test.sh \\\n  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \\\n  --tenant-id=tenant_demo_002 \\\n  --days-to-advance=30', this)">Copy</button>
+                <pre><code>chmod +x scripts/test-subscription-renewal/run-full-test.sh
+./scripts/test-subscription-renewal/run-full-test.sh \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --tenant-id=tenant_demo_002 \
+  --days-to-advance=30</code></pre>
+            </div>
+            <div id="full-windows" class="command-content">
+                <button class="copy-button" onclick="copyToClipboard('bash scripts/test-subscription-renewal/run-full-test.sh --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002 --days-to-advance=30', this)">Copy</button>
+                <pre><code>bash scripts/test-subscription-renewal/run-full-test.sh --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002 --days-to-advance=30</code></pre>
+            </div>
+        </div>
+
+        <p><strong>Test Suite Steps:</strong></p>
+        <ol>
+            <li>Expedite Stripe subscription renewal</li>
+            <li>Wait for webhook processing (10 seconds)</li>
+            <li><strong>Sync database from Stripe</strong> (ensures dates match)</li>
+            <li>Verify database state (before batch job)</li>
+            <li><strong>Configure dev profile</strong> (set <code>USE_DATABASE_FALLBACK=true</code>)</li>
+            <li>Trigger batch job</li>
+            <li>Wait for batch job completion (10 seconds)</li>
+            <li>Verify final database state</li>
+        </ol>
+
+        <h3>18.6 Example Test Scenario</h3>
+
+        <p><strong>Scenario:</strong> Test monthly subscription renewal for subscription <code>sub_1SeifsK5BrggeAHMBvg2XE93</code></p>
+
+        <h4>18.6.1 Initial State</h4>
+        <div class="code-block-title">SQL</div>
+        <pre><code>-- Current subscription state
+SELECT id, subscription_status, current_period_start, current_period_end,
+       stripe_subscription_id, tenant_id
+FROM membership_subscription
+WHERE stripe_subscription_id = 'sub_1SeifsK5BrggeAHMBvg2XE93'
+  AND tenant_id = 'tenant_demo_002';
+
+-- Expected output:
+-- current_period_start: 2025-12-15
+-- current_period_end: 2026-01-14
+-- subscription_status: ACTIVE</code></pre>
+
+        <h4>18.6.2 Expedite Renewal</h4>
+        <div class="copyable-code-block">
+            <div class="command-tabs">
+                <button class="command-tab active" onclick="switchCommandTab(this, 'expedite-example-bash')">Bash (Multi-line)</button>
+                <button class="command-tab" onclick="switchCommandTab(this, 'expedite-example-windows')">Windows (Single-line)</button>
+            </div>
+            <div id="expedite-example-bash" class="command-content active">
+                <button class="copy-button" onclick="copyToClipboard('node scripts/test-subscription-renewal/expedite-stripe-renewal.js \\\n  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \\\n  --days-to-advance=30', this)">Copy</button>
+                <pre><code>node scripts/test-subscription-renewal/expedite-stripe-renewal.js \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --days-to-advance=30</code></pre>
+            </div>
+            <div id="expedite-example-windows" class="command-content">
+                <button class="copy-button" onclick="copyToClipboard('node scripts/test-subscription-renewal/expedite-stripe-renewal.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --days-to-advance=30', this)">Copy</button>
+                <pre><code>node scripts/test-subscription-renewal/expedite-stripe-renewal.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --days-to-advance=30</code></pre>
+            </div>
+        </div>
+
+        <p><strong>Expected Result:</strong> Stripe subscription period advanced by 30 days</p>
+
+        <h4>18.6.3 Sync Database from Stripe</h4>
+        <div class="copyable-code-block">
+            <div class="command-tabs">
+                <button class="command-tab active" onclick="switchCommandTab(this, 'sync-example-bash')">Bash (Multi-line)</button>
+                <button class="command-tab" onclick="switchCommandTab(this, 'sync-example-windows')">Windows (Single-line)</button>
+            </div>
+            <div id="sync-example-bash" class="command-content active">
+                <button class="copy-button" onclick="copyToClipboard('node scripts/test-subscription-renewal/sync-database-from-stripe.js \\\n  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \\\n  --tenant-id=tenant_demo_002', this)">Copy</button>
+                <pre><code>node scripts/test-subscription-renewal/sync-database-from-stripe.js \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --tenant-id=tenant_demo_002</code></pre>
+            </div>
+            <div id="sync-example-windows" class="command-content">
+                <button class="copy-button" onclick="copyToClipboard('node scripts/test-subscription-renewal/sync-database-from-stripe.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002', this)">Copy</button>
+                <pre><code>node scripts/test-subscription-renewal/sync-database-from-stripe.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002</code></pre>
+            </div>
+        </div>
+
+        <p><strong>Expected Result:</strong> Database dates updated to match Stripe dates</p>
+
+        <h4>18.6.4 Verify Database State</h4>
+        <div class="copyable-code-block">
+            <div class="command-tabs">
+                <button class="command-tab active" onclick="switchCommandTab(this, 'webhook-bash')">Bash (Multi-line)</button>
+                <button class="command-tab" onclick="switchCommandTab(this, 'webhook-windows')">Windows (Single-line)</button>
+            </div>
+            <div id="webhook-bash" class="command-content active">
+                <button class="copy-button" onclick="copyToClipboard('node scripts/test-subscription-renewal/verify-database.js \\\n  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \\\n  --tenant-id=tenant_demo_002', this)">Copy</button>
+                <pre><code>node scripts/test-subscription-renewal/verify-database.js \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --tenant-id=tenant_demo_002</code></pre>
+            </div>
+            <div id="webhook-windows" class="command-content">
+                <button class="copy-button" onclick="copyToClipboard('node scripts/test-subscription-renewal/verify-database.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002', this)">Copy</button>
+                <pre><code>node scripts/test-subscription-renewal/verify-database.js --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 --tenant-id=tenant_demo_002</code></pre>
+            </div>
+        </div>
+
+        <p><strong>Expected Result:</strong> Database should show updated period dates matching Stripe</p>
+
+        <h4>18.6.5 Configure Dev Profile</h4>
+        <p><strong>Set Environment Variable:</strong></p>
+        <div class="copyable-code-block">
+            <div class="command-tabs">
+                <button class="command-tab active" onclick="switchCommandTab(this, 'dev-example-bash')">Bash</button>
+                <button class="command-tab" onclick="switchCommandTab(this, 'dev-example-windows')">Windows</button>
+            </div>
+            <div id="dev-example-bash" class="command-content active">
+                <button class="copy-button" onclick="copyToClipboard('export USE_DATABASE_FALLBACK=true', this)">Copy</button>
+                <pre><code>export USE_DATABASE_FALLBACK=true</code></pre>
+            </div>
+            <div id="dev-example-windows" class="command-content">
+                <button class="copy-button" onclick="copyToClipboard('$env:USE_DATABASE_FALLBACK=\"true\"', this)">Copy</button>
+                <pre><code>$env:USE_DATABASE_FALLBACK="true"</code></pre>
+            </div>
+        </div>
+
+        <p><strong>Expected Result:</strong> Batch job will use database dates as fallback when Stripe dates are out of sync</p>
+
+        <h4>18.6.6 Trigger Batch Job</h4>
+        <div class="copyable-code-block">
+            <div class="command-tabs">
+                <button class="command-tab active" onclick="switchCommandTab(this, 'trigger-example-bash')">Bash (Multi-line)</button>
+                <button class="command-tab" onclick="switchCommandTab(this, 'trigger-example-windows')">Windows (Single-line)</button>
+            </div>
+            <div id="trigger-example-bash" class="command-content active">
+                <button class="copy-button" onclick="copyToClipboard('node scripts/test-subscription-renewal/trigger-batch-job.js \\\n  --tenant-id=tenant_demo_002 \\\n  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93', this)">Copy</button>
+                <pre><code>node scripts/test-subscription-renewal/trigger-batch-job.js \
+  --tenant-id=tenant_demo_002 \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93</code></pre>
+            </div>
+            <div id="trigger-example-windows" class="command-content">
+                <button class="copy-button" onclick="copyToClipboard('node scripts/test-subscription-renewal/trigger-batch-job.js --tenant-id=tenant_demo_002 --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93', this)">Copy</button>
+                <pre><code>node scripts/test-subscription-renewal/trigger-batch-job.js --tenant-id=tenant_demo_002 --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93</code></pre>
+            </div>
+        </div>
+
+        <p><strong>Expected Result:</strong> Batch job processes subscription and updates database</p>
+
+        <h4>18.6.7 Final Verification</h4>
+        <div class="code-block-title">SQL</div>
+        <pre><code>-- Verify final state
+SELECT id, subscription_status, current_period_start, current_period_end,
+       last_reconciliation_at, reconciliation_status
+FROM membership_subscription
+WHERE stripe_subscription_id = 'sub_1SeifsK5BrggeAHMBvg2XE93'
+  AND tenant_id = 'tenant_demo_002';
+
+-- Expected output:
+-- current_period_start: 2026-01-14 (advanced by 30 days)
+-- current_period_end: 2026-02-13 (advanced by 30 days)
+-- subscription_status: ACTIVE
+-- reconciliation_status: COMPLETED (or PENDING if batch job not run)</code></pre>
+
+        <h3>18.7 Understanding Database Date Fallback Logic</h3>
+
+        <h4>18.7.1 Problem Statement</h4>
+        <p>When testing subscription renewals, there can be a mismatch between Stripe dates and database dates:</p>
+        <ul>
+            <li><strong>Stripe</strong> may have dates advanced via expedite script: <code>current_period_end = 2026-01-26</code></li>
+            <li><strong>Database</strong> may have older dates: <code>current_period_end = 2025-12-31</code></li>
+            <li><strong>Batch Job</strong> checks if dates are within 7-day renewal window</li>
+            <li><strong>Result</strong>: Subscription skipped because Stripe date (2026-01-26) is outside window</li>
+        </ul>
+
+        <h4>18.7.2 Fallback Logic Flow</h4>
+        <p>The batch job processor follows this decision tree:</p>
+        <ol>
+            <li><strong>Check Stripe Date First</strong>
+                <ul>
+                    <li>If Stripe <code>current_period_end</code> is within 7-day window → Process subscription ✅</li>
+                    <li>If Stripe date is outside window → Continue to step 2</li>
+                </ul>
+            </li>
+            <li><strong>Check Database Date</strong>
+                <ul>
+                    <li>If database <code>current_period_end</code> is also outside window → Skip subscription ❌</li>
+                    <li>If database date is within window → Continue to step 3</li>
+                </ul>
+            </li>
+            <li><strong>Check Fallback Mode</strong>
+                <ul>
+                    <li><strong>Development Mode</strong> (<code>USE_DATABASE_FALLBACK=true</code>):
+                        <ul>
+                            <li>Log warning about date mismatch</li>
+                            <li>Process subscription using database date ✅</li>
+                            <li>Update database dates from Stripe during processing (self-healing)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Production Mode</strong> (<code>USE_DATABASE_FALLBACK=false</code>):
+                        <ul>
+                            <li>Log warning about date mismatch</li>
+                            <li>Skip subscription (Stripe is source of truth) ❌</li>
+                            <li>Suggest running reconciliation job</li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+        </ol>
+
+        <h4>18.7.3 Example Scenarios</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>Stripe Date</th>
+                    <th>Database Date</th>
+                    <th>Fallback Mode</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Normal Case</td>
+                    <td>2026-01-02 (within window)</td>
+                    <td>2026-01-02 (within window)</td>
+                    <td>N/A</td>
+                    <td>✅ Processed (Stripe date used)</td>
+                </tr>
+                <tr>
+                    <td>Testing Mode</td>
+                    <td>2026-01-26 (outside window)</td>
+                    <td>2025-12-31 (within window)</td>
+                    <td>true</td>
+                    <td>✅ Processed (database date used, warning logged)</td>
+                </tr>
+                <tr>
+                    <td>Production Mode</td>
+                    <td>2026-01-26 (outside window)</td>
+                    <td>2025-12-31 (within window)</td>
+                    <td>false</td>
+                    <td>❌ Skipped (Stripe is source of truth)</td>
+                </tr>
+                <tr>
+                    <td>Both Outside</td>
+                    <td>2026-01-26 (outside window)</td>
+                    <td>2026-01-26 (outside window)</td>
+                    <td>N/A</td>
+                    <td>❌ Skipped (both dates outside window)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>18.7.4 Self-Healing Mechanism</h4>
+        <p>When the batch job processes a subscription in development mode with date mismatch:</p>
+        <ol>
+            <li>It processes the subscription using the database date</li>
+            <li>During processing, it updates the database dates from Stripe</li>
+            <li>This ensures the database stays in sync with Stripe</li>
+            <li>Future batch job runs will use Stripe dates (now matching database)</li>
+        </ol>
+
+        <div class="info-box">
+            <p><strong>Key Benefit:</strong> The self-healing mechanism ensures that even when dates are out of sync initially, the batch job will correct them during processing, preventing future mismatches.</p>
+        </div>
+
+        <h3>18.8 Troubleshooting</h3>
+
+        <h4>18.7.1 Stripe API Errors</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Error</th>
+                    <th>Cause</th>
+                    <th>Solution</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>"No such subscription"</td>
+                    <td>Subscription ID incorrect or subscription deleted</td>
+                    <td>Verify subscription ID in Stripe dashboard</td>
+                </tr>
+                <tr>
+                    <td>"Invalid API key"</td>
+                    <td>Wrong API key or using live key in test mode</td>
+                    <td>Verify STRIPE_SECRET_KEY is test mode key (starts with <code>sk_test_</code>)</td>
+                </tr>
+                <tr>
+                    <td>"Cannot update subscription"</td>
+                    <td>Subscription canceled or in invalid state</td>
+                    <td>Check subscription status in Stripe dashboard</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>18.7.2 Database Verification Issues</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Issue</th>
+                    <th>Cause</th>
+                    <th>Solution</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Period dates don't match</td>
+                    <td>Webhook not processed or batch job not run</td>
+                    <td>Run batch job manually or wait for webhook</td>
+                </tr>
+                <tr>
+                    <td>Status mismatch</td>
+                    <td>Status mapping incorrect or subscription state changed</td>
+                    <td>Check status mapping in backend code</td>
+                </tr>
+                <tr>
+                    <td>Subscription not found</td>
+                    <td>Wrong tenant_id or subscription_id</td>
+                    <td>Verify tenant_id and subscription_id match database</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>18.7.3 Batch Job Errors</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Error</th>
+                    <th>Cause</th>
+                    <th>Solution</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>401 Unauthorized</td>
+                    <td>Invalid JWT credentials</td>
+                    <td>Verify API_JWT_USER and API_JWT_PASS</td>
+                </tr>
+                <tr>
+                    <td>404 Not Found</td>
+                    <td>Batch job endpoint doesn't exist</td>
+                    <td>Verify endpoint exists in backend: <code>/api/cron/subscription-renewal</code></td>
+                </tr>
+                <tr>
+                    <td>500 Internal Server Error</td>
+                    <td>Backend error processing batch job</td>
+                    <td>Check backend logs for detailed error</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>18.9 Best Practices</h3>
+
+        <ul>
+            <li><strong>Use Test Mode Only</strong> - Never run expedited renewal scripts on live subscriptions</li>
+            <li><strong>Verify Before Testing</strong> - Always verify subscription exists and is in correct state before testing</li>
+            <li><strong>Sync Database Before Testing</strong> - Always run <code>sync-database-from-stripe.js</code> before testing batch job to ensure dates match</li>
+            <li><strong>Enable Fallback Mode for Testing</strong> - Set <code>USE_DATABASE_FALLBACK=true</code> in development environment</li>
+            <li><strong>Disable Fallback Mode in Production</strong> - Always set <code>USE_DATABASE_FALLBACK=false</code> in production</li>
+            <li><strong>Wait for Webhooks</strong> - Allow 5-10 seconds for webhook processing before verifying</li>
+            <li><strong>Check Batch Job Logs</strong> - Review batch job execution logs for detailed processing information and date mismatch warnings</li>
+            <li><strong>Clean Up Test Data</strong> - Reset test subscriptions after testing if needed</li>
+            <li><strong>Document Test Results</strong> - Keep records of test runs and any issues found</li>
+        </ul>
+
+        <h3>18.10 Script Reference</h3>
+
+        <p>For detailed script documentation, see:</p>
+        <ul>
+            <li><code>scripts/test-subscription-renewal/README.md</code> - Complete script documentation</li>
+            <li><code>scripts/test-subscription-renewal/expedite-stripe-renewal.js</code> - Expedite renewal script</li>
+            <li><code>scripts/test-subscription-renewal/sync-database-from-stripe.js</code> - Sync database dates from Stripe</li>
+            <li><code>scripts/test-subscription-renewal/verify-database.js</code> - Database verification script</li>
+            <li><code>scripts/test-subscription-renewal/trigger-batch-job.js</code> - Batch job trigger script</li>
+            <li><code>scripts/test-subscription-renewal/run-full-test.sh</code> - Full test suite script</li>
+        </ul>
+
+        <h2>Appendix A: References</h2>
+
+        <h3>Documentation</h3>
+        <ul>
+            <li><a href="https://stripe.com/docs/api/subscriptions" target="_blank">Stripe Subscriptions API</a></li>
+            <li><a href="https://stripe.com/docs/webhooks" target="_blank">Stripe Webhooks Guide</a></li>
+            <li><a href="https://stripe.com/docs/rate-limits" target="_blank">Stripe Rate Limits</a></li>
+            <li><a href="https://docs.spring.io/spring-batch/reference/" target="_blank">Spring Batch Documentation</a></li>
+            <li><a href="https://docs.aws.amazon.com/batch/" target="_blank">AWS Batch Documentation</a></li>
+            <li><a href="https://docs.aws.amazon.com/eventbridge/" target="_blank">Amazon EventBridge Documentation</a></li>
+            <li><a href="./MEMBERSHIP_SUBSCRIPTION_PRD.md">Membership Subscription PRD</a></li>
+            <li><a href="./MEMBERSHIP_SUBSCRIPTION_BACKEND_PRD.html">Backend PRD</a></li>
+        </ul>
+
+        <h3>Code References</h3>
+        <ul>
+            <li>Frontend Webhook Handler: <code>src/app/api/webhooks/stripe/route.ts</code></li>
+            <li>Database Schema: <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_11.sql</code></li>
+            <li>API Documentation: <code>documentation/Swagger_API_Docs/api-docs.json</code></li>
+            <li>Next.js API Rules: <code>.cursor/rules/nextjs_api_routes.mdc</code></li>
+        </ul>
+
+        <h3>Related Projects</h3>
+        <ul>
+            <li>Frontend: <code>E:\project_workspace\mosc-temp</code></li>
+            <li>Backend: <code>E:\project_workspace\malayalees-us-site-boot</code></li>
+        </ul>
+
+        <div class="footer">
+            <p><strong>Subscription Renewal Webhook Handling - Batch Job Analysis Report</strong></p>
+            <p>Version 2.0 | Date: 2025-01-27 | Updated: 2025-01-27</p>
+            <p>Status: Analysis Only - No Implementation Changes</p>
+            <p><strong>Key Update:</strong> Added AWS deployment architecture with Spring Batch as separate service</p>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hero Section Viewport Resize &amp; Image Containment — UI Design Guideline</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; max-width: 72rem; margin: 0 auto; padding: 2rem; color: #333; }
+    h1 { font-size: 1.75rem; border-bottom: 3px solid #0066cc; padding-bottom: 0.5rem; }
+    h2 { font-size: 1.35rem; margin-top: 2rem; border-left: 4px solid #0066cc; padding-left: 12px; }
+    h3 { font-size: 1.15rem; margin-top: 1.5rem; }
+    p, li { margin: 0.5rem 0; }
+    ul, ol { margin: 0.75rem 0; padding-left: 1.5rem; }
+    code { background: #e8f4f8; color: #0d3b66; padding: 0.2em 0.5em; border-radius: 4px; font-size: 0.9em; border: 1px solid #b8d4e3; }
+    pre { background: #e8f4f8; color: #0d3b66; padding: 1rem; border-radius: 6px; overflow-x: auto; border: 1px solid #b8d4e3; }
+    .info { background: #d1ecf1; padding: 1rem 1.25rem; border-left: 4px solid #0c5460; margin: 1rem 0; border-radius: 0 6px 6px 0; }
+    .warning { background: #fff3cd; padding: 1rem 1.25rem; border-left: 4px solid #ffc107; margin: 1rem 0; border-radius: 0 6px 6px 0; }
+    .success { background: #d4edda; padding: 1rem 1.25rem; border-left: 4px solid #28a745; margin: 1rem 0; border-radius: 0 6px 6px 0; }
+    .section-intro { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; padding: 1rem 1.25rem; margin: 1rem 0; border-radius: 0 6px 6px 0; }
+    .toc { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); padding: 1rem 1.5rem; border-radius: 8px; margin: 1rem 0; border: 1px solid #b8d4e3; }
+    .toc ul { list-style: none; padding-left: 0; }
+    .toc li { margin: 0.35rem 0; }
+    .toc a { color: #0066cc; text-decoration: none; font-weight: 500; }
+    .toc a:hover { text-decoration: underline; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+    th, td { border: 1px solid #ddd; padding: 0.5rem 0.75rem; text-align: left; }
+    th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; font-weight: bold; }
+    tr:nth-child(even) { background: #f8f9fa; }
+    img.ref { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Hero Section Viewport Resize &amp; Image Containment</h1>
+      <p>UI design guideline and implementation prompt for reducing the home page hero section height, containing it within the viewport on smaller screens and laptops, and ensuring images fill their allocated sections without cropping. Use this document when implementing or refining the hero section at <code>/html/body/div[3]/main/section[1]</code> (home page <code>localhost:3000</code>).</p>
+    </header>
+
+    <nav class="toc" aria-label="Table of contents">
+      <h2>Contents</h2>
+      <ul>
+        <li><a href="#references">References</a></li>
+        <li><a href="#layout-structure">Layout Structure (Diagram)</a></li>
+        <li><a href="#goals">Goals</a></li>
+        <li><a href="#height-changes">Height &amp; Viewport Requirements</a></li>
+        <li><a href="#image-containment">Image Containment</a></li>
+        <li><a href="#mobile">Mobile Responsiveness</a></li>
+        <li><a href="#implementation-prompt">Implementation Prompt</a></li>
+      </ul>
+    </nav>
+
+    <section id="references">
+      <h2>References</h2>
+      <ul>
+        <li><strong>Layout diagram:</strong> <code>public/images/hero_section/hero_section_split_excalidraw.png</code> — Four-section split: (1) logo/vertical text left, (2) slideshow right, (3) Unite India / About Mission, (4) Donate button.</li>
+        <li><strong>Home page hero DOM:</strong> <code>/html/body/div[3]/main/section[1]</code> — First <code>&lt;section&gt;</code> inside <code>main</code> on the home page.</li>
+        <li><strong>Component:</strong> <code>src/components/HeroSection.tsx</code> — Renders the hero; uses classes from <code>src/app/globals.css</code> (e.g. <code>.hero-container-split</code>, <code>.hero-split-row</code>, <code>.hero-bottom-row</code>, <code>.hero-bottom-card</code>).</li>
+        <li><strong>Image containment rule:</strong> <code>.cursor/rules/image_containment_prevention_hero_images_cards.mdc</code> — Use <code>object-contain</code>, flexible height (<code>h-auto</code>), and no cropping for hero/banner images that must be fully visible.</li>
+        <li><strong>Design reference (screenshot):</strong> Malayalees.US-style hero — dark purple background, two large panels (left: Kerala/backwaters; right: “This is KERALA” collage), bottom row with “Unite India” and “Support Our Community / Donate Now” cards. Use for visual hierarchy and CTA placement; implement viewport containment per this guideline.</li>
+      </ul>
+    </section>
+
+    <section id="layout-structure">
+      <h2>Layout Structure (Diagram)</h2>
+      <div class="section-intro">
+        <p>The hero is split into four areas as in the Excalidraw diagram:</p>
+        <ul>
+          <li><strong>Section 1 (top left):</strong> Logo / vertical “MALAYALEES.US” style content; Kerala/backwaters image. Must fit without cutoff.</li>
+          <li><strong>Section 2 (top right):</strong> Regular slideshow; do not break existing slideshow behavior.</li>
+          <li><strong>Section 3 (bottom left):</strong> Unite India logo + “About Our Mission”; logo must fit inside the area without cutoff.</li>
+          <li><strong>Section 4 (bottom right):</strong> Donate button and “Support Our Community”; make prominent.</li>
+        </ul>
+        <p>Top row = Sections 1 &amp; 2 side by side (desktop); bottom row = Sections 3 &amp; 4 side by side. All four plus the “Browse all upcoming events” strip must fit within the intended viewport height.</p>
+      </div>
+    </section>
+
+    <section id="goals">
+      <h2>Goals</h2>
+      <ol>
+        <li><strong>Reduce overall hero height</strong> by at least 150px (or more) so the entire hero fits within the viewport on typical laptops and smaller screens.</li>
+        <li><strong>Contain the full hero within the viewport</strong> so users do not need to scroll to see the bottom of the hero (bottom row + browse link). Currently the hero extends beyond the display and requires scrolling.</li>
+        <li>Optionally <strong>reduce the height of sections 3 and 4</strong> by about 20px (e.g. lower <code>min-height</code> / <code>max-height</code> of <code>.hero-bottom-card</code> and/or <code>.hero-bottom-row</code> flex share).</li>
+        <li>Ensure <strong>all images in sections 1–4</strong> are contained within their allocated areas and <strong>fill</strong> those areas appropriately (no unintended cropping; follow image containment rule).</li>
+        <li>Maintain <strong>mobile responsiveness</strong>: sections stack properly (e.g. 1, then 2, then 3, then 4) and remain readable and tappable.</li>
+        <li>Apply <strong>frontend design polish</strong> (spacing, proportions, visual hierarchy) so the resized hero still looks intentional and professional.</li>
+      </ol>
+    </section>
+
+    <section id="height-changes">
+      <h2>Height &amp; Viewport Requirements</h2>
+      <ul>
+        <li><strong>Overall hero container:</strong> Reduce total height by 150px or more. Consider using a max-height such as <code>calc(100vh - 150px)</code> or similar (account for header/nav height) so the hero never exceeds the visible viewport.</li>
+        <li><strong>Top row (Sections 1 &amp; 2):</strong> Currently <code>flex: 0 0 80%</code> of the hero. Reduce this percentage or the hero’s total height so the top row plus bottom row plus browse strip fit in one viewport.</li>
+        <li><strong>Bottom row (Sections 3 &amp; 4):</strong> Currently <code>flex: 0 0 18%</code>. Optionally reduce the height of the bottom cards by about 20px (e.g. <code>.hero-bottom-card</code> <code>min-height</code> / <code>max-height</code>).</li>
+        <li><strong>Browse strip:</strong> Keep compact (e.g. current <code>flex: 0 0 2%</code> or equivalent) so it doesn’t push content off-screen.</li>
+      </ul>
+      <div class="info">
+        <p><strong>Target:</strong> On a typical laptop/smaller screen, the entire hero (left panel, right panel, bottom two cards, and “Browse all upcoming events”) should be visible without vertical scrolling. Only content below the hero should require scrolling.</p>
+      </div>
+    </section>
+
+    <section id="image-containment">
+      <h2>Image Containment</h2>
+      <p>Follow the rule in <code>.cursor/rules/image_containment_prevention_hero_images_cards.mdc</code>:</p>
+      <ul>
+        <li><strong>Containers:</strong> Use flexible height where appropriate (<code>h-auto</code> or constrained by parent flex) so images can maintain aspect ratio. Avoid fixed heights that force cropping.</li>
+        <li><strong>Images:</strong> Use <code>object-contain</code> for hero/banner/logo images that must be fully visible (Sections 1, 2, and 3). Ensure images <strong>fill</strong> their allocated section area (e.g. <code>w-full h-full</code> with <code>object-contain</code> and centered <code>object-position</code>) so the section looks filled without cropping edges.</li>
+        <li><strong>Section 3 (Unite India):</strong> Diagram states “logo should fit inside this area without cutoff.” Ensure the Unite India image is contained and fills the card area (e.g. <code>object-contain</code> or controlled <code>object-cover</code> with safe <code>object-position</code> so the logo is never cut off).</li>
+      </ul>
+      <p>Reference: Image containment rule specifies <code>object-contain</code>, <code>w-full h-auto</code> (or equivalent within a flex layout), and no cropping for hero/banner/logo imagery.</p>
+    </section>
+
+    <section id="mobile">
+      <h2>Mobile Responsiveness</h2>
+      <ul>
+        <li>On small screens, sections should <strong>stack vertically</strong> in a logical order: e.g. Section 1 (logo/Kerala image), then Section 2 (slideshow), then Section 3 (Unite India / Mission), then Section 4 (Donate), then the browse link.</li>
+        <li>Preserve existing responsive breakpoints (e.g. <code>@media (min-width: 768px)</code> for row layout) and adjust any new height values so mobile view also fits within the viewport where possible, or scrolls minimally.</li>
+        <li>Touch targets (Donate button, Mission card, slideshow controls) must remain large enough and properly spaced.</li>
+      </ul>
+    </section>
+
+    <section id="implementation-prompt">
+      <h2>Implementation Prompt</h2>
+      <p>Use the following as a single, effective prompt for implementation or handoff:</p>
+      <div class="success">
+        <pre><code>Hero section viewport resize and image containment
+
+Context:
+- Home page hero = first &lt;section&gt; inside main, DOM path /html/body/div[3]/main/section[1].
+- Layout diagram: public/images/hero_section/hero_section_split_excalidraw.png (four sections: 1 = logo/Kerala left, 2 = slideshow right, 3 = Unite India/About Mission, 4 = Donate).
+- Component: src/components/HeroSection.tsx; styles: src/app/globals.css (.hero-container-split, .hero-split-row, .hero-bottom-row, .hero-bottom-card, etc.).
+
+Requirements:
+1. Reduce the overall height of the hero section by at least 150px (or more) so that on smaller screens and laptops the entire hero (left panel, right panel, bottom row of two cards, and "Browse all upcoming events" strip) fits within the viewport without requiring the user to scroll. The hero should not extend beyond the visible display area.
+2. Optionally reduce the height of sections 3 and 4 (bottom row) by about 20px (e.g. .hero-bottom-card min-height/max-height and/or .hero-bottom-row flex share).
+3. Ensure all images in sections 1, 2, 3, and 4 are contained within their allocated areas and fill those areas appropriately. Follow .cursor/rules/image_containment_prevention_hero_images_cards.mdc: use object-contain for hero/banner/logo images, flexible height where needed, no unintended cropping. Section 3 Unite India logo must fit inside its area without cutoff.
+4. Mobile: sections must stack properly (1, 2, 3, 4) and remain responsive and usable.
+5. Apply frontend design polish so the resized hero looks intentional (spacing, proportions, visual hierarchy).
+
+Deliverables:
+- Updated CSS in globals.css for hero classes (height, flex, max-height) and any component-level style tweaks in HeroSection.tsx.
+- No change to slideshow behavior; only layout and containment.</code></pre>
+      </div>
+    </section>
+
+    <div class="info">
+      <p><strong>Summary.</strong> Resize the hero so it fits in one viewport (reduce height by 150px+), optionally trim sections 3 &amp; 4 by ~20px, enforce image containment and fill per the cursor rule, keep mobile stacking and polish the design. Reference the Excalidraw diagram and <code>image_containment_prevention_hero_images_cards.mdc</code> for details.</p>
+    </div>
+  </main>
+</body>
+</html>

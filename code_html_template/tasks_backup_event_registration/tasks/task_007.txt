@@ -1,0 +1,576 @@
+# Task ID: 7
+# Title: Create registration form component
+# Status: done
+# Dependencies: 6 ⏱️
+# Priority: high
+# Description: Develop the registration form component for collecting primary attendee information.
+# Details:
+Build form component with:
+
+- Profile selection (existing/new)
+ Provide a field to enter the email ID and once the you ask the user to enter the email ID to look up if the user already exists in the user_profile table. Check to see how theuser profile is lookedin the for reference in theuser profile form http://localhost:3000/profile. and prepopulate the field as required.
+ -  Add the form fieldsto addguest forResistantby clicking the plus button user should be able toadd guestwhom whom he is bringing with..
+
+ Develop guest management with:
+- Visual guest counter for different age groups
+- Form for individual guest details
+- Age group selection (Adult, Teen, Child, Infant)
+- Relationship mapping dropdown
+- Special requirements per guest
+- Add/remove guest functionality
+Create the interface for adding and managing guests during registration.
+# Details:
+Develop guest management with:
+- Visual guest counter for different age groups
+- Form for individual guest details
+- Age group selection (Adult, Teen, Child, Infant)
+- Relationship mapping dropdown
+- Special requirements per guest
+- Add/remove guest functionality
+
+- While submitting the form make sure to create the user profile if the user doesn't already existfor this tenant_id Form fields for new profile creation
+- Special requirements section
+- Terms and conditions acceptance
+- Form validation
+Below are the json schema for the API which we need to integratefor the eventhey just event attendeewho registerand also forguests who are coming along with the attendee where the details has to be integrated.
+"/api/event-attendees/{id}": {
+      "get": {
+        "tags": [
+          "event-attendee-resource"
+        ],
+        "operationId": "getEventAttendee",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventAttendeeDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "event-attendee-resource"
+        ],
+        "operationId": "updateEventAttendee",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventAttendeeDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventAttendeeDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "event-attendee-resource"
+        ],
+        "operationId": "deleteEventAttendee",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "event-attendee-resource"
+        ],
+        "operationId": "partialUpdateEventAttendee",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventAttendeeDTO"
+              }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventAttendeeDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventAttendeeDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/event-attendee-guests/{id}": {
+      "get": {
+        "tags": [
+          "event-attendee-guest-resource"
+        ],
+        "operationId": "getEventAttendeeGuest",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventAttendeeGuestDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "event-attendee-guest-resource"
+        ],
+        "operationId": "updateEventAttendeeGuest",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventAttendeeGuestDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventAttendeeGuestDTO"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "event-attendee-guest-resource"
+        ],
+        "operationId": "deleteEventAttendeeGuest",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "event-attendee-guest-resource"
+        ],
+        "operationId": "partialUpdateEventAttendeeGuest",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventAttendeeGuestDTO"
+              }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventAttendeeGuestDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventAttendeeGuestDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    Add the below types to the In the index type file src\types\index.ts
+     "EventAttendeeDTO": {
+        "required": [
+          "createdAt",
+          "eventId",
+          "registrationDate",
+          "registrationStatus",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "firstName": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "lastName": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "phone": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "isMember": {
+            "type": "boolean"
+          },
+          "eventId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tenantId": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "registrationStatus": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "registrationDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "confirmationDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cancellationDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cancellationReason": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string"
+          },
+          "attendeeType": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "specialRequirements": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "emergencyContactName": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "emergencyContactPhone": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "checkInStatus": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "checkInTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "totalNumberOfGuests": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numberOfGuestsCheckedIn": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "notes": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "qrCodeData": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "qrCodeGenerated": {
+            "type": "boolean"
+          },
+          "qrCodeGeneratedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dietaryRestrictions": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "accessibilityNeeds": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "emergencyContactRelationship": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
+          },
+          "checkOutTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "attendanceRating": {
+            "maximum": 5,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "feedback": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "registrationSource": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
+          },
+          "waitListPosition": {
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "priorityScore": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "event": {
+            "$ref": "#/components/schemas/EventDetailsDTO"
+          }
+        }
+      }
+
+      "EventAttendeeGuestDTO": {
+        "required": [
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tenantId": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "firstName": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "lastName": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "phone": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "ageGroup": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "relationship": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "specialRequirements": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string"
+          },
+          "registrationStatus": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "checkInStatus": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "checkInTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "primaryAttendee": {
+            "$ref": "#/components/schemas/EventAttendeeDTO"
+          }
+        },
+        "description": "Event Guest Management JDL Model\nEnhanced entities for sophisticated guest management with age-based pricing"
+      }
+
+
+# Test Strategy:
+Test form validation, submission, and error handling. Verify both existing and new profile paths work correctly.

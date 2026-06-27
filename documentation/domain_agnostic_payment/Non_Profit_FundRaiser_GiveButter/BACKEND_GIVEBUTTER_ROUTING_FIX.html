@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Fix: GiveButter Routing for Donation-Based Checkout Flow</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .alert {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .alert-info {
+            background-color: #d1ecf1;
+            border-color: #0c5460;
+            color: #0c5460;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #e83e8c;
+        }
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+        .code-block {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Backend Fix: GiveButter Routing for Donation-Based Checkout Flow</h1>
+        
+        <div class="alert alert-danger">
+            <strong>⚠️ CRITICAL REQUIREMENT:</strong> This fix must NOT interfere with or disrupt the existing Stripe checkout flow. The donation-based checkout flow should be a completely separate control path.
+        </div>
+
+        <h2>Problem Statement</h2>
+        <p>
+            Event <code>4202</code> is currently routing to <strong>Stripe</strong> instead of <strong>GiveButter</strong> 
+            when accessed through the donation-based checkout flow (<code>/events/[id]/donation-checkout</code>).
+        </p>
+        
+        <div class="alert alert-warning">
+            <strong>Current Behavior (Incorrect):</strong><br>
+            <ul>
+                <li>Event ID: <code>4202</code></li>
+                <li>Admission Type: <code>ticketed</code></li>
+                <li>Payment Provider: <code>STRIPE</code> ❌</li>
+                <li>Payment Use Case: <code>TICKET_SALE</code></li>
+                <li>Success URL: <code>/event/success?transactionId=xxx&eventId=4202</code></li>
+            </ul>
+        </div>
+
+        <div class="alert alert-success">
+            <strong>Expected Behavior (Correct):</strong><br>
+            <ul>
+                <li>Event ID: <code>4202</code></li>
+                <li>Admission Type: <code>ticketed</code> (with fundraiser metadata)</li>
+                <li>Payment Provider: <code>GIVEBUTTER</code> ✅</li>
+                <li>Payment Use Case: <code>TICKET_SALE</code> (but routed to GiveButter)</li>
+                <li>Success URL: <code>/events/4202/donation/success?transactionId=xxx</code></li>
+            </ul>
+        </div>
+
+        <h2>Root Cause Analysis</h2>
+        <p>
+            The backend payment orchestration service is not correctly routing to GiveButter despite the frontend 
+            explicitly requesting it. Based on backend logs, the issues are:
+        </p>
+        <ol>
+            <li><strong>GiveButter Provider Not Configured:</strong> The backend logs show: 
+                <code>"Event 4202 is configured for GiveButter but provider not available for tenant tenant_demo_002 - falling back to other providers"</code>
+                <ul>
+                    <li>This indicates GiveButter provider configuration is missing in the <code>payment_provider_config</code> table</li>
+                    <li>The backend needs GiveButter API credentials configured for tenant <code>tenant_demo_002</code></li>
+                </ul>
+            </li>
+            <li><strong>Frontend Request Parameters Ignored:</strong> The frontend is explicitly sending:
+                <ul>
+                    <li><code>paymentType: 'DONATION_ZERO_FEE'</code></li>
+                    <li><code>paymentProvider: 'GIVEBUTTER'</code></li>
+                    <li><code>returnUrl: '/events/4202/donation/success'</code></li>
+                </ul>
+                But the backend is ignoring these and routing to Stripe instead.
+            </li>
+            <li><strong>Success URL Override:</strong> The backend is setting its own success URL 
+                (<code>/event/success?transactionId=7801&eventId=4202</code>) instead of using the 
+                <code>returnUrl</code> provided by the frontend.</li>
+        </ol>
+
+        <div class="alert alert-info">
+            <h3>Frontend behavior when GiveButter is not configured</h3>
+            <p>When the backend falls back to Stripe (e.g. GiveButter provider missing), it returns a 
+            <code>clientSecret</code> (Stripe PaymentIntent) and no <code>checkoutUrl</code>/<code>sessionUrl</code>. 
+            The donation-checkout page (<code>/events/[id]/donation-checkout</code>) expects a GiveButter 
+            checkout URL. The frontend now:</p>
+            <ul>
+                <li>Detects missing checkout URL and presence of <code>clientSecret</code> (Stripe fallback)</li>
+                <li>Shows a clear error: &quot;GiveButter is not configured for this organization...&quot;</li>
+                <li>Offers a &quot;Use standard ticket checkout (Stripe)&quot; link to <code>/events/[id]/checkout</code></li>
+            </ul>
+            <p>Users will not be redirected to Stripe from the donation-checkout page; they must use the 
+            standard checkout link or the organizer must configure GiveButter.</p>
+        </div>
+
+        <h2>Required Event Configuration</h2>
+        <p>
+            For an event to route to GiveButter (instead of Stripe), the event's <code>donationMetadata</code> 
+            must contain:
+        </p>
+        
+        <div class="code-block">
+            <pre><code>{
+  "isFundraiserEvent": true,
+  "zeroFeeProvider": "GIVEBUTTER",
+  "givebutterCampaignId": "&lt;campaign-id&gt;" // Optional but recommended
+}</code></pre>
+        </div>
+
+        <h3>Event Configuration Checklist for Event 4202</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Required Value</th>
+                    <th>Current Status</th>
+                    <th>Action Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>donationMetadata.isFundraiserEvent</code></td>
+                    <td><code>true</code></td>
+                    <td>❓ Unknown</td>
+                    <td>Verify and set to <code>true</code> if missing</td>
+                </tr>
+                <tr>
+                    <td><code>donationMetadata.zeroFeeProvider</code></td>
+                    <td><code>"GIVEBUTTER"</code></td>
+                    <td>❓ Unknown</td>
+                    <td>Verify and set to <code>"GIVEBUTTER"</code> if missing</td>
+                </tr>
+                <tr>
+                    <td><code>donationMetadata.givebutterCampaignId</code></td>
+                    <td>Valid GiveButter campaign ID</td>
+                    <td>❓ Unknown</td>
+                    <td>Verify and set if missing</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Frontend Request Payload (CRITICAL)</h2>
+        <p>
+            The frontend is explicitly sending the following request to <code>POST /api/proxy/payments/initialize</code> 
+            (which forwards to backend <code>POST /api/payments/initialize</code>):
+        </p>
+        
+        <h3>For Donation-Only Events (DONATION_BASED or OFFERING):</h3>
+        <div class="code-block">
+            <pre><code>{
+  "eventId": 4202,
+  "paymentType": "DONATION_ZERO_FEE",  // ✅ Explicitly indicates donation flow
+  "paymentProvider": "GIVEBUTTER",     // ✅ Explicitly requests GiveButter
+  "amount": 0.70,
+  "email": "giventauser@gmail.com",
+  "firstName": "...",
+  "lastName": "...",
+  "phone": "...",
+  "metadata": {
+    "givebutterCampaignId": "...",
+    "isFundraiser": true,
+    "isCharity": false,
+    "prayerIntention": "..."
+  },
+  "returnUrl": "http://localhost:3000/events/4202/donation/success",  // ✅ Correct success URL
+  "cancelUrl": "http://localhost:3000/events/4202"
+}</code></pre>
+        </div>
+
+        <h3>For Ticketed Fundraiser Events (admissionType='ticketed' with isFundraiserEvent=true):</h3>
+        <div class="code-block">
+            <pre><code>{
+  "eventId": 4202,
+  "paymentType": "DONATION_ZERO_FEE",  // ✅ Explicitly indicates donation flow (even with tickets)
+  "paymentProvider": "GIVEBUTTER",     // ✅ Explicitly requests GiveButter (even with tickets)
+  "amount": 1.30,
+  "currency": "USD",
+  "items": [                            // ✅ Ticket items for ticketed fundraisers
+    {
+      "itemType": "TICKET",
+      "itemId": 7551,
+      "description": "Gold Sponsor",
+      "quantity": 1,
+      "unitPrice": 0.70
+    },
+    {
+      "itemType": "TICKET",
+      "itemId": 7552,
+      "description": "Silver Sponsor",
+      "quantity": 1,
+      "unitPrice": 0.60
+    }
+  ],
+  "customerEmail": "giventauser@gmail.com",
+  "customerName": "...",
+  "customerPhone": "...",
+  "metadata": {
+    "givebutterCampaignId": "...",
+    "isFundraiser": true,
+    "isCharity": false,
+    "cart": "[{\"quantity\":1,\"ticketTypeId\":7551},{\"quantity\":1,\"ticketTypeId\":7552}]"  // ✅ Ticket items in metadata
+  },
+  "returnUrl": "http://localhost:3000/events/4202/donation/success",  // ✅ Correct success URL
+  "cancelUrl": "http://localhost:3000/events/4202/donation-checkout",
+  "discountCodeId": null  // Optional discount code ID
+}</code></pre>
+        </div>
+        
+        <div class="alert alert-warning">
+            <strong>⚠️ IMPORTANT:</strong> For ticketed fundraisers, the frontend sends BOTH:
+            <ul>
+                <li><code>paymentType: "DONATION_ZERO_FEE"</code> and <code>paymentProvider: "GIVEBUTTER"</code> (to route to GiveButter)</li>
+                <li><code>items: [...]</code> array with ticket items (for ticket processing)</li>
+            </ul>
+            The backend MUST route to GiveButter based on <code>paymentProvider</code> even when <code>items</code> array is present.
+        </div>
+        
+        <div class="alert alert-danger">
+            <strong>⚠️ CRITICAL:</strong> The backend <strong>MUST</strong> respect the <code>paymentProvider: 'GIVEBUTTER'</code> 
+            parameter sent by the frontend. Do NOT ignore this parameter and fall back to Stripe.
+        </div>
+        
+        <h3>Backend Request Handling</h3>
+        <p>
+            The backend payment initialization endpoint should check these fields in the request:
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Request Field</th>
+                    <th>Expected Value</th>
+                    <th>Action Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>paymentProvider</code></td>
+                    <td><code>"GIVEBUTTER"</code></td>
+                    <td>Route to GiveButter immediately (highest priority)</td>
+                </tr>
+                <tr>
+                    <td><code>paymentType</code></td>
+                    <td><code>"DONATION_ZERO_FEE"</code></td>
+                    <td>Also indicates GiveButter routing (secondary check)</td>
+                </tr>
+                <tr>
+                    <td><code>returnUrl</code></td>
+                    <td><code>"/events/4202/donation/success"</code></td>
+                    <td>Use this URL exactly (do not override)</td>
+                </tr>
+                <tr>
+                    <td><code>metadata.givebutterCampaignId</code></td>
+                    <td>GiveButter campaign ID string</td>
+                    <td>Use this campaign ID when creating GiveButter donation</td>
+                </tr>
+                <tr>
+                    <td><code>items</code> (for ticketed fundraisers)</td>
+                    <td>Array of ticket items with <code>itemType: "TICKET"</code></td>
+                    <td>Process ticket items but still route to GiveButter (do NOT route to Stripe just because items are present)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Backend Routing Logic Requirements</h2>
+        
+        <div class="section">
+            <h3>1. Payment Provider Selection Logic (Priority Order)</h3>
+            <p>
+                The payment orchestration service should check the following conditions <strong>in order</strong> 
+                when determining which payment provider to use:
+            </p>
+            <ol>
+                <li><strong>Check Explicit Request Parameter (HIGHEST PRIORITY):</strong>
+                    <ul>
+                        <li>If <code>request.paymentProvider === 'GIVEBUTTER'</code> OR <code>request.paymentType === 'DONATION_ZERO_FEE'</code>, 
+                            route to GiveButter <strong>immediately</strong> (do not check event metadata or provider config)</li>
+                        <li>This ensures the frontend's explicit request is honored</li>
+                    </ul>
+                </li>
+                <li><strong>Check Event Metadata (SECONDARY):</strong> If no explicit provider is specified, check:
+                    <ul>
+                        <li>If <code>donationMetadata.isFundraiserEvent === true</code> AND 
+                            <code>donationMetadata.zeroFeeProvider === "GIVEBUTTER"</code>, route to GiveButter</li>
+                    </ul>
+                </li>
+                <li><strong>Default to Stripe:</strong> If none of the above conditions are met, route to Stripe 
+                    (existing behavior).</li>
+            </ol>
+        </div>
+        
+        <div class="section">
+            <h3>2. GiveButter Provider Configuration</h3>
+            <p>
+                The backend logs indicate GiveButter provider is not configured. You need to:
+            </p>
+            <ol>
+                <li><strong>Add GiveButter Provider Config:</strong> Insert a record in <code>payment_provider_config</code> table:
+                    <div class="code-block">
+                        <pre><code>INSERT INTO payment_provider_config (
+    tenant_id,
+    provider_name,
+    provider_api_key_encrypted,
+    provider_secret_key_encrypted,
+    webhook_secret_encrypted,
+    is_active,
+    payment_use_case,
+    fallback_order
+) VALUES (
+    'tenant_demo_002',
+    'GIVEBUTTER',
+    -- Encrypted GiveButter API key
+    -- Encrypted GiveButter secret (if applicable)
+    -- Encrypted webhook secret
+    true,
+    'DONATION_ZERO_FEE',  -- or NULL for all use cases
+    0
+);</code></pre>
+                    </div>
+                </li>
+                <li><strong>Verify Provider Availability:</strong> The backend should check if GiveButter provider exists 
+                    and is active before falling back to Stripe.</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h3>2. Separate Control Paths</h3>
+            <div class="alert alert-info">
+                <strong>IMPORTANT:</strong> The donation-based checkout flow must be a <strong>completely separate 
+                control path</strong> from the existing Stripe checkout flow. This means:
+                <ul>
+                    <li>No changes to existing Stripe checkout logic</li>
+                    <li>No modifications to <code>/events/[id]/checkout</code> endpoint behavior</li>
+                    <li>Separate routing logic that only applies to donation-based flows</li>
+                    <li>Different success URL handling for donation-based transactions</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>Implementation Requirements</h2>
+
+        <h3>1. Verify Event 4202 Configuration</h3>
+        <div class="code-block">
+            <pre><code>// SQL Query to check event configuration
+SELECT 
+    id,
+    admission_type,
+    donation_metadata
+FROM event_details
+WHERE id = 4202;
+
+// Expected donation_metadata structure:
+{
+    "isFundraiserEvent": true,
+    "zeroFeeProvider": "GIVEBUTTER",
+    "givebutterCampaignId": "&lt;campaign-id&gt;"
+}</code></pre>
+        </div>
+
+        <h3>2. Update Payment Orchestration Service</h3>
+        <p>
+            Modify the payment orchestration service to <strong>respect the explicit paymentProvider parameter</strong> 
+            from the frontend request:
+        </p>
+        <div class="code-block">
+            <pre><code>// Pseudo-code for payment provider selection
+function selectPaymentProvider(request, event) {
+    // Priority 1: Check explicit paymentProvider from frontend request (HIGHEST PRIORITY)
+    if (request.getPaymentProvider() === 'GIVEBUTTER' || 
+        request.getPaymentType() === 'DONATION_ZERO_FEE') {
+        
+        // Verify GiveButter provider is configured for tenant
+        PaymentProviderConfig givebutterConfig = getGiveButterConfig(request.getTenantId());
+        if (givebutterConfig != null && givebutterConfig.isActive()) {
+            return 'GIVEBUTTER';  // ✅ Route to GiveButter as requested
+        } else {
+            // Log warning but still try to use GiveButter if API keys are available
+            log.warn("GiveButter provider not configured, but frontend explicitly requested it");
+            // Could still proceed if API keys are available via environment or other means
+        }
+    }
+    
+    // Priority 2: Check event metadata (only if no explicit provider specified)
+    if (request.getPaymentProvider() == null) {
+        const donationMeta = event.getDonationMetadata() || {};
+        if (donationMeta.isFundraiserEvent === true && 
+            donationMeta.zeroFeeProvider === 'GIVEBUTTER') {
+            return 'GIVEBUTTER';
+        }
+    }
+    
+    // Priority 3: Default to Stripe (existing behavior)
+    return 'STRIPE';
+}</code></pre>
+        </div>
+        
+        <div class="alert alert-danger">
+            <strong>⚠️ CRITICAL:</strong> The backend must check <code>request.getPaymentProvider()</code> and 
+            <code>request.getPaymentType()</code> from the frontend request payload. If these indicate GiveButter, 
+            route to GiveButter <strong>immediately</strong> without checking event metadata or falling back to Stripe.
+        </div>
+
+        <h3>3. Success URL Handling (CRITICAL)</h3>
+        <p>
+            The frontend explicitly provides the <code>returnUrl</code> in the request. The backend <strong>MUST</strong> 
+            use this URL instead of generating its own:
+        </p>
+        <div class="code-block">
+            <pre><code>// ✅ DO: Use the returnUrl from the frontend request
+String successUrl = request.getReturnUrl();  // Frontend provides: "/events/4202/donation/success"
+
+// ❌ DON'T: Override with backend-generated URL
+String successUrl = "/event/success?transactionId=" + transactionId + "&eventId=" + eventId;  // WRONG</code></pre>
+        </div>
+        
+        <div class="alert alert-warning">
+            <strong>Important:</strong> The frontend provides the correct success URL in the <code>returnUrl</code> field. 
+            The backend should <strong>always</strong> use this URL when initializing GiveButter payments. Do NOT override it.
+        </div>
+        
+        <h3>4. Webhook Handling Architecture</h3>
+        <div class="alert alert-info">
+            <strong>⚠️ CRITICAL ARCHITECTURE CHANGE:</strong> The <strong>frontend</strong> (Next.js) listens for GiveButter 
+            webhooks at <code>/api/webhooks/givebutter</code>, NOT the backend directly.
+        </div>
+        <p>
+            The webhook flow is:
+        </p>
+        <ol>
+            <li><strong>GiveButter sends webhook</strong> → Frontend endpoint <code>/api/webhooks/givebutter</code></li>
+            <li><strong>Frontend forwards webhook</strong> → Backend endpoint <code>/api/webhooks/givebutter</code> (with JWT auth)</li>
+            <li><strong>Backend processes webhook</strong> → Creates donation transaction, generates QR code, sends email</li>
+            <li><strong>Frontend success page polls</strong> → Falls back to creating transaction if webhook is delayed</li>
+        </ol>
+        <p>
+            <strong>Backend Requirements:</strong>
+        </p>
+        <ul>
+            <li>Backend should have a webhook endpoint at <code>/api/webhooks/givebutter</code> that accepts POST requests</li>
+            <li>Backend should verify GiveButter webhook signatures (if applicable)</li>
+            <li>Backend should process webhook events and create donation transactions</li>
+            <li>Backend should handle duplicate prevention (idempotency) for webhook events</li>
+        </ul>
+
+        <h2>Testing Requirements</h2>
+        <ol>
+            <li><strong>Verify GiveButter Provider Configuration:</strong>
+                <ul>
+                    <li>Query <code>payment_provider_config</code> table for tenant <code>tenant_demo_002</code></li>
+                    <li>Confirm GiveButter provider exists with <code>is_active = true</code></li>
+                    <li>Verify API keys and webhook secrets are properly encrypted and stored</li>
+                </ul>
+            </li>
+            <li><strong>Verify Event Configuration:</strong>
+                <ul>
+                    <li>Query event 4202 from database</li>
+                    <li>Confirm <code>donationMetadata.isFundraiserEvent === true</code></li>
+                    <li>Confirm <code>donationMetadata.zeroFeeProvider === "GIVEBUTTER"</code></li>
+                </ul>
+            </li>
+            <li><strong>Test Donation-Based Checkout:</strong>
+                <ul>
+                    <li>Access <code>/events/4202/donation-checkout</code></li>
+                    <li>Complete donation form and submit</li>
+                    <li>Verify backend logs show: <code>"Routing to GiveButter"</code> (not Stripe)</li>
+                    <li>Verify backend uses <code>returnUrl</code> from request (not generated URL)</li>
+                    <li>Complete payment on GiveButter</li>
+                    <li>Verify redirect to <code>/events/4202/donation/success?donationId=xxx</code></li>
+                    <li>Verify frontend webhook receives GiveButter webhook and forwards to backend</li>
+                    <li>Verify backend creates donation transaction from webhook</li>
+                    <li>Verify QR code is generated and email is sent</li>
+                </ul>
+            </li>
+            <li><strong>Test Standard Stripe Checkout (Regression Test):</strong>
+                <ul>
+                    <li>Access <code>/events/[non-fundraiser-event-id]/checkout</code></li>
+                    <li>Complete ticket selection and payment</li>
+                    <li>Verify payment is processed via Stripe (unchanged behavior)</li>
+                    <li>Verify redirect to <code>/event/success</code> (unchanged behavior)</li>
+                    <li>Verify no GiveButter routing occurs for non-fundraiser events</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h2>Frontend Context (For Reference)</h2>
+        <p>
+            The frontend is already configured to:
+        </p>
+        <ul>
+            <li>Route ticketed fundraiser events to <code>/events/[id]/donation-checkout</code></li>
+            <li>Call <code>initializeDonationPayment</code> with explicit <code>paymentType: 'DONATION_ZERO_FEE'</code> and <code>paymentProvider: 'GIVEBUTTER'</code></li>
+            <li>Provide correct <code>returnUrl: '/events/[id]/donation/success'</code> in the request</li>
+            <li>Listen for GiveButter webhooks at <code>/api/webhooks/givebutter</code> and forward to backend</li>
+            <li>Handle success page with desktop/mobile flow patterns (similar to Stripe flow)</li>
+            <li>Poll for donation transaction status if webhook is delayed</li>
+            <li>Support both donation transactions and ticket transactions on the success page</li>
+        </ul>
+        <p>
+            The frontend expects the backend to:
+        </p>
+        <ul>
+            <li><strong>Respect explicit <code>paymentProvider: 'GIVEBUTTER'</code> parameter</strong> from request</li>
+            <li><strong>Use the <code>returnUrl</code> provided by frontend</strong> (do not override)</li>
+            <li>Have GiveButter provider configured in <code>payment_provider_config</code> table</li>
+            <li>Route to GiveButter when <code>paymentProvider</code> is explicitly set to <code>'GIVEBUTTER'</code></li>
+            <li>Have webhook endpoint at <code>/api/webhooks/givebutter</code> to receive forwarded webhooks from frontend</li>
+            <li>Process GiveButter webhooks and create donation transactions</li>
+            <li>Generate QR codes and send emails after successful donation processing</li>
+        </ul>
+        
+        <h3>Desktop vs Mobile Flow Patterns</h3>
+        <p>
+            The frontend follows the same desktop/mobile flow patterns as Stripe (see 
+            <code>.cursor/rules/desktop_payment_flow.mdc</code> and <code>.cursor/rules/mobile_payment_flow.mdc</code>):
+        </p>
+        <ul>
+            <li><strong>Desktop:</strong> Stays on success page, polls via GET endpoint, creates transaction as fallback if webhook delayed</li>
+            <li><strong>Mobile:</strong> Shows brief success, redirects to QR page, uses POST endpoint as fallback</li>
+            <li><strong>Webhook:</strong> Primary method - frontend receives webhook, forwards to backend, backend creates transaction</li>
+            <li><strong>Idempotency:</strong> Both webhook and fallback paths check for existing transactions before creating</li>
+        </ul>
+        <p>
+            The backend should support the same patterns for GiveButter donations as it does for Stripe ticket sales.
+        </p>
+
+        <h2>Backend Logs Analysis</h2>
+        <p>
+            Current backend logs show the following issues:
+        </p>
+        <div class="code-block">
+            <pre><code>// Backend Logs (Current - INCORRECT):
+Event 4202 donationMetadata check: isFundraiserEvent=true, isCharityEvent=false, zeroFeeProvider=GIVEBUTTER
+Processing TICKET_SALE routing for event 4202
+Event 4202 is configured for GiveButter but provider not available for tenant tenant_demo_002 - falling back to other providers
+Provider selection order: [STRIPE]
+Attempting payment initialization with provider: STRIPE ❌
+Payment session initialized successfully with provider: STRIPE, transactionId: 7801
+Success URL: /event/success?transactionId=7801&eventId=4202 ❌ (Wrong URL)</code></pre>
+        </div>
+        
+        <div class="alert alert-warning">
+            <strong>Key Issues Identified:</strong>
+            <ul>
+                <li>Backend detects GiveButter configuration but says "provider not available" - needs GiveButter provider config in database</li>
+                <li>Backend ignores frontend's explicit <code>paymentProvider: 'GIVEBUTTER'</code> parameter</li>
+                <li>Backend ignores frontend's <code>returnUrl: '/events/4202/donation/success'</code> and uses its own URL</li>
+            </ul>
+        </div>
+        
+        <p>
+            After the fix, the logs should show:
+        </p>
+        <div class="code-block">
+            <pre><code>// Backend Logs (Expected - CORRECT):
+Frontend request: paymentProvider=GIVEBUTTER, paymentType=DONATION_ZERO_FEE
+GiveButter provider found for tenant tenant_demo_002 ✅
+Routing to GiveButter for event 4202
+GiveButter Campaign ID: &lt;campaign-id&gt;
+Using frontend-provided returnUrl: /events/4202/donation/success ✅
+Payment session initialized successfully with provider: GIVEBUTTER, transactionId: xxx
+Success URL: /events/4202/donation/success?transactionId=xxx ✅ (Correct URL)</code></pre>
+        </div>
+
+        <h2>Critical Constraints</h2>
+        <div class="alert alert-danger">
+            <h3>⚠️ DO NOT:</h3>
+            <ul>
+                <li>Modify existing Stripe checkout logic for <code>/events/[id]/checkout</code></li>
+                <li>Change the behavior of standard ticket sales</li>
+                <li>Break existing Stripe payment flows</li>
+                <li>Modify success URL handling for non-donation-based checkouts</li>
+            </ul>
+        </div>
+
+        <div class="alert alert-success">
+            <h3>✅ DO:</h3>
+            <ul>
+                <li>Create a separate routing path for donation-based checkouts</li>
+                <li>Check event metadata before defaulting to Stripe</li>
+                <li>Maintain backward compatibility with existing Stripe flows</li>
+                <li>Use conditional logic that only applies to donation-based requests</li>
+            </ul>
+        </div>
+
+        <h2>Implementation Checklist</h2>
+        <p>
+            The backend needs to implement the following fixes:
+        </p>
+        <ol>
+            <li><strong>Add GiveButter Provider Configuration:</strong>
+                <ul>
+                    <li>Insert GiveButter provider config record in <code>payment_provider_config</code> table for tenant <code>tenant_demo_002</code></li>
+                    <li>Include encrypted GiveButter API key, secret (if applicable), and webhook secret</li>
+                    <li>Set <code>is_active = true</code> and appropriate <code>payment_use_case</code></li>
+                </ul>
+            </li>
+            <li><strong>Respect Frontend Request Parameters:</strong>
+                <ul>
+                    <li>Check <code>request.getPaymentProvider()</code> - if it's <code>'GIVEBUTTER'</code>, route to GiveButter immediately</li>
+                    <li>Check <code>request.getPaymentType()</code> - if it's <code>'DONATION_ZERO_FEE'</code>, route to GiveButter</li>
+                    <li>Do NOT ignore these explicit parameters and fall back to Stripe</li>
+                </ul>
+            </li>
+            <li><strong>Use Frontend-Provided returnUrl:</strong>
+                <ul>
+                    <li>Always use <code>request.getReturnUrl()</code> when initializing GiveButter payments</li>
+                    <li>Do NOT override with backend-generated success URLs</li>
+                    <li>The frontend provides: <code>/events/4202/donation/success</code> - use this exactly</li>
+                </ul>
+            </li>
+            <li><strong>Implement GiveButter Webhook Endpoint:</strong>
+                <ul>
+                    <li>Create <code>POST /api/webhooks/givebutter</code> endpoint in backend</li>
+                    <li>Verify GiveButter webhook signatures (if applicable)</li>
+                    <li>Process webhook events and create donation transactions</li>
+                    <li>Handle idempotency to prevent duplicate transactions</li>
+                    <li>Generate QR codes and send emails after successful donation processing</li>
+                </ul>
+            </li>
+            <li><strong>Maintain Stripe Flow (No Changes):</strong>
+                <ul>
+                    <li>Do NOT modify existing Stripe checkout logic</li>
+                    <li>Do NOT change <code>/events/[id]/checkout</code> endpoint behavior</li>
+                    <li>Ensure standard ticket sales continue to work with Stripe</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h2>Frontend Webhook Architecture (For Reference)</h2>
+        <div class="alert alert-info">
+            <strong>Important:</strong> The <strong>frontend</strong> (Next.js) listens for GiveButter webhooks at 
+            <code>/api/webhooks/givebutter</code> and forwards them to the backend. The backend should have a 
+            corresponding endpoint to receive these forwarded webhooks.
+        </div>
+        <p>
+            Webhook Flow:
+        </p>
+        <ol>
+            <li>GiveButter → Frontend <code>/api/webhooks/givebutter</code> (Next.js API route)</li>
+            <li>Frontend → Backend <code>/api/webhooks/givebutter</code> (with JWT authentication)</li>
+            <li>Backend processes webhook → Creates donation transaction → Generates QR → Sends email</li>
+            <li>Frontend success page polls → Falls back to creating transaction if webhook delayed</li>
+        </ol>
+        
+        <div class="alert alert-success">
+            <strong>Note:</strong> The frontend is already configured correctly with webhook listening, success page 
+            polling, and proper routing. The backend just needs to:
+            <ul>
+                <li>Respect the <code>paymentProvider: 'GIVEBUTTER'</code> parameter</li>
+                <li>Use the <code>returnUrl</code> provided by the frontend</li>
+                <li>Have GiveButter provider configured in the database</li>
+                <li>Have a webhook endpoint to receive forwarded webhooks from the frontend</li>
+            </ul>
+        </div>
+
+        <h2>Quick Reference: What Backend Must Do</h2>
+        <div class="section">
+            <h3>1. Check Request Parameters First (Highest Priority)</h3>
+            <div class="code-block">
+                <pre><code>// ✅ DO: Check explicit request parameters FIRST
+if (request.getPaymentProvider() != null && request.getPaymentProvider().equals("GIVEBUTTER")) {
+    // Route to GiveButter immediately - frontend explicitly requested it
+    return initializeGiveButterPayment(request);
+}
+
+if (request.getPaymentType() != null && request.getPaymentType().equals("DONATION_ZERO_FEE")) {
+    // Also route to GiveButter if paymentType indicates donation
+    return initializeGiveButterPayment(request);
+}
+
+// Only then check event metadata or default to Stripe</code></pre>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>2. Use Frontend-Provided returnUrl</h3>
+            <div class="code-block">
+                <pre><code>// ✅ DO: Use returnUrl from request
+String successUrl = request.getReturnUrl();  // Frontend provides: "/events/4202/donation/success"
+
+// ❌ DON'T: Override with backend-generated URL
+String successUrl = "/event/success?transactionId=" + transactionId;  // WRONG</code></pre>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>3. Configure GiveButter Provider</h3>
+            <div class="code-block">
+                <pre><code>// Ensure GiveButter provider exists in payment_provider_config table
+SELECT * FROM payment_provider_config 
+WHERE tenant_id = 'tenant_demo_002' 
+  AND provider_name = 'GIVEBUTTER' 
+  AND is_active = true;
+
+// If missing, insert GiveButter provider configuration with:
+// - Encrypted API key
+// - Encrypted webhook secret
+// - is_active = true
+// - Appropriate payment_use_case (DONATION_ZERO_FEE or NULL for all)</code></pre>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>4. Implement Webhook Endpoint</h3>
+            <div class="code-block">
+                <pre><code>// Backend should have endpoint: POST /api/webhooks/givebutter
+// This receives webhooks forwarded from frontend (with JWT auth)
+// Should:
+// 1. Verify webhook signature (if applicable)
+// 2. Process webhook event
+// 3. Create donation transaction
+// 4. Generate QR code
+// 5. Send confirmation email
+// 6. Handle idempotency (prevent duplicates)</code></pre>
+            </div>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #dee2e6;">
+        
+        <p style="color: #6c757d; font-size: 0.9em;">
+            <strong>Document Version:</strong> 2.0 (Updated with frontend request payload details and webhook architecture)<br>
+            <strong>Created:</strong> <span id="date"></span><br>
+            <strong>Related Documentation:</strong> 
+            <a href="DONATION_FLOW_SUMMARY.html">DONATION_FLOW_SUMMARY.html</a>
+        </p>
+    </div>
+
+    <script>
+        document.getElementById('date').textContent = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    </script>
+</body>
+</html>

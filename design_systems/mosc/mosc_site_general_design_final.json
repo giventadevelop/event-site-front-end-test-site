@@ -1,0 +1,246 @@
+{
+  "designSystemFinal": {
+    "name": "MOSC Creator Analytics (Final Page Design Spec)",
+    "version": "1.0.0",
+    "purpose": "A comprehensive, AI-oriented design spec for building new features that match the exact styling, structure, and component patterns used on /mosc/creator-analytics. This file is page-specific and complements (does not replace) the broader MOSC design system.",
+    "scope": {
+      "route": "/mosc/creator-analytics",
+      "urlDev": "http://localhost:3000/mosc/creator-analytics",
+      "framework": "Next.js App Router (Next.js 15+), React, TailwindCSS",
+      "layout": {
+        "usesMoscConditionalLayout": true,
+        "layoutFile": "src/app/mosc/layout.tsx",
+        "globalStyles": "src/app/mosc/mosc-globals.css",
+        "notes": "Pages under /mosc/* render within MOSCLayout (MOSCHeader + NavigationBreadcrumb + MOSCFooter)."
+      }
+    },
+    "basedOn": {
+      "designSystem": "design_systems/mosc/mosc_site_general_design.json",
+      "sourcePageImplementation": "src/app/mosc/creator-analytics/page.tsx",
+      "referenceFormImplementation": "src/app/mosc/email/components/ContactForm.tsx",
+      "referenceRules": ".cursor/rules/mosc_styling_standards.mdc"
+    },
+    "highLevelGuidelines": {
+      "designPhilosophy": {
+        "tone": "Sacred, reverent, warm, and calm",
+        "visualLanguage": "Warm earth tones, serif headings, soft shadows, generous spacing, subtle transitions",
+        "avoid": [
+          "Hardcoded colors (hex/gray palettes)",
+          "Generic Tailwind shadows (shadow-md/shadow-lg)",
+          "Busy gradients and aggressive animations"
+        ]
+      },
+      "layoutSystem": {
+        "pageBackground": "bg-background",
+        "sectionSpacing": "Use py-16 for major sections",
+        "containers": {
+          "default": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+          "narrowForm": "max-w-4xl mx-auto px-4 sm:px-6 lg:px-8"
+        }
+      },
+      "typography": {
+        "headingFontClass": "font-heading",
+        "bodyFontClass": "font-body",
+        "headingSizing": {
+          "pageH1": "text-3xl lg:text-4xl font-semibold",
+          "sectionH2": "text-2xl font-semibold",
+          "sectionH3": "text-xl font-semibold",
+          "cardValue": "text-4xl font-bold"
+        },
+        "bodySizing": {
+          "lead": "text-lg",
+          "mutedSmall": "text-sm"
+        }
+      },
+      "motionAndDepth": {
+        "transitionClass": "reverent-transition",
+        "shadowClasses": ["sacred-shadow", "sacred-shadow-sm", "sacred-shadow-lg"],
+        "hoverPatterns": [
+          "hover:sacred-shadow-lg (cards)",
+          "hover:scale-105 or hover:scale-110 (small icon buttons)"
+        ]
+      },
+      "accessibility": {
+        "focusRings": "Always include focus:ring-2 focus:ring-ring focus:ring-offset-2 on interactive controls",
+        "labels": "All form inputs must have <label htmlFor=...>",
+        "aria": "Icon-only buttons must have aria-label"
+      }
+    },
+    "pageBlueprint": {
+      "pageComponent": "CreatorAnalyticsPage",
+      "file": "src/app/mosc/creator-analytics/page.tsx",
+      "sectionsInOrder": [
+        "HeroHeaderWithDateRangeToggle",
+        "CustomizeReportFormSection",
+        "StatsCardsSection (includes StatsGrid, GrowthMetricsGrid, TopPerformingContentList)"
+      ]
+    },
+    "componentSpecs": {
+      "PageRoot": {
+        "element": "div",
+        "className": "bg-background",
+        "notes": "MOSCLayout already sets the body/background, but this page container keeps consistency."
+      },
+      "HeroHeaderWithDateRangeToggle": {
+        "section": {
+          "element": "section",
+          "className": "relative bg-gradient-to-br from-background to-muted py-16"
+        },
+        "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+        "headerBlock": {
+          "container": "text-center mb-12",
+          "iconRow": "flex items-center justify-center space-x-3 mb-6",
+          "iconContainer": "w-12 h-12 bg-primary rounded-full flex items-center justify-center sacred-shadow",
+          "icon": {
+            "component": "AppIcon",
+            "name": "BarChart",
+            "size": 32,
+            "className": "text-primary-foreground"
+          },
+          "title": "font-heading font-semibold text-3xl lg:text-4xl text-foreground mb-4",
+          "subtitle": "font-body text-lg text-muted-foreground max-w-3xl mx-auto"
+        },
+        "dateRangeToggle": {
+          "container": "flex justify-center items-center gap-4 mb-8",
+          "labelLeft": "font-body text-lg font-semibold transition-colors duration-300 reverent-transition",
+          "toggleButton": {
+            "element": "button",
+            "baseClassName": "relative inline-flex h-10 w-16 items-center rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:scale-105 reverent-transition",
+            "stateOnClassName": "bg-primary focus:ring-ring",
+            "stateOffClassName": "bg-accent focus:ring-ring",
+            "thumb": "inline-flex items-center justify-center h-8 w-8 transform rounded-full bg-card transition-transform duration-300 sacred-shadow-sm",
+            "thumbOn": "translate-x-7",
+            "thumbOff": "translate-x-1"
+          },
+          "labelRight": "font-body text-lg font-semibold transition-colors duration-300 reverent-transition"
+        }
+      },
+      "CustomizeReportFormSection": {
+        "section": {
+          "element": "section",
+          "className": "py-16 bg-background"
+        },
+        "container": "max-w-4xl mx-auto px-4 sm:px-6 lg:px-8",
+        "card": {
+          "container": "bg-card rounded-lg sacred-shadow p-8 md:p-12",
+          "header": {
+            "container": "flex items-center space-x-4 mb-8",
+            "iconContainer": "w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center",
+            "icon": {
+              "component": "AppIcon",
+              "name": "Settings",
+              "size": 24,
+              "className": "text-primary"
+            },
+            "title": "font-heading font-semibold text-2xl text-foreground",
+            "subtitle": "font-body text-sm text-muted-foreground"
+          }
+        },
+        "form": {
+          "container": "space-y-6",
+          "fieldLabel": "block font-body font-medium text-foreground mb-2",
+          "requiredAsterisk": "text-destructive",
+          "inputBase": "w-full px-4 py-3 bg-input border rounded-lg font-body text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 reverent-transition",
+          "inputBorderNormal": "border-border",
+          "inputBorderError": "border-destructive",
+          "selectBase": "w-full px-4 py-3 bg-input border border-border rounded-lg font-body text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 reverent-transition",
+          "textareaBase": "w-full px-4 py-3 bg-input border rounded-lg font-body text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 reverent-transition resize-none",
+          "textareaRows": 6,
+          "errorMessage": {
+            "container": "mt-2 inline-flex items-center gap-2 rounded-md bg-red-50 px-4 py-2 text-sm font-body text-red-700 border border-red-300",
+            "badge": "inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-white text-[11px] font-bold"
+          },
+          "statusMessage": {
+            "container": "rounded-lg border px-4 py-3 sacred-shadow-sm",
+            "successClassName": "bg-emerald-50 border-emerald-300 text-emerald-700",
+            "errorClassName": "bg-red-50 border-red-300 text-red-700",
+            "contentRow": "flex items-start gap-3",
+            "iconBubble": "mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 sacred-shadow-sm flex-shrink-0",
+            "title": "font-heading text-sm font-semibold",
+            "message": "mt-1 font-body text-sm text-muted-foreground"
+          },
+          "submitButton": {
+            "className": "w-full bg-primary text-primary-foreground font-body font-medium px-6 py-3 rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 reverent-transition flex items-center justify-center space-x-2",
+            "icon": { "component": "AppIcon", "name": "RefreshCw", "size": 20, "className": "text-primary-foreground" }
+          }
+        }
+      },
+      "StatsCardsSection": {
+        "section": { "element": "section", "className": "py-16 bg-card" },
+        "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+        "statsGrid": {
+          "gridClassName": "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mb-12",
+          "cardBase": "bg-card rounded-lg sacred-shadow p-6 hover:sacred-shadow-lg reverent-transition text-center group",
+          "iconContainerBase": "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 reverent-transition",
+          "value": "font-heading font-bold text-4xl mb-2",
+          "label": "font-body text-sm text-muted-foreground",
+          "cards": [
+            { "key": "totalViews", "iconContainer": "bg-primary/10 group-hover:bg-primary/20", "valueClass": "text-primary", "iconName": "Eye", "iconColorClass": "text-primary" },
+            { "key": "totalSubscribers", "iconContainer": "bg-success/10 group-hover:bg-success/20", "valueClass": "text-success", "iconName": "Users", "iconColorClass": "text-success" },
+            { "key": "totalRevenue", "iconContainer": "bg-accent/10 group-hover:bg-accent/20", "valueClass": "text-accent", "iconName": "DollarSign", "iconColorClass": "text-accent" },
+            { "key": "avgEngagement", "iconContainer": "bg-warning/10 group-hover:bg-warning/20", "valueClass": "text-warning", "iconName": "TrendingUp", "iconColorClass": "text-warning" }
+          ]
+        },
+        "growthMetricsGrid": {
+          "gridClassName": "grid grid-cols-1 md:grid-cols-2 gap-8 mb-12",
+          "cardGradientPrimary": "bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-lg sacred-shadow p-8 border border-primary/20",
+          "cardGradientSuccess": "bg-gradient-to-br from-success/10 via-success/5 to-transparent rounded-lg sacred-shadow p-8 border border-success/20",
+          "headerRow": "flex items-center space-x-3 mb-6",
+          "headerIconBubble": "w-8 h-8 rounded-full flex items-center justify-center",
+          "headerTitle": "font-heading font-semibold text-lg text-foreground",
+          "value": "font-heading font-bold text-3xl mb-2",
+          "desc": "font-body text-muted-foreground leading-relaxed"
+        },
+        "topPerformingContentList": {
+          "container": "bg-card rounded-lg sacred-shadow p-8",
+          "headerRow": "flex items-center space-x-3 mb-6",
+          "headerIconBubble": "w-8 h-8 bg-primary rounded-full flex items-center justify-center",
+          "headerTitle": "font-heading font-semibold text-xl text-foreground",
+          "listSpacing": "space-y-4",
+          "itemContainer": "border border-border rounded-lg p-6 hover:sacred-shadow reverent-transition bg-card",
+          "itemTitle": "font-heading font-medium text-lg text-foreground mb-3",
+          "metricRow": "flex flex-wrap items-center gap-6 text-sm",
+          "metricText": "flex items-center gap-2 font-body text-muted-foreground",
+          "actionButton": {
+            "className": "flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 hover:bg-primary/20 flex items-center justify-center transition-all duration-300 hover:scale-110 reverent-transition",
+            "icon": { "component": "AppIcon", "name": "ArrowRight", "size": 20, "className": "text-primary" },
+            "a11y": { "title": "View Details", "ariaLabel": "View content details" }
+          }
+        }
+      }
+    },
+    "implementationRulesForAI": {
+      "inheritFromBaseDesignSystem": "Start with design_systems/mosc/mosc_site_general_design.json rules; this file is the exact page-level override/spec for /mosc/creator-analytics.",
+      "colors": {
+        "alwaysSemantic": ["bg-background", "bg-card", "bg-primary", "bg-input", "text-foreground", "text-muted-foreground"],
+        "neverHardcode": "Never use hex colors or gray palettes; follow MOSC semantic tokens."
+      },
+      "forms": {
+        "inputsMustUseBgInput": true,
+        "inputBaseMustMatch": "w-full px-4 py-3 bg-input border rounded-lg font-body text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 reverent-transition",
+        "errorState": "Switch border from border-border to border-destructive and show the red error pill below.",
+        "statusBanner": "Use the success/error banner style with sacred-shadow-sm and icon bubble."
+      },
+      "shadows": {
+        "banGenericShadows": true,
+        "allowed": ["sacred-shadow", "sacred-shadow-sm", "sacred-shadow-lg"]
+      },
+      "spacing": {
+        "sections": "py-16",
+        "cards": ["p-6", "p-8", "p-8 md:p-12"]
+      },
+      "icons": {
+        "component": "AppIcon",
+        "notes": "AppIcon wraps lucide-react icons by string name; unknown names fall back to HelpCircle."
+      }
+    },
+    "verification": {
+      "verifiedAgainst": [
+        "src/app/mosc/creator-analytics/page.tsx",
+        "design_systems/mosc/mosc_site_general_design.json"
+      ],
+      "lastUpdated": "2026-01-23",
+      "jsonNotes": "This file is intentionally explicit (exact classnames) to enable deterministic UI reproduction by AI."
+    }
+  }
+}

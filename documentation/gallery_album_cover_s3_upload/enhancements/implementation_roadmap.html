@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Cover S3 — Implementation Roadmap (v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Cover S3 — Implementation Roadmap</h1>
+    <p class="doc-meta">
+        <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 18, 2026<br>
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a>
+    </p>
+
+    <div class="lead">
+        <p>Cross-repo implementation order for S3-backed gallery album covers. Estimated effort: <strong>2–4 days</strong> (backend 1 day, frontend 1 day, porting script 0.5 day, QA 0.5 day).</p>
+    </div>
+
+    <h2>Phase C0 — Documentation (complete)</h2>
+    <ul>
+        <li>PRD pack under <code>documentation/gallery_album_cover_s3_upload/enhancements/</code></li>
+        <li>Stakeholder approval of S3 path convention</li>
+    </ul>
+
+    <h2>Phase C1 — Backend + proxy</h2>
+    <table>
+        <thead><tr><th>Task</th><th>Repo</th><th>Owner</th></tr></thead>
+        <tbody>
+            <tr><td>Add <code>generateGalleryAlbumCoverPath</code> in S3Service</td><td>malayalees-us-site-boot</td><td>Backend</td></tr>
+            <tr><td>Add <code>uploadGalleryAlbumCoverImage</code> in EventMediaResource</td><td>malayalees-us-site-boot</td><td>Backend</td></tr>
+            <tr><td>Update GalleryAlbum cover URL after upload</td><td>malayalees-us-site-boot</td><td>Backend</td></tr>
+            <tr><td>Integration test: Postman multipart upload</td><td>malayalees-us-site-boot</td><td>Backend</td></tr>
+            <tr><td>Add proxy <code>gallery-album-cover-image.ts</code></td><td>mosc-temp</td><td>Frontend</td></tr>
+        </tbody>
+    </table>
+
+    <h2>Phase C2 — Admin UI</h2>
+    <table>
+        <thead><tr><th>Task</th><th>File</th></tr></thead>
+        <tbody>
+            <tr><td>Create <code>GalleryAlbumCoverImageUpload.tsx</code></td><td><code>src/components/admin/gallery/</code></td></tr>
+            <tr><td>Wire into <code>AdminAlbumEditClient.tsx</code></td><td>Replace primary URL input</td></tr>
+            <tr><td>Post-create cover upload in <code>AdminAlbumListClient.tsx</code></td><td>Create flow</td></tr>
+        </tbody>
+    </table>
+
+    <h2>Phase C3 — Media page cleanup</h2>
+    <ul>
+        <li>Refactor <code>handleSetCoverImage</code> to <code>setAlbumCoverImageServer</code></li>
+        <li>Visual indicator for photo that matches <code>album.coverImageUrl</code></li>
+    </ul>
+
+    <h2>Phase C4 — Static import covers</h2>
+    <ul>
+        <li>Add <code>upload-gallery-album-covers.mjs</code> + npm scripts</li>
+        <li>Update <a href="../../gallery_porting/GALLERY_STATIC_TO_DYNAMIC_PORTING_GUIDE.html">porting guide</a> with cover upload step</li>
+        <li>Run against tenant_demo_002 staging; verify 29 covers on S3</li>
+    </ul>
+
+    <h2>Dependencies</h2>
+    <table>
+        <thead><tr><th>Phase</th><th>Blocked by</th></tr></thead>
+        <tbody>
+            <tr><td>C2, C3</td><td>C1 deployed to environment under test</td></tr>
+            <tr><td>C4</td><td>C1 + local <code>public/images/mosc/gallery/</code> files</td></tr>
+        </tbody>
+    </table>
+
+    <h2>Test checklist</h2>
+    <ul>
+        <li>[ ] Upload cover on edit page → S3 object exists</li>
+        <li>[ ] <code>gallery_album.cover_image_url</code> is HTTPS S3 URL</li>
+        <li>[ ] Public <code>/gallery</code> renders cover (Next Image)</li>
+        <li>[ ] Admin list thumbnail updated</li>
+        <li>[ ] Set cover from media grid works via server action</li>
+        <li>[ ] <code>gallery:upload-covers --dry-run</code> reports 29 albums</li>
+        <li>[ ] <code>gallery:upload-covers</code> replaces local paths with S3 URLs</li>
+        <li>[ ] Re-upload replaces old cover (new S3 key; optional orphan cleanup deferred)</li>
+    </ul>
+
+    <div class="info-box">
+        <strong>Out of scope v1.0:</strong> <code>cover_media_id</code> FK, presigned URL rotation, automatic cover from first uploaded photo, CDN invalidation.
+    </div>
+
+    <p><a href="generic_enhancement_prd.html">← Back to index</a></p>
+
+</body>
+</html>

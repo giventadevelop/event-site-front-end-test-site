@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Event Date &amp; Location — Gap Analysis PRD (v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; background: #fff; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        .status-done { color: #155724; font-weight: 600; }
+        .status-partial { color: #856404; font-weight: 600; }
+        .status-missing { color: #721c24; font-weight: 600; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px 16px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px 16px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Event Date &amp; Location — Gap Analysis PRD</h1>
+    <p class="doc-meta">
+        <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 19, 2026<br>
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a>
+    </p>
+
+    <div class="lead">
+        <p>Compares the <strong>legacy album card date line</strong> (full date, optional location) against current <strong>database schema</strong>, <strong>import pipeline</strong>, and <strong>frontend display</strong>.</p>
+    </div>
+
+    <h2>1. Card field gap matrix</h2>
+    <table>
+        <thead><tr><th>Card element</th><th>Legacy static</th><th>DB / API today</th><th>Gap</th><th>Phase</th></tr></thead>
+        <tbody>
+            <tr><td>Date line (full text)</td><td class="status-done">Yes — <code>date</code> string</td><td class="status-missing">Not stored</td><td class="status-missing">Only <code>albumYear</code> integer</td><td>E1–E3</td></tr>
+            <tr><td>Event start date</td><td class="status-partial">Embedded in <code>date</code></td><td class="status-missing">No column</td><td class="status-missing">Need <code>event_date_start</code></td><td>E1</td></tr>
+            <tr><td>Event end date (ranges)</td><td class="status-partial">Embedded in <code>date</code></td><td class="status-missing">No column</td><td class="status-missing">Need <code>event_date_end</code></td><td>E1</td></tr>
+            <tr><td>Location</td><td class="status-partial">Suffix after comma</td><td class="status-missing">No column</td><td class="status-missing">Need <code>event_location</code></td><td>E1</td></tr>
+            <tr><td>Year (filter/sort)</td><td class="status-done"><code>albumYear</code></td><td class="status-done"><code>album_year</code></td><td class="status-done">None</td><td>—</td></tr>
+            <tr><td>Category pill</td><td class="status-done">Yes</td><td class="status-done">Yes (v1.0)</td><td class="status-done">None</td><td>—</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. Data pipeline gap</h2>
+    <table>
+        <thead><tr><th>Stage</th><th>Has full date?</th><th>Has location?</th><th>Persisted to API?</th></tr></thead>
+        <tbody>
+            <tr><td><code>moscStaticAlbums.ts</code></td><td class="status-done">Yes — <code>date</code></td><td class="status-partial">3 albums with comma-location</td><td>—</td></tr>
+            <tr><td><code>static-gallery-manifest.json</code></td><td class="status-done">Yes — copied from TS</td><td class="status-partial">Same</td><td>—</td></tr>
+            <tr><td><code>import-static-gallery-to-api.mjs</code></td><td class="status-missing">Ignored</td><td class="status-missing">Ignored</td><td class="status-missing">Only <code>albumYear</code> POSTed</td></tr>
+            <tr><td>Live API (example id 11062)</td><td class="status-missing">No</td><td class="status-missing">No</td><td><code>albumYear: 2015</code> only</td></tr>
+            <tr><td><code>MoscGalleryAlbumCard</code></td><td class="status-missing">Shows year only</td><td class="status-missing">No</td><td>—</td></tr>
+        </tbody>
+    </table>
+
+    <h2>3. Manifest date formats (29 albums)</h2>
+    <table>
+        <thead><tr><th>Pattern</th><th>Count</th><th>Example</th><th>Structured mapping</th></tr></thead>
+        <tbody>
+            <tr><td>Year only</td><td>17</td><td><code>2019</code></td><td><code>albumYear</code> only; event dates null</td></tr>
+            <tr><td>Single calendar date</td><td>9</td><td><code>November 25, 2015</code></td><td>start = date; end null</td></tr>
+            <tr><td>Same-month range</td><td>1</td><td><code>October 24-26, 2015</code></td><td>start 2015-10-24; end 2015-10-26</td></tr>
+            <tr><td>Date + location</td><td>3</td><td><code>October 24-26, 2015, Indore</code></td><td>Parse location after last comma</td></tr>
+        </tbody>
+    </table>
+
+    <h2>4. Static field → v1.0 API field mapping</h2>
+    <table>
+        <thead><tr><th>Static / manifest</th><th>Example</th><th>v1.0 API / DB field</th></tr></thead>
+        <tbody>
+            <tr><td><code>date</code> (year only)</td><td><code>2019</code></td><td><code>album_year</code> = 2019</td></tr>
+            <tr><td><code>date</code> (single day)</td><td><code>November 25, 2015</code></td><td><code>event_date_start</code> = 2015-11-25</td></tr>
+            <tr><td><code>date</code> (range)</td><td><code>October 24-26, 2015</code></td><td>start + end DATE columns</td></tr>
+            <tr><td>Location suffix</td><td><code>Indore</code>, <code>Beirut</code></td><td><code>event_location</code></td></tr>
+            <tr><td><code>albumYear</code></td><td><code>2015</code></td><td><code>album_year</code> (keep; used for filters)</td></tr>
+        </tbody>
+    </table>
+
+    <div class="warning-box">
+        <strong>Re-scrape not required:</strong> Full legacy strings already exist in-repo. E4 backfill reads <code>static-gallery-manifest.json</code> — no external website scrape.
+    </div>
+
+    <div class="info-box">
+        <strong>Design choice:</strong> Store <strong>structured</strong> dates + location (not a duplicate <code>album_date_label</code> VARCHAR). Display text is computed in <code>formatGalleryAlbumEventDate()</code> for consistent en-dash and comma placement.
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Social Media Implementation Plan</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; max-width: 900px; margin: 0 auto; padding: 2rem; color: #333; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #db1111; padding-bottom: 0.5rem; }
+    h2 { color: #2d2d2d; margin-top: 2rem; }
+    h3 { color: #444; margin-top: 1.5rem; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem 0.75rem; text-align: left; }
+    th { background: #f5f5f5; }
+    pre, code { background: #f8f8f8; padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
+    pre { padding: 1rem; overflow-x: auto; }
+    ul { margin: 0.5rem 0; }
+    li { margin: 0.25rem 0; }
+    .meta { color: #666; font-size: 0.9rem; margin-top: 2rem; }
+  </style>
+</head>
+<body>
+  <h1>Social Media Implementation Plan</h1>
+  <p><strong>Reference</strong>: <code>documentation/news_portal/strapi/index.html</code> (catholicatenews.in)</p>
+  <p><strong>Purpose</strong>: Externalize social URLs in Strapi so admins can update them without code changes.</p>
+
+  <h2>1. Social Media URLs (from index.html)</h2>
+  <p>These URLs are currently hardcoded. Plan: store in Strapi <strong>Settings / Site Settings</strong>.</p>
+  <table>
+    <thead>
+      <tr><th>Purpose</th><th>Current URL</th><th>Source</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>LIVE</strong> (YouTube streams)</td>
+        <td><code>https://www.youtube.com/@DevalokamAramana/streams</code></td>
+        <td>Nav menu item 2467</td>
+      </tr>
+      <tr>
+        <td><strong>Facebook Page</strong> (Follow Us sidebar)</td>
+        <td><code>https://www.facebook.com/catholicatenews.in/</code></td>
+        <td>Header social + sidebar iframe</td>
+      </tr>
+      <tr>
+        <td><strong>Twitter/X</strong></td>
+        <td><code>https://x.com/malankaranews</code></td>
+        <td>Header social links</td>
+      </tr>
+      <tr>
+        <td><strong>MOSC Official Website</strong></td>
+        <td><code>https://mosc.in/</code></td>
+        <td>Nav menu item 217</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>2. Live Link and Facebook Embed – How They Work</h2>
+
+  <h3>Live link</h3>
+  <ul>
+    <li>Simple nav link: <code>&lt;a href="https://www.youtube.com/@DevalokamAramana/streams"&gt;LIVE&lt;/a&gt;</code></li>
+    <li>Opens YouTube live streams in a new tab</li>
+    <li>No embed; just a direct link</li>
+  </ul>
+
+  <h3>Facebook sidebar embed</h3>
+  <ul>
+    <li>Uses Facebook Page Plugin iframe</li>
+    <li><strong>Source</strong>: <code>https://www.facebook.com/plugins/page.php?href=...</code></li>
+    <li>Displays the page timeline, cover, facepile, and Follow button</li>
+    <li>Content is rendered by Facebook; we only provide the page URL</li>
+  </ul>
+
+  <h3>Facebook Page Plugin iframe</h3>
+  <p>The sidebar "Follow Us" panel uses the Facebook Page Plugin. Full embed URL pattern:</p>
+  <pre>https://www.facebook.com/plugins/page.php?href={FACEBOOK_PAGE_URL}&amp;tabs=timeline&amp;width=340&amp;height=500&amp;small_header=false&amp;adapt_container_width=true&amp;hide_cover=false&amp;show_facepile=true</pre>
+  <p><strong>Parameters</strong>:</p>
+  <table>
+    <thead>
+      <tr><th>Parameter</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>href</code></td><td>Facebook page URL (e.g. <code>https://www.facebook.com/catholicatenews.in</code>)</td></tr>
+      <tr><td><code>width</code></td><td>340 (reference) or 360 (current FollowUsFacebook)</td></tr>
+      <tr><td><code>height</code></td><td>500 (reference) or 720 (current FollowUsFacebook)</td></tr>
+      <tr><td><code>tabs=timeline</code></td><td>Shows page posts</td></tr>
+      <tr><td><code>show_facepile=true</code></td><td>Shows follower avatars</td></tr>
+      <tr><td><code>hide_cover=false</code></td><td>Shows cover photo</td></tr>
+    </tbody>
+  </table>
+
+  <h2>3. Externalization Strategy</h2>
+  <ol>
+    <li><strong>Strapi single type</strong>: <code>site-settings</code> or <code>tenant-settings</code>
+      <ul>
+        <li>Fields: <code>youtubeLiveUrl</code>, <code>facebookPageUrl</code>, <code>twitterUrl</code>, <code>moscOfficialWebsiteUrl</code></li>
+        <li>Optional: <code>facebookEmbedWidth</code>, <code>facebookEmbedHeight</code></li>
+      </ul>
+    </li>
+    <li><strong>API</strong>: <code>GET /api/site-settings</code> or <code>GET /api/tenant-settings</code></li>
+    <li><strong>Frontend</strong>:
+      <ul>
+        <li>Fetch settings server-side in <code>getNewsHomePageData</code> (or a dedicated <code>getSiteSettings</code>)</li>
+        <li>Pass to nav and <code>FollowUsFacebook</code> component</li>
+        <li>Use env fallbacks if Strapi returns nothing</li>
+      </ul>
+    </li>
+  </ol>
+
+  <h2>4. URL Reference Summary</h2>
+  <table>
+    <thead>
+      <tr><th>Name</th><th>URL</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>YouTube LIVE</td><td><code>https://www.youtube.com/@DevalokamAramana/streams</code></td></tr>
+      <tr><td>Facebook</td><td><code>https://www.facebook.com/catholicatenews.in/</code></td></tr>
+      <tr><td>Twitter/X</td><td><code>https://x.com/malankaranews</code></td></tr>
+      <tr><td>MOSC Official</td><td><code>https://mosc.in/</code></td></tr>
+      <tr>
+        <td>Facebook Page Plugin</td>
+        <td><code>https://www.facebook.com/plugins/page.php?href={encoded_page_url}&amp;tabs=timeline&amp;width=340&amp;height=500&amp;small_header=false&amp;adapt_container_width=true&amp;hide_cover=false&amp;show_facepile=true</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>5. Implementation Checklist</h2>
+  <ul>
+    <li>Add Strapi single type <code>site-settings</code> (or extend existing settings)
+      <ul>
+        <li><code>youtubeLiveUrl</code>, <code>facebookPageUrl</code>, <code>twitterUrl</code>, <code>moscOfficialWebsiteUrl</code></li>
+        <li><code>facebookEmbedWidth</code>, <code>facebookEmbedHeight</code> (optional)</li>
+      </ul>
+    </li>
+    <li>Fetch in <code>getNewsHomePageData</code> or new <code>getSiteSettings()</code></li>
+    <li>Update nav <code>EXTERNAL_LINKS</code> to use fetched URLs (with env fallbacks)</li>
+    <li>Update <code>FollowUsFacebook</code> to use <code>facebookPageUrl</code> from props</li>
+    <li>Update <code>catholicatenews_strapi_content_mapping.md</code></li>
+    <li>Add admin guide section for site settings</li>
+  </ul>
+
+  <p class="meta"><strong>Created</strong>: 2026-02-04 | <strong>Status</strong>: Implementation plan – ready for Strapi schema and frontend tasks</p>
+</body>
+</html>

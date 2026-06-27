@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiveButter Donation Flow - Control Flow Summary</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+            font-size: 2em;
+        }
+
+        h3 {
+            color: #555;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        h4 {
+            color: #666;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #e74c3c;
+        }
+
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+        }
+
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+
+        pre.flow-diagram {
+            background-color: #f8f9fa;
+            color: #333;
+            border-left: 4px solid #27ae60;
+            font-family: 'Courier New', monospace;
+            white-space: pre;
+            line-height: 1.8;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        th {
+            background-color: #3498db;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        hr {
+            border: none;
+            border-top: 2px solid #ecf0f1;
+            margin: 30px 0;
+        }
+
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .note {
+            background-color: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .critical {
+            background-color: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .json-block {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        .json-key {
+            color: #f92672;
+        }
+
+        .json-string {
+            color: #a6e22e;
+        }
+
+        .json-number {
+            color: #ae81ff;
+        }
+
+        .json-boolean {
+            color: #66d9ef;
+        }
+
+        strong {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .toc {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+
+        .toc h3 {
+            margin-top: 0;
+        }
+
+        .toc ul {
+            list-style-type: none;
+            margin-left: 0;
+        }
+
+        .toc a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>GiveButter Donation Flow - Control Flow Summary</h1>
+
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#section1">1. Event Configuration (Admin Setup)</a></li>
+                <li><a href="#section2">2. Event Detection Logic</a></li>
+                <li><a href="#section3">3. User-Facing Flow Decision Tree</a></li>
+                <li><a href="#section4">4. Payment Flow Routing</a></li>
+                <li><a href="#section5">5. Backend Payment Routing Logic</a></li>
+                <li><a href="#section6">6. Complete Control Flow Diagram</a></li>
+                <li><a href="#section7">7. Key Differences Between Flows</a></li>
+                <li><a href="#section8">8. Event Configuration Examples</a></li>
+                <li><a href="#section9">9. Database Schema Reference</a></li>
+                <li><a href="#section10">10. API Endpoints Summary</a></li>
+                <li><a href="#section11">11. Critical Implementation Notes</a></li>
+                <li><a href="#section12">12. Summary</a></li>
+                <li><a href="#section13">13. Backend Requirements</a></li>
+                <li><a href="#section14">14. Checkout Page Verification</a></li>
+            </ul>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>This document explains how events are determined as donation-based and how the payment flow is routed from admin setup to end-user purchase.</p>
+
+        <hr>
+
+        <h2 id="section1">1. Event Configuration (Admin Setup)</h2>
+
+        <h3>1.1 Admin Configures Event in EventForm</h3>
+
+        <p><strong>Location</strong>: <code>src/components/EventForm.tsx</code></p>
+
+        <p><strong>Configuration Fields</strong>:</p>
+        <ol>
+            <li><strong>Admission Type</strong> (<code>admissionType</code>):
+                <ul>
+                    <li>Options: <code>FREE</code>, <code>TICKETED</code>, <code>INVITATION_ONLY</code>, <code>DONATION_BASED</code></li>
+                    <li>If set to <code>DONATION_BASED</code> → Event is automatically donation-based</li>
+                </ul>
+            </li>
+            <li><strong>Fundraiser/Charity Checkboxes</strong>:
+                <ul>
+                    <li><code>isFundraiserEvent</code> checkbox</li>
+                    <li><code>isCharityEvent</code> checkbox</li>
+                    <li><strong>Mutually exclusive</strong> (checking one unchecks the other)</li>
+                </ul>
+            </li>
+            <li><strong>Zero-Fee Provider Configuration</strong>:
+                <ul>
+                    <li><code>useZeroFeeProvider</code> checkbox (auto-enabled when fundraiser/charity is checked)</li>
+                    <li><code>zeroFeeProvider</code> dropdown (auto-set to <code>GIVEBUTTER</code> when fundraiser/charity is checked)</li>
+                    <li><code>givebutterCampaignId</code> text field (optional)</li>
+                </ul>
+            </li>
+        </ol>
+
+        <p><strong>Data Storage</strong>:</p>
+        <ul>
+            <li><code>admissionType</code> → Stored in <code>event_details.admission_type</code> (enum)</li>
+            <li><code>isFundraiserEvent</code>, <code>isCharityEvent</code>, <code>zeroFeeProvider</code>, <code>givebutterCampaignId</code> → Stored in <code>event_details.donation_metadata</code> (JSON string)</li>
+        </ul>
+
+        <p><strong>Example donationMetadata JSON</strong>:</p>
+        <pre><code>{
+  "isFundraiserEvent": true,
+  "isCharityEvent": false,
+  "zeroFeeProvider": "GIVEBUTTER",
+  "givebutterCampaignId": "campaign_12345"
+}</code></pre>
+
+        <hr>
+
+        <h2 id="section2">2. Event Detection Logic</h2>
+
+        <h3>2.1 Frontend Detection Function</h3>
+
+        <p><strong>Location</strong>: <code>src/lib/donation/utils.ts</code> → <code>isDonationBasedEvent()</code></p>
+
+        <p><strong>Detection Rules</strong>:</p>
+        <pre><code>Event is donation-based if:
+1. admissionType === 'DONATION_BASED' 
+   OR
+2. (isFundraiserEvent === true OR isCharityEvent === true) 
+   AND zeroFeeProvider === 'GIVEBUTTER'</code></pre>
+
+        <p><strong>Usage</strong>:</p>
+        <ul>
+            <li>Used in event list pages (<code>/events</code>, <code>/events/[id]</code>) to show "Make a Donation" button</li>
+            <li>Used in donation checkout page to verify event supports donations</li>
+        </ul>
+
+        <hr>
+
+        <h2 id="section3">3. User-Facing Flow Decision Tree</h2>
+
+        <h3>3.1 Event Page Display Logic</h3>
+
+        <p><strong>Location</strong>: <code>src/app/events/[id]/page.tsx</code> and <code>src/app/events/page.tsx</code></p>
+
+        <p><strong>Button Display Rules</strong>:</p>
+        <pre class="flow-diagram">IF event.admissionType === 'TICKETED' AND event is upcoming:
+  → Show "Buy Tickets" button → Routes to /events/[id]/checkout (existing Stripe flow)
+
+IF isDonationBasedEvent(event) === true AND event is upcoming:
+  → Show "Make a Donation" button → Routes to /events/[id]/donation (new GiveButter flow)
+
+IF event.isRegistrationRequired === true AND event is upcoming:
+  → Show "Register Here" button → Routes to /events/[id]/register</pre>
+
+        <div class="note">
+            <p><strong>Key Point</strong>: An event can be BOTH ticketed AND donation-based:</p>
+            <ul>
+                <li>If <code>admissionType === 'TICKETED'</code> AND <code>isFundraiserEvent === true</code> with <code>zeroFeeProvider === 'GIVEBUTTER'</code></li>
+                <li>User sees "Buy Tickets" button</li>
+                <li>Backend automatically routes payment to GiveButter (not Stripe)</li>
+                <li>Frontend uses existing checkout flow (<code>/events/[id]/checkout</code>)</li>
+            </ul>
+        </div>
+
+        <hr>
+
+        <h2 id="section4">4. Payment Flow Routing</h2>
+
+        <h3>4.1 Donation-Only Events (admissionType === 'DONATION_BASED')</h3>
+
+        <p><strong>User Flow</strong>:</p>
+        <ol>
+            <li>User visits event page → Sees "Make a Donation" button</li>
+            <li>User clicks "Make a Donation" → Routes to <code>/events/[id]/donation</code></li>
+            <li>User fills donation form (amount, email, name, phone, prayer intention)</li>
+            <li>User clicks "Donate" → Frontend calls <code>POST /api/proxy/payments/initialize</code> with:
+                <pre><code>{
+  "eventId": 123,
+  "paymentType": "DONATION_ZERO_FEE",
+  "paymentProvider": "GIVEBUTTER",
+  "amount": 25.00,
+  "email": "donor@example.com",
+  "firstName": "John",
+  "lastName": "Doe",
+  "metadata": {
+    "givebutterCampaignId": "campaign_12345",
+    "isFundraiser": true,
+    "isCharity": false,
+    "prayerIntention": "For my family"
+  },
+  "returnUrl": "http://localhost:3000/events/123/donation/success",
+  "cancelUrl": "http://localhost:3000/events/123"
+}</code></pre>
+            </li>
+            <li>Backend returns GiveButter checkout URL → Frontend redirects user to GiveButter</li>
+            <li>User completes payment on GiveButter → GiveButter redirects to <code>/events/[id]/donation/success?transactionId=xxx</code></li>
+            <li>Success page polls payment status → Creates donation transaction → Generates QR code → Sends email</li>
+        </ol>
+
+        <h3>4.2 Ticketed Fundraiser Events (admissionType === 'TICKETED' + isFundraiserEvent === true)</h3>
+
+        <p><strong>User Flow</strong>:</p>
+        <ol>
+            <li>User visits event page → Sees "Buy Tickets" button (NOT "Make a Donation")</li>
+            <li>User clicks "Buy Tickets" → Routes to <code>/events/[id]/checkout</code> (existing checkout flow)</li>
+            <li>User selects tickets and fills form</li>
+            <li>User clicks "Checkout" → Frontend calls <code>POST /api/proxy/payments/initialize</code> with:
+                <pre><code>{
+  "paymentUseCase": "TICKET_SALE",
+  "eventId": 123,
+  "amount": 50.00,
+  "items": [
+    {
+      "itemType": "TICKET",
+      "itemId": 456,
+      "quantity": 2,
+      "unitPrice": 25.00
+    }
+  ],
+  "customerEmail": "buyer@example.com"
+}</code></pre>
+            </li>
+            <li><strong>Backend Routing Logic</strong> (in backend service):
+                <ul>
+                    <li>Backend receives <code>eventId</code> in request</li>
+                    <li>Backend queries event metadata from database</li>
+                    <li>Backend checks: <code>isFundraiserEvent === true</code> AND <code>zeroFeeProvider === 'GIVEBUTTER'</code></li>
+                    <li><strong>If true</strong>: Backend routes to GiveButter adapter (returns GiveButter checkout URL)</li>
+                    <li><strong>If false</strong>: Backend routes to Stripe adapter (returns Stripe checkout URL)</li>
+                </ul>
+            </li>
+            <li>Frontend receives checkout URL (GiveButter or Stripe) → Redirects user</li>
+            <li>User completes payment → Redirects to success page</li>
+            <li>Success page polls payment status → Creates ticket transaction → Generates QR code → Sends email</li>
+        </ol>
+
+        <div class="note">
+            <p><strong>Key Point</strong>: Frontend doesn't know which provider will be used. Backend makes the routing decision based on event metadata.</p>
+        </div>
+
+        <hr>
+
+        <h2 id="section5">5. Backend Payment Routing Logic</h2>
+
+        <h3>5.1 Backend Decision Flow (Backend Implementation Required)</h3>
+
+        <p><strong>Location</strong>: Backend service (<code>E:\project_workspace\malayalees-us-site-boot</code>)</p>
+
+        <p><strong>Routing Logic</strong> (pseudo-code):</p>
+        <pre><code>private ProviderType determineProvider(PaymentInitializeRequest request) {
+    // For TICKET_SALE payments, check event metadata
+    if (request.getPaymentUseCase() == PaymentUseCase.TICKET_SALE) {
+        if (request.getEventId() != null) {
+            EventDetails event = eventRepository.findById(request.getEventId());
+            
+            if (event != null && event.getDonationMetadata() != null) {
+                // Parse donationMetadata JSON string
+                Map&lt;String, Object&gt; donationMeta = parseJSON(event.getDonationMetadata());
+                
+                Boolean isFundraiser = (Boolean) donationMeta.get("isFundraiserEvent");
+                Boolean isCharity = (Boolean) donationMeta.get("isCharityEvent");
+                String zeroFeeProvider = (String) donationMeta.get("zeroFeeProvider");
+                
+                // Route to GiveButter if fundraiser/charity with GIVEBUTTER provider
+                if ((isFundraiser == true || isCharity == true) 
+                    && "GIVEBUTTER".equals(zeroFeeProvider)) {
+                    return ProviderType.GIVEBUTTER;
+                }
+            }
+        }
+    }
+    
+    // For DONATION_ZERO_FEE payments, always use GiveButter
+    if (request.getPaymentType() == PaymentType.DONATION_ZERO_FEE) {
+        return ProviderType.GIVEBUTTER;
+    }
+    
+    // Default: Stripe
+    return ProviderType.STRIPE;
+}</code></pre>
+
+        <p><strong>Critical Backend Requirements</strong>:</p>
+        <ol>
+            <li>Backend must check <code>event.donationMetadata</code> (JSON string) for fundraiser/charity flags</li>
+            <li>Backend must parse JSON string (not JSONB) - use Jackson ObjectMapper</li>
+            <li>Backend must check <code>zeroFeeProvider === 'GIVEBUTTER'</code> before routing</li>
+            <li>Backend must verify tenant has GiveButter configured in <code>payment_provider_config</code> table</li>
+        </ol>
+
+        <hr>
+
+        <h2 id="section6">6. Complete Control Flow Diagram</h2>
+
+        <h3>6.1 Admin Setup Flow</h3>
+
+        <pre class="flow-diagram">Admin → EventForm.tsx
+  ├─ Sets admissionType = 'DONATION_BASED' OR
+  ├─ Checks isFundraiserEvent = true
+  ├─ (Auto-enables useZeroFeeProvider)
+  ├─ (Auto-sets zeroFeeProvider = 'GIVEBUTTER')
+  └─ Saves to database:
+      ├─ event_details.admission_type = 'DONATION_BASED' (if set)
+      └─ event_details.donation_metadata = JSON string:
+          {
+            "isFundraiserEvent": true,
+            "zeroFeeProvider": "GIVEBUTTER",
+            "givebutterCampaignId": "..."
+          }</pre>
+
+        <h3>6.2 User Purchase Flow - Donation-Only Event</h3>
+
+        <pre class="flow-diagram">User → Event Page (/events/[id])
+  ├─ Frontend calls isDonationBasedEvent(event)
+  ├─ Returns true (admissionType === 'DONATION_BASED')
+  ├─ Shows "Make a Donation" button
+  └─ User clicks → Routes to /events/[id]/donation
+
+User → Donation Checkout Page
+  ├─ Selects donation amount ($5, $10, $25, $50, $100, or custom)
+  ├─ Enters email, name, phone (optional)
+  ├─ Enters prayer intention (optional)
+  ├─ Clicks "Donate"
+  └─ Frontend calls initializeDonationPayment() server action
+      ├─ POST /api/proxy/payments/initialize
+      ├─ Body: { paymentType: 'DONATION_ZERO_FEE', paymentProvider: 'GIVEBUTTER', ... }
+      └─ Backend returns: { checkoutUrl: "https://givebutter.com/..." }
+          └─ Frontend redirects to GiveButter checkout
+
+User → GiveButter Checkout
+  ├─ Completes payment on GiveButter
+  └─ GiveButter redirects to /events/[id]/donation/success?transactionId=xxx
+
+User → Donation Success Page
+  ├─ Frontend polls payment status (every 2 seconds, max 30 attempts)
+  ├─ Polls: GET /api/proxy/payments/{transactionId}
+  ├─ When status === 'SUCCEEDED':
+  │   ├─ Fetches donation transaction: GET /api/proxy/donation-transactions/{transactionId}
+  │   ├─ Generates QR code: POST /api/proxy/events/{id}/donations/{transactionId}/qrcode
+  │   └─ Sends email: POST /api/proxy/events/{id}/donations/{transactionId}/send-email
+  └─ Displays success page with QR code and confirmation</pre>
+
+        <h3>6.3 User Purchase Flow - Ticketed Fundraiser Event</h3>
+
+        <pre class="flow-diagram">User → Event Page (/events/[id])
+  ├─ Frontend checks: event.admissionType === 'TICKETED'
+  ├─ Returns true
+  ├─ Shows "Buy Tickets" button (NOT "Make a Donation")
+  └─ User clicks → Routes to /events/[id]/checkout (existing checkout)
+
+User → Ticket Checkout Page
+  ├─ Selects tickets
+  ├─ Enters email, name, phone
+  ├─ Applies discount code (optional)
+  ├─ Clicks "Checkout"
+  └─ Frontend calls UniversalPaymentCheckout component
+      ├─ POST /api/proxy/payments/initialize
+      ├─ Body: { paymentUseCase: 'TICKET_SALE', eventId: 123, items: [...], ... }
+      └─ Backend routing decision:
+          ├─ Backend queries event metadata
+          ├─ Checks: isFundraiserEvent === true AND zeroFeeProvider === 'GIVEBUTTER'
+          ├─ If true: Routes to GiveButter → Returns GiveButter checkout URL
+          └─ If false: Routes to Stripe → Returns Stripe checkout URL
+              └─ Frontend redirects to returned checkout URL
+
+User → Payment Provider Checkout (GiveButter or Stripe)
+  ├─ Completes payment
+  └─ Redirects to /event/success?transactionId=xxx
+
+User → Success Page
+  ├─ Frontend polls payment status
+  ├─ When status === 'SUCCEEDED':
+  │   ├─ Fetches ticket transaction
+  │   ├─ Generates QR code
+  │   └─ Sends email
+  └─ Displays success page with QR code and confirmation</pre>
+
+        <hr>
+
+        <h2 id="section7">7. Key Differences Between Flows</h2>
+
+        <h3>7.1 Donation-Only Flow vs Ticketed Fundraiser Flow</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Aspect</th>
+                    <th>Donation-Only Flow</th>
+                    <th>Ticketed Fundraiser Flow</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Button Shown</strong></td>
+                    <td>"Make a Donation"</td>
+                    <td>"Buy Tickets"</td>
+                </tr>
+                <tr>
+                    <td><strong>Route</strong></td>
+                    <td><code>/events/[id]/donation</code></td>
+                    <td><code>/events/[id]/checkout</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Frontend Component</strong></td>
+                    <td><code>DonationCheckoutClient</code></td>
+                    <td><code>CheckoutClient</code> (existing)</td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Type</strong></td>
+                    <td><code>DONATION_ZERO_FEE</code></td>
+                    <td><code>TICKET_SALE</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Provider</strong></td>
+                    <td>Always <code>GIVEBUTTER</code></td>
+                    <td>Backend decides (GiveButter or Stripe)</td>
+                </tr>
+                <tr>
+                    <td><strong>Backend Routing</strong></td>
+                    <td>Always GiveButter (explicit)</td>
+                    <td>Conditional (based on event metadata)</td>
+                </tr>
+                <tr>
+                    <td><strong>Transaction Table</strong></td>
+                    <td><code>donation_transaction</code></td>
+                    <td><code>event_ticket_transaction</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Success Route</strong></td>
+                    <td><code>/events/[id]/donation/success</code></td>
+                    <td><code>/event/success</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <hr>
+
+        <h2 id="section8">8. Event Configuration Examples</h2>
+
+        <h3>Example 1: Pure Donation Event (No Tickets)</h3>
+
+        <p><strong>Admin Configuration</strong>:</p>
+        <ul>
+            <li><code>admissionType</code> = <code>'DONATION_BASED'</code></li>
+            <li><code>isFundraiserEvent</code> = <code>false</code> (not needed)</li>
+            <li><code>isCharityEvent</code> = <code>false</code> (not needed)</li>
+        </ul>
+
+        <p><strong>User Experience</strong>:</p>
+        <ul>
+            <li>Event page shows "Make a Donation" button</li>
+            <li>Routes to <code>/events/[id]/donation</code></li>
+            <li>Always uses GiveButter</li>
+        </ul>
+
+        <h3>Example 2: Fundraiser Event with Tickets</h3>
+
+        <p><strong>Admin Configuration</strong>:</p>
+        <ul>
+            <li><code>admissionType</code> = <code>'TICKETED'</code></li>
+            <li><code>isFundraiserEvent</code> = <code>true</code></li>
+            <li><code>zeroFeeProvider</code> = <code>'GIVEBUTTER'</code></li>
+            <li><code>givebutterCampaignId</code> = <code>'campaign_12345'</code></li>
+        </ul>
+
+        <p><strong>User Experience</strong>:</p>
+        <ul>
+            <li>Event page shows "Buy Tickets" button</li>
+            <li>Routes to <code>/events/[id]/checkout</code> (existing flow)</li>
+            <li>Backend automatically routes to GiveButter (not Stripe)</li>
+            <li>User purchases tickets, but payment goes through GiveButter</li>
+        </ul>
+
+        <h3>Example 3: Charity Event with Tickets</h3>
+
+        <p><strong>Admin Configuration</strong>:</p>
+        <ul>
+            <li><code>admissionType</code> = <code>'TICKETED'</code></li>
+            <li><code>isCharityEvent</code> = <code>true</code></li>
+            <li><code>zeroFeeProvider</code> = <code>'GIVEBUTTER'</code></li>
+        </ul>
+
+        <p><strong>User Experience</strong>:</p>
+        <ul>
+            <li>Same as Example 2 (fundraiser with tickets)</li>
+        </ul>
+
+        <hr>
+
+        <h2 id="section9">9. Database Schema Reference</h2>
+
+        <h3>9.1 Event Details Table</h3>
+
+        <pre><code>event_details:
+  - id: BIGINT
+  - admission_type: ENUM('FREE', 'TICKETED', 'INVITATION_ONLY', 'DONATION_BASED')
+  - donation_metadata: TEXT (JSON string)</code></pre>
+
+        <h3>9.2 Donation Metadata JSON Structure</h3>
+
+        <pre><code>{
+  "isFundraiserEvent": true,
+  "isCharityEvent": false,
+  "zeroFeeProvider": "GIVEBUTTER",
+  "givebutterCampaignId": "campaign_12345"
+}</code></pre>
+
+        <h3>9.3 Donation Transaction Table</h3>
+
+        <pre><code>donation_transaction:
+  - id: BIGINT
+  - tenant_id: VARCHAR(255)
+  - event_id: BIGINT (nullable)
+  - payment_transaction_id: BIGINT (links to payment orchestration)
+  - transaction_reference: VARCHAR(255) UNIQUE
+  - givebutter_donation_id: VARCHAR(255)
+  - amount: DECIMAL(10,2)
+  - email: VARCHAR(255)
+  - first_name: VARCHAR(255)
+  - last_name: VARCHAR(255)
+  - phone: VARCHAR(50)
+  - prayer_intention: TEXT
+  - is_recurring: BOOLEAN
+  - status: VARCHAR(50) ('PENDING', 'COMPLETED', 'FAILED', 'CANCELLED')
+  - qr_code_url: TEXT
+  - email_sent: BOOLEAN</code></pre>
+
+        <hr>
+
+        <h2 id="section10">10. API Endpoints Summary</h2>
+
+        <h3>10.1 Frontend → Backend API Calls</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Endpoint</th>
+                    <th>Method</th>
+                    <th>Purpose</th>
+                    <th>Used By</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>/api/proxy/payments/initialize</code></td>
+                    <td>POST</td>
+                    <td>Initialize payment (GiveButter or Stripe)</td>
+                    <td>Donation checkout, Ticket checkout</td>
+                </tr>
+                <tr>
+                    <td><code>/api/proxy/payments/{transactionId}</code></td>
+                    <td>GET</td>
+                    <td>Poll payment status</td>
+                    <td>Donation success page</td>
+                </tr>
+                <tr>
+                    <td><code>/api/proxy/donation-transactions/{id}</code></td>
+                    <td>GET</td>
+                    <td>Get donation transaction</td>
+                    <td>Donation success page</td>
+                </tr>
+                <tr>
+                    <td><code>/api/proxy/events/{id}/donations/{transactionId}/qrcode</code></td>
+                    <td>POST</td>
+                    <td>Generate QR code</td>
+                    <td>Donation success page</td>
+                </tr>
+                <tr>
+                    <td><code>/api/proxy/events/{id}/donations/{transactionId}/send-email</code></td>
+                    <td>POST</td>
+                    <td>Send confirmation email</td>
+                    <td>Donation success page</td>
+                </tr>
+                <tr>
+                    <td><code>/api/proxy/givebutter/donations/{donationId}/status</code></td>
+                    <td>GET</td>
+                    <td>Check GiveButter donation status</td>
+                    <td>Donation success page (polling)</td>
+                </tr>
+                <tr>
+                    <td><code>/api/proxy/donations/create-from-givebutter</code></td>
+                    <td>POST</td>
+                    <td>Create donation from GiveButter data</td>
+                    <td>Donation success page</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <hr>
+
+        <h2 id="section11">11. Critical Implementation Notes</h2>
+
+        <h3>11.1 Frontend Detection vs Backend Routing</h3>
+
+        <ul>
+            <li><strong>Frontend Detection</strong> (<code>isDonationBasedEvent()</code>): Used to show/hide "Make a Donation" button</li>
+            <li><strong>Backend Routing</strong>: Used to determine which payment provider to use (GiveButter vs Stripe)</li>
+        </ul>
+
+        <div class="note">
+            <p><strong>Important</strong>: These are separate decisions:</p>
+            <ul>
+                <li>Frontend decides which button to show based on <code>admissionType</code> and <code>donationMetadata</code></li>
+                <li>Backend decides which provider to use based on event metadata when processing payment</li>
+            </ul>
+        </div>
+
+        <h3>11.2 Ticketed Fundraiser Events</h3>
+
+        <p>For ticketed fundraiser events:</p>
+        <ul>
+            <li>Frontend shows "Buy Tickets" button (uses existing checkout flow)</li>
+            <li>Backend automatically routes to GiveButter based on event metadata</li>
+            <li><strong>No frontend changes needed</strong> - backend handles routing transparently</li>
+        </ul>
+
+        <h3>11.3 Donation-Only Events</h3>
+
+        <p>For donation-only events:</p>
+        <ul>
+            <li>Frontend shows "Make a Donation" button (uses new donation flow)</li>
+            <li>Frontend explicitly sets <code>paymentType: 'DONATION_ZERO_FEE'</code> and <code>paymentProvider: 'GIVEBUTTER'</code></li>
+            <li>Backend always uses GiveButter (no routing decision needed)</li>
+        </ul>
+
+        <hr>
+
+        <h2 id="section12">12. Summary</h2>
+
+        <h3>Admin Setup Flow:</h3>
+        <ol>
+            <li>Admin opens EventForm</li>
+            <li>Sets <code>admissionType</code> to <code>'DONATION_BASED'</code> OR checks <code>isFundraiserEvent</code>/<code>isCharityEvent</code></li>
+            <li>System auto-enables <code>useZeroFeeProvider</code> and sets <code>zeroFeeProvider</code> to <code>'GIVEBUTTER'</code></li>
+            <li>Admin optionally enters <code>givebutterCampaignId</code></li>
+            <li>Admin saves event → Data stored in <code>event_details.donation_metadata</code> (JSON string)</li>
+        </ol>
+
+        <h3>User Purchase Flow - Donation Event:</h3>
+        <ol>
+            <li>User sees "Make a Donation" button on event page</li>
+            <li>Clicks button → Routes to <code>/events/[id]/donation</code></li>
+            <li>Fills donation form → Submits</li>
+            <li>Frontend calls <code>/api/proxy/payments/initialize</code> with <code>DONATION_ZERO_FEE</code> type</li>
+            <li>Backend returns GiveButter checkout URL</li>
+            <li>User completes payment on GiveButter</li>
+            <li>Redirects to success page → Polls status → Shows QR code and sends email</li>
+        </ol>
+
+        <h3>User Purchase Flow - Ticketed Fundraiser:</h3>
+        <ol>
+            <li>User sees "Buy Tickets" button on event page</li>
+            <li>Clicks button → Routes to <code>/events/[id]/checkout</code> (existing flow)</li>
+            <li>Selects tickets → Submits</li>
+            <li>Frontend calls <code>/api/proxy/payments/initialize</code> with <code>TICKET_SALE</code> type</li>
+            <li><strong>Backend checks event metadata</strong> → Routes to GiveButter (if fundraiser configured)</li>
+            <li>Backend returns GiveButter checkout URL (or Stripe if not fundraiser)</li>
+            <li>User completes payment → Redirects to success page → Shows QR code and sends email</li>
+        </ol>
+
+        <hr>
+
+        <h2 id="section13">13. Backend Requirements</h2>
+
+        <div class="critical">
+            <p><strong>CRITICAL</strong>: The backend must implement the routing logic described in section 5.1. Without this, ticketed fundraiser events will route to Stripe instead of GiveButter.</p>
+        </div>
+
+        <p><strong>Backend Files to Update</strong>:</p>
+        <ul>
+            <li><code>PaymentOrchestrationService.java</code> (or equivalent)</li>
+            <li><code>determineProvider()</code> method must check event metadata</li>
+            <li>Must parse <code>donationMetadata</code> JSON string (not JSONB)</li>
+            <li>Must verify GiveButter provider is configured for tenant</li>
+        </ul>
+
+        <p><strong>Reference Documentation</strong>:</p>
+        <ul>
+            <li><code>documentation/domain_agnostic_payment/Non_Profit_FundRaiser_GiveButter/BACKEND_ROUTING_PROMPT.md</code></li>
+            <li><code>documentation/domain_agnostic_payment/Non_Profit_FundRaiser_GiveButter/BACKEND_IMPLEMENTATION_PRD.html</code></li>
+        </ul>
+
+        <hr>
+
+        <h2 id="section14">14. Checkout Page Verification</h2>
+
+        <div class="note">
+            <p><strong>VERIFIED</strong>: No changes were made to the existing checkout page (<code>/events/[id]/checkout</code>) during the GiveButter donation implementation.</p>
+        </div>
+
+        <h3>14.1 Verification Results</h3>
+
+        <p><strong>Files Checked</strong>:</p>
+        <ul>
+            <li><code>src/app/events/[id]/checkout/page.tsx</code> - ✅ No changes</li>
+            <li><code>src/app/events/[id]/checkout/CheckoutClient.tsx</code> - ✅ No changes</li>
+            <li><code>src/app/events/[id]/checkout/CheckoutServerData.tsx</code> - ✅ No changes</li>
+        </ul>
+
+        <p><strong>Code Search Results</strong>:</p>
+        <ul>
+            <li>Searched for: <code>donation</code>, <code>givebutter</code>, <code>GIVEBUTTER</code>, <code>isDonationBasedEvent</code></li>
+            <li>Result: <strong>No matches found</strong> in the checkout directory</li>
+            <li>Searched for donation-related imports: <strong>No matches found</strong></li>
+        </ul>
+
+        <h3>14.2 Checkout Flow Remains Unchanged</h3>
+
+        <p>The existing checkout flow continues to work exactly as before:</p>
+        <ul>
+            <li>Still uses <code>UniversalPaymentCheckout</code> component</li>
+            <li>Still calls <code>POST /api/proxy/payments/initialize</code> with <code>paymentUseCase: 'TICKET_SALE'</code></li>
+            <li>No donation-specific logic added</li>
+            <li>No GiveButter-specific code added</li>
+        </ul>
+
+        <h3>14.3 How Ticketed Fundraiser Events Work</h3>
+
+        <p>For ticketed fundraiser events (<code>admissionType === 'TICKETED'</code> + <code>isFundraiserEvent === true</code>):</p>
+
+        <ol>
+            <li><strong>Frontend</strong>: User sees "Buy Tickets" button → Routes to <code>/events/[id]/checkout</code> (existing flow)</li>
+            <li><strong>Frontend</strong>: Uses existing <code>CheckoutClient</code> and <code>UniversalPaymentCheckout</code> components</li>
+            <li><strong>Frontend</strong>: Calls <code>/api/proxy/payments/initialize</code> with <code>paymentUseCase: 'TICKET_SALE'</code></li>
+            <li><strong>Backend</strong>: Checks event metadata and routes to GiveButter (if fundraiser) or Stripe (if not)</li>
+            <li><strong>Frontend</strong>: Receives checkout URL and redirects (no frontend changes needed)</li>
+        </ol>
+
+        <div class="note">
+            <p><strong>Key Point</strong>: The backend handles routing to GiveButter for ticketed fundraiser events based on event metadata. This is transparent to the frontend - no frontend changes are required.</p>
+        </div>
+
+        <h3>14.4 Implementation Summary</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Route/Page</th>
+                    <th>Status</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>/events/[id]/checkout</code></td>
+                    <td>✅ <strong>No Changes</strong></td>
+                    <td>Existing checkout flow remains unchanged</td>
+                </tr>
+                <tr>
+                    <td><code>/events/[id]/donation</code></td>
+                    <td>✅ <strong>New Route</strong></td>
+                    <td>Separate donation flow (new implementation)</td>
+                </tr>
+                <tr>
+                    <td><code>/events/[id]/offering</code></td>
+                    <td>✅ <strong>New Route</strong></td>
+                    <td>Separate mass offering flow (new implementation)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>14.5 Architecture Decision</h3>
+
+        <p>The implementation follows a <strong>separation of concerns</strong> approach:</p>
+        <ul>
+            <li><strong>Donation-only events</strong> → Use new <code>/events/[id]/donation</code> route</li>
+            <li><strong>Ticketed fundraiser events</strong> → Use existing <code>/events/[id]/checkout</code> route</li>
+            <li><strong>Backend routing</strong> → Handles provider selection (GiveButter vs Stripe) based on event metadata</li>
+            <li><strong>Frontend</strong> → No knowledge of provider selection, just redirects to returned checkout URL</li>
+        </ul>
+
+        <div class="note">
+            <p><strong>Benefits</strong>:</p>
+            <ul>
+                <li>Existing checkout flow remains stable and unchanged</li>
+                <li>New donation flow is completely separate</li>
+                <li>Backend can route to any provider without frontend changes</li>
+                <li>Easier to maintain and test each flow independently</li>
+            </ul>
+        </div>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Cube Membership & Subscription - Analysis & Documentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+Pro:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #2D2A26;
+            background-color: #F5F1E8;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #FFFFFF;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(139, 125, 107, 0.1);
+        }
+
+        h1 {
+            font-family: 'Crimson Text', serif;
+            font-size: 2.5em;
+            color: #8B7D6B;
+            margin-bottom: 10px;
+            border-bottom: 3px solid #8B7D6B;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            font-family: 'Crimson Text', serif;
+            font-size: 2em;
+            color: #6B4E3D;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #A0926B;
+            padding-bottom: 8px;
+        }
+
+        h3 {
+            font-family: 'Crimson Text', serif;
+            font-size: 1.5em;
+            color: #8B7D6B;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        h4 {
+            font-family: 'Crimson Text', serif;
+            font-size: 1.25em;
+            color: #6B4E3D;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            background-color: #EDE7D3;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            color: #6B4E3D;
+        }
+
+        pre {
+            background-color: #2D2A26;
+            color: #F5F1E8;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        pre code {
+            background-color: transparent;
+            color: #F5F1E8;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: #FFFFFF;
+        }
+
+        th, td {
+            border: 1px solid #A0926B;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #8B7D6B;
+            color: #FFFFFF;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background-color: #F5F1E8;
+        }
+
+        .info-box {
+            background-color: #EDE7D3;
+            border-left: 4px solid #8B7D6B;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box {
+            background-color: #FFF4E6;
+            border-left: 4px solid #A67C52;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .success-box {
+            background-color: #E8F5E9;
+            border-left: 4px solid #4A6741;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .mermaid {
+            background-color: #F5F1E8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        .diagram-fallback {
+            background-color: #2D2A26;
+            color: #F5F1E8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+        }
+
+        .doc-meta {
+            font-size: 0.9em;
+            color: #6B4E3D;
+            margin-bottom: 30px;
+        }
+
+        a {
+            color: #8B7D6B;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Event Cube Membership &amp; Subscription Analysis</h1>
+        <p class="doc-meta"><strong>Document Version:</strong> 1.0 | <strong>Date:</strong> February 2025 | <strong>Status:</strong> Analysis &amp; Documentation (No Implementation)</p>
+
+        <div class="info-box">
+            <h3 style="margin-top: 0;">Table of Contents</h3>
+            <ul style="margin-left: 20px; margin-bottom: 0;">
+                <li><a href="#executive-summary">1. Executive Summary</a></li>
+                <li><a href="#current-vs-eventcube">2. Current State vs Event Cube Path</a></li>
+                <li><a href="#eventcube-features">3. Event Cube Membership Features</a></li>
+                <li><a href="#eventcube-pricing">4. Event Cube Pricing &amp; Costs</a></li>
+                <li><a href="#domain-agnostic-model">5. Domain-Agnostic Membership Model</a></li>
+                <li><a href="#externalization-strategy">6. Externalization Strategy</a></li>
+                <li><a href="#separate-path-implementation">7. Separate Path Feature Implementation Outline</a></li>
+                <li><a href="#eventcube-as-paid-service">8. Event Cube as Paid Managed Service</a></li>
+                <li><a href="#when-eventcube-makes-sense">9. When Event Cube Makes Sense</a></li>
+                <li><a href="#architecture-diagrams">10. Architecture Diagrams</a></li>
+                <li><a href="#implementation-roadmap">11. Implementation Roadmap</a></li>
+                <li><a href="#references">12. References</a></li>
+            </ul>
+        </div>
+
+        <h2 id="executive-summary">1. Executive Summary</h2>
+        <p>
+            This document analyzes Event Cube as a <strong>separate path</strong> for membership and subscription management in the MCEFEE application. The goal is to detach membership from the event-centric Stripe integration and instead use Event Cube as a managed membership platform that is associated with <strong>organizations</strong> and <strong>domains</strong>, not with individual events.
+        </p>
+        <div class="info-box">
+            <h4>Key Concept</h4>
+            <p>Event Cube provides an all-in-one platform for events, memberships, and recurring payments. Rather than building our own billing logic with Stripe, we can externalize membership management to Event Cube while keeping event ticketing on our current path. Membership becomes organization-scoped and domain-aware.</p>
+        </div>
+
+        <h2 id="current-vs-eventcube">2. Current State vs Event Cube Path</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Aspect</th>
+                    <th>Current (Stripe Direct)</th>
+                    <th>Event Cube Path</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Membership Association</strong></td>
+                    <td>Tenant-scoped, backend tables (<code>membership_plan</code>, <code>membership_subscription</code>)</td>
+                    <td>Externalized in Event Cube, synced to app for display</td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Processing</strong></td>
+                    <td>Stripe API, webhooks, our backend</td>
+                    <td>Event Cube (Stripe under the hood)</td>
+                </tr>
+                <tr>
+                    <td><strong>Member Portal</strong></td>
+                    <td>Custom <code>/membership/*</code> pages</td>
+                    <td>Event Cube member portal + optional embed</td>
+                </tr>
+                <tr>
+                    <td><strong>Recurring Billing</strong></td>
+                    <td>Stripe Subscriptions, custom logic</td>
+                    <td>Event Cube managed</td>
+                </tr>
+                <tr>
+                    <td><strong>Event Integration</strong></td>
+                    <td>Events separate; membership standalone</td>
+                    <td>Membership can include event perks, members-only tickets</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 id="eventcube-features">3. Event Cube Membership Features</h2>
+        <p>Event Cube offers a built-in membership system that supports:</p>
+        <ul>
+            <li><strong>Create and manage membership plans</strong> – Multiple tiers, seasons, pricing levels</li>
+            <li><strong>Recurring payments</strong> – Direct debit, monthly/annual subscriptions</li>
+            <li><strong>Member status and renewals</strong> – Automatic tracking of expiration, renewal status, access levels</li>
+            <li><strong>Member portal</strong> – Members can view and manage their membership online</li>
+            <li><strong>Event integration</strong> – Member-only content, exclusive events, discounted tickets</li>
+            <li><strong>White-label</strong> – Custom domain/SSL, remove Event Cube branding (Pro plan)</li>
+            <li><strong>API</strong> – Events, tickets, basket, orders (Pro plan)</li>
+            <li><strong>Zapier</strong> – Integration with other tools</li>
+        </ul>
+        <p><strong>Note:</strong> Event Cube uses Stripe or similar processors for payments, but wraps them into a higher-level membership workflow so you don&apos;t build your own billing logic.</p>
+        <p><strong>Reference:</strong> <a href="https://www.eventcube.io/memberships" target="_blank" rel="noopener">https://www.eventcube.io/memberships</a></p>
+
+        <h2 id="eventcube-pricing">4. Event Cube Pricing &amp; Costs</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Plan</th>
+                    <th>Monthly Fee</th>
+                    <th>Transaction Fee</th>
+                    <th>Membership Features</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Starter</strong></td>
+                    <td>Free</td>
+                    <td>5% of transaction total</td>
+                    <td>Limited</td>
+                </tr>
+                <tr>
+                    <td><strong>Pro</strong></td>
+                    <td>$99–$125/mo (20% annual discount)</td>
+                    <td>3% of transaction total</td>
+                    <td>Full membership, custom domain, API, Zapier</td>
+                </tr>
+                <tr>
+                    <td><strong>Enterprise</strong></td>
+                    <td>Custom</td>
+                    <td>Bespoke rates</td>
+                    <td>Full suite, multiple gateways, bespoke extensions</td>
+                </tr>
+            </tbody>
+        </table>
+        <ul>
+            <li>API available on Pro plans and above</li>
+            <li>Free events are always free (no charge for free tickets)</li>
+            <li>UK: Prices exclude VAT</li>
+        </ul>
+        <p><strong>Reference:</strong> <a href="https://www.eventcube.io/pricing" target="_blank" rel="noopener">https://www.eventcube.io/pricing</a></p>
+
+        <h2 id="domain-agnostic-model">5. Domain-Agnostic Membership Model</h2>
+        <h3>Core Concept</h3>
+        <p>Membership is tied to the <strong>organization</strong> (tenant), not to events. Each organization can have its own Event Cube account and membership plans.</p>
+        <h3>Key Entities</h3>
+        <ul>
+            <li><code>tenant_organization</code> – tenant_id, domain, organization_name, etc.</li>
+            <li><strong>Domain/subdomain mapping</strong> – domain or subdomain &rarr; tenant_id &rarr; organization</li>
+            <li><strong>Externalized membership</strong> – Event Cube account per organization (or per tenant)</li>
+            <li><strong>User profile</strong> – user_profile + tenant_id &rarr; member in Event Cube for that org</li>
+        </ul>
+        <h3>Domain-to-Membership Association</h3>
+        <pre><code>Domain/Subdomain → tenant_id → tenant_organization → Event Cube Account ID
+                                                    → membership_plan (sync)
+                                                    → membership_subscription (sync)</code></pre>
+
+        <h2 id="externalization-strategy">6. Externalization Strategy</h2>
+        <h3>What to Externalize to Event Cube</h3>
+        <ul>
+            <li><strong>Membership plans</strong> – Created in Event Cube, optionally synced to local <code>membership_plan</code> for display</li>
+            <li><strong>Subscriptions</strong> – Primary source of truth in Event Cube; webhooks or API sync to local <code>membership_subscription</code></li>
+            <li><strong>Member portal</strong> – Event Cube hosted or embed (custom domain on Pro)</li>
+        </ul>
+        <h3>Per-Domain Configuration</h3>
+        <ul>
+            <li><code>tenant_organization.eventcube_account_id</code> (or similar) – maps org to Event Cube account</li>
+            <li>Environment: <code>NEXT_PUBLIC_TENANT_ID</code> per deployment; subdomain/domain resolves to tenant</li>
+            <li>Each domain/subdomain deployment uses its tenant&apos;s Event Cube config</li>
+        </ul>
+        <div class="success-box">
+            <h4>User Management Across Domains</h4>
+            <p>When a user visits a subdomain (e.g., org1.mosc.com), the app resolves <code>tenant_id</code> from the domain. Membership lookup uses <code>tenant_id</code> + user_profile to fetch subscription status from Event Cube (or local cache). The user can manage membership for that organization in the Event Cube portal or via embedded UI.</p>
+        </div>
+
+        <h2 id="separate-path-implementation">7. Separate Path Feature Implementation Outline</h2>
+        <h3>Path A – Stripe Direct (Current)</h3>
+        <ul>
+            <li>Routes: <code>/membership</code>, <code>/membership/plans</code>, <code>/membership/subscribe/[planId]</code>, <code>/membership/manage</code></li>
+            <li>Uses Stripe Elements, Payment Intents, Subscriptions</li>
+            <li>Backend: <code>membership_plan</code>, <code>membership_subscription</code>, Stripe webhooks</li>
+        </ul>
+        <h3>Path B – Event Cube (New, Parallel)</h3>
+        <ul>
+            <li><code>/membership/eventcube</code> or feature flag to route to Event Cube flow</li>
+            <li>Redirect to Event Cube checkout/portal, or embed Event Cube UI</li>
+            <li>Sync subscription status via Event Cube webhooks/API</li>
+            <li>Local cache: <code>membership_subscription</code> with <code>source = 'EVENTCUBE'</code> and <code>eventcube_subscription_id</code></li>
+        </ul>
+        <h3>Coexistence</h3>
+        <ul>
+            <li>Tenant setting: <code>membership_provider: 'STRIPE' | 'EVENTCUBE'</code></li>
+            <li>Routing logic selects Path A or Path B based on tenant config</li>
+        </ul>
+
+        <h2 id="eventcube-as-paid-service">8. Event Cube as Paid Managed Service</h2>
+        <h3>What Event Cube Charges</h3>
+        <ul>
+            <li><strong>Monthly SaaS fee</strong> – $0 (Starter), $99–$125 (Pro), Custom (Enterprise)</li>
+            <li><strong>Transaction fee</strong> – 5% (Starter), 3% (Pro), bespoke (Enterprise)</li>
+        </ul>
+        <h3>What You Avoid Building</h3>
+        <ul>
+            <li>Recurring billing logic</li>
+            <li>Member portal</li>
+            <li>Renewal tracking</li>
+            <li>Direct debit handling</li>
+        </ul>
+        <h3>What You Still Need</h3>
+        <ul>
+            <li>Auth (Clerk)</li>
+            <li>User profile</li>
+            <li>Tenant/org mapping</li>
+            <li>Optional local cache of subscription status for feature gating</li>
+        </ul>
+        <h3>Cost Comparison</h3>
+        <p><strong>Stripe direct:</strong> Development cost + infra cost + maintenance. <strong>Event Cube:</strong> Subscription fee + transaction % + lower dev cost. Choose based on scale, dev resources, and desired features.</p>
+
+        <h2 id="when-eventcube-makes-sense">9. When Event Cube Makes Sense</h2>
+        <ul>
+            <li><strong>All-in-one platform</strong> – Events + memberships + recurring payments under one roof</li>
+            <li><strong>Branded member portal</strong> – Without manually building your own system</li>
+            <li><strong>Membership includes event perks</strong> – Integrated event ticketing (clubs, associations, organizations)</li>
+        </ul>
+        <div class="info-box">
+            <h4>Best Fit</h4>
+            <p>Clubs, associations, and organizations where membership offers event perks or integrated ticketing. Event Cube combines event and member-centric activity into a single platform.</p>
+        </div>
+
+        <h2 id="architecture-diagrams">10. Architecture Diagrams</h2>
+        <h3>Current Stripe Membership Flow</h3>
+        <div class="mermaid">
+flowchart LR
+    User[User] --> Plans["/membership/plans"]
+    Plans --> Subscribe["/membership/subscribe/planId"]
+    Subscribe --> StripeElements[Stripe Elements]
+    StripeElements --> PI[Payment Intent]
+    PI --> Success["/membership/success"]
+    Success --> Webhook[Stripe Webhook]
+    Webhook --> Backend[Backend API]
+    Backend --> DB[(membership_subscription)]
+    Success --> Process[processMembershipSubscription]
+    Process --> DB
+        </div>
+        <h3>Proposed Event Cube Flow</h3>
+        <div class="mermaid">
+flowchart LR
+    Domain[Domain/Subdomain] --> Tenant[tenant_id]
+    Tenant --> Org[tenant_organization]
+    Org --> ECAccount[Event Cube Account]
+    User[User] --> Plans["/membership/plans or EC Portal"]
+    Plans --> ECCheckout[Event Cube Checkout]
+    ECCheckout --> EC[Event Cube]
+    EC --> Webhook[EC Webhook/API]
+    Webhook --> Sync[Sync Layer]
+    Sync --> LocalCache[(membership_subscription)]
+    User --> Profile[user_profile + tenant_id]
+        </div>
+        <h3>Dual-Path Routing</h3>
+        <div class="mermaid">
+flowchart TD
+    User[User visits /membership] --> Config{membership_provider}
+    Config -->|STRIPE| PathA[Path A: Stripe Direct]
+    Config -->|EVENTCUBE| PathB[Path B: Event Cube]
+    PathA --> StripePages["/membership/plans, subscribe, manage"]
+    PathB --> ECRedirect[Redirect to EC or embed]
+        </div>
+
+        <h2 id="implementation-roadmap">11. Implementation Roadmap (Documentation Only)</h2>
+        <ol>
+            <li><strong>Phase 1:</strong> Tenant/org config for membership provider (<code>membership_provider</code> in tenant_settings or tenant_organization)</li>
+            <li><strong>Phase 2:</strong> Event Cube account setup and API integration (Pro plan for API access)</li>
+            <li><strong>Phase 3:</strong> Domain-to-Event Cube mapping and sync layer (webhooks, polling, or API)</li>
+            <li><strong>Phase 4:</strong> Frontend routing and Event Cube embed/redirect</li>
+            <li><strong>Phase 5:</strong> Webhook handling and subscription sync to local cache</li>
+        </ol>
+
+        <h2 id="references">12. References</h2>
+        <ul>
+            <li><a href="https://www.eventcube.io/memberships" target="_blank" rel="noopener">Event Cube Memberships</a></li>
+            <li><a href="https://www.eventcube.io/pricing" target="_blank" rel="noopener">Event Cube Pricing</a></li>
+            <li><a href="https://api-docs.eventcube.io/" target="_blank" rel="noopener">Event Cube API</a></li>
+            <li><a href="https://www.eventcube.io/for-developers/api-driven" target="_blank" rel="noopener">Event Cube API Driven</a> (Pro plan)</li>
+            <li>Existing PRD: <code>documentation/domain_agnostic_payment/membership_susbscription/MEMBERSHIP_SUBSCRIPTION_PRD.md</code></li>
+            <li>tenant_organization schema: <code>code_html_template/SQLS/db_SQL_Temp_.sql</code> (lines 1676–1703)</li>
+        </ul>
+
+        <div class="warning-box">
+            <h4>Document Purpose</h4>
+            <p>This document is for <strong>analysis and planning only</strong>. No implementation has been performed. Use this analysis to evaluate Event Cube as an alternative path for membership management and to plan future development if the Event Cube path is selected.</p>
+        </div>
+    </div>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'neutral', themeVariables: { primaryColor: '#8B7D6B', primaryTextColor: '#2D2A26', primaryBorderColor: '#A0926B', lineColor: '#6B4E3D', secondaryColor: '#EDE7D3' } });
+    </script>
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gallery Static → Dynamic Porting Guide</title>
+  <style>
+    :root { --bg: #0f1419; --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff; --border: #30363d; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; margin: 0; padding: 2rem; }
+    .doc { max-width: 72rem; margin: 0 auto; }
+    h1 { font-size: 1.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-top: 0; }
+    h2 { font-size: 1.25rem; margin-top: 2rem; color: var(--accent); }
+    h3 { font-size: 1.05rem; margin-top: 1.25rem; }
+    p { margin: 0.5rem 0 1rem; color: var(--muted); }
+    code { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 0.15em 0.4em; border-radius: 4px; font-size: 0.9em; }
+    pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 1rem; border-radius: 8px; overflow-x: auto; font-size: 0.88em; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; font-weight: 600; }
+    .note { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 0 6px 6px 0; color: #0d3b66; }
+    .warn { background: #fff3cd; border-left: 4px solid #ffc107; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 0 6px 6px 0; color: #333; }
+    ul, ol { margin: 0.5rem 0 1rem; padding-left: 1.5rem; color: var(--muted); }
+    a { color: var(--accent); }
+    .section-intro { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .section-intro p, .section-intro li { color: #333; }
+    .command-block { border-radius: 8px; border: 2px solid #2196f3; margin: 1rem 0; overflow: hidden; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); }
+    .command-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: rgba(0,0,0,0.05); }
+    .command-content { padding: 12px 15px; font-family: 'Courier New', monospace; font-size: 0.9em; word-break: break-all; color: #0d3b66; white-space: pre-wrap; }
+    .copy-button { padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; border: none; background: #0066cc; color: white; }
+    .code-highlight { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 2px 6px; border-radius: 4px; }
+    .status-badge { display: inline-block; background: #238636; color: #fff; padding: 2px 10px; border-radius: 999px; font-size: 0.85em; font-weight: 600; }
+    .parameters-list { background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%); border-left: 4px solid #ff9800; border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+    .parameters-list li { color: #333; margin: 6px 0; }
+  </style>
+</head>
+<body>
+  <div class="doc">
+    <h1>Gallery Static → Dynamic Porting <span class="status-badge">Implemented</span></h1>
+    <p>Bulk-import all MOSC static gallery albums and photos into the dynamic <code class="code-highlight">gallery_album</code> + <code class="code-highlight">event_media</code> database using existing REST APIs — no backend code changes required.</p>
+
+    <div class="section-intro">
+      <p><strong>Static gallery (unchanged):</strong> <a href="http://localhost:3000/mosc-redesign/gallery">http://localhost:3000/mosc-redesign/gallery</a></p>
+      <p><strong>Dynamic gallery (API-driven):</strong> <a href="http://localhost:3000/gallery">http://localhost:3000/gallery</a></p>
+      <p><strong>Header submenu:</strong> Gallery → <em>Gallery</em> (static) + <em>Gallery Dynamic</em> (<code>/gallery</code>)</p>
+      <p><strong>Scope:</strong> 29 albums, ~315 photos parsed from <code>src/lib/gallery/moscStaticAlbums.ts</code> and per-album <code>page.tsx</code> files.</p>
+    </div>
+
+    <h2>1. Architecture overview</h2>
+    <table>
+      <thead><tr><th>Layer</th><th>Location</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td>Static manifest</td><td><code>src/lib/gallery/moscStaticAlbums.ts</code></td><td>Album metadata (title, category, year, slug)</td></tr>
+        <tr><td>Static album pages</td><td><code>src/app/mosc-redesign/(syro)/gallery/{slug}/page.tsx</code></td><td>Photo <code>src</code> paths per album</td></tr>
+        <tr><td>Dynamic public gallery</td><td><code>src/app/gallery/</code></td><td>Lists albums from API</td></tr>
+        <tr><td>Admin CRUD</td><td><code>src/app/admin/gallery/albums/</code></td><td>Manage albums after import</td></tr>
+        <tr><td>Import scripts</td><td><code>scripts/gallery-porting/</code></td><td>Extract manifest + POST to API</td></tr>
+        <tr><td>Nav config</td><td><code>src/components/mosc-redesign/galleryNav.ts</code></td><td>Gallery submenu items</td></tr>
+      </tbody>
+    </table>
+
+    <h2>2. Prerequisites</h2>
+    <div class="parameters-list">
+      <p><strong>Required environment variables</strong> (in <code>.env.local</code>):</p>
+      <ul>
+        <li><code>NEXT_PUBLIC_API_BASE_URL</code> — Rust/Spring backend base URL</li>
+        <li><code>NEXT_PUBLIC_TENANT_ID</code> — tenant for all DTOs</li>
+        <li><code>API_JWT_USER</code> / <code>API_JWT_PASS</code> — service JWT credentials (same as other admin scripts)</li>
+      </ul>
+      <p><strong>Optional (file upload mode only):</strong></p>
+      <ul>
+        <li><code>MOSC_APP_BASE_URL</code> or <code>NEXT_PUBLIC_APP_URL</code> — e.g. <code>http://localhost:3000</code></li>
+        <li>Next.js dev server running for multipart proxy uploads</li>
+        <li>Image files present under <code>public/images/mosc/gallery/{slug}/</code></li>
+      </ul>
+    </div>
+    <div class="note">
+      <strong>Gallery categories are required.</strong> Albums need a <code>gallery_category_id</code> foreign key. If <code>gallery_category</code> is empty (common after a fresh schema rebuild), imports succeed but every album gets <code>galleryCategoryId: null</code>. See <a href="#gallery-categories">Section 4 — Gallery categories</a> for the fix.
+    </div>
+    <div class="note">
+      <strong>Cover images on S3:</strong> Default import uses local paths (<code>/images/mosc/gallery/...</code>) for <code>cover_image_url</code>. For production S3 covers and admin upload UX, see
+      <a href="../gallery_album_cover_s3_upload/enhancements/generic_enhancement_prd.html">Gallery Album Cover S3 Upload PRD</a>.
+    </div>
+    <div class="note">
+      <strong>Event dates &amp; location:</strong> Legacy cards show full date lines (e.g. <em>October 24–26, 2015, Indore</em>); the API today stores only <code>album_year</code>. Structured fields <code>eventDateStart</code>, <code>eventDateEnd</code>, <code>eventLocation</code> require schema + backend work first — see
+      <a href="gallery_album_event_date_location_enhancements/generic_enhancement_prd.html">Event date &amp; location PRD pack</a> and <a href="#event-dates">Section 4.5</a>.
+    </div>
+
+    <h2 id="quick-reference">3. Quick reference — npm scripts</h2>
+    <p>Run from the repository root with <code>.env.local</code> configured. Typical order for a <strong>fresh database</strong> is rows 1 → 4 → 5 → 6 (or 1 → 4 → 5 if import auto-seeds categories).</p>
+    <table>
+      <thead><tr><th>Order</th><th>Command</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><code>npm run gallery:extract-manifest</code></td><td>Parse static TS pages → <code>static-gallery-manifest.json</code></td></tr>
+        <tr><td>2 (optional)</td><td><code>npm run gallery:seed-categories:dry</code></td><td>Dry-run category seed + album backfill (no API writes)</td></tr>
+        <tr><td>3 (optional)</td><td><code>npm run gallery:seed-categories</code></td><td>Seed 8 categories + PATCH <code>galleryCategoryId</code> on existing albums</td></tr>
+        <tr><td>4</td><td><code>npm run gallery:import:dry</code></td><td>Validate JWT, payloads, category resolution</td></tr>
+        <tr><td>5</td><td><code>npm run gallery:import</code></td><td>Import 29 albums + ~315 photos (URL mode). Auto-seeds categories if missing.</td></tr>
+        <tr><td>6</td><td><code>npm run gallery:seed-categories</code></td><td><strong>Run again</strong> if albums were imported before categories existed (backfill only)</td></tr>
+        <tr><td>—</td><td><code>npm run gallery:import:albums</code></td><td>Albums only (skip photos)</td></tr>
+        <tr><td>—</td><td><code>npm run gallery:import:media</code></td><td>Photos only (match albums by <code>static_slug=</code> in description)</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="gallery-categories">4. Gallery categories — problem and fix</h2>
+    <div class="warn">
+      <strong>Symptom:</strong> After import, SQL shows <code>gallery_category</code> empty and <code>gallery_album.gallery_category_id</code> is <code>NULL</code> for every row. The dynamic gallery may hide category pills/filters.
+    </div>
+    <h3>Root cause</h3>
+    <ul>
+      <li>The import script <strong>looks up</strong> categories by slug; it does not create the category table rows unless the updated import path runs <code>ensureGalleryCategories()</code> (current <code>npm run gallery:import</code>).</li>
+      <li>A fresh schema creates the <code>gallery_category</code> table but does not insert the 8 seed rows unless you run SQL migration <code>002_seed_gallery_category.sql</code> or the API seed script below.</li>
+      <li>Console during import: <code>No category id for slug …</code> → album created with <code>galleryCategoryId: null</code>. <code>album_year</code> and photos still import correctly.</li>
+    </ul>
+    <h3>Fix option A — API seed + backfill (recommended)</h3>
+    <p>Script: <code class="code-highlight">scripts/gallery-porting/seed-gallery-categories-and-backfill-albums.mjs</code></p>
+    <ol>
+      <li><strong>Step 1:</strong> POST eight <code>gallery_category</code> rows via <code>/api/gallery-categories</code> (skips slugs that already exist).</li>
+      <li><strong>Step 2:</strong> PATCH each imported album matched by <code>static_slug=</code> in <code>description</code>, using category mapping from <code>static-gallery-manifest.json</code>.</li>
+    </ol>
+    <div class="command-block">
+      <div class="command-header"><span>Seed categories + backfill albums</span><button class="copy-button" type="button" data-copy="npm run gallery:seed-categories">Copy</button></div>
+      <div class="command-content">npm run gallery:seed-categories</div>
+    </div>
+    <div class="command-block">
+      <div class="command-header"><span>Dry run (preview only)</span><button class="copy-button" type="button" data-copy="npm run gallery:seed-categories:dry">Copy</button></div>
+      <div class="command-content">npm run gallery:seed-categories:dry</div>
+    </div>
+    <p>Report written to <code>scripts/gallery-porting/category-backfill-report.json</code>.</p>
+    <h3>Fix option B — SQL migrations</h3>
+    <p>Apply in order (PostgreSQL):</p>
+    <ul>
+      <li><code>documentation/gallery_album_category_year_enhancements/migrations/001_add_gallery_category_and_album_year.sql</code> — schema (if not already in main schema file)</li>
+      <li><code>documentation/gallery_album_category_year_enhancements/migrations/002_seed_gallery_category.sql</code> — insert 8 categories for <code>tenant_demo_002</code></li>
+      <li><code>documentation/gallery_album_category_year_enhancements/migrations/004_backfill_gallery_album_category_year.sql</code> — set <code>gallery_category_id</code> from static slug mapping</li>
+    </ul>
+    <h3>Category slugs seeded (8 rows)</h3>
+    <table>
+      <thead><tr><th>Slug</th><th>Display name</th><th>sortOrder</th></tr></thead>
+      <tbody>
+        <tr><td><code>ecumenical-visits</code></td><td>Ecumenical Visits</td><td>10</td></tr>
+        <tr><td><code>major-events</code></td><td>Major Events</td><td>20</td></tr>
+        <tr><td><code>receptions</code></td><td>Receptions</td><td>30</td></tr>
+        <tr><td><code>liturgical-events</code></td><td>Liturgical Events</td><td>40</td></tr>
+        <tr><td><code>special-events</code></td><td>Special Events</td><td>50</td></tr>
+        <tr><td><code>private-audiences</code></td><td>Private Audiences</td><td>60</td></tr>
+        <tr><td><code>church-visits</code></td><td>Church Visits</td><td>70</td></tr>
+        <tr><td><code>conferences</code></td><td>Conferences</td><td>80</td></tr>
+      </tbody>
+    </table>
+    <h3>Verify in database</h3>
+    <pre>SELECT COUNT(*) FROM gallery_category WHERE tenant_id = 'tenant_demo_002';
+SELECT id, title, gallery_category_id, album_year
+FROM gallery_album
+WHERE tenant_id = 'tenant_demo_002'
+ORDER BY display_order;</pre>
+    <p>Expect 8 categories and non-null <code>gallery_category_id</code> on all static-imported albums (29 rows). Albums without <code>static_slug=</code> in description are skipped by the backfill script.</p>
+
+    <h2 id="event-dates">4.5 Event dates &amp; location (planned v1.0)</h2>
+    <div class="warn">
+      <strong>Symptom:</strong> Dynamic gallery cards show only the year (e.g. <code>2015</code>) while the static gallery shows <em>October 24–26, 2015, Indore</em>. Manifest <code>date</code> strings were never sent to the API at import time.
+    </div>
+    <p><strong>PRD pack (E0–E4):</strong> <a href="gallery_album_event_date_location_enhancements/generic_enhancement_prd.html">gallery_album_event_date_location_enhancements/</a></p>
+    <table>
+      <thead><tr><th>Layer</th><th>Document</th></tr></thead>
+      <tbody>
+        <tr><td>Index + phases</td><td><a href="gallery_album_event_date_location_enhancements/generic_enhancement_prd.html">generic_enhancement_prd.html</a></td></tr>
+        <tr><td>Gap analysis</td><td><a href="gallery_album_event_date_location_enhancements/gap_analysis_prd.html">gap_analysis_prd.html</a></td></tr>
+        <tr><td>Database schema</td><td><a href="gallery_album_event_date_location_enhancements/database_schema_enhancements_prd.html">database_schema_enhancements_prd.html</a></td></tr>
+        <tr><td>Backend (Rust/JHipster)</td><td><a href="gallery_album_event_date_location_enhancements/backend_enhancements_prd.html">backend_enhancements_prd.html</a></td></tr>
+        <tr><td>Frontend (mosc-temp)</td><td><a href="gallery_album_event_date_location_enhancements/frontend_enhancements_prd.html">frontend_enhancements_prd.html</a></td></tr>
+        <tr><td>Data migration / backfill</td><td><a href="gallery_album_event_date_location_enhancements/data_migration_enhancements_prd.html">data_migration_enhancements_prd.html</a></td></tr>
+        <tr><td>Implementation roadmap</td><td><a href="gallery_album_event_date_location_enhancements/implementation_roadmap.html">implementation_roadmap.html</a></td></tr>
+      </tbody>
+    </table>
+    <h3>After backend deploy (E4)</h3>
+    <p>One-time backfill from existing manifest — no photo re-import:</p>
+    <div class="command-block">
+      <div class="command-header"><span>Backfill event dates (planned npm script)</span><button class="copy-button" type="button" data-copy="npm run gallery:backfill-event-dates">Copy</button></div>
+      <div class="command-content">npm run gallery:backfill-event-dates</div>
+    </div>
+    <p>SQL alternative: <code>gallery_album_event_date_location_enhancements/migrations/001_gallery_album_event_date_location_schema.sql</code> then optional <code>002_backfill_event_dates_mosc_static.sql</code>. Verify with <code>003_verify_event_date_migration.sql</code>.</p>
+
+    <h2>5. Step-by-step workflow</h2>
+
+    <h3>Step 1 — Extract manifest</h3>
+    <p>Parses static TS sources into <code>scripts/gallery-porting/static-gallery-manifest.json</code>.</p>
+    <div class="command-block">
+      <div class="command-header"><span>Extract manifest</span><button class="copy-button" type="button" data-copy="npm run gallery:extract-manifest">Copy</button></div>
+      <div class="command-content">npm run gallery:extract-manifest</div>
+    </div>
+    <p>Equivalent:</p>
+    <div class="command-block">
+      <div class="command-header"><span>Direct node</span><button class="copy-button" type="button" data-copy="node scripts/gallery-porting/extract-static-gallery-manifest.mjs">Copy</button></div>
+      <div class="command-content">node scripts/gallery-porting/extract-static-gallery-manifest.mjs</div>
+    </div>
+
+    <h3>Step 2 — Dry run (validate auth + payload)</h3>
+    <div class="command-block">
+      <div class="command-header"><span>Full dry run</span><button class="copy-button" type="button" data-copy="npm run gallery:import:dry">Copy</button></div>
+      <div class="command-content">npm run gallery:import:dry</div>
+    </div>
+    <div class="command-block">
+      <div class="command-header"><span>Single album test</span><button class="copy-button" type="button" data-copy="node scripts/gallery-porting/import-static-gallery-to-api.mjs --dry-run --slug russia-visit">Copy</button></div>
+      <div class="command-content">node scripts/gallery-porting/import-static-gallery-to-api.mjs --dry-run --slug russia-visit</div>
+    </div>
+
+    <h3>Step 3 — (Optional) Seed categories before import</h3>
+    <p>Use this on a fresh DB if you prefer categories to exist before any album POST. Otherwise skip — <code>npm run gallery:import</code> calls <code>ensureGalleryCategories()</code> automatically.</p>
+    <div class="command-block">
+      <div class="command-header"><span>Pre-import category seed</span><button class="copy-button" type="button" data-copy="npm run gallery:seed-categories">Copy</button></div>
+      <div class="command-content">npm run gallery:seed-categories</div>
+    </div>
+
+    <h3>Step 4 — Import albums + photos (URL mode, default)</h3>
+    <p>Creates <code>gallery_album</code> rows and <code>event_media</code> rows with <code>fileUrl</code> pointing at existing static paths (e.g. <code>/images/mosc/gallery/russia-visit/1.jpg</code>). No file upload required if images are served from the Next app or CDN. Seeds categories first if the table is empty; patches category on existing albums when re-run and category was missing.</p>
+    <div class="command-block">
+      <div class="command-header"><span>Full import</span><button class="copy-button" type="button" data-copy="npm run gallery:import">Copy</button></div>
+      <div class="command-content">npm run gallery:import</div>
+    </div>
+
+    <h3>Step 5 — Backfill categories (if albums imported with NULL category)</h3>
+    <p>If you imported <strong>before</strong> categories existed, run the seed/backfill script once. Safe to re-run (idempotent for existing categories).</p>
+    <div class="command-block">
+      <div class="command-header"><span>Backfill gallery_category_id</span><button class="copy-button" type="button" data-copy="npm run gallery:seed-categories">Copy</button></div>
+      <div class="command-content">npm run gallery:seed-categories</div>
+    </div>
+
+    <h3>Step 6 — Verify</h3>
+    <ul>
+      <li>Open <a href="http://localhost:3000/gallery">http://localhost:3000/gallery</a> — albums should appear.</li>
+      <li>Admin: <a href="http://localhost:3000/admin/gallery/albums">/admin/gallery/albums</a></li>
+      <li>Review <code>scripts/gallery-porting/import-report.json</code> for per-album ids and error counts.</li>
+    </ul>
+
+    <h2>6. Import script flags</h2>
+    <table>
+      <thead><tr><th>Flag</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>--dry-run</code></td><td>Log POST payloads without calling API</td></tr>
+        <tr><td><code>--albums-only</code></td><td>Create album records only; skip photos</td></tr>
+        <tr><td><code>--media-only</code></td><td>Attach photos to albums matched by <code>static_slug=</code> in description</td></tr>
+        <tr><td><code>--slug &lt;id&gt;</code></td><td>Import one album (e.g. <code>russia-visit</code>)</td></tr>
+        <tr><td><code>--limit N</code></td><td>Process first N albums only</td></tr>
+        <tr><td><code>--batch-size N</code></td><td>Photos per batch (default 8); reduces API pressure</td></tr>
+        <tr><td><code>--media-mode url</code></td><td><strong>Default.</strong> POST event_media with URL paths</td></tr>
+        <tr><td><code>--media-mode file</code></td><td>Multipart upload via Next proxy; requires local files + running app</td></tr>
+        <tr><td><code>--force</code></td><td>Re-import even when album/media already exists</td></tr>
+        <tr><td><code>--manifest path</code></td><td>Use pre-generated JSON instead of live parse</td></tr>
+        <tr><td><code>--report path</code></td><td>Output report path (default: <code>scripts/gallery-porting/import-report.json</code>)</td></tr>
+      </tbody>
+    </table>
+
+    <h2>7. Batch import examples</h2>
+
+    <h3>Phased import (albums first, then media)</h3>
+    <div class="command-block">
+      <div class="command-header"><span>Phase 1 — albums</span><button class="copy-button" type="button" data-copy="npm run gallery:import:albums">Copy</button></div>
+      <div class="command-content">npm run gallery:import:albums</div>
+    </div>
+    <div class="command-block">
+      <div class="command-header"><span>Phase 2 — media</span><button class="copy-button" type="button" data-copy="npm run gallery:import:media">Copy</button></div>
+      <div class="command-content">npm run gallery:import:media</div>
+    </div>
+
+    <h3>Small batches (production-safe)</h3>
+    <div class="command-block">
+      <div class="command-header"><span>First 5 albums</span><button class="copy-button" type="button" data-copy="node scripts/gallery-porting/import-static-gallery-to-api.mjs --limit 5 --batch-size 10">Copy</button></div>
+      <div class="command-content">node scripts/gallery-porting/import-static-gallery-to-api.mjs --limit 5 --batch-size 10</div>
+    </div>
+
+    <h3>File upload mode (S3 via Next proxy)</h3>
+    <div class="warn">
+      Requires <code>npm run dev</code> running and image files on disk. Use when you need copies in S3 rather than URL references.
+    </div>
+    <div class="command-block">
+      <div class="command-header"><span>File mode</span><button class="copy-button" type="button" data-copy="node scripts/gallery-porting/import-static-gallery-to-api.mjs --media-mode file --slug russia-visit">Copy</button></div>
+      <div class="command-content">node scripts/gallery-porting/import-static-gallery-to-api.mjs --media-mode file --slug russia-visit</div>
+    </div>
+
+    <h2>8. How albums are matched (idempotency)</h2>
+    <ul>
+      <li>Each imported album description includes <code>static_slug={slug}</code> for re-runs.</li>
+      <li>Default behavior skips albums/media that already exist (use <code>--force</code> to override).</li>
+      <li><code>--media-only</code> looks up existing albums by parsing <code>static_slug=</code> from description.</li>
+    </ul>
+
+    <h2>9. Navigation changes</h2>
+    <p>File: <code>src/components/mosc-redesign/galleryNav.ts</code></p>
+    <pre>export const GALLERY_MENU_ITEMS = [
+  { label: 'Gallery', href: '/mosc-redesign/gallery' },
+  { label: 'Gallery Dynamic', href: '/gallery' },
+];</pre>
+    <p><code>MoscRedesignHeader.tsx</code> renders a Gallery dropdown (desktop hover + mobile submenu) using these items, matching the Calendar submenu pattern.</p>
+
+    <h2>10. API endpoints used (no backend changes)</h2>
+    <table>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>GET</td><td><code>/api/gallery-categories</code></td><td>Resolve category id by slug</td></tr>
+        <tr><td>POST</td><td><code>/api/gallery-categories</code></td><td>Seed category rows (seed script)</td></tr>
+        <tr><td>GET</td><td><code>/api/gallery-albums</code></td><td>Detect existing imports</td></tr>
+        <tr><td>POST</td><td><code>/api/gallery-albums</code></td><td>Create album</td></tr>
+        <tr><td>PATCH</td><td><code>/api/gallery-albums/{id}</code></td><td>Backfill <code>galleryCategoryId</code> (seed script)</td></tr>
+        <tr><td>POST</td><td><code>/api/event-medias</code></td><td>Create photo (URL mode)</td></tr>
+        <tr><td>POST</td><td><code>/api/proxy/event-medias/upload-multiple</code></td><td>Multipart upload (file mode, via Next app)</td></tr>
+        <tr><td>PATCH</td><td><code>/api/event-medias/{id}</code></td><td>Set <code>albumId</code> after upload (file mode)</td></tr>
+      </tbody>
+    </table>
+
+    <h2>11. Troubleshooting</h2>
+    <table>
+      <thead><tr><th>Symptom</th><th>Cause / fix</th></tr></thead>
+      <tbody>
+        <tr><td>401 on import</td><td>Check <code>API_JWT_USER</code> / <code>API_JWT_PASS</code> in <code>.env.local</code></td></tr>
+        <tr><td><code>gallery_category</code> table empty</td><td>Run <code>npm run gallery:seed-categories</code> or SQL <code>002_seed_gallery_category.sql</code></td></tr>
+        <tr><td><code>gallery_category_id</code> NULL on all albums</td><td>Categories missing at import time. Run <code>npm run gallery:seed-categories</code> to seed + backfill. See <a href="#gallery-categories">Section 4</a>.</td></tr>
+        <tr><td>Console: <code>No category id for slug …</code></td><td>Same as above — seed categories, then backfill or re-run import (patches existing albums)</td></tr>
+        <tr><td>No category id warning (legacy)</td><td>Run <code>npm run gallery:seed-categories</code> or category SQL migrations</td></tr>
+        <tr><td>Empty gallery at <code>/gallery</code></td><td>Confirm import report; check <code>isPublic: true</code> on albums</td></tr>
+        <tr><td>Broken images</td><td>URL mode: ensure <code>/images/mosc/gallery/...</code> paths resolve in production. File mode: ensure files exist locally</td></tr>
+        <tr><td>File mode fails</td><td>Start <code>npm run dev</code>; set <code>MOSC_APP_BASE_URL=http://localhost:3000</code></td></tr>
+        <tr><td>Duplicate albums</td><td>Re-run without <code>--force</code>; script skips by <code>static_slug</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2>12. File reference</h2>
+    <table>
+      <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>scripts/gallery-porting/gallery-porting-lib.mjs</code></td><td>JWT, parsing, <code>GALLERY_CATEGORY_SEEDS</code>, category map</td></tr>
+        <tr><td><code>scripts/gallery-porting/extract-static-gallery-manifest.mjs</code></td><td>Manifest generator</td></tr>
+        <tr><td><code>scripts/gallery-porting/import-static-gallery-to-api.mjs</code></td><td>Main import CLI; <code>ensureGalleryCategories()</code> on run</td></tr>
+        <tr><td><code>scripts/gallery-porting/seed-gallery-categories-and-backfill-albums.mjs</code></td><td>Seed 8 categories + PATCH album <code>galleryCategoryId</code></td></tr>
+        <tr><td><code>scripts/gallery-porting/static-gallery-manifest.json</code></td><td>Generated source data</td></tr>
+        <tr><td><code>scripts/gallery-porting/import-report.json</code></td><td>Last import run results</td></tr>
+        <tr><td><code>scripts/gallery-porting/category-backfill-report.json</code></td><td>Last category seed/backfill results</td></tr>
+        <tr><td><code>documentation/gallery_album_category_year_enhancements/migrations/002_seed_gallery_category.sql</code></td><td>SQL alternative for category seed</td></tr>
+        <tr><td><code>documentation/gallery_porting/gallery_album_event_date_location_enhancements/</code></td><td>PRD pack: eventDateStart/End + eventLocation (E0–E4)</td></tr>
+        <tr><td><code>scripts/gallery-porting/README.md</code></td><td>Quick-start markdown</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <script>
+    document.querySelectorAll('.copy-button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var text = btn.getAttribute('data-copy') || btn.parentElement.nextElementSibling.textContent;
+        navigator.clipboard.writeText(text.trim()).then(function () {
+          btn.textContent = 'Copied!';
+          setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+        });
+      });
+    });
+  </script>
+</body>
+</html>

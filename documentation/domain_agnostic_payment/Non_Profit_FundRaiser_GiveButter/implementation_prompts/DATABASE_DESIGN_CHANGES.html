@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiveButter Donation Flow - Database Design Changes</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #2D2A26;
+            background-color: #F5F1E8;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #8B7D6B;
+            border-bottom: 3px solid #8B7D6B;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        h2 {
+            color: #6B4E3D;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-left: 4px solid #8B7D6B;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #8B7D6B;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+        h4 {
+            color: #A0926B;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        .meta {
+            background: #EDE7D3;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            border-left: 4px solid #8B7D6B;
+        }
+        .meta p { margin: 5px 0; }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-ready { background: #4A6741; color: white; }
+        .highlight-box {
+            background: #EDE7D3;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #8B7D6B;
+        }
+        .warning-box {
+            background: #FFF4E6;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #A67C52;
+        }
+        .success-box {
+            background: #F0F9F0;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #4A6741;
+        }
+        .code-block {
+            background: #2D2A26;
+            color: #F5F1E8;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #8B7D6B;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: #EDE7D3;
+            font-weight: bold;
+            color: #2D2A26;
+        }
+        ul, ol { margin-left: 30px; margin-top: 10px; }
+        li { margin: 8px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="meta">
+            <p><strong>Document Type:</strong> Database Design Changes Document</p>
+            <p><strong>Project:</strong> GiveButter Donation Flow - Database Schema</p>
+            <p><strong>Version:</strong> 1.0</p>
+            <p><strong>Date:</strong> January 2025</p>
+            <p><strong>Status:</strong> <span class="status-badge status-ready">Ready for Implementation</span></p>
+            <p><strong>Database:</strong> PostgreSQL</p>
+        </div>
+
+        <h1>GiveButter Donation Flow - Database Design Changes<br><small style="font-size: 0.6em; color: #A0926B;">Schema Changes and New Tables</small></h1>
+
+        <div class="highlight-box">
+            <h4>Summary of Changes</h4>
+            <ul>
+                <li><strong>New Table:</strong> <code>donation_transaction</code> - Standalone donation records</li>
+                <li><strong>Enum Update:</strong> Add <code>GIVEBUTTER</code> to <code>payment_provider_type</code> enum</li>
+                <li><strong>Existing Tables:</strong> No changes required (reuse existing payment infrastructure)</li>
+                <li><strong>Indexes:</strong> Add indexes for performance optimization</li>
+            </ul>
+        </div>
+
+        <h2>1. New Table: donation_transaction</h2>
+
+        <h3>1.1 Table Definition</h3>
+        <div class="code-block">
+<code>CREATE TABLE donation_transaction (
+    id BIGINT DEFAULT nextval('public.sequence_generator'::regclass) NOT NULL,
+    tenant_id VARCHAR(255) NOT NULL,
+    event_id BIGINT REFERENCES event_details(id),
+    payment_transaction_id BIGINT REFERENCES payment_transaction(id),
+    transaction_reference VARCHAR(255) UNIQUE NOT NULL,
+    givebutter_donation_id VARCHAR(255), -- GiveButter donation ID
+    amount DECIMAL(10, 2) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    first_name VARCHAR(255),
+    last_name VARCHAR(255),
+    phone VARCHAR(50),
+    prayer_intention TEXT, -- For Mass offerings
+    is_recurring BOOLEAN DEFAULT FALSE,
+    is_anonymous BOOLEAN DEFAULT FALSE,
+    status VARCHAR(50) NOT NULL, -- VARCHAR, not enum (matches existing pattern) -- PENDING, COMPLETED, FAILED, CANCELLED (VARCHAR, not enum)
+    qr_code_url TEXT,
+    qr_code_image_url TEXT,
+    email_sent BOOLEAN DEFAULT FALSE,
+    metadata TEXT, -- JSON string for additional data
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT donation_transaction_pkey PRIMARY KEY (id),
+    CONSTRAINT fk_donation_event FOREIGN KEY (event_id) REFERENCES event_details(id),
+    CONSTRAINT fk_donation_payment FOREIGN KEY (payment_transaction_id) REFERENCES payment_transaction(id)
+);</code>
+        </div>
+
+        <h3>1.2 Column Descriptions</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Column</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>id</code></td>
+                    <td>BIGINT</td>
+                    <td>Primary key, uses shared sequence_generator (compatible with existing schema pattern)</td>
+                </tr>
+                <tr>
+                    <td><code>tenant_id</code></td>
+                    <td>VARCHAR(255)</td>
+                    <td>Multi-tenant identifier</td>
+                </tr>
+                <tr>
+                    <td><code>event_id</code></td>
+                    <td>BIGINT</td>
+                    <td>Foreign key to event_details (nullable for standalone donations)</td>
+                </tr>
+                <tr>
+                    <td><code>payment_transaction_id</code></td>
+                    <td>BIGINT</td>
+                    <td>Foreign key to payment_transaction (links to payment orchestration)</td>
+                </tr>
+                <tr>
+                    <td><code>transaction_reference</code></td>
+                    <td>VARCHAR(255)</td>
+                    <td>Unique transaction reference (e.g., "GB-12345")</td>
+                </tr>
+                <tr>
+                    <td><code>givebutter_donation_id</code></td>
+                    <td>VARCHAR(255)</td>
+                    <td>GiveButter donation ID from API response</td>
+                </tr>
+                <tr>
+                    <td><code>amount</code></td>
+                    <td>DECIMAL(10, 2)</td>
+                    <td>Donation amount</td>
+                </tr>
+                <tr>
+                    <td><code>email</code></td>
+                    <td>VARCHAR(255)</td>
+                    <td>Donor email address</td>
+                </tr>
+                <tr>
+                    <td><code>first_name</code></td>
+                    <td>VARCHAR(255)</td>
+                    <td>Donor first name</td>
+                </tr>
+                <tr>
+                    <td><code>last_name</code></td>
+                    <td>VARCHAR(255)</td>
+                    <td>Donor last name</td>
+                </tr>
+                <tr>
+                    <td><code>phone</code></td>
+                    <td>VARCHAR(50)</td>
+                    <td>Donor phone number (optional)</td>
+                </tr>
+                <tr>
+                    <td><code>prayer_intention</code></td>
+                    <td>TEXT</td>
+                    <td>Prayer intention for Mass offerings (optional)</td>
+                </tr>
+                <tr>
+                    <td><code>is_recurring</code></td>
+                    <td>BOOLEAN</td>
+                    <td>Whether donation is recurring</td>
+                </tr>
+                <tr>
+                    <td><code>is_anonymous</code></td>
+                    <td>BOOLEAN</td>
+                    <td>Whether donation is anonymous</td>
+                </tr>
+                <tr>
+                    <td><code>status</code></td>
+                    <td>VARCHAR(50)</td>
+                    <td>Donation status: PENDING, COMPLETED, FAILED, CANCELLED (VARCHAR, not enum type - matches existing pattern)</td>
+                </tr>
+                <tr>
+                    <td><code>qr_code_url</code></td>
+                    <td>TEXT</td>
+                    <td>QR code URL for donation confirmation</td>
+                </tr>
+                <tr>
+                    <td><code>qr_code_image_url</code></td>
+                    <td>TEXT</td>
+                    <td>QR code image URL</td>
+                </tr>
+                <tr>
+                    <td><code>email_sent</code></td>
+                    <td>BOOLEAN</td>
+                    <td>Whether confirmation email has been sent</td>
+                </tr>
+                <tr>
+                    <td><code>metadata</code></td>
+                    <td>TEXT</td>
+                    <td>JSON string for additional donation data</td>
+                </tr>
+                <tr>
+                    <td><code>created_at</code></td>
+                    <td>TIMESTAMP WITH TIME ZONE</td>
+                    <td>Record creation timestamp</td>
+                </tr>
+                <tr>
+                    <td><code>updated_at</code></td>
+                    <td>TIMESTAMP WITH TIME ZONE</td>
+                    <td>Record last update timestamp</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>1.3 Indexes</h3>
+        <div class="code-block">
+<code>-- Performance indexes
+CREATE INDEX idx_donation_tenant_event ON donation_transaction(tenant_id, event_id);
+CREATE INDEX idx_donation_reference ON donation_transaction(transaction_reference);
+CREATE INDEX idx_donation_givebutter_id ON donation_transaction(givebutter_donation_id);
+CREATE INDEX idx_donation_status ON donation_transaction(status);
+CREATE INDEX idx_donation_created ON donation_transaction(created_at);
+CREATE INDEX idx_donation_email_sent ON donation_transaction(email_sent) WHERE email_sent = FALSE;
+CREATE INDEX idx_donation_qr_code ON donation_transaction(qr_code_url) WHERE qr_code_url IS NULL;</code>
+        </div>
+
+        <h2>2. Enum Updates</h2>
+
+        <h3>2.1 Add GIVEBUTTER to payment_provider_type</h3>
+        <div class="code-block">
+<code>-- Add GIVEBUTTER to payment_provider_type enum (if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_enum
+        WHERE enumlabel = 'GIVEBUTTER'
+        AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'payment_provider_type')
+    ) THEN
+        ALTER TYPE payment_provider_type ADD VALUE 'GIVEBUTTER';
+    END IF;
+END $$;
+
+-- Verify enum values
+SELECT unnest(enum_range(NULL::payment_provider_type)) AS provider_type;
+-- Expected: STRIPE, PAYPAL, ACP, AP2, SQUARE, CRYPTO, GIVEBUTTER</code>
+        </div>
+
+        <h3>2.2 Verify payment_type Enum</h3>
+        <div class="code-block">
+<code>-- Verify payment_type enum includes required values
+SELECT enumlabel AS payment_type
+FROM pg_enum
+WHERE enumtypid = (SELECT oid FROM pg_type WHERE typname = 'payment_type')
+ORDER BY enumsortorder;
+
+-- Required values:
+-- - TICKET_SALE (for ticketed fundraiser events)
+-- - DONATION (for donation-based events)
+-- - DONATION_ZERO_FEE (explicit zero-fee donations)
+-- - OFFERING (for Mass offerings)</code>
+        </div>
+
+        <h2>3. Existing Tables (No Changes Required)</h2>
+
+        <h3>3.1 Tables Reused</h3>
+        <p>The following existing tables support the donation flow without modifications:</p>
+        <ul>
+            <li><code>payment_provider_config</code> - Stores GiveButter API configuration</li>
+            <li><code>payment_transaction</code> - Payment orchestration records</li>
+            <li><code>event_ticket_transaction</code> - For ticketed fundraiser events</li>
+            <li><code>event_details</code> - Event configuration (has <code>metadata</code> TEXT column)</li>
+        </ul>
+
+        <h3>3.2 payment_provider_config Usage</h3>
+        <div class="code-block">
+<code>-- Example GiveButter configuration in payment_provider_config
+INSERT INTO payment_provider_config (
+    tenant_id,
+    provider_type,
+    provider_name,
+    is_active,
+    is_primary,
+    priority,
+    config_data,        -- Encrypted: {"api_key": "gb_live_xxx"}
+    webhook_secret,     -- Encrypted: GiveButter webhook secret
+    supports_wallets,
+    supports_subscriptions,
+    supports_refunds,
+    metadata            -- JSONB: {"campaignId": "default_campaign", "useCase": "DONATION_ZERO_FEE"}
+) VALUES (
+    'tenant_demo_002',
+    'GIVEBUTTER',
+    'GiveButter Zero-Fee Donations',
+    true,
+    false,
+    1,
+    encrypt('{"api_key": "8444|3hrww9PxiamJunblhPMKn8uwVFA5xf8R8Wy8rUhU"}'),
+    encrypt('bQVval9RQAGYlV3EEXmfmCkIfiLBVlobLgZMRscpbvyNH3SyPQr4AeWDNip6bOj4dS5MjpedPQhCbQIzP9KlvQUDZZIySggiIPAn'),
+    false,
+    true,  -- Supports recurring donations
+    true,
+    '{"campaignId": "default_campaign", "useCase": "DONATION_ZERO_FEE"}'::jsonb
+);</code>
+        </div>
+
+        <h2>4. Optional: Donation Statistics Table</h2>
+
+        <h3>4.1 Statistics Table (Optional)</h3>
+        <p>Create an optional table for pre-aggregated donation statistics (for admin dashboard performance):</p>
+        <div class="code-block">
+<code>CREATE TABLE donation_statistics (
+    id BIGINT DEFAULT nextval('public.sequence_generator'::regclass) NOT NULL,
+    tenant_id VARCHAR(255) NOT NULL,
+    event_id BIGINT REFERENCES event_details(id),
+    total_donations INTEGER DEFAULT 0,
+    total_amount DECIMAL(10, 2) DEFAULT 0,
+    average_amount DECIMAL(10, 2) DEFAULT 0,
+    date_range_start DATE,
+    date_range_end DATE,
+    last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT donation_statistics_pkey PRIMARY KEY (id),
+    UNIQUE(tenant_id, event_id, date_range_start, date_range_end)
+);
+
+CREATE INDEX idx_donation_stats_tenant_event ON donation_statistics(tenant_id, event_id);
+CREATE INDEX idx_donation_stats_date_range ON donation_statistics(date_range_start, date_range_end);</code>
+        </div>
+
+        <div class="warning-box">
+            <strong>Note:</strong> This table is optional. Statistics can also be calculated on-the-fly from <code>donation_transaction</code> table. Use this table only if performance optimization is needed for admin dashboard.
+        </div>
+
+        <h2>5. Migration Script</h2>
+
+        <h3>5.1 Complete Migration</h3>
+        <div class="code-block">
+<code>-- =====================================================
+-- Migration: Add GiveButter Donation Support
+-- Date: 2025-01-XX
+-- Description: Creates donation_transaction table and adds GIVEBUTTER enum value
+-- =====================================================
+
+BEGIN;
+
+-- Step 1: Add GIVEBUTTER to payment_provider_type enum
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_enum
+        WHERE enumlabel = 'GIVEBUTTER'
+        AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'payment_provider_type')
+    ) THEN
+        ALTER TYPE payment_provider_type ADD VALUE 'GIVEBUTTER';
+    END IF;
+END $$;
+
+-- Step 2: Create donation_transaction table
+CREATE TABLE IF NOT EXISTS donation_transaction (
+    id BIGINT DEFAULT nextval('public.sequence_generator'::regclass) NOT NULL,
+    tenant_id VARCHAR(255) NOT NULL,
+    event_id BIGINT REFERENCES event_details(id),
+    payment_transaction_id BIGINT REFERENCES payment_transaction(id),
+    transaction_reference VARCHAR(255) UNIQUE NOT NULL,
+    givebutter_donation_id VARCHAR(255),
+    amount DECIMAL(10, 2) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    first_name VARCHAR(255),
+    last_name VARCHAR(255),
+    phone VARCHAR(50),
+    prayer_intention TEXT,
+    is_recurring BOOLEAN DEFAULT FALSE,
+    is_anonymous BOOLEAN DEFAULT FALSE,
+    status VARCHAR(50) NOT NULL, -- VARCHAR, not enum (matches existing pattern)
+    qr_code_url TEXT,
+    qr_code_image_url TEXT,
+    email_sent BOOLEAN DEFAULT FALSE,
+    metadata TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT donation_transaction_pkey PRIMARY KEY (id),
+    CONSTRAINT fk_donation_event FOREIGN KEY (event_id) REFERENCES event_details(id),
+    CONSTRAINT fk_donation_payment FOREIGN KEY (payment_transaction_id) REFERENCES payment_transaction(id)
+);
+
+-- Step 3: Create indexes
+CREATE INDEX IF NOT EXISTS idx_donation_tenant_event ON donation_transaction(tenant_id, event_id);
+CREATE INDEX IF NOT EXISTS idx_donation_reference ON donation_transaction(transaction_reference);
+CREATE INDEX IF NOT EXISTS idx_donation_givebutter_id ON donation_transaction(givebutter_donation_id);
+CREATE INDEX IF NOT EXISTS idx_donation_status ON donation_transaction(status);
+CREATE INDEX IF NOT EXISTS idx_donation_created ON donation_transaction(created_at);
+CREATE INDEX IF NOT EXISTS idx_donation_email_sent ON donation_transaction(email_sent) WHERE email_sent = FALSE;
+CREATE INDEX IF NOT EXISTS idx_donation_qr_code ON donation_transaction(qr_code_url) WHERE qr_code_url IS NULL;
+
+-- Step 4: Add comments
+COMMENT ON TABLE donation_transaction IS 'Stores standalone donation transactions (non-ticketed donations)';
+COMMENT ON COLUMN donation_transaction.givebutter_donation_id IS 'GiveButter donation ID from API response';
+COMMENT ON COLUMN donation_transaction.prayer_intention IS 'Prayer intention for Mass offerings';
+COMMENT ON COLUMN donation_transaction.metadata IS 'JSON string for additional donation data';
+
+COMMIT;
+
+-- Verification queries
+SELECT 'GIVEBUTTER enum value added' AS status
+WHERE EXISTS (
+    SELECT 1 FROM pg_enum
+    WHERE enumlabel = 'GIVEBUTTER'
+    AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'payment_provider_type')
+);
+
+SELECT 'donation_transaction table created' AS status
+WHERE EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_name = 'donation_transaction'
+);</code>
+        </div>
+
+        <h2>6. Data Relationships</h2>
+
+        <h3>6.1 Entity Relationship Diagram</h3>
+        <div class="code-block">
+<code>event_details (1) ──&lt; (N) donation_transaction
+payment_transaction (1) ──&lt; (N) donation_transaction
+event_details (1) ──&lt; (N) event_ticket_transaction (for ticketed fundraisers)
+payment_transaction (1) ──&lt; (N) event_ticket_transaction</code>
+        </div>
+
+        <h3>6.2 Relationship Notes</h3>
+        <ul>
+            <li><strong>donation_transaction.event_id:</strong> Links to event (nullable for standalone donations)</li>
+            <li><strong>donation_transaction.payment_transaction_id:</strong> Links to payment orchestration record</li>
+            <li><strong>For ticketed fundraisers:</strong> Use <code>event_ticket_transaction</code> instead of <code>donation_transaction</code></li>
+        </ul>
+
+        <h2>7. Query Examples</h2>
+
+        <h3>7.1 Get Donations for Event</h3>
+        <div class="code-block">
+<code>SELECT 
+    id,
+    transaction_reference,
+    amount,
+    email,
+    first_name,
+    last_name,
+    status,
+    created_at
+FROM donation_transaction
+WHERE event_id = 4202
+  AND tenant_id = 'tenant_demo_002'
+  AND status = 'COMPLETED'
+ORDER BY created_at DESC;</code>
+        </div>
+
+        <h3>7.2 Get Donation Statistics</h3>
+        <div class="code-block">
+<code>SELECT 
+    event_id,
+    COUNT(*) AS total_donations,
+    SUM(amount) AS total_amount,
+    AVG(amount) AS average_amount,
+    MIN(amount) AS min_amount,
+    MAX(amount) AS max_amount
+FROM donation_transaction
+WHERE event_id = 4202
+  AND tenant_id = 'tenant_demo_002'
+  AND status = 'COMPLETED'
+GROUP BY event_id;</code>
+        </div>
+
+        <h3>7.3 Get Pending Email Donations</h3>
+        <div class="code-block">
+<code>SELECT 
+    id,
+    transaction_reference,
+    email,
+    amount,
+    event_id
+FROM donation_transaction
+WHERE status = 'COMPLETED'
+  AND email IS NOT NULL
+  AND email_sent = FALSE
+ORDER BY created_at ASC
+LIMIT 100;</code>
+        </div>
+
+        <h2>8. Rollback Script</h2>
+
+        <h3>8.1 Rollback Migration</h3>
+        <div class="warning-box">
+            <strong>WARNING:</strong> This will delete all donation transaction data. Only run if you're sure you want to remove this functionality.
+        </div>
+
+        <div class="code-block">
+<code>-- =====================================================
+-- Rollback: Remove GiveButter Donation Support
+-- WARNING: This will delete all donation transaction data
+-- =====================================================
+
+BEGIN;
+
+-- Drop indexes
+DROP INDEX IF EXISTS idx_donation_qr_code;
+DROP INDEX IF EXISTS idx_donation_email_sent;
+DROP INDEX IF EXISTS idx_donation_created;
+DROP INDEX IF EXISTS idx_donation_status;
+DROP INDEX IF EXISTS idx_donation_givebutter_id;
+DROP INDEX IF EXISTS idx_donation_reference;
+DROP INDEX IF EXISTS idx_donation_tenant_event;
+
+-- Drop table
+DROP TABLE IF EXISTS donation_transaction CASCADE;
+
+-- Note: Cannot remove enum values in PostgreSQL
+-- GIVEBUTTER will remain in enum but can be ignored in application code
+
+COMMIT;</code>
+        </div>
+
+        <h2>9. References</h2>
+
+        <h3>9.1 Related Documentation</h3>
+        <ul>
+            <li><code>documentation/domain_agnostic_payment/Non_Profit_FundRaiser_GiveButter/GIVEBUTTER_DATABASE_SCHEMA_CHANGES.md</code></li>
+            <li><code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code> - Current database schema</li>
+            <li><code>documentation/domain_agnostic_payment/Non_Profit_FundRaiser_GiveButter/BACKEND_IMPLEMENTATION_PRD.html</code></li>
+        </ul>
+
+        <h2>10. Architecture Note: Frontend Polling Pattern</h2>
+
+        <div class="highlight-box">
+            <h4>No Webhook-Based Transaction Creation</h4>
+            <p>The database schema supports donation transactions that are created via API endpoints (called from frontend), not via webhook handlers. The frontend polls donation status and calls backend APIs to create transactions, generate QR codes, and send emails.</p>
+            <p>This matches the existing checkout flow pattern where the frontend handles webhook-like behavior through polling.</p>
+        </div>
+
+        <div class="success-box">
+            <h4>✅ Ready for Implementation</h4>
+            <p>This document provides complete database schema changes for the GiveButter donation flow. All changes are backward compatible and can be applied incrementally. The schema supports frontend polling pattern (no backend webhook handlers needed).</p>
+        </div>
+    </div>
+</body>
+</html>

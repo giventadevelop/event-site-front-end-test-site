@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PRD: Focus Group – Member Join &amp; Organisers (Frontend)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+      h1, h2, h3, h4 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+      h1 { font-size: 2.3rem; margin-bottom: 0.75rem; }
+      h2 { font-size: 1.7rem; margin-top: 2.5rem; }
+      h3 { font-size: 1.3rem; margin-top: 1.8rem; }
+      h4 { font-size: 1.1rem; margin-top: 1.2rem; }
+      p, li { line-height: 1.75; font-size: 1rem; }
+      ul, ol { margin-left: 1.4rem; }
+      table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+      th, td { border: 1px solid rgba(42, 32, 23, 0.15); padding: 0.75rem; vertical-align: top; }
+      th { background: rgba(213, 201, 182, 0.35); font-weight: 600; }
+      code, pre {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+      }
+      pre { padding: 1rem; line-height: 1.6; overflow-x: auto; }
+      code.inline { padding: 0.15rem 0.35rem; font-size: 0.95rem; display: inline-block; }
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .divider { height: 1px; background: rgba(42, 32, 23, 0.12); margin: 2rem 0; }
+      .callout {
+        border-left: 4px solid #8b7d6b;
+        background: rgba(213, 201, 182, 0.3);
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
+        margin: 1.8rem 0;
+      }
+      .toc ol { list-style: decimal; }
+      .toc a { color: #1f4c8f; text-decoration: none; }
+      .toc a:hover { text-decoration: underline; }
+      footer { margin-top: 4rem; text-align: center; font-size: 0.9rem; color: #7a7066; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Draft · Frontend</span>
+      <h1>PRD: Focus Group – Member Join &amp; Organisers (Frontend)</h1>
+      <p>
+        <strong>Project:</strong> mosc-temp (Next.js 15+ App Router)<br />
+        <strong>Document Version:</strong> 1.0<br />
+        <strong>Date:</strong> March 2026<br />
+        <strong>Status:</strong> Draft
+      </p>
+
+      <div class="divider"></div>
+
+      <h2 id="scope">Scope</h2>
+      <p>
+        This PRD specifies the frontend behaviour for <strong>end-user join focus group</strong> and
+        <strong>executive/organising committee list</strong>. Do not build components in the initial docs phase;
+        this document is the handoff for the frontend team to implement when the backend supports self-service join
+        and committee filtering.
+      </p>
+
+      <h2 id="end-user-join">End-User Join</h2>
+      <ul>
+        <li><strong>Where:</strong> Public focus group page: <code class="inline">src/app/focus-groups/[slug]/page.tsx</code>.</li>
+        <li><strong>When user is logged in:</strong> Show a “Join” button if the current user is not already a member of this focus group. On success, show “Leave” (or “Requested” if status is PENDING).</li>
+        <li><strong>When user is not logged in:</strong> Do not show Join; optionally show “Sign in to join” or link to sign-in.</li>
+        <li><strong>Implementation:</strong> Use auth (e.g. Clerk) to get the current user; resolve <code class="inline">user_profile_id</code> via existing profile lookup (e.g. by userId). Call backend via server action or proxy: POST to create a <code class="inline">focus_group_members</code> row with <code class="inline">focusGroupId</code>, <code class="inline">tenantId</code>, and <code class="inline">user_profile_id</code> from the server/session. For “Leave”, call DELETE (or backend leave endpoint) for the current user’s membership row.</li>
+      </ul>
+
+      <h2 id="committee-list">Executive / Organising Committee List</h2>
+      <ul>
+        <li><strong>Where:</strong> Same public focus group page: <code class="inline">src/app/focus-groups/[slug]/page.tsx</code>.</li>
+        <li><strong>What:</strong> A section “Executive / Organising Committee” that lists members whose <code class="inline">role</code> is EXECUTIVE or ORGANISER (and optionally LEAD, ADMIN) for this focus group.</li>
+        <li><strong>Data:</strong> GET <code class="inline">/api/proxy/focus-group-members</code> with filters e.g. <code class="inline">focusGroupId.equals=&lt;id&gt;</code> and <code class="inline">role.in=EXECUTIVE,ORGANISER</code> (or equivalent per backend API). If the backend exposes a dedicated endpoint e.g. <code class="inline">GET /api/focus-groups/{id}/organisers</code>, use that. Resolve user names/photos from <code class="inline">user_profile</code> if the API returns only <code class="inline">userProfileId</code> (e.g. expand in server action or use nested DTO from backend).</li>
+      </ul>
+
+      <h2 id="api-proxy">API / Proxy</h2>
+      <ul>
+        <li>Use existing proxy: <code class="inline">/api/proxy/focus-group-members</code> (GET list, POST create, DELETE by id).</li>
+        <li>Follow <strong>nextjs_api_routes.mdc</strong>: all authenticated backend calls from server components or server actions (e.g. <code class="inline">ApiServerActions.ts</code>); use <code class="inline">fetchWithJwtRetry</code> from <code class="inline">@/lib/proxyHandler</code> for direct backend calls. Client components must not call the backend API URL directly; use server actions for mutations.</li>
+        <li>Do not add <code class="inline">tenantId.equals</code> when calling proxy endpoints; the proxy injects tenant.</li>
+      </ul>
+
+      <h2 id="ui-standards">UI Standards</h2>
+      <ul>
+        <li>Follow <strong>ui_style_guide.mdc</strong>: page container <code class="inline">max-w-5xl mx-auto px-8 py-8</code>, content cards <code class="inline">bg-white rounded-lg shadow-md p-6</code>, and existing button/form patterns.</li>
+      </ul>
+
+      <div class="callout">
+        <strong>No build in docs phase:</strong> This PRD is for the frontend team to implement when the backend supports self-service join and committee filtering. No components are built in the initial schema/docs phase.
+      </div>
+
+      <h2 id="references">References</h2>
+      <ul>
+        <li><a href="generic_prd.html">generic_prd.html</a> – Data model and role/status values</li>
+        <li><code class="inline">.cursor/rules/nextjs_api_routes.mdc</code> – REST/proxy and server actions</li>
+        <li><code class="inline">.cursor/rules/ui_style_guide.mdc</code> – UI layout and components</li>
+        <li><code class="inline">documentation/Swagger_API_Docs/api-docs.json</code> – API schema (focus-group-members)</li>
+      </ul>
+
+      <footer>
+        <p>Focus Group – Member Join &amp; Organisers (Frontend) PRD · MCEFEE Platform</p>
+      </footer>
+    </main>
+  </body>
+</html>

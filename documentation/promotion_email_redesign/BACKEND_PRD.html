@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promotion Email Management - Backend PRD</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+        }
+        .info-box {
+            background: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .task-list {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .task-item {
+            padding: 10px;
+            margin: 8px 0;
+            background: white;
+            border-left: 3px solid #28a745;
+            border-radius: 3px;
+        }
+        .task-item h4 {
+            margin: 0 0 5px 0;
+            color: #28a745;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #e83e8c;
+        }
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .priority-high {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .priority-medium {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .priority-low {
+            color: #28a745;
+        }
+        ul, ol {
+            margin: 10px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Promotion Email Management System - Backend PRD</h1>
+
+        <div class="info-box">
+            <strong>📋 Project Context:</strong> This project is already in active development phase. All infrastructure,
+            basic development tools, database schema foundation, and JSON schema definitions are already in place.
+            This PRD focuses <strong>exclusively on feature implementation</strong> and does not include any infrastructure
+            setup, basic tooling, or foundational development work.
+        </div>
+
+        <h2>1. Overview</h2>
+        <p>
+            This document outlines the backend implementation requirements for the Promotion Email Management System.
+            The system will enable administrators to create, manage, and send promotion email templates associated
+            with events and discount codes.
+        </p>
+
+        <h2>2. Objectives</h2>
+        <ul>
+            <li>Implement database-backed promotion email template storage</li>
+            <li>Create REST API endpoints for template CRUD operations</li>
+            <li>Implement email sending functionality (test and bulk)</li>
+            <li>Create audit logging for all sent emails</li>
+            <li>Integrate with existing event and discount code systems</li>
+        </ul>
+
+        <h2>3. Database Implementation</h2>
+
+        <h3>3.1 Database Migration</h3>
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 1.1: Create Database Migration Script</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>Description:</strong> Create SQL migration script to add two new tables:</p>
+                <ul>
+                    <li><code>promotion_email_template</code> - Stores email templates</li>
+                    <li><code>promotion_email_sent_log</code> - Tracks sent emails</li>
+                </ul>
+                <p><strong>Acceptance Criteria:</strong></p>
+                <ul>
+                    <li>Migration script follows existing project conventions</li>
+                    <li>All foreign keys properly defined</li>
+                    <li>Indexes created for performance</li>
+                    <li>Table comments added for documentation</li>
+                </ul>
+                <p><strong>Reference:</strong> See <code>documentation/promotion_email_redesign/migrations/001_create_promotion_tables.sql</code></p>
+            </div>
+        </div>
+
+        <h3>3.2 Entity Classes</h3>
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 2.1: Create PromotionEmailTemplate Entity</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>Description:</strong> Create JPA entity class for <code>promotion_email_template</code> table</p>
+                <p><strong>Requirements:</strong></p>
+                <ul>
+                    <li>Map all table columns to entity fields</li>
+                    <li>Define relationships: EventDetails, DiscountCode, UserProfile</li>
+                    <li>Add validation annotations (NotNull, Size, etc.)</li>
+                    <li>Implement equals/hashCode methods</li>
+                    <li>Add audit fields (createdAt, updatedAt) handling</li>
+                </ul>
+                <p><strong>Fields:</strong></p>
+                <ul>
+                    <li>id, tenantId, eventId, templateName, subject, bodyHtml</li>
+                    <li>headerImageUrl, footerImageUrl, promotionCode, discountCodeId</li>
+                    <li>isActive, createdById, createdAt, updatedAt</li>
+                </ul>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 2.2: Create PromotionEmailSentLog Entity</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>Description:</strong> Create JPA entity class for <code>promotion_email_sent_log</code> table</p>
+                <p><strong>Requirements:</strong></p>
+                <ul>
+                    <li>Map all table columns to entity fields</li>
+                    <li>Define relationships: PromotionEmailTemplate, EventDetails, DiscountCode, UserProfile</li>
+                    <li>Add validation annotations</li>
+                    <li>Add enum for emailStatus (SENT, FAILED, BOUNCED)</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>3.3 Repository Interfaces</h3>
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 3.1: Create PromotionEmailTemplateRepository</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>Description:</strong> Create Spring Data JPA repository interface</p>
+                <p><strong>Required Methods:</strong></p>
+                <ul>
+                    <li>Standard CRUD operations (inherited from JpaRepository)</li>
+                    <li><code>findByTenantIdAndEventId</code> - Find templates by tenant and event</li>
+                    <li><code>findByTenantIdAndIsActive</code> - Find active templates</li>
+                    <li><code>findByTenantIdAndEventIdAndTemplateName</code> - Check uniqueness</li>
+                </ul>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 3.2: Create PromotionEmailSentLogRepository</h4>
+                <p><strong>Priority:</strong> <span class="priority-medium">MEDIUM</span></p>
+                <p><strong>Description:</strong> Create Spring Data JPA repository interface</p>
+                <p><strong>Required Methods:</strong></p>
+                <ul>
+                    <li>Standard CRUD operations</li>
+                    <li><code>findByTenantIdAndEventId</code> - Find logs by event</li>
+                    <li><code>findByTenantIdAndTemplateId</code> - Find logs by template</li>
+                    <li><code>findByTenantIdAndSentAtBetween</code> - Find logs by date range</li>
+                    <li><code>findByTenantIdAndEmailStatus</code> - Find logs by status</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>4. DTOs and Service Layer</h2>
+
+        <h3>4.1 DTO Classes</h3>
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 4.1: Create PromotionEmailTemplateDTO</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>Description:</strong> Create DTO class matching OpenAPI schema</p>
+                <p><strong>Fields:</strong> All fields from entity, plus nested DTOs (EventDetailsDTO, DiscountCodeDTO, UserProfileDTO)</p>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 4.2: Create PromotionEmailTemplateFormDTO</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>Description:</strong> Create form DTO for create/update operations</p>
+                <p><strong>Fields:</strong> eventId, templateName, subject, bodyHtml, headerImageUrl, footerImageUrl, discountCodeId, isActive</p>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 4.3: Create SendPromotionEmailDTO</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>Description:</strong> Create DTO for email sending requests</p>
+                <p><strong>Fields:</strong> templateId, recipientEmail (optional), isTestEmail, subjectOverride (optional), bodyHtmlOverride (optional)</p>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 4.4: Create PromotionEmailSentLogDTO</h4>
+                <p><strong>Priority:</strong> <span class="priority-medium">MEDIUM</span></p>
+                <p><strong>Description:</strong> Create DTO for sent log entries</p>
+            </div>
+        </div>
+
+        <h3>4.2 Service Classes</h3>
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 5.1: Create PromotionEmailTemplateService</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>Description:</strong> Implement service layer for template operations</p>
+                <p><strong>Required Methods:</strong></p>
+                <ul>
+                    <li><code>createTemplate(formDTO, tenantId, userId)</code> - Create new template</li>
+                    <li><code>updateTemplate(id, formDTO, tenantId)</code> - Update existing template</li>
+                    <li><code>getTemplate(id, tenantId)</code> - Get template by ID</li>
+                    <li><code>listTemplates(criteria, tenantId)</code> - List templates with filtering</li>
+                    <li><code>deleteTemplate(id, tenantId)</code> - Soft delete (set isActive=false)</li>
+                    <li><code>validateTemplateName(name, eventId, tenantId, excludeId)</code> - Check uniqueness</li>
+                </ul>
+                <p><strong>Business Rules:</strong></p>
+                <ul>
+                    <li>Template name must be unique per event per tenant</li>
+                    <li>Event must exist and belong to tenant</li>
+                    <li>Discount code (if provided) must exist and belong to event</li>
+                    <li>Auto-set createdById and updatedAt timestamps</li>
+                </ul>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 5.2: Create PromotionEmailService</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>Description:</strong> Implement email sending service</p>
+                <p><strong>Required Methods:</strong></p>
+                <ul>
+                    <li><code>sendTestEmail(templateId, recipientEmail, tenantId, userId)</code> - Send test email</li>
+                    <li><code>sendBulkEmail(templateId, recipientEmails, tenantId, userId)</code> - Send bulk emails</li>
+                    <li><code>buildEmailContent(template, overrides)</code> - Build final email content</li>
+                    <li><code>logEmailSent(logEntry)</code> - Log sent email</li>
+                </ul>
+                <p><strong>Integration Points:</strong></p>
+                <ul>
+                    <li>Use existing email service infrastructure</li>
+                    <li>Retrieve event registrants from EventAttendee/EventTicketTransaction tables</li>
+                    <li>Handle email sending failures gracefully</li>
+                    <li>Log all email attempts (success and failure)</li>
+                </ul>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 5.3: Create PromotionEmailSentLogService</h4>
+                <p><strong>Priority:</strong> <span class="priority-medium">MEDIUM</span></p>
+                <p><strong>Description:</strong> Implement service for querying email logs</p>
+                <p><strong>Required Methods:</strong></p>
+                <ul>
+                    <li><code>listLogs(criteria, tenantId)</code> - List logs with filtering</li>
+                    <li><code>getLog(id, tenantId)</code> - Get log entry by ID</li>
+                    <li><code>getEmailStatistics(eventId, tenantId)</code> - Get email statistics (optional)</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>5. REST API Controllers</h2>
+
+        <h3>5.1 PromotionEmailTemplateController</h3>
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 6.1: Implement Template CRUD Endpoints</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>Endpoints:</strong></p>
+                <table>
+                    <tr>
+                        <th>Method</th>
+                        <th>Path</th>
+                        <th>Description</th>
+                        <th>Response</th>
+                    </tr>
+                    <tr>
+                        <td>GET</td>
+                        <td><code>/api/promotion-email-templates</code></td>
+                        <td>List templates (with filtering)</td>
+                        <td>PromotionEmailTemplateDTO[]</td>
+                    </tr>
+                    <tr>
+                        <td>GET</td>
+                        <td><code>/api/promotion-email-templates/{id}</code></td>
+                        <td>Get template by ID</td>
+                        <td>PromotionEmailTemplateDTO</td>
+                    </tr>
+                    <tr>
+                        <td>POST</td>
+                        <td><code>/api/promotion-email-templates</code></td>
+                        <td>Create new template</td>
+                        <td>PromotionEmailTemplateDTO</td>
+                    </tr>
+                    <tr>
+                        <td>PATCH</td>
+                        <td><code>/api/promotion-email-templates/{id}</code></td>
+                        <td>Update template</td>
+                        <td>PromotionEmailTemplateDTO</td>
+                    </tr>
+                    <tr>
+                        <td>DELETE</td>
+                        <td><code>/api/promotion-email-templates/{id}</code></td>
+                        <td>Delete template (soft delete)</td>
+                        <td>204 No Content</td>
+                    </tr>
+                </table>
+                <p><strong>Query Parameters (for GET list):</strong></p>
+                <ul>
+                    <li><code>eventId.equals</code> - Filter by event ID</li>
+                    <li><code>isActive.equals</code> - Filter by active status</li>
+                    <li><code>sort</code> - Sort order (e.g., "createdAt,desc")</li>
+                    <li><code>page</code> - Page number (0-indexed)</li>
+                    <li><code>size</code> - Page size</li>
+                </ul>
+                <p><strong>Requirements:</strong></p>
+                <ul>
+                    <li>All endpoints must validate tenant ID from context</li>
+                    <li>Use JHipster criteria API for filtering</li>
+                    <li>Return appropriate HTTP status codes</li>
+                    <li>Handle validation errors with clear messages</li>
+                </ul>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 6.2: Implement Email Sending Endpoints</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>Endpoints:</strong></p>
+                <table>
+                    <tr>
+                        <th>Method</th>
+                        <th>Path</th>
+                        <th>Description</th>
+                        <th>Request Body</th>
+                        <th>Response</th>
+                    </tr>
+                    <tr>
+                        <td>POST</td>
+                        <td><code>/api/promotion-email-templates/{id}/send-test</code></td>
+                        <td>Send test email</td>
+                        <td>{ recipientEmail: string }</td>
+                        <td>{ success: boolean, messageId?: string }</td>
+                    </tr>
+                    <tr>
+                        <td>POST</td>
+                        <td><code>/api/promotion-email-templates/{id}/send-bulk</code></td>
+                        <td>Send bulk email</td>
+                        <td>{ recipientEmails?: string[] }</td>
+                        <td>{ success: boolean, sentCount: number, failedCount: number }</td>
+                    </tr>
+                </table>
+                <p><strong>Requirements:</strong></p>
+                <ul>
+                    <li>Test email: Send to single recipient (admin email)</li>
+                    <li>Bulk email: Send to all event registrants if recipientEmails not provided</li>
+                    <li>Log all email attempts in promotion_email_sent_log</li>
+                    <li>Handle email failures gracefully</li>
+                    <li>Return detailed success/failure counts</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>5.2 PromotionEmailSentLogController</h3>
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 7.1: Implement Log Query Endpoints</h4>
+                <p><strong>Priority:</strong> <span class="priority-medium">MEDIUM</span></p>
+                <p><strong>Endpoints:</strong></p>
+                <table>
+                    <tr>
+                        <th>Method</th>
+                        <th>Path</th>
+                        <th>Description</th>
+                        <th>Response</th>
+                    </tr>
+                    <tr>
+                        <td>GET</td>
+                        <td><code>/api/promotion-email-sent-logs</code></td>
+                        <td>List sent email logs</td>
+                        <td>PromotionEmailSentLogDTO[]</td>
+                    </tr>
+                    <tr>
+                        <td>GET</td>
+                        <td><code>/api/promotion-email-sent-logs/{id}</code></td>
+                        <td>Get log entry by ID</td>
+                        <td>PromotionEmailSentLogDTO</td>
+                    </tr>
+                </table>
+                <p><strong>Query Parameters:</strong></p>
+                <ul>
+                    <li><code>eventId.equals</code> - Filter by event</li>
+                    <li><code>templateId.equals</code> - Filter by template</li>
+                    <li><code>sentAt.greaterThanOrEqual</code> - Start date</li>
+                    <li><code>sentAt.lessThanOrEqual</code> - End date</li>
+                    <li><code>emailStatus.equals</code> - Filter by status</li>
+                    <li><code>sort</code>, <code>page</code>, <code>size</code> - Pagination</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>6. Integration Points</h2>
+
+        <h3>6.1 Existing Systems</h3>
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 8.1: Integrate with Event System</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>Description:</strong> Ensure proper integration with EventDetails entity</p>
+                <ul>
+                    <li>Validate event exists and belongs to tenant</li>
+                    <li>Retrieve event registrants for bulk email</li>
+                    <li>Use existing event service/repository</li>
+                </ul>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 8.2: Integrate with Discount Code System</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>Description:</strong> Link templates to discount codes</p>
+                <ul>
+                    <li>Validate discount code exists and belongs to event</li>
+                    <li>Retrieve discount code details for email content</li>
+                    <li>Use existing DiscountCode entity/repository</li>
+                </ul>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 8.3: Integrate with Email Service</h4>
+                <p><strong>Priority:</strong> <span class="priority-high">HIGH</span></p>
+                <p><strong>Description:</strong> Use existing email sending infrastructure</p>
+                <ul>
+                    <li>Reuse existing email service/configuration</li>
+                    <li>Support HTML email content</li>
+                    <li>Handle email sending errors</li>
+                </ul>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 8.4: Integrate with User Profile System</h4>
+                <p><strong>Priority:</strong> <span class="priority-medium">MEDIUM</span></p>
+                <p><strong>Description:</strong> Track who created templates and sent emails</p>
+                <ul>
+                    <li>Link createdById to UserProfile</li>
+                    <li>Link sentById to UserProfile</li>
+                    <li>Retrieve user details for audit trail</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>7. OpenAPI/Swagger Documentation</h2>
+
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 9.1: Update Swagger/OpenAPI Documentation</h4>
+                <p><strong>Priority:</strong> <span class="priority-medium">MEDIUM</span></p>
+                <p><strong>Description:</strong> Add API documentation for all new endpoints</p>
+                <ul>
+                    <li>Document all endpoints with proper annotations</li>
+                    <li>Define request/response schemas</li>
+                    <li>Add example requests/responses</li>
+                    <li>Document query parameters</li>
+                    <li>Add error response documentation</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>8. Testing Requirements</h2>
+
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Task 10.1: Unit Tests</h4>
+                <p><strong>Priority:</strong> <span class="priority-medium">MEDIUM</span></p>
+                <p><strong>Description:</strong> Write unit tests for service layer</p>
+                <ul>
+                    <li>Test template creation/update/delete</li>
+                    <li>Test email sending logic</li>
+                    <li>Test validation rules</li>
+                    <li>Test error handling</li>
+                </ul>
+            </div>
+
+            <div class="task-item">
+                <h4>Task 10.2: Integration Tests</h4>
+                <p><strong>Priority:</strong> <span class="priority-medium">MEDIUM</span></p>
+                <p><strong>Description:</strong> Write integration tests for REST endpoints</p>
+                <ul>
+                    <li>Test all CRUD operations</li>
+                    <li>Test email sending endpoints</li>
+                    <li>Test filtering and pagination</li>
+                    <li>Test error scenarios</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>9. Error Handling</h2>
+
+        <div class="warning-box">
+            <strong>Error Handling Requirements:</strong>
+            <ul>
+                <li>Return appropriate HTTP status codes (200, 201, 400, 404, 500)</li>
+                <li>Provide clear error messages in response body</li>
+                <li>Log errors for debugging</li>
+                <li>Handle validation errors gracefully</li>
+                <li>Handle database constraint violations</li>
+                <li>Handle email sending failures</li>
+            </ul>
+        </div>
+
+        <h2>10. Security Considerations</h2>
+
+        <div class="warning-box">
+            <strong>Security Requirements:</strong>
+            <ul>
+                <li>All endpoints must validate tenant ID from security context</li>
+                <li>Users can only access templates for their tenant</li>
+                <li>Validate user permissions (admin only)</li>
+                <li>Sanitize HTML content in email body</li>
+                <li>Validate email addresses</li>
+                <li>Rate limit email sending endpoints</li>
+            </ul>
+        </div>
+
+        <h2>11. Performance Considerations</h2>
+
+        <ul>
+            <li>Use database indexes for filtering queries</li>
+            <li>Implement pagination for list endpoints</li>
+            <li>Consider async processing for bulk emails</li>
+            <li>Cache frequently accessed templates</li>
+            <li>Optimize email sending batch size</li>
+        </ul>
+
+        <h2>12. Acceptance Criteria</h2>
+
+        <div class="task-list">
+            <div class="task-item">
+                <h4>Overall Acceptance Criteria</h4>
+                <ul>
+                    <li>✅ All database tables created and migrated successfully</li>
+                    <li>✅ All REST endpoints implemented and tested</li>
+                    <li>✅ Templates can be created, updated, and deleted</li>
+                    <li>✅ Test emails can be sent successfully</li>
+                    <li>✅ Bulk emails can be sent to event registrants</li>
+                    <li>✅ All sent emails are logged in audit table</li>
+                    <li>✅ Integration with existing systems works correctly</li>
+                    <li>✅ Swagger documentation is complete</li>
+                    <li>✅ Unit and integration tests pass</li>
+                    <li>✅ Error handling is robust</li>
+                    <li>✅ Security requirements are met</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>13. Dependencies</h2>
+
+        <ul>
+            <li>Existing EventDetails entity and repository</li>
+            <li>Existing DiscountCode entity and repository</li>
+            <li>Existing UserProfile entity and repository</li>
+            <li>Existing email service infrastructure</li>
+            <li>Existing tenant context filter</li>
+            <li>Existing authentication/authorization system</li>
+        </ul>
+
+        <h2>14. Estimated Effort</h2>
+
+        <table>
+            <tr>
+                <th>Task Category</th>
+                <th>Estimated Time</th>
+            </tr>
+            <tr>
+                <td>Database Migration</td>
+                <td>2-3 hours</td>
+            </tr>
+            <tr>
+                <td>Entity Classes</td>
+                <td>3-4 hours</td>
+            </tr>
+            <tr>
+                <td>Repository Interfaces</td>
+                <td>2-3 hours</td>
+            </tr>
+            <tr>
+                <td>DTO Classes</td>
+                <td>3-4 hours</td>
+            </tr>
+            <tr>
+                <td>Service Layer</td>
+                <td>6-8 hours</td>
+            </tr>
+            <tr>
+                <td>REST Controllers</td>
+                <td>6-8 hours</td>
+            </tr>
+            <tr>
+                <td>Integration</td>
+                <td>4-6 hours</td>
+            </tr>
+            <tr>
+                <td>Swagger Documentation</td>
+                <td>2-3 hours</td>
+            </tr>
+            <tr>
+                <td>Testing</td>
+                <td>6-8 hours</td>
+            </tr>
+            <tr>
+                <td><strong>Total</strong></td>
+                <td><strong>34-47 hours (~4-6 days)</strong></td>
+            </tr>
+        </table>
+
+        <h2>15. References</h2>
+
+        <ul>
+            <li>Database Schema: <code>code_html_template/SQLS/Latest_Schema_Post__Blob_Claude_11.sql</code></li>
+            <li>Migration Script: <code>documentation/promotion_email_redesign/migrations/001_create_promotion_tables.sql</code></li>
+            <li>Analysis Document: <code>documentation/promotion_email_redesign/PROMOTION_EMAIL_REDESIGN_ANALYSIS.md</code></li>
+            <li>Swagger API Docs: <code>documentation/Swagger_API_Docs/api-docs.json</code></li>
+        </ul>
+
+    </div>
+</body>
+</html>
+
+
+
+
+
+
+

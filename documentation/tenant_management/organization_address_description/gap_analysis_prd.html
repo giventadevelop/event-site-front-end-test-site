@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organization Address &amp; Description — Gap Analysis (v2.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .ok { color: #155724; font-weight: 600; }
+        .gap { color: #856404; font-weight: 600; }
+        .missing { color: #721c24; font-weight: 600; }
+        .deprecated { color: #6c757d; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <h1>Organization Address &amp; Description — Gap Analysis</h1>
+    <p class="doc-meta">
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a> &nbsp;|&nbsp;
+        <strong>Version:</strong> 2.0 &nbsp;|&nbsp; <strong>Date:</strong> June 17, 2026
+    </p>
+
+    <div class="lead">
+        <p>v2.0 consolidates identity fields on <strong><code>tenant_organization</code></strong>. <code>tenant_settings</code> address columns are legacy; they must not receive new writes after migration. Status key: <span class="ok">Present</span> · <span class="gap">Partial</span> · <span class="missing">Missing</span> · <span class="deprecated">Deprecated</span>.</p>
+    </div>
+
+    <h2>1. Source-of-truth decision</h2>
+    <div class="info-box">
+        <p><strong>Why organization, not settings?</strong></p>
+        <ul>
+            <li><code>tenant_organization</code> is the parent identity entity (<code>tenant_settings.tenant_id</code> FK → org).</li>
+            <li>Name, domain, branding, and “where we are” belong with organization metadata — not app configuration.</li>
+            <li>Duplicating on both tables caused admin confusion and drift risk (v1.0 anti-pattern).</li>
+            <li>Settings remains correct home for <code>email</code>, <code>phone_number</code>, WhatsApp/Twilio, homepage toggles, and social URLs.</li>
+        </ul>
+    </div>
+
+    <h2>2. Field comparison matrix (target v2.0)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Field (JSON camelCase)</th>
+                <th>user_profile</th>
+                <th>tenant_organization</th>
+                <th>tenant_settings</th>
+                <th>Target v2.0</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td><code>description</code></td><td class="missing">Missing</td><td class="gap">Partial / new</td><td class="deprecated">Legacy if added in v1.0</td><td><strong>Org only</strong> (max 1000)</td></tr>
+            <tr><td><code>addressLine1</code></td><td class="ok">Present</td><td class="gap">Partial / new</td><td class="deprecated">Legacy present</td><td><strong>Org only</strong> (migrate from settings)</td></tr>
+            <tr><td><code>addressLine2</code></td><td class="ok">Present</td><td class="gap">Partial / new</td><td class="deprecated">Legacy present</td><td><strong>Org only</strong></td></tr>
+            <tr><td><code>city</code></td><td class="ok">Present</td><td class="gap">Partial / new</td><td class="deprecated">Legacy if added</td><td><strong>Org only</strong></td></tr>
+            <tr><td><code>stateProvince</code></td><td class="ok"><code>state</code></td><td class="gap">Partial / new</td><td class="deprecated">Legacy present</td><td><strong>Org only</strong></td></tr>
+            <tr><td><code>zipCode</code></td><td class="ok">Present</td><td class="gap">Partial / new</td><td class="deprecated">Legacy present</td><td><strong>Org only</strong></td></tr>
+            <tr><td><code>country</code></td><td class="ok">Present</td><td class="gap">Partial / new</td><td class="deprecated">Legacy present</td><td><strong>Org only</strong></td></tr>
+            <tr><td><code>websiteUrl</code></td><td class="missing">N/A</td><td class="gap">Partial / new</td><td class="missing">Missing</td><td><strong>Org only</strong></td></tr>
+            <tr><td><code>email</code> (public contact)</td><td class="ok">Present</td><td class="ok"><code>contact_email</code></td><td class="ok">Present</td><td>Both (org = primary contact; settings = site operational)</td></tr>
+            <tr><td><code>phoneNumber</code></td><td class="ok">Present</td><td class="ok"><code>contact_phone</code></td><td class="ok">Present</td><td>Settings + org contact phone (unchanged)</td></tr>
+        </tbody>
+    </table>
+
+    <h2>3. Read fallback (public / footer / contact)</h2>
+    <p>Until deprecated settings columns are dropped, consumers use:</p>
+    <pre style="background:#e8f4f8;color:#0d3b66;border:1px solid #b8d4e3;padding:14px;border-radius:6px;font-family:Consolas,monospace;font-size:0.85em;">resolveTenantOrganizationIdentity({ organization, settings })
+  → for each field: organization.value ?? settingsLegacy.value ?? null</pre>
+    <p>Apply to: <code>Footer.tsx</code>, <code>MoscRedesignFooter.tsx</code>, contact sections, About pages (future). Admin organization detail reads org table only.</p>
+
+    <h2>4. Frontend gaps (v2.0 refactor)</h2>
+    <h3>Tenant Organization (<code>TenantOrganizationForm.tsx</code>)</h3>
+    <ul>
+        <li><span class="ok">Target</span> Description + full address + <code>websiteUrl</code> — sole edit surface.</li>
+        <li><span class="gap">Refactor</span> Ensure PATCH/POST sends only org resource; view page shows all identity fields.</li>
+    </ul>
+    <h3>Tenant Settings (<code>TenantSettingsForm.tsx</code>)</h3>
+    <ul>
+        <li><span class="deprecated">Remove</span> Description textarea and entire Address Information section from form.</li>
+        <li><span class="deprecated">Remove</span> Address display from settings view (or show read-only org address with link “Edit on Organization”).</li>
+        <li><span class="ok">Keep</span> <code>email</code>, <code>phone_number</code>, social URLs, feature flags, hero images, etc.</li>
+    </ul>
+
+    <h2>5. Backend / schema gaps</h2>
+    <table>
+        <thead><tr><th>Table</th><th>Action</th></tr></thead>
+        <tbody>
+            <tr>
+                <td><code>tenant_organization</code></td>
+                <td>Ensure columns: description, address_line_1/2, city, state_province, zip_code, country, website_url. Primary write target.</td>
+            </tr>
+            <tr>
+                <td><code>tenant_settings</code></td>
+                <td>Do <strong>not</strong> add new identity columns in v2.0. Mark address_line_*, state_province, zip_code, country, description, city as <strong>DEPRECATED</strong>. Stop accepting PATCH on these fields (backend returns 400 or ignores). Data migration copies into org.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>6. v1.0 implementation drift (if already merged)</h2>
+    <table>
+        <thead><tr><th>Area</th><th>v1.0 (wrong long-term)</th><th>v2.0 fix</th></tr></thead>
+        <tbody>
+            <tr><td>Schema</td><td><code>tenant_settings.description</code>, <code>city</code> added</td><td>Do not use; optional DROP in v2.1 migration</td></tr>
+            <tr><td>Frontend</td><td>Both forms edit address/description</td><td>Org form only; strip settings form fields</td></tr>
+            <tr><td>DTOs</td><td><code>TenantSettingsDTO</code> extended</td><td>Mark settings address/description <code>@deprecated</code>; org DTO canonical</td></tr>
+            <tr><td>Types</td><td>Duplicate fields on both DTOs</td><td>Single write path via <code>TenantOrganizationDTO</code></td></tr>
+        </tbody>
+    </table>
+
+    <div class="warning-box">
+        <strong>Data migration note:</strong> Copy settings → org only where org column IS NULL. Do not overwrite org values already set. <code>tenant_settings.state_province</code> may contain combined “City, State” text — copy as-is into org <code>state_province</code>; admins fix city manually on org form after deploy.
+    </div>
+
+</body>
+</html>

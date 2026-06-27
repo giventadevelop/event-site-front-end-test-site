@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Batch Job Implementation: Manual Payment Email Jobs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+
+      main {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+
+      h1, h2, h3, h4 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+
+      h1 {
+        font-size: 2.3rem;
+        margin-bottom: 0.75rem;
+      }
+
+      h2 {
+        font-size: 1.7rem;
+        margin-top: 2.5rem;
+        border-bottom: 2px solid #8b7d6b;
+        padding-bottom: 0.5rem;
+      }
+
+      h3 {
+        font-size: 1.3rem;
+        margin-top: 1.8rem;
+        color: #1f4c8f;
+      }
+
+      h4 {
+        font-size: 1.1rem;
+        margin-top: 1.2rem;
+        color: #0066cc;
+      }
+
+      p, li {
+        line-height: 1.75;
+        font-size: 1rem;
+      }
+
+      ul, ol {
+        margin-left: 1.4rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5rem 0;
+        font-size: 0.95rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+      }
+
+      th, td {
+        border: 1px solid #ddd;
+        padding: 0.75rem;
+        vertical-align: top;
+      }
+
+      th {
+        background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+        color: #ffffff;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        font-size: 0.85rem;
+      }
+
+      tr:nth-child(even) {
+        background-color: #f8f9fa;
+      }
+
+      tr:hover {
+        background-color: #e3f2fd;
+        transition: background-color 0.2s ease;
+      }
+
+      code, pre {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        background: #1a1a1a;
+        color: #ffffff;
+        border-radius: 8px;
+      }
+
+      pre {
+        padding: 1rem;
+        line-height: 1.6;
+        overflow-x: auto;
+        margin: 1rem 0;
+      }
+
+      code.inline {
+        background: #f5f1e8;
+        color: #2d2a26;
+        padding: 0.15rem 0.35rem;
+        font-size: 0.95rem;
+        display: inline-block;
+        border-radius: 4px;
+      }
+
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .divider {
+        height: 1px;
+        background: rgba(42, 32, 23, 0.12);
+        margin: 2rem 0;
+      }
+
+      .callout {
+        border-left: 4px solid #8b7d6b;
+        background: rgba(213, 201, 182, 0.3);
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
+        margin: 1.8rem 0;
+      }
+
+      .warning {
+        border-left: 4px solid #d97706;
+        background: rgba(217, 119, 6, 0.1);
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
+        margin: 1.8rem 0;
+      }
+
+      .success {
+        border-left: 4px solid #059669;
+        background: rgba(5, 150, 105, 0.1);
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
+        margin: 1.8rem 0;
+      }
+
+      .code-wrapper {
+        border: 2px solid #1a1a1a;
+        border-radius: 8px;
+        margin: 16px 0 24px;
+        overflow: hidden;
+        background: #ffffff;
+      }
+
+      .code-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px;
+        background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+        border-bottom: 1px solid #d7e6f5;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1f4c8f;
+      }
+
+      .code-block {
+        background-color: #1a1a1a;
+        color: #ffffff;
+        padding: 16px;
+        border-radius: 0 0 6px 6px;
+        font-family: "Courier New", monospace;
+        font-size: 0.95rem;
+        overflow-x: auto;
+        margin: 0;
+        white-space: pre;
+      }
+
+      footer {
+        margin-top: 4rem;
+        text-align: center;
+        font-size: 0.9rem;
+        color: #7a7066;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Batch Job Implementation · January 14, 2026</span>
+      <h1>Batch Job Implementation Guide: Manual Payment Email Jobs</h1>
+      <p>
+        <strong>Project:</strong> MCEFEE Multi-Tenant Event Management Platform<br />
+        <strong>Document Version:</strong> 1.0<br />
+        <strong>Date:</strong> January 14, 2026<br />
+        <strong>Status:</strong> Implementation Ready<br />
+        <strong>Batch Job Project:</strong> E:\project_workspace\event-site-manager-batch-jobs
+      </p>
+
+      <div class="divider"></div>
+
+      <h2 id="executive-summary">Executive Summary</h2>
+      <p>
+        This document provides detailed implementation instructions for batch jobs that send emails for manual payment requests.
+        Two email types are required: (1) Confirmation email sent immediately after payment request creation, and (2) Ticket email
+        sent after admin confirms payment receipt. All email sending must happen asynchronously via batch jobs triggered from the backend.
+      </p>
+
+      <div class="callout">
+        <strong>Key Requirement:</strong> All email sending must be done via batch jobs, not directly from backend services.
+        The backend creates batch job records/tasks that are processed asynchronously by the batch job project.
+      </div>
+
+      <h2 id="table-of-contents">Table of Contents</h2>
+      <nav>
+        <ol>
+          <li><a href="#job-types">Batch Job Types Required</a></li>
+          <li><a href="#confirmation-email-job">Manual Payment Confirmation Email Job</a></li>
+          <li><a href="#ticket-email-job">Manual Payment Ticket Email Job</a></li>
+          <li><a href="#email-templates">Email Template Specifications</a></li>
+          <li><a href="#trigger-points">Trigger Points from Backend</a></li>
+          <li><a href="#job-parameters">Job Parameters & Data Requirements</a></li>
+          <li><a href="#error-handling">Error Handling & Retry Logic</a></li>
+          <li><a href="#testing">Testing Requirements</a></li>
+        </ol>
+      </nav>
+
+      <div class="divider"></div>
+
+      <section id="job-types">
+        <h2>1. Batch Job Types Required</h2>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Job Type</th>
+              <th>Purpose</th>
+              <th>When Triggered</th>
+              <th>Email Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="inline">MANUAL_PAYMENT_CONFIRMATION_EMAIL</code></td>
+              <td>Send confirmation that payment request was received</td>
+              <td>Immediately after payment request creation</td>
+              <td>Confirmation (no QR code)</td>
+            </tr>
+            <tr>
+              <td><code class="inline">MANUAL_PAYMENT_TICKET_EMAIL</code></td>
+              <td>Send ticket email with QR code after payment confirmed</td>
+              <td>When admin marks payment as RECEIVED</td>
+              <td>Ticket email (with QR code)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="warning">
+          <strong>Important:</strong> These are separate from existing Stripe ticket email jobs. Create new job types
+          specifically for manual payments to maintain separation of concerns.
+        </div>
+      </section>
+
+      <section id="confirmation-email-job">
+        <div class="divider"></div>
+        <h2>2. Manual Payment Confirmation Email Job</h2>
+
+        <h3>2.1 Job Configuration</h3>
+        <ul>
+          <li><strong>Job Type:</strong> <code class="inline">MANUAL_PAYMENT_CONFIRMATION_EMAIL</code></li>
+          <li><strong>Job Name:</strong> <code class="inline">manualPaymentConfirmationEmailJob</code></li>
+          <li><strong>Trigger:</strong> Backend creates job record when payment request is created</li>
+          <li><strong>Execution:</strong> Asynchronous, processed by batch job scheduler</li>
+          <li><strong>Priority:</strong> Normal (not urgent, but should process within minutes)</li>
+        </ul>
+
+        <h3>2.2 Job Parameters</h3>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span>Job Parameters (JSON)</span>
+          </div>
+          <pre class="code-block">{
+  "paymentRequestId": 123,
+  "eventId": 52,
+  "recipientEmail": "user@example.com",
+  "recipientName": "John Doe",
+  "paymentMethod": "Zelle",
+  "amount": 150.00,
+  "paymentHandle": "zelle@example.com",
+  "paymentInstructions": "Send payment to zelle@example.com with memo: Event 52 - MANUAL-123",
+  "eventTitle": "Annual Gala",
+  "eventDate": "2026-02-15",
+  "eventTime": "18:00",
+  "eventLocation": "Convention Center",
+  "eventAddress": "123 Main St, City, State 12345",
+  "ticketSummary": [
+    {
+      "ticketTypeName": "General Admission",
+      "quantity": 2,
+      "pricePerUnit": 50.00,
+      "totalAmount": 100.00
+    },
+    {
+      "ticketTypeName": "VIP",
+      "quantity": 1,
+      "pricePerUnit": 50.00,
+      "totalAmount": 50.00
+    }
+  ],
+  "totalAmount": 150.00,
+  "transactionReference": "MANUAL-123",
+  "tenantId": "tenant_demo_001"
+}</pre>
+        </div>
+
+        <h3>2.3 Email Content Requirements</h3>
+        <h4>Subject Line</h4>
+        <p><code class="inline">Payment Request Received - {eventTitle} - {transactionReference}</code></p>
+        <p><strong>Example:</strong> <code class="inline">Payment Request Received - Annual Gala - MANUAL-123</code></p>
+
+        <h4>Email Body Structure</h4>
+        <ol>
+          <li>
+            <strong>Header Section:</strong>
+            <ul>
+              <li>Greeting: "Dear {recipientName},"</li>
+              <li>Event title and date</li>
+              <li>Confirmation message: "We have received your payment request."</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Payment Request Details:</strong>
+            <ul>
+              <li>Transaction Reference: <code class="inline">MANUAL-123</code></li>
+              <li>Payment Method: Zelle/Venmo/Cash App/etc.</li>
+              <li>Total Amount Due: $150.00</li>
+              <li>Status: <strong>Pending Confirmation</strong></li>
+            </ul>
+          </li>
+          <li>
+            <strong>Ticket Summary:</strong>
+            <ul>
+              <li>Table listing each ticket type, quantity, price, and subtotal</li>
+              <li>Total amount</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Payment Instructions:</strong>
+            <ul>
+              <li>Payment method-specific instructions (Zelle handle, Venmo username, etc.)</li>
+              <li>Memo/note format: "Event {eventId} - {transactionReference}"</li>
+              <li>Amount to send</li>
+              <li>Deadline (if applicable)</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Next Steps:</strong>
+            <ul>
+              <li>"Please complete your payment using the method you selected."</li>
+              <li>"Once your payment is confirmed by our team, you will receive your tickets via email."</li>
+              <li>"Your tickets will include a QR code for event entry."</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Important Notes:</strong>
+            <ul>
+              <li>"This is a payment request only. Your tickets will be issued after payment confirmation."</li>
+              <li>"If you have any questions, please contact us at [support email]."</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Footer:</strong>
+            <ul>
+              <li>Event organizer contact information</li>
+              <li>Event website link</li>
+              <li>Unsubscribe link (if applicable)</li>
+            </ul>
+          </li>
+        </ol>
+
+        <h3>2.4 Email Template Example</h3>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span>Email Template (HTML)</span>
+          </div>
+          <pre class="code-block">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;title&gt;Payment Request Received&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;"&gt;
+  &lt;div style="max-width: 600px; margin: 0 auto; padding: 20px;"&gt;
+    &lt;h1 style="color: #8b7d6b;"&gt;Payment Request Received&lt;/h1&gt;
+
+    &lt;p&gt;Dear {{recipientName}},&lt;/p&gt;
+
+    &lt;p&gt;Thank you for your interest in &lt;strong&gt;{{eventTitle}}&lt;/strong&gt; on {{eventDate}} at {{eventTime}}.
+    We have received your payment request and it is currently pending confirmation.&lt;/p&gt;
+
+    &lt;h2 style="color: #1f4c8f;"&gt;Payment Request Details&lt;/h2&gt;
+    &lt;table style="width: 100%; border-collapse: collapse; margin: 20px 0;"&gt;
+      &lt;tr&gt;
+        &lt;td style="padding: 8px; border-bottom: 1px solid #ddd;"&gt;&lt;strong&gt;Transaction Reference:&lt;/strong&gt;&lt;/td&gt;
+        &lt;td style="padding: 8px; border-bottom: 1px solid #ddd;"&gt;{{transactionReference}}&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style="padding: 8px; border-bottom: 1px solid #ddd;"&gt;&lt;strong&gt;Payment Method:&lt;/strong&gt;&lt;/td&gt;
+        &lt;td style="padding: 8px; border-bottom: 1px solid #ddd;"&gt;{{paymentMethod}}&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style="padding: 8px; border-bottom: 1px solid #ddd;"&gt;&lt;strong&gt;Total Amount:&lt;/strong&gt;&lt;/td&gt;
+        &lt;td style="padding: 8px; border-bottom: 1px solid #ddd;"&gt;${{totalAmount}}&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td style="padding: 8px; border-bottom: 1px solid #ddd;"&gt;&lt;strong&gt;Status:&lt;/strong&gt;&lt;/td&gt;
+        &lt;td style="padding: 8px; border-bottom: 1px solid #ddd;"&gt;&lt;span style="color: #d97706;"&gt;Pending Confirmation&lt;/span&gt;&lt;/td&gt;
+      &lt;/tr&gt;
+    &lt;/table&gt;
+
+    &lt;h2 style="color: #1f4c8f;"&gt;Ticket Summary&lt;/h2&gt;
+    &lt;table style="width: 100%; border-collapse: collapse; margin: 20px 0;"&gt;
+      &lt;thead&gt;
+        &lt;tr style="background-color: #f8f9fa;"&gt;
+          &lt;th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;"&gt;Ticket Type&lt;/th&gt;
+          &lt;th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;"&gt;Quantity&lt;/th&gt;
+          &lt;th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;"&gt;Price&lt;/th&gt;
+          &lt;th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;"&gt;Total&lt;/th&gt;
+        &lt;/tr&gt;
+      &lt;/thead&gt;
+      &lt;tbody&gt;
+        {{#each ticketSummary}}
+        &lt;tr&gt;
+          &lt;td style="padding: 10px; border-bottom: 1px solid #ddd;"&gt;{{ticketTypeName}}&lt;/td&gt;
+          &lt;td style="padding: 10px; text-align: center; border-bottom: 1px solid #ddd;"&gt;{{quantity}}&lt;/td&gt;
+          &lt;td style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;"&gt;${{pricePerUnit}}&lt;/td&gt;
+          &lt;td style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;"&gt;${{totalAmount}}&lt;/td&gt;
+        &lt;/tr&gt;
+        {{/each}}
+        &lt;tr style="font-weight: bold;"&gt;
+          &lt;td colspan="3" style="padding: 10px; text-align: right; border-top: 2px solid #ddd;"&gt;Total:&lt;/td&gt;
+          &lt;td style="padding: 10px; text-align: right; border-top: 2px solid #ddd;"&gt;${{totalAmount}}&lt;/td&gt;
+        &lt;/tr&gt;
+      &lt;/tbody&gt;
+    &lt;/table&gt;
+
+    &lt;h2 style="color: #1f4c8f;"&gt;Payment Instructions&lt;/h2&gt;
+    &lt;div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;"&gt;
+      &lt;p&gt;&lt;strong&gt;Please send payment via {{paymentMethod}}:&lt;/strong&gt;&lt;/p&gt;
+      &lt;ul&gt;
+        &lt;li&gt;&lt;strong&gt;Recipient:&lt;/strong&gt; {{paymentHandle}}&lt;/li&gt;
+        &lt;li&gt;&lt;strong&gt;Amount:&lt;/strong&gt; ${{totalAmount}}&lt;/li&gt;
+        &lt;li&gt;&lt;strong&gt;Memo/Note:&lt;/strong&gt; {{paymentInstructions}}&lt;/li&gt;
+      &lt;/ul&gt;
+    &lt;/div&gt;
+
+    &lt;h2 style="color: #1f4c8f;"&gt;Next Steps&lt;/h2&gt;
+    &lt;p&gt;Once you complete your payment, our team will verify the receipt and confirm your tickets.
+    You will receive a separate email with your tickets and QR code once payment is confirmed.&lt;/p&gt;
+
+    &lt;p&gt;&lt;strong&gt;Important:&lt;/strong&gt; This is a payment request only. Your tickets will be issued after payment confirmation.&lt;/p&gt;
+
+    &lt;hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;"&gt;
+
+    &lt;p style="font-size: 0.9em; color: #666;"&gt;
+      If you have any questions, please contact us at [support email].&lt;br&gt;
+      Event: &lt;a href="{{eventUrl}}"&gt;{{eventTitle}}&lt;/a&gt;
+    &lt;/p&gt;
+  &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+        </div>
+
+        <h3>2.5 Implementation Steps</h3>
+        <ol>
+          <li>
+            <strong>Job Creation:</strong>
+            <ul>
+              <li>Create Spring Batch job configuration for <code class="inline">MANUAL_PAYMENT_CONFIRMATION_EMAIL</code></li>
+              <li>Define job parameters schema</li>
+              <li>Set up job repository and job launcher</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Data Fetching:</strong>
+            <ul>
+              <li>Fetch <code class="inline">ManualPaymentRequest</code> by ID from backend API</li>
+              <li>Fetch <code class="inline">EventDetails</code> by event ID</li>
+              <li>Fetch <code class="inline">EventTicketTransaction</code> and items</li>
+              <li>Fetch <code class="inline">EventTicketType</code> details for each item</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Email Generation:</strong>
+            <ul>
+              <li>Load email template (HTML)</li>
+              <li>Populate template variables with fetched data</li>
+              <li>Generate HTML email content</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Email Sending:</strong>
+            <ul>
+              <li>Use existing email service (SMTP/SES/SendGrid)</li>
+              <li>Set "From" address from tenant configuration</li>
+              <li>Set "To" address to <code class="inline">recipientEmail</code></li>
+              <li>Set subject line</li>
+              <li>Send email</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Logging:</strong>
+            <ul>
+              <li>Log email sent successfully</li>
+              <li>Update job status to <code class="inline">COMPLETED</code></li>
+              <li>Create email log record in <code class="inline">email_log</code> table</li>
+            </ul>
+          </li>
+        </ol>
+      </section>
+
+      <section id="ticket-email-job">
+        <div class="divider"></div>
+        <h2>3. Manual Payment Ticket Email Job</h2>
+
+        <h3>3.1 Job Configuration</h3>
+        <ul>
+          <li><strong>Job Type:</strong> <code class="inline">MANUAL_PAYMENT_TICKET_EMAIL</code></li>
+          <li><strong>Job Name:</strong> <code class="inline">manualPaymentTicketEmailJob</code></li>
+          <li><strong>Trigger:</strong> Backend creates job record when payment status changes to RECEIVED</li>
+          <li><strong>Execution:</strong> Asynchronous, processed by batch job scheduler</li>
+          <li><strong>Priority:</strong> High (user is waiting for tickets)</li>
+        </ul>
+
+        <h3>3.2 Job Parameters</h3>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span>Job Parameters (JSON)</span>
+          </div>
+          <pre class="code-block">{
+  "paymentRequestId": 123,
+  "eventId": 52,
+  "ticketTransactionId": 456,
+  "recipientEmail": "user@example.com",
+  "recipientName": "John Doe",
+  "eventTitle": "Annual Gala",
+  "eventDate": "2026-02-15",
+  "eventTime": "18:00",
+  "eventLocation": "Convention Center",
+  "eventAddress": "123 Main St, City, State 12345",
+  "qrCodeImageUrl": "https://s3.amazonaws.com/bucket/qr-codes/event-52-transaction-456.png",
+  "ticketItems": [
+    {
+      "ticketTypeName": "General Admission",
+      "quantity": 2,
+      "pricePerUnit": 50.00,
+      "totalAmount": 100.00
+    },
+    {
+      "ticketTypeName": "VIP",
+      "quantity": 1,
+      "pricePerUnit": 50.00,
+      "totalAmount": 50.00
+    }
+  ],
+  "totalAmount": 150.00,
+  "transactionReference": "MANUAL-123",
+  "tenantId": "tenant_demo_001"
+}</pre>
+        </div>
+
+        <h3>3.3 Email Content Requirements</h3>
+        <h4>Subject Line</h4>
+        <p><code class="inline">Your Tickets for {eventTitle} - {transactionReference}</code></p>
+        <p><strong>Example:</strong> <code class="inline">Your Tickets for Annual Gala - MANUAL-123</code></p>
+
+        <h4>Email Body Structure</h4>
+        <ol>
+          <li>
+            <strong>Header Section:</strong>
+            <ul>
+              <li>Greeting: "Dear {recipientName},"</li>
+              <li>Success message: "Your payment has been confirmed! Your tickets are ready."</li>
+              <li>Event title and date</li>
+            </ul>
+          </li>
+          <li>
+            <strong>QR Code Display:</strong>
+            <ul>
+              <li>Large, prominent QR code image</li>
+              <li>Caption: "Present this QR code at the event for entry"</li>
+              <li>Alternative text: "QR Code for {eventTitle} - {transactionReference}"</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Ticket Details:</strong>
+            <ul>
+              <li>Transaction Reference: <code class="inline">MANUAL-123</code></li>
+              <li>Payment Method: Zelle/Venmo/etc.</li>
+              <li>Payment Status: <strong>Confirmed</strong></li>
+              <li>Table listing each ticket type, quantity, price, and subtotal</li>
+              <li>Total amount paid</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Event Information:</strong>
+            <ul>
+              <li>Event date and time</li>
+              <li>Event location and address</li>
+              <li>Directions (if available)</li>
+              <li>Event description (if available)</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Important Instructions:</strong>
+            <ul>
+              <li>"Please bring this QR code to the event."</li>
+              <li>"Each attendee must have their own QR code (if multiple tickets)."</li>
+              <li>"QR code is valid for entry only."</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Footer:</strong>
+            <ul>
+              <li>Event organizer contact information</li>
+              <li>Event website link</li>
+              <li>Download/add to calendar links</li>
+            </ul>
+          </li>
+        </ol>
+
+        <div class="callout">
+          <strong>Reuse Existing Template:</strong> The ticket email template should be similar to the existing Stripe
+          ticket email template. Reuse the same structure but ensure it works for manual payments (no Stripe-specific content).
+        </div>
+
+        <h3>3.4 QR Code Image Handling</h3>
+        <ul>
+          <li>QR code URL is provided in job parameters (<code class="inline">qrCodeImageUrl</code>)</li>
+          <li>Download QR code image from S3/CDN</li>
+          <li>Embed image in email as inline attachment or hosted image</li>
+          <li>Ensure image is accessible and displays correctly in email clients</li>
+          <li>Provide fallback text if image cannot be loaded</li>
+        </ul>
+
+        <h3>3.5 Implementation Steps</h3>
+        <ol>
+          <li>
+            <strong>Job Creation:</strong>
+            <ul>
+              <li>Create Spring Batch job configuration for <code class="inline">MANUAL_PAYMENT_TICKET_EMAIL</code></li>
+              <li>Define job parameters schema</li>
+              <li>Set up job repository and job launcher</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Data Fetching:</strong>
+            <ul>
+              <li>Fetch <code class="inline">ManualPaymentRequest</code> by ID</li>
+              <li>Fetch <code class="inline">EventTicketTransaction</code> by ID (should have QR code URL)</li>
+              <li>Fetch <code class="inline">EventTicketTransactionItem</code> records</li>
+              <li>Fetch <code class="inline">EventDetails</code> by event ID</li>
+              <li>Verify QR code URL exists and is accessible</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Email Generation:</strong>
+            <ul>
+              <li>Load ticket email template (HTML)</li>
+              <li>Populate template variables</li>
+              <li>Embed QR code image (download and embed, or use hosted URL)</li>
+              <li>Generate HTML email content</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Email Sending:</strong>
+            <ul>
+              <li>Use existing email service</li>
+              <li>Set "From" address from tenant configuration</li>
+              <li>Set "To" address to <code class="inline">recipientEmail</code></li>
+              <li>Set subject line</li>
+              <li>Send email with HTML content</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Logging:</strong>
+            <ul>
+              <li>Log email sent successfully</li>
+              <li>Update job status to <code class="inline">COMPLETED</code></li>
+              <li>Create email log record</li>
+              <li>Update <code class="inline">EventTicketTransaction</code> metadata to mark email as sent</li>
+            </ul>
+          </li>
+        </ol>
+      </section>
+
+      <section id="email-templates">
+        <div class="divider"></div>
+        <h2>4. Email Template Specifications</h2>
+
+        <h3>4.1 Template Location</h3>
+        <p>
+          Store email templates in the batch job project:
+        </p>
+        <ul>
+          <li><code class="inline">src/main/resources/templates/email/manual-payment-confirmation.html</code></li>
+          <li><code class="inline">src/main/resources/templates/email/manual-payment-ticket.html</code></li>
+        </ul>
+
+        <h3>4.2 Template Engine</h3>
+        <p>
+          Use existing template engine (Thymeleaf, FreeMarker, or Mustache) that matches the project's current setup.
+        </p>
+
+        <h3>4.3 Template Variables</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Variable</th>
+              <th>Description</th>
+              <th>Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="inline">{{recipientName}}</code></td>
+              <td>User's full name</td>
+              <td>"John Doe"</td>
+            </tr>
+            <tr>
+              <td><code class="inline">{{eventTitle}}</code></td>
+              <td>Event name</td>
+              <td>"Annual Gala"</td>
+            </tr>
+            <tr>
+              <td><code class="inline">{{eventDate}}</code></td>
+              <td>Event date (formatted)</td>
+              <td>"February 15, 2026"</td>
+            </tr>
+            <tr>
+              <td><code class="inline">{{eventTime}}</code></td>
+              <td>Event time</td>
+              <td>"6:00 PM"</td>
+            </tr>
+            <tr>
+              <td><code class="inline">{{eventLocation}}</code></td>
+              <td>Venue name</td>
+              <td>"Convention Center"</td>
+            </tr>
+            <tr>
+              <td><code class="inline">{{transactionReference}}</code></td>
+              <td>Transaction reference</td>
+              <td>"MANUAL-123"</td>
+            </tr>
+            <tr>
+              <td><code class="inline">{{totalAmount}}</code></td>
+              <td>Total amount paid</td>
+              <td>"150.00"</td>
+            </tr>
+            <tr>
+              <td><code class="inline">{{paymentMethod}}</code></td>
+              <td>Payment method name</td>
+              <td>"Zelle"</td>
+            </tr>
+            <tr>
+              <td><code class="inline">{{qrCodeImageUrl}}</code></td>
+              <td>QR code image URL (ticket email only)</td>
+              <td>"https://s3.amazonaws.com/..."</td>
+            </tr>
+            <tr>
+              <td><code class="inline">{{ticketSummary}}</code></td>
+              <td>Array of ticket items (confirmation email)</td>
+              <td>See job parameters</td>
+            </tr>
+            <tr>
+              <td><code class="inline">{{ticketItems}}</code></td>
+              <td>Array of ticket items (ticket email)</td>
+              <td>See job parameters</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>4.4 Email Styling</h3>
+        <ul>
+          <li>Use inline CSS (email clients don't support external stylesheets)</li>
+          <li>Responsive design for mobile email clients</li>
+          <li>Use web-safe fonts (Arial, Helvetica, sans-serif)</li>
+          <li>Ensure proper contrast for accessibility</li>
+          <li>Test in multiple email clients (Gmail, Outlook, Apple Mail)</li>
+        </ul>
+      </section>
+
+      <section id="trigger-points">
+        <div class="divider"></div>
+        <h2>5. Trigger Points from Backend</h2>
+
+        <h3>5.1 Confirmation Email Trigger</h3>
+        <p>
+          <strong>When:</strong> Immediately after <code class="inline">ManualPaymentRequest</code> is created<br />
+          <strong>Backend Endpoint:</strong> <code class="inline">POST /api/manual-payments/{id}/send-confirmation-email</code><br />
+          <strong>Backend Action:</strong> Create batch job record/task
+        </p>
+
+        <h4>Backend Job Creation Logic</h4>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span>Backend Service Method</span>
+          </div>
+          <pre class="code-block">public void triggerConfirmationEmailJob(Long paymentRequestId) {
+    ManualPaymentRequest request = manualPaymentRequestRepository
+        .findById(paymentRequestId)
+        .orElseThrow(() -> new EntityNotFoundException("Payment request not found"));
+
+    // Check if email already sent (idempotency)
+    if (request.getConfirmationEmailSent() != null && request.getConfirmationEmailSent()) {
+        log.info("Confirmation email already sent for payment request {}", paymentRequestId);
+        return;
+    }
+
+    // Create batch job task/record
+    BatchJobTask emailJob = new BatchJobTask();
+    emailJob.setJobType("MANUAL_PAYMENT_CONFIRMATION_EMAIL");
+    emailJob.setStatus("PENDING");
+    emailJob.setPaymentRequestId(paymentRequestId);
+    emailJob.setEventId(request.getEventId());
+    emailJob.setRecipientEmail(request.getRequesterEmail());
+    emailJob.setTenantId(request.getTenantId());
+    emailJob.setCreatedAt(ZonedDateTime.now());
+
+    // Set job parameters as JSON
+    Map&lt;String, Object&gt; jobParams = new HashMap&lt;&gt;();
+    jobParams.put("paymentRequestId", paymentRequestId);
+    jobParams.put("eventId", request.getEventId());
+    jobParams.put("recipientEmail", request.getRequesterEmail());
+    jobParams.put("recipientName", request.getRequesterName());
+    jobParams.put("paymentMethod", getPaymentMethodName(request.getManualPaymentMethodType()));
+    jobParams.put("amount", request.getAmount());
+    jobParams.put("paymentHandle", request.getPaymentHandle());
+    jobParams.put("paymentInstructions", request.getPaymentInstructions());
+    // ... add more parameters
+
+    emailJob.setJobParameters(objectMapper.writeValueAsString(jobParams));
+    batchJobTaskRepository.save(emailJob);
+
+    // Mark email as sent (prevent duplicates)
+    request.setConfirmationEmailSent(true);
+    manualPaymentRequestRepository.save(request);
+
+    log.info("Confirmation email job created for payment request {}", paymentRequestId);
+}</pre>
+        </div>
+
+        <h3>5.2 Ticket Email Trigger</h3>
+        <p>
+          <strong>When:</strong> When admin updates payment status to <code class="inline">RECEIVED</code><br />
+          <strong>Backend Endpoint:</strong> <code class="inline">PATCH /api/manual-payments/{id}</code><br />
+          <strong>Backend Action:</strong> Create batch job record/task after QR code is generated
+        </p>
+
+        <h4>Backend Job Creation Logic</h4>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span>Backend Service Method</span>
+          </div>
+          <pre class="code-block">public void triggerTicketEmailJob(
+    Long eventId,
+    Long ticketTransactionId,
+    String recipientEmail
+) {
+    EventTicketTransaction transaction = eventTicketTransactionRepository
+        .findById(ticketTransactionId)
+        .orElseThrow(() -> new EntityNotFoundException("Ticket transaction not found"));
+
+    // Verify QR code exists
+    if (transaction.getQrCodeImageUrl() == null || transaction.getQrCodeImageUrl().isEmpty()) {
+        throw new IllegalStateException("QR code not generated for transaction " + ticketTransactionId);
+    }
+
+    // Check if email already sent (idempotency)
+    if (transaction.getTicketEmailSent() != null && transaction.getTicketEmailSent()) {
+        log.info("Ticket email already sent for transaction {}", ticketTransactionId);
+        return;
+    }
+
+    // Create batch job task/record
+    BatchJobTask emailJob = new BatchJobTask();
+    emailJob.setJobType("MANUAL_PAYMENT_TICKET_EMAIL");
+    emailJob.setStatus("PENDING");
+    emailJob.setEventId(eventId);
+    emailJob.setTicketTransactionId(ticketTransactionId);
+    emailJob.setRecipientEmail(recipientEmail);
+    emailJob.setTenantId(transaction.getTenantId());
+    emailJob.setCreatedAt(ZonedDateTime.now());
+
+    // Set job parameters as JSON
+    Map&lt;String, Object&gt; jobParams = new HashMap&lt;&gt;();
+    jobParams.put("eventId", eventId);
+    jobParams.put("ticketTransactionId", ticketTransactionId);
+    jobParams.put("recipientEmail", recipientEmail);
+    jobParams.put("qrCodeImageUrl", transaction.getQrCodeImageUrl());
+    // ... add more parameters
+
+    emailJob.setJobParameters(objectMapper.writeValueAsString(jobParams));
+    batchJobTaskRepository.save(emailJob);
+
+    log.info("Ticket email job created for transaction {}", ticketTransactionId);
+}</pre>
+        </div>
+      </section>
+
+      <section id="job-parameters">
+        <div class="divider"></div>
+        <h2>6. Job Parameters & Data Requirements</h2>
+
+        <h3>6.1 Required Data Sources</h3>
+        <p>
+          Batch jobs must fetch data from backend API endpoints. Use the same authentication mechanism
+          (JWT tokens) as other batch jobs in the project.
+        </p>
+
+        <h4>API Endpoints to Call</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>Endpoint</th>
+              <th>Purpose</th>
+              <th>When Used</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="inline">GET /api/manual-payments/{id}</code></td>
+              <td>Fetch payment request details</td>
+              <td>Both jobs</td>
+            </tr>
+            <tr>
+              <td><code class="inline">GET /api/event-ticket-transactions/{id}</code></td>
+              <td>Fetch ticket transaction details</td>
+              <td>Ticket email job</td>
+            </tr>
+            <tr>
+              <td><code class="inline">GET /api/event-details/{id}</code></td>
+              <td>Fetch event information</td>
+              <td>Both jobs</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>6.2 Authentication</h3>
+        <p>
+          Use service JWT authentication (same as other batch jobs):
+        </p>
+        <ul>
+          <li>Obtain JWT token using API credentials</li>
+          <li>Include <code class="inline">Authorization: Bearer {token}</code> header in all API calls</li>
+          <li>Handle token expiration and refresh</li>
+        </ul>
+      </section>
+
+      <section id="error-handling">
+        <div class="divider"></div>
+        <h2>7. Error Handling & Retry Logic</h2>
+
+        <h3>7.1 Error Scenarios</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Error</th>
+              <th>Action</th>
+              <th>Retry?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Payment request not found</td>
+              <td>Log error, mark job as FAILED</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>Event not found</td>
+              <td>Log error, mark job as FAILED</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>QR code URL not accessible</td>
+              <td>Log warning, mark job as FAILED</td>
+              <td>Yes (3 retries)</td>
+            </tr>
+            <tr>
+              <td>Email service unavailable</td>
+              <td>Log error, mark job as FAILED</td>
+              <td>Yes (5 retries with exponential backoff)</td>
+            </tr>
+            <tr>
+              <td>Template rendering error</td>
+              <td>Log error, mark job as FAILED</td>
+              <td>No</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>7.2 Retry Configuration</h3>
+        <ul>
+          <li><strong>Max Retries:</strong> 3-5 attempts depending on error type</li>
+          <li><strong>Retry Delay:</strong> Exponential backoff (1min, 5min, 15min)</li>
+          <li><strong>Final Status:</strong> Mark as FAILED after max retries</li>
+          <li><strong>Notification:</strong> Send alert to admin if job fails permanently</li>
+        </ul>
+
+        <h3>7.3 Idempotency</h3>
+        <p>
+          Both jobs must be idempotent:
+        </p>
+        <ul>
+          <li>Check if email was already sent before sending</li>
+          <li>Use database flags: <code class="inline">confirmation_email_sent</code>, <code class="inline">ticket_email_sent</code></li>
+          <li>If email already sent, mark job as COMPLETED without sending duplicate</li>
+        </ul>
+      </section>
+
+      <section id="testing">
+        <div class="divider"></div>
+        <h2>8. Testing Requirements</h2>
+
+        <h3>8.1 Unit Tests</h3>
+        <ul>
+          <li>Test job parameter parsing</li>
+          <li>Test template rendering with sample data</li>
+          <li>Test email content generation</li>
+          <li>Test error handling for missing data</li>
+        </ul>
+
+        <h3>8.2 Integration Tests</h3>
+        <ul>
+          <li>Test complete job execution end-to-end</li>
+          <li>Test API calls to backend</li>
+          <li>Test email sending (use test email service)</li>
+          <li>Test QR code image embedding</li>
+          <li>Test idempotency (run job twice, verify single email)</li>
+        </ul>
+
+        <h3>8.3 Email Client Testing</h3>
+        <ul>
+          <li>Test email rendering in Gmail (web and mobile)</li>
+          <li>Test email rendering in Outlook</li>
+          <li>Test email rendering in Apple Mail</li>
+          <li>Verify QR code displays correctly</li>
+          <li>Verify links work correctly</li>
+        </ul>
+      </section>
+
+      <div class="divider"></div>
+
+      <section id="summary">
+        <h2>9. Implementation Summary</h2>
+        <ol>
+          <li>
+            <strong>Create Confirmation Email Job:</strong>
+            <ul>
+              <li>Job type: <code class="inline">MANUAL_PAYMENT_CONFIRMATION_EMAIL</code></li>
+              <li>Triggered when payment request is created</li>
+              <li>Sends confirmation email with payment instructions</li>
+              <li>No QR code included</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Create Ticket Email Job:</strong>
+            <ul>
+              <li>Job type: <code class="inline">MANUAL_PAYMENT_TICKET_EMAIL</code></li>
+              <li>Triggered when payment status changes to RECEIVED</li>
+              <li>Sends ticket email with QR code</li>
+              <li>Includes all ticket and event details</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Create Email Templates:</strong>
+            <ul>
+              <li>Confirmation email template (HTML)</li>
+              <li>Ticket email template (HTML)</li>
+              <li>Both templates must be responsive and email-client compatible</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Implement Job Processing:</strong>
+            <ul>
+              <li>Fetch data from backend API</li>
+              <li>Render email templates</li>
+              <li>Send emails via email service</li>
+              <li>Log results and update job status</li>
+            </ul>
+          </li>
+        </ol>
+      </section>
+
+      <footer>
+        <p>
+          Generated for <code class="inline">documentation/domain_agnostic_payment/fee_free_direct_manual_pay_like_zelle/success_flow/batch_job_implementation.html</code>
+        </p>
+        <p>
+          <strong>Batch Job Project:</strong> E:\project_workspace\event-site-manager-batch-jobs<br />
+          <strong>Reference:</strong> See backend implementation guide for trigger points and API endpoints
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>

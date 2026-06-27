@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiveButter Donation Flow - Backend Implementation PRD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #2D2A26;
+            background-color: #F5F1E8;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #8B7D6B;
+            border-bottom: 3px solid #8B7D6B;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        h2 {
+            color: #6B4E3D;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-left: 4px solid #8B7D6B;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #8B7D6B;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+        h4 {
+            color: #A0926B;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        .meta {
+            background: #EDE7D3;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            border-left: 4px solid #8B7D6B;
+        }
+        .meta p { margin: 5px 0; }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-ready { background: #4A6741; color: white; }
+        .highlight-box {
+            background: #EDE7D3;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #8B7D6B;
+        }
+        .warning-box {
+            background: #FFF4E6;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #A67C52;
+        }
+        .success-box {
+            background: #F0F9F0;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #4A6741;
+        }
+        .code-block {
+            background: #2D2A26;
+            color: #F5F1E8;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #8B7D6B;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: #EDE7D3;
+            font-weight: bold;
+            color: #2D2A26;
+        }
+        ul, ol { margin-left: 30px; margin-top: 10px; }
+        li { margin: 8px 0; }
+        .tag {
+            display: inline-block;
+            background: #8B7D6B;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="meta">
+            <p><strong>Document Type:</strong> Backend Product Requirements Document (PRD)</p>
+            <p><strong>Project:</strong> GiveButter Donation-Based Event Flow - Backend</p>
+            <p><strong>Repository:</strong> <code>E:\project_workspace\malayalees-us-site-boot</code></p>
+            <p><strong>Version:</strong> 1.0</p>
+            <p><strong>Date:</strong> January 2025</p>
+            <p><strong>Status:</strong> <span class="status-badge status-ready">Ready for Implementation</span></p>
+            <p><strong>Framework:</strong> Spring Boot (Java)</p>
+        </div>
+
+        <h1>GiveButter Donation Flow - Backend Implementation PRD<br><small style="font-size: 0.6em; color: #A0926B;">Spring Boot Implementation</small></h1>
+
+        <div class="highlight-box">
+            <h4>Critical Requirements</h4>
+            <ul>
+                <li><strong>Payment Orchestration:</strong> Route donation-based events to GiveButter based on event configuration</li>
+                <li><strong>Data Persistence:</strong> Persist all donation transactions to database for admin dashboard statistics</li>
+                <li><strong>QR Code Generation:</strong> Generate QR codes for donations (similar to ticket purchase flow)</li>
+                <li><strong>Email Sending:</strong> Send confirmation emails via API endpoints (called from frontend)</li>
+                <li><strong>Status Polling Endpoints:</strong> Provide endpoints for frontend to poll GiveButter donation status</li>
+                <li><strong>Transaction Creation:</strong> Create donation transaction records via API endpoints (called from frontend after detecting success)</li>
+                <li><strong>NO Webhook Handling:</strong> Frontend handles all webhook-like behavior through polling (similar to Stripe checkout flow)</li>
+            </ul>
+        </div>
+
+        <h2>1. Executive Summary</h2>
+        <p>This PRD outlines the backend implementation of GiveButter integration for non-profit fundraiser events. The implementation extends the existing domain-agnostic payment infrastructure to support GiveButter as a payment provider, with automatic routing for donation-based events.</p>
+
+        <div class="success-box">
+            <h4>Key Objectives</h4>
+            <ul>
+                <li>Integrate GiveButter API as a payment provider adapter</li>
+                <li>Route donation-based events to GiveButter automatically</li>
+                <li>Persist donation transactions to database</li>
+                <li>Generate QR codes for donations</li>
+                <li>Send confirmation emails via API endpoints (called from frontend)</li>
+                <li>Provide status polling endpoints for frontend to check GiveButter donation status</li>
+                <li>Support ticketed fundraiser events with GiveButter routing</li>
+                <li>Create donation transactions via API endpoints (called from frontend after detecting success)</li>
+            </ul>
+        </div>
+
+        <h2>2. Database Schema</h2>
+
+        <h3>2.1 Existing Tables (No Changes Required)</h3>
+        <p>The following tables already support donation transactions:</p>
+        <ul>
+            <li><code>payment_provider_config</code> - Payment provider configuration (supports GiveButter)</li>
+            <li><code>payment_transaction</code> - Payment orchestration records</li>
+            <li><code>event_ticket_transaction</code> - Ticket transactions (for ticketed fundraisers)</li>
+            <li><code>event_details</code> - Event configuration (has <code>metadata</code> TEXT column)</li>
+        </ul>
+
+        <h3>2.2 New Table: donation_transaction</h3>
+        <p>Create a new table for standalone donation transactions (non-ticketed donations):</p>
+        <div class="code-block">
+<code>CREATE TABLE donation_transaction (
+    id BIGSERIAL PRIMARY KEY,
+    tenant_id VARCHAR(255) NOT NULL,
+    event_id BIGINT REFERENCES event_details(id),
+    payment_transaction_id BIGINT REFERENCES payment_transaction(id),
+    transaction_reference VARCHAR(255) UNIQUE NOT NULL,
+    givebutter_donation_id VARCHAR(255), -- GiveButter donation ID
+    amount DECIMAL(10, 2) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    first_name VARCHAR(255),
+    last_name VARCHAR(255),
+    phone VARCHAR(50),
+    prayer_intention TEXT, -- For Mass offerings
+    is_recurring BOOLEAN DEFAULT FALSE,
+    is_anonymous BOOLEAN DEFAULT FALSE,
+    status VARCHAR(50) NOT NULL, -- PENDING, COMPLETED, FAILED, CANCELLED
+    qr_code_url TEXT,
+    qr_code_image_url TEXT,
+    email_sent BOOLEAN DEFAULT FALSE,
+    metadata TEXT, -- JSON string for additional data
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT fk_donation_event FOREIGN KEY (event_id) REFERENCES event_details(id),
+    CONSTRAINT fk_donation_payment FOREIGN KEY (payment_transaction_id) REFERENCES payment_transaction(id)
+);
+
+CREATE INDEX idx_donation_tenant_event ON donation_transaction(tenant_id, event_id);
+CREATE INDEX idx_donation_reference ON donation_transaction(transaction_reference);
+CREATE INDEX idx_donation_givebutter_id ON donation_transaction(givebutter_donation_id);
+CREATE INDEX idx_donation_status ON donation_transaction(status);
+CREATE INDEX idx_donation_created ON donation_transaction(created_at);</code>
+        </div>
+
+        <h3>2.3 Enum Updates</h3>
+        <div class="code-block">
+<code>-- Add GIVEBUTTER to payment_provider_type enum (if not exists)
+ALTER TYPE payment_provider_type ADD VALUE IF NOT EXISTS 'GIVEBUTTER';
+
+-- Verify payment_type enum includes required values
+-- Should include: TICKET_SALE, DONATION, OFFERING, DONATION_ZERO_FEE</code>
+        </div>
+
+        <h2>3. GiveButter Payment Adapter</h2>
+
+        <h3>3.1 Adapter Interface</h3>
+        <p>Create <code>GiveButterPaymentAdapter</code> implementing the existing <code>PaymentProviderAdapter</code> interface:</p>
+        <div class="code-block">
+<code>// File: com.yourpackage.payment.adapter.givebutter.GiveButterPaymentAdapter.java
+
+package com.yourpackage.payment.adapter.givebutter;
+
+import com.yourpackage.payment.adapter.PaymentProviderAdapter;
+import com.yourpackage.payment.model.*;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+@Component
+public class GiveButterPaymentAdapter implements PaymentProviderAdapter {
+
+    private final RestTemplate restTemplate;
+    private final GiveButterApiClient apiClient;
+
+    public GiveButterPaymentAdapter(RestTemplate restTemplate, GiveButterApiClient apiClient) {
+        this.restTemplate = restTemplate;
+        this.apiClient = apiClient;
+    }
+
+    @Override
+    public PaymentInitializeResponse initialize(PaymentInitializeRequest request) {
+        // Implementation details below
+    }
+
+    @Override
+    public PaymentStatusResponse getStatus(String transactionId) {
+        // Implementation details below
+    }
+
+    @Override
+    public ProviderType getProviderType() {
+        return ProviderType.GIVEBUTTER;
+    }
+}</code>
+        </div>
+
+        <h3>3.2 Payment Initialization</h3>
+        <div class="code-block">
+<code>@Override
+public PaymentInitializeResponse initialize(PaymentInitializeRequest request) {
+    try {
+        // Get GiveButter API key from payment provider config
+        PaymentProviderConfig config = getGiveButterConfig(request.getTenantId());
+        String apiKey = decryptApiKey(config.getConfigData());
+        
+        // Build GiveButter donation request
+        GiveButterDonationRequest gbRequest = new GiveButterDonationRequest();
+        gbRequest.setAmount(request.getAmount());
+        gbRequest.setEmail(request.getEmail());
+        gbRequest.setFirstName(request.getFirstName());
+        gbRequest.setLastName(request.getLastName());
+        gbRequest.setPhone(request.getPhone());
+        
+        // Get campaign ID from event metadata or provider config
+        String campaignId = getCampaignId(request.getEventId(), config);
+        gbRequest.setCampaignId(campaignId);
+        
+        // Set return URLs
+        gbRequest.setReturnUrl(request.getReturnUrl());
+        gbRequest.setCancelUrl(request.getCancelUrl());
+        
+        // Add custom fields (prayer intention, etc.)
+        if (request.getMetadata() != null) {
+            Map&lt;String, Object&gt; metadata = request.getMetadata();
+            if (metadata.containsKey("prayerIntention")) {
+                gbRequest.addCustomField("prayer_intention", 
+                    metadata.get("prayerIntention").toString());
+            }
+            if (metadata.containsKey("isRecurring")) {
+                gbRequest.setRecurring((Boolean) metadata.get("isRecurring"));
+            }
+            if (metadata.containsKey("isAnonymous")) {
+                gbRequest.setAnonymous((Boolean) metadata.get("isAnonymous"));
+            }
+        }
+        
+        // Call GiveButter API to create donation
+        GiveButterDonationResponse gbResponse = apiClient.createDonation(apiKey, gbRequest);
+        
+        // Create payment transaction record
+        PaymentTransaction paymentTransaction = createPaymentTransaction(request, gbResponse);
+        
+        // Create donation transaction record (if not ticketed)
+        if (request.getPaymentType() == PaymentType.DONATION || 
+            request.getPaymentType() == PaymentType.DONATION_ZERO_FEE) {
+            createDonationTransaction(request, paymentTransaction, gbResponse);
+        }
+        
+        // Return checkout URL
+        PaymentInitializeResponse response = new PaymentInitializeResponse();
+        response.setTransactionId(paymentTransaction.getId());
+        response.setCheckoutUrl(gbResponse.getCheckoutUrl());
+        response.setStatus("PENDING");
+        
+        return response;
+        
+    } catch (Exception e) {
+        throw new PaymentException("Failed to initialize GiveButter donation", e);
+    }
+}
+
+private String getCampaignId(Long eventId, PaymentProviderConfig config) {
+    // Priority 1: Event-specific campaign ID from metadata
+    if (eventId != null) {
+        EventDetails event = eventRepository.findById(eventId).orElse(null);
+        if (event != null && event.getMetadata() != null) {
+            Map&lt;String, Object&gt; metadata = parseMetadata(event.getMetadata());
+            if (metadata != null) {
+                Map&lt;String, Object&gt; donationConfig = 
+                    (Map&lt;String, Object&gt;) metadata.get("donationConfig");
+                if (donationConfig != null) {
+                    String campaignId = (String) donationConfig.get("givebutterCampaignId");
+                    if (campaignId != null && !campaignId.trim().isEmpty()) {
+                        return campaignId;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Priority 2: Provider config default campaign ID
+    if (config.getMetadata() != null) {
+        Map&lt;String, Object&gt; meta = config.getMetadata();
+        String defaultCampaignId = (String) meta.get("campaignId");
+        if (defaultCampaignId != null && !defaultCampaignId.trim().isEmpty()) {
+            return defaultCampaignId;
+        }
+    }
+    
+    // Priority 3: Throw exception if no campaign ID found
+    throw new PaymentException("GiveButter campaign ID not configured");
+}</code>
+        </div>
+
+        <h3>3.3 GiveButter API Client</h3>
+        <div class="code-block">
+<code>// File: com.yourpackage.payment.adapter.givebutter.GiveButterApiClient.java
+
+@Service
+public class GiveButterApiClient {
+    
+    private static final String GIVEBUTTER_API_BASE = "https://api.givebutter.com/v1";
+    private final RestTemplate restTemplate;
+    
+    public GiveButterDonationResponse createDonation(String apiKey, GiveButterDonationRequest request) {
+        String url = GIVEBUTTER_API_BASE + "/donations";
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + apiKey);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        
+        HttpEntity&lt;GiveButterDonationRequest&gt; entity = 
+            new HttpEntity&lt;&gt;(request, headers);
+        
+        ResponseEntity&lt;GiveButterDonationResponse&gt; response = 
+            restTemplate.postForEntity(url, entity, GiveButterDonationResponse.class);
+        
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new PaymentException("GiveButter API error: " + response.getStatusCode());
+        }
+        
+        return response.getBody();
+    }
+    
+    public GiveButterDonationResponse getDonation(String apiKey, String donationId) {
+        String url = GIVEBUTTER_API_BASE + "/donations/" + donationId;
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + apiKey);
+        
+        HttpEntity&lt;Void&gt; entity = new HttpEntity&lt;&gt;(headers);
+        
+        ResponseEntity&lt;GiveButterDonationResponse&gt; response = 
+            restTemplate.exchange(url, HttpMethod.GET, entity, GiveButterDonationResponse.class);
+        
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new PaymentException("GiveButter API error: " + response.getStatusCode());
+        }
+        
+        return response.getBody();
+    }
+}</code>
+        </div>
+
+        <h2>4. Payment Orchestration Service</h2>
+
+        <h3>4.1 Routing Logic</h3>
+        <p>Update <code>PaymentOrchestrationService</code> to route donation-based events to GiveButter:</p>
+        <div class="code-block">
+<code>// File: com.yourpackage.payment.service.PaymentOrchestrationService.java
+
+private ProviderType determineProvider(PaymentInitializeRequest request) {
+    // For OFFERING payment type, prefer Givebutter if configured
+    if (PaymentType.OFFERING.equals(request.getPaymentType())) {
+        boolean hasGivebutter = configRepository.existsByTenantIdAndProviderType(
+            request.getTenantId(), ProviderType.GIVEBUTTER);
+        if (hasGivebutter) {
+            return ProviderType.GIVEBUTTER;
+        }
+    }
+    
+    // For TICKET_SALE payment type, check if event is configured as fundraiser
+    if (PaymentType.TICKET_SALE.equals(request.getPaymentType())) {
+        if (request.getEventId() != null) {
+            EventDetails event = eventRepository.findById(request.getEventId()).orElse(null);
+            if (event != null && event.getMetadata() != null) {
+                Map&lt;String, Object&gt; metadata = parseMetadata(event.getMetadata());
+                if (metadata != null) {
+                    Boolean isFundraiserEvent = (Boolean) metadata.get("isFundraiserEvent");
+                    Boolean isCharityEvent = (Boolean) metadata.get("isCharityEvent");
+                    
+                    Map&lt;String, Object&gt; donationConfig = 
+                        (Map&lt;String, Object&gt;) metadata.get("donationConfig");
+                    
+                    if ((Boolean.TRUE.equals(isFundraiserEvent) || 
+                         Boolean.TRUE.equals(isCharityEvent)) && 
+                        donationConfig != null) {
+                        
+                        Boolean useZeroFeeProvider = 
+                            (Boolean) donationConfig.get("useZeroFeeProvider");
+                        String zeroFeeProvider = 
+                            (String) donationConfig.get("zeroFeeProvider");
+                        
+                        if (Boolean.TRUE.equals(useZeroFeeProvider) && 
+                            "GIVEBUTTER".equals(zeroFeeProvider)) {
+                            
+                            boolean hasGivebutter = configRepository
+                                .existsByTenantIdAndProviderType(
+                                    request.getTenantId(), ProviderType.GIVEBUTTER);
+                            
+                            if (hasGivebutter) {
+                                // Route ticketed fundraiser event to Givebutter
+                                return ProviderType.GIVEBUTTER;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // For DONATION payment type, check if zero-fee provider is configured
+    if (PaymentType.DONATION.equals(request.getPaymentType()) || 
+        PaymentType.DONATION_ZERO_FEE.equals(request.getPaymentType())) {
+        if (request.getEventId() != null) {
+            EventDetails event = eventRepository.findById(request.getEventId()).orElse(null);
+            if (event != null && event.getMetadata() != null) {
+                Map&lt;String, Object&gt; metadata = parseMetadata(event.getMetadata());
+                if (metadata != null) {
+                    Map&lt;String, Object&gt; donationConfig = 
+                        (Map&lt;String, Object&gt;) metadata.get("donationConfig");
+                    
+                    if (donationConfig != null) {
+                        Boolean useZeroFeeProvider = 
+                            (Boolean) donationConfig.get("useZeroFeeProvider");
+                        String zeroFeeProvider = 
+                            (String) donationConfig.get("zeroFeeProvider");
+                        
+                        if (Boolean.TRUE.equals(useZeroFeeProvider) && 
+                            "GIVEBUTTER".equals(zeroFeeProvider)) {
+                            
+                            boolean hasGivebutter = configRepository
+                                .existsByTenantIdAndProviderType(
+                                    request.getTenantId(), ProviderType.GIVEBUTTER);
+                            
+                            if (hasGivebutter) {
+                                return ProviderType.GIVEBUTTER;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Default to Stripe (primary provider for regular tickets)
+    return ProviderType.STRIPE;
+}
+
+/**
+ * Parse metadata JSON string from TEXT column.
+ * Metadata is stored as TEXT (not JSONB) matching existing codebase pattern.
+ */
+private Map&lt;String, Object&gt; parseMetadata(String metadataJson) {
+    if (metadataJson == null || metadataJson.trim().isEmpty()) {
+        return null;
+    }
+    try {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(metadataJson, Map.class);
+    } catch (Exception e) {
+        log.error("Failed to parse event metadata JSON", e);
+        return null;
+    }
+}</code>
+        </div>
+
+        <h2>5. Donation Transaction Service</h2>
+
+        <h3>5.1 Create Donation Transaction</h3>
+        <div class="code-block">
+<code>// File: com.yourpackage.donation.service.DonationTransactionService.java
+
+@Service
+public class DonationTransactionService {
+    
+    @Autowired
+    private DonationTransactionRepository donationTransactionRepository;
+    
+    @Autowired
+    private QrCodeService qrCodeService;
+    
+    @Autowired
+    private EmailService emailService;
+    
+    public DonationTransaction createDonationTransaction(
+            PaymentInitializeRequest request,
+            PaymentTransaction paymentTransaction,
+            GiveButterDonationResponse gbResponse) {
+        
+        DonationTransaction donation = new DonationTransaction();
+        donation.setTenantId(request.getTenantId());
+        donation.setEventId(request.getEventId());
+        donation.setPaymentTransactionId(paymentTransaction.getId());
+        donation.setTransactionReference("GB-" + paymentTransaction.getId());
+        donation.setGivebutterDonationId(gbResponse.getDonationId());
+        donation.setAmount(request.getAmount());
+        donation.setEmail(request.getEmail());
+        donation.setFirstName(request.getFirstName());
+        donation.setLastName(request.getLastName());
+        donation.setPhone(request.getPhone());
+        donation.setStatus("PENDING");
+        
+        // Extract metadata
+        if (request.getMetadata() != null) {
+            Map&lt;String, Object&gt; metadata = request.getMetadata();
+            if (metadata.containsKey("prayerIntention")) {
+                donation.setPrayerIntention(
+                    metadata.get("prayerIntention").toString());
+            }
+            if (metadata.containsKey("isRecurring")) {
+                donation.setIsRecurring(
+                    (Boolean) metadata.get("isRecurring"));
+            }
+            if (metadata.containsKey("isAnonymous")) {
+                donation.setIsAnonymous(
+                    (Boolean) metadata.get("isAnonymous"));
+            }
+        }
+        
+        donation = donationTransactionRepository.save(donation);
+        
+        return donation;
+    }
+}</code>
+        </div>
+
+        <h2>6. Status Polling Endpoints (No Webhook Handling)</h2>
+
+        <div class="warning-box">
+            <strong>CRITICAL:</strong> Following the existing checkout flow pattern, the frontend handles all webhook-like behavior through polling. The backend provides status endpoints for the frontend to poll, but does NOT implement webhook listeners.
+        </div>
+
+        <h3>6.1 GiveButter Donation Status Endpoint</h3>
+        <p>Provide an endpoint for the frontend to poll GiveButter donation status:</p>
+        <div class="code-block">
+<code>// File: com.yourpackage.controller.GiveButterStatusController.java
+
+@RestController
+@RequestMapping("/api/proxy/givebutter")
+public class GiveButterStatusController {
+    
+    @Autowired
+    private GiveButterApiClient apiClient;
+    
+    @Autowired
+    private PaymentProviderConfigRepository configRepository;
+    
+    @GetMapping("/donations/{donationId}/status")
+    public ResponseEntity&lt;GiveButterDonationStatusDTO&gt; getDonationStatus(
+            @PathVariable String donationId,
+            @RequestParam(required = false) Long tenantId) {
+        
+        try {
+            // Get GiveButter config
+            PaymentProviderConfig config = getGiveButterConfig(tenantId);
+            String apiKey = decryptApiKey(config.getConfigData());
+            
+            // Call GiveButter API to get donation status
+            GiveButterDonationResponse donation = apiClient.getDonation(apiKey, donationId);
+            
+            GiveButterDonationStatusDTO statusDTO = new GiveButterDonationStatusDTO();
+            statusDTO.setDonationId(donationId);
+            statusDTO.setStatus(mapGiveButterStatus(donation.getStatus()));
+            statusDTO.setAmount(donation.getAmount());
+            statusDTO.setEmail(donation.getEmail());
+            statusDTO.setCreatedAt(donation.getCreatedAt());
+            
+            return ResponseEntity.ok(statusDTO);
+            
+        } catch (Exception e) {
+            log.error("Error fetching GiveButter donation status", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+    
+    private String mapGiveButterStatus(String gbStatus) {
+        // Map GiveButter status to our status enum
+        switch (gbStatus.toLowerCase()) {
+            case "completed":
+            case "succeeded":
+                return "COMPLETED";
+            case "pending":
+                return "PENDING";
+            case "failed":
+                return "FAILED";
+            case "cancelled":
+                return "CANCELLED";
+            default:
+                return "PENDING";
+        }
+    }
+}</code>
+        </div>
+
+        <h3>6.2 Create Donation from GiveButter Data</h3>
+        <p>Endpoint for frontend to create donation transaction after detecting success:</p>
+        <div class="code-block">
+<code>// File: com.yourpackage.controller.DonationTransactionController.java
+
+@PostMapping("/donations/create-from-givebutter")
+public ResponseEntity&lt;DonationTransactionDTO&gt; createDonationFromGiveButter(
+        @RequestBody CreateDonationFromGiveButterRequest request) {
+    
+    try {
+        // Get GiveButter config
+        PaymentProviderConfig config = getGiveButterConfig(request.getTenantId());
+        String apiKey = decryptApiKey(config.getConfigData());
+        
+        // Fetch full donation data from GiveButter
+        GiveButterDonationResponse gbDonation = apiClient.getDonation(
+            apiKey, 
+            request.getGivebutterDonationId()
+        );
+        
+        // Create payment transaction
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setTenantId(request.getTenantId());
+        paymentTransaction.setEventId(request.getEventId());
+        paymentTransaction.setProviderType(ProviderType.GIVEBUTTER);
+        paymentTransaction.setPaymentType(PaymentType.DONATION_ZERO_FEE);
+        paymentTransaction.setAmount(gbDonation.getAmount());
+        paymentTransaction.setStatus("COMPLETED");
+        paymentTransaction.setPaymentReference(request.getGivebutterDonationId());
+        paymentTransaction = paymentTransactionRepository.save(paymentTransaction);
+        
+        // Create donation transaction
+        DonationTransaction donation = new DonationTransaction();
+        donation.setTenantId(request.getTenantId());
+        donation.setEventId(request.getEventId());
+        donation.setPaymentTransactionId(paymentTransaction.getId());
+        donation.setTransactionReference("GB-" + paymentTransaction.getId());
+        donation.setGivebutterDonationId(request.getGivebutterDonationId());
+        donation.setAmount(gbDonation.getAmount());
+        donation.setEmail(gbDonation.getEmail());
+        donation.setFirstName(gbDonation.getFirstName());
+        donation.setLastName(gbDonation.getLastName());
+        donation.setPhone(gbDonation.getPhone());
+        donation.setStatus("COMPLETED");
+        
+        // Extract custom fields (prayer intention, etc.)
+        if (gbDonation.getCustomFields() != null) {
+            Map&lt;String, Object&gt; customFields = gbDonation.getCustomFields();
+            if (customFields.containsKey("prayer_intention")) {
+                donation.setPrayerIntention(
+                    customFields.get("prayer_intention").toString());
+            }
+        }
+        
+        donation = donationTransactionRepository.save(donation);
+        
+        return ResponseEntity.ok(convertToDTO(donation));
+        
+    } catch (Exception e) {
+        log.error("Error creating donation from GiveButter", e);
+        return ResponseEntity.status(500).build();
+    }
+}</code>
+        </div>
+
+        <h2>7. QR Code Generation</h2>
+
+        <h3>7.1 QR Code Service Integration</h3>
+        <p>Reuse existing QR code service for donation QR codes:</p>
+        <div class="code-block">
+<code>// Reuse existing QrCodeService
+// File: com.yourpackage.service.QrCodeService.java
+
+public String generateQrCodeForDonation(
+        Long eventId, 
+        Long donationTransactionId, 
+        String emailHostUrlPrefix) {
+    
+    // Generate QR code URL similar to ticket QR codes
+    String qrCodeData = String.format(
+        "DONATION:%d:%d:%s", 
+        eventId, 
+        donationTransactionId, 
+        emailHostUrlPrefix
+    );
+    
+    // Use existing QR code generation logic
+    return generateQrCode(qrCodeData, eventId, donationTransactionId, emailHostUrlPrefix);
+}</code>
+        </div>
+
+        <h2>8. Email Sending</h2>
+
+        <h3>8.1 Donation Confirmation Email</h3>
+        <div class="code-block">
+<code>// File: com.yourpackage.email.DonationEmailService.java
+
+@Service
+public class DonationEmailService {
+    
+    @Autowired
+    private EmailService emailService;
+    
+    public void sendDonationConfirmationEmail(
+            Long eventId, 
+            Long donationTransactionId, 
+            String email) {
+        
+        // Fetch donation transaction
+        DonationTransaction donation = donationTransactionRepository
+            .findById(donationTransactionId)
+            .orElseThrow(() -&gt; new EntityNotFoundException("Donation not found"));
+        
+        // Fetch event details
+        EventDetails event = eventRepository.findById(eventId)
+            .orElseThrow(() -&gt; new EntityNotFoundException("Event not found"));
+        
+        // Build email template
+        Map&lt;String, Object&gt; templateData = new HashMap&lt;&gt;();
+        templateData.put("donation", donation);
+        templateData.put("event", event);
+        templateData.put("qrCodeUrl", donation.getQrCodeUrl());
+        
+        // Send email using existing email service
+        emailService.sendTemplateEmail(
+            email,
+            "Donation Confirmation",
+            "donation-confirmation", // Email template name
+            templateData
+        );
+    }
+}</code>
+        </div>
+
+        <h2>9. API Endpoints</h2>
+
+        <h3>9.1 Donation Transaction Endpoints</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Endpoint</th>
+                    <th>Method</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>/api/donation-transactions/{id}</code></td>
+                    <td>GET</td>
+                    <td>Get donation transaction details</td>
+                </tr>
+                <tr>
+                    <td><code>/api/events/{eventId}/donations/{transactionId}/qrcode</code></td>
+                    <td>POST</td>
+                    <td>Generate QR code for donation</td>
+                </tr>
+                <tr>
+                    <td><code>/api/events/{eventId}/donations/{transactionId}/send-email</code></td>
+                    <td>POST</td>
+                    <td>Send donation confirmation email</td>
+                </tr>
+                <tr>
+                    <td><code>/api/events/{eventId}/donations</code></td>
+                    <td>GET</td>
+                    <td>List donations for event (admin)</td>
+                </tr>
+                <tr>
+                    <td><code>/api/proxy/givebutter/donations/{donationId}/status</code></td>
+                    <td>GET</td>
+                    <td>Get GiveButter donation status (for frontend polling)</td>
+                    <td>Query params: <code>tenantId</code> (optional)</td>
+                </tr>
+                <tr>
+                    <td><code>/api/proxy/donations/create-from-givebutter</code></td>
+                    <td>POST</td>
+                    <td>Create donation transaction from GiveButter data</td>
+                    <td><code>{ eventId, givebutterDonationId, givebutterData, tenantId }</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>9.2 Endpoint Implementation Example</h3>
+        <div class="code-block">
+<code>// File: com.yourpackage.controller.DonationTransactionController.java
+
+@RestController
+@RequestMapping("/api/donation-transactions")
+public class DonationTransactionController {
+    
+    @Autowired
+    private DonationTransactionService donationService;
+    
+    @GetMapping("/{id}")
+    public ResponseEntity&lt;DonationTransactionDTO&gt; getDonation(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long eventId) {
+        
+        DonationTransaction donation = donationService.findById(id);
+        
+        // Verify event ID matches if provided
+        if (eventId != null && !eventId.equals(donation.getEventId())) {
+            return ResponseEntity.badRequest().build();
+        }
+        
+        return ResponseEntity.ok(convertToDTO(donation));
+    }
+    
+    @PostMapping("/events/{eventId}/donations/{transactionId}/qrcode")
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; generateQrCode(
+            @PathVariable Long eventId,
+            @PathVariable Long transactionId) {
+        
+        DonationTransaction donation = donationService.findById(transactionId);
+        
+        if (!eventId.equals(donation.getEventId())) {
+            return ResponseEntity.badRequest().build();
+        }
+        
+        String qrCodeUrl = donationService.generateQrCode(eventId, transactionId);
+        
+        Map&lt;String, String&gt; response = new HashMap&lt;&gt;();
+        response.put("qrCodeUrl", qrCodeUrl);
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    @PostMapping("/events/{eventId}/donations/{transactionId}/send-email")
+    public ResponseEntity&lt;Map&lt;String, Boolean&gt;&gt; sendEmail(
+            @PathVariable Long eventId,
+            @PathVariable Long transactionId,
+            @RequestParam String to) {
+        
+        DonationTransaction donation = donationService.findById(transactionId);
+        
+        if (!eventId.equals(donation.getEventId())) {
+            return ResponseEntity.badRequest().build();
+        }
+        
+        boolean sent = donationService.sendConfirmationEmail(eventId, transactionId, to);
+        
+        Map&lt;String, Boolean&gt; response = new HashMap&lt;&gt;();
+        response.put("emailSent", sent);
+        
+        return ResponseEntity.ok(response);
+    }
+}</code>
+        </div>
+
+        <h2>10. Environment Variables</h2>
+
+        <h3>10.1 Development Configuration</h3>
+        <div class="code-block">
+<code># application-dev.properties
+# GiveButter API credentials (used by backend proxy endpoints)
+# Note: These are for backend use only - frontend never accesses them directly
+givebutter.api.key=${DEV_GBTTR_API_KEY}
+givebutter.webhook.secret=${DEV_GBTTR_WEBHOOK_SECRET}  # Used for signature verification if needed
+givebutter.api.base.url=https://api.givebutter.com/v1</code>
+        </div>
+
+        <h3>10.2 Production Configuration</h3>
+        <div class="code-block">
+<code># application-prod.properties
+# Use encrypted values from payment_provider_config table
+# API keys are stored encrypted in database, not in environment variables
+# Webhook secret is stored in payment_provider_config.webhook_secret (encrypted)</code>
+        </div>
+
+        <div class="warning-box">
+            <strong>Security Note:</strong> GiveButter API keys should be stored encrypted in the <code>payment_provider_config</code> table, not in environment variables. Use the existing encryption service for API key storage. The webhook secret is used for signature verification if GiveButter requires it for status checks, but we're using polling (not webhook listening).
+        </div>
+
+        <h2>11. Testing Checklist</h2>
+
+        <h3>11.1 Unit Testing</h3>
+        <ul>
+            <li>[ ] GiveButter API client tests</li>
+            <li>[ ] Payment adapter initialization tests</li>
+            <li>[ ] Donation transaction creation tests</li>
+            <li>[ ] Webhook signature verification tests</li>
+            <li>[ ] QR code generation tests</li>
+            <li>[ ] Email sending tests</li>
+        </ul>
+
+        <h3>11.2 Integration Testing</h3>
+        <ul>
+            <li>[ ] Payment orchestration routing to GiveButter</li>
+            <li>[ ] GiveButter donation creation flow</li>
+            <li>[ ] Status polling endpoint (frontend polls this)</li>
+            <li>[ ] Create donation from GiveButter data endpoint</li>
+            <li>[ ] QR code generation via API endpoint</li>
+            <li>[ ] Email sending via API endpoint</li>
+            <li>[ ] Database transaction persistence</li>
+        </ul>
+
+        <h3>11.3 End-to-End Testing</h3>
+        <ul>
+            <li>[ ] Complete donation flow from frontend to GiveButter and back</li>
+            <li>[ ] Frontend polling of donation status</li>
+            <li>[ ] Frontend transaction creation after detecting success</li>
+            <li>[ ] Ticketed fundraiser event routing to GiveButter</li>
+            <li>[ ] Mass offering flow with prayer intentions</li>
+            <li>[ ] Recurring donation setup</li>
+            <li>[ ] Admin dashboard statistics display</li>
+        </ul>
+
+        <h2>12. References</h2>
+
+        <h3>12.1 Existing Code Patterns</h3>
+        <ul>
+            <li><code>StripePaymentAdapter</code> - Reference for payment adapter pattern</li>
+            <li><code>PaymentOrchestrationService</code> - Payment routing logic</li>
+            <li><code>QrCodeService</code> - QR code generation</li>
+            <li><code>EmailService</code> - Email sending</li>
+            <li><code>EventTicketTransactionService</code> - Transaction creation pattern</li>
+        </ul>
+
+        <h3>12.2 Documentation</h3>
+        <ul>
+            <li><code>documentation/domain_agnostic_payment/Non_Profit_FundRaiser_GiveButter/GIVEBUTTER_INTEGRATION_PRD.html</code></li>
+            <li><code>documentation/domain_agnostic_payment/Non_Profit_FundRaiser_GiveButter/GIVEBUTTER_DATABASE_SCHEMA_CHANGES.md</code></li>
+            <li><code>documentation/Swagger_API_Docs/api-docs.json</code> - API schema</li>
+            <li>GiveButter API Documentation: https://docs.givebutter.com/</li>
+        </ul>
+
+        <h2>13. Key Differences from Webhook-Based Approach</h2>
+
+        <div class="highlight-box">
+            <h4>No Backend Webhook Handling</h4>
+            <p>Following the existing checkout flow pattern, the backend does NOT implement webhook listeners. Instead:</p>
+            <ul>
+                <li><strong>Status Polling Endpoints:</strong> Backend provides endpoints for frontend to poll donation status</li>
+                <li><strong>Transaction Creation Endpoints:</strong> Backend provides endpoints for frontend to create transactions after detecting success</li>
+                <li><strong>QR Code/Email Endpoints:</strong> Backend provides endpoints for frontend to trigger QR code generation and email sending</li>
+                <li><strong>Pattern:</strong> Similar to Stripe checkout flow where frontend polls and creates transactions</li>
+            </ul>
+        </div>
+
+        <div class="success-box">
+            <h4>✅ Ready for Implementation</h4>
+            <p>This PRD provides complete specifications for implementing the GiveButter donation flow backend with frontend polling (no webhook handlers). All components should follow existing patterns while extending functionality for donation-based events.</p>
+        </div>
+    </div>
+</body>
+</html>

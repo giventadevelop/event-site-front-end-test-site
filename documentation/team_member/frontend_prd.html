@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Members — Frontend PRD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Team Members / Squad Roster — Frontend PRD</h1>
+    <p class="doc-meta">
+        <strong>Repo:</strong> <code>mosc-temp</code> &nbsp;|&nbsp;
+        <strong>Index:</strong> <a href="generic_prd.html">generic_prd.html</a> &nbsp;|&nbsp;
+        <strong>OpenAPI:</strong> <a href="../Swagger_API_Docs/api-docs.json">api-docs.json</a>
+    </p>
+
+    <h2>1. Proxy routes</h2>
+    <div class="section-container">
+        <div class="section-header">Pages API (createProxyHandler)</div>
+        <ul>
+            <li><code>src/pages/api/proxy/team-groups/index.ts</code> + <code>[...slug].ts</code></li>
+            <li><code>src/pages/api/proxy/team-members/index.ts</code> + <code>[...slug].ts</code> (PATCH: <code>bodyParser: false</code>)</li>
+        </ul>
+        <p>Do <strong>not</strong> add <code>tenantId.equals</code> in client queries; proxy injects tenant for list GETs.</p>
+    </div>
+
+    <h2>2. Types and parsers</h2>
+    <ul>
+        <li><code>src/types/teamGroup.ts</code>, <code>src/types/teamMember.ts</code></li>
+        <li><code>src/lib/parseTeamGroupsResponse.ts</code>, <code>src/lib/parseTeamMembersResponse.ts</code></li>
+    </ul>
+
+    <h2>3. Admin CRUD</h2>
+    <table>
+        <thead><tr><th>Route</th><th>Files</th></tr></thead>
+        <tbody>
+            <tr><td><code>/admin/team-groups</code></td><td><code>ApiServerActions.ts</code>, <code>TeamGroupsClient.tsx</code>, <code>TeamGroupForm.tsx</code></td></tr>
+            <tr><td><code>/admin/team-members</code></td><td><code>ApiServerActions.ts</code>, <code>TeamMembersClient.tsx</code>, <code>TeamMemberForm.tsx</code>, <code>TeamMemberUploadActions.ts</code></td></tr>
+        </tbody>
+    </table>
+    <p>Server actions use <code>fetchWithJwtRetry</code> + <code>getApiBaseUrl()</code> (not client fetch to backend).</p>
+
+    <h2>4. Public UI</h2>
+    <ul>
+        <li><code>SquadRosterSection</code> — homepage carousel; first active group by <code>displayOrder</code></li>
+        <li><code>SquadMemberCard</code> — portrait, jersey badge, subtitle</li>
+        <li><code>/team/[slug]</code> — full roster page from <code>slug.equals</code></li>
+    </ul>
+
+    <h2>5. Tenant settings flags</h2>
+    <div class="info-box">
+        <p><code>show_team_members_section_in_home_page</code> → <strong>SquadRosterSection</strong> (<code>showSquadSection</code> in <code>TenantSettingsProvider</code>).</p>
+        <p><code>show_executive_committee_section_in_home_page</code> → <strong>TeamSection</strong> (executive committee). Fallback: legacy tenants use <code>show_team_members_section_in_home_page</code> for exec until migrated.</p>
+    </div>
+
+    <h2>6. API query examples</h2>
+    <pre>GET /api/proxy/team-groups?isActive.equals=true&amp;sort=displayOrder,asc
+GET /api/proxy/team-members?teamGroupId.equals={id}&amp;isActive.equals=true&amp;sort=priorityOrder,asc
+GET /api/proxy/team-groups?slug.equals={slug}&amp;isActive.equals=true</pre>
+
+    <h2>7. Homepage wiring</h2>
+    <p><code>HomePageClient.tsx</code> renders <code>SquadRosterSection</code> when <code>showSquadSection</code> and <code>TeamSection</code> when <code>showExecutiveCommitteeSection</code>.</p>
+
+</body>
+</html>

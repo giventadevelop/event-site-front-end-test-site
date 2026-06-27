@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiveButter Donation Flow - Batch Job Implementation PRD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #2D2A26;
+            background-color: #F5F1E8;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #8B7D6B;
+            border-bottom: 3px solid #8B7D6B;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        h2 {
+            color: #6B4E3D;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-left: 4px solid #8B7D6B;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #8B7D6B;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+        h4 {
+            color: #A0926B;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        .meta {
+            background: #EDE7D3;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            border-left: 4px solid #8B7D6B;
+        }
+        .meta p { margin: 5px 0; }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-ready { background: #4A6741; color: white; }
+        .highlight-box {
+            background: #EDE7D3;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #8B7D6B;
+        }
+        .warning-box {
+            background: #FFF4E6;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #A67C52;
+        }
+        .success-box {
+            background: #F0F9F0;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #4A6741;
+        }
+        .code-block {
+            background: #2D2A26;
+            color: #F5F1E8;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #8B7D6B;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: #EDE7D3;
+            font-weight: bold;
+            color: #2D2A26;
+        }
+        ul, ol { margin-left: 30px; margin-top: 10px; }
+        li { margin: 8px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="meta">
+            <p><strong>Document Type:</strong> Batch Job Product Requirements Document (PRD)</p>
+            <p><strong>Project:</strong> GiveButter Donation Flow - Batch Jobs</p>
+            <p><strong>Repository:</strong> <code>E:\project_workspace\event-site-manager-batch-jobs</code></p>
+            <p><strong>Version:</strong> 1.0</p>
+            <p><strong>Date:</strong> January 2025</p>
+            <p><strong>Status:</strong> <span class="status-badge status-ready">Ready for Implementation</span></p>
+            <p><strong>Framework:</strong> Spring Batch (Java)</p>
+        </div>
+
+        <h1>GiveButter Donation Flow - Batch Job Implementation PRD<br><small style="font-size: 0.6em; color: #A0926B;">Spring Batch Jobs for Email and QR Code Processing</small></h1>
+
+        <div class="highlight-box">
+            <h4>Critical Requirements</h4>
+            <ul>
+                <li><strong>Email Sending:</strong> Batch job to send donation confirmation emails (triggered by API calls from frontend, similar to ticket email job)</li>
+                <li><strong>QR Code Generation:</strong> Batch job to generate QR codes for donations (triggered by API calls from frontend)</li>
+                <li><strong>Reconciliation:</strong> Batch job to reconcile GiveButter donations with database records (optional, for data consistency)</li>
+                <li><strong>Statistics Aggregation:</strong> Batch job to aggregate donation statistics for admin dashboard</li>
+                <li><strong>NO Webhook Triggering:</strong> Jobs are triggered by API endpoints called from frontend, not by webhook events</li>
+            </ul>
+        </div>
+
+        <h2>1. Executive Summary</h2>
+        <p>This PRD outlines the batch job implementation for GiveButter donation flow. The batch jobs handle asynchronous processing tasks such as email sending, QR code generation, and data reconciliation, similar to existing ticket-related batch jobs.</p>
+
+        <div class="success-box">
+            <h4>Key Objectives</h4>
+            <ul>
+                <li>Send donation confirmation emails asynchronously (triggered by API calls from frontend)</li>
+                <li>Generate QR codes for donations in batch (triggered by API calls from frontend)</li>
+                <li>Reconcile GiveButter donations with database records (optional, for data consistency)</li>
+                <li>Aggregate donation statistics for admin dashboard</li>
+                <li>Handle failed email/QR code generation with retry logic</li>
+                <li>Follow existing pattern: Jobs triggered by API endpoints, not webhook events</li>
+            </ul>
+        </div>
+
+        <h2>2. Batch Job Architecture</h2>
+
+        <h3>2.1 Job Structure</h3>
+        <div class="code-block">
+<code>src/main/java/com/yourpackage/batch/donation/
+  ├── DonationEmailJob.java              # Email sending job
+  ├── DonationQrCodeJob.java            # QR code generation job
+  ├── DonationReconciliationJob.java    # GiveButter reconciliation job
+  ├── DonationStatisticsJob.java        # Statistics aggregation job
+  │
+  ├── processor/
+  │   ├── DonationEmailItemProcessor.java
+  │   ├── DonationQrCodeItemProcessor.java
+  │   └── DonationReconciliationProcessor.java
+  │
+  ├── writer/
+  │   ├── DonationEmailItemWriter.java
+  │   ├── DonationQrCodeItemWriter.java
+  │   └── DonationReconciliationWriter.java
+  │
+  └── config/
+      ├── DonationEmailJobConfig.java
+      ├── DonationQrCodeJobConfig.java
+      ├── DonationReconciliationJobConfig.java
+      └── DonationStatisticsJobConfig.java</code>
+        </div>
+
+        <h2>3. Donation Email Job</h2>
+
+        <h3>3.1 Job Configuration</h3>
+        <div class="code-block">
+<code>// File: com.yourpackage.batch.donation.config.DonationEmailJobConfig.java
+
+@Configuration
+@EnableBatchProcessing
+public class DonationEmailJobConfig {
+    
+    @Autowired
+    private JobBuilderFactory jobBuilderFactory;
+    
+    @Autowired
+    private StepBuilderFactory stepBuilderFactory;
+    
+    @Autowired
+    private DonationTransactionRepository donationRepository;
+    
+    @Autowired
+    private EmailService emailService;
+    
+    @Bean
+    public Job donationEmailJob() {
+        return jobBuilderFactory.get("donationEmailJob")
+            .incrementer(new RunIdIncrementer())
+            .flow(donationEmailStep())
+            .end()
+            .build();
+    }
+    
+    @Bean
+    public Step donationEmailStep() {
+        return stepBuilderFactory.get("donationEmailStep")
+            .&lt;DonationTransaction, DonationTransaction&gt;chunk(10)
+            .reader(donationEmailReader())
+            .processor(donationEmailProcessor())
+            .writer(donationEmailWriter())
+            .faultTolerant()
+            .retryLimit(3)
+            .retry(EmailException.class)
+            .build();
+    }
+    
+    @Bean
+    @StepScope
+    public ItemReader&lt;DonationTransaction&gt; donationEmailReader() {
+        return new DonationEmailItemReader(donationRepository);
+    }
+    
+    @Bean
+    public ItemProcessor&lt;DonationTransaction, DonationTransaction&gt; donationEmailProcessor() {
+        return new DonationEmailItemProcessor();
+    }
+    
+    @Bean
+    public ItemWriter&lt;DonationTransaction&gt; donationEmailWriter() {
+        return new DonationEmailItemWriter(emailService);
+    }
+}</code>
+        </div>
+
+        <h3>3.2 Email Reader</h3>
+        <div class="code-block">
+<code>// File: com.yourpackage.batch.donation.DonationEmailItemReader.java
+
+public class DonationEmailItemReader implements ItemReader&lt;DonationTransaction&gt; {
+    
+    private final DonationTransactionRepository repository;
+    private Iterator&lt;DonationTransaction&gt; iterator;
+    
+    public DonationEmailItemReader(DonationTransactionRepository repository) {
+        this.repository = repository;
+    }
+    
+    @Override
+    public DonationTransaction read() throws Exception {
+        if (iterator == null) {
+            // Find donations that need email sent:
+            // - Status is COMPLETED
+            // - Email is not null
+            // - email_sent is false
+            List&lt;DonationTransaction&gt; donations = repository
+                .findByStatusAndEmailIsNotNullAndEmailSentFalse("COMPLETED");
+            iterator = donations.iterator();
+        }
+        
+        return iterator.hasNext() ? iterator.next() : null;
+    }
+}</code>
+        </div>
+
+        <h3>3.3 Email Writer</h3>
+        <div class="code-block">
+<code>// File: com.yourpackage.batch.donation.writer.DonationEmailItemWriter.java
+
+public class DonationEmailItemWriter implements ItemWriter&lt;DonationTransaction&gt; {
+    
+    private final EmailService emailService;
+    
+    public DonationEmailItemWriter(EmailService emailService) {
+        this.emailService = emailService;
+    }
+    
+    @Override
+    public void write(List&lt;? extends DonationTransaction&gt; donations) throws Exception {
+        for (DonationTransaction donation : donations) {
+            try {
+                // Send donation confirmation email
+                emailService.sendDonationConfirmationEmail(
+                    donation.getEventId(),
+                    donation.getId(),
+                    donation.getEmail()
+                );
+                
+                // Mark email as sent
+                donation.setEmailSent(true);
+                donation.setUpdatedAt(ZonedDateTime.now());
+                
+            } catch (Exception e) {
+                log.error("Failed to send email for donation: " + donation.getId(), e);
+                throw e; // Re-throw to trigger retry
+            }
+        }
+    }
+}</code>
+        </div>
+
+        <h2>4. QR Code Generation Job</h2>
+
+        <h3>4.1 Job Configuration</h3>
+        <div class="code-block">
+<code>// File: com.yourpackage.batch.donation.config.DonationQrCodeJobConfig.java
+
+@Configuration
+@EnableBatchProcessing
+public class DonationQrCodeJobConfig {
+    
+    @Bean
+    public Job donationQrCodeJob() {
+        return jobBuilderFactory.get("donationQrCodeJob")
+            .incrementer(new RunIdIncrementer())
+            .flow(donationQrCodeStep())
+            .end()
+            .build();
+    }
+    
+    @Bean
+    public Step donationQrCodeStep() {
+        return stepBuilderFactory.get("donationQrCodeStep")
+            .&lt;DonationTransaction, DonationTransaction&gt;chunk(10)
+            .reader(donationQrCodeReader())
+            .processor(donationQrCodeProcessor())
+            .writer(donationQrCodeWriter())
+            .faultTolerant()
+            .retryLimit(3)
+            .retry(QrCodeException.class)
+            .build();
+    }
+    
+    @Bean
+    @StepScope
+    public ItemReader&lt;DonationTransaction&gt; donationQrCodeReader() {
+        return new DonationQrCodeItemReader(donationRepository);
+    }
+    
+    @Bean
+    public ItemProcessor&lt;DonationTransaction, DonationTransaction&gt; donationQrCodeProcessor() {
+        return new DonationQrCodeItemProcessor(qrCodeService);
+    }
+    
+    @Bean
+    public ItemWriter&lt;DonationTransaction&gt; donationQrCodeWriter() {
+        return new DonationQrCodeItemWriter(donationRepository);
+    }
+}</code>
+        </div>
+
+        <h3>4.2 QR Code Reader</h3>
+        <div class="code-block">
+<code>// File: com.yourpackage.batch.donation.DonationQrCodeItemReader.java
+
+public class DonationQrCodeItemReader implements ItemReader&lt;DonationTransaction&gt; {
+    
+    private final DonationTransactionRepository repository;
+    private Iterator&lt;DonationTransaction&gt; iterator;
+    
+    @Override
+    public DonationTransaction read() throws Exception {
+        if (iterator == null) {
+            // Find donations that need QR code:
+            // - Status is COMPLETED
+            // - event_id is not null
+            // - qr_code_url is null
+            List&lt;DonationTransaction&gt; donations = repository
+                .findByStatusAndEventIdIsNotNullAndQrCodeUrlIsNull("COMPLETED");
+            iterator = donations.iterator();
+        }
+        
+        return iterator.hasNext() ? iterator.next() : null;
+    }
+}</code>
+        </div>
+
+        <h3>4.3 QR Code Processor</h3>
+        <div class="code-block">
+<code>// File: com.yourpackage.batch.donation.processor.DonationQrCodeItemProcessor.java
+
+public class DonationQrCodeItemProcessor implements ItemProcessor&lt;DonationTransaction, DonationTransaction&gt; {
+    
+    private final QrCodeService qrCodeService;
+    
+    @Override
+    public DonationTransaction process(DonationTransaction donation) throws Exception {
+        try {
+            String emailHostUrlPrefix = getEmailHostUrlPrefix();
+            String qrCodeUrl = qrCodeService.generateQrCode(
+                donation.getEventId(),
+                donation.getId(),
+                emailHostUrlPrefix,
+                "DONATION"
+            );
+            
+            donation.setQrCodeUrl(qrCodeUrl);
+            donation.setQrCodeImageUrl(qrCodeUrl);
+            
+            return donation;
+            
+        } catch (Exception e) {
+            log.error("Failed to generate QR code for donation: " + donation.getId(), e);
+            throw e;
+        }
+    }
+}</code>
+        </div>
+
+        <h2>5. Donation Reconciliation Job</h2>
+
+        <h3>5.1 Purpose</h3>
+        <p>Reconcile GiveButter donations with database records to ensure data consistency:</p>
+        <ul>
+            <li>Fetch donations from GiveButter API</li>
+            <li>Match with database records by GiveButter donation ID</li>
+            <li>Update donation status if changed in GiveButter</li>
+            <li>Create missing donation records if found in GiveButter but not in database</li>
+        </ul>
+
+        <h3>5.2 Job Configuration</h3>
+        <div class="code-block">
+<code>// File: com.yourpackage.batch.donation.config.DonationReconciliationJobConfig.java
+
+@Configuration
+@EnableBatchProcessing
+public class DonationReconciliationJobConfig {
+    
+    @Bean
+    public Job donationReconciliationJob() {
+        return jobBuilderFactory.get("donationReconciliationJob")
+            .incrementer(new RunIdIncrementer())
+            .flow(donationReconciliationStep())
+            .end()
+            .build();
+    }
+    
+    @Bean
+    public Step donationReconciliationStep() {
+        return stepBuilderFactory.get("donationReconciliationStep")
+            .&lt;GiveButterDonation, DonationTransaction&gt;chunk(10)
+            .reader(givebutterDonationReader())
+            .processor(donationReconciliationProcessor())
+            .writer(donationReconciliationWriter())
+            .build();
+    }
+    
+    @Bean
+    @StepScope
+    public ItemReader&lt;GiveButterDonation&gt; givebutterDonationReader() {
+        return new GiveButterDonationReader(giveButterApiClient);
+    }
+    
+    @Bean
+    public ItemProcessor&lt;GiveButterDonation, DonationTransaction&gt; donationReconciliationProcessor() {
+        return new DonationReconciliationProcessor(donationRepository);
+    }
+    
+    @Bean
+    public ItemWriter&lt;DonationTransaction&gt; donationReconciliationWriter() {
+        return new DonationReconciliationWriter(donationRepository);
+    }
+}</code>
+        </div>
+
+        <h2>6. Donation Statistics Job</h2>
+
+        <h3>6.1 Purpose</h3>
+        <p>Aggregate donation statistics for admin dashboard:</p>
+        <ul>
+            <li>Total donations count by event</li>
+            <li>Total donation amount by event</li>
+            <li>Average donation amount</li>
+            <li>Donations by date range</li>
+            <li>Top donors list</li>
+        </ul>
+
+        <h3>6.2 Statistics Aggregation</h3>
+        <div class="code-block">
+<code>// File: com.yourpackage.batch.donation.DonationStatisticsJob.java
+
+@Configuration
+@EnableBatchProcessing
+public class DonationStatisticsJobConfig {
+    
+    @Bean
+    public Job donationStatisticsJob() {
+        return jobBuilderFactory.get("donationStatisticsJob")
+            .incrementer(new RunIdIncrementer())
+            .flow(donationStatisticsStep())
+            .end()
+            .build();
+    }
+    
+    @Bean
+    public Step donationStatisticsStep() {
+        return stepBuilderFactory.get("donationStatisticsStep")
+            .tasklet(donationStatisticsTasklet())
+            .build();
+    }
+    
+    @Bean
+    public Tasklet donationStatisticsTasklet() {
+        return new DonationStatisticsTasklet(donationRepository, statisticsRepository);
+    }
+}
+
+// File: com.yourpackage.batch.donation.DonationStatisticsTasklet.java
+
+public class DonationStatisticsTasklet implements Tasklet {
+    
+    private final DonationTransactionRepository donationRepository;
+    private final DonationStatisticsRepository statisticsRepository;
+    
+    @Override
+    public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) {
+        // Aggregate statistics by event
+        List&lt;EventDetails&gt; events = eventRepository.findAll();
+        
+        for (EventDetails event : events) {
+            DonationStatistics stats = new DonationStatistics();
+            stats.setEventId(event.getId());
+            stats.setTenantId(event.getTenantId());
+            
+            // Calculate statistics
+            List&lt;DonationTransaction&gt; donations = donationRepository
+                .findByEventIdAndStatus(event.getId(), "COMPLETED");
+            
+            stats.setTotalDonations(donations.size());
+            stats.setTotalAmount(donations.stream()
+                .map(DonationTransaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+            stats.setAverageAmount(stats.getTotalAmount()
+                .divide(BigDecimal.valueOf(stats.getTotalDonations()), 2, RoundingMode.HALF_UP));
+            
+            // Save statistics
+            statisticsRepository.save(stats);
+        }
+        
+        return RepeatStatus.FINISHED;
+    }
+}</code>
+        </div>
+
+        <h2>7. Job Scheduling</h2>
+
+        <h3>7.1 Scheduled Jobs</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Job</th>
+                    <th>Schedule</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Donation Email Job</td>
+                    <td>On-demand (via API)</td>
+                    <td>Send donation confirmation emails (triggered by frontend API calls)</td>
+                </tr>
+                <tr>
+                    <td>Donation QR Code Job</td>
+                    <td>On-demand (via API)</td>
+                    <td>Generate QR codes for donations (triggered by frontend API calls)</td>
+                </tr>
+                <tr>
+                    <td>Donation Reconciliation Job</td>
+                    <td>Daily at 2 AM (optional)</td>
+                    <td>Reconcile GiveButter donations with database (optional, for data consistency)</td>
+                </tr>
+                <tr>
+                    <td>Donation Statistics Job</td>
+                    <td>Hourly</td>
+                    <td>Aggregate donation statistics for admin dashboard</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>7.2 Job Triggering via API Endpoints</h3>
+        <div class="warning-box">
+            <strong>Pattern:</strong> Following the existing checkout flow, batch jobs are triggered by API endpoints called from the frontend, not by scheduled jobs or webhooks. The frontend calls these endpoints after detecting donation success.
+        </div>
+
+        <div class="code-block">
+<code>// File: com.yourpackage.controller.DonationJobController.java
+
+@RestController
+@RequestMapping("/api/proxy/events/{eventId}/donations/{transactionId}")
+public class DonationJobController {
+    
+    @Autowired
+    private JobLauncher jobLauncher;
+    
+    @Autowired
+    @Qualifier("donationEmailJob")
+    private Job donationEmailJob;
+    
+    @Autowired
+    @Qualifier("donationQrCodeJob")
+    private Job donationQrCodeJob;
+    
+    // Trigger email job via API endpoint (called from frontend)
+    @PostMapping("/send-email")
+    public ResponseEntity&lt;Map&lt;String, Boolean&gt;&gt; triggerEmailJob(
+            @PathVariable Long eventId,
+            @PathVariable Long transactionId,
+            @RequestParam String to) {
+        
+        try {
+            JobParameters params = new JobParametersBuilder()
+                .addLong("eventId", eventId)
+                .addLong("transactionId", transactionId)
+                .addString("email", to)
+                .addLong("time", System.currentTimeMillis())
+                .toJobParameters();
+            
+            jobLauncher.run(donationEmailJob, params);
+            
+            Map&lt;String, Boolean&gt; response = new HashMap&lt;&gt;();
+            response.put("emailSent", true);
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Error triggering email job", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+    
+    // Trigger QR code job via API endpoint (called from frontend)
+    @PostMapping("/qrcode")
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; triggerQrCodeJob(
+            @PathVariable Long eventId,
+            @PathVariable Long transactionId) {
+        
+        try {
+            JobParameters params = new JobParametersBuilder()
+                .addLong("eventId", eventId)
+                .addLong("transactionId", transactionId)
+                .addLong("time", System.currentTimeMillis())
+                .toJobParameters();
+            
+            jobLauncher.run(donationQrCodeJob, params);
+            
+            // Return QR code URL after job completes
+            // Note: In practice, you may want to wait for job completion or return immediately
+            Map&lt;String, String&gt; response = new HashMap&lt;&gt;();
+            response.put("qrCodeUrl", "pending"); // Job will update this
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Error triggering QR code job", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+}</code>
+        </div>
+
+        <h3>7.3 Scheduled Jobs (Optional)</h3>
+        <div class="code-block">
+<code>// File: com.yourpackage.batch.scheduler.DonationJobScheduler.java
+
+@Configuration
+@EnableScheduling
+public class DonationJobScheduler {
+    
+    @Autowired
+    private JobLauncher jobLauncher;
+    
+    @Autowired
+    @Qualifier("donationReconciliationJob")
+    private Job donationReconciliationJob;
+    
+    @Autowired
+    @Qualifier("donationStatisticsJob")
+    private Job donationStatisticsJob;
+    
+    // Optional: Scheduled reconciliation job (for data consistency)
+    @Scheduled(cron = "0 0 2 * * ?") // Daily at 2 AM
+    public void runDonationReconciliationJob() throws JobExecutionException {
+        JobParameters params = new JobParametersBuilder()
+            .addLong("time", System.currentTimeMillis())
+            .toJobParameters();
+        jobLauncher.run(donationReconciliationJob, params);
+    }
+    
+    // Scheduled statistics aggregation job
+    @Scheduled(fixedRate = 3600000) // Every hour
+    public void runDonationStatisticsJob() throws JobExecutionException {
+        JobParameters params = new JobParametersBuilder()
+            .addLong("time", System.currentTimeMillis())
+            .toJobParameters();
+        jobLauncher.run(donationStatisticsJob, params);
+    }
+}</code>
+        </div>
+
+        <h2>8. Error Handling and Retry Logic</h2>
+
+        <h3>8.1 Retry Configuration</h3>
+        <div class="code-block">
+<code>// Configure retry logic in job steps
+.faultTolerant()
+.retryLimit(3)
+.retry(EmailException.class)
+.retry(QrCodeException.class)
+.skipLimit(10)
+.skip(Exception.class)
+.listener(new DonationJobExecutionListener())</code>
+        </div>
+
+        <h3>8.2 Job Execution Listener</h3>
+        <div class="code-block">
+<code>// File: com.yourpackage.batch.donation.DonationJobExecutionListener.java
+
+public class DonationJobExecutionListener implements JobExecutionListener {
+    
+    @Override
+    public void beforeJob(JobExecution jobExecution) {
+        log.info("Starting donation job: " + jobExecution.getJobInstance().getJobName());
+    }
+    
+    @Override
+    public void afterJob(JobExecution jobExecution) {
+        if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
+            log.info("Donation job completed successfully");
+        } else {
+            log.error("Donation job failed: " + jobExecution.getStatus());
+        }
+    }
+}</code>
+        </div>
+
+        <h2>9. Testing Checklist</h2>
+
+        <h3>9.1 Unit Testing</h3>
+        <ul>
+            <li>[ ] Email reader tests</li>
+            <li>[ ] QR code processor tests</li>
+            <li>[ ] Reconciliation processor tests</li>
+            <li>[ ] Statistics aggregation tests</li>
+        </ul>
+
+        <h3>9.2 Integration Testing</h3>
+        <ul>
+            <li>[ ] Email job end-to-end test</li>
+            <li>[ ] QR code job end-to-end test</li>
+            <li>[ ] Reconciliation job end-to-end test</li>
+            <li>[ ] Statistics job end-to-end test</li>
+            <li>[ ] Job scheduling tests</li>
+        </ul>
+
+        <h2>10. References</h2>
+
+        <h3>10.1 Existing Batch Jobs</h3>
+        <ul>
+            <li>Ticket email job - Reference for email sending pattern</li>
+            <li>QR code generation job - Reference for QR code pattern</li>
+            <li>Statistics aggregation jobs - Reference for statistics pattern</li>
+        </ul>
+
+        <h3>10.2 Documentation</h3>
+        <ul>
+            <li><code>documentation/domain_agnostic_payment/Non_Profit_FundRaiser_GiveButter/BACKEND_IMPLEMENTATION_PRD.html</code></li>
+            <li>Spring Batch Documentation: https://docs.spring.io/spring-batch/docs/current/reference/html/</li>
+        </ul>
+
+        <h2>11. Key Differences from Webhook-Based Approach</h2>
+
+        <div class="highlight-box">
+            <h4>Jobs Triggered by API Calls, Not Webhooks</h4>
+            <p>Following the existing checkout flow pattern, batch jobs are triggered by API endpoints called from the frontend, not by webhook events:</p>
+            <ul>
+                <li><strong>Email Job:</strong> Triggered by <code>POST /api/proxy/events/{eventId}/donations/{transactionId}/send-email</code></li>
+                <li><strong>QR Code Job:</strong> Triggered by <code>POST /api/proxy/events/{eventId}/donations/{transactionId}/qrcode</code></li>
+                <li><strong>Reconciliation Job:</strong> Optional scheduled job for data consistency</li>
+                <li><strong>Statistics Job:</strong> Scheduled job for admin dashboard</li>
+            </ul>
+        </div>
+
+        <div class="success-box">
+            <h4>✅ Ready for Implementation</h4>
+            <p>This PRD provides complete specifications for implementing batch jobs for the GiveButter donation flow. All jobs should follow existing Spring Batch patterns while extending functionality for donation processing. Jobs are triggered by API endpoints (called from frontend), not by webhook events.</p>
+        </div>
+    </div>
+</body>
+</html>

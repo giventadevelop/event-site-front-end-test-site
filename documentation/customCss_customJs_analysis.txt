@@ -1,0 +1,142 @@
+CUSTOM CSS AND CUSTOM JS FIELDS ANALYSIS
+========================================
+
+Entity: TenantSettings
+Fields: customCss, customJs
+Current Data Type: TextBlob
+
+WHAT THESE FIELDS MEAN:
+========================
+
+customCss TextBlob:
+- Stores custom CSS styling rules for tenant organizations
+- Allows tenants to customize the appearance of their event management platform
+- Can include custom colors, fonts, layouts, responsive design rules
+- Enables brand-specific theming and visual customization
+
+customJs TextBlob:
+- Stores custom JavaScript code for tenant organizations
+- Allows tenants to add custom functionality and interactions
+- Can include custom form validations, UI enhancements, analytics tracking
+- Enables tenant-specific business logic and user experience improvements
+
+COMMON USE CASES:
+=================
+
+Custom CSS Examples:
+- Brand color schemes and typography
+- Custom button styles and hover effects
+- Responsive design adjustments
+- Custom form layouts and styling
+- Event-specific visual themes
+- Mobile app-like styling for events
+- Custom animations and transitions
+
+Custom JavaScript Examples:
+- Form validation rules
+- Custom payment flow logic
+- Analytics and tracking code
+- Social media integration
+- Custom date/time pickers
+- Real-time updates and notifications
+- Third-party service integrations
+
+IDEAL STRING LENGTH IF CHANGED TO String maxlength():
+====================================================
+
+CUSTOM CSS RECOMMENDATION: String maxlength(8192)
+================================================
+Why 8192 characters:
+1. CSS files can be substantial (typical custom themes: 2-8KB)
+2. Multiple CSS rules and selectors add up quickly
+3. Responsive design requires media queries
+4. Vendor prefixes and browser-specific rules
+5. CSS custom properties and variables
+6. Future extensibility for complex themes
+
+Example CSS size breakdown:
+- Basic theme: ~1-2KB
+- Responsive design: +1-2KB
+- Custom components: +1-2KB
+- Browser compatibility: +1-2KB
+- Future additions: +1-2KB
+- Total recommended: 8KB (8192 characters)
+
+CUSTOM JAVASCRIPT RECOMMENDATION: String maxlength(16384)
+========================================================
+Why 16384 characters:
+1. JavaScript code is typically longer than CSS
+2. Custom functions and business logic
+3. Error handling and validation
+4. Third-party API integrations
+5. Event handlers and DOM manipulation
+6. Future extensibility for complex features
+
+Example JavaScript size breakdown:
+- Basic functionality: ~2-4KB
+- Form validation: +1-2KB
+- API integrations: +2-4KB
+- Event handling: +1-2KB
+- Error handling: +1-2KB
+- Future features: +2-4KB
+- Total recommended: 16KB (16384 characters)
+
+ALTERNATIVE RECOMMENDATIONS:
+============================
+
+Conservative Approach:
+- customCss: String maxlength(4096) - 4KB
+- customJs: String maxlength(8192) - 8KB
+
+Balanced Approach:
+- customCss: String maxlength(8192) - 8KB
+- customJs: String maxlength(16384) - 16KB
+
+Aggressive Approach:
+- customCss: String maxlength(16384) - 16KB
+- customJs: String maxlength(32768) - 32KB
+
+FINAL RECOMMENDATIONS:
+======================
+
+RECOMMENDED: Balanced Approach
+==============================
+customCss: String maxlength(8192)
+customJs: String maxlength(16384)
+
+This provides:
+✅ Sufficient space for comprehensive customizations
+✅ Room for complex themes and functionality
+✅ Future extensibility
+✅ Reasonable database storage usage
+✅ Handles most tenant customization needs
+✅ Balances functionality with storage efficiency
+
+RATIONALE:
+==========
+- CSS is typically more concise than JavaScript
+- 8KB CSS allows for substantial theme customization
+- 16KB JavaScript accommodates complex business logic
+- Both sizes provide room for future enhancements
+- Storage impact is reasonable for multi-tenant systems
+
+JDL SYNTAX CHANGES:
+===================
+Current:
+customCss TextBlob,
+customJs TextBlob
+
+Recommended:
+customCss String maxlength(8192),
+customJs String maxlength(16384)
+
+IMPLEMENTATION CONSIDERATIONS:
+=============================
+1. Validate CSS/JS syntax before storing
+2. Sanitize user input to prevent XSS
+3. Consider CSS/JS minification for storage efficiency
+4. Implement versioning for custom code changes
+5. Provide code editor with syntax highlighting
+6. Enable/disable custom code per tenant
+7. Cache compiled/minified versions for performance
+

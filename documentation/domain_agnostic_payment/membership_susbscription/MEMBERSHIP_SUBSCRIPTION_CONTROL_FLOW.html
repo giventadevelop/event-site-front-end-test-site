@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Membership Subscription Control Flow - Recommended Solution</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-left: 10px;
+            border-left: 4px solid #3498db;
+        }
+        h3 {
+            color: #555;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        .flow-diagram {
+            background: #f9f9f9;
+            padding: 25px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border: 2px solid #3498db;
+        }
+        .flow-step {
+            padding: 15px;
+            margin: 12px 0;
+            background: white;
+            border-left: 4px solid #3498db;
+            padding-left: 20px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .flow-step.decision {
+            border-left-color: #e74c3c;
+            background: #fff5f5;
+        }
+        .flow-step.success {
+            border-left-color: #27ae60;
+            background: #f0fff4;
+        }
+        .flow-step.error {
+            border-left-color: #e74c3c;
+            background: #fff5f5;
+        }
+        .flow-step.warning {
+            border-left-color: #f39c12;
+            background: #fffbf0;
+        }
+        .flow-step strong {
+            color: #2c3e50;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        .flow-step code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #e74c3c;
+        }
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .code-block code {
+            color: #f8f8f2;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: 600;
+            color: #856404;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .scenario-box {
+            background: #e8f4f8;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+        }
+        .scenario-box h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #3498db;
+            color: white;
+            font-weight: 600;
+        }
+        tr:hover {
+            background: #f5f5f5;
+        }
+        .decision-tree {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border: 1px solid #ddd;
+        }
+        .decision-tree ul {
+            list-style: none;
+            margin-left: 20px;
+        }
+        .decision-tree li {
+            margin: 10px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        .decision-tree li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #3498db;
+            font-weight: bold;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 14px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        .checklist {
+            background: #f0f8ff;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .checklist ul {
+            list-style: none;
+        }
+        .checklist li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        .checklist li:before {
+            content: "☐";
+            position: absolute;
+            left: 0;
+            font-size: 18px;
+            color: #3498db;
+        }
+        .checklist li.completed:before {
+            content: "☑";
+            color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Membership Subscription Control Flow - Recommended Solution</h1>
+        <p style="font-size: 18px; color: #666; margin-bottom: 30px;">
+            Detailed control flow addressing first-time users, incomplete data, and profile creation failures
+        </p>
+
+        <div class="info">
+            <h3>Overview</h3>
+            <p>This document provides a comprehensive control flow for the recommended solution that ensures user profiles exist before enabling payment. It covers all edge cases including first-time users, missing data, and profile creation failures.</p>
+        </div>
+
+        <h2>1. Complete Control Flow Diagram</h2>
+
+        <div class="flow-diagram">
+            <div class="flow-step">
+                <strong>START: User visits /membership</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>User can browse plans without authentication</li>
+                    <li>Plans are fetched from backend (public endpoint)</li>
+                </ul>
+            </div>
+
+            <div class="flow-step decision">
+                <strong>DECISION: User clicks "Subscribe"</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>Check: Is user authenticated? (<code>userId</code> exists?)</li>
+                </ul>
+            </div>
+
+            <div class="flow-step error">
+                <strong>IF NOT AUTHENTICATED:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>Redirect to: <code>/sign-in?redirect_url=/membership/subscribe/[planId]</code></li>
+                    <li>After sign-in, user will be redirected back to subscription page</li>
+                </ul>
+            </div>
+
+            <div class="flow-step">
+                <strong>IF AUTHENTICATED: Navigate to /membership/subscribe/[planId]</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>Server component checks authentication (already done)</li>
+                    <li>Fetches membership plan details</li>
+                    <li>Attempts to fetch user profile (non-blocking)</li>
+                </ul>
+            </div>
+
+            <div class="flow-step decision">
+                <strong>DECISION: Does user profile exist?</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>Check: <code>userProfile?.id</code> exists?</li>
+                    <li>If not found server-side, client component will check again</li>
+                </ul>
+            </div>
+
+            <div class="flow-step success">
+                <strong>IF PROFILE EXISTS:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>✅ Profile confirmed</li>
+                    <li>✅ Enable payment buttons</li>
+                    <li>✅ User can proceed with payment</li>
+                    <li>→ Continue to Payment Flow (Section 2)</li>
+                </ul>
+            </div>
+
+            <div class="flow-step warning">
+                <strong>IF PROFILE DOES NOT EXIST: Profile Creation Flow</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>Show loading state: "Setting up your account..."</li>
+                    <li>Attempt to create user profile from Clerk data</li>
+                    <li>→ Continue to Profile Creation Flow (Section 3)</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>2. Profile Creation Flow (Critical Section)</h2>
+
+        <div class="scenario-box">
+            <h3>Scenario A: First-Time User with Complete Clerk Data</h3>
+            <p><strong>Conditions:</strong> User has signed in with Clerk, has email, firstName, lastName</p>
+        </div>
+
+        <div class="flow-diagram">
+            <div class="flow-step">
+                <strong>Step 1: Extract Clerk User Data</strong>
+                <div class="code-block">
+<code>const email = user?.emailAddresses?.[0]?.emailAddress ||
+              user?.primaryEmailAddress?.emailAddress || '';
+
+const firstName = user?.firstName || '';
+const lastName = user?.lastName || '';
+const phone = user?.phoneNumbers?.[0]?.phoneNumber || '';
+const imageUrl = user?.imageUrl || '';</code>
+                </div>
+            </div>
+
+            <div class="flow-step decision">
+                <strong>DECISION: Does email exist?</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>Email is <span class="highlight">REQUIRED</span> for user profile creation</li>
+                    <li>Email is <span class="highlight">REQUIRED</span> for payment processing</li>
+                </ul>
+            </div>
+
+            <div class="flow-step success">
+                <strong>IF EMAIL EXISTS: Create Profile</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>Call server action: <code>createUserProfileFromClerkUser()</code></li>
+                    <li>Payload includes: userId, email, firstName, lastName, phone, imageUrl</li>
+                    <li>Backend creates user_profile record</li>
+                </ul>
+                <div class="code-block">
+<code>// Server Action: createUserProfileFromClerkUser
+const profileData = {
+  userId: userId,
+  email: email,
+  firstName: firstName || 'User',
+  lastName: lastName || '',
+  phone: phone || '',
+  profileImageUrl: imageUrl || '',
+  tenantId: getTenantId(),
+  userRole: 'MEMBER',
+  userStatus: 'PENDING_APPROVAL',
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+const response = await fetch('/api/proxy/user-profiles', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(profileData),
+});</code>
+                </div>
+            </div>
+
+            <div class="flow-step decision">
+                <strong>DECISION: Profile creation successful?</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>Check: <code>response.ok === true</code></li>
+                    <li>Check: Response contains <code>profile.id</code></li>
+                </ul>
+            </div>
+
+            <div class="flow-step success">
+                <strong>IF SUCCESS:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>✅ Profile created successfully</li>
+                    <li>✅ Store profile in state</li>
+                    <li>✅ Enable payment buttons</li>
+                    <li>✅ Hide loading state</li>
+                    <li>→ Continue to Payment Flow</li>
+                </ul>
+            </div>
+
+            <div class="flow-step error">
+                <strong>IF FAILURE:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>❌ Profile creation failed</li>
+                    <li>Show error message: "Unable to set up your account. Please try again."</li>
+                    <li>Show retry button</li>
+                    <li>Log error for debugging</li>
+                    <li>→ Continue to Error Handling Flow (Section 4)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="scenario-box">
+            <h3>Scenario B: First-Time User with Missing Email</h3>
+            <p><strong>Conditions:</strong> User signed in but Clerk user has no email address</p>
+            <p><strong>Note:</strong> This is rare but possible with certain OAuth providers or incomplete Clerk setup</p>
+        </div>
+
+        <div class="flow-diagram">
+            <div class="flow-step">
+                <strong>Step 1: Extract Clerk User Data</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>Check: <code>user?.emailAddresses?.[0]?.emailAddress</code></li>
+                    <li>Check: <code>user?.primaryEmailAddress?.emailAddress</code></li>
+                </ul>
+            </div>
+
+            <div class="flow-step decision">
+                <strong>DECISION: Email is missing or empty?</strong>
+            </div>
+
+            <div class="flow-step error">
+                <strong>IF EMAIL MISSING:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>❌ Cannot create user profile (email is required)</li>
+                    <li>❌ Cannot proceed with payment (email required for Stripe)</li>
+                    <li>Show error message: "Email address is required to complete your subscription. Please update your account settings."</li>
+                    <li>Show button: "Update Account Settings"</li>
+                    <li>Redirect to: <code>/profile?redirect_url=/membership/subscribe/[planId]</code></li>
+                    <li>On profile page, user must add email address</li>
+                    <li>After email added, redirect back to subscription page</li>
+                </ul>
+            </div>
+
+            <div class="flow-step">
+                <strong>Profile Page Flow:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>User lands on <code>/profile</code> page</li>
+                    <li>Profile form shows email field (required)</li>
+                    <li>User enters email address</li>
+                    <li>On save, create/update user profile with email</li>
+                    <li>After successful save, redirect to subscription page</li>
+                    <li>Subscription page now has profile with email</li>
+                    <li>→ Payment buttons enabled</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="scenario-box">
+            <h3>Scenario C: Profile Creation Fails (Network/Backend Error)</h3>
+            <p><strong>Conditions:</strong> Email exists, but profile creation API call fails</p>
+        </div>
+
+        <div class="flow-diagram">
+            <div class="flow-step decision">
+                <strong>DECISION: Profile creation API call failed?</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>Check: <code>response.status !== 200</code></li>
+                    <li>Check: Network error or timeout</li>
+                    <li>Check: Backend validation error</li>
+                </ul>
+            </div>
+
+            <div class="flow-step error">
+                <strong>IF NETWORK ERROR:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>Show error: "Network error. Please check your connection and try again."</li>
+                    <li>Show retry button</li>
+                    <li>On retry, attempt profile creation again</li>
+                    <li>Maximum 3 retry attempts</li>
+                </ul>
+            </div>
+
+            <div class="flow-step error">
+                <strong>IF BACKEND ERROR (400/500):</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>Show error: "Unable to set up your account. Please contact support if the problem persists."</li>
+                    <li>Show support contact information</li>
+                    <li>Log error details for debugging</li>
+                    <li>Allow user to retry or contact support</li>
+                </ul>
+            </div>
+
+            <div class="flow-step error">
+                <strong>IF TIMEOUT:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>Show error: "Request timed out. Please try again."</li>
+                    <li>Show retry button</li>
+                    <li>Increase timeout for retry (e.g., 30 seconds)</li>
+                </ul>
+            </div>
+
+            <div class="flow-step warning">
+                <strong>FALLBACK: After 3 Failed Attempts</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>Show message: "We're having trouble setting up your account. Please try again later or contact support."</li>
+                    <li>Show support email/phone</li>
+                    <li>Allow user to save subscription plan for later</li>
+                    <li>Option to receive email when issue is resolved</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>3. Payment Flow (After Profile Confirmed)</h2>
+
+        <div class="flow-diagram">
+            <div class="flow-step success">
+                <strong>Profile Confirmed: Enable Payment</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>✅ User profile exists (<code>userProfile.id</code> confirmed)</li>
+                    <li>✅ Email address available</li>
+                    <li>✅ Payment buttons enabled</li>
+                </ul>
+            </div>
+
+            <div class="flow-step">
+                <strong>Payment Options Available:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li><strong>Desktop:</strong> Stripe Elements (Apple Pay, Google Pay, Link, Card)</li>
+                    <li><strong>Mobile:</strong> Payment Request Button (Apple Pay/Google Pay) + Checkout Session fallback</li>
+                </ul>
+            </div>
+
+            <div class="flow-step">
+                <strong>User Completes Payment:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>Payment Intent or Checkout Session created</li>
+                    <li>Payment processed by Stripe</li>
+                    <li>Redirect to: <code>/membership/success?pi=pi_xxx</code> or <code>?session_id=cs_xxx</code></li>
+                </ul>
+            </div>
+
+            <div class="flow-step decision">
+                <strong>DECISION: Payment successful?</strong>
+            </div>
+
+            <div class="flow-step success">
+                <strong>IF PAYMENT SUCCESSFUL:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>Success page processes subscription</li>
+                    <li>Looks up user profile (should exist now)</li>
+                    <li>Creates membership_subscription record</li>
+                    <li>Links subscription to userProfile.id</li>
+                    <li>Shows success confirmation</li>
+                </ul>
+            </div>
+
+            <div class="flow-step error">
+                <strong>IF PAYMENT SUCCESSFUL BUT PROFILE MISSING:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>⚠️ Edge case: Profile was deleted or not found</li>
+                    <li>Success page attempts to create profile from payment data</li>
+                    <li>Uses email from Payment Intent metadata</li>
+                    <li>Creates profile, then creates subscription</li>
+                    <li>→ Fallback Profile Creation (Section 5)</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>4. Error Handling & Recovery</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Error Scenario</th>
+                    <th>User Action</th>
+                    <th>System Response</th>
+                    <th>Recovery Path</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>No Email in Clerk</strong></td>
+                    <td>User clicks "Subscribe"</td>
+                    <td>Show error, redirect to profile page</td>
+                    <td>User adds email → Profile created → Return to subscription</td>
+                </tr>
+                <tr>
+                    <td><strong>Profile Creation Fails</strong></td>
+                    <td>Retry button clicked</td>
+                    <td>Attempt profile creation again</td>
+                    <td>Success → Enable payment | Failure → Show support contact</td>
+                </tr>
+                <tr>
+                    <td><strong>Network Error</strong></td>
+                    <td>Retry button clicked</td>
+                    <td>Retry with increased timeout</td>
+                    <td>Success → Enable payment | 3 failures → Show support</td>
+                </tr>
+                <tr>
+                    <td><strong>Backend Validation Error</strong></td>
+                    <td>Contact support</td>
+                    <td>Log error, show support info</td>
+                    <td>Admin fixes issue → User retries</td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Success, Profile Missing</strong></td>
+                    <td>Automatic</td>
+                    <td>Create profile from payment data</td>
+                    <td>Profile created → Subscription created → Success</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>5. Fallback Profile Creation (Success Page)</h2>
+
+        <div class="flow-diagram">
+            <div class="flow-step warning">
+                <strong>Edge Case: Payment Succeeded But Profile Missing</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>This should rarely happen if we enforce profile before payment</li>
+                    <li>But we need fallback for edge cases</li>
+                </ul>
+            </div>
+
+            <div class="flow-step">
+                <strong>Success Page Processing:</strong>
+                <div class="code-block">
+<code>// src/app/membership/success/ApiServerActions.ts
+export async function processMembershipSubscriptionFromPaymentIntent(
+  paymentIntentId: string,
+  userId?: string | null
+) {
+  // 1. Extract email from Payment Intent
+  const customerEmail = paymentIntent.metadata.customerEmail ||
+                        paymentIntent.receipt_email || '';
+
+  // 2. Try to find user profile
+  let userProfile = null;
+  if (userId) {
+    userProfile = await fetchUserProfileByUserId(userId);
+  }
+
+  if (!userProfile && customerEmail) {
+    userProfile = await fetchUserProfileByEmail(customerEmail);
+  }
+
+  // 3. IF PROFILE STILL MISSING: Create it
+  if (!userProfile?.id && customerEmail && userId) {
+    console.log('[MEMBERSHIP-SUCCESS] Creating profile from payment data');
+    userProfile = await createUserProfileFromPayment({
+      userId,
+      email: customerEmail,
+      name: paymentIntent.metadata.customerName || '',
+      phone: paymentIntent.metadata.customerPhone || '',
+    });
+  }
+
+  // 4. Now proceed with subscription creation
+  if (!userProfile?.id) {
+    throw new Error('Unable to create user profile. Please contact support.');
+  }
+
+  // 5. Create subscription...
+}</code>
+                </div>
+            </div>
+
+            <div class="flow-step decision">
+                <strong>DECISION: Fallback profile creation successful?</strong>
+            </div>
+
+            <div class="flow-step success">
+                <strong>IF SUCCESS:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>✅ Profile created from payment data</li>
+                    <li>✅ Subscription created and linked</li>
+                    <li>✅ Show success message</li>
+                </ul>
+            </div>
+
+            <div class="flow-step error">
+                <strong>IF FAILURE:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>❌ Cannot create profile (missing email or userId)</li>
+                    <li>Show error: "Payment successful but account setup incomplete. Please contact support."</li>
+                    <li>Store payment intent ID for manual processing</li>
+                    <li>Send alert to admin team</li>
+                    <li>User can contact support with payment confirmation</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>6. Complete Implementation Checklist</h2>
+
+        <div class="checklist">
+            <h3>Subscription Page Implementation</h3>
+            <ul>
+                <li class="completed">Add useEffect to check for user profile existence</li>
+                <li class="completed">Add loading state while checking/creating profile</li>
+                <li class="completed">Add server action to create profile from Clerk data</li>
+                <li>Add email validation (check if email exists in Clerk user)</li>
+                <li>Add error handling for profile creation failures</li>
+                <li>Add retry logic (max 3 attempts)</li>
+                <li>Add redirect to profile page if email missing</li>
+                <li>Only enable payment buttons after profile confirmed</li>
+            </ul>
+
+            <h3>Server Actions</h3>
+            <ul>
+                <li>Create <code>createUserProfileFromClerkUser</code> server action</li>
+                <li>Add email validation before profile creation</li>
+                <li>Add error handling and logging</li>
+                <li>Return profile data on success</li>
+                <li>Throw descriptive errors on failure</li>
+            </ul>
+
+            <h3>Success Page</h3>
+            <ul>
+                <li>Add fallback profile creation logic</li>
+                <li>Extract email from Payment Intent metadata</li>
+                <li>Create profile if missing before subscription creation</li>
+                <li>Add error handling for fallback creation failure</li>
+                <li>Add admin alert for manual processing cases</li>
+            </ul>
+
+            <h3>Error Handling</h3>
+            <ul>
+                <li>Add user-friendly error messages</li>
+                <li>Add retry buttons for transient errors</li>
+                <li>Add support contact information</li>
+                <li>Add error logging for debugging</li>
+                <li>Add admin alerts for critical failures</li>
+            </ul>
+        </div>
+
+        <h2>7. Code Implementation Example</h2>
+
+        <div class="code-block">
+<code>// src/app/membership/subscribe/[planId]/SubscriptionSignupClient.tsx
+
+'use client';
+import { useState, useEffect } from 'react';
+import { useAuth, useUser } from '@clerk/nextjs';
+import { createUserProfileFromClerkUser } from './ApiServerActions';
+
+export function SubscriptionSignupClient({ plan, error, userProfile: initialUserProfile }) {
+  const { userId } = useAuth();
+  const { user, isLoaded: isUserLoaded } = useUser();
+  const [userProfile, setUserProfile] = useState(initialUserProfile);
+  const [isCreatingProfile, setIsCreatingProfile] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [canEnablePayment, setCanEnablePayment] = useState(false);
+
+  // Ensure user profile exists before enabling payment
+  useEffect(() => {
+    async function ensureUserProfile() {
+      if (!userId || !isUserLoaded) {
+        setCanEnablePayment(false);
+        return;
+      }
+
+      // Check if profile already exists
+      if (userProfile?.id) {
+        setCanEnablePayment(true);
+        return;
+      }
+
+      // Try to fetch profile
+      try {
+        const response = await fetch(`/api/proxy/user-profiles/by-user/${userId}`, {
+          cache: 'no-store',
+        });
+
+        if (response.ok) {
+          const profile = await response.json();
+          if (profile?.id) {
+            setUserProfile(profile);
+            setCanEnablePayment(true);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('[MEMBERSHIP-SUBSCRIBE] Error fetching profile:', err);
+      }
+
+      // Profile doesn't exist - check if we have email
+      const email = user?.emailAddresses?.[0]?.emailAddress ||
+                    user?.primaryEmailAddress?.emailAddress || '';
+
+      if (!email) {
+        setProfileError('Email address is required. Please update your account settings.');
+        setCanEnablePayment(false);
+        return;
+      }
+
+      // Create profile
+      if (retryCount < 3) {
+        setIsCreatingProfile(true);
+        setProfileError(null);
+
+        try {
+          const newProfile = await createUserProfileFromClerkUser({
+            userId,
+            email,
+            firstName: user?.firstName || 'User',
+            lastName: user?.lastName || '',
+            phone: user?.phoneNumbers?.[0]?.phoneNumber || '',
+            imageUrl: user?.imageUrl || '',
+          });
+
+          if (newProfile?.id) {
+            setUserProfile(newProfile);
+            setCanEnablePayment(true);
+            setIsCreatingProfile(false);
+            setRetryCount(0);
+          } else {
+            throw new Error('Profile creation returned no ID');
+          }
+        } catch (err) {
+          setIsCreatingProfile(false);
+          const errorMessage = err instanceof Error ? err.message : 'Failed to create profile';
+          setProfileError(`Unable to set up your account: ${errorMessage}`);
+
+          if (retryCount < 2) {
+            // Auto-retry after 2 seconds
+            setTimeout(() => {
+              setRetryCount(prev => prev + 1);
+            }, 2000);
+          }
+        }
+      } else {
+        setProfileError('Unable to set up your account after multiple attempts. Please contact support.');
+        setCanEnablePayment(false);
+      }
+    }
+
+    ensureUserProfile();
+  }, [userId, isUserLoaded, userProfile, retryCount, user]);
+
+  // Render loading state
+  if (isCreatingProfile) {
+    return (
+      &lt;div className="max-w-5xl mx-auto px-8 py-8"&gt;
+        &lt;div className="text-center"&gt;
+          &lt;div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"&gt;&lt;/div&gt;
+          &lt;p className="text-lg text-gray-600"&gt;Setting up your account...&lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    );
+  }
+
+  // Render error state
+  if (profileError && !canEnablePayment) {
+    const hasEmail = !!(user?.emailAddresses?.[0]?.emailAddress ||
+                        user?.primaryEmailAddress?.emailAddress);
+
+    return (
+      &lt;div className="max-w-5xl mx-auto px-8 py-8"&gt;
+        &lt;div className="bg-red-50 border border-red-200 text-red-800 p-6 rounded-md"&gt;
+          &lt;h3 className="font-semibold text-lg mb-2"&gt;Account Setup Required&lt;/h3&gt;
+          &lt;p className="mb-4"&gt;{profileError}&lt;/p&gt;
+          {!hasEmail ? (
+            &lt;&gt;
+              &lt;button
+                onClick={() => router.push(`/profile?redirect_url=/membership/subscribe/${plan.id}`)}
+                className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600"
+              &gt;
+                Update Account Settings
+              &lt;/button&gt;
+            &lt;/&gt;
+          ) : (
+            &lt;&gt;
+              &lt;button
+                onClick={() => setRetryCount(0)}
+                className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 mr-4"
+              &gt;
+                Try Again
+              &lt;/button&gt;
+              &lt;a
+                href="mailto:support@example.com"
+                className="text-blue-500 underline"
+              &gt;
+                Contact Support
+              &lt;/a&gt;
+            &lt;/&gt;
+          )}
+        &lt;/div&gt;
+      &lt;/div&gt;
+    );
+  }
+
+  // Render payment form (only if profile confirmed)
+  return (
+    &lt;div className="max-w-5xl mx-auto px-8 py-8"&gt;
+      {/* Payment form - only rendered if canEnablePayment === true */}
+      {canEnablePayment && (
+        &lt;MembershipDesktopCheckout
+          enabled={true}
+          email={user?.emailAddresses?.[0]?.emailAddress || userProfile?.email}
+          // ... other props
+        /&gt;
+      )}
+    &lt;/div&gt;
+  );
+}</code>
+        </div>
+
+        <h2>8. Summary & Key Points</h2>
+
+        <div class="success">
+            <h3>Recommended Solution Summary</h3>
+            <ol>
+                <li><strong>Require Profile Before Payment:</strong> Ensure user profile exists before enabling payment buttons</li>
+                <li><strong>Auto-Create Profile:</strong> If profile doesn't exist, create it from Clerk user data</li>
+                <li><strong>Email Validation:</strong> If email is missing, redirect to profile page to add email</li>
+                <li><strong>Error Handling:</strong> Handle profile creation failures with retry logic and user-friendly messages</li>
+                <li><strong>Fallback Safety:</strong> Add fallback profile creation in success page for edge cases</li>
+            </ol>
+        </div>
+
+        <div class="info">
+            <h3>Key Decision Points</h3>
+            <ul>
+                <li><strong>Email Required:</strong> Email is mandatory for both profile creation and payment processing</li>
+                <li><strong>Profile Before Payment:</strong> Profile must exist before payment buttons are enabled</li>
+                <li><strong>Retry Logic:</strong> Maximum 3 retry attempts for profile creation</li>
+                <li><strong>Fallback Creation:</strong> Success page can create profile if missing (edge case)</li>
+                <li><strong>User Experience:</strong> Show loading states and clear error messages</li>
+            </ul>
+        </div>
+
+        <div class="timestamp">
+            <p><strong>Document Created:</strong> <span id="timestamp"></span></p>
+            <p><strong>Version:</strong> 1.0 - Recommended Solution</p>
+            <p><strong>Related Documents:</strong></p>
+            <ul>
+                <li><code>USER_PROFILE_MEMBERSHIP_INTEGRATION_ANALYSIS.html</code></li>
+                <li><code>MEMBERSHIP_SUBSCRIPTION_PRD.html</code></li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+    </script>
+</body>
+</html>
+

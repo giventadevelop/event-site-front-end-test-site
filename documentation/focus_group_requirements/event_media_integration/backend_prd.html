@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PRD: Focus Group – Event Media Integration (Backend)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+      h1, h2, h3, h4 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+      h1 { font-size: 2.3rem; margin-bottom: 0.75rem; }
+      h2 { font-size: 1.7rem; margin-top: 2.5rem; }
+      h3 { font-size: 1.3rem; margin-top: 1.8rem; }
+      h4 { font-size: 1.1rem; margin-top: 1.2rem; }
+      p, li { line-height: 1.75; font-size: 1rem; }
+      ul, ol { margin-left: 1.4rem; }
+      table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+      th, td { border: 1px solid rgba(42, 32, 23, 0.15); padding: 0.75rem; vertical-align: top; }
+      th { background: rgba(213, 201, 182, 0.35); font-weight: 600; }
+      code, pre {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+      }
+      pre { padding: 1rem; line-height: 1.6; overflow-x: auto; }
+      code.inline { padding: 0.15rem 0.35rem; font-size: 0.95rem; display: inline-block; }
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .divider { height: 1px; background: rgba(42, 32, 23, 0.12); margin: 2rem 0; }
+      .callout {
+        border-left: 4px solid #8b7d6b;
+        background: rgba(213, 201, 182, 0.3);
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
+        margin: 1.8rem 0;
+      }
+      .toc ol { list-style: decimal; }
+      .toc a { color: #1f4c8f; text-decoration: none; }
+      .toc a:hover { text-decoration: underline; }
+      footer { margin-top: 4rem; text-align: center; font-size: 0.9rem; color: #7a7066; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Draft · Backend</span>
+      <h1>PRD: Focus Group – Event Media Integration (Backend)</h1>
+      <p>
+        <strong>Project:</strong> malayalees-us-site-boot (Spring Boot / JHipster)<br />
+        <strong>Path:</strong> <code class="inline">E:\project_workspace\malayalees-us-site-boot</code><br />
+        <strong>Document Version:</strong> 1.0<br />
+        <strong>Date:</strong> March 2026<br />
+        <strong>Status:</strong> Draft
+      </p>
+
+      <div class="divider"></div>
+
+      <h2 id="requirement">Requirement</h2>
+      <p>
+        Add optional <code class="inline">event_focus_group_id</code> to the <code class="inline">event_media</code>
+        table and expose it in REST and DTOs so the frontend can associate media with an event’s focus group when
+        uploading or editing. The canonical schema change is already applied in the shared SQL file; the backend must
+        apply an equivalent migration (e.g. Liquibase) and update entity, DTO, criteria, mapper, and REST layer.
+      </p>
+
+      <h2 id="schema">Schema / Migration</h2>
+      <ul>
+        <li>Column: <code class="inline">event_focus_group_id bigint NULL</code></li>
+        <li>FK: <code class="inline">REFERENCES public.event_focus_groups(id) ON DELETE SET NULL</code></li>
+        <li>Index: <code class="inline">idx_event_media_event_focus_group_id</code> on
+          <code class="inline">event_media(event_focus_group_id)</code> WHERE
+          <code class="inline">event_focus_group_id IS NOT NULL</code></li>
+        <li>Add a Liquibase changelog (or equivalent) for the new column and constraint. Reference the canonical file:
+          <code class="inline">code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code> (in the
+          frontend repo or sync from it).</li>
+      </ul>
+
+      <h2 id="entity">Entity</h2>
+      <p>
+        In <code class="inline">EventMedia.java</code>: add <code class="inline">eventFocusGroupId</code> (Long,
+        nullable) mapped to column <code class="inline">event_focus_group_id</code>. Optionally add
+        <code class="inline">@ManyToOne(fetch = LAZY) EventFocusGroup eventFocusGroup</code> with
+        <code class="inline">@JoinColumn(name = "event_focus_group_id")</code> for navigation.
+      </p>
+
+      <h2 id="dto">DTO</h2>
+      <p>
+        In <code class="inline">EventMediaDTO</code>: add <code class="inline">eventFocusGroupId</code> (Long,
+        nullable). Optionally include a nested <code class="inline">EventFocusGroupDTO</code> for responses when the
+        client needs focus group details with the media.
+      </p>
+
+      <h2 id="criteria">Criteria</h2>
+      <p>
+        In <code class="inline">EventMediaCriteria</code>: add filter(s) such as
+        <code class="inline">eventFocusGroupId.equals</code> (and <code class="inline">eventFocusGroupId.in</code> if
+        needed) so the frontend can query media by focus group.
+      </p>
+
+      <h2 id="mapper">Mapper</h2>
+      <p>
+        In <code class="inline">EventMediaMapper</code>: map the new field between entity and DTO (and nested
+        EventFocusGroup if present).
+      </p>
+
+      <h2 id="rest">REST</h2>
+      <p>
+        No URL change. Existing <code class="inline">EventMediaResource</code> and query service should persist and
+        return the new field. Regenerate or update Swagger / api-docs to include <code class="inline">eventFocusGroupId</code>
+        on the EventMedia schema.
+      </p>
+
+      <h2 id="validation">Validation</h2>
+      <p>
+        When <code class="inline">eventFocusGroupId</code> is set, ensure the referenced
+        <code class="inline">event_focus_groups</code> row’s <code class="inline">event_id</code> matches the media’s
+        <code class="inline">event_id</code> (service-level check or DB constraint). Reject or correct invalid
+        combinations to keep data consistent.
+      </p>
+
+      <div class="callout">
+        <strong>Backward compatibility:</strong> The field is optional. Existing API clients that do not send or
+        expect <code class="inline">eventFocusGroupId</code> remain unchanged.
+      </div>
+
+      <h2 id="references">References</h2>
+      <ul>
+        <li><a href="generic_prd.html">generic_prd.html</a> – Data model and relationships</li>
+        <li>Entity: <code class="inline">domain/EventMedia.java</code>, <code class="inline">domain/EventFocusGroup.java</code></li>
+        <li>DTO: <code class="inline">service/dto/EventMediaDTO.java</code></li>
+        <li>Criteria: <code class="inline">service/criteria/EventMediaCriteria.java</code></li>
+        <li>Resource: <code class="inline">web/rest/EventMediaResource.java</code></li>
+      </ul>
+
+      <footer>
+        <p>Focus Group – Event Media Integration (Backend) PRD · MCEFEE Platform</p>
+      </footer>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organization Address &amp; Description — Backend API (v2.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; overflow-x: auto; font-family: Consolas, monospace; font-size: 0.82em; line-height: 1.45; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Organization Address &amp; Description — Backend Enhancements (v2.0)</h1>
+    <p class="doc-meta">
+        <strong>Layer:</strong> Rust/JHipster REST API &nbsp;|&nbsp; <strong>Version:</strong> 2.0 &nbsp;|&nbsp; <strong>Date:</strong> June 17, 2026<br>
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a> &nbsp;|&nbsp;
+        <strong>Schema:</strong> <a href="database_schema_enhancements_prd.html">database_schema_enhancements_prd.html</a>
+    </p>
+
+    <div class="lead">
+        <p>Extend <code>TenantOrganization</code> entity, DTO, mapper, and REST resource for identity fields. <strong>Do not</strong> extend <code>TenantSettings</code> with new identity columns in v2.0. Reject or ignore PATCH/PUT of deprecated settings identity fields.</p>
+    </div>
+
+    <h2>1. Affected REST resources</h2>
+    <table>
+        <thead><tr><th>Resource</th><th>Base path</th><th>v2.0 write scope</th></tr></thead>
+        <tbody>
+            <tr><td>Tenant Organization</td><td><code>/api/tenant-organizations</code></td><td><strong>All identity fields</strong> (description, address, website)</td></tr>
+            <tr><td>Tenant Settings</td><td><code>/api/tenant-settings</code></td><td>Operational fields only; <strong>no</strong> address/description writes</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. TenantOrganizationDTO — fields (canonical)</h2>
+    <pre>{
+  "description": "string | null, max 1000",
+  "addressLine1": "string | null, max 255",
+  "addressLine2": "string | null, max 255",
+  "city": "string | null, max 255",
+  "stateProvince": "string | null, max 255",
+  "zipCode": "string | null, max 20",
+  "country": "string | null, max 100",
+  "websiteUrl": "string | null, max 1024"
+}</pre>
+    <p>Plus existing org fields: <code>organizationName</code>, <code>contactEmail</code>, <code>contactPhone</code>, branding, subscription, etc.</p>
+
+    <h2>3. TenantSettingsDTO — deprecated identity fields</h2>
+    <div class="warning-box">
+        <strong>v2.0 rule:</strong> If clients PATCH <code>addressLine1</code>, <code>description</code>, <code>city</code>, etc. on tenant-settings, return <strong>400 Bad Request</strong> with message: <code>Identity fields moved to tenant-organization; use PATCH /api/tenant-organizations/{id}</code>. Alternatively strip deprecated keys silently (prefer explicit 400 for admin clarity).
+    </div>
+    <p>GET may still return legacy columns for backward compatibility until v2.1 DROP. Mark OpenAPI fields as <code>deprecated: true</code>.</p>
+    <p><strong>Active settings fields (unchanged):</strong> <code>email</code>, <code>phoneNumber</code>, homepage toggles, social URLs, hero images, limits, WhatsApp/Twilio, etc.</p>
+
+    <h2>4. Validation rules (organization)</h2>
+    <ul>
+        <li>All identity fields optional (nullable).</li>
+        <li><code>description</code>: max 1000 characters.</li>
+        <li><code>websiteUrl</code>: if non-empty, must start with <code>http://</code> or <code>https://</code>.</li>
+        <li>PATCH merge-patch: omitted fields unchanged.</li>
+    </ul>
+
+    <h2>5. Optional composite read endpoint (future)</h2>
+    <p>Not required v2.0. Frontend can fetch org + settings and merge via <code>resolveTenantOrganizationIdentity</code>. If backend adds convenience:</p>
+    <pre>GET /api/tenant-organizations/by-tenant/{tenantId}/with-settings
+→ { organization: {...}, settings: {...}, resolvedIdentity: {...} }</pre>
+
+    <h2>6. Sample PATCH — tenant organization (only write path)</h2>
+    <pre>PATCH /api/tenant-organizations/42
+Content-Type: application/merge-patch+json
+
+{
+  "id": 42,
+  "description": "Malayalee Cultural Events Federation — serving the diaspora since 2010.",
+  "addressLine1": "123 Main Street",
+  "addressLine2": "Suite 200",
+  "city": "Dallas",
+  "stateProvince": "TX",
+  "zipCode": "75201",
+  "country": "United States",
+  "websiteUrl": "https://www.example.org"
+}</pre>
+
+    <h2>7. Sample PATCH — tenant settings (no identity fields)</h2>
+    <pre>PATCH /api/tenant-settings/7
+Content-Type: application/merge-patch+json
+
+{
+  "id": 7,
+  "email": "info@example.org",
+  "phoneNumber": "+1-555-0100",
+  "showEventsSectionInHomePage": true
+}</pre>
+
+    <h2>8. Implementation checklist</h2>
+    <ul>
+        <li>Run migration <code>001_tenant_org_address_description.sql</code>.</li>
+        <li>Add identity columns to <code>TenantOrganization</code> entity + mapper + DTO.</li>
+        <li>Do <strong>not</strong> add identity columns to <code>TenantSettings</code> entity in v2.0.</li>
+        <li>Reject PATCH of deprecated settings identity fields (or document ignore policy).</li>
+        <li>Mark deprecated settings fields in OpenAPI.</li>
+        <li>Integration tests: org create/update with full address; settings PATCH without address succeeds; settings PATCH with address returns 400.</li>
+        <li>Verify multi-tenant <code>tenantId</code> scoping unchanged.</li>
+    </ul>
+
+    <div class="info-box">
+        <strong>Proxy note (Next.js):</strong> Frontend writes identity via <code>/api/proxy/tenant-organizations</code> only. Settings proxy unchanged for operational fields.
+    </div>
+
+</body>
+</html>

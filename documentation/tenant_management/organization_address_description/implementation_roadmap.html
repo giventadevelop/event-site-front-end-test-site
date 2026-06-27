@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organization Address &amp; Description — Implementation Roadmap (v2.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        .phase { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 16px 20px; margin: 18px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Organization Address &amp; Description — Implementation Roadmap (v2.0)</h1>
+    <p class="doc-meta">
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a> &nbsp;|&nbsp;
+        <strong>Version:</strong> 2.0 &nbsp;|&nbsp; <strong>Date:</strong> June 17, 2026
+    </p>
+
+    <div class="warning-box">
+        <strong>Architecture:</strong> <code>tenant_organization</code> is the single write target for description, address, and website. <code>tenant_settings</code> identity columns are deprecated (read fallback until v2.1 DROP).
+    </div>
+
+    <h2>Phased delivery</h2>
+
+    <div class="phase">
+        <strong>Phase 1 — Database</strong>
+        <ul>
+            <li>Run <code>migrations/001_tenant_org_address_description.sql</code> (org columns + settings→org data migration + deprecate comments).</li>
+            <li>Update baseline <code>Latest_Schema_Post__Blob_Claude_12.sql</code> COMMENTs to match v2.0.</li>
+            <li>Verify on dev/staging: org has migrated data; settings columns still present.</li>
+            <li>Estimate: 0.5 day</li>
+        </ul>
+    </div>
+
+    <div class="phase">
+        <strong>Phase 2 — Backend API</strong>
+        <ul>
+            <li>Extend <code>TenantOrganization</code> entity/DTO/mapper/REST for identity fields.</li>
+            <li>Do <strong>not</strong> add new identity columns to <code>TenantSettings</code>.</li>
+            <li>Reject or ignore PATCH of deprecated settings identity fields (400 preferred).</li>
+            <li>OpenAPI: mark settings identity fields <code>deprecated</code>.</li>
+            <li>Integration tests: org PATCH; settings PATCH without address succeeds.</li>
+            <li>Deploy API before frontend v2.0 refactor.</li>
+            <li>Estimate: 1–2 days</li>
+        </ul>
+    </div>
+
+    <div class="phase">
+        <strong>Phase 3 — Frontend refactor</strong>
+        <ul>
+            <li>Add <code>src/lib/resolveTenantOrganizationIdentity.ts</code>.</li>
+            <li><code>TenantOrganizationForm</code>: full identity UI (write path).</li>
+            <li><code>TenantSettingsForm</code>: <strong>remove</strong> address/description/city; strip deprecated keys on submit.</li>
+            <li>Update org detail view; slim settings detail view.</li>
+            <li>Wire Footer/contact/about to resolved identity (org-first fallback).</li>
+            <li>Fix <code>organizations/new/page.tsx</code> initialData.</li>
+            <li>Estimate: 1–2 days</li>
+        </ul>
+    </div>
+
+    <div class="phase">
+        <strong>Phase 4 — QA &amp; UAT</strong>
+        <ul>
+            <li>Org CRUD with identity fields.</li>
+            <li>Settings CRUD without touching org identity.</li>
+            <li>Public footer: org data; legacy settings-only tenant shows fallback.</li>
+            <li>Regression: homepage toggles, social links, email/phone from settings unchanged.</li>
+            <li>Estimate: 0.5 day</li>
+        </ul>
+    </div>
+
+    <div class="phase">
+        <strong>Phase 5 — v2.1 cleanup (optional, after verification window)</strong>
+        <ul>
+            <li>Run <code>migrations/002_drop_deprecated_tenant_settings_identity_columns.sql</code>.</li>
+            <li>Remove deprecated fields from <code>TenantSettingsDTO</code> and read fallback (org-only reads).</li>
+            <li>Estimate: 0.5 day</li>
+        </ul>
+    </div>
+
+    <h2>Dependency order</h2>
+    <table>
+        <thead><tr><th>Step</th><th>Depends on</th></tr></thead>
+        <tbody>
+            <tr><td>Migration 001</td><td>—</td></tr>
+            <tr><td>Backend deploy</td><td>Phase 1</td></tr>
+            <tr><td>Frontend v2.0 deploy</td><td>Phase 2 API + migration 001 on target env</td></tr>
+            <tr><td>Migration 002 (DROP)</td><td>Production verified; no clients PATCH settings identity</td></tr>
+        </tbody>
+    </table>
+
+    <h2>v1.0 → v2.0 refactor checklist</h2>
+    <table>
+        <thead><tr><th>If v1.0 was implemented</th><th>v2.0 action</th></tr></thead>
+        <tbody>
+            <tr><td>Both forms edit address/description</td><td>Remove from settings form; keep on org form only</td></tr>
+            <tr><td>Settings PATCH sends address fields</td><td>Strip from payload; backend may 400</td></tr>
+            <tr><td>Footer reads settings address</td><td>Switch to <code>resolveTenantOrganizationIdentity</code></td></tr>
+            <tr><td>DTO identity on both types</td><td>Org = canonical; settings fields deprecated for read only</td></tr>
+        </tbody>
+    </table>
+
+    <h2>Rollout risk</h2>
+    <ul>
+        <li><strong>Low:</strong> Nullable columns; migration 001 copies settings→org without deleting settings data.</li>
+        <li><strong>Low:</strong> Read fallback preserves display until admins edit org record.</li>
+        <li><strong>Medium:</strong> Admins who only used settings form must use org form for address updates after v2.0 UI ships — mitigate with info callout on settings page.</li>
+    </ul>
+
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Implementation plan for admin manual refresh of homepage cache per tenant using cache-busting version approach. Covers frontend, backend, database, and optional batch job.">
+    <title>Homepage Cache Admin Refresh – Implementation Plan</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+            background-color: #fff;
+        }
+        h1 {
+            color: #1a1a1a;
+            font-size: 2.5em;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        h2 {
+            color: #0066cc;
+            font-size: 1.8em;
+            margin-top: 30px;
+            border-left: 4px solid #0066cc;
+            padding-left: 15px;
+        }
+        h3 { font-size: 1.4em; color: #333; margin-top: 25px; }
+        h4 { font-size: 1.2em; color: #555; margin-top: 20px; }
+        code, .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre, .code-block {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #b8d4e3;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        pre code { background-color: transparent; padding: 0; border: none; }
+        .info {
+            background-color: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .info code, .info .code-highlight, .warning code, .warning .code-highlight,
+        .success code, .success .code-highlight, .error code, .error .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+        .toc {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .toc ul { list-style-type: none; margin-left: 0; }
+        .toc li { margin-bottom: 8px; }
+        .toc a { color: #0066cc; text-decoration: none; }
+        .toc a:hover { text-decoration: underline; }
+        .section-container {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-container.parameters {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left-color: #ff9800;
+        }
+        .section-container.output {
+            background: linear-gradient(135deg, #e6ffe6 0%, #ccffcc 100%);
+            border-left-color: #28a745;
+        }
+        .section-container.usage {
+            background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%);
+            border-left-color: #9c27b0;
+        }
+        .section-header {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            padding: 12px 20px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 8px 8px 0 0;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .section-header.parameters { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); }
+        .section-header.output { background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%); }
+        .section-header.usage { background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%); }
+        .section-intro {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-intro code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+        }
+        .parameters-list {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left: 4px solid #ff9800;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .parameters-list strong { color: #ff9800; font-weight: bold; }
+        .parameters-list code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        tr:hover { background-color: #e3f2fd; transition: background-color 0.2s ease; }
+        td code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+        ul, ol { margin-left: 20px; }
+        li { margin-bottom: 8px; }
+        a { color: #0066cc; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        @media (max-width: 768px) { body { padding: 10px; } }
+    </style>
+</head>
+<body>
+    <h1>Homepage Cache Admin Refresh – Implementation Plan</h1>
+
+    <div class="section-intro">
+        <p>This document is the implementation plan for an <strong>admin page that manually refreshes the homepage cache per tenant</strong>. It uses the <strong>cache-busting version parameter</strong> approach described in the <a href="HOMEPAGE_EDGE_CACHE_GUIDELINE.html#manual-push-amplify">Homepage Edge Cache Guideline</a> (Option 1: no CloudFront API required). The plan covers frontend (Next.js admin page), backend (REST endpoint or PATCH extension), database (version storage), optional batch job (cache warming), and API contract. <strong>No code or config changes are made by this document</strong>—it is documentation only for developers to implement the feature.</p>
+    </div>
+
+    <div class="toc">
+        <h2>Table of Contents</h2>
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#frontend">Frontend</a></li>
+            <li><a href="#backend">Backend</a></li>
+            <li><a href="#database">Database</a></li>
+            <li><a href="#batch-job">Batch Job (Optional)</a></li>
+            <li><a href="#api-contract">API Contract</a></li>
+            <li><a href="#post-implementation">Post-Implementation Notes</a></li>
+            <li><a href="#references">References</a></li>
+        </ul>
+    </div>
+
+    <h2 id="overview">Overview</h2>
+    <div class="section-container">
+        <div class="section-header">Goal and approach</div>
+        <p><strong>Goal:</strong> Allow an admin to trigger a “refresh” of the homepage cache for a specific tenant so that the next request for the homepage payload uses a new cache key and fetches fresh content from the origin (cache-busting).</p>
+        <p><strong>Approach:</strong> Store a <strong>version</strong> per tenant (e.g. in <code class="code-highlight">tenant_settings</code> or a dedicated table). When the admin clicks “Refresh homepage cache” for a tenant, the backend bumps that version. The homepage-payload URL includes the version (e.g. <code class="code-highlight">?tenantId=X&amp;v=...</code>). Clients use the new version in the next request, so the CDN treats it as a new resource and serves fresh content. This matches <strong>Option 1: Cache-busting with a version parameter</strong> in <a href="HOMEPAGE_EDGE_CACHE_GUIDELINE.html#manual-push-amplify">HOMEPAGE_EDGE_CACHE_GUIDELINE.html</a>.</p>
+        <div class="parameters-list">
+            <p><strong>Project context</strong></p>
+            <ul>
+                <li><strong>Frontend:</strong> Current repo (mosc-temp) – Next.js 15, App Router, admin under <code>src/app/admin/</code>.</li>
+                <li><strong>Backend:</strong> E:\project_workspace\malayalees-us-site-boot – REST API; Swagger in <code>documentation/Swagger_API_Docs/api-docs.json</code>.</li>
+                <li><strong>Batch jobs:</strong> E:\project_workspace\event-site-manager-batch-jobs – optional cache warming.</li>
+                <li><strong>DB schema:</strong> <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code>.</li>
+            </ul>
+        </div>
+    </div>
+
+    <h2 id="frontend">Frontend</h2>
+    <div class="section-container usage">
+        <div class="section-header usage">Admin page and components</div>
+        <ul>
+            <li><strong>New admin page:</strong> Create <code class="code-highlight">src/app/admin/homepage-cache/page.tsx</code>. Server component that fetches the list of tenants (or current tenant) and passes data to a client component. Use layout <code class="code-highlight">max-w-5xl mx-auto px-8 py-8</code> and content card <code class="code-highlight">bg-white rounded-lg shadow-md p-6</code> per <code class="code-highlight">.cursor/rules/ui_style_guide.mdc</code>.</li>
+            <li><strong>Client component:</strong> Table or list of tenants with a “Refresh cache” button per row. On click: call a server action (e.g. <code class="code-highlight">refreshHomepageCacheServer(tenantId)</code>); show loading state; on success show a success message (and optionally the new version). Use admin action button styling per <code class="code-highlight">.cursor/rules/admin_action_buttons_styling.mdc</code> or <code class="code-highlight">.cursor/rules/icons_buttons_styles.mdc</code> (e.g. <code class="code-highlight">w-full flex-shrink-0 h-14 rounded-xl bg-blue-100 hover:bg-blue-200</code> with icon and label).</li>
+            <li><strong>Server action:</strong> New file <code class="code-highlight">src/app/admin/homepage-cache/ApiServerActions.ts</code>. Use <code class="code-highlight">fetchWithJwtRetry</code> from <code class="code-highlight">src/lib/proxyHandler.ts</code> to call the backend (or proxy). Do not call the backend from the client; all API calls must be server-side per <code class="code-highlight">.cursor/rules/nextjs_api_routes.mdc</code>.</li>
+            <li><strong>Proxy (if backend adds a new path):</strong> If the backend adds <code class="code-highlight">POST /api/homepage-cache/refresh</code>, add a proxy route e.g. <code class="code-highlight">src/pages/api/proxy/homepage-cache/[...slug].ts</code> using <code class="code-highlight">createProxyHandler</code> from <code class="code-highlight">src/lib/proxyHandler.ts</code>. The frontend server action then calls <code class="code-highlight">/api/proxy/homepage-cache/refresh</code> (or the proxy path that forwards to the backend).</li>
+            <li><strong>Admin Home link:</strong> Add a new tile in <code class="code-highlight">src/app/admin/page.tsx</code> for “Homepage cache” or “Refresh homepage cache” with a unique color. No duplicate colors within the admin button group per <code class="code-highlight">.cursor/rules/admin_home_button_groups_styling.mdc</code> (e.g. use a color not already used: sky, emerald, etc.).</li>
+        </ul>
+    </div>
+
+    <h2 id="backend">Backend</h2>
+    <div class="section-container parameters">
+        <div class="section-header parameters">Backend repo and endpoints</div>
+        <p><strong>Repo:</strong> E:\project_workspace\malayalees-us-site-boot.</p>
+        <p><strong>Option 1 – Extend tenant-settings PATCH:</strong> Add or extend PATCH for tenant-settings to support <code class="code-highlight">homepageCacheVersion</code> (or <code class="code-highlight">homepage_cache_version</code> per API schema). The frontend calls the existing tenant-settings proxy with a PATCH body that includes the bumped version; the backend persists and returns the updated resource. Reference <code class="code-highlight">documentation/Swagger_API_Docs/api-docs.json</code> for the current tenant-settings path and schema.</p>
+        <p><strong>Option 2 – New endpoint:</strong> Add e.g. <code class="code-highlight">POST /api/homepage-cache/refresh</code> with body <code class="code-highlight">{ "tenantId": "..." }</code>. Backend validates that the caller is an admin, loads <code class="code-highlight">tenant_settings</code> (or <code class="code-highlight">homepage_cache_meta</code>) for that tenant, increments or sets the version, saves, and returns 200 with the new version or 204.</p>
+        <p><strong>Auth and tenant isolation:</strong> Admin-only (same as tenant-settings update). Only allow refresh for tenants the user is allowed to manage; enforce tenant isolation so one tenant cannot bump another tenant’s version.</p>
+        <p><strong>Frontend integration:</strong> The frontend will call the backend via a proxy (e.g. <code class="code-highlight">/api/proxy/tenant-settings/{id}</code> for PATCH or <code class="code-highlight">/api/proxy/homepage-cache/refresh</code> for POST). All calls must be made from server actions using <code class="code-highlight">fetchWithJwtRetry</code>, not from the client.</p>
+    </div>
+
+    <h2 id="database">Database</h2>
+    <div class="section-container output">
+        <div class="section-header output">Schema changes</div>
+        <p><strong>Option A (recommended for simplicity):</strong> Add a column to the existing <code class="code-highlight">tenant_settings</code> table:</p>
+        <ul>
+            <li>Column: <code class="code-highlight">homepage_cache_version bigint DEFAULT 0 NOT NULL</code> (or <code class="code-highlight">varchar(32)</code> for a timestamp string, if preferred).</li>
+            <li>The backend must expose this in the tenant-settings DTO and allow PATCH to update it (or expose a dedicated “bump” endpoint that updates this column).</li>
+            <li>Schema file to update: <code class="code-highlight">code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code>. New columns may be added via ALTER in a migration; document the ALTER and ensure the canonical schema file is updated when the migration is applied.</li>
+        </ul>
+        <p><strong>Option B – New table:</strong> Create <code class="code-highlight">homepage_cache_meta</code> with <code class="code-highlight">id</code> (bigint, <code class="code-highlight">sequence_generator</code>), <code class="code-highlight">tenant_id</code> (varchar 255, FK to <code class="code-highlight">tenant_organization.tenant_id</code>), <code class="code-highlight">version</code> (bigint or varchar), <code class="code-highlight">updated_at</code> (timestamp). Follow <code class="code-highlight">.cursor/rules/database_schema_guidelines.mdc</code>: add DROP TABLE in reverse dependency order at the top of the schema file, CREATE TABLE in dependency order, and add the table to the <code class="code-highlight">sequence_generator</code> setval GREATEST block.</p>
+        <p><strong>Migrations:</strong> Document whether the backend (e.g. Flyway/Liquibase in malayalees-us-site-boot) runs migrations or a separate process applies schema changes.</p>
+    </div>
+
+    <h2 id="batch-job">Batch Job (Optional)</h2>
+    <div class="section-container">
+        <div class="section-header">Cache warming</div>
+        <p><strong>Repo:</strong> E:\project_workspace\event-site-manager-batch-jobs.</p>
+        <p>Optional job: Use EventBridge (or cron) to run every 3 days (or other interval). For each tenant, perform an HTTP GET to the homepage-payload URL (e.g. <code class="code-highlight">https://your-app-url/api/cached/homepage?tenantId=...</code>) or call the backend to generate the payload. This warms the edge cache so that user requests are served from the CDN. See the “Cache warming” section in <a href="HOMEPAGE_EDGE_CACHE_GUIDELINE.html#cache-warming">HOMEPAGE_EDGE_CACHE_GUIDELINE.html</a>.</p>
+    </div>
+
+    <h2 id="api-contract">API Contract</h2>
+    <div class="section-container parameters">
+        <div class="section-header parameters">Refresh and payload</div>
+        <p><strong>Refresh (bump version):</strong></p>
+        <ul>
+            <li>If using PATCH tenant-settings: <code class="code-highlight">PATCH /api/tenant-settings/{id}</code> with body <code class="code-highlight">{ "homepageCacheVersion": &lt;newValue&gt; }</code>. Backend returns 200 with updated resource.</li>
+            <li>If using dedicated endpoint: <code class="code-highlight">POST /api/homepage-cache/refresh</code> with body <code class="code-highlight">{ "tenantId": "tenant_demo_002" }</code>. Backend returns 200 with <code class="code-highlight">{ "version": &lt;newVersion&gt; }</code> or 204 No Content. On error: 400 (invalid tenant), 403 (not admin), 404 (tenant not found).</li>
+        </ul>
+        <p><strong>Homepage payload:</strong> The homepage-payload API (e.g. <code class="code-highlight">GET /api/cached/homepage?tenantId=X&amp;v=...</code>) must read the current version for the tenant (from <code class="code-highlight">tenant_settings</code> or <code class="code-highlight">homepage_cache_meta</code>) and include it in the response or in the cache key. Clients use the <code class="code-highlight">v</code> query parameter so that after an admin refresh, the next request uses a new <code class="code-highlight">v</code> and the CDN fetches fresh content.</p>
+    </div>
+
+    <h2 id="post-implementation">Post-Implementation Notes</h2>
+    <div class="section-container">
+        <div class="section-header">Client-side cache behavior and configuration</div>
+        <p>After implementing the admin refresh and env-prefixed cache keys, the following fixes were applied to improve behavior in local dev and to clarify configuration.</p>
+
+        <h3>1. Instant cache on refresh (useLayoutEffect)</h3>
+        <p><strong>Issue:</strong> In local dev, the loading image and section delays were still visible even after the first load and a browser refresh. Cached data was only read in <code class="code-highlight">useEffect</code>, which runs after the first paint, so the loading image appeared for at least one frame and sections waited for their deferred timers (300ms, 800ms, 1500ms) before checking cache.</p>
+        <p><strong>Fix:</strong></p>
+        <ul>
+            <li><strong>TenantSettingsProvider</strong> – Added a <code class="code-highlight">useLayoutEffect</code> that runs before paint and performs a synchronous read of the tenant-settings cache. When the cache is warm, it sets <code class="code-highlight">settings</code> and <code class="code-highlight">loading = false</code> in that layout effect, so the loading image is never shown.</li>
+            <li><strong>TeamSection, UpcomingEventsSection, OurSponsorsSection, FeaturedEventsSection</strong> – Added a <code class="code-highlight">useLayoutEffect</code> in each that runs before paint and performs a synchronous read of their sessionStorage cache. When cache is warm, each sets its data and <code class="code-highlight">loading = false</code> (or <code class="code-highlight">isVisible = true</code> for Featured) in that layout effect, so sections render immediately without waiting for the deferred delays.</li>
+            <li><strong>Hero section (HeroSection / DynamicHeroImage)</strong> – Added <code class="code-highlight">homepage_hero_section_cache</code> to <code class="code-highlight">src/lib/homepageCacheKeys.ts</code> and a <code class="code-highlight">useLayoutEffect</code> in the hero component that reads cached <code class="code-highlight">dynamicImages</code>, <code class="code-highlight">upcomingEvents</code>, and <code class="code-highlight">imageDurations</code> before paint. When cache is warm, hero images and rotation show immediately on refresh. After hero data is initialized (from <code class="code-highlight">useFilteredEvents('hero')</code> plus standalone hero media fetch), the component writes the same payload to sessionStorage. Hero image rotation logic and data sources are documented in <code class="code-highlight">.cursor/rules/hero_section_image_rotation.mdc</code>.</li>
+        </ul>
+        <p><strong>Result:</strong> On refresh or repeat visit (cache warm), the loading image does not appear and Events, Featured Events, Team, Sponsors, and <strong>Hero section (rotating images and overlay)</strong> show content immediately. Cold first load is unchanged (deferred fetch and optional loading UI).</p>
+
+        <h3>2. NEXT_PUBLIC_APP_ENV values</h3>
+        <p><strong>Question:</strong> Does <code class="code-highlight">NEXT_PUBLIC_APP_ENV</code> have to be exactly <code class="code-highlight">local</code> | <code class="code-highlight">development</code> | <code class="code-highlight">staging</code> | <code class="code-highlight">production</code>?</p>
+        <p><strong>Answer:</strong> No. The code does not validate the value; it uses whatever string is set (or <code class="code-highlight">'local'</code> when unset) as the cache key prefix in <code class="code-highlight">src/lib/homepageCacheKeys.ts</code>. The four values above are a <strong>convention</strong>, not a strict allowlist.</p>
+        <div class="parameters-list">
+            <p><strong>Rules:</strong></p>
+            <ul>
+                <li><strong>Different environments → different values:</strong> Use a different value per deployment (e.g. dev vs prod) so cache namespaces do not collide.</li>
+                <li><strong>Same environment → same value:</strong> Use the same value for all builds of that environment so they share the same cache namespace.</li>
+                <li><strong>Unset:</strong> If the variable is not set, the prefix is <code class="code-highlight">'local'</code>; all such deployments share the same “local” cache.</li>
+            </ul>
+        </div>
+        <p>You may use other names (e.g. <code class="code-highlight">dev</code>, <code class="code-highlight">prod</code>, <code class="code-highlight">test</code>, <code class="code-highlight">uat</code>, <code class="code-highlight">preview</code>, or branch names) as long as they are consistent per environment.</p>
+    </div>
+
+    <h2 id="references">References</h2>
+    <div class="section-container">
+        <div class="section-header">Documentation and rules</div>
+        <ul>
+            <li><strong>Homepage Edge Cache Guideline:</strong> <a href="HOMEPAGE_EDGE_CACHE_GUIDELINE.html">HOMEPAGE_EDGE_CACHE_GUIDELINE.html</a> – cache-busting option, manual push, Amplify vs S3+CloudFront.</li>
+            <li><strong>Hero section image rotation:</strong> <code class="code-highlight">.cursor/rules/hero_section_image_rotation.mdc</code> – hero image rotation logic, event/standalone selection, overlay, and per-image duration; hero data is cached under <code class="code-highlight">homepage_hero_section_cache</code>.</li>
+            <li><strong>Next.js API routes:</strong> <code class="code-highlight">.cursor/rules/nextjs_api_routes.mdc</code> – server actions, fetchWithJwtRetry, proxy pattern, no client-side API calls.</li>
+            <li><strong>UI style guide:</strong> <code class="code-highlight">.cursor/rules/ui_style_guide.mdc</code> – page container, content card, forms, labels.</li>
+            <li><strong>Admin home button groups:</strong> <code class="code-highlight">.cursor/rules/admin_home_button_groups_styling.mdc</code> – grid layout, unique colors, card-style buttons.</li>
+            <li><strong>Admin action buttons:</strong> <code class="code-highlight">.cursor/rules/admin_action_buttons_styling.mdc</code> – full-width action button styling.</li>
+            <li><strong>API schema:</strong> <code class="code-highlight">documentation/Swagger_API_Docs/api-docs.json</code> – tenant-settings and other REST endpoints.</li>
+            <li><strong>Database schema:</strong> <code class="code-highlight">code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code> – canonical schema; <code class="code-highlight">.cursor/rules/database_schema_guidelines.mdc</code> – new tables, sequence_generator.</li>
+        </ul>
+    </div>
+</body>
+</html>

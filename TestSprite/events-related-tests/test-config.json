@@ -1,0 +1,189 @@
+{
+  "testSuite": "admin-events-management",
+  "projectName": "malayalees-us-site",
+  "baseUrl": "http://localhost:3000",
+  "testScope": "admin-events-functionality",
+  "authentication": {
+    "required": true,
+    "type": "clerk-social-login",
+    "role": "admin"
+  },
+  "testCategories": [
+    {
+      "category": "core-functionality",
+      "priority": "high",
+      "tests": [
+        {
+          "id": "AE001",
+          "name": "Admin Events Analytics Dashboard",
+          "url": "/admin/events",
+          "type": "page-load",
+          "selectors": ["h1", ".bg-teal-50", ".bg-indigo-50"],
+          "expectedElements": ["Event Analytics Dashboard", "navigation cards"],
+          "timeout": 5000
+        },
+        {
+          "id": "AE002",
+          "name": "Event Overview Page",
+          "url": "/admin/events/1",
+          "type": "navigation",
+          "selectors": ["h1", "a[href*='/edit']", "a[href*='/media']"],
+          "expectedElements": ["Event Overview", "management buttons"],
+          "timeout": 5000
+        },
+        {
+          "id": "AE003",
+          "name": "Event Edit Form",
+          "url": "/admin/events/1/edit",
+          "type": "form",
+          "selectors": ["input[name='title']", "input[name='startDate']", "button[type='submit']"],
+          "expectedElements": ["edit form", "save button"],
+          "timeout": 5000
+        }
+      ]
+    },
+    {
+      "category": "crud-operations",
+      "priority": "high",
+      "tests": [
+        {
+          "id": "AE004",
+          "name": "Ticket Types CRUD",
+          "url": "/admin/events/1/ticket-types/list",
+          "type": "crud",
+          "actions": ["create", "read", "update", "delete"],
+          "selectors": ["table", "button:has-text('Add Ticket Type')", ".data-table"],
+          "timeout": 10000
+        },
+        {
+          "id": "AE005",
+          "name": "Performers CRUD",
+          "url": "/admin/events/1/performers",
+          "type": "crud",
+          "actions": ["create", "read", "update", "delete"],
+          "selectors": ["table", "button:has-text('Add Performer')", ".data-table"],
+          "timeout": 10000
+        },
+        {
+          "id": "AE006",
+          "name": "Sponsors CRUD",
+          "url": "/admin/events/1/sponsors",
+          "type": "crud",
+          "actions": ["assign", "edit", "remove"],
+          "selectors": ["table", "button:has-text('Assign Sponsor')", ".data-table"],
+          "timeout": 10000
+        },
+        {
+          "id": "AE007",
+          "name": "Contacts CRUD",
+          "url": "/admin/events/1/contacts",
+          "type": "crud",
+          "actions": ["create", "read", "update", "delete"],
+          "selectors": ["table", "button:has-text('Add Contact')", ".data-table"],
+          "timeout": 10000
+        }
+      ]
+    },
+    {
+      "category": "media-management",
+      "priority": "medium",
+      "tests": [
+        {
+          "id": "AE008",
+          "name": "Event Media Management",
+          "url": "/admin/events/1/media",
+          "type": "file-management",
+          "selectors": ["input[type='file']", ".media-grid", "button:has-text('Upload')"],
+          "expectedElements": ["media upload", "media grid"],
+          "timeout": 10000
+        }
+      ]
+    },
+    {
+      "category": "registration-management",
+      "priority": "high",
+      "tests": [
+        {
+          "id": "AE009",
+          "name": "Event Registration Management",
+          "url": "/admin/events/registrations",
+          "type": "data-management",
+          "selectors": ["table", "input[type='search']", ".pagination"],
+          "expectedElements": ["registration table", "search functionality"],
+          "timeout": 10000
+        }
+      ]
+    },
+    {
+      "category": "analytics-reporting",
+      "priority": "medium",
+      "tests": [
+        {
+          "id": "AE010",
+          "name": "Event Dashboard Analytics",
+          "url": "/admin/events/dashboard",
+          "type": "analytics",
+          "selectors": [".chart-container", ".analytics-card", ".metrics-display"],
+          "expectedElements": ["analytics charts", "metrics cards"],
+          "timeout": 10000
+        },
+        {
+          "id": "AE011",
+          "name": "Event Reports Generation",
+          "url": "/admin/events/reports",
+          "type": "reporting",
+          "selectors": ["button:has-text('Generate Report')", ".report-filters"],
+          "expectedElements": ["report generation", "filter options"],
+          "timeout": 15000
+        }
+      ]
+    }
+  ],
+  "testData": {
+    "sampleEvent": {
+      "id": 1,
+      "title": "Test Event for TestSprite",
+      "startDate": "2025-12-25",
+      "endDate": "2025-12-25",
+      "startTime": "18:00",
+      "endTime": "22:00",
+      "timezone": "America/New_York",
+      "location": "Test Venue",
+      "description": "Sample event for automated testing"
+    },
+    "sampleTicketType": {
+      "name": "General Admission",
+      "price": 25.00,
+      "availableQuantity": 100,
+      "description": "Standard event ticket"
+    },
+    "samplePerformer": {
+      "name": "Test Artist",
+      "stageName": "TestSprite Performer",
+      "role": "Singer",
+      "email": "performer@test.com",
+      "bio": "Test performer for automation testing"
+    },
+    "sampleContact": {
+      "name": "Test Contact",
+      "phone": "+1-555-0123",
+      "email": "contact@test.com"
+    }
+  },
+  "environment": {
+    "nodeVersion": "18+",
+    "browser": "chromium",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "headless": false,
+    "slowMo": 100
+  },
+  "reporting": {
+    "outputFormat": ["json", "html", "markdown"],
+    "includeScreenshots": true,
+    "includeNetworkLogs": true,
+    "includeConsoleErrors": true
+  }
+}

@@ -1,0 +1,100 @@
+---
+description: Database schema guidelines for PostgreSQL tables in this system; follow the conventions in the canonical schema file.
+globs: code_html_template/SQLS/**/*.sql, **/migrations/**/*.sql
+alwaysApply: false
+---
+
+# Database Schema Guidelines
+
+This rule defines the standard patterns for adding or modifying PostgreSQL tables in this project. The **canonical reference** is [Latest_Schema_Post__Blob_Claude_12.sql](mdc:code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql).
+
+## **ID and Primary Key**
+
+- **Primary key column:** Always name the column `id`.
+- **Type:** Use `bigint` (or `int8`) for all application table primary keys.
+- **Per-table sequence:** Each application table owns `public.{table_name}_id_seq` (not a shared `sequence_generator`).
+- **Definition:**
+  ```sql
+  CREATE SEQUENCE IF NOT EXISTS public.my_table_id_seq INCREMENT BY 1 ...;
+
+  id bigint DEFAULT nextval('public.my_table_id_seq'::regclass) NOT NULL,
+  CONSTRAINT my_table_pkey PRIMARY KEY (id)
+  ```
+- **Rationale:** Per-table sequences prevent cross-table ID inflation (e.g. executive committee ids no longer follow `event_media` max).
+
+## **Multi-Tenancy**
+
+- **Tenant column:** Include `tenant_id` on all tenant-scoped tables.
+- **Type:** `character varying(255)` or `varchar(255)`; allow `NULL` only when the table is global (e.g. `databasechangelog`).
+- **Unique constraints:** When a business key is unique per tenant, use a unique constraint on `(tenant_id, <other_columns>)`.
+
+## **Timestamps**
+
+- **Created/Updated:** Use `created_at` and `updated_at` for audit timestamps.
+- **Type:** `timestamp without time zone DEFAULT now() NOT NULL` (or `timestamp DEFAULT now() NOT NULL`).
+- **Trigger:** For tables that need automatic `updated_at` on row update, add a trigger that calls `public.update_updated_at_column()`.
+
+## **Adding New Tables to the Schema File**
+
+- **Do not use ALTER statements** to add new tables in the canonical schema file. Use **CREATE TABLE** only.
+- **DROP order at top:** Add `DROP TABLE IF EXISTS public.<table_name> CASCADE;` in reverse dependency order.
+- **CREATE order:** Create parent tables before children.
+- **Sequence:** Add `CREATE SEQUENCE IF NOT EXISTS public.<table>_id_seq` in the per-table sequences block and `DEFAULT nextval('public.<table>_id_seq'::regclass)` on `id`.
+- **End-of-file setval:** Add per-table `setval` for the new sequence, or run `sync_all_table_sequences.sql` after import.
+- **Tooling:** Run `generate_per_table_sequences.cjs` to validate schema + Java entity alignment.
+
+## **Per-Table Sequence Rules (Mandatory)**
+
+- **Sequence increment:** `INCREMENT BY 1` on every `{table}_id_seq`.
+- **Hibernate alignment:** Unique `@SequenceGenerator` name per entity; `sequenceName = "public.{table}_id_seq"`, `allocationSize = 1`.
+  ```java
+  @SequenceGenerator(
+      name = "myTableSeq",
+      sequenceName = "public.my_table_id_seq",
+      allocationSize = 1
+  )
+  ```
+- **Dev workflow after seed data:**
+  1. `Latest_Schema_Post__Blob_Claude_12.sql`
+  2. `corrected_event_media_inserts.ordered.sql` (or renumbered)
+  3. `sync_all_table_sequences.sql` (step 7) + `sync_spring_batch_sequences.sql` (step 7b)
+- **Spring Batch framework sequences** (`batch_job_seq`, etc.) are separate — use `sync_spring_batch_sequences.sql` only.
+
+- **Required post-import pattern (per table):**
+  ```sql
+  SELECT pg_catalog.setval(
+      'public.my_table_id_seq',
+      GREATEST(COALESCE((SELECT MAX(id) FROM public.my_table), 0), 1),
+      true
+  );
+  ```
+- **Deprecated:** `public.sequence_generator`, `sync_sequence_after_inserts.sql`, global GREATEST across all tables.
+
+## **Foreign Keys**
+
+- **Naming:** `CONSTRAINT fk_<short_name> FOREIGN KEY (column_id) REFERENCES public.<parent_table>(id) ON DELETE SET NULL` (or `ON DELETE CASCADE` where appropriate).
+- **Column type:** Use `bigint` for foreign key columns referencing `id`.
+
+## **Naming Conventions**
+
+- **Tables:** `snake_case` (e.g. `news_article`, `news_section_display_config`).
+- **Sequences:** `{table_name}_id_seq` (exceptions documented in schema: `discount_code_id_seq`, etc.).
+- **Columns:** `snake_case`.
+- **Constraints:** `tablename_pkey` for primary key; `ux_*` or `uq_*` for unique; `fk_*` for foreign key.
+
+## **Reference Implementation**
+
+- **Schema file:** [code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql](mdc:code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql)
+- **Sync script:** [sync_all_table_sequences.sql](mdc:code_html_template/SQLS/Current_Sqls/sync_all_table_sequences.sql)
+- **Generator:** [generate_per_table_sequences.cjs](mdc:code_html_template/SQLS/sequence_fix_inserts/generate_per_table_sequences.cjs)
+
+## **Summary Checklist for New Tables**
+
+- [ ] `CREATE SEQUENCE public.<table>_id_seq INCREMENT BY 1`
+- [ ] `id bigint DEFAULT nextval('public.<table>_id_seq'::regclass) NOT NULL` and `PRIMARY KEY (id)`
+- [ ] `tenant_id` (if tenant-scoped)
+- [ ] `created_at` / `updated_at` where applicable
+- [ ] DROP/CREATE in correct dependency order
+- [ ] Table added to `sync_all_table_sequences.sql` (or regenerate script)
+- [ ] Java entity with unique `@SequenceGenerator` matching sequence name
+- [ ] `allocationSize = 1` on all application entities

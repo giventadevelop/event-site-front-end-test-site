@@ -1,0 +1,279 @@
+{
+  "meta": {
+    "projectName": "nextjs-template",
+    "version": "1.5.0",
+    "source": ".task-master/PRD.md",
+    "description": "Tasks generated from PRD",
+    "totalTasksGenerated": 20,
+    "tasksIncluded": 20
+  },
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Create calendar page route",
+      "description": "Set up the basic calendar page route at /calendar with server component structure.",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "details": "- Create `/app/calendar/page.tsx` as a server component\n- Set up initial layout structure\n- Add `/calendar(.*)` to middleware publicRoutes\n- Verify page loads without authentication\n- Create basic metadata for SEO",
+      "testStrategy": "Verify that the page loads correctly at /calendar and does not require authentication."
+    },
+    {
+      "id": 2,
+      "title": "Set up API server actions",
+      "description": "Create ApiServerActions.ts with server-side API calls using fetchWithJwtRetry pattern.",
+      "status": "pending",
+      "dependencies": [
+        1
+      ],
+      "priority": "high",
+      "details": "- Create `ApiServerActions.ts` with 'use server' directive\n- Implement `fetchEventsForMonthServer` function using fetchWithJwtRetry\n- Add error handling with graceful fallbacks\n- Set up query parameters for the event-details endpoint\n- Test with real API calls to ensure data is returned correctly",
+      "testStrategy": "Test API calls with various date ranges and verify data is returned correctly with proper error handling."
+    },
+    {
+      "id": 3,
+      "title": "Install and set up calendar library",
+      "description": "Select and integrate a calendar library (react-big-calendar recommended) with basic configuration.",
+      "status": "pending",
+      "dependencies": [
+        1
+      ],
+      "priority": "high",
+      "details": "- Install react-big-calendar and dependencies\n- Install date-fns and date-fns-tz for timezone handling\n- Create basic calendar component with month view\n- Set up stylesheet integration with Tailwind\n- Create basic event rendering component",
+      "testStrategy": "Verify calendar renders correctly with basic styling and can display sample events."
+    },
+    {
+      "id": 4,
+      "title": "Implement CalendarClient component",
+      "description": "Create client-side calendar component that manages state and renders the appropriate view.",
+      "status": "pending",
+      "dependencies": [
+        2,
+        3
+      ],
+      "priority": "high",
+      "details": "- Create CalendarClient.tsx as a client component\n- Set up state for current year/month/view\n- Implement useEffect to fetch events when date changes\n- Add loading states\n- Create basic layout with calendar container\n- Implement error handling for failed API calls",
+      "testStrategy": "Test that the component renders correctly and fetches data when dates change. Verify error states display correctly."
+    },
+    {
+      "id": 5,
+      "title": "Implement Month View",
+      "description": "Create the primary month view calendar with event display and interaction.",
+      "status": "pending",
+      "dependencies": [
+        4
+      ],
+      "priority": "high",
+      "details": "- Create MonthView.tsx component\n- Implement standard calendar grid (7 columns, 5-6 rows)\n- Highlight current day\n- Display events on correct dates\n- Handle multiple events per day\n- Implement truncation for event titles\n- Style according to design requirements",
+      "testStrategy": "Verify month view displays correctly with events on the right dates. Test with various month data to ensure grid adapts correctly."
+    },
+    {
+      "id": 6,
+      "title": "Implement Week View",
+      "description": "Create week view with hourly time slots and event positioning.",
+      "status": "pending",
+      "dependencies": [
+        4
+      ],
+      "priority": "medium",
+      "details": "- Create WeekView.tsx component\n- Implement 7-day view with hourly slots\n- Position events by time\n- Handle multiple events in same time slot\n- Add hour markers\n- Style according to design requirements",
+      "testStrategy": "Test week view with various events to ensure proper positioning and display of overlapping events."
+    },
+    {
+      "id": 7,
+      "title": "Implement Day View",
+      "description": "Create detailed day view with hourly breakdown and event details.",
+      "status": "pending",
+      "dependencies": [
+        4
+      ],
+      "priority": "medium",
+      "details": "- Create DayView.tsx component\n- Implement single day view with hourly slots\n- Show all-day events at top\n- Position events by time with duration\n- Display detailed event information\n- Style according to design requirements",
+      "testStrategy": "Test day view with various events including all-day events to ensure proper display and positioning."
+    },
+    {
+      "id": 8,
+      "title": "Implement View Switcher",
+      "description": "Create tabs to switch between Month, Week, and Day views while maintaining selected date.",
+      "status": "pending",
+      "dependencies": [
+        5,
+        6,
+        7
+      ],
+      "priority": "medium",
+      "details": "- Create ViewSwitcher.tsx component\n- Implement Month/Week/Day tabs\n- Maintain selected date when switching views\n- Style according to design requirements\n- Add active state for current view",
+      "testStrategy": "Test switching between views and verify that the selected date is maintained."
+    },
+    {
+      "id": 9,
+      "title": "Implement Navigation Controls",
+      "description": "Add controls to navigate between time periods (prev/next/today).",
+      "status": "pending",
+      "dependencies": [
+        4
+      ],
+      "priority": "high",
+      "details": "- Create navigation buttons (Previous/Next/Today)\n- Implement handlers for navigation in all views\n- Add month/year picker for quick jump\n- Ensure smooth transitions between periods\n- Add keyboard navigation support",
+      "testStrategy": "Test navigation controls in all views to ensure they correctly update the displayed time period."
+    },
+    {
+      "id": 10,
+      "title": "Create Event Modal",
+      "description": "Implement modal to display event details when an event is clicked.",
+      "status": "pending",
+      "dependencies": [
+        5
+      ],
+      "priority": "high",
+      "details": "- Create EventModal.tsx using React Portal\n- Implement sticky close button\n- Display complete event information\n- Add links to full event page and ticket purchase\n- Add 'Add to Calendar' export option\n- Position modal relative to clicked event\n- Ensure modal stays within viewport\n- Close on X, ESC key, or outside click",
+      "testStrategy": "Test modal opening/closing and verify all event details display correctly. Test positioning with events in different parts of the calendar."
+    },
+    {
+      "id": 11,
+      "title": "Implement Event Filtering",
+      "description": "Add filters for events by category, location, and ticket availability.",
+      "status": "pending",
+      "dependencies": [
+        4
+      ],
+      "priority": "medium",
+      "details": "- Create CalendarFilters.tsx component\n- Implement filter dropdowns (category, location, type)\n- Add filter state to CalendarClient\n- Update API calls with filter parameters\n- Add 'Clear Filters' button\n- Show active filters\n- Persist filter state during navigation",
+      "testStrategy": "Test applying various filters and verify that only matching events are displayed. Test clearing filters and verify all events return."
+    },
+    {
+      "id": 12,
+      "title": "Implement Search Functionality",
+      "description": "Add search bar to find events by title, description, or location.",
+      "status": "pending",
+      "dependencies": [
+        4
+      ],
+      "priority": "medium",
+      "details": "- Create CalendarSearch.tsx component\n- Implement real-time search as user types\n- Search event titles, descriptions, and locations\n- Show search results count\n- Highlight matching events\n- Add clear search button\n- Debounce search input (300ms)",
+      "testStrategy": "Test searching for various terms and verify that only matching events are displayed. Test clearing search and verify all events return."
+    },
+    {
+      "id": 13,
+      "title": "Implement Calendar Pagination",
+      "description": "Add always-visible pagination controls for navigating through large event datasets.",
+      "status": "pending",
+      "dependencies": [
+        4
+      ],
+      "priority": "medium",
+      "details": "- Create CalendarPagination.tsx component\n- Implement Previous/Next/Page status pattern\n- Use x-total-count header from API\n- Show 'Showing X to Y of Z events'\n- Gray out buttons when navigation not possible\n- Ensure pagination is always visible (never conditionally hidden)",
+      "testStrategy": "Test pagination with various dataset sizes and verify that navigation works correctly. Verify pagination is visible in all states (loading, empty, with data)."
+    },
+    {
+      "id": 14,
+      "title": "Implement Calendar Export",
+      "description": "Add functionality to export events to external calendars in iCal format.",
+      "status": "pending",
+      "dependencies": [
+        10
+      ],
+      "priority": "low",
+      "details": "- Implement single event export to iCal\n- Add export for all events in a month\n- Add export for filtered/searched events\n- Generate valid .ics file format\n- Include all event details (title, description, date, time, location)\n- Test with popular calendar applications",
+      "testStrategy": "Test exporting single and multiple events and verify that the generated .ics files can be imported into Google Calendar, Apple Calendar, and Outlook."
+    },
+    {
+      "id": 15,
+      "title": "Implement Timezone-Aware Date Handling",
+      "description": "Ensure all event dates display correctly in their intended timezone to prevent off-by-one-day errors.",
+      "status": "pending",
+      "dependencies": [
+        4
+      ],
+      "priority": "high",
+      "details": "- Use date-fns-tz for timezone-aware formatting\n- Implement transformToCalendarEvents function\n- Format dates with event's intended timezone\n- Show timezone abbreviation (EDT, PST, etc.)\n- Avoid using new Date('YYYY-MM-DD') directly\n- Always use formatInTimeZone for display",
+      "testStrategy": "Test with events in various timezones and verify that dates display correctly without off-by-one-day errors."
+    },
+    {
+      "id": 16,
+      "title": "Implement Responsive Mobile Design",
+      "description": "Ensure calendar works well on all screen sizes with touch-friendly controls.",
+      "status": "pending",
+      "dependencies": [
+        5,
+        6,
+        7
+      ],
+      "priority": "high",
+      "details": "- Implement responsive layouts for all views\n- Create mobile-specific list view for small screens\n- Add touch-friendly controls (44px+ tap targets)\n- Implement swipe gestures for navigation\n- Test on various screen sizes (320px+)\n- Ensure no horizontal scrolling required\n- Optimize performance for mobile",
+      "testStrategy": "Test on various device sizes and verify that the calendar is usable and displays correctly. Test touch interactions on mobile devices."
+    },
+    {
+      "id": 17,
+      "title": "Implement Loading States and Error Handling",
+      "description": "Add loading indicators and comprehensive error handling for all API interactions.",
+      "status": "pending",
+      "dependencies": [
+        4
+      ],
+      "priority": "medium",
+      "details": "- Add skeleton loading states for calendar\n- Implement error messages with retry options\n- Add fallback to cached data when API fails\n- Create 'No events found' state\n- Handle network timeouts\n- Log errors for monitoring",
+      "testStrategy": "Test various error scenarios (API failure, network timeout, empty results) and verify that appropriate messages are displayed with recovery options."
+    },
+    {
+      "id": 18,
+      "title": "Implement Performance Optimization",
+      "description": "Optimize calendar performance for large datasets and slow networks.",
+      "status": "pending",
+      "dependencies": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "priority": "medium",
+      "details": "- Implement client-side caching of fetched events\n- Add debouncing for search and filters\n- Optimize event rendering for large datasets\n- Implement code splitting for calendar views\n- Add lazy loading for event images\n- Optimize bundle size",
+      "testStrategy": "Test with large datasets (100+ events) and verify that the calendar remains responsive. Test on slow network connections to ensure reasonable load times."
+    },
+    {
+      "id": 19,
+      "title": "Implement Accessibility Features",
+      "description": "Ensure calendar is accessible according to WCAG 2.1 AA standards.",
+      "status": "pending",
+      "dependencies": [
+        5,
+        6,
+        7,
+        10
+      ],
+      "priority": "medium",
+      "details": "- Add sufficient color contrast (4.5:1 for text)\n- Implement keyboard navigation\n- Add screen reader compatibility\n- Add focus indicators\n- Implement ARIA labels for interactive elements\n- Use semantic HTML structure",
+      "testStrategy": "Test with keyboard navigation and screen readers to verify that all calendar features are accessible. Check color contrast with accessibility tools."
+    },
+    {
+      "id": 20,
+      "title": "Final Integration and Testing",
+      "description": "Perform comprehensive testing and finalize integration with the rest of the application.",
+      "status": "pending",
+      "dependencies": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "priority": "high",
+      "details": "- Perform cross-browser testing\n- Verify mobile responsiveness\n- Test all user flows and interactions\n- Verify API integration\n- Check performance metrics\n- Fix critical bugs\n- Prepare for production deployment",
+      "testStrategy": "Execute all test cases defined in the PRD Appendix D. Verify that all acceptance criteria are met for each feature."
+    }
+  ]
+}

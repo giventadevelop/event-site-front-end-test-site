@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Changes: Stripe Fees, Tax, and Net Revenue</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+        }
+        .code-block {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 15px 0;
+        }
+        .file-path {
+            font-family: 'Courier New', monospace;
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #d63384;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .recommendation {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Frontend Changes: Stripe Fees, Tax, and Net Revenue</h1>
+        <p><strong>Document Date:</strong> January 11, 2026</p>
+        <p><strong>Project Location:</strong> Current workspace (mosc-temp)</p>
+        <p><strong>Purpose:</strong> Detailed implementation guide for frontend changes to fix purchase flow calculations, enhance analytics, and update batch job trigger UI.</p>
+
+        <div class="info-box">
+            <h2>Overview</h2>
+            <p>This document details all frontend changes required to:</p>
+            <ol>
+                <li>Fix purchase flow calculations (total_amount vs final_amount)</li>
+                <li>Update sales analytics to display net payout and organizer revenue</li>
+                <li>Update batch job trigger UI to support eventId parameter</li>
+                <li>Add net revenue metrics to analytics dashboard</li>
+            </ol>
+        </div>
+
+        <h2>1. Fix Purchase Flow Calculations</h2>
+
+        <h3>1.1 Problem Statement</h3>
+        <div class="warning-box">
+            <p><strong>Issue:</strong> <span class="file-path">total_amount</span> and <span class="file-path">final_amount</span> are being set to the same value during ticket purchase, indicating calculations are not being properly applied.</p>
+            <p><strong>Expected Behavior:</strong></p>
+            <ul>
+                <li><span class="file-path">total_amount</span> = Sum of base ticket prices (before discounts, fees, taxes)</li>
+                <li><span class="file-path">final_amount</span> = total_amount - discount_amount + platform_fee_amount + tax_amount</li>
+            </ul>
+        </div>
+
+        <h3>1.2 Files to Modify</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>File Path</th>
+                    <th>Purpose</th>
+                    <th>Changes Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="file-path">src/app/event/success/ApiServerActions.ts</span></td>
+                    <td>Processes Stripe session and creates transaction</td>
+                    <td>Fix calculation logic for total_amount and final_amount</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">src/app/events/[id]/checkout/page.tsx</span></td>
+                    <td>Checkout page where calculations occur</td>
+                    <td>Verify calculation logic is correct</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>1.3 Implementation Details</h3>
+
+        <h4>File: <span class="file-path">src/app/event/success/ApiServerActions.ts</span></h4>
+        <p><strong>Function:</strong> <code>processStripeSessionServer()</code></p>
+        <p><strong>Current Issue:</strong> Both total_amount and final_amount are set to the same value.</p>
+
+        <div class="code-block">
+// ✅ CORRECT Calculation Logic (to implement)
+export async function processStripeSessionServer(
+  sessionId: string,
+  // ... other parameters
+): Promise&lt;{ transaction: any, userProfile: any, attendee: any } | null&gt; {
+  // ... existing code ...
+
+  // Step 1: Calculate total_amount (base ticket prices)
+  let totalAmount = 0;
+  for (const item of lineItems) {
+    const ticketType = ticketTypes.find(tt => tt.id === item.ticketTypeId);
+    if (ticketType) {
+      totalAmount += (ticketType.pricePerUnit || 0) * item.quantity;
+    }
+  }
+
+  // Step 2: Calculate discount_amount (if discount code applied)
+  let discountAmount = 0;
+  if (discountCode) {
+    // Calculate discount based on discount code type
+    if (discountCode.discountType === 'PERCENTAGE') {
+      discountAmount = (totalAmount * discountCode.discountValue) / 100;
+    } else if (discountCode.discountType === 'FIXED') {
+      discountAmount = discountCode.discountValue;
+    }
+    // Ensure discount doesn't exceed total amount
+    discountAmount = Math.min(discountAmount, totalAmount);
+  }
+
+  // Step 3: Calculate platform_fee_amount (from tenant settings)
+  const platformFeePercentage = tenantSettings?.platformFeePercentage || 0;
+  const amountAfterDiscount = totalAmount - discountAmount;
+  const platformFeeAmount = Number(((amountAfterDiscount * platformFeePercentage) / 100).toFixed(2));
+
+  // Step 4: Calculate tax_amount (if tax is applicable)
+  // Note: If using Stripe Tax, tax is included in Stripe amount, not calculated separately
+  // If calculating manually, add tax calculation here
+  let taxAmount = 0;
+  // TODO: Add tax calculation logic if manual tax is used
+
+  // Step 5: Calculate final_amount (what customer pays)
+  // final_amount = total_amount - discount_amount + platform_fee_amount + tax_amount
+  const finalAmount = totalAmount - discountAmount + platformFeeAmount + taxAmount;
+
+  // Step 6: Create transaction with correct values
+  const transactionData = {
+    // ... other fields ...
+    totalAmount: Number(totalAmount.toFixed(2)),
+    discountAmount: Number(discountAmount.toFixed(2)),
+    platformFeeAmount: Number(platformFeeAmount.toFixed(2)),
+    taxAmount: Number(taxAmount.toFixed(2)),
+    finalAmount: Number(finalAmount.toFixed(2)),
+    stripeFeeAmount: 0, // Will be populated by batch job
+    stripeAmountTax: null, // Will be populated by batch job
+    // ... other fields ...
+  };
+
+  // ... rest of function ...
+}
+        </div>
+
+        <div class="warning-box">
+            <h4>⚠️ Important Notes:</h4>
+            <ul>
+                <li><strong>Stripe Amount:</strong> The <code>finalAmount</code> should match the amount charged by Stripe (from session.amount_total)</li>
+                <li><strong>Tax Handling:</strong> If Stripe Tax is enabled, tax is included in the Stripe amount. Don't add tax_amount again.</li>
+                <li><strong>Platform Fee:</strong> Platform fee is typically added on top of the ticket price (not deducted from it)</li>
+                <li><strong>Verification:</strong> Verify that <code>finalAmount * 100</code> (in cents) matches <code>session.amount_total</code> from Stripe</li>
+            </ul>
+        </div>
+
+        <h2>2. Update Sales Analytics to Display Net Revenue</h2>
+
+        <h3>2.1 Add Net Revenue Before Tax Metric</h3>
+        <div class="recommendation">
+            <h4>Net Revenue Before Tax Display (Option A: Calculate On-the-Fly)</h4>
+            <p><strong>Formula:</strong> <code>net_revenue_before_tax = final_amount - stripe_fee_amount</code></p>
+            <p><strong>Approach:</strong> Backend calculates and returns in metrics, frontend displays</p>
+            <p><strong>No Database Changes:</strong> Calculated on-the-fly in backend service, no need to store in database</p>
+        </div>
+
+        <h3>2.2 Files to Modify</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>File Path</th>
+                    <th>Purpose</th>
+                    <th>Changes Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="file-path">src/app/admin/sales-analytics/ApiServerActions.ts</span></td>
+                    <td>Calculates sales metrics</td>
+                    <td>Add net payout and organizer revenue calculations</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">src/app/admin/sales-analytics/SalesAnalyticsClient.tsx</span></td>
+                    <td>Displays sales analytics UI</td>
+                    <td>Add net payout and organizer revenue metric cards</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">src/types/index.ts</span></td>
+                    <td>TypeScript type definitions</td>
+                    <td>Add netPayoutAmount to EventTicketTransactionDTO (if not exists)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2.2 Update Sales Metrics Calculation</h3>
+
+        <h4>File: <span class="file-path">src/app/admin/sales-analytics/ApiServerActions.ts</span></h4>
+        <p><strong>Function:</strong> <code>calculateSalesMetricsServer()</code></p>
+
+        <div class="code-block">
+// ✅ ADD to calculateSalesMetricsServer() function
+export async function calculateSalesMetricsServer(
+  eventId: string,
+  startDate?: string,
+  endDate?: string
+): Promise&lt;SalesMetrics&gt; {
+  // ... existing code to fetch transactions ...
+
+  // Filter only completed transactions
+  const confirmedTransactions = allTransactions.filter(
+    t => t.status === 'COMPLETED'
+  );
+
+  // ... existing calculations ...
+
+  // NEW: Calculate Net Payout (amount received in bank after Stripe fees/tax)
+  const totalNetPayout = confirmedTransactions.reduce((sum, t) => {
+    const finalAmount = t.finalAmount || 0;
+    const stripeFee = t.stripeFeeAmount || 0;
+    const stripeTax = t.stripeAmountTax || 0;
+    // Net Payout = final_amount - stripe_fee_amount - stripe_amount_tax
+    const netPayout = finalAmount - stripeFee - stripeTax;
+    return sum + netPayout;
+  }, 0);
+
+  // NEW: Calculate Total Stripe Fees
+  const totalStripeFees = confirmedTransactions.reduce((sum, t) =>
+    sum + (t.stripeFeeAmount || 0), 0
+  );
+
+  // NEW: Calculate Total Stripe Tax
+  const totalStripeTax = confirmedTransactions.reduce((sum, t) =>
+    sum + (t.stripeAmountTax || 0), 0
+  );
+
+  // NEW: Calculate Event Organizer Net Revenue
+  // Organizer Net Revenue = Net Payout - Platform Fees
+  const organizerNetRevenue = totalNetPayout - platformFees;
+
+  return {
+    // ... existing metrics ...
+    totalNetPayout,        // NEW
+    totalStripeFees,       // NEW
+    totalStripeTax,        // NEW
+    organizerNetRevenue,   // NEW
+  };
+}
+        </div>
+
+        <h4>Update SalesMetrics Interface</h4>
+        <div class="code-block">
+// In src/app/admin/sales-analytics/ApiServerActions.ts
+export interface SalesMetrics {
+  eventId: number;
+  totalTransactions: number;
+  totalRevenue: number;        // Sum of finalAmount
+  grossRevenue: number;       // Sum of totalAmount
+  netRevenue: number;          // Gross - Discounts - Refunds - Platform Fees
+  totalNetPayout: number;      // NEW: Sum of (finalAmount - stripeFeeAmount - stripeAmountTax)
+  totalStripeFees: number;     // NEW: Sum of stripeFeeAmount
+  totalStripeTax: number;      // NEW: Sum of stripeAmountTax
+  organizerNetRevenue: number; // NEW: Net Payout - Platform Fees
+  netRevenueBeforeTax: number; // NEW: Sum of (finalAmount - stripeFeeAmount)
+  totalDiscounts: number;
+  totalRefunds: number;
+  platformFees: number;
+  taxAmount: number;
+  averageTicketPrice: number;
+  // ... other metrics ...
+}
+        </div>
+
+        <div class="info-box">
+            <h4>Note:</h4>
+            <p>The <code>netRevenueBeforeTax</code> field is calculated by the backend service (no frontend calculation needed). The backend uses the formula: <code>net_revenue_before_tax = final_amount - stripe_fee_amount</code> for each transaction and sums the results.</p>
+        </div>
+
+        <h3>2.3 Update Sales Analytics UI</h3>
+
+        <h4>File: <span class="file-path">src/app/admin/sales-analytics/SalesAnalyticsClient.tsx</span></h4>
+        <p><strong>Location:</strong> Add new metric cards after existing revenue metrics</p>
+
+        <div class="code-block">
+// ✅ ADD new metric cards in SalesAnalyticsClient.tsx
+{metrics && !loading && (
+  &lt;&gt;
+    {/* Existing metrics cards */}
+    &lt;div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"&gt;
+      {/* ... existing cards ... */}
+    &lt;/div&gt;
+
+    {/* NEW: Net Payout and Organizer Revenue Metrics */}
+    &lt;div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4"&gt;
+      {/* Net Payout Card */}
+      &lt;div className="bg-indigo-50 border-2 border-indigo-200 rounded-lg p-6"&gt;
+        &lt;div className="flex items-center justify-between"&gt;
+          &lt;div&gt;
+            &lt;p className="text-indigo-600 text-sm font-medium"&gt;Net Payout to Bank&lt;/p&gt;
+            &lt;p className="text-3xl font-bold text-indigo-900 mt-2"&gt;
+              ${metrics.totalNetPayout?.toFixed(2) || '0.00'}
+            &lt;/p&gt;
+            &lt;p className="text-xs text-indigo-600 mt-1"&gt;
+              After Stripe fees and tax
+            &lt;/p&gt;
+          &lt;/div&gt;
+          &lt;FaMoneyBillWave className="w-10 h-10 text-indigo-500" /&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      {/* Total Stripe Fees Card */}
+      &lt;div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-6"&gt;
+        &lt;div className="flex items-center justify-between"&gt;
+          &lt;div&gt;
+            &lt;p className="text-orange-600 text-sm font-medium"&gt;Total Stripe Fees&lt;/p&gt;
+            &lt;p className="text-3xl font-bold text-orange-900 mt-2"&gt;
+              ${metrics.totalStripeFees?.toFixed(2) || '0.00'}
+            &lt;/p&gt;
+            &lt;p className="text-xs text-orange-600 mt-1"&gt;
+              Processing costs
+            &lt;/p&gt;
+          &lt;/div&gt;
+          &lt;FaPercent className="w-10 h-10 text-orange-500" /&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      {/* Total Stripe Tax Card */}
+      &lt;div className="bg-cyan-50 border-2 border-cyan-200 rounded-lg p-6"&gt;
+        &lt;div className="flex items-center justify-between"&gt;
+          &lt;div&gt;
+            &lt;p className="text-cyan-600 text-sm font-medium"&gt;Total Stripe Tax&lt;/p&gt;
+            &lt;p className="text-3xl font-bold text-cyan-900 mt-2"&gt;
+              ${metrics.totalStripeTax?.toFixed(2) || '0.00'}
+            &lt;/p&gt;
+            &lt;p className="text-xs text-cyan-600 mt-1"&gt;
+              Tax collected by Stripe
+            &lt;/p&gt;
+          &lt;/div&gt;
+          &lt;FaPercent className="w-10 h-10 text-cyan-500" /&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      {/* Organizer Net Revenue Card */}
+      &lt;div className="bg-emerald-50 border-2 border-emerald-200 rounded-lg p-6"&gt;
+        &lt;div className="flex items-center justify-between"&gt;
+          &lt;div&gt;
+            &lt;p className="text-emerald-600 text-sm font-medium"&gt;Organizer Net Revenue&lt;/p&gt;
+            &lt;p className="text-3xl font-bold text-emerald-900 mt-2"&gt;
+              ${metrics.organizerNetRevenue?.toFixed(2) || '0.00'}
+            &lt;/p&gt;
+            &lt;p className="text-xs text-emerald-600 mt-1"&gt;
+              After all deductions
+            &lt;/p&gt;
+          &lt;/div&gt;
+          &lt;FaChartLine className="w-10 h-10 text-emerald-500" /&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    {/* NEW: Net Revenue Before Tax Metric Card */}
+    &lt;div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4"&gt;
+      {/* Net Revenue Before Tax Card */}
+      &lt;div className="bg-cyan-50 border-2 border-cyan-200 rounded-lg p-6"&gt;
+        &lt;div className="flex items-center justify-between"&gt;
+          &lt;div&gt;
+            &lt;p className="text-cyan-600 text-sm font-medium"&gt;Net Revenue Before Tax&lt;/p&gt;
+            &lt;p className="text-3xl font-bold text-cyan-900 mt-2"&gt;
+              ${metrics.netRevenueBeforeTax?.toFixed(2) || '0.00'}
+            &lt;/p&gt;
+            &lt;p className="text-xs text-cyan-600 mt-1"&gt;
+              After Stripe fees, before tax
+            &lt;/p&gt;
+          &lt;/div&gt;
+          &lt;FaMoneyBillWave className="w-10 h-10 text-cyan-500" /&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/&gt;
+)}
+        </div>
+
+        <div class="info-box">
+            <h4>Required Imports:</h4>
+            <div class="code-block">
+// Add to imports in SalesAnalyticsClient.tsx
+// Note: FaMoneyBillWave is already imported for Net Payout card, reuse for Net Revenue Before Tax
+import { FaMoneyBillWave, FaPercent, FaChartLine } from 'react-icons/fa';
+            </div>
+            <p><strong>Note:</strong> The <code>FaMoneyBillWave</code> icon is already imported for the "Net Payout to Bank" card. You can reuse it for the "Net Revenue Before Tax" card, or use a different icon like <code>FaDollarSign</code> if preferred.</p>
+        </div>
+
+        <h2>3. Update Batch Job Trigger UI</h2>
+
+        <h3>3.1 Add Event ID Input Field</h3>
+
+        <h4>File: <span class="file-path">src/app/admin/sales-analytics/SalesAnalyticsClient.tsx</span></h4>
+        <p><strong>Location:</strong> In the batch job trigger section</p>
+
+        <div class="code-block">
+// ✅ UPDATE batch job form in SalesAnalyticsClient.tsx
+const [batchJobFormData, setBatchJobFormData] = useState&lt;StripeFeesTaxUpdateRequest&gt;({
+  tenantId: '', // Pre-filled with current tenant ID
+  eventId: '',  // NEW: Add eventId field
+  startDate: '',
+  endDate: '',
+  forceUpdate: false,
+});
+
+// ✅ ADD eventId input field in the batch job form
+&lt;form onSubmit={handleBatchJobSubmit} className="space-y-4"&gt;
+  {/* Tenant ID Input (existing) */}
+  &lt;div&gt;
+    &lt;label htmlFor="batchTenantId" className="block text-sm font-medium text-gray-700 mb-1"&gt;
+      Tenant ID (optional, defaults to current tenant if empty)
+    &lt;/label&gt;
+    &lt;input
+      type="text"
+      id="batchTenantId"
+      value={batchJobFormData.tenantId || ''}
+      onChange={(e) =&gt; setBatchJobFormData({ ...batchJobFormData, tenantId: e.target.value })}
+      placeholder="Leave empty to process all tenants"
+      className="block w-full border border-gray-400 rounded-lg focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-base"
+    /&gt;
+  &lt;/div&gt;
+
+  {/* NEW: Event ID Input */}
+  &lt;div&gt;
+    &lt;label htmlFor="batchEventId" className="block text-sm font-medium text-gray-700 mb-1"&gt;
+      Event ID (optional, leave empty to process all events)
+    &lt;/label&gt;
+    &lt;input
+      type="number"
+      id="batchEventId"
+      value={batchJobFormData.eventId || ''}
+      onChange={(e) =&gt; setBatchJobFormData({
+        ...batchJobFormData,
+        eventId: e.target.value ? parseInt(e.target.value, 10) : undefined
+      })}
+      placeholder={eventId ? `Current: ${eventId}` : 'Leave empty to process all events'}
+      className="block w-full border border-gray-400 rounded-lg focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-base"
+    /&gt;
+    &lt;p className="mt-1 text-xs text-gray-500"&gt;
+      {eventId
+        ? `Current event ID: ${eventId} (will be used if left empty)`
+        : 'Leave empty to process all events for the selected tenant'}
+    &lt;/p&gt;
+  &lt;/div&gt;
+
+  {/* Date range inputs (existing) */}
+  {/* ... */}
+
+  {/* Force update checkbox (existing) */}
+  {/* ... */}
+
+  &lt;button type="submit" disabled={batchJobLoading}&gt;
+    {/* ... */}
+  &lt;/button&gt;
+&lt;/form&gt;
+        </div>
+
+        <h3>3.2 Update Batch Job Request Type</h3>
+
+        <h4>File: <span class="file-path">src/app/admin/sales-analytics/ApiServerActions.ts</span></h4>
+
+        <div class="code-block">
+// ✅ UPDATE StripeFeesTaxUpdateRequest interface
+export interface StripeFeesTaxUpdateRequest {
+  tenantId?: string;
+  eventId?: number;  // NEW: Add eventId field
+  startDate?: string; // ISO 8601 format: "2025-01-01T00:00:00.000Z"
+  endDate?: string;   // ISO 8601 format: "2025-01-31T23:59:59.999Z"
+  forceUpdate?: boolean; // Default: false
+}
+
+// ✅ UPDATE triggerStripeFeesTaxUpdateServer function
+export async function triggerStripeFeesTaxUpdateServer(
+  request: StripeFeesTaxUpdateRequest
+): Promise&lt;StripeFeesTaxUpdateResponse&gt; {
+  // ... existing code ...
+
+  // Prepare request payload (only include defined fields)
+  const payload: any = {};
+  if (request.tenantId) {
+    payload.tenantId = request.tenantId;
+  }
+  if (request.eventId) {  // NEW: Include eventId if provided
+    payload.eventId = request.eventId;
+  }
+  if (request.startDate) {
+    payload.startDate = request.startDate;
+  }
+  if (request.endDate) {
+    payload.endDate = request.endDate;
+  }
+  payload.forceUpdate = request.forceUpdate || false;
+
+  // Call backend batch job API endpoint
+  const url = `${API_BASE_URL}/api/cron/stripe-fees-tax-update`;
+  const response = await fetchWithJwtRetry(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+  });
+
+  // ... rest of function ...
+}
+        </div>
+
+        <h3>3.3 Auto-fill Event ID from Current Context</h3>
+
+        <div class="code-block">
+// ✅ UPDATE useEffect in SalesAnalyticsClient.tsx to auto-fill eventId
+useEffect(() => {
+  // Set default tenantId and eventId for batch job form
+  try {
+    setBatchJobFormData(prev => ({
+      ...prev,
+      tenantId: getTenantId(),
+      eventId: eventId ? parseInt(eventId, 10) : undefined  // NEW: Auto-fill from current event
+    }));
+  } catch (e: any) {
+    console.error("Failed to get tenant ID for batch job form:", e.message);
+  }
+}, [eventId]); // NEW: Add eventId to dependencies
+        </div>
+
+        <h2>4. Update TypeScript Types</h2>
+
+        <h3>4.1 Update EventTicketTransactionDTO</h3>
+
+        <h4>File: <span class="file-path">src/types/index.ts</span></h4>
+
+        <div class="code-block">
+// ✅ VERIFY/UPDATE EventTicketTransactionDTO interface
+export interface EventTicketTransactionDTO {
+  id: number | null;
+  tenantId?: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  quantity: number;
+  pricePerUnit: number;
+  totalAmount: number;        // Base ticket prices
+  taxAmount?: number;
+  platformFeeAmount?: number;
+  discountCodeId?: number;
+  discountAmount?: number;
+  serviceFee?: number;
+  finalAmount: number;        // What customer paid
+  status: string;
+  paymentMethod?: string;
+  paymentReference?: string;
+  stripeCheckoutSessionId?: string;
+  stripePaymentIntentId?: string;
+  purchaseDate: string;
+  confirmationSentAt?: string;
+  refundAmount?: number;
+  refundDate?: string;
+  refundReason?: string;
+  stripeCustomerId?: string;
+  stripePaymentStatus?: string;
+  stripeCustomerEmail?: string;
+  stripePaymentCurrency?: string;
+  stripeAmountDiscount?: number;
+  stripeAmountTax?: number;   // Tax collected by Stripe
+  stripeFeeAmount?: number;   // Stripe processing fee
+  netPayoutAmount?: number;   // NEW: Net payout to bank (finalAmount - stripeFeeAmount - stripeAmountTax)
+  qrCodeImageUrl?: string;
+  eventId?: number;
+  userId?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  // ... other fields ...
+}
+        </div>
+
+        <h2>5. Testing Checklist</h2>
+
+        <h3>5.1 Purchase Flow Testing</h3>
+        <ul>
+            <li>✅ Verify total_amount = sum of base ticket prices</li>
+            <li>✅ Verify discount_amount is calculated correctly when discount code is applied</li>
+            <li>✅ Verify platform_fee_amount is calculated from tenant settings</li>
+            <li>✅ Verify final_amount = total_amount - discount_amount + platform_fee_amount + tax_amount</li>
+            <li>✅ Verify final_amount matches Stripe session.amount_total</li>
+        </ul>
+
+        <h3>5.2 Sales Analytics Testing</h3>
+        <ul>
+            <li>✅ Verify net payout metric displays correctly</li>
+            <li>✅ Verify total Stripe fees metric displays correctly</li>
+            <li>✅ Verify total Stripe tax metric displays correctly</li>
+            <li>✅ Verify organizer net revenue metric displays correctly</li>
+            <li>✅ Verify net revenue before tax metric displays correctly</li>
+            <li>✅ Verify net revenue before tax = finalAmount - stripeFeeAmount (per transaction)</li>
+            <li>✅ Verify calculations match expected formulas</li>
+            <li>✅ Verify metrics update after batch job runs</li>
+        </ul>
+
+        <h3>5.3 Batch Job Trigger UI Testing</h3>
+        <ul>
+            <li>✅ Verify eventId input field appears in batch job form</li>
+            <li>✅ Verify eventId auto-fills from current event context</li>
+            <li>✅ Verify eventId can be cleared to process all events</li>
+            <li>✅ Verify batch job API call includes eventId parameter</li>
+            <li>✅ Verify batch job processes only specified event when eventId is provided</li>
+        </ul>
+
+        <h2>6. File Modification Summary</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>File Path</th>
+                    <th>Changes</th>
+                    <th>Priority</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="file-path">src/app/event/success/ApiServerActions.ts</span></td>
+                    <td>Fix total_amount and final_amount calculations</td>
+                    <td>HIGH</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">src/app/admin/sales-analytics/ApiServerActions.ts</span></td>
+                    <td>Add net payout and organizer revenue calculations, update request interface, add netRevenueBeforeTax to SalesMetrics interface</td>
+                    <td>HIGH</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">src/app/admin/sales-analytics/SalesAnalyticsClient.tsx</span></td>
+                    <td>Add net payout metrics UI, add net revenue before tax metric card, add eventId input to batch job form</td>
+                    <td>HIGH</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">src/types/index.ts</span></td>
+                    <td>Add netPayoutAmount to EventTicketTransactionDTO</td>
+                    <td>HIGH</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>7. Related Documentation</h2>
+        <ul>
+            <li><a href="stripe_fees_tax_net_revenue_complete_implementation_plan.html">Complete Implementation Plan</a></li>
+            <li><a href="stripe_fees_tax_net_revenue_backend_changes.html">Backend Changes</a></li>
+            <li><a href="stripe_fees_tax_net_revenue_batch_job_changes.html">Batch Job Changes</a></li>
+        </ul>
+
+        <hr>
+        <p><em>Document generated: January 11, 2026</em></p>
+        <p><em>Last updated: January 11, 2026</em></p>
+    </div>
+</body>
+</html>

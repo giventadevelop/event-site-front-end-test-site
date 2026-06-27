@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Frontend Requirements: Fee-Free Manual Payments</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+
+      h1 {
+        font-size: 2.1rem;
+        margin-bottom: 0.75rem;
+      }
+
+      h2 {
+        font-size: 1.6rem;
+        margin-top: 2.5rem;
+      }
+
+      h3 {
+        font-size: 1.2rem;
+        margin-top: 1.6rem;
+      }
+
+      p,
+      li {
+        line-height: 1.75;
+        font-size: 1rem;
+      }
+
+      ul,
+      ol {
+        margin-left: 1.4rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5rem 0;
+        font-size: 0.95rem;
+      }
+
+      th,
+      td {
+        border: 1px solid rgba(42, 32, 23, 0.15);
+        padding: 0.75rem;
+        vertical-align: top;
+      }
+
+      th {
+        background: rgba(213, 201, 182, 0.35);
+        font-weight: 600;
+      }
+
+      code.inline {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+        padding: 0.15rem 0.35rem;
+        font-size: 0.95rem;
+        display: inline-block;
+      }
+
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .divider {
+        height: 1px;
+        background: rgba(42, 32, 23, 0.12);
+        margin: 2rem 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Frontend · January 14, 2026</span>
+      <h1>Frontend Requirements: Fee-Free Manual Payments</h1>
+      <p>
+        This document specifies the UI/UX and client requirements for manual payments (Zelle, Venmo, Cash App, Cash,
+        Check, Other) in the Next.js frontend. Align all UI with <code class="inline">@ui_style_guide.mdc</code>.
+      </p>
+
+      <div class="divider"></div>
+
+      <h2>1. Event Configuration & Visibility</h2>
+      <ul>
+        <li>Respect event-level <code class="inline">payment_flow_mode</code> (Stripe-only, Manual-only, Hybrid).</li>
+        <li>Only show manual methods enabled in tenant configuration.</li>
+        <li>Display a banner explaining that manual payments require organizer confirmation.</li>
+      </ul>
+
+      <h2>2. Checkout UI</h2>
+      <ul>
+        <li>Payment method selector with Stripe + Manual methods.</li>
+        <li>Manual method detail panel showing: handle, memo instructions, and amount due.</li>
+        <li>Checkbox acknowledgement: “I understand tickets are issued after confirmation.”</li>
+        <li>Submit action creates a manual payment request via proxy API.</li>
+      </ul>
+
+      <h2>3. Proof-of-Payment Upload</h2>
+      <ul>
+        <li>Optional upload after request creation (image/PDF).</li>
+        <li>Display current upload status and allow replace/delete before confirmation.</li>
+        <li>Explain storage location: <code class="inline">events/{eventId}/manual-payments/proof-of-payment/</code>.</li>
+      </ul>
+
+      <h2>4. Attendee Status & Tickets</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>UI Behavior</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Requested</td>
+            <td>Show “Pending confirmation” banner; QR code hidden.</td>
+          </tr>
+          <tr>
+            <td>Received</td>
+            <td>Show QR code and success confirmation.</td>
+          </tr>
+          <tr>
+            <td>Voided/Refunded</td>
+            <td>Show cancellation notice and provide re-request action.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>5. Admin & Organizer Console</h2>
+      <ul>
+        <li>Manual Payments tab filtered by event and status.</li>
+        <li>Action buttons: Mark Received, Void/Refund, Add Notes.</li>
+        <li>Download proof-of-payment attachments.</li>
+        <li>Dashboard summary widget reads from manual payment summary report endpoint.</li>
+        <li>Display totals grouped by status and method per event.</li>
+      </ul>
+
+      <h2>6. API Integration Notes</h2>
+      <ul>
+        <li>All REST calls must use proxy routes per <code class="inline">cursor_rules/nextjs_api_routes.mdc</code>.</li>
+        <li>Use absolute URLs in server components; client components use relative proxy URLs.</li>
+        <li>No manual payment expiration; allow user-initiated cancel.</li>
+      </ul>
+    </main>
+  </body>
+</html>

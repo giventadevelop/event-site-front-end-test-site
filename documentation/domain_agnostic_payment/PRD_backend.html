@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Domain-Agnostic Payments – Backend PRD</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f4f2ed;
+        color: #2b241e;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+      main {
+        max-width: 900px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 18px;
+        box-shadow: 0 22px 48px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+      h1, h2, h3, h4 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2b241e;
+      }
+      h1 { font-size: 2.2rem; margin-bottom: 0.6rem; }
+      h2 { font-size: 1.6rem; margin-top: 2.2rem; }
+      h3 { font-size: 1.25rem; margin-top: 1.5rem; }
+      h4 { font-size: 1.05rem; margin-top: 1rem; }
+      p, li { font-size: 1rem; line-height: 1.75; }
+      ul, ol { margin-left: 1.3rem; }
+      code { font-family: "JetBrains Mono", Consolas, monospace; background: #f6f1e6; padding: 0.12rem 0.4rem; border-radius: 6px; }
+      .tag { display: inline-block; background: #8b7d6b; color: #fff; padding: 0.25rem 0.7rem; border-radius: 999px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+      .divider { height: 1px; background: rgba(42,32,23,0.12); margin: 1.9rem 0; }
+      .callout { border-left: 4px solid #8b7d6b; background: rgba(213,201,182,0.3); padding: 1rem 1.2rem; border-radius: 12px; margin: 1.6rem 0; }
+      table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+      th, td { border: 1px solid rgba(42,32,23,0.15); padding: 0.75rem; text-align: left; vertical-align: top; }
+      th { background: rgba(213,201,182,0.35); font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Backend · November 2025</span>
+      <h1>Domain-Agnostic Payment Refactor – Backend PRD</h1>
+      <p><strong>Repository:</strong> <code>E:\project_workspace\malayalees-us-site-boot</code><br />
+         <strong>Goal:</strong> Implement a payment orchestration layer that supports multi-tenant Stripe (PaymentIntents/Checkout), optional ACP, and additional gateways (PayPal, Zeffy, Zelle manual, Revolut, CeFi charity) while centralizing fee settlement.</p>
+
+      <div class="divider"></div>
+
+      <h2>1. Architectural Overview</h2>
+      <ul>
+        <li><strong>Payment Orchestration Service:</strong> Entry point for all payment operations (initialize, confirm, refund, status) via REST endpoints.</li>
+        <li><strong>Provider Adapters:</strong> Implement <code>PaymentService</code> for each gateway (Stripe, PayPal, Zeffy, ZelleManual, Revolut, future CeFi). Responsible for provider API calls and translating results to our domain objects.</li>
+        <li><strong>Configuration Layer:</strong> <code>payment_provider_config</code> table stores tenant-level provider credentials, feature flags (ACP, Zeffy, Zelle), and fallback ordering.</li>
+        <li><strong>Transactions:</strong> <code>payment_transaction</code>, <code>payment_transaction_item</code>, <code>payment_webhook_log</code>, and new settlement/invoice tables provide the system of record.</li>
+      </ul>
+      <div class="callout">
+        <strong>Reference Documents:</strong>
+        <ul>
+          <li><code>documentation/Swagger_API_Docs/api-docs.json</code> – endpoint contracts.</li>
+          <li><code>code_html_template/SQLS/Latest_Schema_Post__Blob_Claude_11.sql</code> – latest schema baseline (extend with new tables/columns as defined below).</li>
+          <li><code>documentation/domain_agnostic_payment/PRD.html</code> – overarching strategy and addendums.</li>
+        </ul>
+      </div>
+
+      <h2>2. Scope</h2>
+      <h3>Must Deliver</h3>
+      <ul>
+        <li>Stripe adapter refactor (PaymentIntent creation, Checkout Sessions, Link/Wallet support, webhook handling) with multi-tenant configuration.</li>
+        <li>Payment initialization endpoint (<code>POST /api/payments/initialize</code>) that returns provider-neutral session details.</li>
+        <li>Support for PayPal (Orders API), Zeffy (donation API/embeds), Zelle manual flows (pending transactions), Revolut (card acquiring), and CeFi charity flows.</li>
+        <li>Platform settlement job summarizing transactions per tenant/provider and generating invoices if fees aren’t auto-deducted.</li>
+        <li>ACP readiness: implement ACP endpoints (<code>CreateCheckout</code>, <code>Update</code>, <code>Complete</code>, <code>Cancel</code>) that wrap Stripe Instant Checkout once access is granted.</li>
+      </ul>
+      <h3>Out of Scope</h3>
+      <ul>
+        <li>UI changes (handled in frontend PRD).</li>
+        <li>Finance portal UI beyond API endpoints for settlements/invoices.</li>
+        <li>Automated reconciliation with accounting software.</li>
+      </ul>
+
+      <h2>3. API Surface</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Endpoint</th>
+            <th>Description</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>POST /api/payments/initialize</code></td>
+            <td>Create payment session. Returns <code>PaymentSessionResponse</code> with provider hint, clientSecret/sessionUrl, publishable key (if required).</td>
+            <td>Derive schema from Swagger; support payment types: TICKET_SALE, DONATION, DONATION_CEFI, OFFERING, MEMBERSHIP_SUBSCRIPTION.</td>
+          </tr>
+          <tr>
+            <td><code>GET /api/payments/{transactionId}</code></td>
+            <td>Fetch status for polling (used by frontend for Revolut/Zelle pending flows).</td>
+            <td>Expose payment method details, settlement info, failure reasons.</td>
+          </tr>
+          <tr>
+            <td><code>POST /api/payments/{transactionId}/refund</code></td>
+            <td>Issue full/partial refund through respective adapter.</td>
+            <td>Log refund metadata in <code>payment_transaction</code>.</td>
+          </tr>
+          <tr>
+            <td><code>POST /api/payments/providers/stripe/instant-checkout</code></td>
+            <td>Create Stripe Instant Checkout (ACP) session if tenant enabled.</td>
+            <td>Returns hosted session URL; fallback to standard PaymentIntent if feature disabled.</td>
+          </tr>
+          <tr>
+            <td><code>POST /api/payments/zeffy/initialize</code></td>
+            <td>Optional helper that returns Zeffy campaign info/embedded URL.</td>
+            <td>Used when event flagged as zero-fee fundraiser.</td>
+          </tr>
+          <tr>
+            <td><code>POST /api/payments/zelle/manual</code></td>
+            <td>Create pending transaction for Zelle instructions.</td>
+            <td>Stores payer email, expected amount, memo instructions.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>4. Database Updates</h2>
+      <h3>Tables</h3>
+      <ul>
+        <li><code>payment_provider_config</code> – ensure columns for <code>payment_use_case</code>, <code>supports_acp</code>, <code>supports_zeffy</code>, <code>supports_zelle</code>, <code>supports_revolut</code>.</li>
+        <li><code>payment_transaction</code> – add <code>settlement_batch_id</code>, <code>platform_invoice_id</code>, <code>manual_payment_reference</code>.</li>
+        <li><code>platform_settlement</code> – new table storing aggregated totals per tenant/provider/day.</li>
+        <li><code>platform_invoice</code> – invoices for outstanding platform fees; link to settlements.</li>
+        <li><code>membership_plan</code>, <code>membership_subscription</code> – subscription definitions and user enrollments.</li>
+      </ul>
+      <h3>Migrations</h3>
+      <ol>
+        <li>Create new tables with indexes described in master PRD.</li>
+        <li>Migrate legacy <code>event_ticket_transaction</code> data into <code>payment_transaction</code> (Stripe only) for historical reference.</li>
+        <li>Backfill <code>payment_provider_config</code> for existing tenants with Stripe configs.</li>
+      </ol>
+
+      <h2>5. Provider Adapters</h2>
+      <ul>
+        <li><strong>StripePaymentAdapter:</strong> PaymentIntent, Checkout Session, Instant Checkout (ACP) creation, wallet support, subscription support (Stripe Billing), webhooks.</li>
+        <li><strong>PayPalPaymentAdapter:</strong> Orders API, capture, refund, webhook validation.</li>
+        <li><strong>ZeffyPaymentAdapter:</strong> Donation API integration; fallback instructions if unavailable.</li>
+        <li><strong>ZelleManualAdapter:</strong> No external API; create pending transactions and expose admin confirmation endpoints.</li>
+        <li><strong>RevolutPaymentAdapter:</strong> Create card sessions, handle redirect-based SCA, ingest settlement webhooks.</li>
+        <li><strong>CeFiCharityAdapter:</strong> Integrate partner ACH/transfer provider for CeFi events (fetch settlement files).</li>
+      </ul>
+      <p>All adapters must implement <code>PaymentService</code> methods (initialize, confirm, cancel, refund, webhook handling, supportedMethods).</p>
+
+      <h2>6. Webhook Processing</h2>
+      <ul>
+        <li>Stripe: <code>/api/webhooks/stripe</code> – handle <code>payment_intent.succeeded</code>, <code>payment_intent.payment_failed</code>, <code>checkout.session.completed</code>, Instant Checkout events, refund events.</li>
+        <li>PayPal: <code>/api/webhooks/paypal</code> – capture/void notifications.</li>
+        <li>Zeffy: Import payout CSV or webhook if provided.</li>
+        <li>Revolut: Listen for <code>payment_succeeded</code>, <code>payment_failed</code>, <code>settlement_created</code>.</li>
+      </ul>
+      <p>All webhook payloads must be logged in <code>payment_webhook_log</code> and processed idempotently.</p>
+
+      <h2>7. Settlements & Fees</h2>
+      <ol>
+        <li>Nightly job aggregates transactions → create <code>platform_settlement</code> entries with gross, processing fee, platform fee, net.</li>
+        <li>If provider supports application fee (Stripe Connect), mark platform fee as collected; else generate <code>platform_invoice</code>.</li>
+        <li>Expose admin API <code>GET /api/finance/settlements</code> and <code>GET /api/finance/invoices</code> for reporting dashboards.</li>
+        <li>Provide <code>POST /api/finance/invoices/{id}/charge</code> to trigger auto-debit (Stripe Billing/ACH).</li>
+      </ol>
+
+      <h2>8. ACP Readiness Plan</h2>
+      <ul>
+        <li>Implement ACP REST endpoints according to Stripe spec (Create/Update/Complete/Cancel checkout).</li>
+        <li>Wrap existing Stripe PaymentIntent creation inside <code>CompleteCheckout</code> handler using Shared Payment Token.</li>
+        <li>Gate endpoints behind <code>supports_acp</code> flag in <code>payment_provider_config</code>.</li>
+        <li>Document onboarding steps (contact Stripe support, enable Instant Checkout, capture configuration IDs) – see master PRD section 15.11.</li>
+      </ul>
+
+      <h2>9. Security & Compliance</h2>
+      <ul>
+        <li>Store provider credentials encrypted (AES-256-GCM). Rotate keys annually.</li>
+        <li>Ensure webhook endpoints verify signatures and rate-limit requests.</li>
+        <li>Log all admin actions related to settlements/invoices.</li>
+        <li>Maintain PCI scope at SAQ A: backend never stores raw card data.</li>
+      </ul>
+
+      <h2>10. Testing Strategy</h2>
+      <ul>
+        <li>Unit tests for each adapter (mock provider APIs).</li>
+        <li>Integration tests for <code>/api/payments/initialize</code> covering all providers.</li>
+        <li>Contract tests using Swagger schema to ensure frontend/backends remain in sync.</li>
+        <li>End-to-end tests for Stripe and PayPal flows in staging (using Stripe test mode, PayPal sandbox).</li>
+        <li>Settlement job test to validate fee calculations and invoice generation.</li>
+      </ul>
+
+      <h2>11. Timeline (Backend)</h2>
+      <ul>
+        <li>Week 1-2: Schema migrations, configuration layer, Stripe adapter refactor.</li>
+        <li>Week 3: PayPal adapter, Zeffy integration, Zelle manual adapter.</li>
+        <li>Week 4: Revolut adapter, CeFi charity adapter, webhook handling hardening.</li>
+        <li>Week 5: Settlement job, invoice generation, admin finance APIs.</li>
+        <li>Week 6: ACP endpoint implementation + private preview testing (pending Stripe approval).</li>
+      </ul>
+
+      <h2>12. Acceptance Criteria</h2>
+      <ul>
+        <li>All payments initiated via backend endpoints; no provider secrets in frontend.</li>
+        <li>Adapters return consistent <code>PaymentSession</code> structure and handle webhooks idempotently.</li>
+        <li>Fee calculations recorded per transaction and summarized in settlement batches.</li>
+        <li>ACP endpoints functional behind feature flag and pass Stripe Instant Checkout certification.</li>
+        <li>Swagger documentation updated for every new endpoint and response.</li>
+      </ul>
+
+      <footer style="margin-top: 3rem; text-align: center; font-size: 0.9rem; color: #7b7067;">
+        <p>Document owner: Backend Lead · Updated November 2025</p>
+      </footer>
+    </main>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+

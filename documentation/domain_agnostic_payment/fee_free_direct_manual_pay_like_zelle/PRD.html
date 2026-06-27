@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PRD: Fee-Free Manual Payment Flow (Zelle/Venmo/Cash App/Cash/Check)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+
+      h1 {
+        font-size: 2.3rem;
+        margin-bottom: 0.75rem;
+      }
+
+      h2 {
+        font-size: 1.7rem;
+        margin-top: 2.5rem;
+      }
+
+      h3 {
+        font-size: 1.3rem;
+        margin-top: 1.8rem;
+      }
+
+      h4 {
+        font-size: 1.1rem;
+        margin-top: 1.2rem;
+      }
+
+      p,
+      li {
+        line-height: 1.75;
+        font-size: 1rem;
+      }
+
+      ul,
+      ol {
+        margin-left: 1.4rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5rem 0;
+        font-size: 0.95rem;
+      }
+
+      th,
+      td {
+        border: 1px solid rgba(42, 32, 23, 0.15);
+        padding: 0.75rem;
+        vertical-align: top;
+      }
+
+      th {
+        background: rgba(213, 201, 182, 0.35);
+        font-weight: 600;
+      }
+
+      code,
+      pre {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+      }
+
+      pre {
+        padding: 1rem;
+        line-height: 1.6;
+        overflow-x: auto;
+      }
+
+      code.inline {
+        padding: 0.15rem 0.35rem;
+        font-size: 0.95rem;
+        display: inline-block;
+      }
+
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .divider {
+        height: 1px;
+        background: rgba(42, 32, 23, 0.12);
+        margin: 2rem 0;
+      }
+
+      .callout {
+        border-left: 4px solid #8b7d6b;
+        background: rgba(213, 201, 182, 0.3);
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
+        margin: 1.8rem 0;
+      }
+
+      .toc ol {
+        list-style: decimal;
+      }
+
+      .toc a {
+        color: #1f4c8f;
+        text-decoration: none;
+      }
+
+      .toc a:hover {
+        text-decoration: underline;
+      }
+
+      footer {
+        margin-top: 4rem;
+        text-align: center;
+        font-size: 0.9rem;
+        color: #7a7066;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Draft · January 14, 2026</span>
+      <h1>PRD: Fee-Free Manual Payment Flow (Zelle/Venmo/Cash App/Cash/Check)</h1>
+      <p>
+        <strong>Project:</strong> MCEFEE Multi-Tenant Event Management Platform<br />
+        <strong>Document Version:</strong> 1.0<br />
+        <strong>Date:</strong> January 14, 2026<br />
+        <strong>Status:</strong> Draft
+      </p>
+
+      <div class="divider"></div>
+
+      <h2 id="executive-summary">Executive Summary</h2>
+      <p>
+        This document defines a fee-free manual payment flow for the existing domain-agnostic payment system.
+        The flow allows attendees or donors to pay organizers directly using Zelle, Venmo, Cash App, Cash, Check,
+        and future manual methods. Payments are tracked in the platform with a manual status lifecycle
+        (<strong>Requested → Received → Voided/Refunded</strong>) and produce QR codes only after the organizer
+        confirms receipt. This flow must coexist with Stripe-based checkout while remaining selectable per event.
+      </p>
+
+      <div class="callout">
+        <strong>Key Concept:</strong> Manual payments are not processed by Stripe or other gateways.
+        The platform records requests and confirmations while the actual fund transfer happens outside the system.
+      </div>
+
+      <h2 id="table-of-contents">Table of Contents</h2>
+      <nav class="toc">
+        <ol>
+          <li><a href="#background">Background &amp; Context</a></li>
+          <li><a href="#goals">Goals &amp; Non-Goals</a></li>
+          <li><a href="#scope">Scope &amp; Event Configuration</a></li>
+          <li><a href="#user-journeys">User Journeys</a></li>
+          <li><a href="#status-lifecycle">Manual Payment Status Lifecycle</a></li>
+          <li><a href="#data-model">Data Model &amp; Schema Changes</a></li>
+          <li><a href="#backend-requirements">Backend Requirements</a></li>
+          <li><a href="#frontend-requirements">Frontend Requirements</a></li>
+          <li><a href="#batch-jobs">Batch Jobs &amp; Reconciliation</a></li>
+          <li><a href="#security">Security &amp; Compliance</a></li>
+          <li><a href="#migration">Migration &amp; Rollout</a></li>
+          <li><a href="#open-questions">Open Questions</a></li>
+        </ol>
+      </nav>
+
+      <div class="divider"></div>
+
+      <section id="background">
+        <h2>1. Background &amp; Context</h2>
+        <ul>
+          <li><strong>Frontend:</strong> Next.js 15+ application in <code class="inline">E:\project_workspace\mosc-temp</code></li>
+          <li><strong>Backend:</strong> Spring Boot service in <code class="inline">E:\project_workspace\malayalees-us-site-boot</code></li>
+          <li><strong>Batch Jobs:</strong> Spring Batch jobs in <code class="inline">E:\project_workspace\event-site-manager-batch-jobs</code></li>
+          <li><strong>Schema Reference:</strong> <code class="inline">code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></li>
+          <li><strong>API Schema:</strong> <code class="inline">documentation/Swagger_API_Docs/api-docs.json</code></li>
+          <li><strong>UI Standards:</strong> <code class="inline">@ui_style_guide.mdc</code></li>
+        </ul>
+        <p>
+          Section 15.7 in the Domain-Agnostic Payment PRD recommends Zelle as a manual/offline option. This PRD expands
+          that concept to a comprehensive manual payment flow that includes additional fee-free methods and works for
+          both ticketing and fundraising scenarios.
+        </p>
+      </section>
+
+      <section id="goals">
+        <div class="divider"></div>
+        <h2>2. Goals &amp; Non-Goals</h2>
+        <h3>Goals</h3>
+        <ul>
+          <li>Enable fee-free payment options: Zelle, Venmo, Cash App, Cash, Check, and extensible manual methods.</li>
+          <li>Provide a clearly separate flow from Stripe payments, while keeping a consistent UI.</li>
+          <li>Allow per-event configuration: Stripe-only, Manual-only, or Hybrid.</li>
+          <li>Track all manual payments with a status lifecycle and admin verification.</li>
+          <li>Issue ticket QR codes only after payment is marked Received.</li>
+          <li>Provide admin and organizer reporting for requested and received payments.</li>
+        </ul>
+        <h3>Non-Goals</h3>
+        <ul>
+          <li>Automated settlement or webhook confirmation from Zelle/Venmo/Cash App.</li>
+          <li>Processing any funds through Stripe or other gateways for manual payments.</li>
+          <li>Replacing current Stripe checkout for events that require instant confirmation.</li>
+        </ul>
+      </section>
+
+      <section id="scope">
+        <div class="divider"></div>
+        <h2>3. Scope &amp; Event Configuration</h2>
+        <h3>Applicability</h3>
+        <ul>
+          <li><strong>All events</strong> can optionally enable manual payments.</li>
+          <li>Fundraisers and donation-based events default to Hybrid (Stripe + Manual).</li>
+          <li>Ticketed events can be Manual-only for invite-only or organizer-verified workflows.</li>
+        </ul>
+        <h3>Configuration Inputs</h3>
+        <ul>
+          <li>Event-level flag: <code class="inline">payment_flow_mode</code> = <code class="inline">STRIPE_ONLY</code>, <code class="inline">MANUAL_ONLY</code>, <code class="inline">HYBRID</code>.</li>
+          <li>Manual method enablement per tenant via <code class="inline">payment_provider_config</code> records.</li>
+          <li>Organizer-provided instructions (handles, QR codes, mailing address).</li>
+        </ul>
+      </section>
+
+      <section id="user-journeys">
+        <div class="divider"></div>
+        <h2>4. User Journeys</h2>
+        <h3>Ticket Purchase (Manual)</h3>
+        <ol>
+          <li>User selects tickets and chooses a manual payment method.</li>
+          <li>UI shows amount due, organizer instructions, and required memo format.</li>
+          <li>User confirms they will pay externally.</li>
+          <li>System creates a Manual Payment Request (status: Requested).</li>
+          <li>User sees “Pending manual confirmation” and no QR code yet.</li>
+        </ol>
+        <h3>Fundraising / Donation (Manual)</h3>
+        <ol>
+          <li>User enters donation amount and selects a manual method.</li>
+          <li>System records payment request and displays donor instructions.</li>
+          <li>Organizer marks payment received; donor receipt/thank-you email sent.</li>
+        </ol>
+        <h3>Organizer / Admin</h3>
+        <ul>
+          <li>View manual payment requests by event and method.</li>
+          <li>Mark status as Received or Voided/Refunded.</li>
+          <li>Trigger QR issuance and ticket inventory updates when Received.</li>
+          <li>Export reports for reconciliation and accounting.</li>
+        </ul>
+      </section>
+
+      <section id="status-lifecycle">
+        <div class="divider"></div>
+        <h2>5. Manual Payment Status Lifecycle</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Definition</th>
+              <th>System Behavior</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Requested</strong></td>
+              <td>Manual payment created, funds not confirmed.</td>
+              <td>Tickets held in pending state; QR code not issued.</td>
+            </tr>
+            <tr>
+              <td><strong>Received</strong></td>
+              <td>Organizer verifies payment receipt.</td>
+              <td>Tickets confirmed, QR code generated, attendee notified.</td>
+            </tr>
+            <tr>
+              <td><strong>Voided/Refunded</strong></td>
+              <td>Request cancelled or refunded.</td>
+              <td>Tickets released, payment request archived with reason.</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          Status changes are manual and audit-logged. The lifecycle is intentionally independent from Stripe payment
+          status codes.
+        </p>
+      </section>
+
+      <section id="data-model">
+        <div class="divider"></div>
+        <h2>6. Data Model &amp; Schema Changes</h2>
+        <h3>Existing Tables (Reference)</h3>
+        <ul>
+          <li><code class="inline">event_ticket_transaction</code> (ticket purchase tracking)</li>
+          <li><code class="inline">event_ticket_transaction_item</code> (ticket line items)</li>
+          <li><code class="inline">user_payment_transaction</code> (payment tracking + event linkage)</li>
+          <li><code class="inline">payment_provider_config</code> (provider configuration and flags)</li>
+        </ul>
+
+        <h3>Proposed Additions</h3>
+        <ul>
+          <li>
+            <strong>Manual payment request table</strong> (new):
+            <code class="inline">manual_payment_request</code> with fields:
+            event_id, ticket_transaction_id, requester info, amount_due, payment_method_type,
+            payment_handle, payment_instructions, status, received_at, received_by, void_reason, metadata, audit fields.
+          </li>
+          <li>
+            Extend <code class="inline">payment_provider_config</code> provider list to include:
+            <code class="inline">VENMO_MANUAL</code>, <code class="inline">CASH_APP_MANUAL</code>, <code class="inline">CASH</code>, <code class="inline">CHECK</code>, <code class="inline">OTHER_MANUAL</code>.
+          </li>
+          <li>
+            Add event-level payment flow configuration:
+            <code class="inline">event_details.payment_flow_mode</code> and
+            <code class="inline">event_details.manual_payment_enabled</code> (if not present).
+          </li>
+          <li>
+            Add manual status enum or lookup table:
+            <code class="inline">manual_payment_status</code> = Requested, Received, Voided/Refunded.
+          </li>
+          <li>
+            Add proof-of-payment attachment metadata:
+            <code class="inline">proof_of_payment_file_key</code>, <code class="inline">proof_of_payment_file_url</code>,
+            <code class="inline">proof_of_payment_uploaded_at</code> on manual payment records or a child table.
+          </li>
+        </ul>
+        <div class="callout">
+          Align all schema changes with the latest SQL snapshot and ensure tenant_id is present on all new tables.
+        </div>
+      </section>
+
+      <section id="backend-requirements">
+        <div class="divider"></div>
+        <h2>7. Backend Requirements</h2>
+        <h3>Service Layer</h3>
+        <ul>
+          <li>Create <code class="inline">ManualPaymentService</code> with CRUD for manual payment requests.</li>
+          <li>Integrate status updates with ticket inventory + QR generation.</li>
+          <li>Audit log each status change with actor and timestamp.</li>
+          <li>Store proof-of-payment uploads in S3 under <code class="inline">events/{eventId}/manual-payments/proof-of-payment/</code>.</li>
+        </ul>
+        <h3>REST APIs (Example Endpoints)</h3>
+        <ul>
+          <li><code class="inline">POST /api/manual-payments</code> → Create manual payment request.</li>
+          <li><code class="inline">GET /api/manual-payments?eventId.equals=</code> → List requests for event/admin.</li>
+          <li><code class="inline">PATCH /api/manual-payments/{id}</code> → Update status to Received/Voided.</li>
+          <li><code class="inline">GET /api/manual-payment-methods?tenantId.equals=</code> → List available manual methods.</li>
+          <li><code class="inline">POST /api/manual-payments/{id}/proof</code> → Upload proof-of-payment file.</li>
+        </ul>
+        <h3>Integration with Ticketing</h3>
+        <ul>
+          <li>Manual payment requests should reference <code class="inline">event_ticket_transaction</code> or <code class="inline">user_payment_transaction</code>.</li>
+          <li>On status Received, call QR issuance workflow and set ticket status to Confirmed.</li>
+          <li>On Voided/Refunded, release inventory and log reason.</li>
+        </ul>
+        <h3>Standards</h3>
+        <ul>
+          <li>Follow <code class="inline">cursor_rules/nextjs_api_routes.mdc</code> for proxy routing from the frontend.</li>
+          <li>Match contracts and naming patterns with <code class="inline">documentation/Swagger_API_Docs/api-docs.json</code>.</li>
+          <li>Use tenant_id injection and criteria queries (<code class="inline">tenantId.equals</code>).</li>
+        </ul>
+      </section>
+
+      <section id="frontend-requirements">
+        <div class="divider"></div>
+        <h2>8. Frontend Requirements</h2>
+        <h3>Checkout Experience</h3>
+        <ul>
+          <li>Payment method selector that lists Stripe and Manual options based on event configuration.</li>
+          <li>Manual options include: Zelle, Venmo, Cash App, Cash, Check, Other.</li>
+          <li>Manual selection shows organizer-provided instructions and required memo fields.</li>
+          <li>Submission creates a Manual Payment Request via proxy API.</li>
+          <li>Optional proof-of-payment upload (image/PDF) after request is created.</li>
+          <li>Pending requests never expire automatically; users can cancel a request.</li>
+        </ul>
+        <h3>Status & Ticketing UI</h3>
+        <ul>
+          <li>Pending state banner: “Payment requested. Awaiting organizer confirmation.”</li>
+          <li>QR code panel hidden until status = Received.</li>
+          <li>Show audit timestamp and method in attendee dashboard.</li>
+        </ul>
+        <h3>Admin & Organizer Console</h3>
+        <ul>
+          <li>Manual payments tab with filters (event, method, status).</li>
+          <li>Action buttons: Mark Received, Void/Refund, Add Notes.</li>
+          <li>Follow UI standards in <code class="inline">@ui_style_guide.mdc</code> and admin button patterns.</li>
+        </ul>
+      </section>
+
+      <section id="batch-jobs">
+        <div class="divider"></div>
+        <h2>9. Batch Jobs &amp; Reconciliation</h2>
+        <ul>
+          <li><strong>Summary Aggregation Job:</strong> nightly totals grouped by event, status, and payment method.</li>
+          <li><strong>Reporting Table:</strong> store daily snapshots for admin dashboard reporting.</li>
+          <li><strong>Reconciliation Export:</strong> optional CSV output for finance teams.</li>
+          <li><strong>Stale Cleanup:</strong> no auto-void; pending requests remain open until manually cancelled.</li>
+          <li>Batch job implementations live in <code class="inline">event-site-manager-batch-jobs</code>.</li>
+        </ul>
+      </section>
+
+      <section id="security">
+        <div class="divider"></div>
+        <h2>10. Security &amp; Compliance</h2>
+        <ul>
+          <li>Manual payment instructions must never store sensitive banking data beyond organizer-provided handles.</li>
+          <li>Audit logs required for all status changes.</li>
+          <li>Role-based access: only admin/organizer can mark Received or Void.</li>
+          <li>Ensure manual payment records respect tenant isolation.</li>
+        </ul>
+      </section>
+
+      <section id="migration">
+        <div class="divider"></div>
+        <h2>11. Migration &amp; Rollout</h2>
+        <ol>
+          <li>Add schema changes and migration scripts.</li>
+          <li>Implement backend endpoints and admin workflows.</li>
+          <li>Update frontend checkout to include manual flow selection.</li>
+          <li>Enable per-tenant configuration in admin settings.</li>
+          <li>Roll out per event, starting with fundraising events.</li>
+        </ol>
+      </section>
+
+      <section id="open-questions">
+        <div class="divider"></div>
+        <h2>12. Decisions</h2>
+        <ul>
+          <li>Partial payment tracking: <strong>Not supported.</strong></li>
+          <li>Expiration window: <strong>Open-ended</strong>; requests can be cancelled manually.</li>
+          <li>Proof-of-payment uploads: <strong>Supported.</strong> Store in S3 under the event path.</li>
+          <li>Admin action webhooks: <strong>Not required for v1.</strong></li>
+        </ul>
+      </section>
+
+      <footer>
+        <p>Generated for <code class="inline">documentation/domain_agnostic_payment/fee_free_direct_manual_pay_like_zelle/PRD.html</code></p>
+      </footer>
+    </main>
+  </body>
+</html>

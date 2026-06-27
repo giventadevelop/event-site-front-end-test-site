@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="UI UX Pro Max: install uipro-cli, Cursor integration, Next.js workflow, design-system persistence, Windows PATH notes — Roy and Bindu Productions project documentation.">
+    <title>UI/UX Pro Max — Cursor IDE &amp; Next.js Integration Guide</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+        }
+        h1 {
+            font-size: 2.5em;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+        }
+        h2 {
+            font-size: 1.8em;
+            border-left: 4px solid #0066cc;
+            padding-left: 15px;
+            margin-top: 28px;
+            margin-bottom: 16px;
+        }
+        h3 { font-size: 1.4em; color: #333; margin-top: 20px; margin-bottom: 10px; }
+        h4 { font-size: 1.2em; color: #555; margin-top: 16px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin: 12px 0 12px 24px; }
+        li { margin-bottom: 8px; }
+        a { color: #0066cc; }
+        a:focus { outline: 2px solid #0066cc; outline-offset: 2px; }
+
+        .toc {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 24px 0;
+        }
+        .toc h2 { margin-top: 0; border: none; padding: 0; font-size: 1.3em; }
+        .toc ul { margin: 12px 0 0 20px; }
+        .toc a { font-weight: 600; }
+
+        .section-intro {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-intro code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+
+        .section-container {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-container.usage {
+            background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%);
+            border-left-color: #9c27b0;
+        }
+        .section-container.parameters {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left-color: #ff9800;
+        }
+        .section-container.output {
+            background: linear-gradient(135deg, #e6ffe6 0%, #ccffcc 100%);
+            border-left-color: #28a745;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            padding: 12px 20px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 8px 8px 0 0;
+            font-size: 1.2em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-header.usage {
+            background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+        }
+        .section-header.parameters {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+        .section-header.output {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+        }
+
+        .parameters-list {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left: 4px solid #ff9800;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .parameters-list code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+
+        .info {
+            background: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            padding: 16px 20px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+        .info code, .info .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 16px 20px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+        .warning code, .warning .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 16px 20px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+
+        .script-name {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+        }
+
+        .code-block, pre, pre code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #b8d4e3;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        tr:hover { background-color: #e3f2fd; transition: background-color 0.2s ease; }
+        td code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+        }
+
+        /* Command blocks */
+        .command-block {
+            border: 2px solid #2196f3;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+        }
+        .command-block.setup { border-color: #2196f3; }
+        .command-block.advance {
+            border-color: #ff9800;
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        }
+        .command-block.verify {
+            border-color: #4caf50;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        }
+        .command-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.6);
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+        }
+        .command-type { font-weight: bold; color: #1565c0; }
+        .command-block.advance .command-type { color: #e65100; }
+        .command-block.verify .command-type { color: #2e7d32; }
+        .command-header-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .copy-button, .copy-button-template {
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .copy-button {
+            background-color: #0066cc;
+        }
+        .copy-button:hover { background-color: #0052a3; transform: translateY(-1px); }
+        .copy-button.copied { background-color: #28a745; }
+        .copy-button-template {
+            background-color: #6c757d;
+        }
+        .copy-button-template:hover { background-color: #5a6268; }
+        .copy-button-template.copied { background-color: #28a745; }
+
+        .command-parameters {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.5);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .command-parameters h5 {
+            margin: 0 0 12px 0;
+            font-size: 0.9em;
+            color: #333;
+            font-weight: bold;
+        }
+        .parameter-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .parameter-group.single { grid-template-columns: 1fr; }
+        .parameter-input { display: flex; flex-direction: column; gap: 4px; }
+        .parameter-input label { font-size: 0.8em; color: #555; font-weight: 600; }
+        .parameter-input input, .parameter-input select {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            transition: border-color 0.2s ease;
+        }
+        .parameter-input input:focus, .parameter-input select:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+        @media (max-width: 768px) {
+            .parameter-group { grid-template-columns: 1fr; }
+            body { padding: 10px; }
+            h1 { font-size: 1.75em; }
+        }
+
+        .command-content {
+            padding: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #0d3b66;
+            background: #fff;
+            word-break: break-all;
+        }
+        .command-single-line {
+            padding: 12px 15px;
+            background: #e8f4f8;
+            border-top: 1px solid #b8d4e3;
+        }
+        .command-single-line-label {
+            font-size: 0.75em;
+            color: #666;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .command-single-line code {
+            display: block;
+            background: transparent;
+            border: none;
+            padding: 0;
+            color: #0d3b66;
+            font-size: 0.95em;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>UI/UX Pro Max — Cursor IDE &amp; Next.js Integration</h1>
+
+        <div class="toc">
+            <h2>Table of Contents</h2>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#install-global">Install CLI globally</a></li>
+                <li><a href="#init-cursor">Initialize for Cursor (this project)</a></li>
+                <li><a href="#windows-path">Windows: PATH and <code class="code-highlight">uipro</code> command</a></li>
+                <li><a href="#compare">UI UX Pro Max vs frontend-design skill</a></li>
+                <li><a href="#cursor-integration">How it integrates with Cursor</a></li>
+                <li><a href="#nextjs">Next.js workflow &amp; commands</a></li>
+                <li><a href="#paths">Script paths &amp; flags (<code class="code-highlight">--persist</code>)</a></li>
+                <li><a href="#repo">Upstream repository</a></li>
+            </ul>
+        </div>
+
+        <div class="section-intro" id="overview">
+            <h2 style="margin-top:0;border:none;padding:0;">Overview</h2>
+            <p>
+                This guide documents installing <strong>UI/UX Pro Max</strong> for the
+                <strong>Roy and Bindu Productions</strong> Next.js workspace: global <code class="code-highlight">uipro-cli</code>,
+                project skill files under <code class="code-highlight">.cursor/skills/ui-ux-pro-max/</code>, Windows notes,
+                comparison with the <strong>frontend-design</strong> skill, and <strong>Next.js</strong>-oriented
+                <code class="code-highlight">python</code> commands for design-system generation and persistence.
+            </p>
+        </div>
+
+        <div class="section-container usage" id="install-global">
+            <div class="section-header usage">Global install — npm</div>
+            <p>Install the CLI once per machine (npm package <code class="code-highlight">uipro-cli@2.2.3</code> as verified at install time).</p>
+            <div class="command-block setup"
+                 data-command-type="setup"
+                 data-command-base="npm install -g uipro-cli"
+                 data-template-command="npm install -g uipro-cli">
+                <div class="command-header">
+                    <span class="command-type">Setup</span>
+                    <div class="command-header-buttons">
+                        <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cb-npm-uipro')" title="Copy template command">📄 Template</button>
+                        <button type="button" class="copy-button" onclick="copyCommand(this, 'cb-npm-uipro')" title="Copy customized command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Customize Parameters:</h5>
+                    <div class="parameter-group single">
+                        <div class="parameter-input">
+                            <label for="cb-npm-uipro-atversion">Optional version (e.g. 2.2.3 or @2.2.3):</label>
+                            <input type="text" id="cb-npm-uipro-atversion" placeholder="2.2.3 or leave empty" value="" oninput="updateCommand('cb-npm-uipro', 'atversion', this.value)" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+                <div class="command-content" id="cb-npm-uipro">npm install -g uipro-cli</div>
+                <div class="command-single-line" id="cb-npm-uipro-single">
+                    <div class="command-single-line-label">Windows single-line:</div>
+                    <code id="cb-npm-uipro-single-code">npm install -g uipro-cli</code>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-container usage" id="init-cursor">
+            <div class="section-header usage">Project init — Cursor</div>
+            <p>From the <strong>repository root</strong>, run init so files are written to <code class="code-highlight">.cursor/skills/</code>.</p>
+            <div class="command-block setup"
+                 data-command-type="setup"
+                 data-command-base="uipro init --ai"
+                 data-template-command="uipro init --ai cursor">
+                <div class="command-header">
+                    <span class="command-type">Setup</span>
+                    <div class="command-header-buttons">
+                        <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cb-uipro-init')" title="Copy template command">📄 Template</button>
+                        <button type="button" class="copy-button" onclick="copyCommand(this, 'cb-uipro-init')" title="Copy customized command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Customize Parameters:</h5>
+                    <div class="parameter-group single">
+                        <div class="parameter-input">
+                            <label for="cb-uipro-init-ai">Assistant target (<code class="code-highlight">--ai</code>):</label>
+                            <select id="cb-uipro-init-ai" onchange="updateCommand('cb-uipro-init', 'ai', this.value)">
+                                <option value="cursor" selected>cursor</option>
+                                <option value="claude">claude</option>
+                                <option value="windsurf">windsurf</option>
+                                <option value="copilot">copilot</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="command-content" id="cb-uipro-init">uipro init --ai cursor</div>
+                <div class="command-single-line">
+                    <div class="command-single-line-label">Windows single-line:</div>
+                    <code id="cb-uipro-init-single-code">uipro init --ai cursor</code>
+                </div>
+            </div>
+            <div class="success">
+                <strong>Success output (example):</strong> installer reports files under <code class="code-highlight">.cursor/skills/</code> and suggests restarting the AI assistant. After install, the skill includes
+                <code class="script-name">SKILL.md</code>, <code class="script-name">scripts/search.py</code>, and <code class="code-highlight">data/*.csv</code>.
+            </div>
+        </div>
+
+        <div class="section-container parameters" id="windows-path">
+            <div class="section-header parameters">Windows: PATH and running <code style="background:transparent;border:none;color:#fff;padding:0;">uipro</code></div>
+            <div class="warning">
+                <strong>⚠️ If <code class="code-highlight">uipro</code> is not recognized:</strong> the global npm bin folder may not be on <code class="code-highlight">PATH</code> in the current terminal session. Ensure
+                <code class="code-highlight">%APPDATA%\npm</code> is in your user <strong>PATH</strong>, or open a <strong>new</strong> terminal after install, or invoke
+                <code class="code-highlight">&quot;%APPDATA%\npm\uipro.cmd&quot; init --ai cursor</code> from the project root.
+            </div>
+            <p><strong>PowerShell note:</strong> Older Windows PowerShell does not treat <code class="code-highlight">&amp;&amp;</code> as a command separator; run <code class="code-highlight">cd</code> and the command on separate lines (see project <code class="code-highlight">git_local_push.mdc</code> rule).</p>
+        </div>
+
+        <div class="section-container" id="compare">
+            <div class="section-header">UI UX Pro Max vs frontend-design skill</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Aspect</th>
+                        <th>UI UX Pro Max</th>
+                        <th>Frontend-design skill (e.g. Cursor skill)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Strength</strong></td>
+                        <td>Searchable datasets (styles, colors, stacks), <code class="code-highlight">search.py</code>, optional <code class="code-highlight">design-system/MASTER.md</code> + page overrides</td>
+                        <td>Execution-focused: distinctive, polished UI; avoids generic “template” aesthetics when building components</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Best for</strong></td>
+                        <td>Choosing systems, tokens, patterns, stack hints (e.g. <code class="code-highlight">nextjs</code>)</td>
+                        <td>Craft and visual quality during implementation</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="info">
+                <strong>💡 Practical combo:</strong> use <strong>Pro Max</strong> to define or refresh constraints and references; use <strong>frontend-design</strong> when you want strong creative direction in the actual React/Next.js code. Reconcile outputs with existing project rules under <code class="code-highlight">.cursor/rules/</code> (e.g. MOSC styling) so nothing conflicts.
+            </div>
+        </div>
+
+        <div class="section-container" id="cursor-integration">
+            <div class="section-header">How this integrates with Cursor IDE</div>
+            <ul>
+                <li><code class="code-highlight">uipro init --ai cursor</code> installs the skill at <code class="code-highlight">.cursor/skills/ui-ux-pro-max/</code>.</li>
+                <li>Cursor loads agent instructions from <code class="code-highlight">SKILL.md</code> when that skill is in context.</li>
+                <li><strong>Restart Cursor</strong> (or reload the window) after install so skills are picked up reliably.</li>
+                <li>Optional: reference the skill explicitly in chat if your Cursor build supports @-mentions for skills.</li>
+            </ul>
+        </div>
+
+        <div class="section-container usage" id="nextjs">
+            <div class="section-header usage">Next.js — stack search</div>
+            <p>Run from the <strong>repository root</strong>. Adjust the search query to match your feature (e.g. dashboard, auth, marketing).</p>
+            <div class="command-block advance"
+                 data-command-type="advance"
+                 data-command-base="python .cursor/skills/ui-ux-pro-max/scripts/search.py"
+                 data-template-command="python .cursor/skills/ui-ux-pro-max/scripts/search.py &quot;SaaS dashboard&quot; --stack nextjs -n 3">
+                <div class="command-header">
+                    <span class="command-type">Stack guidelines</span>
+                    <div class="command-header-buttons">
+                        <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cb-py-stack')" title="Copy template command">📄 Template</button>
+                        <button type="button" class="copy-button" onclick="copyCommand(this, 'cb-py-stack')" title="Copy customized command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Customize Parameters:</h5>
+                    <div class="parameter-group">
+                        <div class="parameter-input">
+                            <label for="cb-py-stack-query">Query:</label>
+                            <input type="text" id="cb-py-stack-query" value="SaaS dashboard" oninput="updateCommand('cb-py-stack', 'query', this.value)" autocomplete="off">
+                        </div>
+                        <div class="parameter-input">
+                            <label for="cb-py-stack-n">Max results (-n):</label>
+                            <input type="text" id="cb-py-stack-n" value="3" oninput="updateCommand('cb-py-stack', 'n', this.value)" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+                <div class="command-content" id="cb-py-stack">python .cursor/skills/ui-ux-pro-max/scripts/search.py "SaaS dashboard" --stack nextjs -n 3</div>
+                <div class="command-single-line">
+                    <div class="command-single-line-label">Windows single-line:</div>
+                    <code id="cb-py-stack-single-code">python .cursor/skills/ui-ux-pro-max/scripts/search.py "SaaS dashboard" --stack nextjs -n 3</code>
+                </div>
+            </div>
+
+            <h3>Design system (recommended before large UI work)</h3>
+            <div class="command-block advance"
+                 data-command-type="advance"
+                 data-command-base="python .cursor/skills/ui-ux-pro-max/scripts/search.py"
+                 data-template-command="python .cursor/skills/ui-ux-pro-max/scripts/search.py &quot;SaaS dashboard fintech&quot; --design-system -p &quot;Project Name&quot; -f markdown">
+                <div class="command-header">
+                    <span class="command-type">Design system</span>
+                    <div class="command-header-buttons">
+                        <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cb-py-ds')" title="Copy template command">📄 Template</button>
+                        <button type="button" class="copy-button" onclick="copyCommand(this, 'cb-py-ds')" title="Copy customized command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Customize Parameters:</h5>
+                    <div class="parameter-group">
+                        <div class="parameter-input">
+                            <label for="cb-py-ds-query">Query:</label>
+                            <input type="text" id="cb-py-ds-query" value="SaaS dashboard fintech" oninput="updateCommand('cb-py-ds', 'query', this.value)" autocomplete="off">
+                        </div>
+                        <div class="parameter-input">
+                            <label for="cb-py-ds-project">Project name (-p):</label>
+                            <input type="text" id="cb-py-ds-project" value="Roy and Bindu Productions" oninput="updateCommand('cb-py-ds', 'project', this.value)" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+                <div class="command-content" id="cb-py-ds">python .cursor/skills/ui-ux-pro-max/scripts/search.py "SaaS dashboard fintech" --design-system -p "Roy and Bindu Productions" -f markdown</div>
+                <div class="command-single-line">
+                    <div class="command-single-line-label">Windows single-line:</div>
+                    <code id="cb-py-ds-single-code">python .cursor/skills/ui-ux-pro-max/scripts/search.py "SaaS dashboard fintech" --design-system -p "Roy and Bindu Productions" -f markdown</code>
+                </div>
+            </div>
+
+            <h3>Persist Master + optional page override</h3>
+            <p>Use <code class="code-highlight">--persist</code> (not <code class="code-highlight">--pers</code>). This writes <code class="code-highlight">design-system/MASTER.md</code> and optionally <code class="code-highlight">design-system/pages/&lt;page&gt;.md</code> under the working directory.</p>
+            <div class="command-block verify"
+                 data-command-type="verify"
+                 data-command-base="python .cursor/skills/ui-ux-pro-max/scripts/search.py"
+                 data-template-command="python .cursor/skills/ui-ux-pro-max/scripts/search.py &quot;SaaS dashboard&quot; --design-system --persist -p &quot;Project Name&quot; --page &quot;dashboard&quot;">
+                <div class="command-header">
+                    <span class="command-type">Persist design system</span>
+                    <div class="command-header-buttons">
+                        <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cb-py-per')" title="Copy template command">📄 Template</button>
+                        <button type="button" class="copy-button" onclick="copyCommand(this, 'cb-py-per')" title="Copy customized command">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="command-parameters">
+                    <h5>🔧 Customize Parameters:</h5>
+                    <div class="parameter-group">
+                        <div class="parameter-input">
+                            <label for="cb-py-per-query">Query:</label>
+                            <input type="text" id="cb-py-per-query" value="SaaS dashboard" oninput="updateCommand('cb-py-per', 'query', this.value)" autocomplete="off">
+                        </div>
+                        <div class="parameter-input">
+                            <label for="cb-py-per-project">Project name (-p):</label>
+                            <input type="text" id="cb-py-per-project" value="Roy and Bindu Productions" oninput="updateCommand('cb-py-per', 'project', this.value)" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="parameter-group single">
+                        <div class="parameter-input">
+                            <label for="cb-py-per-page">Page override (--page, optional):</label>
+                            <input type="text" id="cb-py-per-page" value="dashboard" placeholder="dashboard" oninput="updateCommand('cb-py-per', 'page', this.value)" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+                <div class="command-content" id="cb-py-per">python .cursor/skills/ui-ux-pro-max/scripts/search.py "SaaS dashboard" --design-system --persist -p "Roy and Bindu Productions" --page "dashboard"</div>
+                <div class="command-single-line">
+                    <div class="command-single-line-label">Windows single-line:</div>
+                    <code id="cb-py-per-single-code">python .cursor/skills/ui-ux-pro-max/scripts/search.py "SaaS dashboard" --design-system --persist -p "Roy and Bindu Productions" --page "dashboard"</code>
+                </div>
+            </div>
+        </div>
+
+        <div class="parameters-list" id="paths">
+            <p><strong>Paths &amp; hierarchy (project-relative):</strong></p>
+            <ul>
+                <li>Skill script: <code class="code-highlight">.cursor/skills/ui-ux-pro-max/scripts/search.py</code> (not the Claude-only <code class="code-highlight">.claude/skills/...</code> path from some blog posts).</li>
+                <li>Hierarchy: for a page like Checkout, check <code class="code-highlight">design-system/pages/checkout.md</code> first; if missing, use <code class="code-highlight">design-system/MASTER.md</code> only.</li>
+                <li>Align generated guidance with existing <code class="code-highlight">.cursor/rules/</code> (e.g. <code class="code-highlight">mosc_styling_standards.mdc</code>, <code class="code-highlight">icons_buttons_styles.mdc</code>) so the app stays visually consistent.</li>
+            </ul>
+        </div>
+
+        <div class="section-container output" id="repo">
+            <div class="section-header output">Upstream repository</div>
+            <p>
+                <strong>GitHub:</strong>
+                <a href="https://github.com/nextlevelbuilder/ui-ux-pro-max-skill" rel="noopener noreferrer">nextlevelbuilder/ui-ux-pro-max-skill</a>
+            </p>
+            <p class="copy-hint" style="margin-top:12px;color:#555;font-size:0.9em;">npm package: <code class="code-highlight">uipro-cli</code> — CLI installs the skill templates for your chosen assistant.</p>
+        </div>
+    </main>
+
+    <script>
+        const commandParams = {};
+
+        function escapeQueryForCmd(s) {
+            if (!s) return '';
+            return String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        }
+
+        function updateCommand(commandId, paramName, paramValue) {
+            if (!commandParams[commandId]) commandParams[commandId] = {};
+            commandParams[commandId][paramName] = paramValue;
+
+            const commandElement = document.getElementById(commandId);
+            if (!commandElement) return;
+
+            const block = commandElement.closest('.command-block');
+            if (!block) return;
+
+            let command = '';
+
+            if (commandId === 'cb-npm-uipro') {
+                let v = (commandParams[commandId].atversion || '').trim();
+                if (v && v.charAt(0) !== '@') {
+                    v = '@' + v;
+                }
+                command = 'npm install -g uipro-cli' + (v ? v : '');
+            } else if (commandId === 'cb-uipro-init') {
+                const ai = commandParams[commandId].ai || 'cursor';
+                command = 'uipro init --ai ' + ai;
+            } else if (commandId === 'cb-py-stack') {
+                const q = commandParams[commandId].query != null ? commandParams[commandId].query : 'SaaS dashboard';
+                const n = (commandParams[commandId].n || '3').trim() || '3';
+                command = 'python .cursor/skills/ui-ux-pro-max/scripts/search.py "' + escapeQueryForCmd(q) + '" --stack nextjs -n ' + n;
+            } else if (commandId === 'cb-py-ds') {
+                const q = commandParams[commandId].query != null ? commandParams[commandId].query : 'SaaS dashboard fintech';
+                const p = commandParams[commandId].project != null ? commandParams[commandId].project : 'Roy and Bindu Productions';
+                command = 'python .cursor/skills/ui-ux-pro-max/scripts/search.py "' + escapeQueryForCmd(q) + '" --design-system -p "' + escapeQueryForCmd(p) + '" -f markdown';
+            } else if (commandId === 'cb-py-per') {
+                const q = commandParams[commandId].query != null ? commandParams[commandId].query : 'SaaS dashboard';
+                const p = commandParams[commandId].project != null ? commandParams[commandId].project : 'Roy and Bindu Productions';
+                const page = (commandParams[commandId].page || '').trim();
+                command = 'python .cursor/skills/ui-ux-pro-max/scripts/search.py "' + escapeQueryForCmd(q) + '" --design-system --persist -p "' + escapeQueryForCmd(p) + '"';
+                if (page) {
+                    command += ' --page "' + escapeQueryForCmd(page) + '"';
+                }
+            }
+
+            commandElement.textContent = command;
+            const singleLineCode = document.getElementById(commandId + '-single-code');
+            if (singleLineCode) singleLineCode.textContent = command;
+        }
+
+        function fallbackCopy(text, button) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'absolute';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                if (button) {
+                    button.classList.add('copied');
+                    const isTemplate = button.classList.contains('copy-button-template');
+                    button.textContent = '✓ Copied!';
+                    setTimeout(function () {
+                        button.classList.remove('copied');
+                        button.textContent = isTemplate ? '📄 Template' : '📋 Copy';
+                    }, 2000);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+            document.body.removeChild(ta);
+        }
+
+        function copyCommand(button, commandId) {
+            const commandElement = document.getElementById(commandId);
+            if (!commandElement) return;
+            const commandText = commandElement.textContent.trim();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(commandText).then(function () {
+                    button.classList.add('copied');
+                    button.textContent = '✓ Copied!';
+                    setTimeout(function () {
+                        button.classList.remove('copied');
+                        button.textContent = '📋 Copy';
+                    }, 2000);
+                }).catch(function () {
+                    fallbackCopy(commandText, button);
+                });
+            } else {
+                fallbackCopy(commandText, button);
+            }
+        }
+
+        function copyTemplateCommand(button, commandId) {
+            const commandBlock = button.closest('.command-block');
+            if (!commandBlock) return;
+            let templateCommand = commandBlock.getAttribute('data-template-command');
+            if (!templateCommand) {
+                const commandElement = document.getElementById(commandId);
+                if (!commandElement) return;
+                templateCommand = commandElement.textContent.trim();
+            }
+            templateCommand = templateCommand.replace(/&quot;/g, '"');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(templateCommand).then(function () {
+                    button.classList.add('copied');
+                    button.textContent = '✓ Copied!';
+                    setTimeout(function () {
+                        button.classList.remove('copied');
+                        button.textContent = '📄 Template';
+                    }, 2000);
+                }).catch(function () {
+                    fallbackCopy(templateCommand, button);
+                });
+            } else {
+                fallbackCopy(templateCommand, button);
+            }
+        }
+
+        function initializeCommands() {
+            document.querySelectorAll('.command-block[data-command-base]').forEach(function (block) {
+                const commandContent = block.querySelector('.command-content');
+                if (!commandContent || !commandContent.id) return;
+                const commandId = commandContent.id;
+
+                block.querySelectorAll('.parameter-input input, .parameter-input select').forEach(function (input) {
+                    const inputId = input.id;
+                    if (!inputId || inputId.indexOf(commandId + '-') !== 0) return;
+                    const paramName = inputId.substring(commandId.length + 1);
+                    if (!commandParams[commandId]) commandParams[commandId] = {};
+                    if (input.tagName === 'SELECT') {
+                        commandParams[commandId][paramName] = input.value;
+                    } else {
+                        commandParams[commandId][paramName] = input.value || '';
+                    }
+                });
+                updateCommand(commandId, '_init', '');
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            initializeCommands();
+        });
+    </script>
+</body>
+</html>

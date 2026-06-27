@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Tenant ID — Backend Enhancements PRD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; margin: 12px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Auto Tenant ID — Backend Enhancements PRD</h1>
+    <p class="doc-meta">
+        <strong>Project:</strong> <code>malayalees-us-site-boot</code> / Rust API &nbsp;|&nbsp; <strong>Status:</strong> Optional (recommended) &nbsp;|&nbsp;
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a>
+    </p>
+
+    <div class="lead">
+        <p>v1 frontend computes the next tenant ID by listing organizations. For production-grade concurrency, add a backend endpoint that returns the next sequence atomically (or assigns ID on create).</p>
+    </div>
+
+    <h2>1. Recommended REST endpoint</h2>
+    <div class="section-container">
+        <div class="section-header">GET next tenant ID preview</div>
+        <table>
+            <thead><tr><th>Method</th><th>Path</th><th>Auth</th></tr></thead>
+            <tbody>
+                <tr><td><code>GET</code></td><td><code>/api/tenant-organizations/next-tenant-id</code></td><td>Service JWT + super-admin role</td></tr>
+            </tbody>
+        </table>
+        <p><strong>Query:</strong> <code>prefix</code> (required) — slug before the numeric suffix.</p>
+        <pre>Response 200:
+{
+  "prefix": "ford_motors",
+  "sequenceNumber": 10000,
+  "formattedSequence": "10000",
+  "tenantId": "ford_motors_10000"
+}</pre>
+    </div>
+
+    <h2>2. Server logic</h2>
+    <ol>
+        <li>Normalize <code>prefix</code> (lowercase, underscores, strip invalid chars).</li>
+        <li>Query: <code>SELECT MAX(CAST(substring(tenant_id from '_(\\d+)$') AS BIGINT)) FROM tenant_organization WHERE tenant_id ~ '_(\\d+)$'</code> (PostgreSQL).</li>
+        <li>If null → next = 1; else next = max + 1.</li>
+        <li>Format suffix with minimum 5 digits.</li>
+        <li>Return DTO; do not consume sequence until POST create (preview is advisory) OR use DB sequence table for reservation.</li>
+    </ol>
+
+    <h2>3. Optional: assign on POST</h2>
+    <p>Extend <code>POST /api/tenant-organizations</code>:</p>
+    <ul>
+        <li>If body includes <code>tenantIdPrefix</code> and omits <code>tenantId</code>, server assigns next ID inside a transaction.</li>
+        <li>Reject if computed ID already exists (retry with +1).</li>
+    </ul>
+
+    <h2>4. Criteria / list</h2>
+    <p>No change required. Existing <code>GET /api/tenant-organizations</code> with pagination remains the data source for admin lists.</p>
+
+    <h2>5. Frontend integration (future)</h2>
+    <ul>
+        <li>Replace <code>previewNextTenantIdServer</code> internal pagination with proxy call to <code>/api/proxy/tenant-organizations/next-tenant-id?prefix=...</code>.</li>
+        <li>Add Pages Router proxy slug or dedicated handler in <code>src/pages/api/proxy/tenant-organizations/</code>.</li>
+    </ul>
+
+    <div class="warning-box">
+        <p><strong>Not required for v1:</strong> Frontend-only generation works when tenant creation volume is low. Adopt backend endpoint before high-volume or multi-admin concurrent onboarding.</p>
+    </div>
+
+</body>
+</html>

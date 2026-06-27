@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Changes: Stripe Fees, Tax, and Net Revenue</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+        }
+        .code-block {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 15px 0;
+        }
+        .file-path {
+            font-family: 'Courier New', monospace;
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #d63384;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .recommendation {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Backend Changes: Stripe Fees, Tax, and Net Revenue</h1>
+        <p><strong>Document Date:</strong> January 11, 2026</p>
+        <p><strong>Project Location:</strong> <code>E:\project_workspace\malayalees-us-site-boot</code></p>
+        <p><strong>Purpose:</strong> Detailed implementation guide for backend changes to add net_payout_amount field, update DTOs, and fix purchase flow calculations.</p>
+
+        <div class="info-box">
+            <h2>Overview</h2>
+            <p>This document details all backend changes required to:</p>
+            <ol>
+                <li>Add <code>net_payout_amount</code> field to database schema</li>
+                <li>Update EventTicketTransaction entity and DTO</li>
+                <li>Update PATCH endpoint to accept netPayoutAmount</li>
+                <li>Fix purchase flow calculation logic</li>
+                <li>Create database migration script</li>
+            </ol>
+        </div>
+
+        <h2>1. Database Schema Changes</h2>
+
+        <h3>1.1 Add net_payout_amount Column</h3>
+        <div class="recommendation">
+            <h4>Database Migration Required</h4>
+            <p><strong>Table:</strong> <code>event_ticket_transaction</code></p>
+            <p><strong>New Column:</strong> <code>net_payout_amount numeric(21,2) NULL</code></p>
+            <p><strong>Purpose:</strong> Store the net amount received in bank account after Stripe fees and tax are deducted.</p>
+            <p><strong>Calculation:</strong> <code>net_payout_amount = final_amount - stripe_fee_amount - stripe_amount_tax</code></p>
+        </div>
+
+        <h3>1.2 Database Migration Script</h3>
+        <p><strong>File to Create:</strong> <code>src/main/resources/db/migration/V{version}__add_net_payout_amount_to_event_ticket_transaction.sql</code></p>
+
+        <div class="code-block">
+-- Migration: Add net_payout_amount column to event_ticket_transaction
+-- Version: V{next_version} (replace with actual version number)
+-- Date: 2026-01-11
+
+-- Add net_payout_amount column
+ALTER TABLE public.event_ticket_transaction
+ADD COLUMN net_payout_amount numeric(21,2) NULL;
+
+-- Add comment to column
+COMMENT ON COLUMN public.event_ticket_transaction.net_payout_amount IS
+'Net amount received in bank account after Stripe fees and tax are deducted. Calculated as: final_amount - stripe_fee_amount - stripe_amount_tax';
+
+-- Optional: Create index for performance (if needed for frequent queries)
+-- CREATE INDEX idx_event_ticket_transaction_net_payout_amount
+-- ON public.event_ticket_transaction(net_payout_amount)
+-- WHERE net_payout_amount IS NOT NULL;
+
+-- Optional: Backfill existing records (can be done via batch job instead)
+-- UPDATE public.event_ticket_transaction
+-- SET net_payout_amount = final_amount - COALESCE(stripe_fee_amount, 0) - COALESCE(stripe_amount_tax, 0)
+-- WHERE stripe_fee_amount IS NOT NULL
+--   AND final_amount IS NOT NULL
+--   AND status = 'COMPLETED';
+        </div>
+
+        <div class="warning-box">
+            <h4>⚠️ Important Notes:</h4>
+            <ul>
+                <li><strong>Version Number:</strong> Replace <code>{version}</code> with the next available Flyway/Liquibase version number</li>
+                <li><strong>Backfill Strategy:</strong> The batch job will populate this field for existing records, so backfill in migration is optional</li>
+                <li><strong>NULL Values:</strong> Column is nullable because existing records won't have this value until batch job runs</li>
+                <li><strong>Constraint:</strong> No CHECK constraint needed - batch job will ensure calculation is correct</li>
+            </ul>
+        </div>
+
+        <h2>2. Entity Changes</h2>
+
+        <h3>2.1 Update EventTicketTransaction Entity</h3>
+        <p><strong>File:</strong> <code>src/main/java/com/.../domain/EventTicketTransaction.java</code></p>
+
+        <div class="code-block">
+// ✅ ADD to EventTicketTransaction entity class
+@Entity
+@Table(name = "event_ticket_transaction")
+public class EventTicketTransaction {
+    // ... existing fields ...
+
+    @Column(name = "stripe_fee_amount", precision = 21, scale = 2)
+    private BigDecimal stripeFeeAmount;
+
+    @Column(name = "stripe_amount_tax", precision = 21, scale = 2)
+    private BigDecimal stripeAmountTax;
+
+    // NEW: Add net_payout_amount field
+    @Column(name = "net_payout_amount", precision = 21, scale = 2)
+    private BigDecimal netPayoutAmount;
+
+    // ... existing fields ...
+
+    // NEW: Add getter and setter
+    public BigDecimal getNetPayoutAmount() {
+        return netPayoutAmount;
+    }
+
+    public void setNetPayoutAmount(BigDecimal netPayoutAmount) {
+        this.netPayoutAmount = netPayoutAmount;
+    }
+}
+        </div>
+
+        <h2>3. DTO Changes</h2>
+
+        <h3>3.1 Update EventTicketTransactionDTO</h3>
+        <p><strong>File:</strong> <code>src/main/java/com/.../dto/EventTicketTransactionDTO.java</code></p>
+
+        <div class="code-block">
+// ✅ ADD to EventTicketTransactionDTO class
+public class EventTicketTransactionDTO {
+    // ... existing fields ...
+
+    @JsonProperty("stripeFeeAmount")
+    private BigDecimal stripeFeeAmount;
+
+    @JsonProperty("stripeAmountTax")
+    private BigDecimal stripeAmountTax;
+
+    // NEW: Add netPayoutAmount field
+    @JsonProperty("netPayoutAmount")
+    private BigDecimal netPayoutAmount;
+
+    // ... existing fields ...
+
+    // NEW: Add getter and setter
+    public BigDecimal getNetPayoutAmount() {
+        return netPayoutAmount;
+    }
+
+    public void setNetPayoutAmount(BigDecimal netPayoutAmount) {
+        this.netPayoutAmount = netPayoutAmount;
+    }
+}
+        </div>
+
+        <h2>4. Add Net Revenue Before Tax Calculation</h2>
+
+        <h3>4.1 Overview</h3>
+        <div class="recommendation">
+            <h4>Net Revenue Before Tax Calculation (Option A: Calculate On-the-Fly)</h4>
+            <p><strong>Formula:</strong> <code>net_revenue_before_tax = final_amount - stripe_fee_amount</code></p>
+            <p><strong>Alternative Formula:</strong> <code>net_revenue_before_tax = net_payout_amount + stripe_amount_tax</code></p>
+            <p><strong>Approach:</strong> Calculate in analytics service layer (no database changes needed)</p>
+            <p><strong>Rationale:</strong> Simple calculation using existing fields, no need to store in database unless performance becomes an issue.</p>
+        </div>
+
+        <h3>4.2 Update Sales Analytics Service</h3>
+        <p><strong>File:</strong> <code>src/main/java/com/.../service/SalesAnalyticsService.java</code> (or equivalent service)</p>
+        <p><strong>Purpose:</strong> Add calculation for "Net Revenue Before Tax" in sales metrics</p>
+
+        <div class="code-block">
+// ✅ ADD to SalesAnalyticsService (or equivalent service)
+public SalesMetrics calculateSalesMetrics(
+    List&lt;EventTicketTransaction&gt; transactions,
+    String eventId,
+    ZonedDateTime startDate,
+    ZonedDateTime endDate
+) {
+    // Filter only completed transactions
+    List&lt;EventTicketTransaction&gt; completedTransactions = transactions.stream()
+        .filter(t -&gt; "COMPLETED".equals(t.getStatus()))
+        .collect(Collectors.toList());
+
+    // ... existing calculations ...
+
+    // NEW: Calculate Net Revenue Before Tax
+    // Formula: net_revenue_before_tax = final_amount - stripe_fee_amount
+    BigDecimal netRevenueBeforeTax = completedTransactions.stream()
+        .map(t -&gt; {
+            BigDecimal finalAmount = t.getFinalAmount() != null
+                ? t.getFinalAmount()
+                : BigDecimal.ZERO;
+            BigDecimal stripeFee = t.getStripeFeeAmount() != null
+                ? t.getStripeFeeAmount()
+                : BigDecimal.ZERO;
+            // Net revenue before tax = final_amount - stripe_fee_amount
+            return finalAmount.subtract(stripeFee);
+        })
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    // ALTERNATIVE: If net_payout_amount is available, use:
+    // net_revenue_before_tax = net_payout_amount + stripe_amount_tax
+    BigDecimal netRevenueBeforeTaxAlt = completedTransactions.stream()
+        .map(t -&gt; {
+            BigDecimal netPayout = t.getNetPayoutAmount() != null
+                ? t.getNetPayoutAmount()
+                : BigDecimal.ZERO;
+            BigDecimal stripeTax = t.getStripeAmountTax() != null
+                ? t.getStripeAmountTax()
+                : BigDecimal.ZERO;
+            // Net revenue before tax = net_payout_amount + stripe_amount_tax
+            return netPayout.add(stripeTax);
+        })
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    // Use the first calculation (final_amount - stripe_fee_amount)
+    // as it's more reliable if net_payout_amount is not yet populated
+
+    // Create and return metrics
+    SalesMetrics metrics = new SalesMetrics();
+    // ... set existing metrics ...
+    metrics.setNetRevenueBeforeTax(netRevenueBeforeTax);
+
+    return metrics;
+}
+        </div>
+
+        <h3>4.3 Update SalesMetrics DTO</h3>
+        <p><strong>File:</strong> <code>src/main/java/com/.../dto/SalesMetrics.java</code></p>
+
+        <div class="code-block">
+// ✅ ADD to SalesMetrics DTO class
+public class SalesMetrics {
+    // ... existing fields ...
+
+    private BigDecimal totalRevenue;
+    private BigDecimal grossRevenue;
+    private BigDecimal netRevenue;
+    private BigDecimal totalNetPayout;
+    private BigDecimal totalStripeFees;
+    private BigDecimal totalStripeTax;
+    private BigDecimal organizerNetRevenue;
+
+    // NEW: Add netRevenueBeforeTax field
+    private BigDecimal netRevenueBeforeTax;
+
+    // ... existing getters and setters ...
+
+    // NEW: Add getter and setter
+    public BigDecimal getNetRevenueBeforeTax() {
+        return netRevenueBeforeTax;
+    }
+
+    public void setNetRevenueBeforeTax(BigDecimal netRevenueBeforeTax) {
+        this.netRevenueBeforeTax = netRevenueBeforeTax;
+    }
+}
+        </div>
+
+        <div class="info-box">
+            <h4>Important Notes:</h4>
+            <ul>
+                <li><strong>No Database Changes:</strong> This metric is calculated on-the-fly, no need to add a database field</li>
+                <li><strong>No Batch Job Changes:</strong> Calculation happens in analytics service, batch job doesn't need to populate this</li>
+                <li><strong>Performance:</strong> For most datasets, calculating on-the-fly is fast enough. Only consider storing in database if performance becomes an issue</li>
+                <li><strong>Formula Choice:</strong> Use <code>final_amount - stripe_fee_amount</code> as it's more reliable if <code>net_payout_amount</code> is not yet populated by batch job</li>
+            </ul>
+        </div>
+
+        <h2>5. API Endpoint Changes</h2>
+
+        <h3>5.1 Update PATCH Endpoint</h3>
+        <p><strong>File:</strong> <code>src/main/java/com/.../web/rest/EventTicketTransactionResource.java</code></p>
+        <p><strong>Endpoint:</strong> <code>PATCH /api/event-ticket-transactions/{id}</code></p>
+
+        <div class="code-block">
+// ✅ VERIFY PATCH endpoint accepts netPayoutAmount
+@PatchMapping("/event-ticket-transactions/{id}")
+public ResponseEntity&lt;EventTicketTransactionDTO&gt; partialUpdateEventTicketTransaction(
+    @PathVariable(value = "id", required = false) final Long id,
+    @RequestBody EventTicketTransactionDTO eventTicketTransactionDTO
+) {
+    // ... existing validation ...
+
+    // The DTO already includes netPayoutAmount field, so the endpoint will automatically accept it
+    // Verify that the mapper/service properly handles this field
+
+    // ... existing update logic ...
+}
+        </div>
+
+        <div class="info-box">
+            <h4>Note:</h4>
+            <p>If using MapStruct or similar mapping library, verify that the mapper includes <code>netPayoutAmount</code> in the mapping configuration.</p>
+        </div>
+
+        <h3>4.2 Update Service Layer</h3>
+        <p><strong>File:</strong> <code>src/main/java/com/.../service/EventTicketTransactionService.java</code></p>
+
+        <div class="code-block">
+// ✅ VERIFY service method handles netPayoutAmount
+public Optional&lt;EventTicketTransactionDTO&gt; partialUpdate(EventTicketTransactionDTO eventTicketTransactionDTO) {
+    // ... existing code ...
+
+    // The entity mapper should automatically map netPayoutAmount from DTO to entity
+    // Verify mapping configuration includes this field
+
+    // ... existing update logic ...
+}
+        </div>
+
+        <h2>5. Fix Purchase Flow Calculation Logic</h2>
+
+        <h3>5.1 Problem Statement</h3>
+        <div class="warning-box">
+            <p><strong>Issue:</strong> During ticket purchase, <code>totalAmount</code> and <code>finalAmount</code> are being set to the same value.</p>
+            <p><strong>Expected Calculation:</strong></p>
+            <ul>
+                <li><code>totalAmount</code> = Sum of base ticket prices (before discounts, fees, taxes)</li>
+                <li><code>finalAmount</code> = totalAmount - discountAmount + platformFeeAmount + taxAmount</li>
+            </ul>
+        </div>
+
+        <h3>5.2 Files to Review and Fix</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>File Path</th>
+                    <th>Purpose</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="file-path">.../service/EventTicketTransactionService.java</span></td>
+                    <td>Service layer for transaction creation</td>
+                    <td>Review and fix calculation logic</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">.../web/rest/EventTicketTransactionResource.java</span></td>
+                    <td>REST controller for transactions</td>
+                    <td>Verify calculation in POST endpoint</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">.../service/dto/EventTicketTransactionDTO.java</span></td>
+                    <td>DTO for transaction data</td>
+                    <td>Verify all fields are present</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>5.3 Correct Calculation Logic</h3>
+        <div class="code-block">
+// ✅ CORRECT Calculation Logic (to implement in service)
+public EventTicketTransactionDTO createTransaction(EventTicketTransactionDTO dto) {
+    // Step 1: Calculate totalAmount (sum of base ticket prices)
+    BigDecimal totalAmount = BigDecimal.ZERO;
+    for (TicketItem item : dto.getTicketItems()) {
+        BigDecimal itemTotal = item.getPricePerUnit()
+            .multiply(BigDecimal.valueOf(item.getQuantity()));
+        totalAmount = totalAmount.add(itemTotal);
+    }
+
+    // Step 2: Calculate discountAmount (if discount code applied)
+    BigDecimal discountAmount = BigDecimal.ZERO;
+    if (dto.getDiscountCodeId() != null) {
+        DiscountCode discountCode = discountCodeRepository.findById(dto.getDiscountCodeId())
+            .orElseThrow();
+
+        if ("PERCENTAGE".equals(discountCode.getDiscountType())) {
+            discountAmount = totalAmount
+                .multiply(discountCode.getDiscountValue())
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        } else if ("FIXED".equals(discountCode.getDiscountType())) {
+            discountAmount = discountCode.getDiscountValue();
+        }
+
+        // Ensure discount doesn't exceed total amount
+        if (discountAmount.compareTo(totalAmount) > 0) {
+            discountAmount = totalAmount;
+        }
+    }
+
+    // Step 3: Calculate platformFeeAmount (from tenant settings)
+    TenantSettings tenantSettings = tenantSettingsRepository.findByTenantId(dto.getTenantId())
+        .orElse(null);
+    BigDecimal platformFeePercentage = tenantSettings != null
+        ? tenantSettings.getPlatformFeePercentage()
+        : BigDecimal.ZERO;
+
+    BigDecimal amountAfterDiscount = totalAmount.subtract(discountAmount);
+    BigDecimal platformFeeAmount = amountAfterDiscount
+        .multiply(platformFeePercentage)
+        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+    // Step 4: Calculate taxAmount (if tax is applicable)
+    // Note: If using Stripe Tax, tax is included in Stripe amount, not calculated separately
+    BigDecimal taxAmount = BigDecimal.ZERO;
+    // TODO: Add tax calculation logic if manual tax is used
+
+    // Step 5: Calculate finalAmount (what customer pays)
+    // finalAmount = totalAmount - discountAmount + platformFeeAmount + taxAmount
+    BigDecimal finalAmount = totalAmount
+        .subtract(discountAmount)
+        .add(platformFeeAmount)
+        .add(taxAmount);
+
+    // Step 6: Set all calculated values
+    dto.setTotalAmount(totalAmount.setScale(2, RoundingMode.HALF_UP));
+    dto.setDiscountAmount(discountAmount.setScale(2, RoundingMode.HALF_UP));
+    dto.setPlatformFeeAmount(platformFeeAmount.setScale(2, RoundingMode.HALF_UP));
+    dto.setTaxAmount(taxAmount.setScale(2, RoundingMode.HALF_UP));
+    dto.setFinalAmount(finalAmount.setScale(2, RoundingMode.HALF_UP));
+
+    // Initialize Stripe-related fields (will be populated by batch job)
+    dto.setStripeFeeAmount(BigDecimal.ZERO);
+    dto.setStripeAmountTax(null);
+    dto.setNetPayoutAmount(null); // Will be calculated by batch job
+
+    // ... save transaction ...
+    return savedDto;
+}
+        </div>
+
+        <div class="warning-box">
+            <h4>⚠️ Important Notes:</h4>
+            <ul>
+                <li><strong>Stripe Amount Verification:</strong> The <code>finalAmount</code> should match the amount charged by Stripe (from PaymentIntent or CheckoutSession)</li>
+                <li><strong>Tax Handling:</strong> If Stripe Tax is enabled, tax is included in the Stripe amount. Don't add taxAmount again to finalAmount.</li>
+                <li><strong>Platform Fee:</strong> Platform fee is typically added on top of the ticket price (not deducted from it)</li>
+                <li><strong>Precision:</strong> Always use <code>setScale(2, RoundingMode.HALF_UP)</code> for monetary values</li>
+            </ul>
+        </div>
+
+        <h2>6. Repository Changes (if needed)</h2>
+
+        <h3>6.1 Verify Repository Supports New Field</h3>
+        <p><strong>File:</strong> <code>src/main/java/com/.../repository/EventTicketTransactionRepository.java</code></p>
+
+        <div class="info-box">
+            <p>No changes needed to repository interface. JPA will automatically handle the new <code>netPayoutAmount</code> field if the entity is properly configured.</p>
+        </div>
+
+        <h2>7. Mapper Configuration (if using MapStruct)</h2>
+
+        <h3>7.1 Update Mapper Interface</h3>
+        <p><strong>File:</strong> <code>src/main/java/com/.../service/mapper/EventTicketTransactionMapper.java</code></p>
+
+        <div class="code-block">
+// ✅ VERIFY mapper includes netPayoutAmount
+@Mapper(componentModel = "spring")
+public interface EventTicketTransactionMapper {
+    EventTicketTransactionDTO toDto(EventTicketTransaction entity);
+    EventTicketTransaction toEntity(EventTicketTransactionDTO dto);
+
+    // The mapper should automatically map netPayoutAmount if field names match
+    // If using @Mapping annotations, verify netPayoutAmount is included
+}
+        </div>
+
+        <h2>8. Testing Checklist</h2>
+
+        <h3>8.1 Database Migration Testing</h3>
+        <ul>
+            <li>✅ Verify migration script runs successfully</li>
+            <li>✅ Verify net_payout_amount column exists and is nullable</li>
+            <li>✅ Verify column type is numeric(21,2)</li>
+            <li>✅ Verify existing records have NULL for net_payout_amount (expected)</li>
+        </ul>
+
+        <h3>8.2 Entity and DTO Testing</h3>
+        <ul>
+            <li>✅ Verify EventTicketTransaction entity includes netPayoutAmount field</li>
+            <li>✅ Verify EventTicketTransactionDTO includes netPayoutAmount field</li>
+            <li>✅ Verify getter and setter methods work correctly</li>
+            <li>✅ Verify JSON serialization/deserialization works</li>
+        </ul>
+
+        <h3>8.3 API Endpoint Testing</h3>
+        <ul>
+            <li>✅ Verify PATCH endpoint accepts netPayoutAmount in request body</li>
+            <li>✅ Verify PATCH endpoint updates netPayoutAmount correctly</li>
+            <li>✅ Verify GET endpoint returns netPayoutAmount in response</li>
+            <li>✅ Verify NULL values are handled correctly</li>
+        </ul>
+
+        <h3>8.4 Purchase Flow Testing</h3>
+        <ul>
+            <li>✅ Verify totalAmount = sum of base ticket prices</li>
+            <li>✅ Verify discountAmount is calculated correctly</li>
+            <li>✅ Verify platformFeeAmount is calculated from tenant settings</li>
+            <li>✅ Verify finalAmount = totalAmount - discountAmount + platformFeeAmount + taxAmount</li>
+            <li>✅ Verify finalAmount matches Stripe PaymentIntent amount</li>
+        </ul>
+
+        <h3>8.5 Net Revenue Before Tax Testing</h3>
+        <ul>
+            <li>✅ Verify netRevenueBeforeTax is calculated correctly in analytics service</li>
+            <li>✅ Verify formula: netRevenueBeforeTax = finalAmount - stripeFeeAmount</li>
+            <li>✅ Verify calculation handles NULL values correctly (treats as 0)</li>
+            <li>✅ Verify SalesMetrics DTO includes netRevenueBeforeTax field</li>
+            <li>✅ Verify API response includes netRevenueBeforeTax in metrics</li>
+            <li>✅ Verify calculation works for transactions with and without tax</li>
+        </ul>
+
+        <h2>9. File Modification Summary</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>File Path</th>
+                    <th>Changes</th>
+                    <th>Priority</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="file-path">src/main/resources/db/migration/V{version}__add_net_payout_amount.sql</span></td>
+                    <td>Create migration script to add net_payout_amount column</td>
+                    <td>HIGH</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">.../domain/EventTicketTransaction.java</span></td>
+                    <td>Add netPayoutAmount field with getter/setter</td>
+                    <td>HIGH</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">.../dto/EventTicketTransactionDTO.java</span></td>
+                    <td>Add netPayoutAmount field with getter/setter</td>
+                    <td>HIGH</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">.../service/EventTicketTransactionService.java</span></td>
+                    <td>Fix calculation logic for totalAmount and finalAmount</td>
+                    <td>HIGH</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">.../service/SalesAnalyticsService.java</span></td>
+                    <td>Add netRevenueBeforeTax calculation in calculateSalesMetrics()</td>
+                    <td>HIGH</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">.../dto/SalesMetrics.java</span></td>
+                    <td>Add netRevenueBeforeTax field with getter/setter</td>
+                    <td>HIGH</td>
+                </tr>
+                <tr>
+                    <td><span class="file-path">.../service/mapper/EventTicketTransactionMapper.java</span></td>
+                    <td>Verify netPayoutAmount is included in mapping</td>
+                    <td>MEDIUM</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>10. Deployment Steps</h2>
+
+        <div class="recommendation">
+            <h3>Backend Deployment Sequence:</h3>
+            <ol>
+                <li><strong>Step 1: Run Database Migration</strong>
+                    <ul>
+                        <li>Execute migration script to add net_payout_amount column</li>
+                        <li>Verify column exists in database</li>
+                    </ul>
+                </li>
+                <li><strong>Step 2: Update Code</strong>
+                    <ul>
+                        <li>Update entity, DTO, and service classes</li>
+                        <li>Fix purchase flow calculation logic</li>
+                        <li>Rebuild application</li>
+                    </ul>
+                </li>
+                <li><strong>Step 3: Deploy Backend</strong>
+                    <ul>
+                        <li>Deploy updated backend application</li>
+                        <li>Verify PATCH endpoint accepts netPayoutAmount</li>
+                        <li>Test with sample PATCH request</li>
+                    </ul>
+                </li>
+                <li><strong>Step 4: Verification</strong>
+                    <ul>
+                        <li>Test purchase flow creates transactions with correct calculations</li>
+                        <li>Test PATCH endpoint updates netPayoutAmount</li>
+                        <li>Monitor for any errors</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <h2>11. Related Documentation</h2>
+        <ul>
+            <li><a href="stripe_fees_tax_net_revenue_complete_implementation_plan.html">Complete Implementation Plan</a></li>
+            <li><a href="stripe_fees_tax_net_revenue_frontend_changes.html">Frontend Changes</a></li>
+            <li><a href="stripe_fees_tax_net_revenue_batch_job_changes.html">Batch Job Changes</a></li>
+            <li><strong>Database Schema:</strong> <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></li>
+        </ul>
+
+        <hr>
+        <p><em>Document generated: January 11, 2026</em></p>
+        <p><em>Last updated: January 11, 2026</em></p>
+    </div>
+</body>
+</html>

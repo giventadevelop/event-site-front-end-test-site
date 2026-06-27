@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Category &amp; Year — Implementation Roadmap (v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .section-container.usage { background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%); border-left-color: #7b1fa2; }
+        .section-container.usage .section-header { background: linear-gradient(135deg, #7b1fa2 0%, #6a1b9a 100%); }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .checklist { list-style: none; margin-left: 0; padding-left: 0; }
+        .checklist li { padding: 6px 0 6px 28px; position: relative; }
+        .checklist li::before { content: "☐"; position: absolute; left: 0; color: #0066cc; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Category &amp; Year — Implementation Roadmap (v1.0)</h1>
+    <p class="doc-meta">
+        <strong>Date:</strong> June 17, 2026 &nbsp;|&nbsp; <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a><br>
+        <strong>Repos:</strong> <code>mosc-temp</code> · <code>malayalees-us-site-boot</code> · canonical SQL in mosc-temp
+    </p>
+
+    <div class="lead">
+        <p>Cross-repo sprint order for phases <strong>G0–G4</strong>. Backend (G1) must deploy before frontend admin/public changes that depend on new DTO fields.</p>
+    </div>
+
+    <h2>1. Phase overview</h2>
+    <table>
+        <thead><tr><th>Phase</th><th>Focus</th><th>Repo</th><th>Shippable?</th></tr></thead>
+        <tbody>
+            <tr><td><strong>G0</strong></td><td>Documentation pack</td><td>mosc-temp</td><td>Yes — docs only</td></tr>
+            <tr><td><strong>G1</strong></td><td>Schema + GalleryCategory API + album DTO fields</td><td>boot + SQL</td><td>Yes — backward compatible</td></tr>
+            <tr><td><strong>G2</strong></td><td>Admin album form + category dropdown + proxy routes</td><td>mosc-temp</td><td>Yes — needs G1 deployed</td></tr>
+            <tr><td><strong>G3</strong></td><td>Public redesign card + MOSC gallery API-driven</td><td>mosc-temp</td><td>Yes</td></tr>
+            <tr><td><strong>G4</strong></td><td>Seed categories + backfill / import static albums</td><td>SQL + scripts</td><td>Optional per tenant</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. G0 — Documentation (this pack)</h2>
+    <ul class="checklist">
+        <li><code>generic_enhancement_prd.html</code> — index</li>
+        <li><code>gap_analysis_prd.html</code></li>
+        <li><code>database_schema_enhancements_prd.html</code></li>
+        <li><code>backend_enhancements_prd.html</code></li>
+        <li><code>frontend_enhancements_prd.html</code></li>
+        <li><code>data_migration_enhancements_prd.html</code></li>
+        <li><code>urls_and_routes_enhancements.html</code></li>
+        <li><code>implementation_roadmap.html</code> — this file</li>
+    </ul>
+
+    <h2>3. G1 — Schema + API (malayalees-us-site-boot)</h2>
+    <div class="section-container">
+        <div class="section-header">Order of work</div>
+        <ol>
+            <li>Liquibase: <code>gallery_category</code> + alter <code>gallery_album</code></li>
+            <li>Sync <code>Latest_Schema_Post__Blob_Claude_12.sql</code> in mosc-temp</li>
+            <li>Generate <code>GalleryCategory*</code> JHipster stack</li>
+            <li>Extend <code>GalleryAlbum</code> entity, DTO, mapper, criteria</li>
+            <li>Integration tests for category CRUD and album PATCH with new fields</li>
+            <li>Deploy backend to dev/staging</li>
+        </ol>
+    </div>
+
+    <h2>4. G1 — Proxy (mosc-temp)</h2>
+    <ol>
+        <li>Add <code>src/pages/api/proxy/gallery-categories/index.ts</code></li>
+        <li>Add <code>src/pages/api/proxy/gallery-categories/[...slug].ts</code> with bodyParser config for PATCH</li>
+        <li>Verify existing gallery-albums proxy forwards new JSON fields</li>
+    </ol>
+
+    <h2>5. G2 — Admin UI (mosc-temp)</h2>
+    <ol>
+        <li>Update <code>GalleryAlbumDTO</code> + <code>GalleryCategoryDTO</code> in <code>src/types/index.ts</code></li>
+        <li><code>fetchGalleryCategoriesForAdminServer</code> in admin ApiServerActions</li>
+        <li>Extend <code>AdminAlbumEditClient</code> + create album form with category select + year input</li>
+        <li>Optional: category/year columns on <code>AdminAlbumListClient</code></li>
+    </ol>
+
+    <h2>6. G3 — Public cards (mosc-temp)</h2>
+    <ol>
+        <li>Create <code>MoscGalleryAlbumCard.tsx</code> shared component</li>
+        <li>Update <code>GalleryAlbumCard.tsx</code> — category pill, album year, remove createdAt-as-date</li>
+        <li>Refactor <code>mosc-redesign/(syro)/gallery/page.tsx</code> to server-fetch albums</li>
+        <li>Static slug → href map for View Album links (until v1.1 slug column)</li>
+        <li>Visual QA against redesign mockup (Russia visit card)</li>
+    </ol>
+
+    <h2>7. G4 — Data (ops / DBA)</h2>
+    <ol>
+        <li>Run category seed SQL per tenant</li>
+        <li>Backfill album_year + category on priority albums</li>
+        <li>Optional: import script from static manifest</li>
+        <li>Run verification queries from data migration PRD</li>
+    </ol>
+
+    <h2>8. Dependency graph</h2>
+    <div class="section-container usage">
+        <div class="section-header">Must follow this order</div>
+        <pre>G0 (docs)
+  └── G1 (DB + backend API + proxy)
+        └── G2 (admin forms)
+        └── G3 (public cards) — can parallel G2 after G1
+              └── G4 (seed/import) — after G2 for admin-assigned data</pre>
+    </div>
+
+    <h2>9. Test checklist (QA)</h2>
+    <ul class="checklist">
+        <li>GET gallery-albums returns <code>albumYear</code> and nested <code>galleryCategory</code></li>
+        <li>Admin saves album with category + year; reload shows values</li>
+        <li>Public card shows “Ecumenical Visits” pill and “2019” year</li>
+        <li>Photo count badge correct for album with media</li>
+        <li>Album without category/year — card renders without errors</li>
+        <li>MOSC redesign gallery loads from API (fallback if API down)</li>
+        <li>View Album navigates or opens slideshow per surface</li>
+        <li>Multi-tenant: category slug unique per tenant only</li>
+    </ul>
+
+    <h2>10. Approval handoff</h2>
+    <table>
+        <thead><tr><th>Stakeholder</th><th>Review document</th><th>Decision needed</th></tr></thead>
+        <tbody>
+            <tr><td>DBA / Backend</td><td><a href="database_schema_enhancements_prd.html">Database schema</a>, <a href="backend_enhancements_prd.html">Backend</a></td><td>Approve table + API design</td></tr>
+            <tr><td>Frontend</td><td><a href="frontend_enhancements_prd.html">Frontend</a>, <a href="urls_and_routes_enhancements.html">Routes</a></td><td>Approve card UX + static slug map v1.0</td></tr>
+            <tr><td>Content / MOSC</td><td><a href="data_migration_enhancements_prd.html">Data migration</a></td><td>Confirm category list + album import scope</td></tr>
+            <tr><td>PM</td><td><a href="gap_analysis_prd.html">Gap analysis</a>, this roadmap</td><td>Phase priority G1→G3 vs full G4 import</td></tr>
+        </tbody>
+    </table>
+
+    <div class="info-box">
+        <strong>Start here:</strong> <a href="generic_enhancement_prd.html">Enhancement index</a>
+    </div>
+
+</body>
+</html>

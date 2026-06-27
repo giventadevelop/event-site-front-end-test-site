@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Category &amp; Year — URLs &amp; Routes (v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Category &amp; Year — URLs &amp; Routes</h1>
+    <p class="doc-meta">
+        <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 17, 2026<br>
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a>
+    </p>
+
+    <div class="lead">
+        <p>Route map for public gallery, MOSC redesign gallery, admin album/category management, and Next.js proxy endpoints. Clerk <code>publicRoutes</code> must include <code>/api/proxy(.*)</code> for public gallery fetches.</p>
+    </div>
+
+    <h2>1. Public pages (mosc-temp)</h2>
+    <table>
+        <thead><tr><th>URL</th><th>File</th><th>Auth</th><th>Data source</th></tr></thead>
+        <tbody>
+            <tr><td><code>/gallery</code></td><td><code>src/app/gallery/page.tsx</code></td><td>Public</td><td><code>fetchAlbumsForGallery</code> server action</td></tr>
+            <tr><td><code>/mosc-redesign/gallery</code></td><td><code>src/app/mosc-redesign/(syro)/gallery/page.tsx</code></td><td>Public</td><td>Static today → API after G3</td></tr>
+            <tr><td><code>/mosc-redesign/gallery/{slug}</code></td><td><code>src/app/mosc-redesign/(syro)/gallery/{slug}/page.tsx</code></td><td>Public</td><td>Static photo arrays (unchanged v1.0)</td></tr>
+            <tr><td><code>/mosc/gallery</code></td><td><code>src/app/mosc/gallery/page.tsx</code></td><td>Public</td><td>Static (mirror MOSC redesign)</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. Admin pages</h2>
+    <table>
+        <thead><tr><th>URL</th><th>File</th><th>Enhancement</th></tr></thead>
+        <tbody>
+            <tr><td><code>/admin/gallery/albums</code></td><td><code>src/app/admin/gallery/albums/page.tsx</code></td><td>Show category + year columns in list (optional)</td></tr>
+            <tr><td><code>/admin/gallery/albums/[id]/edit</code></td><td><code>.../edit/page.tsx</code></td><td>Category + year form fields</td></tr>
+            <tr><td><code>/admin/gallery/albums/[id]/media</code></td><td><code>.../media/page.tsx</code></td><td>Unchanged</td></tr>
+            <tr><td><code>/admin/gallery/categories</code></td><td class="status-missing">New (optional G2)</td><td>Category CRUD</td></tr>
+        </tbody>
+    </table>
+
+    <h2>3. Proxy API routes (Pages Router)</h2>
+    <table>
+        <thead><tr><th>Proxy path</th><th>Backend path</th><th>Methods</th><th>Status</th></tr></thead>
+        <tbody>
+            <tr><td><code>/api/proxy/gallery-albums</code></td><td><code>/api/gallery-albums</code></td><td>GET, POST</td><td>Exists</td></tr>
+            <tr><td><code>/api/proxy/gallery-albums/[...slug]</code></td><td><code>/api/gallery-albums/{id}</code></td><td>GET, PATCH, DELETE</td><td>Exists</td></tr>
+            <tr><td><code>/api/proxy/gallery-categories</code></td><td><code>/api/gallery-categories</code></td><td>GET, POST</td><td><strong>New G1</strong></td></tr>
+            <tr><td><code>/api/proxy/gallery-categories/[...slug]</code></td><td><code>/api/gallery-categories/{id}</code></td><td>GET, PATCH, DELETE</td><td><strong>New G1</strong></td></tr>
+            <tr><td><code>/api/proxy/event-medias</code></td><td><code>/api/event-medias</code></td><td>GET</td><td>Exists — album media by <code>albumId.equals</code></td></tr>
+        </tbody>
+    </table>
+
+    <h2>4. Example public fetch URLs</h2>
+    <div class="section-container">
+        <div class="section-header">Server-side (fetchWithJwtRetry to backend)</div>
+        <pre>GET /api/gallery-albums?tenantId.equals={tenant}&amp;isPublic.equals=true&amp;sort=displayOrder,asc&amp;sort=createdAt,desc&amp;page=0&amp;size=12
+
+GET /api/gallery-albums?tenantId.equals={tenant}&amp;galleryCategoryId.equals={catId}&amp;isPublic.equals=true
+
+GET /api/gallery-categories?tenantId.equals={tenant}&amp;isActive.equals=true&amp;sort=sortOrder,asc
+
+GET /api/event-medias?albumId.equals={albumId}&amp;isPublic.equals=true&amp;sort=displayOrder,asc</pre>
+    </div>
+
+    <h2>5. View Album — navigation matrix</h2>
+    <table>
+        <thead><tr><th>Surface</th><th>View Album behavior</th><th>v1.0</th></tr></thead>
+        <tbody>
+            <tr><td><code>/gallery</code> (main app)</td><td>Open <code>AlbumMediaSlideshow</code> modal</td><td>Keep</td></tr>
+            <tr><td><code>/mosc-redesign/gallery</code></td><td>Link to <code>/mosc-redesign/gallery/{staticSlug}</code></td><td>Static slug map by title/id</td></tr>
+            <tr><td>Future</td><td>Link to <code>/gallery/albums/{slug}</code> dynamic route</td><td>v1.1 with <code>album.slug</code></td></tr>
+        </tbody>
+    </table>
+
+    <h2>6. Middleware</h2>
+    <ul>
+        <li><code>/gallery</code>, <code>/mosc-redesign/gallery(.*)</code> — publicRoutes</li>
+        <li><code>/api/proxy/(.*)</code> — ignoredRoutes (mobile compatibility)</li>
+        <li><code>/admin/gallery/*</code> — protected (Clerk + admin role in layout)</li>
+    </ul>
+
+    <div class="info-box">
+        <strong>Next:</strong> <a href="frontend_enhancements_prd.html">Frontend enhancements</a> ·
+        <a href="implementation_roadmap.html">Implementation roadmap</a>
+    </div>
+
+</body>
+</html>

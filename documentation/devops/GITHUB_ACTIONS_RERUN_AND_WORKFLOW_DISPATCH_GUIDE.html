@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="How to re-run GitHub Actions workflows, why Re-run may be missing, the 30-day limit, and triggering new deploys with gh workflow run.">
+  <title>GitHub Actions: Re-run Workflows and Trigger New Deploys</title>
+  <style>
+    :root {
+      --text: #333;
+      --code-bg: #e8f4f8;
+      --code-text: #0d3b66;
+      --code-border: #b8d4e3;
+      --blue-accent: #0066cc;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--text);
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2.5em;
+      border-bottom: 3px solid var(--blue-accent);
+      padding-bottom: 0.5rem;
+      margin-top: 0;
+    }
+    h2 {
+      font-size: 1.8em;
+      border-left: 4px solid var(--blue-accent);
+      padding-left: 15px;
+      margin-top: 2rem;
+    }
+    h3 { font-size: 1.2em; color: #555; margin-top: 1.25rem; }
+    .meta { color: #666; font-size: 0.95rem; margin-bottom: 1.5rem; }
+    .toc {
+      background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+      border-left: 4px solid var(--blue-accent);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .toc ul { margin: 0.5rem 0; padding-left: 1.25rem; }
+    .toc a { color: var(--blue-accent); }
+    .section-intro {
+      background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+      border-left: 4px solid var(--blue-accent);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+    }
+    .section-container {
+      background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+      border-left: 4px solid var(--blue-accent);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+    }
+    .section-container.usage {
+      background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%);
+      border-left-color: #9c27b0;
+    }
+    .section-container.output {
+      background: linear-gradient(135deg, #e6ffe6 0%, #ccffcc 100%);
+      border-left-color: #28a745;
+    }
+    .section-header {
+      background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+      color: white;
+      padding: 12px 20px;
+      margin: -20px -20px 20px -20px;
+      border-radius: 8px 8px 0 0;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    .section-header.usage {
+      background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+    }
+    .section-header.output {
+      background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+    }
+    .info {
+      background: #d1ecf1;
+      border-left: 4px solid #0c5460;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    .warning {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    .success {
+      background: #d4edda;
+      border-left: 4px solid #28a745;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    .error {
+      background: #f8d7da;
+      border-left: 4px solid #dc3545;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    .info code, .warning code, .success code, .error code,
+    code.code-highlight {
+      background-color: var(--code-bg);
+      color: var(--code-text);
+      padding: 2px 6px;
+      border-radius: 3px;
+      border: 1px solid var(--code-border);
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+    code.script-name {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      border: none;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 15px 0;
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: left;
+    }
+    th {
+      background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+      color: white;
+      font-weight: bold;
+      font-size: 0.9em;
+    }
+    tr:nth-child(even) { background-color: #f8f9fa; }
+    tr:hover { background-color: #e3f2fd; }
+    td code {
+      background-color: var(--code-bg);
+      color: var(--code-text);
+      padding: 3px 8px;
+      border-radius: 3px;
+      border: 1px solid var(--code-border);
+      font-family: 'Courier New', monospace;
+    }
+    ol.steps { padding-left: 1.5rem; }
+    ol.steps li { margin: 0.75rem 0; }
+    .command-block {
+      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+      border: 2px solid #2196f3;
+      border-radius: 8px;
+      margin: 20px 0;
+      overflow: hidden;
+    }
+    .command-block.verify {
+      background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+      border-color: #4caf50;
+    }
+    .command-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      background: rgba(255,255,255,0.4);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    .command-type { font-weight: bold; color: #333; }
+    .command-header-buttons { display: flex; gap: 8px; }
+    .copy-button, .copy-button-template {
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85em;
+      font-weight: bold;
+    }
+    .copy-button {
+      background-color: #0066cc;
+    }
+    .copy-button-template {
+      background-color: #6c757d;
+    }
+    .copy-button:hover { background-color: #0052a3; }
+    .copy-button-template:hover { background-color: #5a6268; }
+    .copy-button.copied, .copy-button-template.copied {
+      background-color: #28a745;
+    }
+    .command-content {
+      padding: 15px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.95em;
+      color: var(--code-text);
+      word-break: break-all;
+    }
+    .command-single-line {
+      padding: 12px 15px;
+      background: var(--code-bg);
+      border-top: 1px solid var(--code-border);
+    }
+    .command-single-line-label {
+      font-size: 0.8em;
+      color: #666;
+      margin-bottom: 6px;
+    }
+    .command-single-line code {
+      background: transparent;
+      color: var(--code-text);
+      padding: 0;
+      border: none;
+      font-family: 'Courier New', monospace;
+    }
+    footer.doc-footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid #ddd;
+      font-size: 0.9rem;
+      color: #666;
+    }
+    a { color: var(--blue-accent); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>GitHub Actions: Re-run Workflows and Trigger New Deploys</h1>
+    <p class="meta">
+      Location: <code class="code-highlight">documentation/devops/GITHUB_ACTIONS_RERUN_AND_WORKFLOW_DISPATCH_GUIDE.html</code><br>
+      Repository example: <code class="code-highlight">giventadeveloporg/malayalees-us-site-boot</code> · Workflow: <code class="code-highlight">deploy-dev.yml</code>
+    </p>
+
+    <div class="section-intro">
+      <p>
+        This guide documents three related topics: <strong>how to re-run a GitHub Actions workflow from the UI</strong>,
+        <strong>why the Re-run button may be missing</strong>, and <strong>what to do when <code class="code-highlight">gh run rerun</code> fails because the run is older than 30 days</strong>
+        (including triggering a <strong>new</strong> run with <code class="code-highlight">gh workflow run</code>).
+      </p>
+    </div>
+
+    <nav class="toc" aria-label="Table of contents">
+      <h2 style="margin-top:0;border:none;padding:0;font-size:1.3em;">Table of contents</h2>
+      <ul>
+        <li><a href="#rerun-ui">1. Re-run the last workflow (GitHub UI)</a></li>
+        <li><a href="#no-rerun">2. Re-run not visible on the run page</a></li>
+        <li><a href="#30-day-limit">3. 30-day limit and <code>gh run rerun</code></a></li>
+        <li><a href="#new-run">4. Start a new deploy (recommended alternatives)</a></li>
+        <li><a href="#success-example">5. Successful workflow dispatch example</a></li>
+        <li><a href="#prerequisites">6. Before you trigger a deploy</a></li>
+      </ul>
+    </nav>
+
+    <!-- Section 1 -->
+    <section id="rerun-ui" aria-labelledby="h-rerun-ui">
+      <h2 id="h-rerun-ui">1. Re-run the last GitHub Actions workflow (UI)</h2>
+
+      <div class="section-container usage">
+        <div class="section-header usage">📋 Steps in the GitHub web UI</div>
+        <ol class="steps">
+          <li>Open the repository on GitHub (for example <code class="code-highlight">giventadeveloporg/malayalees-us-site-boot</code>).</li>
+          <li>Click the <strong>Actions</strong> tab.</li>
+          <li>In the left sidebar, click the workflow name (for example <strong>Deploy to Dev</strong> or <code class="code-highlight">deploy-dev.yml</code>).</li>
+          <li>Click the <strong>most recent run</strong> in the list (failed runs show a red ✗; successful runs show a green ✓).</li>
+          <li>Top right → <strong>Re-run jobs</strong> or <strong>Re-run all jobs</strong>.</li>
+        </ol>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Button</th>
+            <th>What it does</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Re-run all jobs</strong></td>
+            <td>Runs every job in the workflow again from the start.</td>
+          </tr>
+          <tr>
+            <td><strong>Re-run failed jobs</strong></td>
+            <td>Re-runs only jobs that failed (when GitHub offers this option).</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="info">
+        <strong>💡 Important:</strong> A re-run uses the <strong>same commit and branch</strong> as the original run, but picks up <strong>current</strong> secrets and variables. Update <strong>Environment secrets</strong> (not variables) for sensitive values such as <code class="code-highlight">AWS_ACCESS_KEY_ID</code> before re-running a deploy that uses AWS credentials.
+      </div>
+    </section>
+
+    <!-- Section 2 -->
+    <section id="no-rerun" aria-labelledby="h-no-rerun">
+      <h2 id="h-no-rerun">2. Re-run not visible on the run page</h2>
+
+      <div class="warning">
+        <strong>⚠️ Common case:</strong> On some run summary pages (especially older <strong>successful</strong> runs), there is no large <strong>Re-run jobs</strong> button in the header. Check the <strong>⋯</strong> (three dots) menu at the top right of the run title first.
+      </div>
+
+      <h3>2.1 Use the ⋯ menu on the run page</h3>
+      <ol class="steps">
+        <li>Open the specific workflow run (for example <em>Merge pull request #18…</em>).</li>
+        <li>Click <strong>⋯</strong> next to the run title.</li>
+        <li>Look for <strong>Re-run all jobs</strong> or <strong>Re-run failed jobs</strong>.</li>
+      </ol>
+
+      <h3>2.2 Re-run from the workflow runs list</h3>
+      <ol class="steps">
+        <li><strong>Actions</strong> tab → select the workflow in the left sidebar.</li>
+        <li>In the table of runs, hover the right side of the row.</li>
+        <li>Click <strong>⋯</strong> on that row → <strong>Re-run all jobs</strong>.</li>
+      </ol>
+
+      <h3>2.3 Why Re-run may be unavailable</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Reason</th>
+            <th>What to do</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Run older than ~30 days</strong></td>
+            <td>GitHub does not allow re-run; start a <strong>new</strong> run (see <a href="#30-day-limit">Section 3</a>).</td>
+          </tr>
+          <tr>
+            <td><strong>Read-only access</strong> to the repo</td>
+            <td>Need <strong>Write</strong> or <strong>Maintain</strong> permission, or ask an admin to re-run.</td>
+          </tr>
+          <tr>
+            <td><strong>Fork</strong> without write access</td>
+            <td>Re-run on the <strong>upstream</strong> repository, not the fork.</td>
+          </tr>
+          <tr>
+            <td><strong>Wrong repository</strong></td>
+            <td>Confirm you opened the repo where the deploy failed (for example <code class="code-highlight">event-site-manager-batch-jobs</code> vs <code class="code-highlight">malayalees-us-site-boot</code>).</td>
+          </tr>
+          <tr>
+            <td><strong>Archived repository</strong></td>
+            <td>Unarchive or use another trigger method.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="info">
+        <strong>Optional — re-run from a commit:</strong> On the <strong>Commits</strong> page, open a commit → status icon → <strong>Details</strong> → <strong>Re-run jobs</strong> if shown.
+      </div>
+    </section>
+
+    <!-- Section 3 -->
+    <section id="30-day-limit" aria-labelledby="h-30-day">
+      <h2 id="h-30-day">3. 30-day limit and <code>gh run rerun</code></h2>
+
+      <div class="error">
+        <strong>GitHub CLI error (example):</strong><br>
+        <code class="code-highlight">run 23694863798 cannot be rerun; Unable to retry this workflow run because it was created over a month ago</code>
+      </div>
+
+      <p>
+        GitHub blocks <strong>re-running</strong> workflow runs that are <strong>older than approximately 30 days</strong>. This applies in both the web UI and the CLI. A run from two months ago (for example run <code class="code-highlight">23694863798</code>) cannot be retried; you must <strong>create a new workflow run</strong>.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>Works on runs &gt; 30 days old?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>gh run rerun &lt;run-id&gt;</code></td>
+            <td><strong>No</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Re-run all jobs</strong> in UI</td>
+            <td><strong>No</strong></td>
+          </tr>
+          <tr>
+            <td><code>gh workflow run</code> / <strong>Run workflow</strong> / <code>git push</code></td>
+            <td><strong>Yes</strong> — creates a <strong>new</strong> run</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Section 4 -->
+    <section id="new-run" aria-labelledby="h-new-run">
+      <h2 id="h-new-run">4. Start a new deploy (recommended alternatives)</h2>
+
+      <h3>4.1 GitHub UI — Run workflow</h3>
+      <div class="section-container">
+        <div class="section-header">▶ Manual dispatch (if enabled in YAML)</div>
+        <ol class="steps">
+          <li>Open <code class="code-highlight">https://github.com/giventadeveloporg/malayalees-us-site-boot/actions</code></li>
+          <li>Left sidebar → click <code class="code-highlight">deploy-dev.yml</code> (or the workflow display name).</li>
+          <li>If <strong>Run workflow</strong> appears on the right → choose branch (for example <code class="code-highlight">release/v1.0.0</code>) → <strong>Run workflow</strong>.</li>
+        </ol>
+        <p>This requires <code class="code-highlight">workflow_dispatch:</code> in the workflow file:</p>
+        <pre class="code-block" style="background:#e8f4f8;color:#0d3b66;border:1px solid #b8d4e3;padding:15px;border-radius:5px;">on:
+  push:
+    branches: [...]
+  workflow_dispatch:</pre>
+      </div>
+
+      <h3>4.2 GitHub CLI — <code>gh workflow run</code></h3>
+
+      <div class="command-block verify" data-command-base="gh workflow run deploy-dev.yml --repo giventadeveloporg/malayalees-us-site-boot --ref release/v1.0.0" data-template-command="gh workflow run deploy-dev.yml --repo giventadeveloporg/malayalees-us-site-boot --ref release/v1.0.0">
+        <div class="command-header">
+          <span class="command-type">Trigger deploy (GitHub CLI)</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'gh-workflow-run')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'gh-workflow-run')" title="Copy command" aria-label="Copy command to clipboard">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-content" id="gh-workflow-run">gh workflow run deploy-dev.yml --repo giventadeveloporg/malayalees-us-site-boot --ref release/v1.0.0</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="gh-workflow-run-single-code">gh workflow run deploy-dev.yml --repo giventadeveloporg/malayalees-us-site-boot --ref release/v1.0.0</code>
+        </div>
+      </div>
+
+      <p>List recent runs after dispatch:</p>
+
+      <div class="command-block verify" data-command-base="gh run list --repo giventadeveloporg/malayalees-us-site-boot --workflow=&quot;deploy-dev.yml&quot; --limit 5" data-template-command="gh run list --repo giventadeveloporg/malayalees-us-site-boot --workflow=&quot;deploy-dev.yml&quot; --limit 5">
+        <div class="command-header">
+          <span class="command-type">List recent workflow runs</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'gh-run-list')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'gh-run-list')" title="Copy command" aria-label="Copy command to clipboard">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-content" id="gh-run-list">gh run list --repo giventadeveloporg/malayalees-us-site-boot --workflow="deploy-dev.yml" --limit 5</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="gh-run-list-single-code">gh run list --repo giventadeveloporg/malayalees-us-site-boot --workflow="deploy-dev.yml" --limit 5</code>
+        </div>
+      </div>
+
+      <p>View a specific run (replace <code class="code-highlight">RUN_ID</code>):</p>
+
+      <div class="command-block verify" data-command-base="gh run view RUN_ID --repo giventadeveloporg/malayalees-us-site-boot" data-template-command="gh run view 25995383556 --repo giventadeveloporg/malayalees-us-site-boot">
+        <div class="command-header">
+          <span class="command-type">View one workflow and run</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'gh-run-view')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'gh-run-view')" title="Copy command" aria-label="Copy command to clipboard">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-content" id="gh-run-view">gh run view 25995383556 --repo giventadeveloporg/malayalees-us-site-boot</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="gh-run-view-single-code">gh run view 25995383556 --repo giventadeveloporg/malayalees-us-site-boot</code>
+        </div>
+      </div>
+
+      <h3>4.3 Empty commit (when workflow runs on <code>push</code>)</h3>
+
+      <div class="command-block" data-command-base="git commit --allow-empty -m &quot;chore: trigger deploy&quot;" data-template-command="git commit --allow-empty -m &quot;chore: trigger deploy&quot;">
+        <div class="command-header">
+          <span class="command-type">Empty commit to trigger push workflow</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'git-empty-commit')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'git-empty-commit')" title="Copy command" aria-label="Copy command to clipboard">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-content" id="git-empty-commit">git commit --allow-empty -m "chore: trigger deploy"</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="git-empty-commit-single-code">git commit --allow-empty -m "chore: trigger deploy"</code>
+        </div>
+      </div>
+
+      <p>Then push the branch your workflow listens to (for example <code class="code-highlight">release/v1.0.0</code> or <code class="code-highlight">main</code>):</p>
+
+      <div class="command-block" data-command-base="git push" data-template-command="git push">
+        <div class="command-header">
+          <span class="command-type">Push to remote</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'git-push')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'git-push')" title="Copy command" aria-label="Copy command to clipboard">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-content" id="git-push">git push</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="git-push-single-code">git push</code>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 5 -->
+    <section id="success-example" aria-labelledby="h-success">
+      <h2 id="h-success">5. Successful workflow dispatch example</h2>
+
+      <div class="section-container output">
+        <div class="section-header output">✓ Example CLI output</div>
+        <p>From <code class="code-highlight">C:\E_Drive\project_workspace\mosc-temp</code>:</p>
+        <pre class="code-block" style="background:#e8f4f8;color:#0d3b66;border:1px solid #b8d4e3;padding:15px;border-radius:5px;white-space:pre-wrap;">gh workflow run deploy-dev.yml --repo giventadeveloporg/malayalees-us-site-boot --ref release/v1.0.0
+✓ Created workflow_dispatch event for deploy-dev.yml at release/v1.0.0
+https://github.com/giventadeveloporg/malayalees-us-site-boot/actions/runs/25995383556
+
+To see the created workflow run, try: gh run view 25995383556
+To see runs for this workflow, try: gh run list --workflow="deploy-dev.yml"</pre>
+      </div>
+
+      <div class="success">
+        <strong>Result:</strong> A <strong>new</strong> workflow run was created (run ID <code class="code-highlight">25995383556</code>) on branch <code class="code-highlight">release/v1.0.0</code>. This is the correct approach when an old run cannot be re-run.
+      </div>
+
+      <p>
+        Open the run in the browser:<br>
+        <a href="https://github.com/giventadeveloporg/malayalees-us-site-boot/actions/runs/25995383556" target="_blank" rel="noopener noreferrer">https://github.com/giventadeveloporg/malayalees-us-site-boot/actions/runs/25995383556</a>
+      </p>
+    </section>
+
+    <!-- Section 6 -->
+    <section id="prerequisites" aria-labelledby="h-prereq">
+      <h2 id="h-prereq">6. Before you trigger a deploy</h2>
+
+      <div class="warning">
+        <strong>AWS credentials in GitHub Environments:</strong> Store <code class="code-highlight">AWS_ACCESS_KEY_ID</code> and <code class="code-highlight">AWS_SECRET_ACCESS_KEY</code> under <strong>Environment secrets</strong> for the <code class="code-highlight">dev</code> environment—not under <strong>Environment variables</strong>. Workflows that use <code class="code-highlight">${{ secrets.AWS_ACCESS_KEY_ID }}</code> will not read variable values correctly, which can cause <code class="code-highlight">The security token included in the request is invalid</code> in the <code class="code-highlight">configure-aws-credentials</code> step.
+      </div>
+
+      <ul>
+        <li>Confirm the correct repository and workflow file (<code class="code-highlight">deploy-dev.yml</code>).</li>
+        <li>Align <code class="code-highlight">AWS_REGION</code> with the region your ECS/ECR resources use.</li>
+        <li>For failed deploy debugging, open the <strong>latest</strong> run—not a months-old successful run.</li>
+      </ul>
+    </section>
+
+    <footer class="doc-footer">
+      <p>Generated for MOSC project DevOps documentation. Styling follows <code class="code-highlight">.cursor/rules/html_documentation_styling_guide.mdc</code>.</p>
+    </footer>
+  </main>
+
+  <script>
+    function fallbackCopy(text, button) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        button.classList.add('copied');
+        const orig = button.textContent;
+        button.textContent = '✓ Copied!';
+        setTimeout(function () {
+          button.classList.remove('copied');
+          button.textContent = orig;
+        }, 2000);
+      } catch (e) {
+        console.error('Copy failed', e);
+      }
+      document.body.removeChild(ta);
+    }
+
+    function copyCommand(button, commandId) {
+      const el = document.getElementById(commandId);
+      if (!el) return;
+      const text = el.textContent.trim();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          button.classList.add('copied');
+          const orig = button.textContent;
+          button.textContent = '✓ Copied!';
+          setTimeout(function () {
+            button.classList.remove('copied');
+            button.textContent = orig;
+          }, 2000);
+        }).catch(function () { fallbackCopy(text, button); });
+      } else {
+        fallbackCopy(text, button);
+      }
+    }
+
+    function copyTemplateCommand(button, commandId) {
+      const block = button.closest('.command-block');
+      if (!block) return;
+      let text = block.getAttribute('data-template-command') || '';
+      text = text.replace(/&quot;/g, '"');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          button.classList.add('copied');
+          const orig = button.textContent;
+          button.textContent = '✓ Copied!';
+          setTimeout(function () {
+            button.classList.remove('copied');
+            button.textContent = orig;
+          }, 2000);
+        }).catch(function () { fallbackCopy(text, button); });
+      } else {
+        fallbackCopy(text, button);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Group Event Association Feature - Requirements</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+            font-size: 1.8em;
+        }
+
+        h3 {
+            color: #555;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        h4 {
+            color: #666;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #e74c3c;
+        }
+
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+        }
+
+        pre code {
+            background-color: transparent;
+            color: #ecf0f1;
+            padding: 0;
+        }
+
+        .requirement {
+            background-color: #f8f9fa;
+            border-left: 4px solid #27ae60;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .requirement h3 {
+            margin-top: 0;
+            color: #27ae60;
+        }
+
+        .technical {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .technical h3 {
+            margin-top: 0;
+            color: #3498db;
+        }
+
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .warning strong {
+            color: #856404;
+        }
+
+        .file-path {
+            background-color: #e8f4f8;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            display: inline-block;
+            margin: 5px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .checklist {
+            background-color: #f0f8ff;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .checklist h3 {
+            margin-top: 0;
+            color: #3498db;
+        }
+
+        .checklist ul {
+            list-style: none;
+            margin-left: 0;
+        }
+
+        .checklist li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .checklist li:before {
+            content: "☐";
+            position: absolute;
+            left: 0;
+            font-size: 1.2em;
+        }
+
+        .reference {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .reference h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Focus Group Event Association Feature - Requirements</h1>
+
+        <div class="reference">
+            <h4>📋 Document Information</h4>
+            <p><strong>Feature:</strong> Event Association for Focus Groups</p>
+            <p><strong>Target Page:</strong> <code>http://localhost:3000/admin/focus-groups/[id]/edit</code></p>
+            <p><strong>Created:</strong> <span id="date"></span></p>
+            <p><strong>Status:</strong> Requirements Definition (No Implementation)</p>
+        </div>
+
+        <h2>1. Overview</h2>
+        <p>This document defines the requirements for adding event association functionality to the Focus Group edit page. The feature will allow administrators to search for events and associate them with focus groups, with a paginated table displaying all associated events.</p>
+
+        <div class="warning">
+            <strong>⚠️ Important:</strong> This document contains requirements only. <strong>Do NOT implement</strong> until explicitly requested. Focus on understanding the requirements and creating a comprehensive implementation plan.
+        </div>
+
+        <h2>2. Feature Requirements</h2>
+
+        <div class="requirement">
+            <h3>2.1 Event Search Component</h3>
+            <p><strong>Location:</strong> Focus Group Edit Page (<code>/admin/focus-groups/[id]/edit</code>)</p>
+            <p><strong>Reference Implementation:</strong> <code>src/app/admin/promotion-emails/components/EventSearchSelect.tsx</code></p>
+
+            <h4>Functionality:</h4>
+            <ul>
+                <li>Search events by <strong>Title</strong> or <strong>ID</strong> (toggle between search types)</li>
+                <li>Real-time search filtering as user types</li>
+                <li>Dropdown results showing matching events (max 7 items visible)</li>
+                <li>Display event title, ID, and start date in dropdown</li>
+                <li>Select event to associate with focus group</li>
+                <li>Clear selection functionality</li>
+                <li>Visual indication of selected event</li>
+            </ul>
+
+            <h4>UI Components:</h4>
+            <ul>
+                <li>Toggle buttons: "Search by Title" / "Search by ID"</li>
+                <li>Search input field with search icon</li>
+                <li>Dropdown results container (z-index: 50)</li>
+                <li>Selected event display box (blue background)</li>
+                <li>Clear button (×) when event is selected</li>
+            </ul>
+
+            <h4>Styling:</h4>
+            <ul>
+                <li>Match styling from <code>EventSearchSelect.tsx</code></li>
+                <li>Input: <code>border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 pl-10 pr-10 px-4 py-2 text-base</code></li>
+                <li>Toggle buttons: Blue when active, gray when inactive</li>
+                <li>Dropdown: White background, border, shadow-lg, max-height for scrolling</li>
+                <li>Hover states: Blue background on dropdown items</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h3>2.2 Event Association Functionality</h3>
+
+            <h4>Association Action:</h4>
+            <ul>
+                <li>When user selects an event from search dropdown, create association</li>
+                <li>Persist association to <code>event_focus_groups</code> join table</li>
+                <li>Association includes:
+                    <ul>
+                        <li><code>event_id</code> - Selected event ID</li>
+                        <li><code>focus_group_id</code> - Current focus group ID</li>
+                        <li><code>tenant_id</code> - Current tenant ID (auto-injected)</li>
+                        <li><code>created_at</code> - Timestamp</li>
+                        <li><code>updated_at</code> - Timestamp</li>
+                    </ul>
+                </li>
+                <li>Prevent duplicate associations (enforced by unique constraint: <code>tenant_id, event_id, focus_group_id</code>)</li>
+                <li>Show success message after successful association</li>
+                <li>Refresh associated events table after association</li>
+            </ul>
+
+            <h4>API Endpoint:</h4>
+            <ul>
+                <li><strong>Method:</strong> POST</li>
+                <li><strong>Endpoint:</strong> <code>/api/proxy/event-focus-groups</code></li>
+                <li><strong>Request Body:</strong>
+                    <pre><code>{
+  "eventId": number,
+  "focusGroupId": number,
+  "tenantId": string (auto-injected)
+}</code></pre>
+                </li>
+                <li><strong>Response:</strong> <code>EventFocusGroupDTO</code> with created association</li>
+            </ul>
+
+            <h4>Error Handling:</h4>
+            <ul>
+                <li>Handle duplicate association attempts gracefully</li>
+                <li>Show user-friendly error messages</li>
+                <li>Handle network errors</li>
+                <li>Handle validation errors from backend</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h3>2.3 Associated Events Table</h3>
+
+            <h4>Location:</h4>
+            <p>Display at the bottom of the Focus Group Edit page, below the form fields and cover image upload section.</p>
+
+            <h4>Data Source:</h4>
+            <ul>
+                <li>Read from <code>event_focus_groups</code> join table</li>
+                <li>Join with <code>event_details</code> table to get event information</li>
+                <li>Filter by <code>focus_group_id</code> matching current focus group</li>
+                <li>Filter by <code>tenant_id</code> (auto-injected)</li>
+            </ul>
+
+            <h4>Table Columns:</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column</th>
+                        <th>Source</th>
+                        <th>Display</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Event Title</td>
+                        <td><code>event_details.title</code></td>
+                        <td>Text</td>
+                        <td>Primary column, clickable link to event detail page</td>
+                    </tr>
+                    <tr>
+                        <td>Start Date</td>
+                        <td><code>event_details.start_date</code></td>
+                        <td>Formatted date</td>
+                        <td>Use existing date formatting utilities</td>
+                    </tr>
+                    <tr>
+                        <td>End Date</td>
+                        <td><code>event_details.end_date</code></td>
+                        <td>Formatted date</td>
+                        <td>Use existing date formatting utilities</td>
+                    </tr>
+                    <tr>
+                        <td>Status</td>
+                        <td><code>event_details.is_active</code></td>
+                        <td>Badge/Indicator</td>
+                        <td>Active/Inactive badge</td>
+                    </tr>
+                    <tr>
+                        <td>Actions</td>
+                        <td>N/A</td>
+                        <td>Unlink Button</td>
+                        <td>Remove association button</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Event Filtering:</h4>
+            <ul>
+                <li>Show all associated events (upcoming and past)</li>
+                <li>Default sort: <code>startDate,desc</code> (newest first)</li>
+                <li>Optional: Add filter toggle for "Upcoming Events" / "Past Events"</li>
+                <li>Filter logic:
+                    <ul>
+                        <li><strong>Upcoming:</strong> <code>startDate >= today</code></li>
+                        <li><strong>Past:</strong> <code>endDate < today</code></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>Unlink Functionality:</h4>
+            <ul>
+                <li>Each row has an "Unlink" button in Actions column</li>
+                <li>On click, show confirmation dialog</li>
+                <li>On confirm, delete record from <code>event_focus_groups</code> table</li>
+                <li>API Endpoint: <code>DELETE /api/proxy/event-focus-groups/{id}</code></li>
+                <li>Refresh table after successful unlink</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h3>2.4 Pagination</h3>
+
+            <h4>Reference Implementation:</h4>
+            <p>Match pagination style from <code>http://localhost:3000/admin/manage-events</code></p>
+            <p>Reference component: <code>src/components/EventList.tsx</code> (lines 569-604)</p>
+
+            <h4>Pagination Requirements:</h4>
+            <ul>
+                <li><strong>Page Size:</strong> 10 events per page (configurable)</li>
+                <li><strong>Pagination Controls:</strong>
+                    <ul>
+                        <li>Previous button (left side)</li>
+                        <li>Page indicator: "Page X of Y" (center)</li>
+                        <li>Next button (right side)</li>
+                    </ul>
+                </li>
+                <li><strong>Pagination Details:</strong> Below controls, centered
+                    <ul>
+                        <li>Format: "Showing <strong>X</strong> to <strong>Y</strong> of <strong>Z</strong> events"</li>
+                        <li>When no events: "No events found" with badge</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>Pagination Styling:</h4>
+            <pre><code>/* Pagination Container */
+&lt;div className="mt-8"&gt;
+  &lt;div className="flex justify-between items-center"&gt;
+    {/* Previous Button */}
+    &lt;button
+      onClick={handlePrevPage}
+      disabled={isPrevDisabled}
+      className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+    &gt;
+      &lt;FaChevronLeft className="h-5 w-5" /&gt;
+      Previous
+    &lt;/button&gt;
+
+    {/* Page Indicator */}
+    &lt;div className="text-sm font-semibold text-gray-700"&gt;
+      Page {currentPage} of {totalPages}
+    &lt;/div&gt;
+
+    {/* Next Button */}
+    &lt;button
+      onClick={handleNextPage}
+      disabled={isNextDisabled}
+      className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+    &gt;
+      Next
+      &lt;FaChevronRight className="h-5 w-5" /&gt;
+    &lt;/button&gt;
+  &lt;/div&gt;
+
+  {/* Pagination Details */}
+  &lt;div className="text-center text-sm text-gray-600 mt-2"&gt;
+    {totalCount > 0 ? (
+      &lt;&gt;Showing &lt;span className="font-medium"&gt;{startItem}&lt;/span&gt; to &lt;span className="font-medium"&gt;{endItem}&lt;/span&gt; of &lt;span className="font-medium"&gt;{totalCount}&lt;/span&gt; events&lt;/&gt;
+    ) : (
+      &lt;div className="flex items-center justify-center gap-2"&gt;
+        &lt;span&gt;No events found&lt;/span&gt;
+        &lt;span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-sm font-medium"&gt;
+          [No events match your criteria]
+        &lt;/span&gt;
+      &lt;/div&gt;
+    )}
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+            <h4>Pagination Logic:</h4>
+            <ul>
+                <li>Use 0-based page indexing internally</li>
+                <li>Display as 1-based to users ("Page 1", "Page 2", etc.)</li>
+                <li>Calculate:
+                    <ul>
+                        <li><code>totalPages = Math.ceil(totalCount / pageSize)</code></li>
+                        <li><code>startItem = currentPage * pageSize + 1</code></li>
+                        <li><code>endItem = Math.min((currentPage + 1) * pageSize, totalCount)</code></li>
+                    </ul>
+                </li>
+                <li>Disable Previous when on first page</li>
+                <li>Disable Next when on last page</li>
+                <li>Disable both when loading</li>
+            </ul>
+
+            <h4>Icons:</h4>
+            <ul>
+                <li>Import from <code>react-icons/fa</code>: <code>FaChevronLeft</code>, <code>FaChevronRight</code></li>
+                <li>Size: <code>h-5 w-5</code></li>
+            </ul>
+        </div>
+
+        <h2>3. Technical Specifications</h2>
+
+        <div class="technical">
+            <h3>3.1 API Routes</h3>
+
+            <h4>Follow Next.js API Routes Rules:</h4>
+            <p>Reference: <code>.cursor/rules/nextjs_api_routes.mdc</code></p>
+
+            <h4>Key Rules:</h4>
+            <ul>
+                <li><strong>No local DTO declarations:</strong> Import DTOs from <code>@/types</code></li>
+                <li><strong>Environment Variables:</strong> Use <code>process.env.NEXT_PUBLIC_API_BASE_URL</code></li>
+                <li><strong>Query String Handling:</strong> Use <code>buildQueryString</code> helper</li>
+                <li><strong>Tenant ID:</strong> Do NOT add <code>tenantId.equals</code> in client code - proxy handles it</li>
+                <li><strong>JWT Handling:</strong> Use <code>fetchWithJwtRetry</code> for backend calls</li>
+                <li><strong>Error Handling:</strong> Catch and return 500 with clear error message</li>
+                <li><strong>Method Handling:</strong> Only allow GET/POST/PATCH/DELETE with proper 405 responses</li>
+            </ul>
+
+            <h4>API Endpoints Required:</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Purpose</th>
+                        <th>Parameters</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/proxy/event-focus-groups</code></td>
+                        <td>POST</td>
+                        <td>Create association</td>
+                        <td><code>eventId</code>, <code>focusGroupId</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/proxy/event-focus-groups</code></td>
+                        <td>GET</td>
+                        <td>List associations</td>
+                        <td><code>focusGroupId.equals={id}</code>, pagination params</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/proxy/event-focus-groups/{id}</code></td>
+                        <td>DELETE</td>
+                        <td>Remove association</td>
+                        <td>Association ID in URL</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/proxy/event-details</code></td>
+                        <td>GET</td>
+                        <td>Search events</td>
+                        <td><code>title.contains</code>, <code>id.equals</code>, pagination</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="technical">
+            <h3>3.2 Server Actions</h3>
+
+            <h4>Pattern:</h4>
+            <p>Create server actions file: <code>src/app/admin/focus-groups/[id]/edit/ApiServerActions.ts</code></p>
+
+            <h4>Required Functions:</h4>
+            <ul>
+                <li><code>associateEventWithFocusGroup(eventId: number, focusGroupId: number)</code>
+                    <ul>
+                        <li>POST to <code>/api/proxy/event-focus-groups</code></li>
+                        <li>Use <code>fetchWithJwtRetry</code> from <code>@/lib/proxyHandler</code></li>
+                        <li>Return <code>EventFocusGroupDTO</code></li>
+                    </ul>
+                </li>
+                <li><code>fetchAssociatedEvents(focusGroupId: number, page: number, pageSize: number, sort?: string)</code>
+                    <ul>
+                        <li>GET <code>/api/proxy/event-details?focusGroupId.equals={id}&page={page}&size={pageSize}&sort={sort}</code></li>
+                        <li>Return <code>{ events: EventDetailsDTO[], totalCount: number }</code></li>
+                        <li>Read <code>X-Total-Count</code> header for total count</li>
+                    </ul>
+                </li>
+                <li><code>unlinkEventFromFocusGroup(associationId: number)</code>
+                    <ul>
+                        <li>DELETE <code>/api/proxy/event-focus-groups/{id}</code></li>
+                        <li>Return success/error status</li>
+                    </ul>
+                </li>
+                <li><code>searchEvents(searchTerm: string, searchType: 'title' | 'id', pageSize?: number)</code>
+                    <ul>
+                        <li>GET <code>/api/proxy/event-details</code> with appropriate filters</li>
+                        <li>Return <code>EventDetailsDTO[]</code></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>Important:</h4>
+            <ul>
+                <li>All server actions MUST use <code>fetchWithJwtRetry</code> from <code>@/lib/proxyHandler</code></li>
+                <li>Use absolute URLs for server-side fetches: <code>getAppUrl()</code> from <code>@/lib/env</code></li>
+                <li>Handle errors gracefully with try-catch</li>
+                <li>Return meaningful error messages</li>
+            </ul>
+        </div>
+
+        <div class="technical">
+            <h3>3.3 Component Structure</h3>
+
+            <h4>New Components:</h4>
+            <ul>
+                <li><code>src/app/admin/focus-groups/[id]/edit/components/FocusGroupEventSearch.tsx</code>
+                    <ul>
+                        <li>Client component ('use client')</li>
+                        <li>Based on <code>EventSearchSelect.tsx</code></li>
+                        <li>Props: <code>focusGroupId</code>, <code>onEventSelected</code></li>
+                        <li>Handles search and selection</li>
+                    </ul>
+                </li>
+                <li><code>src/app/admin/focus-groups/[id]/edit/components/AssociatedEventsTable.tsx</code>
+                    <ul>
+                        <li>Client component ('use client')</li>
+                        <li>Props: <code>focusGroupId</code>, <code>initialEvents</code>, <code>initialTotalCount</code></li>
+                        <li>Handles pagination, filtering, unlinking</li>
+                        <li>Manages table state and refresh</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>Modified Components:</h4>
+            <ul>
+                <li><code>src/app/admin/focus-groups/[id]/edit/FocusGroupEditForm.tsx</code>
+                    <ul>
+                        <li>Add event search component above form</li>
+                        <li>Add associated events table below form</li>
+                        <li>Handle event association callback</li>
+                    </ul>
+                </li>
+                <li><code>src/app/admin/focus-groups/[id]/edit/page.tsx</code>
+                    <ul>
+                        <li>Fetch initial associated events count</li>
+                        <li>Pass data to form component</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <div class="technical">
+            <h3>3.4 Database Schema</h3>
+
+            <h4>Tables Involved:</h4>
+            <ul>
+                <li><code>event_focus_groups</code> (Join Table)
+                    <ul>
+                        <li><code>id</code> (bigint, PK)</li>
+                        <li><code>tenant_id</code> (varchar)</li>
+                        <li><code>event_id</code> (bigint, FK to event_details)</li>
+                        <li><code>focus_group_id</code> (bigint, FK to focus_group)</li>
+                        <li><code>created_at</code> (timestamp)</li>
+                        <li><code>updated_at</code> (timestamp)</li>
+                        <li>Unique constraint: <code>(tenant_id, event_id, focus_group_id)</code></li>
+                    </ul>
+                </li>
+                <li><code>event_details</code> (Event Data)
+                    <ul>
+                        <li><code>id</code> (bigint, PK)</li>
+                        <li><code>title</code> (varchar)</li>
+                        <li><code>start_date</code> (date)</li>
+                        <li><code>end_date</code> (date)</li>
+                        <li><code>is_active</code> (boolean)</li>
+                        <li>... (other fields)</li>
+                    </ul>
+                </li>
+                <li><code>focus_group</code> (Focus Group Data)
+                    <ul>
+                        <li><code>id</code> (bigint, PK)</li>
+                        <li><code>name</code> (varchar)</li>
+                        <li>... (other fields)</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>Query Pattern:</h4>
+            <pre><code>SELECT ed.*
+FROM event_details ed
+INNER JOIN event_focus_groups efg ON ed.id = efg.event_id
+WHERE efg.focus_group_id = {focusGroupId}
+  AND efg.tenant_id = {tenantId}
+ORDER BY ed.start_date DESC
+LIMIT {pageSize} OFFSET {page * pageSize}</code></pre>
+        </div>
+
+        <h2>4. UI/UX Requirements</h2>
+
+        <div class="requirement">
+            <h3>4.1 Page Layout</h3>
+            <ul>
+                <li>Event search component placed at the top of the page (above form fields)</li>
+                <li>Form fields remain in their current position</li>
+                <li>Cover image upload remains in its current position</li>
+                <li>Associated events table placed at the bottom (below all form fields)</li>
+                <li>Clear visual separation between sections</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h3>4.2 Table Styling</h3>
+            <ul>
+                <li>Match table styling from <code>EventList.tsx</code></li>
+                <li>White background, rounded corners, shadow</li>
+                <li>Hover effects on rows</li>
+                <li>Clickable event title (link to event detail page)</li>
+                <li>Action buttons styled consistently</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h3>4.3 Loading States</h3>
+            <ul>
+                <li>Show loading spinner when fetching events</li>
+                <li>Disable pagination buttons during loading</li>
+                <li>Show "Loading events..." message in table</li>
+                <li>Disable search input during initial load</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h3>4.4 Error States</h3>
+            <ul>
+                <li>Display error messages in red alert boxes</li>
+                <li>Show "Failed to load events" message</li>
+                <li>Allow retry functionality</li>
+                <li>Handle network errors gracefully</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h3>4.5 Success Feedback</h3>
+            <ul>
+                <li>Show success message when event is associated</li>
+                <li>Auto-refresh table after association</li>
+                <li>Show success message when event is unlinked</li>
+                <li>Use toast notifications or inline messages</li>
+            </ul>
+        </div>
+
+        <h2>5. Reference Files</h2>
+
+        <div class="reference">
+            <h4>📁 Implementation References</h4>
+            <ul>
+                <li><strong>Event Search:</strong> <code>src/app/admin/promotion-emails/components/EventSearchSelect.tsx</code></li>
+                <li><strong>Pagination:</strong> <code>src/components/EventList.tsx</code> (lines 569-604)</li>
+                <li><strong>Manage Events Page:</strong> <code>src/app/admin/manage-events/page.tsx</code></li>
+                <li><strong>Focus Group Events Page:</strong> <code>src/app/admin/focus-groups/[id]/events/page.tsx</code></li>
+                <li><strong>API Routes Rules:</strong> <code>.cursor/rules/nextjs_api_routes.mdc</code></li>
+                <li><strong>UI Style Guide:</strong> <code>shared-cursor-rules/ui_style_guide.mdc</code></li>
+                <li><strong>API Schema:</strong> <code>documentation/Swagger_API_Docs/api-docs.json</code></li>
+                <li><strong>Database Schema:</strong> <code>code_html_template/SQLS/Latest_Schema_Post__Blob_Claude_11.sql</code></li>
+            </ul>
+        </div>
+
+        <h2>6. Implementation Checklist</h2>
+
+        <div class="checklist">
+            <h3>Phase 1: Event Search Component</h3>
+            <ul>
+                <li>Create <code>FocusGroupEventSearch.tsx</code> component</li>
+                <li>Implement search by title functionality</li>
+                <li>Implement search by ID functionality</li>
+                <li>Add toggle buttons for search type</li>
+                <li>Implement dropdown results display</li>
+                <li>Add event selection handler</li>
+                <li>Add clear selection functionality</li>
+                <li>Style component to match <code>EventSearchSelect.tsx</code></li>
+            </ul>
+
+            <h3>Phase 2: Server Actions</h3>
+            <ul>
+                <li>Create <code>ApiServerActions.ts</code> file</li>
+                <li>Implement <code>associateEventWithFocusGroup</code> function</li>
+                <li>Implement <code>fetchAssociatedEvents</code> function</li>
+                <li>Implement <code>unlinkEventFromFocusGroup</code> function</li>
+                <li>Implement <code>searchEvents</code> function</li>
+                <li>Add proper error handling</li>
+                <li>Use <code>fetchWithJwtRetry</code> for all calls</li>
+            </ul>
+
+            <h3>Phase 3: Associated Events Table</h3>
+            <ul>
+                <li>Create <code>AssociatedEventsTable.tsx</code> component</li>
+                <li>Implement table structure with columns</li>
+                <li>Add pagination state management</li>
+                <li>Implement pagination controls (Previous/Next buttons)</li>
+                <li>Add pagination details display</li>
+                <li>Implement event filtering (upcoming/past toggle)</li>
+                <li>Add unlink functionality with confirmation</li>
+                <li>Style table to match <code>EventList.tsx</code></li>
+                <li>Style pagination to match admin/manage-events page</li>
+            </ul>
+
+            <h3>Phase 4: Integration</h3>
+            <ul>
+                <li>Integrate event search into <code>FocusGroupEditForm.tsx</code></li>
+                <li>Integrate associated events table into form</li>
+                <li>Handle event association callback</li>
+                <li>Update page to fetch initial events</li>
+                <li>Test end-to-end functionality</li>
+                <li>Verify pagination works correctly</li>
+                <li>Verify error handling</li>
+                <li>Verify loading states</li>
+            </ul>
+
+            <h3>Phase 5: Testing & Refinement</h3>
+            <ul>
+                <li>Test event search functionality</li>
+                <li>Test event association</li>
+                <li>Test event unlinking</li>
+                <li>Test pagination with various page sizes</li>
+                <li>Test filtering (upcoming/past events)</li>
+                <li>Test error scenarios</li>
+                <li>Verify UI matches design requirements</li>
+                <li>Verify responsive design</li>
+            </ul>
+        </div>
+
+        <h2>7. Important Notes</h2>
+
+        <div class="warning">
+            <h3>⚠️ Critical Requirements</h3>
+            <ul>
+                <li><strong>DO NOT</strong> add <code>tenantId.equals</code> in client/server code - proxy handles it automatically</li>
+                <li><strong>MUST</strong> use <code>fetchWithJwtRetry</code> from <code>@/lib/proxyHandler</code> for all backend API calls</li>
+                <li><strong>MUST</strong> use absolute URLs (<code>getAppUrl()</code>) for server-side fetches</li>
+                <li><strong>MUST</strong> match pagination styling exactly from admin/manage-events page</li>
+                <li><strong>MUST</strong> follow Next.js API routes rules from <code>nextjs_api_routes.mdc</code></li>
+                <li><strong>MUST</strong> follow UI style guide from <code>ui_style_guide.mdc</code></li>
+                <li><strong>MUST</strong> prevent duplicate associations (handle gracefully)</li>
+                <li><strong>MUST</strong> refresh table after association/unlink operations</li>
+            </ul>
+        </div>
+
+        <div class="reference">
+            <h4>📝 Additional Considerations</h4>
+            <ul>
+                <li>Consider adding bulk association feature (future enhancement)</li>
+                <li>Consider adding event preview on hover (future enhancement)</li>
+                <li>Consider adding export functionality (future enhancement)</li>
+                <li>Ensure accessibility (keyboard navigation, ARIA labels)</li>
+                <li>Ensure mobile responsiveness</li>
+                <li>Consider performance optimization for large event lists</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>Focus Group Event Association Feature - Requirements Document</p>
+            <p>Target Page: <code>http://localhost:3000/admin/focus-groups/[id]/edit</code></p>
+            <p>Status: Requirements Definition - No Implementation</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('date').textContent = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    </script>
+</body>
+</html>
+

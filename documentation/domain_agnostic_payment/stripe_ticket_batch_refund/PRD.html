@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PRD: Stripe Ticket Batch Refund</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+
+      h1 {
+        font-size: 2.3rem;
+        margin-bottom: 0.75rem;
+      }
+
+      h2 {
+        font-size: 1.7rem;
+        margin-top: 2.5rem;
+      }
+
+      h3 {
+        font-size: 1.3rem;
+        margin-top: 1.8rem;
+      }
+
+      h4 {
+        font-size: 1.1rem;
+        margin-top: 1.2rem;
+      }
+
+      p,
+      li {
+        line-height: 1.75;
+        font-size: 1rem;
+      }
+
+      ul,
+      ol {
+        margin-left: 1.4rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5rem 0;
+        font-size: 0.95rem;
+      }
+
+      th,
+      td {
+        border: 1px solid rgba(42, 32, 23, 0.15);
+        padding: 0.75rem;
+        vertical-align: top;
+      }
+
+      th {
+        background: rgba(213, 201, 182, 0.35);
+        font-weight: 600;
+      }
+
+      code,
+      pre {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+      }
+
+      pre {
+        padding: 1rem;
+        line-height: 1.6;
+        overflow-x: auto;
+      }
+
+      code.inline {
+        padding: 0.15rem 0.35rem;
+        font-size: 0.95rem;
+        display: inline-block;
+      }
+
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .divider {
+        height: 1px;
+        background: rgba(42, 32, 23, 0.12);
+        margin: 2rem 0;
+      }
+
+      .callout {
+        border-left: 4px solid #8b7d6b;
+        background: rgba(213, 201, 182, 0.3);
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
+        margin: 1.8rem 0;
+      }
+
+      .toc ol {
+        list-style: decimal;
+      }
+
+      .toc a {
+        color: #1f4c8f;
+        text-decoration: none;
+      }
+
+      .toc a:hover {
+        text-decoration: underline;
+      }
+
+      footer {
+        margin-top: 4rem;
+        text-align: center;
+        font-size: 0.9rem;
+        color: #7a7066;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Draft · January 2026</span>
+      <h1>PRD: Stripe Ticket Batch Refund</h1>
+      <p>
+        <strong>Project:</strong> MCEFEE Multi-Tenant Event Management Platform<br />
+        <strong>Document Version:</strong> 1.0<br />
+        <strong>Date:</strong> January 2026<br />
+        <strong>Status:</strong> Draft
+      </p>
+
+      <div class="divider"></div>
+
+      <h2 id="executive-summary">Executive Summary</h2>
+      <p>
+        This document defines a batch refund feature for Stripe-based ticket transactions. The feature allows
+        administrators to refund all eligible tickets for an event in a single operation via an on-demand batch job.
+        This is particularly useful when events are canceled or require bulk refund processing. The feature follows
+        the same pattern as the existing batch job trigger in the sales analytics page and extends the single ticket
+        refund functionality to handle multiple transactions efficiently.
+      </p>
+
+      <div class="callout">
+        <strong>Key Concept:</strong> Batch refunds are processed asynchronously via an on-demand batch job. The system
+        returns a job ID immediately and processes refunds in the background, allowing administrators to continue
+        working while refunds are being processed.
+      </div>
+
+      <h2 id="table-of-contents">Table of Contents</h2>
+      <nav class="toc">
+        <ol>
+          <li><a href="#background">Background &amp; Context</a></li>
+          <li><a href="#goals">Goals &amp; Non-Goals</a></li>
+          <li><a href="#scope">Scope &amp; Eligibility</a></li>
+          <li><a href="#user-journeys">User Journeys</a></li>
+          <li><a href="#data-model">Data Model &amp; Schema</a></li>
+          <li><a href="#integration-points">Integration Points</a></li>
+          <li><a href="#backend-requirements">Backend Requirements</a></li>
+          <li><a href="#frontend-requirements">Frontend Requirements</a></li>
+          <li><a href="#batch-jobs">Batch Jobs &amp; Processing</a></li>
+          <li><a href="#security">Security &amp; Compliance</a></li>
+          <li><a href="#error-handling">Error Handling &amp; Edge Cases</a></li>
+          <li><a href="#migration">Migration &amp; Rollout</a></li>
+        </ol>
+      </nav>
+
+      <div class="divider"></div>
+
+      <section id="background">
+        <h2>1. Background &amp; Context</h2>
+        <ul>
+          <li><strong>Frontend:</strong> Next.js 15+ application in <code class="inline">E:\project_workspace\mosc-temp</code></li>
+          <li><strong>Backend:</strong> Spring Boot service in <code class="inline">E:\project_workspace\malayalees-us-site-boot</code></li>
+          <li><strong>Batch Jobs:</strong> Spring Batch jobs in <code class="inline">E:\project_workspace\event-site-manager-batch-jobs</code></li>
+          <li><strong>Schema Reference:</strong> <code class="inline">code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></li>
+          <li><strong>API Schema:</strong> <code class="inline">documentation/Swagger_API_Docs/api-docs.json</code></li>
+          <li><strong>UI Standards:</strong> <code class="inline">@ui_style_guide.mdc</code></li>
+        </ul>
+        <p>
+          Currently, administrators can refund individual tickets through the ticket list page using a single refund
+          button per transaction. This process requires manual intervention for each ticket, which is time-consuming
+          when events are canceled and all tickets need to be refunded. The batch refund feature automates this process
+          by allowing administrators to trigger a single batch job that processes all eligible tickets for an event.
+        </p>
+        <p>
+          The feature follows the same architectural pattern as the existing Stripe Fees and Tax Update batch job,
+          which is triggered from the sales analytics page. This ensures consistency in user experience and code
+          maintainability.
+        </p>
+      </section>
+
+      <section id="goals">
+        <div class="divider"></div>
+        <h2>2. Goals &amp; Non-Goals</h2>
+        <h3>Goals</h3>
+        <ul>
+          <li>Enable administrators to refund all eligible tickets for an event in a single operation.</li>
+          <li>Process refunds asynchronously via an on-demand batch job to avoid UI blocking.</li>
+          <li>Provide real-time feedback on job status, progress, and completion.</li>
+          <li>Handle partial refund scenarios gracefully (continue processing if some refunds fail).</li>
+          <li>Maintain consistency with existing single refund flow and batch job patterns.</li>
+          <li>Ensure proper audit logging and tenant isolation for all refund operations.</li>
+        </ul>
+        <h3>Non-Goals</h3>
+        <ul>
+          <li>Scheduled/automatic batch refunds (this is an on-demand feature only).</li>
+          <li>Refunding manual payments (Zelle, Venmo, etc.) - only Stripe payments are supported.</li>
+          <li>Partial refunds for individual transactions (full refund only per ticket).</li>
+          <li>Refunding tickets from multiple events in a single batch operation.</li>
+          <li>Refund reason selection for batch operations (uses default reason: "Event canceled - Batch refund").</li>
+        </ul>
+      </section>
+
+      <section id="scope">
+        <div class="divider"></div>
+        <h2>3. Scope &amp; Eligibility</h2>
+        <h3>Eligible Tickets</h3>
+        <p>
+          Only tickets meeting all of the following criteria are eligible for batch refund:
+        </p>
+        <ul>
+          <li><strong>Event ID:</strong> Must match the event ID from the ticket list page context.</li>
+          <li><strong>Tenant ID:</strong> Must match the current tenant (enforced by backend).</li>
+          <li><strong>Stripe Payment:</strong> Must have a <code class="inline">stripePaymentIntentId</code> (Stripe payments only).</li>
+          <li><strong>Status:</strong> Must not already be refunded (<code class="inline">status != 'REFUNDED'</code>).</li>
+          <li><strong>Payment Status:</strong> Must have a completed Stripe payment status.</li>
+        </ul>
+        <h3>Excluded Tickets</h3>
+        <ul>
+          <li>Tickets with manual payments (Zelle, Venmo, Cash App, etc.).</li>
+          <li>Tickets that are already refunded.</li>
+          <li>Tickets with pending or failed payment status.</li>
+          <li>Tickets from different events or tenants.</li>
+        </ul>
+        <h3>Optional Filters</h3>
+        <ul>
+          <li><strong>Date Range:</strong> Optional filter by purchase date range (future enhancement).</li>
+          <li><strong>Status Filter:</strong> Optional filter by transaction status (future enhancement).</li>
+        </ul>
+      </section>
+
+      <section id="user-journeys">
+        <div class="divider"></div>
+        <h2>4. User Journeys</h2>
+        <h3>Administrator Workflow</h3>
+        <ol>
+          <li>Navigate to ticket list page: <code class="inline">/admin/events/{eventId}/tickets/list</code></li>
+          <li>Review ticket statistics and confirm event details.</li>
+          <li>Locate the "Batch Refund" section (collapsible, similar to sales analytics page).</li>
+          <li>Click "Show Batch Refund Options" to expand the section.</li>
+          <li>Review the number of eligible tickets that will be refunded.</li>
+          <li>Click "Trigger Batch Refund" button.</li>
+          <li>Confirm the action in the confirmation dialog (shows ticket count and warning).</li>
+          <li>System returns job ID and estimated completion time immediately.</li>
+          <li>Monitor job status via success message (job ID, status, estimated records).</li>
+          <li>Refresh ticket list to see updated refund status after job completion.</li>
+        </ol>
+        <h3>System Processing Flow</h3>
+        <ol>
+          <li>Frontend validates eventId and prepares request payload.</li>
+          <li>Frontend calls server action: <code class="inline">triggerStripeTicketBatchRefundServer()</code>.</li>
+          <li>Server action calls backend endpoint: <code class="inline">POST /api/cron/stripe-ticket-batch-refund</code>.</li>
+          <li>Backend validates request and returns job ID (HTTP 202 Accepted).</li>
+          <li>Backend triggers batch job service asynchronously.</li>
+          <li>Batch job queries eligible tickets from database.</li>
+          <li>Batch job processes refunds in batches (100-500 tickets per batch).</li>
+          <li>For each ticket: Call Stripe refund API, update database record.</li>
+          <li>Batch job logs success/failure for each transaction.</li>
+          <li>Batch job updates job status with progress and completion summary.</li>
+        </ol>
+      </section>
+
+      <section id="data-model">
+        <div class="divider"></div>
+        <h2>5. Data Model &amp; Schema</h2>
+        <h3>Primary Table: event_ticket_transaction</h3>
+        <p>
+          The batch refund feature operates on the existing <code class="inline">event_ticket_transaction</code> table.
+          No schema changes are required, but the following fields are critical:
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="inline">id</code></td>
+              <td>Integer</td>
+              <td>Unique transaction identifier</td>
+            </tr>
+            <tr>
+              <td><code class="inline">event_id</code></td>
+              <td>Integer</td>
+              <td>Event identifier for filtering</td>
+            </tr>
+            <tr>
+              <td><code class="inline">tenant_id</code></td>
+              <td>String</td>
+              <td>Tenant isolation and filtering</td>
+            </tr>
+            <tr>
+              <td><code class="inline">stripe_payment_intent_id</code></td>
+              <td>String</td>
+              <td>Required for Stripe refund API call</td>
+            </tr>
+            <tr>
+              <td><code class="inline">status</code></td>
+              <td>String</td>
+              <td>Transaction status (COMPLETED, REFUNDED, PENDING, etc.)</td>
+            </tr>
+            <tr>
+              <td><code class="inline">final_amount</code></td>
+              <td>Decimal</td>
+              <td>Amount to refund (in dollars)</td>
+            </tr>
+            <tr>
+              <td><code class="inline">refund_amount</code></td>
+              <td>Decimal</td>
+              <td>Refunded amount (updated after refund)</td>
+            </tr>
+            <tr>
+              <td><code class="inline">refund_date</code></td>
+              <td>Timestamp</td>
+              <td>Timestamp when refund was processed</td>
+            </tr>
+            <tr>
+              <td><code class="inline">refund_reason</code></td>
+              <td>String</td>
+              <td>Reason for refund (default: "Event canceled - Batch refund")</td>
+            </tr>
+            <tr>
+              <td><code class="inline">stripe_payment_status</code></td>
+              <td>String</td>
+              <td>Stripe payment status (updated to 'refunded' after refund)</td>
+            </tr>
+          </tbody>
+        </table>
+        <h3>Query Criteria</h3>
+        <pre><code>SELECT * FROM event_ticket_transaction
+WHERE event_id = ?
+  AND tenant_id = ?
+  AND stripe_payment_intent_id IS NOT NULL
+  AND status != 'REFUNDED'
+  AND stripe_payment_status IN ('succeeded', 'paid')
+ORDER BY created_at ASC;</code></pre>
+      </section>
+
+      <section id="integration-points">
+        <div class="divider"></div>
+        <h2>6. Integration Points</h2>
+        <h3>Stripe API Integration</h3>
+        <ul>
+          <li><strong>Endpoint:</strong> <code class="inline">stripe.refunds.create()</code></li>
+          <li><strong>Parameters:</strong> <code class="inline">payment_intent</code> (from <code class="inline">stripePaymentIntentId</code>), <code class="inline">reason</code> (optional)</li>
+          <li><strong>Response:</strong> Refund object with <code class="inline">id</code>, <code class="inline">amount</code>, <code class="inline">status</code></li>
+          <li><strong>Error Handling:</strong> Handle rate limits, invalid payment intents, already refunded payments</li>
+        </ul>
+        <h3>Backend REST API</h3>
+        <ul>
+          <li><strong>Endpoint:</strong> <code class="inline">POST /api/cron/stripe-ticket-batch-refund</code></li>
+          <li><strong>Authentication:</strong> Service JWT (Bearer token)</li>
+          <li><strong>Request Body:</strong> <code class="inline">StripeTicketBatchRefundRequest</code> DTO</li>
+          <li><strong>Response:</strong> <code class="inline">StripeTicketBatchRefundResponse</code> with job ID (HTTP 202 Accepted)</li>
+        </ul>
+        <h3>Batch Job Service</h3>
+        <ul>
+          <li><strong>Job Name:</strong> <code class="inline">StripeTicketBatchRefundJob</code></li>
+          <li><strong>Trigger:</strong> On-demand via backend REST endpoint</li>
+          <li><strong>Processing:</strong> Asynchronous, processes tickets in batches</li>
+          <li><strong>Status Updates:</strong> Reports progress, success count, failure count</li>
+        </ul>
+        <h3>Frontend Integration</h3>
+        <ul>
+          <li><strong>Page:</strong> <code class="inline">/admin/events/[id]/tickets/list</code></li>
+          <li><strong>Server Action:</strong> <code class="inline">triggerStripeTicketBatchRefundServer()</code> in <code class="inline">ApiServerActions.ts</code></li>
+          <li><strong>UI Component:</strong> Collapsible batch refund section (similar to sales analytics)</li>
+          <li><strong>State Management:</strong> Loading, success, error states with job status display</li>
+        </ul>
+      </section>
+
+      <section id="backend-requirements">
+        <div class="divider"></div>
+        <h2>7. Backend Requirements</h2>
+        <p>
+          See <a href="backend_requirements.html">Backend Requirements</a> for detailed specifications.
+        </p>
+        <h3>Key Requirements Summary</h3>
+        <ul>
+          <li>REST endpoint: <code class="inline">POST /api/cron/stripe-ticket-batch-refund</code></li>
+          <li>Request validation: eventId, tenantId, optional date filters</li>
+          <li>Eligible ticket query with proper filtering</li>
+          <li>Asynchronous batch job trigger</li>
+          <li>Immediate response with job ID (HTTP 202 Accepted)</li>
+          <li>Error handling and validation</li>
+        </ul>
+      </section>
+
+      <section id="frontend-requirements">
+        <div class="divider"></div>
+        <h2>8. Frontend Requirements</h2>
+        <p>
+          See <a href="frontend_requirements.html">Frontend Requirements</a> for detailed specifications.
+        </p>
+        <h3>Key Requirements Summary</h3>
+        <ul>
+          <li>Batch refund section on ticket list page (collapsible)</li>
+          <li>Confirmation dialog with ticket count and warning</li>
+          <li>Server action for triggering batch job</li>
+          <li>Status display: loading, success, error states</li>
+          <li>Job ID and estimated completion time display</li>
+          <li>Follow UI standards from <code class="inline">@ui_style_guide.mdc</code></li>
+        </ul>
+      </section>
+
+      <section id="batch-jobs">
+        <div class="divider"></div>
+        <h2>9. Batch Jobs &amp; Processing</h2>
+        <p>
+          See <a href="batch_job_requirements.html">Batch Job Requirements</a> for detailed specifications.
+        </p>
+        <h3>Key Requirements Summary</h3>
+        <ul>
+          <li>On-demand job (not scheduled)</li>
+          <li>Process tickets in batches (100-500 per batch)</li>
+          <li>Stripe API integration for each refund</li>
+          <li>Database updates after successful Stripe refund</li>
+          <li>Progress tracking and status updates</li>
+          <li>Error handling: continue on individual failures</li>
+          <li>Audit logging for all operations</li>
+        </ul>
+      </section>
+
+      <section id="security">
+        <div class="divider"></div>
+        <h2>10. Security &amp; Compliance</h2>
+        <h3>Access Control</h3>
+        <ul>
+          <li>Admin-only access (enforced by backend authorization)</li>
+          <li>Tenant isolation: only refund tickets for current tenant</li>
+          <li>Event validation: ensure eventId belongs to tenant</li>
+        </ul>
+        <h3>Confirmation Requirements</h3>
+        <ul>
+          <li>Confirmation dialog before triggering batch refund</li>
+          <li>Display ticket count and warning message</li>
+          <li>Require explicit user confirmation</li>
+        </ul>
+        <h3>Audit Logging</h3>
+        <ul>
+          <li>Log all batch refund operations with timestamps</li>
+          <li>Record job ID, eventId, tenantId, ticket count</li>
+          <li>Track success/failure for each transaction</li>
+          <li>Store admin user ID who triggered the refund</li>
+        </ul>
+        <h3>Data Protection</h3>
+        <ul>
+          <li>No sensitive data in logs (mask payment intent IDs)</li>
+          <li>Secure API communication (HTTPS, JWT authentication)</li>
+          <li>Rate limiting for Stripe API calls</li>
+        </ul>
+      </section>
+
+      <section id="error-handling">
+        <div class="divider"></div>
+        <h2>11. Error Handling &amp; Edge Cases</h2>
+        <h3>Partial Refund Scenarios</h3>
+        <ul>
+          <li><strong>Some refunds fail:</strong> Continue processing remaining tickets, log failures</li>
+          <li><strong>Stripe API errors:</strong> Log error, mark transaction as failed, continue</li>
+          <li><strong>Database errors:</strong> Rollback individual transaction update, continue</li>
+          <li><strong>Network timeouts:</strong> Implement retry logic for Stripe API calls</li>
+        </ul>
+        <h3>Validation Errors</h3>
+        <ul>
+          <li><strong>Invalid eventId:</strong> Return 400 Bad Request with error message</li>
+          <li><strong>No eligible tickets:</strong> Return 200 OK with message "No eligible tickets found"</li>
+          <li><strong>Event not found:</strong> Return 404 Not Found</li>
+          <li><strong>Tenant mismatch:</strong> Return 403 Forbidden</li>
+        </ul>
+        <h3>Stripe API Errors</h3>
+        <ul>
+          <li><strong>Already refunded:</strong> Skip ticket, log warning, continue</li>
+          <li><strong>Invalid payment intent:</strong> Log error, mark as failed, continue</li>
+          <li><strong>Rate limit exceeded:</strong> Implement exponential backoff retry</li>
+          <li><strong>Insufficient funds:</strong> Log error, mark as failed, continue</li>
+        </ul>
+        <h3>Job Status Reporting</h3>
+        <ul>
+          <li>Report total tickets processed</li>
+          <li>Report successful refunds count</li>
+          <li>Report failed tickets count with error details</li>
+          <li>Provide job completion summary</li>
+        </ul>
+      </section>
+
+      <section id="migration">
+        <div class="divider"></div>
+        <h2>12. Migration &amp; Rollout</h2>
+        <h3>Implementation Phases</h3>
+        <ol>
+          <li><strong>Phase 1: Backend API</strong>
+            <ul>
+              <li>Create REST endpoint for batch refund trigger</li>
+              <li>Implement request validation and job trigger logic</li>
+              <li>Test with sample event data</li>
+            </ul>
+          </li>
+          <li><strong>Phase 2: Batch Job</strong>
+            <ul>
+              <li>Create batch job for processing refunds</li>
+              <li>Implement Stripe API integration</li>
+              <li>Implement database update logic</li>
+              <li>Test with small batch of tickets</li>
+            </ul>
+          </li>
+          <li><strong>Phase 3: Frontend UI</strong>
+            <ul>
+              <li>Add batch refund section to ticket list page</li>
+              <li>Implement server action for API call</li>
+              <li>Add confirmation dialog</li>
+              <li>Test end-to-end flow</li>
+            </ul>
+          </li>
+          <li><strong>Phase 4: Testing &amp; Rollout</strong>
+            <ul>
+              <li>Test with various scenarios (small events, large events, partial failures)</li>
+              <li>Performance testing with large ticket counts</li>
+              <li>User acceptance testing with administrators</li>
+              <li>Gradual rollout to production</li>
+            </ul>
+          </li>
+        </ol>
+        <h3>Rollback Plan</h3>
+        <ul>
+          <li>Feature can be disabled via feature flag if issues arise</li>
+          <li>Single refund functionality remains available as fallback</li>
+          <li>Database changes are reversible (status updates can be reverted)</li>
+          <li>Stripe refunds are permanent but can be tracked via audit logs</li>
+        </ul>
+      </section>
+
+      <footer>
+        <p>Generated for <code class="inline">documentation/domain_agnostic_payment/stripe_ticket_batch_refund/PRD.html</code></p>
+      </footer>
+    </main>
+  </body>
+</html>

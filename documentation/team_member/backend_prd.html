@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Members — Backend PRD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+
+    <h1>Team Members — Backend PRD</h1>
+    <p class="doc-meta">
+        <strong>Project:</strong> <code>malayalees-us-site-boot</code> (JHipster / Spring Boot)<br>
+        <strong>Index:</strong> <a href="generic_prd.html">generic_prd.html</a> · <strong>Schema:</strong> <a href="database_schema_prd.html">database_schema_prd.html</a> · <strong>OpenAPI:</strong> <a href="../Swagger_API_Docs/api-docs.json">api-docs.json</a> (<code>/api/team-groups</code>, <code>/api/team-members</code>)
+    </p>
+
+    <div class="lead">
+        <p>Two REST resources cloned from <code>ExecutiveCommitteeTeamMember</code>: <code>/api/team-groups</code> and <code>/api/team-members</code>. Liquibase changelog <code>20260523120000_added_entity_team_groups_and_team_members.xml</code>.</p>
+    </div>
+
+    <h2>1. REST endpoints</h2>
+    <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Notes</th></tr></thead>
+        <tbody>
+            <tr><td>GET</td><td><code>/api/team-groups</code></td><td>Criteria: <code>tenantId.equals</code>, <code>teamType.equals</code>, <code>isActive.equals</code>, <code>sort=displayOrder,asc</code></td></tr>
+            <tr><td>POST</td><td><code>/api/team-groups</code></td><td><code>tenantId</code> required</td></tr>
+            <tr><td>GET/PUT/PATCH/DELETE</td><td><code>/api/team-groups/{id}</code></td><td>Standard CRUD</td></tr>
+            <tr><td>GET</td><td><code>/api/team-members</code></td><td><code>teamGroupId.equals</code>, <code>isActive.equals</code>, <code>sort=priorityOrder,asc</code></td></tr>
+            <tr><td>POST</td><td><code>/api/team-members</code></td><td><code>tenantId</code> + <code>teamGroupId</code> required; group tenant must match</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. Java packages</h2>
+    <pre>com.nextjstemplate.domain.TeamGroup, TeamMember
+com.nextjstemplate.repository.TeamGroupRepository, TeamMemberRepository
+com.nextjstemplate.service.dto.TeamGroupDTO, TeamMemberDTO
+com.nextjstemplate.service.criteria.TeamGroupCriteria, TeamMemberCriteria
+com.nextjstemplate.service.TeamGroupQueryService, TeamMemberQueryService
+com.nextjstemplate.web.rest.TeamGroupResource, TeamMemberResource</pre>
+
+    <h2>3. OpenAPI</h2>
+    <p>Regenerate or merge paths into <code>documentation/Swagger_API_Docs/api-docs.json</code> from <code>src/main/resources/swagger/api-docs.json</code> after deploy.</p>
+
+</body>
+</html>

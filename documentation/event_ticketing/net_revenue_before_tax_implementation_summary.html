@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Net Revenue Before Tax Implementation Summary</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+        }
+        .summary-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .recommendation {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .calculation-box {
+            background-color: #f8f9fa;
+            border: 2px solid #6c757d;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .code-block {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 15px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .field-name {
+            font-family: 'Courier New', monospace;
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .layer-box {
+            background-color: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Net Revenue Before Tax Implementation Summary</h1>
+        <p><strong>Document Date:</strong> January 11, 2026</p>
+        <p><strong>Purpose:</strong> Analyze whether adding "Net Revenue Before Tax" requires changes across all layers (database, batch job, backend, frontend) and provide implementation summary.</p>
+
+        <div class="summary-box">
+            <h2>Executive Summary</h2>
+            <p><strong>Question:</strong> Do we need to make changes in all layers (DB, batch job, backend, frontend) to display "Net Revenue Before Tax"?</p>
+            <p><strong>Answer:</strong> <span class="highlight">It depends on the definition and whether you want to store it or calculate on-the-fly.</span></p>
+            <p><strong>Recommendation:</strong> Calculate on-the-fly in analytics queries (no database changes needed). If performance becomes an issue, add a database field and populate via batch job.</p>
+        </div>
+
+        <h2>1. Understanding "Net Revenue Before Tax"</h2>
+
+        <h3>1.1 Current Financial Fields</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Description</th>
+                    <th>Example ($1.00 ticket + $0.08 tax)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="field-name">final_amount</span></td>
+                    <td>Total amount customer paid (including tax if applicable)</td>
+                    <td>$1.08</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">stripe_fee_amount</span></td>
+                    <td>Stripe processing fee</td>
+                    <td>$0.33</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">stripe_amount_tax</span></td>
+                    <td>Tax collected by Stripe (if Stripe Tax enabled)</td>
+                    <td>$0.08</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">net_payout_amount</span></td>
+                    <td>Net payout to bank = final_amount - stripe_fee_amount - stripe_amount_tax</td>
+                    <td>$0.67 ($1.08 - $0.33 - $0.08)</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">platform_fee_amount</span></td>
+                    <td>Platform fee (deducted by your platform, not Stripe)</td>
+                    <td>$0.05</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>1.2 Definition: "Net Revenue Before Tax"</h3>
+        <div class="info-box">
+            <p><strong>Possible Interpretations:</strong></p>
+            <ol>
+                <li><strong>Net Payout Excluding Tax Component:</strong>
+                    <ul>
+                        <li>Formula: <code>final_amount - stripe_fee_amount</code></li>
+                        <li>Meaning: What you'd receive if tax wasn't collected</li>
+                        <li>Example: $1.08 - $0.33 = <strong>$0.75</strong></li>
+                    </ul>
+                </li>
+                <li><strong>Net Payout Plus Tax (Add Tax Back):</strong>
+                    <ul>
+                        <li>Formula: <code>net_payout_amount + stripe_amount_tax</code></li>
+                        <li>Meaning: Net payout with tax added back</li>
+                        <li>Example: $0.67 + $0.08 = <strong>$0.75</strong></li>
+                    </ul>
+                </li>
+                <li><strong>Revenue Before All Deductions:</strong>
+                    <ul>
+                        <li>Formula: <code>final_amount</code></li>
+                        <li>Meaning: Gross revenue (what customer paid)</li>
+                        <li>Example: <strong>$1.08</strong></li>
+                    </ul>
+                </li>
+            </ol>
+            <p><strong>Most Likely Meaning:</strong> Interpretation #1 or #2 (both result in the same value: <code>final_amount - stripe_fee_amount</code>)</p>
+        </div>
+
+        <div class="calculation-box">
+            <h3>Financial Flow Example:</h3>
+            <p><strong>Customer Payment:</strong> $1.08 (includes $1.00 ticket + $0.08 tax)</p>
+            <p><strong>Stripe Processing:</strong></p>
+            <ul>
+                <li>Stripe Fee: $0.33</li>
+                <li>Stripe Tax: $0.08 (collected from customer, passed through)</li>
+            </ul>
+            <p><strong>Net Payout to Bank:</strong> $1.08 - $0.33 - $0.08 = <strong>$0.67</strong></p>
+            <p><strong>Net Revenue Before Tax:</strong> $1.08 - $0.33 = <strong>$0.75</strong> (or $0.67 + $0.08 = $0.75)</p>
+            <p><em>This represents what you'd receive if tax wasn't part of the transaction.</em></p>
+        </div>
+
+        <h2>2. Implementation Options</h2>
+
+        <h3>2.1 Option A: Calculate On-the-Fly (Recommended)</h3>
+        <div class="recommendation">
+            <h4>Approach: Calculate in Analytics/Reporting Queries</h4>
+            <p><strong>Formula:</strong> <code>net_revenue_before_tax = final_amount - stripe_fee_amount</code></p>
+            <p><strong>OR:</strong> <code>net_revenue_before_tax = net_payout_amount + stripe_amount_tax</code></p>
+
+            <h4>Required Changes:</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Layer</th>
+                        <th>Changes Required</th>
+                        <th>Complexity</th>
+                        <th>Estimated Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Database</strong></td>
+                        <td>✅ <strong>NO CHANGES</strong> - Use existing fields</td>
+                        <td>None</td>
+                        <td>0 hours</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Batch Job</strong></td>
+                        <td>✅ <strong>NO CHANGES</strong> - Not needed</td>
+                        <td>None</td>
+                        <td>0 hours</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Backend API</strong></td>
+                        <td>✅ <strong>NO CHANGES</strong> - Calculation in service layer</td>
+                        <td>None</td>
+                        <td>0 hours</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Backend Service</strong></td>
+                        <td>🔧 <strong>MINOR CHANGES</strong> - Add calculation in analytics service</td>
+                        <td>Low</td>
+                        <td>1-2 hours</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Frontend</strong></td>
+                        <td>🔧 <strong>MINOR CHANGES</strong> - Display new metric in analytics page</td>
+                        <td>Low</td>
+                        <td>1-2 hours</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Implementation Example:</h4>
+            <div class="code-block">
+// In Backend Service (Sales Analytics)
+public SalesMetrics calculateSalesMetrics(List&lt;EventTicketTransaction&gt; transactions) {
+    // ... existing calculations ...
+
+    // NEW: Calculate net revenue before tax
+    BigDecimal netRevenueBeforeTax = transactions.stream()
+        .filter(t -&gt; t.getStatus().equals("COMPLETED"))
+        .map(t -&gt; {
+            BigDecimal finalAmount = t.getFinalAmount() != null ? t.getFinalAmount() : BigDecimal.ZERO;
+            BigDecimal stripeFee = t.getStripeFeeAmount() != null ? t.getStripeFeeAmount() : BigDecimal.ZERO;
+            // Net revenue before tax = final_amount - stripe_fee_amount
+            return finalAmount.subtract(stripeFee);
+        })
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    // OR using net_payout_amount (if available):
+    BigDecimal netRevenueBeforeTax = transactions.stream()
+        .filter(t -&gt; t.getStatus().equals("COMPLETED"))
+        .map(t -&gt; {
+            BigDecimal netPayout = t.getNetPayoutAmount() != null ? t.getNetPayoutAmount() : BigDecimal.ZERO;
+            BigDecimal stripeTax = t.getStripeAmountTax() != null ? t.getStripeAmountTax() : BigDecimal.ZERO;
+            // Net revenue before tax = net_payout_amount + stripe_amount_tax
+            return netPayout.add(stripeTax);
+        })
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    metrics.setNetRevenueBeforeTax(netRevenueBeforeTax);
+    return metrics;
+}
+            </div>
+
+            <h4>Pros:</h4>
+            <ul>
+                <li>✅ No database schema changes</li>
+                <li>✅ No batch job changes</li>
+                <li>✅ Always accurate (calculated from source data)</li>
+                <li>✅ No data synchronization issues</li>
+                <li>✅ Fast to implement</li>
+            </ul>
+
+            <h4>Cons:</h4>
+            <ul>
+                <li>⚠️ Must calculate every time (minor performance impact)</li>
+                <li>⚠️ Calculation logic must be consistent across all queries</li>
+            </ul>
+        </div>
+
+        <h3>2.2 Option B: Store in Database (If Performance Becomes Issue)</h3>
+        <div class="info-box">
+            <h4>Approach: Add Database Field and Populate via Batch Job</h4>
+            <p><strong>Formula:</strong> <code>net_revenue_before_tax = final_amount - stripe_fee_amount</code></p>
+
+            <h4>Required Changes:</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Layer</th>
+                        <th>Changes Required</th>
+                        <th>Complexity</th>
+                        <th>Estimated Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Database</strong></td>
+                        <td>🔧 <strong>SCHEMA CHANGE</strong> - Add <code>net_revenue_before_tax numeric(21,2) NULL</code></td>
+                        <td>Low</td>
+                        <td>1 hour (migration script)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Backend Entity/DTO</strong></td>
+                        <td>🔧 <strong>ADD FIELD</strong> - Add <code>netRevenueBeforeTax</code> to entity and DTO</td>
+                        <td>Low</td>
+                        <td>1 hour</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Batch Job</strong></td>
+                        <td>🔧 <strong>CALCULATE & STORE</strong> - Calculate and update field</td>
+                        <td>Medium</td>
+                        <td>2-3 hours</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Backend API</strong></td>
+                        <td>🔧 <strong>ACCEPT FIELD</strong> - Update PATCH endpoint to accept field</td>
+                        <td>Low</td>
+                        <td>1 hour</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Backend Service</strong></td>
+                        <td>🔧 <strong>USE STORED VALUE</strong> - Read from field instead of calculating</td>
+                        <td>Low</td>
+                        <td>1 hour</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Frontend</strong></td>
+                        <td>🔧 <strong>DISPLAY METRIC</strong> - Display new metric in analytics page</td>
+                        <td>Low</td>
+                        <td>1-2 hours</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Implementation Steps:</h4>
+            <ol>
+                <li><strong>Database Migration:</strong>
+                    <div class="code-block">
+ALTER TABLE event_ticket_transaction
+ADD COLUMN net_revenue_before_tax numeric(21,2) NULL;
+                    </div>
+                </li>
+                <li><strong>Backend Entity Update:</strong>
+                    <div class="code-block">
+// In EventTicketTransaction.java
+@Column(name = "net_revenue_before_tax", precision = 21, scale = 2)
+private BigDecimal netRevenueBeforeTax;
+                    </div>
+                </li>
+                <li><strong>Batch Job Update:</strong>
+                    <div class="code-block">
+// In StripeFeesTaxUpdateService.java
+BigDecimal finalAmount = transaction.getFinalAmount();
+BigDecimal stripeFee = result.getFee();
+BigDecimal netRevenueBeforeTax = finalAmount.subtract(stripeFee != null ? stripeFee : BigDecimal.ZERO);
+
+// Update payload
+updatePayload.put("netRevenueBeforeTax", netRevenueBeforeTax);
+                    </div>
+                </li>
+                <li><strong>Backend API Update:</strong>
+                    <div class="code-block">
+// In EventTicketTransactionDTO.java
+private BigDecimal netRevenueBeforeTax;
+
+// In PATCH endpoint - already accepts all fields via merge-patch
+                    </div>
+                </li>
+            </ol>
+
+            <h4>Pros:</h4>
+            <ul>
+                <li>✅ Pre-calculated for fast queries</li>
+                <li>✅ Consistent value across all reports</li>
+                <li>✅ Can track historical values</li>
+            </ul>
+
+            <h4>Cons:</h4>
+            <ul>
+                <li>⚠️ Requires database schema change</li>
+                <li>⚠️ Requires batch job update</li>
+                <li>⚠️ Must ensure batch job populates field correctly</li>
+                <li>⚠️ More complex implementation</li>
+            </ul>
+        </div>
+
+        <h2>3. Recommended Approach</h2>
+
+        <div class="recommendation">
+            <h3>✅ Recommendation: Option A (Calculate On-the-Fly)</h3>
+            <p><strong>Rationale:</strong></p>
+            <ul>
+                <li>✅ <strong>No database changes needed</strong> - Use existing fields</li>
+                <li>✅ <strong>No batch job changes needed</strong> - Calculation is simple</li>
+                <li>✅ <strong>Fast implementation</strong> - Only backend service and frontend changes</li>
+                <li>✅ <strong>Always accurate</strong> - Calculated from source data</li>
+                <li>✅ <strong>No data synchronization issues</strong> - No stored value to maintain</li>
+            </ul>
+            <p><strong>When to Consider Option B:</strong></p>
+            <ul>
+                <li>If analytics queries become slow with large datasets</li>
+                <li>If you need to track historical "before tax" values separately</li>
+                <li>If you need to query/filter by this value frequently</li>
+            </ul>
+        </div>
+
+        <h2>4. Implementation Summary: Option A (Recommended)</h2>
+
+        <div class="layer-box">
+            <h3>4.1 Database Layer</h3>
+            <p><strong>Status:</strong> ✅ <strong>NO CHANGES REQUIRED</strong></p>
+            <p>Use existing fields: <span class="field-name">final_amount</span>, <span class="field-name">stripe_fee_amount</span>, <span class="field-name">net_payout_amount</span>, <span class="field-name">stripe_amount_tax</span></p>
+        </div>
+
+        <div class="layer-box">
+            <h3>4.2 Batch Job Layer</h3>
+            <p><strong>Status:</strong> ✅ <strong>NO CHANGES REQUIRED</strong></p>
+            <p>Calculation is simple enough to do in analytics queries. No need to store in database.</p>
+        </div>
+
+        <div class="layer-box">
+            <h3>4.3 Backend API Layer</h3>
+            <p><strong>Status:</strong> ✅ <strong>NO CHANGES REQUIRED</strong></p>
+            <p>No new API endpoints needed. Calculation happens in service layer.</p>
+        </div>
+
+        <div class="layer-box">
+            <h3>4.4 Backend Service Layer</h3>
+            <p><strong>Status:</strong> 🔧 <strong>MINOR CHANGES REQUIRED</strong></p>
+            <p><strong>Files to Modify:</strong></p>
+            <ul>
+                <li><code>SalesAnalyticsService.java</code> (or equivalent service)</li>
+                <li><code>SalesMetrics.java</code> (DTO to add new field)</li>
+            </ul>
+            <p><strong>Changes:</strong></p>
+            <ol>
+                <li>Add <code>netRevenueBeforeTax</code> field to <code>SalesMetrics</code> DTO</li>
+                <li>Calculate in <code>calculateSalesMetrics()</code> method:
+                    <div class="code-block">
+BigDecimal netRevenueBeforeTax = transactions.stream()
+    .filter(t -&gt; t.getStatus().equals("COMPLETED"))
+    .map(t -&gt; {
+        BigDecimal finalAmount = t.getFinalAmount() != null ? t.getFinalAmount() : BigDecimal.ZERO;
+        BigDecimal stripeFee = t.getStripeFeeAmount() != null ? t.getStripeFeeAmount() : BigDecimal.ZERO;
+        return finalAmount.subtract(stripeFee);
+    })
+    .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    </div>
+                </li>
+            </ol>
+            <p><strong>Estimated Time:</strong> 1-2 hours</p>
+        </div>
+
+        <div class="layer-box">
+            <h3>4.5 Frontend Layer</h3>
+            <p><strong>Status:</strong> 🔧 <strong>MINOR CHANGES REQUIRED</strong></p>
+            <p><strong>Files to Modify:</strong></p>
+            <ul>
+                <li><code>src/app/admin/sales-analytics/SalesAnalyticsClient.tsx</code></li>
+                <li><code>src/app/admin/sales-analytics/ApiServerActions.ts</code> (if DTO needs update)</li>
+            </ul>
+            <p><strong>Changes:</strong></p>
+            <ol>
+                <li>Update <code>SalesMetrics</code> interface to include <code>netRevenueBeforeTax</code></li>
+                <li>Add new metric card to display "Net Revenue Before Tax"</li>
+                <li>Style consistently with existing metric cards</li>
+            </ol>
+            <p><strong>Example UI Addition:</strong></p>
+            <div class="code-block">
+{/* Net Revenue Before Tax Card */}
+&lt;div className="bg-cyan-50 border-2 border-cyan-200 rounded-lg p-6"&gt;
+  &lt;div className="flex items-center justify-between"&gt;
+    &lt;div&gt;
+      &lt;p className="text-cyan-600 text-sm font-medium"&gt;Net Revenue Before Tax&lt;/p&gt;
+      &lt;p className="text-3xl font-bold text-cyan-900 mt-2"&gt;
+        ${metrics.netRevenueBeforeTax?.toFixed(2) || '0.00'}
+      &lt;/p&gt;
+    &lt;/div&gt;
+    &lt;FaMoneyBillWave className="w-10 h-10 text-cyan-500" /&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+            </div>
+            <p><strong>Estimated Time:</strong> 1-2 hours</p>
+        </div>
+
+        <h2>5. Implementation Summary: Option B (If Needed)</h2>
+
+        <div class="warning-box">
+            <h3>⚠️ Only Implement Option B If Performance Becomes an Issue</h3>
+            <p>Option B requires changes across all layers. Only proceed if Option A causes performance problems.</p>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Layer</th>
+                    <th>File(s) to Modify</th>
+                    <th>Changes</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Database</strong></td>
+                    <td>Migration script</td>
+                    <td>Add <code>net_revenue_before_tax numeric(21,2) NULL</code></td>
+                    <td>1 hour</td>
+                </tr>
+                <tr>
+                    <td><strong>Backend Entity</strong></td>
+                    <td><code>EventTicketTransaction.java</code></td>
+                    <td>Add <code>netRevenueBeforeTax</code> field</td>
+                    <td>30 min</td>
+                </tr>
+                <tr>
+                    <td><strong>Backend DTO</strong></td>
+                    <td><code>EventTicketTransactionDTO.java</code></td>
+                    <td>Add <code>netRevenueBeforeTax</code> field</td>
+                    <td>30 min</td>
+                </tr>
+                <tr>
+                    <td><strong>Batch Job Service</strong></td>
+                    <td><code>StripeFeesTaxUpdateService.java</code></td>
+                    <td>Calculate and include in update payload</td>
+                    <td>2 hours</td>
+                </tr>
+                <tr>
+                    <td><strong>Backend API</strong></td>
+                    <td>PATCH endpoint (already accepts all fields)</td>
+                    <td>Verify field is accepted (should work automatically)</td>
+                    <td>30 min</td>
+                </tr>
+                <tr>
+                    <td><strong>Backend Service</strong></td>
+                    <td><code>SalesAnalyticsService.java</code></td>
+                    <td>Read from field instead of calculating</td>
+                    <td>1 hour</td>
+                </tr>
+                <tr>
+                    <td><strong>Frontend</strong></td>
+                    <td><code>SalesAnalyticsClient.tsx</code></td>
+                    <td>Display metric from API response</td>
+                    <td>1-2 hours</td>
+                </tr>
+            </tbody>
+        </table>
+        <p><strong>Total Estimated Time (Option B):</strong> 6-8 hours</p>
+
+        <h2>6. Comparison Table</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Aspect</th>
+                    <th>Option A: Calculate On-the-Fly</th>
+                    <th>Option B: Store in Database</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Database Changes</strong></td>
+                    <td>✅ None</td>
+                    <td>🔧 Add field + migration</td>
+                </tr>
+                <tr>
+                    <td><strong>Batch Job Changes</strong></td>
+                    <td>✅ None</td>
+                    <td>🔧 Calculate and store</td>
+                </tr>
+                <tr>
+                    <td><strong>Backend Changes</strong></td>
+                    <td>🔧 Service calculation only</td>
+                    <td>🔧 Entity, DTO, Service</td>
+                </tr>
+                <tr>
+                    <td><strong>Frontend Changes</strong></td>
+                    <td>🔧 Display metric</td>
+                    <td>🔧 Display metric</td>
+                </tr>
+                <tr>
+                    <td><strong>Implementation Time</strong></td>
+                    <td>2-4 hours</td>
+                    <td>6-8 hours</td>
+                </tr>
+                <tr>
+                    <td><strong>Performance</strong></td>
+                    <td>Good (for most datasets)</td>
+                    <td>Excellent (pre-calculated)</td>
+                </tr>
+                <tr>
+                    <td><strong>Data Accuracy</strong></td>
+                    <td>✅ Always accurate</td>
+                    <td>✅ Accurate (if batch job runs correctly)</td>
+                </tr>
+                <tr>
+                    <td><strong>Maintenance</strong></td>
+                    <td>✅ Low (no stored value to maintain)</td>
+                    <td>⚠️ Medium (must ensure batch job populates)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>7. Decision Matrix</h2>
+
+        <div class="info-box">
+            <h3>Choose Option A (Calculate On-the-Fly) If:</h3>
+            <ul>
+                <li>✅ You want fastest implementation (2-4 hours)</li>
+                <li>✅ You want to avoid database schema changes</li>
+                <li>✅ Your dataset is not extremely large (&lt; 100K transactions per query)</li>
+                <li>✅ You don't need to query/filter by this value frequently</li>
+                <li>✅ You prefer simplicity and maintainability</li>
+            </ul>
+
+            <h3>Choose Option B (Store in Database) If:</h3>
+            <ul>
+                <li>⚠️ Analytics queries are slow with large datasets</li>
+                <li>⚠️ You need to query/filter by this value frequently</li>
+                <li>⚠️ You need to track historical "before tax" values separately</li>
+                <li>⚠️ You have complex reporting requirements that benefit from pre-calculated values</li>
+            </ul>
+        </div>
+
+        <h2>8. Recommended Implementation Steps (Option A)</h2>
+
+        <div class="recommendation">
+            <h3>Step-by-Step Implementation:</h3>
+            <ol>
+                <li><strong>Backend Service (1-2 hours)</strong>
+                    <ul>
+                        <li>Add <code>netRevenueBeforeTax</code> to <code>SalesMetrics</code> DTO</li>
+                        <li>Add calculation in <code>calculateSalesMetrics()</code> method</li>
+                        <li>Test calculation with sample data</li>
+                    </ul>
+                </li>
+                <li><strong>Frontend (1-2 hours)</strong>
+                    <ul>
+                        <li>Update <code>SalesMetrics</code> interface in TypeScript</li>
+                        <li>Add new metric card to display "Net Revenue Before Tax"</li>
+                        <li>Style consistently with existing metrics</li>
+                        <li>Test display with real data</li>
+                    </ul>
+                </li>
+                <li><strong>Testing (1 hour)</strong>
+                    <ul>
+                        <li>Verify calculation matches expected formula</li>
+                        <li>Test with transactions that have tax and without tax</li>
+                        <li>Verify UI displays correctly</li>
+                    </ul>
+                </li>
+            </ol>
+            <p><strong>Total Estimated Time: 3-5 hours</strong></p>
+        </div>
+
+        <h2>9. Formula Verification</h2>
+
+        <div class="calculation-box">
+            <h3>Calculation Examples:</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>final_amount</th>
+                        <th>stripe_fee_amount</th>
+                        <th>stripe_amount_tax</th>
+                        <th>net_payout_amount</th>
+                        <th>net_revenue_before_tax</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Ticket with tax</td>
+                        <td>$1.08</td>
+                        <td>$0.33</td>
+                        <td>$0.08</td>
+                        <td>$0.67</td>
+                        <td><strong>$0.75</strong> ($1.08 - $0.33)</td>
+                    </tr>
+                    <tr>
+                        <td>Ticket without tax</td>
+                        <td>$1.00</td>
+                        <td>$0.33</td>
+                        <td>$0.00</td>
+                        <td>$0.67</td>
+                        <td><strong>$0.67</strong> ($1.00 - $0.33)</td>
+                    </tr>
+                    <tr>
+                        <td>Multi-ticket purchase</td>
+                        <td>$3.24</td>
+                        <td>$0.39</td>
+                        <td>$0.24</td>
+                        <td>$2.61</td>
+                        <td><strong>$2.85</strong> ($3.24 - $0.39)</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p><strong>Formula:</strong> <code>net_revenue_before_tax = final_amount - stripe_fee_amount</code></p>
+            <p><strong>Alternative (if net_payout_amount available):</strong> <code>net_revenue_before_tax = net_payout_amount + stripe_amount_tax</code></p>
+        </div>
+
+        <h2>10. Related Documentation</h2>
+        <ul>
+            <li><a href="stripe_fees_tax_net_revenue_batch_job_enhancement_analysis.html">Batch Job Enhancement Analysis</a></li>
+            <li><a href="stripe_fees_tax_net_revenue_complete_implementation_plan.html">Complete Implementation Plan</a></li>
+            <li><a href="stripe_payout_fees_tax_summary.html">Stripe Payout, Fees, and Tax Summary</a></li>
+        </ul>
+
+        <hr>
+        <p><em>Document generated: January 11, 2026</em></p>
+        <p><em>Last updated: January 11, 2026</em></p>
+    </div>
+</body>
+</html>

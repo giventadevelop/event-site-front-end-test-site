@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Event Date &amp; Location — Enhancement PRD (Index v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; background: #fff; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        a { color: #0066cc; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .toc { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 24px 0; }
+        .toc h2 { margin-top: 0; border: none; padding: 0; font-size: 1.25em; }
+        .layer-cards { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 20px 0; }
+        @media (min-width: 640px) { .layer-cards { grid-template-columns: 1fr 1fr; } }
+        .layer-card { background: #fff; border: 2px solid #b8d4e3; border-radius: 8px; padding: 16px; }
+        .layer-card h3 { margin-top: 0; color: #0052a3; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .section-container.usage { background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%); border-left-color: #7b1fa2; }
+        .section-container.usage .section-header { background: linear-gradient(135deg, #7b1fa2 0%, #6a1b9a 100%); }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; border-radius: 6px; overflow: hidden; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        tbody tr:hover { background: #f5faff; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.9em; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px 16px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px 16px; border-radius: 6px; margin: 16px 0; }
+        .companion { background: #d4edda; border-left: 4px solid #28a745; padding: 14px 18px; border-radius: 8px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Event Date &amp; Location — Enhancement PRD (Index v1.0)</h1>
+    <p class="doc-meta">
+        <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 19, 2026 &nbsp;|&nbsp; <strong>Status:</strong> Draft<br>
+        <strong>Parent:</strong> <a href="../GALLERY_STATIC_TO_DYNAMIC_PORTING_GUIDE.html">Gallery static → dynamic porting guide</a> &nbsp;|&nbsp;
+        <strong>Prior pack:</strong> <a href="../../gallery_album_category_year_enhancements/generic_enhancement_prd.html">Category &amp; year enhancements (v1.0)</a><br>
+        <strong>Repos:</strong> <code>mosc-temp</code> (frontend + porting scripts) · <code>malayalees-us-site-boot</code> (backend) · canonical SQL in mosc-temp
+    </p>
+
+    <div class="lead">
+        <p>Extends <strong>gallery_album</strong> with structured event timing and place so public cards can show legacy strings like <strong>“October 24–26, 2015, Indore”</strong> instead of year-only (<code>2015</code>). Source data already exists in <code>src/lib/gallery/moscStaticAlbums.ts</code> and <code>scripts/gallery-porting/static-gallery-manifest.json</code> as the <code>date</code> field — it was never persisted to the API.</p>
+        <p><strong>Non-breaking rule:</strong> New columns are nullable. Existing albums keep working; cards fall back to <code>albumYear</code> when event dates are absent.</p>
+    </div>
+
+    <div class="companion">
+        <p><strong>Prerequisite:</strong> Category &amp; year v1.0 deployed (<code>gallery_category</code>, <code>album_year</code>, <code>gallery_category_id</code>).</p>
+        <p><strong>Porting scripts:</strong> <code>scripts/gallery-porting/</code> — extend import + add backfill (see <a href="data_migration_enhancements_prd.html">data migration PRD</a>).</p>
+    </div>
+
+    <nav class="toc" aria-label="Enhancement PRD index">
+        <h2>Enhancement layer PRDs</h2>
+        <div class="layer-cards">
+            <div class="layer-card">
+                <h3><a href="gap_analysis_prd.html">Gap analysis</a></h3>
+                <p>Legacy card date line vs DB/API today; manifest field mapping; display fallback rules.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="database_schema_enhancements_prd.html">Database schema (v1.0)</a></h3>
+                <p><code>event_date_start</code>, <code>event_date_end</code>, <code>event_location</code> on <code>gallery_album</code>.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="backend_enhancements_prd.html">Backend enhancements</a></h3>
+                <p>GalleryAlbum DTO/entity/criteria; validation; OpenAPI; integration tests.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="frontend_enhancements_prd.html">Frontend enhancements</a></h3>
+                <p>Types, admin form, card display formatter, gallery pages.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="data_migration_enhancements_prd.html">Data migration &amp; backfill</a></h3>
+                <p>Parse manifest <code>date</code> strings; PATCH 29 albums; npm script commands.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="implementation_roadmap.html">Implementation roadmap</a></h3>
+                <p>Cross-repo phases E0–E4, dependencies, verification checklist.</p>
+            </div>
+        </div>
+    </nav>
+
+    <h2 id="executive-summary">Executive summary</h2>
+    <div class="section-container usage">
+        <div class="section-header">Problem and solution</div>
+        <p>The legacy MOSC gallery card shows a human-readable date line under the title (e.g. <em>November 25, 2015</em> or <em>October 24–26, 2015, Indore</em>). After static → dynamic porting, the API stores only <code>albumYear</code> (integer). Full dates and locations were extracted into the manifest but dropped at import time.</p>
+        <p><strong>Solution (v1.0):</strong> Add three nullable columns on <code>gallery_album</code>, expose via REST, extend admin create/edit, format display on <code>MoscGalleryAlbumCard</code> and <code>/gallery</code> cards, and backfill imported albums from the existing manifest (no photo re-import).</p>
+    </div>
+
+    <h2 id="card-field-mapping">Target card → data mapping</h2>
+    <table>
+        <thead><tr><th>UI element (legacy)</th><th>Source after v1.0</th><th>Notes</th></tr></thead>
+        <tbody>
+            <tr><td>Date line under title</td><td>Formatted from <code>eventDateStart</code>, <code>eventDateEnd</code>, <code>eventLocation</code></td><td>Client-side formatter; hide line if all null and no <code>albumYear</code></td></tr>
+            <tr><td>Year-only albums (<code>2019</code>)</td><td><code>album_year</code> only</td><td>Event date columns null; display <code>2019</code></td></tr>
+            <tr><td>Single day (<code>November 25, 2015</code>)</td><td><code>event_date_start</code> = 2015-11-25</td><td><code>event_date_end</code> null</td></tr>
+            <tr><td>Date range (<code>October 24-26, 2015</code>)</td><td>start + end same month</td><td>Display with en-dash range</td></tr>
+            <tr><td>Location suffix (<code>, Indore</code>)</td><td><code>event_location</code></td><td>Appended after formatted date</td></tr>
+            <tr><td>Category pill</td><td><code>gallery_category.display_name</code></td><td>From prior v1.0 pack — unchanged</td></tr>
+            <tr><td>Photo count</td><td><code>totalMediaCount</code></td><td>Unchanged</td></tr>
+        </tbody>
+    </table>
+
+    <h2 id="phases">Enhancement phases (E0–E4)</h2>
+    <table>
+        <thead><tr><th>Phase</th><th>Depends on</th><th>Deliverable</th><th>PRD</th></tr></thead>
+        <tbody>
+            <tr><td><strong>E0 — Docs</strong></td><td>—</td><td>This HTML PRD pack + SQL templates</td><td>This index</td></tr>
+            <tr><td><strong>E1 — Schema + API</strong></td><td>E0, category/year G1</td><td>ALTER <code>gallery_album</code>; DTO + criteria</td><td><a href="database_schema_enhancements_prd.html">Database</a>, <a href="backend_enhancements_prd.html">Backend</a></td></tr>
+            <tr><td><strong>E2 — Admin UI</strong></td><td>E1</td><td>Date + location fields on album form</td><td><a href="frontend_enhancements_prd.html">Frontend</a></td></tr>
+            <tr><td><strong>E3 — Public cards</strong></td><td>E1</td><td>Shared date formatter + card update</td><td><a href="frontend_enhancements_prd.html">Frontend</a></td></tr>
+            <tr><td><strong>E4 — Backfill</strong></td><td>E1</td><td>Manifest parser + PATCH 29 albums</td><td><a href="data_migration_enhancements_prd.html">Data migration</a></td></tr>
+        </tbody>
+    </table>
+
+    <h2 id="success-criteria">Success criteria</h2>
+    <ul>
+        <li>Album <code>dharma-dhamma-conference</code> displays <strong>October 24–26, 2015, Indore</strong> on MOSC and main gallery cards.</li>
+        <li>Admin can set/clear event start date, end date, and location on create/edit.</li>
+        <li>Import script persists new fields for future album creates.</li>
+        <li>Backfill script updates all 29 static-ported albums without re-importing media.</li>
+        <li>Albums with only <code>albumYear</code> continue to show the year with no errors.</li>
+    </ul>
+
+    <div class="info-box">
+        <strong>Related:</strong> <a href="gap_analysis_prd.html">Gap analysis</a> ·
+        <a href="implementation_roadmap.html">Implementation roadmap</a> ·
+        <a href="../GALLERY_STATIC_TO_DYNAMIC_PORTING_GUIDE.html">Static porting guide</a>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recurring Events - Frontend Requirements</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+        }
+        h3 {
+            color: #555;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        h4 {
+            color: #666;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        p {
+            margin-bottom: 15px;
+        }
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        pre code {
+            background: transparent;
+            padding: 0;
+            color: #ecf0f1;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+        }
+        .info-box {
+            background: #d1ecf1;
+            padding: 15px;
+            border-left: 4px solid #17a2b8;
+            margin: 20px 0;
+        }
+        .warning-box {
+            background: #f8d7da;
+            padding: 15px;
+            border-left: 4px solid #dc3545;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        .badge-primary {
+            background: #3498db;
+            color: white;
+        }
+        .badge-success {
+            background: #28a745;
+            color: white;
+        }
+        .badge-warning {
+            background: #ffc107;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Recurring Events Feature - Frontend Requirements</h1>
+
+        <div class="info-box">
+            <strong>Date:</strong> 2025-01-XX<br>
+            <strong>Feature:</strong> Recurring Events Functionality - Frontend Implementation<br>
+            <strong>Status:</strong> Requirements Analysis
+        </div>
+
+        <div class="section">
+            <h2>Executive Summary</h2>
+            <p>This document outlines the frontend requirements for implementing recurring event functionality. The frontend will provide a user-friendly interface for creating events that repeat on a schedule (daily, weekly, biweekly, monthly) with configurable end dates (maximum 5 years) or number of occurrences.</p>
+        </div>
+
+        <div class="section">
+            <h2>Current System Analysis</h2>
+
+            <h3>Existing Frontend Components</h3>
+            <ul>
+                <li><code>EventForm.tsx</code> - Main event creation/editing form</li>
+                <li><code>EventDetailsDTO</code> - TypeScript interface for event data</li>
+                <li>Uses <code>metadata</code> field (JSON string) for extended configuration</li>
+            </ul>
+
+            <h3>Current Form Structure</h3>
+            <p>The event form currently includes:</p>
+            <ul>
+                <li>Basic event fields (title, description, dates, times)</li>
+                <li>Fundraiser & Charity Configuration section</li>
+                <li>Email Header Image Upload section</li>
+                <li>Max Guests Per Attendee field</li>
+            </ul>
+
+            <div class="highlight">
+                <strong>Key Finding:</strong> The <code>metadata</code> field is already used for storing JSON configuration (fundraiser/charity settings), making it a suitable place to store recurrence rules without requiring immediate database schema changes.
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>UI Components Requirements</h2>
+
+            <h3>1. Recurring Event Toggle</h3>
+            <table>
+                <tr>
+                    <th>Property</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td>Location</td>
+                    <td>EventForm.tsx, after "Max Guests Per Attendee" section</td>
+                </tr>
+                <tr>
+                    <td>Component Type</td>
+                    <td>Checkbox</td>
+                </tr>
+                <tr>
+                    <td>Label</td>
+                    <td>"Make this event recurring"</td>
+                </tr>
+                <tr>
+                    <td>Behavior</td>
+                    <td>When checked, shows recurrence configuration section</td>
+                </tr>
+            </table>
+
+            <h3>2. Recurrence Pattern Selection</h3>
+            <table>
+                <tr>
+                    <th>Property</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td>Component Type</td>
+                    <td>Radio button group</td>
+                </tr>
+                <tr>
+                    <td>Options</td>
+                    <td>
+                        <ul>
+                            <li>Daily</li>
+                            <li>Weekly</li>
+                            <li>Biweekly</li>
+                            <li>Monthly</li>
+                        </ul>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Default</td>
+                    <td>None selected (required if recurring is enabled)</td>
+                </tr>
+            </table>
+
+            <h3>3. Pattern-Specific Fields</h3>
+
+            <h4>For Daily Pattern:</h4>
+            <ul>
+                <li><strong>Component:</strong> Number input</li>
+                <li><strong>Label:</strong> "Repeat every [N] days"</li>
+                <li><strong>Constraints:</strong> min: 1, default: 1</li>
+            </ul>
+
+            <h4>For Weekly Pattern:</h4>
+            <ul>
+                <li><strong>Number Input:</strong> "Repeat every [N] weeks" (min: 1, default: 1)</li>
+                <li><strong>Checkbox Group:</strong> "On days of week"
+                    <ul>
+                        <li>Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday</li>
+                        <li>At least one day must be selected</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>For Biweekly Pattern:</h4>
+            <ul>
+                <li><strong>Read-only Text:</strong> "Every 2 weeks"</li>
+                <li><strong>Checkbox Group:</strong> "On days of week" (same as Weekly)
+                    <ul>
+                        <li>At least one day must be selected</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>For Monthly Pattern:</h4>
+            <ul>
+                <li><strong>Number Input:</strong> "Repeat every [N] months" (min: 1, default: 1)</li>
+                <li><strong>Radio Buttons:</strong> "On day of month"
+                    <ul>
+                        <li>Option 1: "Day [N]" (number input, 1-31)</li>
+                        <li>Option 2: "Last day of month"</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h3>4. End Condition Selection</h3>
+            <table>
+                <tr>
+                    <th>Property</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td>Component Type</td>
+                    <td>Radio button group</td>
+                </tr>
+                <tr>
+                    <td>Options</td>
+                    <td>
+                        <ul>
+                            <li>"End on date" (shows date picker)</li>
+                            <li>"End after [N] occurrences" (shows number input)</li>
+                        </ul>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Default</td>
+                    <td>"End on date"</td>
+                </tr>
+            </table>
+
+            <h3>5. End Date Input</h3>
+            <ul>
+                <li><strong>Component:</strong> Date picker (same style as existing start/end date pickers)</li>
+                <li><strong>Validation:</strong>
+                    <ul>
+                        <li>Must be after start date</li>
+                        <li>Maximum: 5 years from start date</li>
+                        <li>Required if "End on date" is selected</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h3>6. Occurrences Input</h3>
+            <ul>
+                <li><strong>Component:</strong> Number input</li>
+                <li><strong>Validation:</strong>
+                    <ul>
+                        <li>Minimum: 1</li>
+                        <li>Maximum: 1000</li>
+                        <li>Required if "End after occurrences" is selected</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h3>7. Preview Section</h3>
+            <ul>
+                <li><strong>Component:</strong> Collapsible section showing "Preview of recurring events"</li>
+                <li><strong>Content:</strong> List of first 10 occurrence dates (with "Show more" if applicable)</li>
+                <li><strong>Format:</strong> "Event 1: Monday, January 15, 2025 at 6:00 PM"</li>
+                <li><strong>Update:</strong> Real-time as user changes recurrence settings</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Form Validation</h2>
+
+            <h3>Client-Side Validation Rules</h3>
+            <p>If recurring is enabled:</p>
+            <ul>
+                <li>Pattern must be selected</li>
+                <li>End condition must be selected</li>
+                <li>If "End on date": end date must be valid and within 5 years</li>
+                <li>If "End after occurrences": occurrences must be 1-1000</li>
+                <li>For WEEKLY/BIWEEKLY: At least one weekday must be selected</li>
+                <li>For MONTHLY: Day of month must be specified</li>
+            </ul>
+
+            <h3>Visual Feedback</h3>
+            <ul>
+                <li>Red border on invalid fields</li>
+                <li>Error messages below fields</li>
+                <li>Disable "Save Event" button if validation fails</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>State Management</h2>
+
+            <h3>New State Variables in EventForm</h3>
+            <pre><code>const [isRecurring, setIsRecurring] = useState(false);
+const [recurrencePattern, setRecurrencePattern] = useState<'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | ''>('');
+const [recurrenceInterval, setRecurrenceInterval] = useState&lt;number&gt;(1);
+const [recurrenceEndType, setRecurrenceEndType] = useState<'END_DATE' | 'OCCURRENCES'>('END_DATE');
+const [recurrenceEndDate, setRecurrenceEndDate] = useState&lt;string&gt;('');
+const [recurrenceOccurrences, setRecurrenceOccurrences] = useState&lt;number&gt;(1);
+const [recurrenceWeeklyDays, setRecurrenceWeeklyDays] = useState&lt;number[]&gt;([]);
+const [recurrenceMonthlyDay, setRecurrenceMonthlyDay] = useState&lt;number | 'LAST' | null&gt;(null);
+const [recurrencePreview, setRecurrencePreview] = useState&lt;string[]&gt;([]);</code></pre>
+        </div>
+
+        <div class="section">
+            <h2>Metadata Serialization</h2>
+
+            <h3>Update handleSubmit in EventForm.tsx</h3>
+            <ul>
+                <li>Parse existing metadata</li>
+                <li>Add recurrence configuration if <code>isRecurring</code> is true</li>
+                <li>Merge with existing metadata (fundraiser/charity config)</li>
+                <li>Serialize to JSON string before submission</li>
+            </ul>
+
+            <h3>Helper Function</h3>
+            <pre><code>function createRecurrenceMetadata(options: {
+  isRecurring: boolean;
+  pattern?: string;
+  interval?: number;
+  endType?: string;
+  endDate?: string;
+  occurrences?: number;
+  weeklyDays?: number[];
+  monthlyDay?: number | 'LAST';
+}): Record&lt;string, any&gt; {
+  // Implementation
+}</code></pre>
+
+            <h3>Recurrence Configuration JSON Structure</h3>
+            <pre><code>{
+  "isRecurring": true,
+  "recurrenceConfig": {
+    "pattern": "DAILY" | "WEEKLY" | "BIWEEKLY" | "MONTHLY",
+    "interval": 1,
+    "endType": "END_DATE" | "OCCURRENCES",
+    "endDate": "2026-01-15",
+    "occurrences": 10,
+    "weeklyDays": [1, 3, 5],
+    "monthlyDay": 15
+  }
+}</code></pre>
+        </div>
+
+        <div class="section">
+            <h2>Date Calculation Utilities</h2>
+
+            <h3>New Utility Functions</h3>
+            <p>Create new file: <code>src/lib/recurrenceUtils.ts</code></p>
+
+            <h4>Calculate Next Occurrence</h4>
+            <pre><code>function calculateNextOccurrence(
+  startDate: Date,
+  pattern: string,
+  interval: number,
+  currentDate: Date,
+  weeklyDays?: number[],
+  monthlyDay?: number | 'LAST'
+): Date | null;</code></pre>
+
+            <h4>Generate Occurrence Dates</h4>
+            <pre><code>function generateOccurrenceDates(
+  startDate: Date,
+  pattern: string,
+  interval: number,
+  endDate?: Date,
+  maxOccurrences?: number,
+  weeklyDays?: number[],
+  monthlyDay?: number | 'LAST'
+): Date[];</code></pre>
+
+            <h4>Validate Recurrence End Date</h4>
+            <pre><code>function validateRecurrenceEndDate(
+  startDate: Date,
+  endDate: Date
+): boolean;</code></pre>
+        </div>
+
+        <div class="section">
+            <h2>File Changes Summary</h2>
+
+            <h3>New Files</h3>
+            <ol>
+                <li><code>src/lib/recurrenceUtils.ts</code> - Recurrence calculation utilities</li>
+                <li><code>src/components/RecurrenceConfigSection.tsx</code> - Recurrence configuration UI component</li>
+                <li><code>src/components/RecurrencePreview.tsx</code> - Preview of occurrence dates</li>
+            </ol>
+
+            <h3>Modified Files</h3>
+            <ol>
+                <li><code>src/components/EventForm.tsx</code> - Add recurrence section</li>
+                <li><code>src/types/index.ts</code> - Add recurrence-related types</li>
+                <li><code>src/lib/eventUtils.ts</code> - Add recurrence metadata helpers</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>Implementation Checklist</h2>
+
+            <h3>Phase 1: Frontend UI (Week 1-2)</h3>
+            <ul>
+                <li>[ ] Add recurring event toggle checkbox</li>
+                <li>[ ] Add recurrence pattern radio buttons</li>
+                <li>[ ] Add pattern-specific input fields</li>
+                <li>[ ] Add end condition selection</li>
+                <li>[ ] Add date/occurrence inputs</li>
+                <li>[ ] Add preview section</li>
+                <li>[ ] Implement form validation</li>
+                <li>[ ] Update metadata serialization</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Testing Requirements</h2>
+
+            <h3>Frontend Tests</h3>
+            <ul>
+                <li>[ ] Recurrence toggle shows/hides configuration</li>
+                <li>[ ] Pattern selection shows correct fields</li>
+                <li>[ ] Validation prevents invalid configurations</li>
+                <li>[ ] Preview updates correctly</li>
+                <li>[ ] Metadata serialization includes recurrence config</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>UI Style Guide Compliance</h2>
+            <p>All components must follow the existing UI style guide:</p>
+            <ul>
+                <li>Use consistent form field styling</li>
+                <li>Follow checkbox/radio button patterns</li>
+                <li>Maintain consistent spacing and layout</li>
+                <li>Use appropriate color schemes (blue for primary actions)</li>
+                <li>Ensure responsive design for mobile devices</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Success Criteria</h2>
+            <ul>
+                <li>✅ Users can create recurring events with all supported patterns</li>
+                <li>✅ Recurrence end date is limited to 5 years maximum</li>
+                <li>✅ Users can specify end by date or occurrences</li>
+                <li>✅ Preview shows upcoming occurrences</li>
+                <li>✅ UI follows existing design patterns and style guide</li>
+                <li>✅ Form validation prevents invalid configurations</li>
+                <li>✅ Metadata is correctly serialized and sent to backend</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>References</h2>
+            <ul>
+                <li>Current Event Form: <code>src/components/EventForm.tsx</code></li>
+                <li>Event Details DTO: <code>src/types/index.ts</code></li>
+                <li>Metadata Pattern: <code>src/lib/eventUtils.ts</code> (createFundraiserMetadata)</li>
+                <li>UI Style Guide: <code>shared-cursor-rules/ui_style_guide.mdc</code></li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+

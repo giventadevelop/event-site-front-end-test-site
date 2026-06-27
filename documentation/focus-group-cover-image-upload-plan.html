@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Group Cover Image Upload Implementation Plan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+            font-size: 1.8em;
+        }
+
+        h3 {
+            color: #555;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        h4 {
+            color: #666;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #e74c3c;
+        }
+
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+        }
+
+        pre code {
+            background-color: transparent;
+            color: #ecf0f1;
+            padding: 0;
+        }
+
+        .pros-cons {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .pros-cons h4 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+
+        .pros-cons ul {
+            margin-bottom: 0;
+        }
+
+        .step {
+            background-color: #f8f9fa;
+            border-left: 4px solid #27ae60;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .step h3 {
+            margin-top: 0;
+            color: #27ae60;
+        }
+
+        .file-path {
+            background-color: #e8f4f8;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            display: inline-block;
+            margin: 5px 0;
+        }
+
+        .note {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .note strong {
+            color: #856404;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Focus Group Cover Image Upload Implementation Plan</h1>
+
+        <h2>Overview</h2>
+        <p>Implement cover image upload functionality for focus groups, similar to the email header image upload feature. This will allow administrators to upload and manage cover images for focus groups through the admin interface.</p>
+
+        <h2>Current State Analysis</h2>
+
+        <h3>Frontend</h3>
+        <ul>
+            <li><strong>Focus Group Edit Page</strong>: <code>src/app/admin/focus-groups/[id]/edit/page.tsx</code>
+                <ul>
+                    <li>Currently has a text input field for <code>coverImageUrl</code></li>
+                    <li>Uses server action to PATCH focus group data</li>
+                    <li>Field exists in form but no upload functionality</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>Backend Structure</h3>
+        <ul>
+            <li><strong>Database</strong>: <code>focus_group</code> table has <code>cover_image_url</code> field (VARCHAR 1024)</li>
+            <li><strong>DTO</strong>: <code>FocusGroupDTO</code> includes <code>coverImageUrl?: string</code></li>
+            <li><strong>Proxy Endpoint</strong>: <code>/api/proxy/focus-groups/[...slug].ts</code> uses shared <code>createProxyHandler</code></li>
+            <li><strong>Relationship</strong>: Focus groups are connected to events via <code>event_focus_groups</code> join table</li>
+        </ul>
+
+        <h3>Existing Upload Patterns</h3>
+        <ol>
+            <li><strong>Email Header Image</strong>: <code>/api/proxy/event-medias/upload/email-header-image</code>
+                <ul>
+                    <li>Requires <code>eventId</code> parameter</li>
+                    <li>Returns <code>EventMediaDTO</code> with <code>fileUrl</code></li>
+                    <li>Updates event's <code>emailHeaderImageUrl</code> field</li>
+                </ul>
+            </li>
+            <li><strong>Other Entity Types</strong>: Use <code>/api/proxy/event-medias/upload/{entityType}</code> pattern
+                <ul>
+                    <li>Examples: <code>sponsor</code>, <code>featured-performer</code>, <code>program-director</code></li>
+                    <li>Some require <code>eventId</code>, some don't</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h2>Implementation Strategy</h2>
+
+        <h3>Option 1: Use Event-Media Upload Endpoint (Recommended)</h3>
+        <div class="pros-cons">
+            <h4>Pros:</h4>
+            <ul>
+                <li>Leverages existing infrastructure</li>
+                <li>Images stored in <code>event_media</code> table (centralized media management)</li>
+                <li>Consistent with other entity uploads</li>
+                <li>Automatic S3 storage handling</li>
+            </ul>
+
+            <h4>Cons:</h4>
+            <ul>
+                <li>Requires <code>eventId</code> parameter (but can use <code>0</code> for non-event-specific images)</li>
+                <li>May need backend support for <code>entityType=focus-group</code></li>
+            </ul>
+
+            <h4>Implementation:</h4>
+            <ul>
+                <li>Create proxy endpoint: <code>/api/proxy/event-medias/upload/focus-group-cover-image</code></li>
+                <li>Backend endpoint: <code>/api/event-medias/upload/focus-group-cover-image</code></li>
+                <li>Parameters: <code>focusGroupId</code>, <code>title</code>, <code>description</code>, <code>isPublic</code>, <code>tenantId</code></li>
+                <li>Returns: <code>EventMediaDTO</code> with <code>fileUrl</code></li>
+                <li>Update focus group's <code>coverImageUrl</code> via PATCH</li>
+            </ul>
+        </div>
+
+        <h3>Option 2: Direct Focus Group Image Upload</h3>
+        <div class="pros-cons">
+            <h4>Pros:</h4>
+            <ul>
+                <li>Simpler - no event association needed</li>
+                <li>Direct to focus group entity</li>
+            </ul>
+
+            <h4>Cons:</h4>
+            <ul>
+                <li>Requires new backend endpoint</li>
+                <li>May duplicate S3 upload logic</li>
+                <li>Less consistent with existing patterns</li>
+            </ul>
+
+            <h4>Implementation:</h4>
+            <ul>
+                <li>Create proxy endpoint: <code>/api/proxy/focus-groups/[id]/upload-cover-image</code></li>
+                <li>Backend endpoint: <code>/api/focus-groups/{id}/upload-cover-image</code></li>
+                <li>Returns: Image URL</li>
+                <li>Update focus group's <code>coverImageUrl</code> via PATCH</li>
+            </ul>
+        </div>
+
+        <h2>Recommended Approach: Option 1 (Dedicated Endpoint)</h2>
+        <p>Following the existing pattern of email header images, we'll create a dedicated endpoint <code>/api/event-medias/upload/focus-group-cover-image</code> similar to <code>/api/event-medias/upload/email-header-image</code>.</p>
+
+        <div class="note">
+            <strong>Backend Analysis:</strong>
+            <ul>
+                <li>Generic <code>/api/event-medias/upload</code> endpoint exists with <code>entityType</code> and <code>entityId</code> support</li>
+                <li>Dedicated endpoints exist for specific use cases (email-header-image, featured-performer, sponsor, etc.)</li>
+                <li>Focus groups don't have multiple image types (just cover image), so a dedicated endpoint is cleaner</li>
+                <li>Backend already has infrastructure for S3 uploads via EventMediaService</li>
+            </ul>
+        </div>
+
+        <h2>Implementation Steps</h2>
+
+        <div class="step">
+            <h3>Step 1: Backend API Endpoint (Backend Project)</h3>
+            <p><strong>Location</strong>: <span class="file-path">E:\project_workspace\malayalees-us-site-boot</span></p>
+            <p><strong>File</strong>: <code>src/main/java/com/nextjstemplate/web/rest/EventMediaResource.java</code></p>
+
+            <p><strong>Action</strong>: Create new endpoint <code>/api/event-medias/upload/focus-group-cover-image</code></p>
+
+            <p><strong>Pattern</strong>: Similar to <code>uploadEmailHeaderImage</code> method (line ~656)</p>
+
+            <h4>Required Parameters:</h4>
+            <ul>
+                <li><code>focusGroupId</code> (required) - Long</li>
+                <li><code>title</code> (default: "Focus Group Cover Image") - String</li>
+                <li><code>description</code> (optional, default: "Cover image for focus group") - String</li>
+                <li><code>isPublic</code> (default: true) - Boolean</li>
+                <li><code>tenantId</code> (required) - String</li>
+                <li><code>file</code> (multipart/form-data) - MultipartFile</li>
+            </ul>
+
+            <h4>Implementation Notes:</h4>
+            <ul>
+                <li>Use <code>eventMediaService.uploadFile()</code> with appropriate parameters</li>
+                <li>Set <code>eventId=0</code> or <code>null</code> since cover image is group-level, not event-specific</li>
+                <li>Use <code>entityType="focus-group"</code> and <code>entityId=focusGroupId</code></li>
+                <li>After upload, update <code>FocusGroup.coverImageUrl</code> via <code>FocusGroupService</code></li>
+                <li>Return <code>EventMediaDTO</code> with <code>fileUrl</code></li>
+            </ul>
+
+            <h4>Response:</h4>
+            <pre><code>{
+  "id": 123,
+  "fileUrl": "https://s3.../focus-group-cover-4002.jpg",
+  "title": "Focus Group Cover Image",
+  "eventId": null,
+  "entityType": "focus-group",
+  "entityId": 4002,
+  ...
+}</code></pre>
+
+            <h4>Backend Code Pattern:</h4>
+            <pre><code>@PostMapping(value = "/upload/focus-group-cover-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+public ResponseEntity&lt;EventMediaDTO&gt; uploadFocusGroupCoverImage(
+    @RequestParam("file") MultipartFile file,
+    @RequestParam("focusGroupId") Long focusGroupId,
+    @RequestParam("title") @NotNull String title,
+    @RequestParam(value = "description", required = false) String description,
+    @RequestParam("tenantId") String tenantId,
+    @RequestParam(value = "isPublic", required = false) Boolean isPublic,
+    Authentication authentication
+) {
+    // Upload to S3 via eventMediaService
+    // Update FocusGroup.coverImageUrl
+    // Return EventMediaDTO
+}</code></pre>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Frontend Proxy Endpoint</h3>
+            <p><strong>File</strong>: <code>src/pages/api/proxy/event-medias/upload/focus-group-cover-image.ts</code></p>
+
+            <p><strong>Pattern</strong>: Similar to <code>email-header-image.ts</code></p>
+
+            <h4>Key Differences:</h4>
+            <ul>
+                <li>Uses <code>focusGroupId</code> instead of <code>eventId</code></li>
+                <li>May use <code>eventId=0</code> if backend requires it</li>
+                <li>Title: "Focus Group Cover Image"</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: FocusGroupCoverImageUpload Component</h3>
+            <p><strong>File</strong>: <code>src/components/FocusGroupCoverImageUpload.tsx</code></p>
+
+            <p><strong>Based on</strong>: <code>EmailHeaderImageUpload.tsx</code></p>
+
+            <h4>Key Changes:</h4>
+            <ul>
+                <li>Accepts <code>focusGroupId</code> instead of <code>eventId</code></li>
+                <li>Uses <code>/api/proxy/event-medias/upload/focus-group-cover-image</code></li>
+                <li>Icon: Use group/team icon instead of envelope icon</li>
+                <li>Labels: "Focus Group Cover Image" instead of "Email Header Image"</li>
+            </ul>
+
+            <h4>Props:</h4>
+            <pre><code>interface FocusGroupCoverImageUploadProps {
+  focusGroupId: number;
+  currentImageUrl?: string;
+  onImageUploaded: (imageUrl: string) => void;
+  onError: (error: string) => void;
+  disabled?: boolean;
+  className?: string;
+}</code></pre>
+        </div>
+
+        <div class="step">
+            <h3>Step 4: Update Focus Group Edit Page</h3>
+            <p><strong>File</strong>: <code>src/app/admin/focus-groups/[id]/edit/page.tsx</code></p>
+
+            <h4>Changes:</h4>
+            <ol>
+                <li>Convert to client component or create client wrapper</li>
+                <li>Replace text input with <code>FocusGroupCoverImageUpload</code> component</li>
+                <li>Handle image upload callback to update form state</li>
+                <li>Ensure <code>coverImageUrl</code> is included in PATCH payload</li>
+            </ol>
+
+            <h4>Current Form Structure:</h4>
+            <ul>
+                <li>Server action form</li>
+                <li>Needs to be converted to client component with server action for save</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>Step 5: Testing</h3>
+            <ol>
+                <li>Upload cover image for focus group</li>
+                <li>Verify image appears in preview</li>
+                <li>Save form and verify <code>coverImageUrl</code> is updated in database</li>
+                <li>Verify image displays correctly on focus group detail pages</li>
+            </ol>
+        </div>
+
+        <h2>Technical Considerations</h2>
+
+        <h3>Focus Group to Event Relationship</h3>
+        <ul>
+            <li>Focus groups can be associated with multiple events via <code>event_focus_groups</code> table</li>
+            <li>Cover image is group-level, not event-specific</li>
+            <li>Use <code>eventId=0</code> or first associated event if backend requires eventId</li>
+        </ul>
+
+        <h3>Image Storage</h3>
+        <ul>
+            <li>Images stored in S3 via event-media upload system</li>
+            <li>URL stored in <code>focus_group.cover_image_url</code></li>
+            <li>Consider image optimization/resizing if needed</li>
+        </ul>
+
+        <h3>Error Handling</h3>
+        <ul>
+            <li>File type validation (JPEG, PNG, GIF)</li>
+            <li>File size validation (max 10MB)</li>
+            <li>Upload error handling with user-friendly messages</li>
+            <li>Network error handling</li>
+        </ul>
+
+        <h2>Files to Create/Modify</h2>
+
+        <h3>New Files</h3>
+        <ol>
+            <li><code>src/components/FocusGroupCoverImageUpload.tsx</code></li>
+            <li><code>src/pages/api/proxy/event-medias/upload/focus-group-cover-image.ts</code></li>
+        </ol>
+
+        <h3>Modified Files</h3>
+        <ol>
+            <li><code>src/app/admin/focus-groups/[id]/edit/page.tsx</code> - Add upload component</li>
+            <li>Backend: Add focus-group cover image upload endpoint (if needed)</li>
+        </ol>
+
+        <h2>Dependencies</h2>
+        <ul>
+            <li>Existing <code>EmailHeaderImageUpload</code> component pattern</li>
+            <li>Event media upload infrastructure</li>
+            <li>S3 storage configuration</li>
+            <li>JWT authentication via proxy handler</li>
+        </ul>
+
+        <h2>Next Steps</h2>
+        <ol>
+            <li><strong>Research Backend</strong>: Check backend API for focus-group image upload support</li>
+            <li><strong>Create Component</strong>: Build <code>FocusGroupCoverImageUpload</code> component</li>
+            <li><strong>Create Proxy</strong>: Add proxy endpoint for focus-group cover image upload</li>
+            <li><strong>Update Edit Page</strong>: Integrate upload component into focus group edit page</li>
+            <li><strong>Test</strong>: Verify end-to-end functionality</li>
+        </ol>
+
+        <div class="footer">
+            <p>Generated from: focus-group-cover-image-upload-plan.md</p>
+        </div>
+    </div>
+</body>
+</html>
+
+
+

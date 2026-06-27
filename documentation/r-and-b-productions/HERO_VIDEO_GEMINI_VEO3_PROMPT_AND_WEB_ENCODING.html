@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="R&amp;B Productions hero loop: Gemini Veo 3 generation prompt, reference images, and web MP4 encoding aligned with HOME_HERO_VIDEO_ENCODING_GUIDE.">
+    <title>R&amp;B Productions — Hero Loop Video (Veo 3 Prompt) &amp; Web Encoding</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+        }
+        h1 {
+            font-size: 2.5em;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+        }
+        h2 {
+            font-size: 1.8em;
+            border-left: 4px solid #0066cc;
+            padding-left: 15px;
+            margin-top: 28px;
+            margin-bottom: 16px;
+        }
+        h3 { font-size: 1.4em; color: #333; margin-top: 20px; margin-bottom: 10px; }
+        h4 { font-size: 1.2em; color: #555; margin-top: 16px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin: 12px 0 12px 24px; }
+        li { margin-bottom: 8px; }
+        a { color: #0066cc; }
+        a:focus { outline: 2px solid #0066cc; outline-offset: 2px; }
+
+        .toc {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 24px 0;
+        }
+        .toc h2 { margin-top: 0; border: none; padding: 0; font-size: 1.3em; }
+        .toc ul { margin: 12px 0 0 20px; }
+        .toc a { font-weight: 600; }
+
+        .section-intro {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-intro code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+
+        .section-container {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-container.usage {
+            background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%);
+            border-left-color: #9c27b0;
+        }
+        .section-container.parameters {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left-color: #ff9800;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            padding: 12px 20px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 8px 8px 0 0;
+            font-size: 1.2em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-header.usage {
+            background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+        }
+        .section-header.parameters {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+
+        .parameters-list {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left: 4px solid #ff9800;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .parameters-list code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+
+        .info {
+            background: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            padding: 16px 20px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+        .info code, .info .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 16px 20px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 16px 20px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+
+        .code-block, pre, pre code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #b8d4e3;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .code-block { line-height: 1.55; }
+
+        code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        tr:hover { background-color: #e3f2fd; transition: background-color 0.2s ease; }
+        td code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+        }
+
+        .copy-hint {
+            font-size: 0.85em;
+            color: #555;
+            margin-top: 8px;
+        }
+
+        .prompt-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .copy-button {
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .copy-button:hover {
+            background-color: #0052a3;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .copy-button:focus {
+            outline: 2px solid #0066cc;
+            outline-offset: 2px;
+        }
+        .copy-button.copied {
+            background-color: #28a745;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            h1 { font-size: 1.75em; }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>R&amp;B Productions — Hero Loop Video (Gemini Veo 3) &amp; Web Encoding</h1>
+
+        <div class="toc">
+            <h2>Table of Contents</h2>
+            <ul>
+                <li><a href="#purpose">Purpose &amp; encoding reference</a></li>
+                <li><a href="#delivery">Web delivery targets (hero loop)</a></li>
+                <li><a href="#references">Reference images (project paths)</a></li>
+                <li><a href="#brand">Brand copy (for prompt context)</a></li>
+                <li><a href="#nano-banana-hero">Nano Banana Pro — hero still image prompts (Howie MP)</a></li>
+                <li><a href="#rule-copy-note">Copy buttons vs. command blocks (styling rule)</a></li>
+                <li><a href="#safety-blocked">If Veo blocks your prompt (safety)</a></li>
+                <li><a href="#veo-safe">Safety-friendly prompt (use when blocked)</a></li>
+                <li><a href="#veo-prompt">Primary Gemini Veo 3 prompt (copy)</a></li>
+                <li><a href="#veo-alt">Alternate / shorter prompt &amp; constraints</a></li>
+                <li><a href="#ffmpeg">Post-process with ffmpeg (10s, 1080p, silent AAC)</a></li>
+            </ul>
+        </div>
+
+        <div class="section-intro" id="purpose">
+            <h2 style="margin-top:0;border:none;padding:0;">Purpose &amp; encoding reference</h2>
+            <p>
+                This document gives a <strong>copy-paste prompt</strong> for <strong>Google Gemini / Veo 3</strong> (or similar AI video tools) to generate a
+                <strong>cinematic hero background clip</strong> for <strong>R&amp;B Productions</strong>, intended to <strong>loop</strong> on the site hero
+                for <strong>no more than 10 seconds</strong> per loop.
+            </p>
+            <p>
+                After generation, the file must be <strong>re-encoded for the web</strong> using the same principles as
+                <a href="../fc-united/HOME_HERO_VIDEO_ENCODING_GUIDE.html"><strong>Home Hero Video — Encoding &amp; Integration Guide</strong></a>
+                (<code>fc-united/HOME_HERO_VIDEO_ENCODING_GUIDE.html</code>): <strong>H.264</strong>, <strong>1920×1080</strong>,
+                <strong>yuv420p</strong>, <strong>silent AAC</strong> stereo (not video-only) for reliable Chrome playback, and <code>+faststart</code>.
+            </p>
+        </div>
+
+        <div class="parameters-list" id="delivery">
+            <h3>Web delivery targets (align with encoding guide)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">Setting</th>
+                        <th scope="col">Value / note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Duration (generation)</td>
+                        <td><strong>≤ 10 seconds</strong> per loop (use tool’s closest supported length if Veo caps at 8s, etc.).</td>
+                    </tr>
+                    <tr>
+                        <td>Final encode resolution</td>
+                        <td><strong>1920×1080</strong> — scale to cover, then center crop if source aspect differs (see ffmpeg below).</td>
+                    </tr>
+                    <tr>
+                        <td>Video codec / pixel format</td>
+                        <td><code>libx264</code>, <code>yuv420p</code>, <code>-crf 23</code>, <code>-preset medium</code></td>
+                    </tr>
+                    <tr>
+                        <td>Audio</td>
+                        <td><strong>Silent AAC</strong> stereo (mux with <code>anullsrc</code>) — page plays <strong>muted</strong>; avoids Chrome freeze on video-only MP4.</td>
+                    </tr>
+                    <tr>
+                        <td>Container</td>
+                        <td>MP4 with <code>-movflags +faststart</code></td>
+                    </tr>
+                    <tr>
+                        <td>Playback</td>
+                        <td>Hero player: <code>autoPlay</code>, <code>muted</code>, <code>playsInline</code>; loop via <code>ended</code> → seek 0 + <code>play()</code> (see guide).</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section-container parameters" id="references">
+            <div class="section-header parameters">Reference images (local assets)</div>
+            <p>Use these in tools that support <strong>image-to-video</strong> or <strong>style / identity references</strong> (follow each tool’s rules and rights).</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">Role</th>
+                        <th scope="col">Path under <code>public/</code></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Brand mark (PNG)</td>
+                        <td><code>images/hero_movie_section/roy_and_bindu_prod_logo_transparent.png</code></td>
+                    </tr>
+                    <tr>
+                        <td>Bindu (reference)</td>
+                        <td><code>images/hero_movie_section/bindu_only.jpg</code></td>
+                    </tr>
+                    <tr>
+                        <td>Roy (reference)</td>
+                        <td><code>images/hero_movie_section/roy_only.jpg</code></td>
+                    </tr>
+                    <tr>
+                        <td>Roy — suit (alternate reference)</td>
+                        <td><code>images/hero_movie_section/roy_only_suit.jpg</code></td>
+                    </tr>
+                    <tr>
+                        <td>Bindu — churidar (alternate reference)</td>
+                        <td><code>images/hero_movie_section/bindu_only_churidar.jpg</code></td>
+                    </tr>
+                    <tr>
+                        <td>Nadirshah — director (reference)</td>
+                        <td><code>images/hero_movie_section/Nadirshah.jpg</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Merged mood board</strong> (2×2, 16:9 — single upload for tools that allow one image)</td>
+                        <td><code>images/hero_movie_section/rb-hero-mood-board-1920x1080.png</code></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p class="copy-hint">
+                Regenerate the mood board after changing any source file:
+                <code class="code-highlight">pwsh -File scripts/merge-rb-hero-mood-board.ps1</code>
+                (requires <code class="code-highlight">ffmpeg</code> on PATH). Matches <strong>1920×1080</strong> hero target from
+                <a href="../fc-united/HOME_HERO_VIDEO_ENCODING_GUIDE.html">HOME_HERO_VIDEO_ENCODING_GUIDE.html</a>.
+            </p>
+            <div class="warning">
+                <strong>Rights &amp; likeness:</strong> Prefer <strong>stylized cinematic</strong> framing over photorealistic impersonation of real people unless you hold clear
+                commercial/image rights. In prompts, “inspired by reference” is safer than “exact likeness.”
+            </div>
+        </div>
+
+        <div class="section-container" id="brand">
+            <div class="section-header">Brand copy (embed or paraphrase in tool)</div>
+            <ul>
+                <li><strong>Tagline:</strong> “An initiative by Roy and Bindu” — authentic, owner-led Malayalam production context.</li>
+                <li><strong>Positioning:</strong> Digital entertainment with soulful stories — from Kerala to the world.</li>
+                <li><strong>Company:</strong> R&amp;B Productions — owned by Roy and Bindu; based in Brisbane, Australia; funding and producing Malayalam films; promotions, digital content, distribution globally.</li>
+                <li><strong>Partners (creative):</strong> Directors Dileesh Pothan and Nadirshah; actor Fahadh Faasil; scenarist Syam Pushkaran.</li>
+                <li><strong>Hero video arc (Veo):</strong> Brief film-style countdown with filmstrip / reel motion at the top; Roy, Bindu, and Nadirshah as producers and directors of the film, representing R&amp;B Productions; end with all three standing together as the brand “making it happen.”</li>
+                <li><strong>Mission:</strong> Soulful content, local flavours, global audience; cinematic craft with a modern digital footprint.</li>
+            </ul>
+        </div>
+
+        <div class="section-container usage" id="nano-banana-hero">
+            <div class="section-header usage">Nano Banana Pro — website hero still image (16:9)</div>
+            <p>
+                Use these prompts in <strong>Nano Banana Pro</strong> (or similar AI image tools) to generate a <strong>wide cinematic hero still</strong> for the production company site — complementary to the <strong>Veo video loop</strong> above. Context: <strong>R&amp;B Productions</strong>;
+                <strong>Roy</strong> and <strong>Bindu</strong> are <strong>owners/partners</strong>; <strong>Nadirshah</strong> is the <strong>director</strong>; featured film line <strong>Howie MP</strong>. Reference files live under
+                <code class="code-highlight">public/images/hero_movie_section/</code> (logo, suit, churidar, director).
+            </p>
+
+            <div class="info" id="rule-copy-note">
+                <strong>Copy buttons &amp; the HTML documentation rule:</strong>
+                <a href="../../.cursor/rules/html_documentation_styling_guide.mdc"><code class="code-highlight">html_documentation_styling_guide.mdc</code></a>
+                requires <strong>two buttons</strong> (📄 Template + 📋 Copy) and parameter fields specifically for <strong>command blocks</strong> — i.e. shell/Node commands that users customize and paste into a terminal.
+                Long-form <strong>AI prompts</strong> in <code class="code-highlight">&lt;pre&gt;</code> are <strong>not</strong> those interactive commands. The checklist line “all commands have copy buttons” means <strong>CLI commands</strong>, not every prose block.
+                On this page, <strong>📋 Copy</strong> on prompt blocks is added for convenience so you can paste into Nano Banana Pro / Veo without selecting by hand.
+            </div>
+
+            <h3>Reference files (for image-to-image)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">Role</th>
+                        <th scope="col">Path under <code>public/</code></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Brand mark</td>
+                        <td><code>images/hero_movie_section/roy_and_bindu_prod_logo_transparent.png</code></td>
+                    </tr>
+                    <tr>
+                        <td>Roy (suit)</td>
+                        <td><code>images/hero_movie_section/roy_only_suit.jpg</code></td>
+                    </tr>
+                    <tr>
+                        <td>Bindu (churidar)</td>
+                        <td><code>images/hero_movie_section/bindu_only_churidar.jpg</code></td>
+                    </tr>
+                    <tr>
+                        <td>Nadirshah (director)</td>
+                        <td><code>images/hero_movie_section/Nadirshah.jpg</code></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p class="copy-hint">
+                If the tool allows only <strong>one</strong> reference image, use the merged mood board
+                <code class="code-highlight">images/hero_movie_section/rb-hero-mood-board-1920x1080.png</code> or lead with logo + strongest portrait and keep the rest in the text prompt.
+            </p>
+
+            <h3>Primary hero image prompt (16:9)</h3>
+            <p class="copy-hint">Set tool aspect to <strong>16:9</strong> (e.g. 1920×1080). Click <strong>📋 Copy</strong>, then paste into Nano Banana Pro.</p>
+            <div class="prompt-toolbar">
+                <button type="button" class="copy-button" onclick="copyPreById('nb-hero-primary', this)" title="Copy prompt to clipboard">📋 Copy</button>
+            </div>
+            <pre class="code-block" id="nb-hero-primary">Ultra-wide cinematic hero image for a Malayalam–global movie production company, “R&amp;B Productions”. Mood: soulful, premium, contemporary — not a cheesy stock poster.
+
+Story roles (stylized, cinematic — not a crowded cast poster): In the same frame, suggest two adult partners who own the company (man in a sharp suit; woman in elegant Indian churidar / contemporary ethnic wear) — warm, confident, approachable — positioned as producers / studio heads. Separately in the scene, suggest a film director at work: on-set energy — director near a camera / monitor glow or viewfinder light, creative authority, Malayalam cinema prestige.
+
+Featured film line (subtle, elegant typography or signage — not a full poster): “Howie MP” as the current movie the company is pushing — integrated as minimal title treatment or soft neon / etched glass on a studio element.
+
+Brand: incorporate the R&amp;B Productions identity as a clean logo lockup (wordmark with restrained accent), high readability, premium finish.
+
+Lighting / grade: gold–amber key with deep teal shadows, soft volumetric haze, gentle lens bloom, 35mm film grain (subtle).
+
+Setting: modern film studio / stage with controlled practical lights, black void + highlights (avoid clutter). Optional background hint: very subtle epic scale (distant silhouettes / mist) only if it stays tasteful — no disaster imagery, no graphic violence.
+
+Composition: rule of thirds, clear headline space at top or left for web text overlay, not busy.
+
+Quality: 8K feel, sharp, color-managed, high dynamic range, no watermark.</pre>
+
+            <h3>Negative prompt (if the tool has a negative field)</h3>
+            <div class="prompt-toolbar">
+                <button type="button" class="copy-button" onclick="copyPreById('nb-hero-negative', this)" title="Copy negative prompt to clipboard">📋 Copy</button>
+            </div>
+            <pre class="code-block" id="nb-hero-negative">crowded poster collage, 12 faces, cheesy clapperboard gag, neon gamer UI, oversaturated HDR, messy text everywhere, low-res, duplicate logos, warped hands, extra fingers, gore, explicit disaster scenes, political symbols</pre>
+
+            <h3>Short variant (character limits)</h3>
+            <div class="prompt-toolbar">
+                <button type="button" class="copy-button" onclick="copyPreById('nb-hero-short', this)" title="Copy short prompt to clipboard">📋 Copy</button>
+            </div>
+            <pre class="code-block" id="nb-hero-short">Cinematic 16:9 hero: R&amp;B Productions — owners (suit + churidar) as studio partners; director beat with monitor/camera glow; Nadirshah energy as Malayalam film director; subtle title “Howie MP”; logo integrated cleanly; gold–teal grade, soft haze, 35mm grain, minimal clutter, space for website headline.</pre>
+
+            <h3>Multi-image reference order (conceptual)</h3>
+            <p class="copy-hint">If the tool accepts several references, use this order; otherwise merge to one mood board or prioritize logo + one portrait.</p>
+            <div class="prompt-toolbar">
+                <button type="button" class="copy-button" onclick="copyPreById('nb-ref-order', this)" title="Copy reference order to clipboard">📋 Copy</button>
+            </div>
+            <pre class="code-block" id="nb-ref-order">1) roy_and_bindu_prod_logo_transparent.png — brand / colour story
+2) roy_only_suit.jpg — owner/partner (male) styling
+3) bindu_only_churidar.jpg — owner/partner (female) styling
+4) Nadirshah.jpg — director presence / wardrobe / vibe (ask for “inspired styling”, not pixel-perfect clone unless rights allow)</pre>
+
+            <div class="warning">
+                <strong>Likeness &amp; safety:</strong> Some tools block named public figures or strict likeness. If generation fails, paraphrase roles (generic “studio owners,” “director at monitor”) and keep film title generic; add names in site copy or post, not in the tool.
+            </div>
+        </div>
+
+        <div class="warning" id="safety-blocked">
+            <h2 style="margin-top:0;border:none;padding:0;font-size:1.25em;color:#856404;">If Veo says “blocked due to safety reasons”</h2>
+            <p>
+                <strong>Image checks and text checks are separate.</strong> A message like “there are no children in the images” only means the <em>image</em> pipeline did not flag minors — it does <strong>not</strong> guarantee the <strong>written prompt</strong> will pass. The text layer may still block for other rules.
+            </p>
+            <p><strong>Common text triggers:</strong></p>
+            <ul>
+                <li><strong>Named real people</strong> (actors, directors, owners by name) — often blocked as <strong>public-figure / likeness</strong> risk.</li>
+                <li><strong>“Family-run”</strong> or similar — occasionally misfires on safety classifiers.</li>
+                <li><strong>Reference photos of real individuals</strong> — can trigger likeness policies even when no minors appear.</li>
+            </ul>
+            <p><strong>What to try (in order):</strong></p>
+            <ol>
+                <li>Use the <a href="#veo-safe"><strong>safety-friendly prompt</strong></a> below (no celebrity names; generic adult professionals).</li>
+                <li>Generate <strong>text-to-video only</strong> first (no reference images). If that works, optionally refine.</li>
+                <li>If using one image, try <strong>logo-only</strong> (<code>roy_and_bindu_prod_logo_transparent.png</code>) — avoid face reference images until the text prompt is accepted.</li>
+                <li>Add credits / real names in <strong>post</strong> (Resolve / Premiere / on-site HTML), not inside the AI prompt.</li>
+            </ol>
+        </div>
+
+        <div class="section-container usage" id="veo-safe">
+            <div class="section-header usage">Safety-friendly prompt — use when the primary prompt is blocked</div>
+            <p class="copy-hint">No real-person names; generic adults only; fictional brand wording. Duration <strong>≤ 10 s</strong>. Use <strong>📋 Copy</strong> or select all below.</p>
+            <div class="prompt-toolbar">
+                <button type="button" class="copy-button" onclick="copyPreById('veo-safe-prompt', this)" title="Copy prompt to clipboard">📋 Copy</button>
+            </div>
+            <pre class="code-block" id="veo-safe-prompt">Create a premium cinematic hero video (MAXIMUM 10 SECONDS) for a fictional independent film and digital entertainment label called “R&amp;B Productions,” inspired by South Indian / Malayalam cinema culture — stylized, not documentary.
+
+OPENING (FIRST ~1–2 SECONDS): Classic cinema “picture start” feel — a very short film-style countdown (bold numbers counting down) with a filmstrip / 35mm film reel rolling or scrolling beside or behind the numbers, subtle projector flicker, warm grading; then transition smoothly into the main sequence.
+
+VISUAL THEME: Theatrical spotlights, warm gold and deep teal color grade, soft anamorphic lens flares, very light 35mm film grain, slow elegant camera moves (dolly / parallax). High-end, soulful, globally polished. No horror, no violence, no gore, no disturbing imagery.
+
+PEOPLE (ADULT PROFESSIONALS ONLY — GENERIC, NOT REAL INDIVIDUALS): Three adult principals — two co-owners/producers (man in sharp business suit, woman in elegant professional attire) and one director figure — shown as the producing and directing team behind the film, representing the label. Mid-sequence: modern film office beats (monitor review, storyboard, camera silhouette). CLOSING BEAT: all three come together and stand side by side, confident and united, as the face of the brand — “making it happen,” tasteful and cinematic, not a documentary.
+
+SETTING: Contemporary post-production suite, soft bokeh, storyboards, editing bay glow. Optional subtle modern city skyline bokeh — keep geography nonspecific unless your tool allows it.
+
+OPTIONAL ON-SCREEN TEXT (VERY SUBTLE): Generic inspirational line only, e.g. “Soulful stories from Kerala to the world” — low contrast, brief, not dominant.
+
+LOOP: If a seamless hero loop is required, favor matching brightness between the post-countdown frame and the final three-person pose, or use a soft crossfade in post; otherwise prioritize the countdown opener and closing brand beat.
+
+STRICT AVOID: Celebrity names, requests to depict real public figures, graphic content, political or religious symbols, crowded chaotic scenes, neon gamer aesthetics, shaky handheld chaos.
+
+OUTPUT: 16:9 cinematic composition, filmic contrast, clean highlights.</pre>
+        </div>
+
+        <div class="info">
+            <strong>After a successful render:</strong> Add “An initiative by Roy and Bindu,” partner credits, and Brisbane / Malayalam production context on the <strong>website</strong> or in <strong>title cards edited in post</strong> — not inside Veo if that retriggers safety.
+        </div>
+
+        <div class="section-container usage" id="veo-prompt">
+            <div class="section-header usage">Primary Gemini Veo 3 prompt (copy all)</div>
+            <p class="copy-hint">Use when <strong>not</strong> blocked. Paste into Veo 3 (or similar). Set duration to <strong>maximum 10 seconds</strong> or the closest allowed. Enable <strong>loop</strong> if the product offers it.</p>
+            <div class="prompt-toolbar">
+                <button type="button" class="copy-button" onclick="copyPreById('veo-primary', this)" title="Copy prompt to clipboard">📋 Copy</button>
+            </div>
+            <pre class="code-block" id="veo-primary">Create a premium cinematic hero video (MAXIMUM 10 SECONDS) for “R&amp;B Productions,” a Malayalam-focused digital entertainment and film company.
+
+OPENING (FIRST ~1–2 SECONDS): Film-style “showtime” opener — a short, punchy classic cinema countdown (large bold numbers: 3, 2, 1 or similar) with a filmstrip and/or 35mm film reel rolling or feeding through the frame (vintage projector aesthetic, subtle motion blur, warm gold/teal light). Keep it brief; then dissolve or cut into the main hero sequence.
+
+THEME &amp; MOOD: Big-screen movie atmosphere — subtle theatre spotlights, warm gold and deep teal color grade, soft anamorphic lens flares, very light 35mm film grain, elegant slow camera moves (dolly / parallax). Modern, soulful, globally polished — not a soap opera look. No horror, no violence, no clutter.
+
+PRINCIPALS &amp; BRAND (story, not documentary): Roy, Bindu, and Nadirshah are the film’s producers and directors — the creative leadership behind the movie and the face of R&amp;B Productions. Roy and Bindu are partners and owners/producers. Nadirshah is the Malayalam film director on the project. Depict them as confident, approachable professionals in a contemporary film-office / studio environment (editing suite silhouettes, storyboard wall, soft bokeh lights). Roy must wear a sharp suit or refined professional business attire. Bindu in elegant professional attire. Mid-sequence: collaborative beats — reviewing a frame, nodding approval, director at viewfinder or monitor (stylized silhouette or medium shots; avoid uncanny celebrity close-ups unless your tool is cleared for reference likeness).
+
+CLOSING BEAT (FINAL ~2–3 SECONDS): All three — Roy, Bindu, and Nadirshah — come together in the same shot, standing side by side (or a slight staggered row), facing camera or three-quarter, warm and assured — representing the production company brand and “making it happen.” Hero pose, cinematic, not stiff; this is the brand lockup moment.
+
+OPTIONAL BACKDROP HINT: Subtle suggestion of Brisbane / Australia as home base (soft skyline bokeh or daylight warmth) — keep it minimal so Kerala / cinema identity stays primary.
+
+CREATIVE NETWORK (context only, not all on screen at once): The company collaborates with acclaimed Malayalam talent — directors Dileesh Pothan and Nadirshah, actor Fahadh Faasil, scenarist Syam Pushkaran — express this as “prestige Malayalam cinema ecosystem” lighting and production value, not a crowded group poster.
+
+BRAND MESSAGES (optional, subtle): If text appears, use sparingly and elegant typography: “An initiative by Roy and Bindu” and/or “Digital entertainment with soulful stories — from Kerala to the world.” Low contrast, brief, do not dominate the frame.
+
+LOOP: Prefer a gentle crossfade or match the end group pose brightness to the post-countdown opening if you need a seamless website loop; if the countdown and final pose differ too much, prioritize the narrative arc and trim or crossfade in post.
+
+STYLE NEGATIVES: No shaky handheld chaos, no neon gamer UI, no cheap stock transitions, no cluttered subtitles, no religious or political symbols, no gore.
+
+OUTPUT: 16:9 cinematic composition, high dynamic range feel, clean highlights, filmic contrast.</pre>
+        </div>
+
+        <div class="section-container parameters" id="veo-alt">
+            <div class="section-header parameters">Alternate short prompt + constraints</div>
+            <p class="copy-hint">Use if the tool has a strict character limit. <strong>Note:</strong> This version names real-style roles — if blocked, use the <a href="#veo-safe">safety-friendly prompt</a> instead.</p>
+            <div class="prompt-toolbar">
+                <button type="button" class="copy-button" onclick="copyPreById('veo-alt-short', this)" title="Copy short prompt to clipboard">📋 Copy</button>
+            </div>
+            <pre class="code-block" id="veo-alt-short">10s max, 16:9, Malayalam studio hero: open with short film countdown + rolling filmstrip/reel; Roy (suit), Bindu, Nadirshah as producers/directors — mid beats in glow lighting; end with all three standing together as R&amp;B Productions brand; gold/teal, lens flare, grain, slow move; Brisbane hint optional; no violence, no clutter.</pre>
+            <h4>Negative / safety add-ons (append if supported)</h4>
+            <div class="prompt-toolbar">
+                <button type="button" class="copy-button" onclick="copyPreById('veo-alt-negative', this)" title="Copy negative add-ons to clipboard">📋 Copy</button>
+            </div>
+            <pre class="code-block" id="veo-alt-negative">Avoid: graphic content, hateful imagery, distorted faces, watermarks, random logos, unreadable tiny text, flicker epilepsy risk, loud strobe.</pre>
+        </div>
+
+        <div class="info">
+            <strong>Tool limits:</strong> If Veo 3 caps clips at 8 seconds, generate at the max length, then loop in the player. If “loop” mode produces a longer file, trim to <strong>10 seconds</strong> in ffmpeg before deploy.
+        </div>
+
+        <div class="section-container" id="ffmpeg">
+            <div class="section-header">Post-process: ffmpeg (10s, 1080p, silent AAC, faststart)</div>
+            <p>
+                Replace <code>INPUT.mp4</code> with your exported Veo file path. Output path targets
+                <code>public/images/hero_movie_section/</code> — adjust filenames to match your repo.
+            </p>
+            <div class="prompt-toolbar">
+                <button type="button" class="copy-button" onclick="copyPreById('ffmpeg-cmd-template', this)" title="Copy ffmpeg command to clipboard">📋 Copy</button>
+            </div>
+            <pre class="code-block" id="ffmpeg-cmd-template">ffmpeg -y -i "INPUT.mp4" -t 10 -vf "scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080" -c:v libx264 -pix_fmt yuv420p -crf 23 -preset medium -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -map 0:v:0 -map 1:a:0 -c:a aac -b:a 96k -shortest -movflags +faststart "public/images/hero_movie_section/rb-hero-loop.mp4"</pre>
+            <p>
+                Example from repository root on Windows (PowerShell), if the export is saved as
+                <code>public/images/hero_movie_section/veo3-raw-export.mp4</code>:
+            </p>
+            <div class="prompt-toolbar">
+                <button type="button" class="copy-button" onclick="copyPreById('ffmpeg-cmd-example', this)" title="Copy example ffmpeg command to clipboard">📋 Copy</button>
+            </div>
+            <pre class="code-block" id="ffmpeg-cmd-example">ffmpeg -y -i "public/images/hero_movie_section/veo3-raw-export.mp4" -t 10 -vf "scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080" -c:v libx264 -pix_fmt yuv420p -crf 23 -preset medium -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -map 0:v:0 -map 1:a:0 -c:a aac -b:a 96k -shortest -movflags +faststart "public/images/hero_movie_section/rb-hero-loop.mp4"</pre>
+            <div class="success">
+                <strong>Next step in app:</strong> Point your hero <code>&lt;video&gt;</code> source at <code>/images/hero_movie_section/rb-hero-loop.mp4</code> (or your chosen filename), with
+                <code>poster</code> set to a still (e.g. logo PNG or first frame). Wire loop + muted playback per
+                <a href="../fc-united/HOME_HERO_VIDEO_ENCODING_GUIDE.html">the FC United encoding guide</a> integration section.
+            </div>
+        </div>
+
+        <footer class="section-container" style="margin-top: 40px;">
+            <p style="margin:0;font-size:0.9em;color:#555;">
+                Document: <code class="code-highlight">documentation/r-and-b-productions/HERO_VIDEO_GEMINI_VEO3_PROMPT_AND_WEB_ENCODING.html</code> —
+                styled per project HTML documentation rules.
+            </p>
+        </footer>
+    </main>
+    <script>
+        function copyPreById(id, btn) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            var text = el.textContent || '';
+            var label = btn && btn.innerHTML ? btn.innerHTML : '\uD83D\uDCCB Copy';
+            function feedback() {
+                if (!btn) return;
+                btn.classList.add('copied');
+                btn.textContent = '\u2713 Copied!';
+                setTimeout(function () {
+                    btn.classList.remove('copied');
+                    btn.innerHTML = label;
+                }, 2000);
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(feedback).catch(function () {
+                    fallbackCopyPre(text, btn, label);
+                });
+            } else {
+                fallbackCopyPre(text, btn, label);
+            }
+        }
+        function fallbackCopyPre(text, btn, label) {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+            } catch (e) {}
+            document.body.removeChild(ta);
+            if (btn) {
+                btn.classList.add('copied');
+                btn.textContent = '\u2713 Copied!';
+                setTimeout(function () {
+                    btn.classList.remove('copied');
+                    btn.innerHTML = label || '\uD83D\uDCCB Copy';
+                }, 2000);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Domain-Agnostic Payments – Frontend PRD</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+      main {
+        max-width: 880px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 18px;
+        box-shadow: 0 20px 45px -18px rgba(43, 34, 28, 0.25);
+        padding: 2.5rem 3rem;
+      }
+      h1, h2, h3 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+      h1 { font-size: 2.15rem; margin-bottom: 0.6rem; }
+      h2 { font-size: 1.55rem; margin-top: 2rem; }
+      h3 { font-size: 1.2rem; margin-top: 1.4rem; }
+      p, li { line-height: 1.7; font-size: 1rem; }
+      ul, ol { margin-left: 1.2rem; }
+      code { font-family: "JetBrains Mono", Consolas, monospace; background: #f5f1e8; padding: 0.1rem 0.35rem; border-radius: 6px; }
+      .tag { display: inline-block; background: #8b7d6b; color: #fff; padding: 0.2rem 0.65rem; border-radius: 999px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+      .divider { height: 1px; background: rgba(42,32,23,0.12); margin: 1.8rem 0; }
+      .callout { border-left: 4px solid #8b7d6b; background: rgba(213,201,182,0.3); padding: 1.1rem 1.3rem; border-radius: 12px; margin: 1.6rem 0; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Frontend · November 2025</span>
+      <h1>Domain-Agnostic Payment Refactor – Frontend PRD</h1>
+      <p><strong>Repository:</strong> Current Next.js workspace (this project)<br />
+         <strong>Goal:</strong> Deliver a multi-domain payment experience driven by backend orchestration while preserving premium UI/UX across tenants.</p>
+
+      <div class="divider"></div>
+
+      <h2>1. Context</h2>
+      <p>
+        The Stripe Elements integration is live today and tied to domain-specific publishable keys. Backend transformations (Payment Orchestrator,
+        provider adapters) will centralize payment creation. The frontend must consume the new APIs, support Instant Checkout (ACP) when it becomes
+        available, and expose alternative gateways (Zeffy, Zelle manual flow, Revolut, PayPal) with consistent UI patterns.
+      </p>
+      <div class="callout">
+        <strong>References:</strong>
+        <ul>
+          <li><code>cursor_rules/nextjs_api_routes.mdc</code> – required proxy pattern for REST API calls.</li>
+          <li><code>@ui_style_guide.mdc</code> – typography, colors, spacing, component guidance.</li>
+          <li><code>documentation/domain_agnostic_payment/PRD.html</code> – master backend/architecture PRD.</li>
+          <li><code>documentation/Swagger_API_Docs/api-docs.json</code> – backend contract definitions (use for typings).</li>
+        </ul>
+      </div>
+
+      <h2>2. Scope</h2>
+      <h3>In Scope</h3>
+      <ul>
+        <li>Update checkout forms to read payment configuration from backend (tenant-aware) and remove embedded Stripe publishable keys.</li>
+        <li>Implement <code>UniversalPaymentCheckout</code> client component that renders provider-specific UIs based on backend response.</li>
+        <li>Expose optional Instant Checkout CTA (ACP) once flagged by backend; maintain Stripe Elements flow as default.</li>
+        <li>Embed Zeffy donation CTA for events flagged as zero-fee fundraisers.</li>
+        <li>Surface Zelle manual payment option with instructions and pending status messaging.</li>
+        <li>Render Revolut checkout button for tenants configured with Revolut adapter; ensure PSD2/SCA prompts are handled via redirect.</li>
+        <li>Update membership management screens to support subscription pricing (monthly/annual) once backend endpoints are ready.</li>
+        <li>Ensure all new API calls use proxy endpoints and follow error handling/logging patterns.</li>
+      </ul>
+      <h3>Out of Scope</h3>
+      <ul>
+        <li>Backend orchestration, settlement logic, or database migrations.</li>
+        <li>Tenant billing invoicing UI (handled in admin backoffice later).</li>
+        <li>Offline payment reconciliation workflows (admin-only screens).</li>
+      </ul>
+
+      <h2>3. User Flows</h2>
+      <ol>
+        <li><strong>Standard Ticket Purchase:</strong> Shopper visits event page → selects tickets → <code>UniversalPaymentCheckout</code> determines provider:
+          <ul>
+            <li>Stripe (default): show wallet buttons + Elements card form.</li>
+            <li>PayPal: render PayPal Buttons (embedded) with redirect fallback.</li>
+            <li>Revolut: show “Pay with Revolut” button that redirects to hosted page for SCA; poll backend for completion.</li>
+          </ul>
+        </li>
+        <li><strong>Instant Checkout (ACP) Preview:</strong> If backend returns <code>{ providerType: "STRIPE", sessionUrl }</code>, expose “Instant Checkout (Beta)” button.
+          Clicking opens modal with hosted checkout; once Stripe returns success we redirect to success page.</li>
+        <li><strong>Fundraising with Zeffy:</strong> Event flagged as <code>DONATION_ZERO_FEE</code> → UI displays Zeffy embed. If Zeffy fails, fallback message invites user
+          to use Stripe or PayPal.</li>
+        <li><strong>Zelle Manual Flow:</strong> For events enabling Zelle, display instructions + confirm dialog. After confirmation, call backend to create a pending transaction
+          and show “Awaiting confirmation” status to the user.</li>
+      </ol>
+
+      <h2>4. UI Components & Pages</h2>
+      <ul>
+        <li><strong>Checkout Route:</strong>
+          <ul>
+            <li>Replace direct Stripe calls with <code>/api/proxy/payments/initialize</code>.</li>
+            <li>Handle provider-specific metadata and render appropriate sub-component (Stripe, PayPal, Revolut, Zeffy, Zelle manual).</li>
+          </ul>
+        </li>
+        <li><strong>Event Page (Upcoming Events Section):</strong>
+          <ul>
+            <li>Display badges for supported payment methods based on backend event metadata.</li>
+            <li>Ensure hero image logic remains unchanged (homepage hero > hero > placeholder).</li>
+          </ul>
+        </li>
+        <li><strong>Admin Tenant Settings:</strong>
+          <ul>
+            <li>Add toggles for “Instant Checkout beta”, “Enable Zeffy for fundraisers”, “Enable Zelle manual payments”, “Enable Revolut checkout”.</li>
+            <li>Form should call new proxy endpoints (to backend) and obey <code>@ui_style_guide.mdc</code> layout.</li>
+          </ul>
+        </li>
+        <li><strong>Membership Portal:</strong>
+          <ul>
+            <li>Implement subscription plan selection UI (monthly/yearly) and feed data to backend <code>/api/proxy/memberships/subscriptions</code> endpoints.</li>
+            <li>Show current subscription status, renewal date, and allow cancellation requests.</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h2>5. API Integration Requirements</h2>
+      <ol>
+        <li>All fetches must use proxy routes defined under <code>src/pages/api/proxy</code>, following patterns in <code>cursor_rules/nextjs_api_routes.mdc</code>.</li>
+        <li>Use typings derived from <code>documentation/Swagger_API_Docs/api-docs.json</code> for <code>PaymentSession</code>, <code>PaymentStatusResponse</code>, etc.</li>
+        <li>Handle polling for Revolut/Zelle pending transactions via <code>/api/proxy/payments/{transactionId}</code>.</li>
+        <li>Ensure sensitive provider keys are never exposed client-side; rely on backend responses for publishable keys or session URLs.</li>
+      </ol>
+
+      <h2>6. Accessibility & UX</h2>
+      <ul>
+        <li>All buttons must meet contrast requirements defined in <code>@ui_style_guide.mdc</code>.</li>
+        <li>Hosted flows (Stripe Instant Checkout, PayPal, Revolut) should open in modal/redirect with clear loading and success messaging.</li>
+        <li>Provide localized currency and date formats based on tenant settings (GBP/EUR support for UK/EU tenants).</li>
+        <li>Ensure keyboard navigation and screen-reader announcements when switching providers.</li>
+      </ul>
+
+      <h2>7. Risks & Mitigations</h2>
+      <ul>
+        <li><strong>Dependency on Backend Completion:</strong> Frontend work requires finalized endpoints. Mitigation: mock responses based on Swagger schema.</li>
+        <li><strong>Hosted Checkout Branding Loss:</strong> Instant Checkout reduces design control. Mitigation: keep Stripe Elements as default; highlight ACP as optional beta.</li>
+        <li><strong>Zelle Manual Confirmation:</strong> Users might expect instant confirmation. Mitigation: clear messaging and follow-up email templates.</li>
+        <li><strong>Zeffy Availability:</strong> Some events may not qualify. Mitigation: fallback logic automatically shows Stripe/PayPal if Zeffy returns errors.</li>
+      </ul>
+
+      <h2>8. Deliverables & Timeline (Frontend)</h2>
+      <ul>
+        <li>Week 1-2: Refactor checkout to consume backend initialization endpoint; implement UniversalPaymentCheckout skeleton.</li>
+        <li>Week 3: Integrate provider UIs (Stripe Elements fallback, PayPal Buttons, Revolut redirect, Zelle manual flow, Zeffy embed).</li>
+        <li>Week 4: Admin toggles, membership subscription UI, final QA.</li>
+        <li>Week 5: Pilot tenants (Stripe/PayPal), capture feedback, polish ACP beta surfaces.</li>
+      </ul>
+
+      <h2>9. Acceptance Criteria</h2>
+      <ul>
+        <li>All payment providers selectable via backend configuration with no client redeploy.</li>
+        <li>Checkout page renders correct provider-specific UI and handles success/cancel/error flows per provider.</li>
+        <li>ACP beta button only appears when backend indicates support; falls back gracefully otherwise.</li>
+        <li>Membership subscriptions show correct status and interact with backend endpoints.</li>
+        <li>All new API calls use proxy routes and pass lint/tests.</li>
+      </ul>
+
+      <footer style="margin-top: 3rem; text-align: center; font-size: 0.9rem; color: #7a7066;">
+        <p>Document owner: Frontend Lead · Updated November 2025</p>
+      </footer>
+    </main>
+  </body>
+</html>
+

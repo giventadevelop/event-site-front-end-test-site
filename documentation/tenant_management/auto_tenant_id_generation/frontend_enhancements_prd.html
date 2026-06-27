@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Tenant ID — Frontend Enhancements PRD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Auto Tenant ID — Frontend Enhancements PRD</h1>
+    <p class="doc-meta">
+        <strong>Project:</strong> <code>event-site-manager</code> &nbsp;|&nbsp; <strong>Status:</strong> Implemented (v1) &nbsp;|&nbsp;
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a>
+    </p>
+
+    <div class="lead">
+        <p>Replace manual tenant ID entry on <strong>Create Organization</strong> with a prefix field plus auto-generated sequence. Full ID is persisted to <code>tenant_organization.tenant_id</code> on save.</p>
+    </div>
+
+    <h2>1. Admin route</h2>
+    <table>
+        <thead><tr><th>Route</th><th>Action</th></tr></thead>
+        <tbody>
+            <tr><td><code>/admin/tenant-management/organizations/new</code></td><td>Create organization; auto-generate tenant ID</td></tr>
+            <tr><td><code>/admin/tenant-management/settings/new</code></td><td>Select existing org (no ID generation)</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. Files (implemented)</h2>
+    <table>
+        <thead><tr><th>File</th><th>Role</th></tr></thead>
+        <tbody>
+            <tr><td><code>src/lib/tenantIdGeneration.ts</code></td><td>Pure helpers: normalize prefix, parse suffix, next sequence, build ID</td></tr>
+            <tr><td><code>src/app/admin/tenant-management/organizations/tenantIdServerActions.ts</code></td><td>Server actions: paginate orgs, preview next ID</td></tr>
+            <tr><td><code>src/app/admin/tenant-management/components/TenantOrganizationForm.tsx</code></td><td>Create UI: prefix + read-only sequence + preview; re-fetch on submit</td></tr>
+        </tbody>
+    </table>
+
+    <h2>3. UX flow</h2>
+    <ol>
+        <li>Admin opens <strong>New Organization</strong>.</li>
+        <li>Enters organization name; if prefix is empty, slug is suggested from the name.</li>
+        <li>Admin edits prefix (e.g. <code>ford_motors</code>).</li>
+        <li>Frontend calls <code>previewNextTenantIdServer(prefix)</code> (debounced 350ms).</li>
+        <li>Read-only sequence and full generated ID are shown.</li>
+        <li>On submit, preview is refreshed once more, then <code>createTenantOrganization</code> runs with final <code>tenantId</code>.</li>
+        <li>Edit mode: tenant ID is read-only.</li>
+    </ol>
+
+    <div class="section-container">
+        <div class="section-header">Server action — previewNextTenantIdServer</div>
+        <pre>Input:  rawPrefix (string)
+Steps:  1. normalizeTenantIdPrefix
+        2. GET all tenant_organization (paginated via fetchTenantOrganizations)
+        3. max trailing _NNNNN + 1 (or 1 if none)
+        4. buildTenantId(prefix, sequence)
+Output: { prefix, sequenceNumber, formattedSequence, tenantId }</pre>
+    </div>
+
+    <h2>4. Validation</h2>
+    <ul>
+        <li>Prefix: letters, numbers, underscores after normalization.</li>
+        <li>Full ID regex: <code>/^[a-z0-9]+_\d{5,}$/</code></li>
+        <li>DB <code>UNIQUE</code> on <code>tenant_id</code> is the final guard for race conditions.</li>
+    </ul>
+
+    <div class="info-box">
+        <p><strong>Concurrency:</strong> v1 computes next ID in the Next.js server action. Two simultaneous creates may collide; retry or adopt the optional backend endpoint in <a href="backend_enhancements_prd.html">backend_enhancements_prd.html</a>.</p>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Database Changes: Fee-Free Manual Payments</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+
+      h1 {
+        font-size: 2.1rem;
+        margin-bottom: 0.75rem;
+      }
+
+      h2 {
+        font-size: 1.6rem;
+        margin-top: 2.5rem;
+      }
+
+      h3 {
+        font-size: 1.2rem;
+        margin-top: 1.6rem;
+      }
+
+      p,
+      li {
+        line-height: 1.75;
+        font-size: 1rem;
+      }
+
+      ul,
+      ol {
+        margin-left: 1.4rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5rem 0;
+        font-size: 0.95rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+      }
+
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 0.75rem;
+        vertical-align: top;
+      }
+
+      th {
+        background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+        color: #ffffff;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        font-size: 0.85rem;
+      }
+
+      tr:nth-child(even) {
+        background-color: #f8f9fa;
+      }
+
+      tr:hover {
+        background-color: #e3f2fd;
+        transition: background-color 0.2s ease;
+      }
+
+      td code {
+        background-color: #1a1a1a;
+        color: #ffffff;
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-family: "Courier New", monospace;
+      }
+
+      code.inline {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+        padding: 0.15rem 0.35rem;
+        font-size: 0.95rem;
+        display: inline-block;
+      }
+
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .divider {
+        height: 1px;
+        background: rgba(42, 32, 23, 0.12);
+        margin: 2rem 0;
+      }
+
+      .code-block {
+        background-color: #1a1a1a;
+        color: #ffffff;
+        padding: 16px;
+        border-radius: 6px;
+        font-family: "Courier New", monospace;
+        font-size: 0.95rem;
+        overflow-x: auto;
+        margin: 12px 0 0 0;
+        white-space: pre;
+      }
+
+      .code-wrapper {
+        border: 2px solid #1a1a1a;
+        border-radius: 8px;
+        margin: 16px 0 24px;
+        overflow: hidden;
+        background: #ffffff;
+      }
+
+      .code-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px;
+        background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+        border-bottom: 1px solid #d7e6f5;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1f4c8f;
+      }
+
+      .copy-button {
+        background-color: #0066cc;
+        color: #ffffff;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+      }
+
+      .copy-button:hover {
+        background-color: #0052a3;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      .copy-button.copied {
+        background-color: #28a745;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Database · January 14, 2026</span>
+      <h1>Database Changes: Fee-Free Manual Payments</h1>
+      <p>
+        This document proposes schema changes aligned to
+        <code class="inline">Latest_Schema_Post__Blob_Claude_12.sql</code>.
+      </p>
+
+      <div class="divider"></div>
+
+      <h2>1. New Table: manual_payment_request</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Column</th>
+            <th>Type</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>id</td>
+            <td>bigint</td>
+            <td>Primary key</td>
+          </tr>
+          <tr>
+            <td>tenant_id</td>
+            <td>varchar</td>
+            <td>Tenant scope</td>
+          </tr>
+          <tr>
+            <td>event_id</td>
+            <td>bigint</td>
+            <td>FK to event_details</td>
+          </tr>
+          <tr>
+            <td>ticket_transaction_id</td>
+            <td>bigint</td>
+            <td>FK to event_ticket_transaction</td>
+          </tr>
+          <tr>
+            <td>amount_due</td>
+            <td>numeric(21,2)</td>
+            <td>Total amount due</td>
+          </tr>
+          <tr>
+            <td>payment_method_type</td>
+            <td>varchar(50)</td>
+            <td>ZELLE_MANUAL, VENMO_MANUAL, CASH_APP_MANUAL, CASH, CHECK, OTHER</td>
+          </tr>
+          <tr>
+            <td>payment_handle</td>
+            <td>varchar(255)</td>
+            <td>Organizer handle/email/phone/mailing</td>
+          </tr>
+          <tr>
+            <td>payment_instructions</td>
+            <td>text</td>
+            <td>Memo text and details</td>
+          </tr>
+          <tr>
+            <td>status</td>
+            <td>varchar(30)</td>
+            <td>Requested, Received, Voided/Refunded</td>
+          </tr>
+          <tr>
+            <td>proof_of_payment_file_key</td>
+            <td>varchar(512)</td>
+            <td>S3 key</td>
+          </tr>
+          <tr>
+            <td>proof_of_payment_file_url</td>
+            <td>varchar(1024)</td>
+            <td>Optional CDN URL</td>
+          </tr>
+          <tr>
+            <td>proof_of_payment_uploaded_at</td>
+            <td>timestamp</td>
+            <td>Upload timestamp</td>
+          </tr>
+          <tr>
+            <td>received_at</td>
+            <td>timestamp</td>
+            <td>Set on confirmation</td>
+          </tr>
+          <tr>
+            <td>received_by</td>
+            <td>varchar(255)</td>
+            <td>Admin/organizer identifier</td>
+          </tr>
+          <tr>
+            <td>void_reason</td>
+            <td>text</td>
+            <td>Cancel reason</td>
+          </tr>
+          <tr>
+            <td>created_at / updated_at</td>
+            <td>timestamp</td>
+            <td>Audit fields</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>2. Payment Provider Config Extension</h2>
+      <ul>
+        <li>Add provider_name values: VENMO_MANUAL, CASH_APP_MANUAL, CASH, CHECK, OTHER_MANUAL.</li>
+        <li>Ensure tenant-level enablement flags for manual methods.</li>
+      </ul>
+
+      <h2>3. Event Configuration</h2>
+      <ul>
+        <li>Event-level flags: payment_flow_mode and manual_payment_enabled (if missing).</li>
+      </ul>
+
+      <h2>4. Notes</h2>
+      <ul>
+        <li>No partial payment tracking in v1.</li>
+        <li>Pending requests are open-ended; cancellation is explicit.</li>
+      </ul>
+
+      <div class="divider"></div>
+
+      <h2>5. Copyable DDL Snippets</h2>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>Create manual_payment_request table</span>
+          <button class="copy-button" onclick="copyCode('ddl-manual-payment')">Copy</button>
+        </div>
+        <pre class="code-block" id="ddl-manual-payment">CREATE TABLE manual_payment_request (
+  id BIGINT PRIMARY KEY,
+  tenant_id VARCHAR(255) NOT NULL,
+  event_id BIGINT REFERENCES event_details(id) ON DELETE CASCADE,
+  ticket_transaction_id BIGINT REFERENCES event_ticket_transaction(id) ON DELETE SET NULL,
+  amount_due NUMERIC(21,2) NOT NULL,
+  payment_method_type VARCHAR(50) NOT NULL,
+  payment_handle VARCHAR(255),
+  payment_instructions TEXT,
+  status VARCHAR(30) NOT NULL DEFAULT 'REQUESTED',
+  proof_of_payment_file_key VARCHAR(512),
+  proof_of_payment_file_url VARCHAR(1024),
+  proof_of_payment_uploaded_at TIMESTAMP,
+  received_at TIMESTAMP,
+  received_by VARCHAR(255),
+  void_reason TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);</pre>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>Create manual_payment_method_type enum</span>
+          <button class="copy-button" onclick="copyCode('ddl-provider-config')">Copy</button>
+        </div>
+        <pre class="code-block" id="ddl-provider-config">CREATE TYPE public.manual_payment_method_type AS ENUM (
+  'ZELLE_MANUAL',
+  'VENMO_MANUAL',
+  'CASH_APP_MANUAL',
+  'CASH',
+  'CHECK',
+  'OTHER_MANUAL'
+);</pre>
+      </div>
+
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>Event configuration fields</span>
+          <button class="copy-button" onclick="copyCode('ddl-event-config')">Copy</button>
+        </div>
+        <pre class="code-block" id="ddl-event-config">ALTER TABLE event_details
+  ADD COLUMN IF NOT EXISTS payment_flow_mode VARCHAR(30) DEFAULT 'STRIPE_ONLY',
+  ADD COLUMN IF NOT EXISTS manual_payment_enabled BOOLEAN DEFAULT false;</pre>
+      </div>
+    </main>
+
+    <script>
+      function copyCode(codeId) {
+        const codeElement = document.getElementById(codeId);
+        if (!codeElement) return;
+        const text = codeElement.textContent.trim();
+        const button = codeElement.parentElement.querySelector('.copy-button');
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(() => {
+            if (button) {
+              button.classList.add('copied');
+              button.textContent = 'Copied';
+              setTimeout(() => {
+                button.classList.remove('copied');
+                button.textContent = 'Copy';
+              }, 2000);
+            }
+          });
+        } else {
+          const temp = document.createElement('textarea');
+          temp.value = text;
+          document.body.appendChild(temp);
+          temp.select();
+          document.execCommand('copy');
+          document.body.removeChild(temp);
+        }
+      }
+    </script>
+  </body>
+</html>

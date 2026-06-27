@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Competitions — Database Schema PRD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .section-container.schema { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left-color: #0066cc; }
+        .section-container.parameters { background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%); border-left-color: #ff9800; }
+        .section-container.parameters .section-header { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; overflow-x: auto; font-family: Consolas, monospace; font-size: 0.82em; line-height: 1.45; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Event Competitions — Database Schema PRD</h1>
+    <p class="doc-meta">
+        <strong>Layer:</strong> PostgreSQL schema &nbsp;|&nbsp; <strong>Date:</strong> May 21, 2026 &nbsp;|&nbsp; <strong>Version:</strong> 2.0<br>
+        <strong>Canonical file:</strong> <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code><br>
+        <strong>Index:</strong> <a href="generic_prd.html">generic_prd.html</a> · <strong>Backend:</strong> <a href="backend_prd.html">backend_prd.html</a>
+    </p>
+
+    <div class="lead">
+        <p>DDL for the generic <strong>Event Competitions</strong> domain. Supports youth (parent/child), adult (self), and mixed events. Follow <code>database_schema_guidelines.mdc</code>: <strong>bigint</strong> PKs via <code>sequence_generator</code>, <code>tenant_id</code> on tenant-scoped tables.</p>
+        <p><strong>Baseline today:</strong> <code>event_details</code> has <code>is_sports_event</code> but no <code>is_competition_event</code> or <code>event_competition_*</code> tables.</p>
+    </div>
+
+    <h2>1. Entity relationship</h2>
+    <pre>event_details (1) ──&lt; (N) event_competition_day
+event_details (1) ──&lt; (1) event_competition_settings
+event_details (1) ──&lt; (N) event_competition
+event_details (1) ──&lt; (N) event_competition_content_block
+
+user_profile (1) ──&lt; (N) event_competition_participant
+
+event_competition_participant (1) ──&lt; (N) event_competition_registration
+event_competition (1) ──&lt; (N) event_competition_registration
+event_competition_registration (1) ──&lt; (N) event_competition_group_member  [v1.1 optional]
+
+event_competition (1) ──&lt; (N) event_competition_result
+event_competition_participant (0..1) ──&lt; (N) event_competition_result
+event_medias (0..1) ──&lt; (N) event_competition_result  [winner_media_id]</pre>
+
+    <h2>2. DROP order (migration script header)</h2>
+    <div class="section-container parameters">
+        <div class="section-header">Reverse dependency</div>
+<pre>DROP TABLE IF EXISTS public.event_competition_group_member CASCADE;
+DROP TABLE IF EXISTS public.event_competition_result CASCADE;
+DROP TABLE IF EXISTS public.event_competition_registration CASCADE;
+DROP TABLE IF EXISTS public.event_competition_participant CASCADE;
+DROP TABLE IF EXISTS public.event_competition CASCADE;
+DROP TABLE IF EXISTS public.event_competition_content_block CASCADE;
+DROP TABLE IF EXISTS public.event_competition_day CASCADE;
+DROP TABLE IF EXISTS public.event_competition_settings CASCADE;
+-- Rollback only: ALTER event_details DROP COLUMN is_competition_event;</pre>
+    </div>
+
+    <h2 id="migration">3. Migration from deprecated <code>kids_*</code> names</h2>
+    <div class="warning-box">
+        <p>Early PRD drafts used <code>is_kids_festival</code> and <code>kids_*</code> table names. Greenfield implementations should use the names below. If a branch already created <code>kids_*</code> tables, rename via Liquibase or:</p>
+        <ul>
+            <li><code>is_kids_festival</code> → <code>is_competition_event</code></li>
+            <li><code>kids_child_profile</code> → <code>event_competition_participant</code> (add <code>participant_type</code>, <code>guardian_user_profile_id</code>)</li>
+            <li>Other <code>kids_*</code> → matching <code>event_competition_*</code> per mapping in <a href="../Event_Competitions_PRD.html">master PRD</a></li>
+        </ul>
+    </div>
+
+    <h2>4. Alter existing table</h2>
+    <div class="section-container schema">
+        <div class="section-header">event_details — add column</div>
+<pre>ALTER TABLE public.event_details
+    ADD COLUMN IF NOT EXISTS is_competition_event boolean DEFAULT false NOT NULL;
+
+COMMENT ON COLUMN public.event_details.is_competition_event IS
+    'When true, event uses Event Competitions flow (catalog + registrations + results), not default ticket-only checkout.';
+
+CREATE INDEX IF NOT EXISTS idx_event_details__is_competition_event
+    ON public.event_details(is_competition_event)
+    WHERE is_competition_event = true;</pre>
+    </div>
+
+    <h2>5. New tables (CREATE)</h2>
+
+    <h3>5.1 event_competition_settings</h3>
+    <pre>CREATE TABLE public.event_competition_settings (
+    id bigint DEFAULT nextval('public.sequence_generator'::regclass) NOT NULL,
+    tenant_id character varying(255) NOT NULL,
+    event_id bigint NOT NULL,
+    audience_mode character varying(20) DEFAULT 'YOUTH' NOT NULL,
+    registration_mode character varying(32) DEFAULT 'PARENT_CHILD' NOT NULL,
+    registration_deadline timestamp without time zone,
+    registration_open boolean DEFAULT true NOT NULL,
+    allow_ticket_sales boolean DEFAULT false NOT NULL,
+    points_first integer DEFAULT 5 NOT NULL,
+    points_second integer DEFAULT 3 NOT NULL,
+    points_third integer DEFAULT 1 NOT NULL,
+    champion_enabled boolean DEFAULT false NOT NULL,
+    champion_exclude_group_points boolean DEFAULT true NOT NULL,
+    champion_max_category integer,
+    results_display_mode character varying(32) DEFAULT 'FULL_NAME',
+    eligibility_text text,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    CONSTRAINT event_competition_settings_pkey PRIMARY KEY (id),
+    CONSTRAINT chk_event_competition_settings__audience
+        CHECK (audience_mode IN ('YOUTH', 'ADULT', 'MIXED')),
+    CONSTRAINT chk_event_competition_settings__reg_mode
+        CHECK (registration_mode IN ('PARENT_CHILD', 'SELF', 'TEAM_CAPTAIN', 'MIXED')),
+    CONSTRAINT ux_event_competition_settings__event UNIQUE (event_id),
+    CONSTRAINT fk_event_competition_settings__event
+        FOREIGN KEY (event_id) REFERENCES public.event_details(id) ON DELETE CASCADE
+);</pre>
+    <p><strong>audience_mode:</strong> YOUTH = parent registers children; ADULT = self-registration; MIXED = both.<br>
+    <strong>registration_mode:</strong> Default UX for primary registrant (may be overridden per competition).</p>
+
+    <h3>5.2 event_competition_day</h3>
+    <pre>CREATE TABLE public.event_competition_day (
+    id bigint DEFAULT nextval('public.sequence_generator'::regclass) NOT NULL,
+    tenant_id character varying(255) NOT NULL,
+    event_id bigint NOT NULL,
+    day_label character varying(100) NOT NULL,
+    event_date date NOT NULL,
+    venue_name character varying(255) NOT NULL,
+    venue_address character varying(500),
+    sort_order integer DEFAULT 0 NOT NULL,
+    notes text,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    CONSTRAINT event_competition_day_pkey PRIMARY KEY (id),
+    CONSTRAINT fk_event_competition_day__event
+        FOREIGN KEY (event_id) REFERENCES public.event_details(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_event_competition_day__event_id ON public.event_competition_day(event_id);</pre>
+
+    <h3>5.3 event_competition</h3>
+    <pre>CREATE TABLE public.event_competition (
+    id bigint DEFAULT nextval('public.sequence_generator'::regclass) NOT NULL,
+    tenant_id character varying(255) NOT NULL,
+    event_id bigint NOT NULL,
+    competition_day_id bigint,
+    name character varying(255) NOT NULL,
+    description text,
+    competition_type character varying(20) NOT NULL,
+    eligible_audience character varying(20) DEFAULT 'ALL' NOT NULL,
+    category_code character varying(20),
+    division_label character varying(100),
+    track character varying(50),
+    fee_amount numeric(10,2) DEFAULT 0 NOT NULL,
+    max_participants integer,
+    min_group_size integer DEFAULT 3,
+    max_group_size integer DEFAULT 10,
+    time_limit_minutes integer,
+    requires_soundtrack boolean DEFAULT false NOT NULL,
+    judgment_criteria_json text,
+    display_order integer DEFAULT 0 NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    CONSTRAINT event_competition_pkey PRIMARY KEY (id),
+    CONSTRAINT chk_event_competition__type
+        CHECK (competition_type IN ('INDIVIDUAL', 'GROUP')),
+    CONSTRAINT chk_event_competition__eligible_audience
+        CHECK (eligible_audience IN ('YOUTH_ONLY', 'ADULT_ONLY', 'ALL')),
+    CONSTRAINT fk_event_competition__event
+        FOREIGN KEY (event_id) REFERENCES public.event_details(id) ON DELETE CASCADE,
+    CONSTRAINT fk_event_competition__day
+        FOREIGN KEY (competition_day_id) REFERENCES public.event_competition_day(id) ON DELETE SET NULL
+);
+CREATE INDEX idx_event_competition__event_id ON public.event_competition(event_id);</pre>
+    <p><strong>category_code:</strong> grade band for YOUTH (e.g. CAT1–CAT4). <strong>division_label:</strong> age bracket or open division for ADULT.</p>
+
+    <h3>5.4 event_competition_participant</h3>
+    <pre>CREATE TABLE public.event_competition_participant (
+    id bigint DEFAULT nextval('public.sequence_generator'::regclass) NOT NULL,
+    tenant_id character varying(255) NOT NULL,
+    participant_type character varying(20) NOT NULL,
+    user_profile_id bigint NOT NULL,
+    clerk_user_id character varying(255) NOT NULL,
+    guardian_user_profile_id bigint,
+    first_name character varying(100) NOT NULL,
+    last_name character varying(100) NOT NULL,
+    display_name character varying(200),
+    date_of_birth date,
+    current_grade integer,
+    school_name character varying(255),
+    phone character varying(50),
+    email character varying(255),
+    is_active boolean DEFAULT true NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    CONSTRAINT event_competition_participant_pkey PRIMARY KEY (id),
+    CONSTRAINT chk_event_competition_participant__type
+        CHECK (participant_type IN ('CHILD', 'ADULT', 'TEAM_MEMBER')),
+    CONSTRAINT fk_event_competition_participant__user_profile
+        FOREIGN KEY (user_profile_id) REFERENCES public.user_profile(id),
+    CONSTRAINT fk_event_competition_participant__guardian
+        FOREIGN KEY (guardian_user_profile_id) REFERENCES public.user_profile(id)
+);
+CREATE INDEX idx_event_competition_participant__tenant_clerk
+    ON public.event_competition_participant(tenant_id, clerk_user_id);
+CREATE INDEX idx_event_competition_participant__guardian
+    ON public.event_competition_participant(tenant_id, guardian_user_profile_id)
+    WHERE guardian_user_profile_id IS NOT NULL;</pre>
+    <ul>
+        <li><strong>CHILD:</strong> <code>guardian_user_profile_id</code> required; parent owns profile (YOUTH).</li>
+        <li><strong>ADULT:</strong> <code>user_profile_id</code> = competitor; <code>guardian_user_profile_id</code> null.</li>
+        <li><strong>TEAM_MEMBER:</strong> Optional normalized member row for group events.</li>
+    </ul>
+
+    <h3>5.5 event_competition_registration</h3>
+    <pre>CREATE TABLE public.event_competition_registration (
+    id bigint DEFAULT nextval('public.sequence_generator'::regclass) NOT NULL,
+    tenant_id character varying(255) NOT NULL,
+    event_id bigint NOT NULL,
+    competition_id bigint NOT NULL,
+    participant_profile_id bigint NOT NULL,
+    registration_status character varying(32) DEFAULT 'PENDING_PAYMENT' NOT NULL,
+    fee_amount numeric(10,2) NOT NULL,
+    effective_category character varying(20),
+    stripe_payment_intent_id character varying(255),
+    group_leader_registration_id bigint,
+    registered_by_user_profile_id bigint NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    CONSTRAINT event_competition_registration_pkey PRIMARY KEY (id),
+    CONSTRAINT ux_event_comp_reg__participant_competition
+        UNIQUE (competition_id, participant_profile_id),
+    CONSTRAINT fk_event_comp_reg__competition
+        FOREIGN KEY (competition_id) REFERENCES public.event_competition(id),
+    CONSTRAINT fk_event_comp_reg__participant
+        FOREIGN KEY (participant_profile_id) REFERENCES public.event_competition_participant(id),
+    CONSTRAINT fk_event_comp_reg__event
+        FOREIGN KEY (event_id) REFERENCES public.event_details(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_event_comp_reg__event_id ON public.event_competition_registration(event_id);</pre>
+
+    <h3>5.6 event_competition_result (winners, prizes, photos)</h3>
+    <pre>CREATE TABLE public.event_competition_result (
+    id bigint DEFAULT nextval('public.sequence_generator'::regclass) NOT NULL,
+    tenant_id character varying(255) NOT NULL,
+    event_id bigint NOT NULL,
+    competition_id bigint NOT NULL,
+    participant_profile_id bigint,
+    registration_id bigint,
+    display_name character varying(200) NOT NULL,
+    placement integer,
+    placement_label character varying(50),
+    prize_title character varying(255),
+    prize_details text,
+    points_awarded integer DEFAULT 0 NOT NULL,
+    winner_photo_url character varying(1024),
+    winner_media_id bigint,
+    notes text,
+    is_published boolean DEFAULT false NOT NULL,
+    published_at timestamp without time zone,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    CONSTRAINT event_competition_result_pkey PRIMARY KEY (id),
+    CONSTRAINT chk_event_comp_result__placement
+        CHECK (placement IS NULL OR placement &gt;= 1),
+    CONSTRAINT fk_event_comp_result__competition
+        FOREIGN KEY (competition_id) REFERENCES public.event_competition(id) ON DELETE CASCADE,
+    CONSTRAINT fk_event_comp_result__participant
+        FOREIGN KEY (participant_profile_id) REFERENCES public.event_competition_participant(id),
+    CONSTRAINT fk_event_comp_result__registration
+        FOREIGN KEY (registration_id) REFERENCES public.event_competition_registration(id),
+    CONSTRAINT fk_event_comp_result__winner_media
+        FOREIGN KEY (winner_media_id) REFERENCES public.event_medias(id) ON DELETE SET NULL
+);
+CREATE INDEX idx_event_comp_result__event_published
+    ON public.event_competition_result(event_id, is_published);
+CREATE INDEX idx_event_comp_result__competition_placement
+    ON public.event_competition_result(competition_id, placement)
+    WHERE is_published = true;</pre>
+    <div class="info-box">
+        <p><strong>Winner media:</strong> Prefer <code>winner_media_id</code> → <code>event_medias</code> (same S3/upload pipeline as event gallery). <code>winner_photo_url</code> is optional denormalized URL for public CDN display. Aligns with <a href="../../event_sports_arts_competition/Event_Sports_Arts_Competition_Results_Feature_Requirements.html">Sports/Arts Results</a> prize/photo fields.</p>
+    </div>
+
+    <h3>5.7 event_competition_content_block</h3>
+    <pre>CREATE TABLE public.event_competition_content_block (
+    id bigint DEFAULT nextval('public.sequence_generator'::regclass) NOT NULL,
+    tenant_id character varying(255) NOT NULL,
+    event_id bigint NOT NULL,
+    block_type character varying(32) NOT NULL,
+    title character varying(255),
+    body_markdown text NOT NULL,
+    sort_order integer DEFAULT 0 NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    CONSTRAINT event_competition_content_block_pkey PRIMARY KEY (id),
+    CONSTRAINT ux_event_comp_content__event_type UNIQUE (event_id, block_type),
+    CONSTRAINT fk_event_comp_content__event
+        FOREIGN KEY (event_id) REFERENCES public.event_details(id) ON DELETE CASCADE
+);</pre>
+
+    <h3>5.8 event_competition_group_member (v1.1 optional)</h3>
+    <pre>CREATE TABLE public.event_competition_group_member (
+    id bigint DEFAULT nextval('public.sequence_generator'::regclass) NOT NULL,
+    tenant_id character varying(255) NOT NULL,
+    registration_id bigint NOT NULL,
+    participant_profile_id bigint NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    CONSTRAINT event_competition_group_member_pkey PRIMARY KEY (id),
+    CONSTRAINT fk_event_comp_group_member__registration
+        FOREIGN KEY (registration_id) REFERENCES public.event_competition_registration(id) ON DELETE CASCADE,
+    CONSTRAINT fk_event_comp_group_member__participant
+        FOREIGN KEY (participant_profile_id) REFERENCES public.event_competition_participant(id)
+);</pre>
+
+    <h2>6. sequence_generator setval</h2>
+    <div class="section-container schema">
+        <div class="section-header">Add to consolidated setval block</div>
+<pre>COALESCE((SELECT MAX(id) FROM public.event_competition_settings), 0),
+COALESCE((SELECT MAX(id) FROM public.event_competition_day), 0),
+COALESCE((SELECT MAX(id) FROM public.event_competition), 0),
+COALESCE((SELECT MAX(id) FROM public.event_competition_participant), 0),
+COALESCE((SELECT MAX(id) FROM public.event_competition_registration), 0),
+COALESCE((SELECT MAX(id) FROM public.event_competition_result), 0),
+COALESCE((SELECT MAX(id) FROM public.event_competition_content_block), 0),
+COALESCE((SELECT MAX(id) FROM public.event_competition_group_member), 0)</pre>
+    </div>
+
+    <h2>7. Contrast with sports/arts results</h2>
+    <div class="info-box">
+        <p><a href="../../event_sports_arts_competition/Event_Sports_Arts_Competition_Results_Feature_Requirements.html">Event Sports &amp; Arts Results</a> targets <code>is_sports_event</code> scorecards and optional arts result rows on the event. <strong>Event Competitions</strong> uses <code>event_competition</code> + <code>event_competition_result</code> for multi-competition festivals (youth or adult). Do not use <code>event_ticket_*</code> for competition slots.</p>
+    </div>
+
+    <h2>8. Implementation checklist</h2>
+    <table>
+        <thead><tr><th>Step</th><th>Owner</th></tr></thead>
+        <tbody>
+            <tr><td>Apply DDL to <code>Latest_Schema_Post__Blob_Claude_12.sql</code></td><td>DBA / platform</td></tr>
+            <tr><td>Liquibase in <code>malayalees-us-site-boot</code></td><td>Backend</td></tr>
+            <tr><td>Seed one YOUTH and one ADULT test event</td><td>QA</td></tr>
+        </tbody>
+    </table>
+
+</body>
+</html>

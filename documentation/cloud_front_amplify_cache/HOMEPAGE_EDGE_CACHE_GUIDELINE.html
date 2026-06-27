@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Guideline for improving homepage load by serving static data from AWS edge (CloudFront or Amplify CDN), with optional cache warming. Enables instant first paint when cache is warm.">
+    <title>Homepage Edge Cache Guideline – AWS CloudFront / Amplify</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+            background-color: #fff;
+        }
+        h1 {
+            color: #1a1a1a;
+            font-size: 2.5em;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        h2 {
+            color: #0066cc;
+            font-size: 1.8em;
+            margin-top: 30px;
+            border-left: 4px solid #0066cc;
+            padding-left: 15px;
+        }
+        h3 { font-size: 1.4em; color: #333; margin-top: 25px; }
+        h4 { font-size: 1.2em; color: #555; margin-top: 20px; }
+        code, .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre, .code-block {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #b8d4e3;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        pre code { background-color: transparent; padding: 0; border: none; }
+        .info {
+            background-color: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .info code, .info .code-highlight, .warning code, .warning .code-highlight,
+        .success code, .success .code-highlight, .error code, .error .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+        .toc {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .toc ul { list-style-type: none; margin-left: 0; }
+        .toc li { margin-bottom: 8px; }
+        .toc a { color: #0066cc; text-decoration: none; }
+        .toc a:hover { text-decoration: underline; }
+        .section-container {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-container.parameters {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left-color: #ff9800;
+        }
+        .section-container.output {
+            background: linear-gradient(135deg, #e6ffe6 0%, #ccffcc 100%);
+            border-left-color: #28a745;
+        }
+        .section-container.usage {
+            background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%);
+            border-left-color: #9c27b0;
+        }
+        .section-header {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            padding: 12px 20px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 8px 8px 0 0;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .section-header.parameters { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); }
+        .section-header.output { background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%); }
+        .section-header.usage { background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%); }
+        .section-intro {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-intro code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+        }
+        .parameters-list {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left: 4px solid #ff9800;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .parameters-list strong { color: #ff9800; font-weight: bold; }
+        .parameters-list code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        tr:hover { background-color: #e3f2fd; transition: background-color 0.2s ease; }
+        td code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+        ul, ol { margin-left: 20px; }
+        li { margin-bottom: 8px; }
+        a { color: #0066cc; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        @media (max-width: 768px) { body { padding: 10px; } }
+    </style>
+</head>
+<body>
+    <h1>Homepage Edge Cache Guideline – AWS CloudFront / Amplify</h1>
+
+    <div class="section-intro">
+        <p>This guideline describes how to improve homepage load by serving static or cached data from the AWS edge (CloudFront or Amplify CDN) so that homepage sections can render immediately when the cache is warm, without a loading screen. The application runs on <strong>AWS Amplify</strong> (Lambda SSR), so all options use AWS-native services.</p>
+    </div>
+
+    <div class="toc">
+        <h2>Table of Contents</h2>
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#problem">Problem Statement</a></li>
+            <li><a href="#current-pattern">Current Homepage Pattern</a></li>
+            <li><a href="#recommended-architecture">Recommended Architecture</a></li>
+            <li><a href="#aws-options">AWS Infrastructure Options</a></li>
+            <li><a href="#option-comparison">Option Comparison: Amplify vs S3 + CloudFront</a></li>
+            <li><a href="#manual-push-amplify">Manual push and invalidation (Amplify)</a></li>
+            <li><a href="#cache-key">Cache Key Design</a></li>
+            <li><a href="#ttl">TTL and Invalidation</a></li>
+            <li><a href="#cache-warming">Cache Warming</a></li>
+            <li><a href="#client-behavior">Client Behavior</a></li>
+            <li><a href="#security">Security and Tenant Isolation</a></li>
+            <li><a href="#checklist">Checklist and Best Practices</a></li>
+            <li><a href="#references">References</a></li>
+        </ul>
+    </div>
+
+    <h2 id="overview">Overview</h2>
+    <div class="section-container">
+        <div class="section-header">Goal and cache behavior</div>
+        <p><strong>Goal:</strong> When the edge has a cached copy of the homepage data, portions of the page should load immediately from that cache so the user sees content without a loading screen. When the cache is cold or the response is slow, the existing deferred-loading pattern remains as fallback.</p>
+        <ul>
+            <li><strong>Cache hit:</strong> Portions load immediately from edge; no loading screen for those sections.</li>
+            <li><strong>Cache miss:</strong> Keep current behavior (deferred fetch and optional loading UI).</li>
+            <li><strong>Freshness:</strong> Cache is updated regularly (e.g., short TTL or scheduled cache warming).</li>
+        </ul>
+    </div>
+
+    <h2 id="problem">Problem Statement</h2>
+    <div class="section-container">
+        <div class="section-header">Current limitations and desired outcome</div>
+        <p>Today, the homepage uses client-side deferred loading and per-section <code class="code-highlight">sessionStorage</code> cache (5-minute TTL). On a first visit or after cache expiry, multiple API calls run after first paint, which can still result in a visible loading experience and Lambda/backend load. There is no edge-level cache, so every cold request hits the origin.</p>
+        <p>Desired outcome: small, static-like payloads for the homepage sections are served from the edge when possible, so the page (or key portions) loads immediately without a loading screen when the cache is warm.</p>
+    </div>
+
+    <h2 id="current-pattern">Current Homepage Pattern</h2>
+    <div class="section-container">
+        <div class="section-header">Existing deferred loading and data sources</div>
+        <p>The existing pattern is defined in the project rule <code class="code-highlight">homepage_deferred_loading_pattern.mdc</code>. Summary:</p>
+        <ul>
+            <li><strong>Hooks:</strong> <code class="code-highlight">usePageReady()</code> and <code class="code-highlight">useDeferredFetch(delayMs)</code> gate API calls until after initial paint.</li>
+            <li><strong>Staggered delays:</strong> TenantSettings (gate) → Hero/Live/Featured events (500 ms) → Upcoming events (300 ms after mount) → Team (800 ms) → Sponsors (1500 ms).</li>
+            <li><strong>Per-section cache:</strong> Each section checks <code class="code-highlight">sessionStorage</code> first (5-minute TTL); cache hit avoids network.</li>
+        </ul>
+        <div class="parameters-list">
+            <p><strong>Data sources (all via <code>/api/proxy/...</code>):</strong></p>
+            <ul>
+                <li><code>tenant-settings</code> – Section visibility gate</li>
+                <li><code>event-details</code> + <code>event-medias</code> – Hero, live, featured, upcoming events</li>
+                <li><code>executive-committee-team-members</code> – Team section</li>
+                <li><code>event-sponsors</code> – Sponsors section</li>
+            </ul>
+        </div>
+    </div>
+
+    <h2 id="recommended-architecture">Recommended Architecture</h2>
+    <div class="section-container">
+        <div class="section-header">Edge-cached homepage payload</div>
+        <ol>
+            <li><strong>Single aggregated endpoint</strong> – e.g. <code class="code-highlight">/api/homepage-payload</code> or <code class="code-highlight">/api/cached/homepage</code> – returns a JSON blob with all data needed for above-the-fold and key sections: tenant settings, hero/featured/upcoming events (with media), team members, sponsors. Response must be scoped by tenant (e.g. query param <code class="code-highlight">?tenantId=...</code> or path segment).</li>
+            <li><strong>CloudFront or Amplify CDN</strong> – Cache this endpoint with a cache key that includes tenant ID (and optionally locale). Use a short TTL (e.g. 1–5 minutes) so content stays fresh, or longer TTL with invalidation on admin updates.</li>
+            <li><strong>Homepage client logic</strong> – On load, try to fetch the cached payload first. If the response is fast (e.g. &lt; 200–300 ms) and OK, render from it immediately and skip per-section fetches for that load. Otherwise, show loading/placeholder and fall back to the existing deferred per-section fetch. Continue to use <code class="code-highlight">sessionStorage</code> for repeat visits within TTL.</li>
+            <li><strong>Optional cache warming</strong> – A scheduled job (e.g. EventBridge rule every 5–15 minutes) triggers a server-side or Lambda request to the homepage-payload URL per tenant so the edge stays warm.</li>
+        </ol>
+        <p>This keeps the existing deferred pattern as fallback and adds a fast path when the edge has the payload.</p>
+    </div>
+
+    <h2 id="aws-options">AWS Infrastructure Options</h2>
+    <div class="section-container">
+        <div class="section-header">Infrastructure choices</div>
+        <table>
+        <thead>
+            <tr>
+                <th>Option</th>
+                <th>Description</th>
+                <th>Pros</th>
+                <th>Cons</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>CloudFront in front of Amplify</strong></td>
+                <td>Add or reuse a CloudFront distribution; create a cache behavior for <code>/api/cached/*</code> or <code>/api/homepage-payload</code> with a short TTL.</td>
+                <td>Full control over TTL, invalidation, and cache key (tenant, path).</td>
+                <td>Requires CloudFront configuration (and possibly custom domain/origin).</td>
+            </tr>
+            <tr>
+                <td><strong>Amplify custom headers / cache control</strong></td>
+                <td>Set <code>Cache-Control</code> on the homepage-payload route (in the app or via <code>customHeaders.yaml</code>) so Amplify’s default CDN caches responses. <strong>Built-in:</strong> no separate CloudFront; Amplify’s CDN respects Cache-Control for dynamic routes.</td>
+                <td>No separate CloudFront setup; Amplify already serves via CDN. Easiest and cheapest.</td>
+                <td>No built-in on-demand invalidation per tenant; relies on TTL (e.g. 3 days).</td>
+            </tr>
+            <tr>
+                <td><strong>Lambda@Edge (optional)</strong></td>
+                <td>Use viewer request/response to build cache key or modify headers (e.g. by tenant from header or cookie).</td>
+                <td>Fine-grained cache keys.</td>
+                <td>More complex; use only if needed for advanced keying.</td>
+            </tr>
+            <tr>
+                <td><strong>Static JSON in S3 + CloudFront</strong></td>
+                <td>A job writes a JSON file to S3 (e.g. <code>s3://bucket/homepage-payload/{tenantId}.json</code>); CloudFront caches it.</td>
+                <td>Very fast; no Lambda for payload; clear separation.</td>
+                <td>Requires job to call backend, aggregate, and write S3; invalidation or TTL on CloudFront.</td>
+            </tr>
+            <tr>
+                <td><strong>API Gateway + CloudFront</strong></td>
+                <td>If the payload is served by API Gateway + Lambda, put CloudFront in front with caching.</td>
+                <td>Reusable for other cached APIs.</td>
+                <td>More moving parts; only if you already use API Gateway for this app.</td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="info">
+        <strong>Recommendation:</strong> Prefer <strong>CloudFront (or Amplify CDN) caching a dedicated homepage-payload API</strong> as the primary approach. Use <strong>S3 + CloudFront</strong> and <strong>scheduled warming</strong> as optional alternatives for maximum control and performance.
+    </div>
+    </div>
+
+    <h2 id="option-comparison">Option Comparison: Amplify Cache-Control vs S3 + CloudFront</h2>
+    <p>For a strategy that uses <strong>periodic update once every three days</strong> and <strong>on-demand refresh per tenant</strong> (e.g. when an admin publishes changes), the two most relevant options are <strong>Amplify custom headers / Cache-Control</strong> and <strong>S3 + CloudFront with scheduled warming</strong>. Below is whether Amplify’s caching is built-in, how each option fits that use case, cost, ease of setup, and a concise recommendation.</p>
+
+    <h3>Does Amplify custom headers / Cache-Control exist as a built-in feature?</h3>
+    <div class="success">
+        <strong>Yes.</strong> AWS Amplify Hosting uses CloudFront in front of your app and supports caching of dynamic (SSR/API) responses in two ways:
+        <ul>
+            <li><strong>Application-level:</strong> Your homepage-payload route (e.g. Next.js API Route or Route Handler) returns a response with <code class="code-highlight">Cache-Control: public, max-age=259200</code> (3 days in seconds). Amplify’s managed cache policy respects this and will cache the response at the edge.</li>
+            <li><strong>Custom headers file:</strong> You can add a <code class="code-highlight">customHeaders.yaml</code> in the project root (or configure in the Amplify console) with a pattern such as <code class="code-highlight">/api/cached/**</code> and set <code class="code-highlight">Cache-Control: public, max-age=259200</code>. This overrides framework defaults and applies to successful 200 responses.</li>
+        </ul>
+        <p>So no separate CloudFront distribution is required; the CDN in front of Amplify is already there and will cache when you set appropriate Cache-Control. Default TTL for compute (Lambda) responses is 0; setting <code class="code-highlight">max-age</code> or <code class="code-highlight">s-maxage</code> enables caching.</p>
+    </div>
+
+    <h3>Use case: 3-day refresh + on-demand push per tenant</h3>
+    <div class="section-container parameters">
+        <div class="section-header parameters">Behavior by option</div>
+        <ul>
+            <li><strong>Amplify Cache-Control:</strong> Set <code class="code-highlight">max-age=259200</code> (3 days). Content refreshes automatically after 3 days. <strong>On-demand invalidation per tenant</strong> is not built-in: Amplify does not expose a per-path CloudFront invalidation API to the application. To “push” an update for one tenant you would need to either (a) accept that the cache expires in at most 3 days, (b) use a shorter TTL after updates (e.g. re-deploy or a separate path with short TTL), or (c) put your own CloudFront in front and run invalidations there.</li>
+            <li><strong>S3 + CloudFront + scheduled warming:</strong> A job (e.g. EventBridge + Lambda) runs every 3 days, fetches data per tenant, and writes <code class="code-highlight">s3://bucket/homepage-payload/{tenantId}.json</code>. CloudFront caches each object. For <strong>on-demand push per tenant</strong>, you overwrite the S3 object for that <code class="code-highlight">tenantId</code> and optionally create a CloudFront invalidation for <code class="code-highlight">/homepage-payload/{tenantId}.json</code>. So both “every 3 days” and “on demand per tenant” are fully supported.</li>
+        </ul>
+    </div>
+
+    <h3>Cost comparison (order-of-magnitude)</h3>
+    <p>Assumptions: a few tenants (e.g. 5–10), homepage payload ~200–500 KB per tenant, and either low traffic (e.g. 10K page views/month) or moderate (100K views/month). Prices are US East–style and approximate.</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Component</th>
+                <th>Amplify Cache-Control</th>
+                <th>S3 + CloudFront + warming</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Extra infrastructure</strong></td>
+                <td>None (use existing Amplify CDN)</td>
+                <td>S3 bucket, CloudFront distribution (or reuse existing), Lambda for job</td>
+            </tr>
+            <tr>
+                <td><strong>Amplify / Lambda</strong></td>
+                <td>Lambda runs only on cache miss (first request per path per TTL). After 3-day TTL, one run per tenant. Cost is part of current Amplify bill.</td>
+                <td>Lambda for scheduled job only (e.g. once per 3 days × tenants ≈ 10–30 invocations/month). Typically &lt;$0.01/month.</td>
+            </tr>
+            <tr>
+                <td><strong>S3</strong></td>
+                <td>N/A</td>
+                <td>PUTs: ~10–30/month. GETs: only on CloudFront cache miss. Storage: &lt;50 MB. Total S3 usually &lt;$0.01/month.</td>
+            </tr>
+            <tr>
+                <td><strong>CloudFront (data + requests)</strong></td>
+                <td>No extra; traffic is already through Amplify’s CDN.</td>
+                <td>Data transfer out: ~$0.085/GB (after 1 TB free). 10K views × 0.3 MB ≈ 3 GB → often within free tier. 100K views ≈ 30 GB → ~$2.50/month. Requests ~$0.0075/10K → &lt;$0.10/month at 100K.</td>
+            </tr>
+            <tr>
+                <td><strong>EventBridge</strong></td>
+                <td>Optional (if you add a warming schedule). Free tier covers typical 3-day schedule.</td>
+                <td>One rule (e.g. every 3 days). Free tier.</td>
+            </tr>
+            <tr>
+                <td><strong>Total (low traffic)</strong></td>
+                <td><strong>~$0 extra</strong></td>
+                <td><strong>~$0–1/month</strong> (S3 + Lambda + possibly CloudFront within free tier)</td>
+            </tr>
+            <tr>
+                <td><strong>Total (moderate traffic, 100K views)</strong></td>
+                <td><strong>~$0 extra</strong></td>
+                <td><strong>~$2.50–3/month</strong> (dominated by CloudFront data transfer)</td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="info">
+        <strong>Summary:</strong> <strong>Amplify Cache-Control is cheaper</strong> because it adds no new services; you only pay for existing Amplify/Lambda on cache misses. <strong>S3 + CloudFront</strong> is low cost at small scale and scales with traffic (mainly CloudFront data transfer).
+    </div>
+
+    <h3>Ease of setup</h3>
+    <ul>
+        <li><strong>Amplify Cache-Control (easier):</strong> Implement the homepage-payload API (e.g. <code class="code-highlight">/api/cached/homepage?tenantId=...</code>). In that route, set the response header <code class="code-highlight">Cache-Control: public, max-age=259200</code> (and optionally <code class="code-highlight">s-maxage=259200</code>). Optionally add <code class="code-highlight">customHeaders.yaml</code> for the same path. No new AWS resources. On-demand invalidation per tenant is not supported out of the box.</li>
+        <li><strong>S3 + CloudFront (more setup):</strong> Create S3 bucket and object key layout (e.g. <code class="code-highlight">homepage-payload/{tenantId}.json</code>). Create or reuse a CloudFront distribution with origin = S3. Add a Lambda (triggered by EventBridge every 3 days) that calls your backend or existing API to build the payload per tenant and writes to S3. Optionally add an admin-triggered action (e.g. API or Lambda) to write S3 and invalidate CloudFront for that tenant. More moving parts, but full control over 3-day refresh and on-demand push per tenant.</li>
+    </ul>
+
+    <h3>Recommendation for your scenario</h3>
+    <div class="section-container output">
+        <div class="section-header output">When to use which</div>
+        <ul>
+            <li><strong>Use Amplify Cache-Control</strong> if you want the <strong>cheapest and simplest</strong> approach and can accept that updates propagate at most every 3 days (no true on-demand invalidation per tenant). Ideal when homepage content changes infrequently and you are already on Amplify.</li>
+            <li><strong>Use S3 + CloudFront + scheduled warming</strong> when you need <strong>on-demand refresh per tenant</strong> (e.g. admin clicks “Publish” and that tenant’s homepage updates within seconds via S3 overwrite + optional CloudFront invalidation), or when you want strict separation between “content generation” (job) and “content delivery” (S3 + CDN). Cost remains low for typical traffic; setup is more involved.</li>
+        </ul>
+        <p>If you need both “periodic every 3 days” and “push on demand per tenant,” <strong>S3 + CloudFront</strong> is the option that supports both natively; Amplify Cache-Control supports only the periodic TTL unless you add your own invalidation layer.</p>
+    </div>
+
+    <h3 id="manual-push-amplify">Manual push and invalidation when using Amplify</h3>
+    <p>Because Amplify does not expose a built-in “invalidate cache for this tenant” button or API, you can add your own control in two ways: <strong>cache-busting with a version parameter</strong> (no AWS APIs, works with Amplify as-is), or <strong>programmatic CloudFront invalidation</strong> (requires the distribution ID and IAM permissions).</p>
+
+    <h4>Option 1: Cache-busting with a version parameter (recommended, no AWS API)</h4>
+    <div class="section-container usage">
+        <div class="section-header usage">How it works</div>
+        <p>Include a <strong>version</strong> in the cache key so that when you “push” an update, the client requests a <em>new</em> URL. The CDN treats it as a new resource (cache miss) and fetches fresh content from the origin. No invalidation API is needed.</p>
+        <ol>
+            <li><strong>Store a version per tenant</strong> – e.g. in your database or config: <code class="code-highlight">homepage_cache_version</code> or <code class="code-highlight">last_published_at</code> (timestamp). When an admin publishes changes for a tenant, update this value (e.g. set to <code class="code-highlight">Date.now()</code> or current ISO string).</li>
+            <li><strong>Payload URL includes version</strong> – The client requests <code class="code-highlight">/api/cached/homepage?tenantId=X&amp;v=1730123456</code>. The <code class="code-highlight">v</code> value can come from (a) a small “meta” endpoint that returns the current version for the tenant, or (b) the payload response itself (e.g. payload returns <code class="code-highlight">{ version: 1730123456, ... }</code> and the client uses that version in the next request). For the <em>first</em> load, the client can call the payload URL without <code class="code-highlight">v</code> (or with <code class="code-highlight">v=0</code>); the server returns the payload and the current version; the client then stores the version and uses it in subsequent requests.</li>
+            <li><strong>Admin “Refresh” or “Publish” action</strong> – When the admin clicks “Refresh homepage cache” or “Publish” for a tenant, your backend updates the stored version for that tenant. The next time any client requests the payload, they get the new version (either from the meta endpoint or from the payload response); they then request <code class="code-highlight">?tenantId=X&amp;v=newVersion</code>. That URL is a new cache key, so the CDN fetches from origin and caches the new response. Old cached URLs expire naturally after TTL.</li>
+        </ol>
+        <p><strong>Implementation outline:</strong> Add an API route (e.g. <code class="code-highlight">POST /api/admin/refresh-homepage-cache</code>) that accepts <code class="code-highlight">tenantId</code>, validates the caller is an admin, and updates the tenant’s <code class="code-highlight">homepage_cache_version</code> (or equivalent) in the database. The homepage-payload API reads this version and either (a) redirects to <code class="code-highlight">/api/cached/homepage?tenantId=X&amp;v=...</code> or (b) includes the version in the JSON so the client can use it in the next request. The client always requests with <code class="code-highlight">tenantId</code> and <code class="code-highlight">v</code> when known; otherwise it gets the version from the payload or a small meta endpoint first.</p>
+        <div class="success">
+            <strong>Advantages:</strong> No CloudFront API, no distribution ID, no IAM; works entirely within your app and Amplify’s CDN. You control “push” by updating a version in your data store and having clients use that version in the URL.
+        </div>
+    </div>
+
+    <h4>Option 2: Programmatic CloudFront invalidation</h4>
+    <div class="section-container parameters">
+        <div class="section-header parameters">When you need to clear the CDN cache directly</div>
+        <p>If you want to actually <em>invalidate</em> the cached response for a path (so the next request refetches from origin), you can call the <strong>CloudFront CreateInvalidation</strong> API. Amplify hosts your app behind a CloudFront distribution that Amplify creates and manages. To use this approach you need:</p>
+        <ul>
+            <li><strong>Distribution ID</strong> – Amplify does not expose this in the app console by default. You can find it in the AWS CloudFront console (look for the distribution whose origin is your Amplify app URL), or via AWS APIs (e.g. <code class="code-highlight">ListDistributions</code> and match by origin). Store it in an environment variable (e.g. <code class="code-highlight">AMPLIFY_CLOUDFRONT_DISTRIBUTION_ID</code>) so you can use it from a server-side route or Lambda.</li>
+            <li><strong>IAM permissions</strong> – The role that runs your API route or Lambda needs <code class="code-highlight">cloudfront:CreateInvalidation</code>. Create an IAM policy that allows <code class="code-highlight">CreateInvalidation</code> on the specific distribution (or use a broader policy if you have multiple distributions).</li>
+            <li><strong>Invalidation paths</strong> – For a tenant-scoped payload, invalidate the path that includes the tenant (e.g. <code class="code-highlight">/api/cached/homepage*tenantId=tenant_123*</code> or the exact path your app uses). CloudFront supports path patterns; the first 1,000 invalidation paths per month are free, then a small charge per path.</li>
+        </ul>
+        <p><strong>Implementation outline:</strong> Add an API route (e.g. <code class="code-highlight">POST /api/admin/refresh-homepage-cache</code>) that accepts <code class="code-highlight">tenantId</code>, validates the caller is an admin, then calls the AWS SDK (e.g. <code class="code-highlight">@aws-sdk/client-cloudfront</code>) <code class="code-highlight">CreateInvalidation</code> with the distribution ID and paths like <code class="code-highlight">["/api/cached/homepage?tenantId=tenant_123"]</code>. Use a unique <code class="code-highlight">CallerReference</code> (e.g. timestamp) per request. After the invalidation is created, the next request to that URL will hit the origin and the new response will be cached.</p>
+        <div class="warning">
+            <strong>Note:</strong> Amplify may recreate or change the distribution on certain operations (e.g. major config changes). If the distribution ID changes, update your env. Option 1 (cache-busting) avoids this dependency.
+        </div>
+    </div>
+
+    </div>
+
+    <h2 id="cache-key">Cache Key Design</h2>
+    <div class="section-container parameters">
+        <div class="section-header parameters">Cache key requirements</div>
+        <ul>
+            <li><strong>Tenant ID (required):</strong> Every cache key must include the tenant identifier so responses are never shared across tenants. Use query parameter (e.g. <code class="code-highlight">?tenantId=tenant_demo_002</code>) or path segment (e.g. <code class="code-highlight">/api/cached/homepage/tenant_demo_002</code>).</li>
+            <li><strong>Locale (optional):</strong> If the payload varies by language, include locale in the cache key (query or path).</li>
+            <li><strong>Path:</strong> Restrict caching to the homepage-payload path only so other API routes are not cached by mistake.</li>
+        </ul>
+    </div>
+
+    <h2 id="ttl">TTL and Invalidation</h2>
+    <div class="section-container">
+        <div class="section-header">Suggested TTL and invalidation</div>
+        <ul>
+            <li><strong>Suggested TTL:</strong> 1–5 minutes for a good balance between freshness and hit rate. For infrequent updates, <strong>3 days</strong> (<code class="code-highlight">max-age=259200</code>) is also common and reduces origin load; use with Amplify Cache-Control or CloudFront.</li>
+            <li><strong>Invalidation on admin updates:</strong> When an admin updates events, tenant settings, team, or sponsors, optionally invalidate the cache for that tenant (e.g. CloudFront invalidation <code class="code-highlight">/api/cached/homepage?tenantId=*</code> or path pattern). With <strong>S3 + CloudFront</strong>, you can overwrite the object for that tenant and create an invalidation for <code class="code-highlight">/homepage-payload/{tenantId}.json</code> to get <strong>on-demand refresh per tenant</strong>. With Amplify-only, invalidation is not exposed; rely on TTL.</li>
+        </ul>
+    </div>
+
+    <h2 id="cache-warming">Cache Warming</h2>
+    <div class="section-container output">
+        <div class="section-header output">Scheduled cache warming</div>
+        <p>To keep the edge cache warm, use a scheduled job that calls the homepage-payload URL for each tenant (or, for S3 + CloudFront, writes the payload to S3 per tenant):</p>
+        <ul>
+            <li><strong>EventBridge (CloudWatch Events):</strong> Create a rule with a schedule expression (e.g. <code class="code-highlight">rate(5 minutes)</code>, <code class="code-highlight">cron(0/15 * * * ? *)</code> for every 15 minutes, or <code class="code-highlight">cron(0 8 * * ? *)</code> for once daily at 8:00 UTC). For <strong>once every 3 days</strong>, use e.g. <code class="code-highlight">cron(0 8 1/3 * ? *)</code> (every 3 days at 8:00 UTC) or a fixed schedule that fits your release cycle.</li>
+            <li><strong>Target:</strong> A Lambda function that performs an HTTP GET to <code class="code-highlight">https://your-app-url/api/cached/homepage?tenantId=...</code> for each configured tenant (e.g. from environment variable or config).</li>
+            <li><strong>Result:</strong> CloudFront (or Amplify CDN) serves the request from origin once per period and caches the response; subsequent user requests are served from the edge.</li>
+        </ul>
+        <p>Ensure the Lambda uses the same origin URL and tenant IDs as production so the cache is populated correctly.</p>
+    </div>
+
+    <h2 id="client-behavior">Client Behavior</h2>
+    <div class="section-container usage">
+        <div class="section-header usage">Homepage client flow</div>
+        <ol>
+            <li><strong>Check sessionStorage</strong> – If a valid cached payload exists (same structure as edge payload, within client-side TTL), use it and render immediately; skip network.</li>
+            <li><strong>Fetch payload with timeout</strong> – Request <code class="code-highlight">/api/cached/homepage?tenantId=...</code> (or equivalent). Use a timeout (e.g. 300 ms).</li>
+            <li><strong>Fast and OK:</strong> If response returns within the timeout and status is 200, parse JSON and render all sections from the payload. Optionally store in sessionStorage for the next visit. Do not run the existing per-section deferred fetches for this load.</li>
+            <li><strong>Slow or error:</strong> If timeout fires or status is not OK, ignore the payload and run the existing deferred pattern (usePageReady / useDeferredFetch and per-section API calls). Show loading/placeholder as today.</li>
+        </ol>
+        <p>This way, when the edge is warm, users get instant content; when it is cold, behavior matches the current implementation.</p>
+    </div>
+
+    <h2 id="security">Security and Tenant Isolation</h2>
+    <div class="section-container">
+        <div class="section-header">Security requirements</div>
+    <ul>
+        <li><strong>Cache key must include tenant:</strong> Never cache a response without tenant in the key; otherwise one tenant could see another tenant’s data.</li>
+        <li><strong>Payload endpoint:</strong> The homepage-payload API must enforce tenant server-side (e.g. from <code class="code-highlight">NEXT_PUBLIC_TENANT_ID</code> or a validated token). Do not rely only on client-supplied tenant ID for authorization; use it only for cache keying after the server has determined the tenant.</li>
+        <li><strong>Public read-only:</strong> The payload is public (homepage data). Ensure it contains no sensitive or user-specific data.</li>
+    </ul>
+    </div>
+
+    <h2 id="checklist">Checklist and Best Practices</h2>
+    <div class="section-container output">
+        <div class="section-header output">Implementation checklist</div>
+    <div class="success">
+        <strong>Implementation checklist</strong>
+        <ul>
+            <li>Implement the aggregated homepage-payload endpoint (e.g. <code class="code-highlight">/api/cached/homepage</code>) that returns tenant-scoped JSON.</li>
+            <li>Configure CloudFront or Amplify CDN to cache this path with a short TTL and cache key that includes tenant (and optionally locale).</li>
+            <li>Add client-side logic: try payload first with a short timeout; if fast and OK, render from it and skip per-section fetch; else use existing deferred flow.</li>
+            <li>Optionally add cache warming (EventBridge + Lambda) to hit the payload URL per tenant on a schedule.</li>
+            <li>Optionally add cache invalidation when admins update events, settings, team, or sponsors.</li>
+            <li>Monitor cache hit rate (e.g. CloudFront metrics or application logs) to tune TTL and warming frequency.</li>
+        </ul>
+    </div>
+    </div>
+
+    <h2 id="references">References</h2>
+    <div class="section-container">
+        <div class="section-header">Documentation and links</div>
+        <ul>
+            <li><strong>Homepage deferred loading pattern:</strong> Project rule <code class="code-highlight">.cursor/rules/homepage_deferred_loading_pattern.mdc</code> – current hooks, delays, and sessionStorage behavior.</li>
+            <li><strong>HTML documentation styling:</strong> <code class="code-highlight">.cursor/rules/html_documentation_styling_guide.mdc</code> – design system for this document.</li>
+            <li>AWS Amplify hosting and CDN: <a href="https://docs.aws.amazon.com/amplify/" target="_blank" rel="noopener">AWS Amplify Documentation</a>.</li>
+            <li>Amazon CloudFront caching: <a href="https://docs.aws.amazon.com/cloudfront/" target="_blank" rel="noopener">CloudFront Documentation</a>.</li>
+        </ul>
+    </div>
+</body>
+</html>

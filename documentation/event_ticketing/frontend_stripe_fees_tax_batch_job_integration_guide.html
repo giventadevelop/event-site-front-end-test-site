@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Integration Guide: Stripe Fees and Tax Batch Job API</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+        }
+        .info-box {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .success-box {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .code-block {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 15px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .field-name {
+            font-family: 'Courier New', monospace;
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .endpoint-box {
+            background-color: #e8f4f8;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .method {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: white;
+            background-color: #28a745;
+            margin-right: 10px;
+        }
+        .endpoint-path {
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            color: #2c3e50;
+        }
+        .example-container {
+            margin: 20px 0;
+        }
+        .example-label {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Frontend Integration Guide: Stripe Fees and Tax Batch Job API</h1>
+        <p><strong>Document Date:</strong> January 11, 2026</p>
+        <p><strong>Purpose:</strong> Guide for frontend developers to integrate the Stripe Fees and Tax Update Batch Job API.</p>
+        <p><strong>Backend API Base URL:</strong> Configured in your frontend environment (typically <code>http://localhost:8080/api</code> for development)</p>
+
+        <div class="info-box">
+            <h2>Executive Summary</h2>
+            <p>This document provides a comprehensive guide for frontend developers to integrate the Stripe Fees and Tax Update Batch Job API. The batch job service retrieves missing Stripe fee and tax data from Stripe's API and updates transaction records in the database. The API returns immediately with a job ID and status (HTTP 202 Accepted), while processing happens asynchronously in the background.</p>
+        </div>
+
+        <h2>1. Overview</h2>
+        <p>The Stripe Fees and Tax Update Batch Job API allows you to:</p>
+        <ul>
+            <li>Trigger batch processing of Stripe fee and tax data retrieval</li>
+            <li>Update transaction records in the database</li>
+            <li>Process transactions for specific tenants or all tenants</li>
+            <li>Filter transactions by date range</li>
+            <li>Force update already populated transactions (if needed)</li>
+        </ul>
+
+        <div class="info-box">
+            <h3>Key Characteristics</h3>
+            <ul>
+                <li><strong>Asynchronous Processing:</strong> The API returns immediately (HTTP 202 Accepted) while processing happens in the background</li>
+                <li><strong>Non-blocking:</strong> Don't wait for job completion - the job runs independently</li>
+                <li><strong>Idempotent:</strong> Safe to call multiple times with the same parameters</li>
+                <li><strong>Multi-tenant Support:</strong> Can process for specific tenant or all tenants</li>
+            </ul>
+        </div>
+
+        <h2>2. API Endpoint Details</h2>
+        <div class="endpoint-box">
+            <div>
+                <span class="method">POST</span>
+                <span class="endpoint-path">/api/cron/stripe-fees-tax-update</span>
+            </div>
+            <p><strong>Description:</strong> Triggers the Stripe fees and tax update batch job.</p>
+            <p><strong>Response:</strong> Returns immediately with job ID and status (HTTP 202 Accepted)</p>
+            <p><strong>Authentication:</strong> Requires JWT token in Authorization header</p>
+            <p><strong>Processing:</strong> Runs asynchronously in the background</p>
+        </div>
+
+        <h3>2.1 Request Headers</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Header</th>
+                    <th>Value</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Content-Type</td>
+                    <td>application/json</td>
+                    <td>Yes</td>
+                    <td>Request body content type</td>
+                </tr>
+                <tr>
+                    <td>Authorization</td>
+                    <td>Bearer {jwt_token}</td>
+                    <td>Yes</td>
+                    <td>JWT authentication token</td>
+                </tr>
+                <tr>
+                    <td>X-Tenant-Id</td>
+                    <td>{tenant_id}</td>
+                    <td>No</td>
+                    <td>Optional tenant ID override (if not provided in request body)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2.2 Request Body</h3>
+        <p>All fields in the request body are <strong>optional</strong>. An empty JSON object <code>{}</code> will process all tenants with no date filters.</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Required</th>
+                    <th>Example</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="field-name">tenantId</span></td>
+                    <td>String</td>
+                    <td>Filter by specific tenant ID. If not provided, processes all tenants sequentially.</td>
+                    <td>No</td>
+                    <td><code>"tenant_demo_002"</code></td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">startDate</span></td>
+                    <td>String (ISO 8601)</td>
+                    <td>Process transactions created on or after this date. Format: <code>yyyy-MM-dd'T'HH:mm:ss.SSSXXX</code></td>
+                    <td>No</td>
+                    <td><code>"2025-01-01T00:00:00.000Z"</code></td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">endDate</span></td>
+                    <td>String (ISO 8601)</td>
+                    <td>Process transactions created on or before this date. Format: <code>yyyy-MM-dd'T'HH:mm:ss.SSSXXX</code></td>
+                    <td>No</td>
+                    <td><code>"2025-01-31T23:59:59.999Z"</code></td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">forceUpdate</span></td>
+                    <td>Boolean</td>
+                    <td>If <code>true</code>, update even if <code>stripe_fee_amount</code> is already populated. Default: <code>false</code></td>
+                    <td>No</td>
+                    <td><code>false</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2.3 Response Format</h3>
+        <p><strong>HTTP Status:</strong> <code>202 Accepted</code> (when job starts successfully)</p>
+        <div class="code-block">
+{
+  "jobId": "stripe-fees-update-20250111-140530-tenant_demo_002",
+  "status": "STARTED",
+  "tenantId": "tenant_demo_002",
+  "startDate": "2025-01-01T00:00:00.000Z",
+  "endDate": "2025-01-31T23:59:59.999Z",
+  "forceUpdate": false,
+  "estimatedRecords": 150,
+  "estimatedCompletionTime": "2025-01-11T14:15:30.000Z",
+  "message": "Batch job started successfully"
+}
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="field-name">jobId</span></td>
+                    <td>String</td>
+                    <td>Unique job identifier for tracking (can be used for future job status queries)</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">status</span></td>
+                    <td>String</td>
+                    <td>Job status: <code>STARTED</code>, <code>IN_PROGRESS</code>, <code>COMPLETED</code>, <code>FAILED</code></td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">tenantId</span></td>
+                    <td>String | null</td>
+                    <td>Tenant ID being processed (null if processing all tenants)</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">startDate</span></td>
+                    <td>String | null</td>
+                    <td>Start date filter (null if not provided)</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">endDate</span></td>
+                    <td>String | null</td>
+                    <td>End date filter (null if not provided)</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">forceUpdate</span></td>
+                    <td>Boolean</td>
+                    <td>Force update flag</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">estimatedRecords</span></td>
+                    <td>Long | null</td>
+                    <td>Estimated number of transactions to process</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">estimatedCompletionTime</span></td>
+                    <td>String | null</td>
+                    <td>Estimated completion time (ISO 8601 format)</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">message</span></td>
+                    <td>String</td>
+                    <td>Human-readable status message</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2.4 Error Responses</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>HTTP Status</th>
+                    <th>Description</th>
+                    <th>Response Body</th>
+                    <th>Frontend Handling</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>400 Bad Request</td>
+                    <td>Invalid request parameters (e.g., startDate after endDate)</td>
+                    <td><code>{"status": "FAILED", "message": "startDate must be before or equal to endDate"}</code></td>
+                    <td>Show validation error to user, allow them to fix the date range</td>
+                </tr>
+                <tr>
+                    <td>401 Unauthorized</td>
+                    <td>Missing or invalid authentication token</td>
+                    <td><code>{"error": "Unauthorized"}</code></td>
+                    <td>Redirect to login or refresh token</td>
+                </tr>
+                <tr>
+                    <td>500 Internal Server Error</td>
+                    <td>Job failed to start or service error</td>
+                    <td><code>{"status": "FAILED", "message": "Failed to trigger job: [error details]"}</code></td>
+                    <td>Show error message, suggest retry or contact support</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>3. Frontend Implementation</h2>
+
+        <h3>3.1 TypeScript/JavaScript Interface Types</h3>
+        <div class="code-block">
+// TypeScript interfaces
+interface StripeFeesTaxUpdateRequest {
+  tenantId?: string;
+  startDate?: string; // ISO 8601 format: "2025-01-01T00:00:00.000Z"
+  endDate?: string;   // ISO 8601 format: "2025-01-31T23:59:59.999Z"
+  forceUpdate?: boolean; // Default: false
+}
+
+interface StripeFeesTaxUpdateResponse {
+  jobId: string;
+  status: 'STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+  tenantId: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  forceUpdate: boolean;
+  estimatedRecords: number | null;
+  estimatedCompletionTime: string | null;
+  message: string;
+}
+        </div>
+
+        <h3>3.2 React/Next.js Service Function Example</h3>
+        <div class="code-block">
+// services/stripeFeesTaxBatchJobService.ts
+import axios from 'axios';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api';
+
+export const triggerStripeFeesTaxUpdate = async (
+  request: StripeFeesTaxUpdateRequest,
+  authToken: string,
+  tenantId?: string
+): Promise&lt;StripeFeesTaxUpdateResponse&gt; => {
+  try {
+    const headers: Record&lt;string, string&gt; = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authToken}`,
+    };
+
+    // Add tenant ID to header if provided
+    if (tenantId) {
+      headers['X-Tenant-Id'] = tenantId;
+    }
+
+    const response = await axios.post(
+      `${API_BASE_URL}/cron/stripe-fees-tax-update`,
+      request,
+      { headers }
+    );
+
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      // Server responded with error status
+      throw new Error(error.response.data?.message || 'Failed to trigger batch job');
+    } else if (error.request) {
+      // Request made but no response received
+      throw new Error('Network error: Unable to connect to server');
+    } else {
+      // Something else happened
+      throw new Error(error.message || 'An unexpected error occurred');
+    }
+  }
+};
+        </div>
+
+        <h3>3.3 React Component Example</h3>
+        <div class="code-block">
+// components/StripeFeesTaxBatchJobTrigger.tsx
+import React, { useState } from 'react';
+import { triggerStripeFeesTaxUpdate } from '../services/stripeFeesTaxBatchJobService';
+
+interface Props {
+  authToken: string;
+  currentTenantId?: string;
+}
+
+const StripeFeesTaxBatchJobTrigger: React.FC&lt;Props&gt; = ({ authToken, currentTenantId }) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState&lt;string | null&gt;(null);
+  const [success, setSuccess] = useState(false);
+  const [jobId, setJobId] = useState&lt;string | null&gt;(null);
+
+  const [formData, setFormData] = useState&lt;StripeFeesTaxUpdateRequest&gt;({
+    tenantId: currentTenantId || '',
+    startDate: '',
+    endDate: '',
+    forceUpdate: false,
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      // Validate date range if both dates are provided
+      if (formData.startDate && formData.endDate) {
+        const start = new Date(formData.startDate);
+        const end = new Date(formData.endDate);
+        if (start > end) {
+          setError('Start date must be before or equal to end date');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Prepare request (remove empty fields)
+      const request: StripeFeesTaxUpdateRequest = {
+        ...(formData.tenantId && { tenantId: formData.tenantId }),
+        ...(formData.startDate && { startDate: formData.startDate }),
+        ...(formData.endDate && { endDate: formData.endDate }),
+        forceUpdate: formData.forceUpdate || false,
+      };
+
+      const response = await triggerStripeFeesTaxUpdate(
+        request,
+        authToken,
+        currentTenantId
+      );
+
+      setJobId(response.jobId);
+      setSuccess(true);
+
+      // Show success message
+      alert(`Batch job started successfully! Job ID: ${response.jobId}\nEstimated records: ${response.estimatedRecords || 'N/A'}`);
+    } catch (err: any) {
+      setError(err.message || 'Failed to trigger batch job');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    &lt;div className="stripe-fees-tax-batch-job"&gt;
+      &lt;h2&gt;Stripe Fees and Tax Update Batch Job&lt;/h2&gt;
+
+      {error && (
+        &lt;div className="error-message" style={{ color: 'red' }}&gt;
+          {error}
+        &lt;/div&gt;
+      )}
+
+      {success && (
+        &lt;div className="success-message" style={{ color: 'green' }}&gt;
+          Batch job started successfully! Job ID: {jobId}
+        &lt;/div&gt;
+      )}
+
+      &lt;form onSubmit={handleSubmit}&gt;
+        &lt;div&gt;
+          &lt;label&gt;Tenant ID (optional):&lt;/label&gt;
+          &lt;input
+            type="text"
+            value={formData.tenantId || ''}
+            onChange={(e) =&gt; setFormData({ ...formData, tenantId: e.target.value })}
+            placeholder="Leave empty to process all tenants"
+          /&gt;
+        &lt;/div&gt;
+
+        &lt;div&gt;
+          &lt;label&gt;Start Date (optional):&lt;/label&gt;
+          &lt;input
+            type="datetime-local"
+            value={formData.startDate || ''}
+            onChange={(e) =&gt; {
+              // Convert to ISO 8601 format
+              const date = e.target.value ? new Date(e.target.value).toISOString() : '';
+              setFormData({ ...formData, startDate: date });
+            }}
+          /&gt;
+        &lt;/div&gt;
+
+        &lt;div&gt;
+          &lt;label&gt;End Date (optional):&lt;/label&gt;
+          &lt;input
+            type="datetime-local"
+            value={formData.endDate || ''}
+            onChange={(e) =&gt; {
+              // Convert to ISO 8601 format
+              const date = e.target.value ? new Date(e.target.value).toISOString() : '';
+              setFormData({ ...formData, endDate: date });
+            }}
+          /&gt;
+        &lt;/div&gt;
+
+        &lt;div&gt;
+          &lt;label&gt;
+            &lt;input
+              type="checkbox"
+              checked={formData.forceUpdate || false}
+              onChange={(e) =&gt; setFormData({ ...formData, forceUpdate: e.target.checked })}
+            /&gt;
+            Force update (reprocess already populated transactions)
+          &lt;/label&gt;
+        &lt;/div&gt;
+
+        &lt;button type="submit" disabled={loading}&gt;
+          {loading ? 'Starting Batch Job...' : 'Trigger Batch Job'}
+        &lt;/button&gt;
+      &lt;/form&gt;
+    &lt;/div&gt;
+  );
+};
+
+export default StripeFeesTaxBatchJobTrigger;
+        </div>
+
+        <h3>3.4 Fetch API Example (Vanilla JavaScript)</h3>
+        <div class="code-block">
+// Using native Fetch API
+async function triggerStripeFeesTaxUpdate(request, authToken, tenantId) {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${authToken}`,
+  };
+
+  if (tenantId) {
+    headers['X-Tenant-Id'] = tenantId;
+  }
+
+  try {
+    const response = await fetch('http://localhost:8080/api/cron/stripe-fees-tax-update', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error triggering batch job:', error);
+    throw error;
+  }
+}
+
+// Usage example
+const request = {
+  tenantId: 'tenant_demo_002',
+  startDate: '2025-01-01T00:00:00.000Z',
+  endDate: '2025-01-31T23:59:59.999Z',
+  forceUpdate: false,
+};
+
+triggerStripeFeesTaxUpdate(request, 'your-jwt-token', 'tenant_demo_002')
+  .then((response) =&gt; {
+    console.log('Batch job started:', response);
+    console.log('Job ID:', response.jobId);
+    console.log('Estimated records:', response.estimatedRecords);
+  })
+  .catch((error) =&gt; {
+    console.error('Failed to trigger batch job:', error);
+  });
+        </div>
+
+        <h2>4. Usage Examples</h2>
+
+        <h3>4.1 Process All Tenants (No Filters)</h3>
+        <div class="example-container">
+            <div class="example-label">Request:</div>
+            <div class="code-block">
+POST /api/cron/stripe-fees-tax-update
+Authorization: Bearer {jwt_token}
+Content-Type: application/json
+
+{}
+            </div>
+            <div class="example-label">Response (HTTP 202 Accepted):</div>
+            <div class="code-block">
+{
+  "jobId": "stripe-fees-update-20250111-140530",
+  "status": "STARTED",
+  "tenantId": null,
+  "startDate": null,
+  "endDate": null,
+  "forceUpdate": false,
+  "estimatedRecords": 1250,
+  "estimatedCompletionTime": "2025-01-11T14:50:30.000Z",
+  "message": "Batch job started successfully"
+}
+            </div>
+        </div>
+
+        <h3>4.2 Process Specific Tenant</h3>
+        <div class="example-container">
+            <div class="example-label">Request:</div>
+            <div class="code-block">
+POST /api/cron/stripe-fees-tax-update
+Authorization: Bearer {jwt_token}
+Content-Type: application/json
+
+{
+  "tenantId": "tenant_demo_002"
+}
+            </div>
+            <div class="example-label">Response (HTTP 202 Accepted):</div>
+            <div class="code-block">
+{
+  "jobId": "stripe-fees-update-20250111-140530-tenant_demo_002",
+  "status": "STARTED",
+  "tenantId": "tenant_demo_002",
+  "startDate": null,
+  "endDate": null,
+  "forceUpdate": false,
+  "estimatedRecords": 150,
+  "estimatedCompletionTime": "2025-01-11T14:15:30.000Z",
+  "message": "Batch job started successfully"
+}
+            </div>
+        </div>
+
+        <h3>4.3 Process Specific Tenant with Date Range</h3>
+        <div class="example-container">
+            <div class="example-label">Request:</div>
+            <div class="code-block">
+POST /api/cron/stripe-fees-tax-update
+Authorization: Bearer {jwt_token}
+Content-Type: application/json
+
+{
+  "tenantId": "tenant_demo_002",
+  "startDate": "2025-01-01T00:00:00.000Z",
+  "endDate": "2025-01-31T23:59:59.999Z"
+}
+            </div>
+            <div class="example-label">Response (HTTP 202 Accepted):</div>
+            <div class="code-block">
+{
+  "jobId": "stripe-fees-update-20250111-140530-tenant_demo_002",
+  "status": "STARTED",
+  "tenantId": "tenant_demo_002",
+  "startDate": "2025-01-01T00:00:00.000Z",
+  "endDate": "2025-01-31T23:59:59.999Z",
+  "forceUpdate": false,
+  "estimatedRecords": 85,
+  "estimatedCompletionTime": "2025-01-11T14:12:10.000Z",
+  "message": "Batch job started successfully"
+}
+            </div>
+        </div>
+
+        <h3>4.4 Force Update (Reprocess Already Populated Transactions)</h3>
+        <div class="example-container">
+            <div class="example-label">Request:</div>
+            <div class="code-block">
+POST /api/cron/stripe-fees-tax-update
+Authorization: Bearer {jwt_token}
+Content-Type: application/json
+
+{
+  "tenantId": "tenant_demo_002",
+  "forceUpdate": true
+}
+            </div>
+            <div class="example-label">Response (HTTP 202 Accepted):</div>
+            <div class="code-block">
+{
+  "jobId": "stripe-fees-update-20250111-140530-tenant_demo_002",
+  "status": "STARTED",
+  "tenantId": "tenant_demo_002",
+  "startDate": null,
+  "endDate": null,
+  "forceUpdate": true,
+  "estimatedRecords": 250,
+  "estimatedCompletionTime": "2025-01-11T14:18:50.000Z",
+  "message": "Batch job started successfully"
+}
+            </div>
+        </div>
+
+        <h2>5. UI/UX Considerations</h2>
+
+        <h3>5.1 User Experience Recommendations</h3>
+        <ul>
+            <li><strong>Loading States:</strong> Show a loading spinner or disabled button while the API call is in progress</li>
+            <li><strong>Success Feedback:</strong> Display a success message with the job ID and estimated records count</li>
+            <li><strong>Error Handling:</strong> Show clear, user-friendly error messages (e.g., "Start date must be before end date")</li>
+            <li><strong>Confirmation:</strong> Consider showing a confirmation dialog before triggering the job, especially for large operations</li>
+            <li><strong>Job ID Display:</strong> Display the job ID so users can reference it if needed (e.g., for support tickets)</li>
+            <li><strong>Estimated Time:</strong> If available, show the estimated completion time to set user expectations</li>
+        </ul>
+
+        <h3>5.2 Form Validation</h3>
+        <ul>
+            <li>Validate that <code>startDate</code> is before or equal to <code>endDate</code> if both are provided</li>
+            <li>Validate date format (ISO 8601: <code>yyyy-MM-dd'T'HH:mm:ss.SSSXXX</code>)</li>
+            <li>Show validation errors inline before submitting the form</li>
+        </ul>
+
+        <h3>5.3 Recommended UI Components</h3>
+        <div class="code-block">
+// Suggested UI layout:
+// ┌─────────────────────────────────────────────┐
+// │ Stripe Fees and Tax Update Batch Job        │
+// ├─────────────────────────────────────────────┤
+// │                                             │
+// │ [ ] Process for all tenants                 │
+// │                                             │
+// │ Tenant ID: [___________] (optional)         │
+// │                                             │
+// │ Start Date: [📅 ___________] (optional)     │
+// │ End Date:   [📅 ___________] (optional)     │
+// │                                             │
+// │ [✓] Force update (reprocess existing data)  │
+// │                                             │
+// │ [Trigger Batch Job] [Cancel]                │
+// │                                             │
+// │ ℹ️ This job runs asynchronously. You will   │
+// │    receive a job ID when it starts.         │
+// │                                             │
+// └─────────────────────────────────────────────┘
+        </div>
+
+        <h2>6. Error Handling Best Practices</h2>
+
+        <h3>6.1 Error Response Handling</h3>
+        <div class="code-block">
+function handleBatchJobError(error: any): string {
+  if (error.response) {
+    // Server responded with error status
+    const status = error.response.status;
+    const message = error.response.data?.message || 'Unknown error';
+
+    switch (status) {
+      case 400:
+        return `Validation Error: ${message}`;
+      case 401:
+        return 'Authentication required. Please log in again.';
+      case 403:
+        return 'You do not have permission to perform this action.';
+      case 500:
+        return `Server Error: ${message}. Please try again later or contact support.`;
+      default:
+        return `Error (${status}): ${message}`;
+    }
+  } else if (error.request) {
+    // Request made but no response received
+    return 'Network Error: Unable to connect to server. Please check your connection.';
+  } else {
+    // Something else happened
+    return `Error: ${error.message || 'An unexpected error occurred'}`;
+  }
+}
+        </div>
+
+        <h3>6.2 Retry Logic</h3>
+        <div class="warning-box">
+            <strong>Note:</strong> The batch job API is idempotent, so it's safe to retry. However, avoid retrying too frequently as it may create multiple jobs for the same request.
+        </div>
+
+        <h2>7. Testing Recommendations</h2>
+
+        <h3>7.1 Test Cases</h3>
+        <ol>
+            <li><strong>Empty Request:</strong> Send <code>{}</code> to test processing all tenants</li>
+            <li><strong>Tenant Filter:</strong> Test with specific tenant ID</li>
+            <li><strong>Date Range:</strong> Test with valid date range</li>
+            <li><strong>Invalid Date Range:</strong> Test with startDate after endDate (should return 400)</li>
+            <li><strong>Force Update:</strong> Test with <code>forceUpdate: true</code></li>
+            <li><strong>Authentication:</strong> Test without token (should return 401)</li>
+            <li><strong>Network Error:</strong> Test with backend service down</li>
+        </ol>
+
+        <h3>7.2 Mock Data for Testing</h3>
+        <div class="code-block">
+// Mock response for testing
+const mockResponse: StripeFeesTaxUpdateResponse = {
+  jobId: 'stripe-fees-update-20250111-140530-tenant_demo_002',
+  status: 'STARTED',
+  tenantId: 'tenant_demo_002',
+  startDate: '2025-01-01T00:00:00.000Z',
+  endDate: '2025-01-31T23:59:59.999Z',
+  forceUpdate: false,
+  estimatedRecords: 150,
+  estimatedCompletionTime: '2025-01-11T14:15:30.000Z',
+  message: 'Batch job started successfully',
+};
+        </div>
+
+        <h2>8. Environment Configuration</h2>
+        <p>Ensure your frontend environment variables are configured:</p>
+        <div class="code-block">
+# .env.local or .env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api
+
+# Production
+# NEXT_PUBLIC_API_BASE_URL=https://api.yourdomain.com/api
+        </div>
+
+        <h2>9. Common Issues and Solutions</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Issue</th>
+                    <th>Possible Cause</th>
+                    <th>Solution</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>CORS error</td>
+                    <td>Backend not configured for frontend origin</td>
+                    <td>Check backend CORS configuration, ensure frontend origin is allowed</td>
+                </tr>
+                <tr>
+                    <td>401 Unauthorized</td>
+                    <td>Missing or expired JWT token</td>
+                    <td>Refresh token or redirect to login</td>
+                </tr>
+                <tr>
+                    <td>Date validation error</td>
+                    <td>Date format incorrect or startDate > endDate</td>
+                    <td>Validate dates on frontend before submitting</td>
+                </tr>
+                <tr>
+                    <td>Network timeout</td>
+                    <td>Backend service not responding</td>
+                    <td>Check backend service status, increase timeout if needed</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>10. Additional Resources</h2>
+        <ul>
+            <li><strong>Backend API Documentation:</strong> <code>documentation/event_details/event_ticketing/backend_batch_job_api_integration_guide.html</code></li>
+            <li><strong>Backend Project:</strong> <code>E:\project_workspace\malayalees-us-site-boot</code></li>
+            <li><strong>Batch Job Service:</strong> <code>E:\project_workspace\event-site-manager-batch-jobs</code></li>
+        </ul>
+
+        <div class="success-box">
+            <h2>Implementation Checklist</h2>
+            <ul>
+                <li>✓ Set up API base URL in environment configuration</li>
+                <li>✓ Create TypeScript interfaces for request/response</li>
+                <li>✓ Implement service function to call the API</li>
+                <li>✓ Create form component with date pickers</li>
+                <li>✓ Add form validation (date range, format)</li>
+                <li>✓ Implement error handling and user feedback</li>
+                <li>✓ Add loading states and success messages</li>
+                <li>✓ Test with various scenarios (empty request, tenant filter, date range, etc.)</li>
+                <li>✓ Test error cases (invalid dates, network errors, authentication)</li>
+            </ul>
+        </div>
+
+        <hr>
+        <p><em>Document generated: January 11, 2026</em></p>
+        <p><em>For questions or clarifications, refer to the backend API integration guide or contact the backend team.</em></p>
+    </div>
+</body>
+</html>

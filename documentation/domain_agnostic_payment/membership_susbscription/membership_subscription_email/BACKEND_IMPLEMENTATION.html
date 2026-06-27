@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Membership Subscription Email Notification - Backend Implementation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            border-left: 5px solid #3498db;
+            padding-left: 20px;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            background-color: #f8f9fa;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 8px;
+        }
+        h4 {
+            color: #666;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+        .status-box {
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border-left: 5px solid;
+        }
+        .info {
+            background-color: #e3f2fd;
+            border-left-color: #2196f3;
+        }
+        .success {
+            background-color: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #e83e8c;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            border-left: 4px solid #3498db;
+        }
+        pre code {
+            background-color: transparent;
+            color: #f8f8f2;
+            padding: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 14px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+        .checklist li {
+            padding: 10px 0;
+            padding-left: 35px;
+            position: relative;
+            margin: 8px 0;
+        }
+        .checklist li:before {
+            content: "☐";
+            position: absolute;
+            left: 0;
+            font-size: 22px;
+            color: #666;
+        }
+        .checklist li.completed:before {
+            content: "✅";
+            color: #4caf50;
+        }
+        .checklist li.pending:before {
+            content: "⏳";
+            color: #ff9800;
+        }
+        .section {
+            margin: 35px 0;
+            padding: 25px;
+            background-color: #fafafa;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+        .file-path {
+            background-color: #e8eaf6;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            display: inline-block;
+            margin: 5px 0;
+        }
+        .endpoint-box {
+            background-color: #fff3e0;
+            padding: 15px;
+            border-left: 4px solid #ff9800;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .endpoint-box code {
+            background-color: #fff;
+            padding: 2px 6px;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+            font-style: italic;
+            text-align: center;
+            margin-top: 30px;
+        }
+        .comparison-table {
+            background-color: #fff;
+            border: 2px solid #3498db;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Membership Subscription Email Notification - Backend Implementation</h1>
+        <p class="timestamp">Generated: December 6, 2025 | Status: Implementation Plan</p>
+
+        <div class="status-box info">
+            <strong>Overview:</strong> This document outlines the backend implementation for membership subscription email notifications. The implementation follows existing patterns from ticket emails to ensure consistency.
+        </div>
+
+        <h2>Critical Requirements</h2>
+        <ul>
+            <li>✅ Follow existing ticket email patterns</li>
+            <li>✅ Use Base64 decoding for emailHostUrlPrefix (same as ticket emails)</li>
+            <li>✅ Support multiple email types (welcome, payment-confirmation, payment-failure, cancellation, updated)</li>
+            <li>✅ Log all emails to <code>email_log</code> table</li>
+            <li>✅ Handle errors gracefully without failing webhooks</li>
+        </ul>
+
+        <h2>Reference Patterns</h2>
+
+        <h3>Ticket Email Pattern (Reference)</h3>
+        <ul>
+            <li><strong>Backend Endpoint:</strong> <code>POST /api/events/{id}/transactions/{transactionId}/emailHostUrlPrefix/{base64}/send-ticket-email</code></li>
+            <li><strong>Controller:</strong> <code>EventTicketTransactionResource.java</code></li>
+            <li><strong>Service:</strong> <code>EmailService.java</code> - <code>sendTicketEmail()</code></li>
+            <li><strong>Template:</strong> Ticket email HTML template</li>
+        </ul>
+
+        <h2>Backend Endpoint Structure</h2>
+
+        <div class="endpoint-box">
+            <strong>Endpoint Pattern:</strong><br>
+            <code>POST /api/membership-subscriptions/{id}/emailHostUrlPrefix/{base64EncodedUrlPrefix}/send-email?type={emailType}&to={email}</code>
+        </div>
+
+        <p><strong>Parameters:</strong></p>
+        <ul>
+            <li><code>{id}</code> - Subscription ID (Long)</li>
+            <li><code>{base64EncodedUrlPrefix}</code> - Base64 encoded email host URL prefix (String)</li>
+            <li><code>type</code> - Email type: <code>welcome</code>, <code>payment-confirmation</code>, <code>payment-failure</code>, <code>cancellation</code>, <code>updated</code> (String)</li>
+            <li><code>to</code> - Recipient email address (String)</li>
+        </ul>
+
+        <h2>Implementation Tasks</h2>
+
+        <h3>1. Add Email Endpoint to MembershipSubscriptionResource</h3>
+
+        <div class="file-path">Backend File: <code>E:\project_workspace\malayalees-us-site-boot\src\main\java\...\web\rest\MembershipSubscriptionResource.java</code> (ADD NEW METHOD)</div>
+
+        <pre><code>/**
+ * Send subscription email
+ * POST /api/membership-subscriptions/{id}/emailHostUrlPrefix/{emailHostUrlPrefix}/send-email
+ *
+ * Follows the same pattern as EventTicketTransactionResource.sendTicketEmail()
+ */
+@PostMapping("/membership-subscriptions/{id}/emailHostUrlPrefix/{emailHostUrlPrefix}/send-email")
+public ResponseEntity&lt;Void&gt; sendSubscriptionEmail(
+    @PathVariable Long id,
+    @PathVariable String emailHostUrlPrefix,
+    @RequestParam String type,
+    @RequestParam String to
+) {
+    log.debug("REST request to send subscription email: subscriptionId={}, type={}, to={}", id, type, to);
+
+    // Decode Base64 emailHostUrlPrefix
+    String decodedEmailHostUrlPrefix;
+    try {
+        byte[] decodedBytes = Base64.getDecoder().decode(emailHostUrlPrefix);
+        decodedEmailHostUrlPrefix = new String(decodedBytes, StandardCharsets.UTF_8);
+    } catch (IllegalArgumentException e) {
+        log.error("Failed to decode emailHostUrlPrefix: {}", emailHostUrlPrefix);
+        return ResponseEntity.badRequest().build();
+    }
+
+    // Find subscription
+    MembershipSubscriptionDTO subscription = membershipSubscriptionService.findOne(id)
+        .orElseThrow(() -> new BadRequestAlertException(
+            "Subscription not found", "membershipSubscription", "notfound"
+        ));
+
+    // Find user profile
+    UserProfileDTO userProfile = userProfileService.findOne(subscription.getUserProfileId())
+        .orElseThrow(() -> new BadRequestAlertException(
+            "User profile not found", "userProfile", "notfound"
+        ));
+
+    // Find membership plan
+    MembershipPlanDTO plan = membershipPlanService.findOne(subscription.getMembershipPlanId())
+        .orElseThrow(() -> new BadRequestAlertException(
+            "Membership plan not found", "membershipPlan", "notfound"
+        ));
+
+    // Send email based on type
+    try {
+        switch (type) {
+            case "welcome":
+                emailService.sendSubscriptionWelcomeEmail(
+                    userProfile,
+                    subscription,
+                    plan,
+                    decodedEmailHostUrlPrefix
+                );
+                break;
+            case "payment-confirmation":
+                emailService.sendSubscriptionPaymentConfirmation(
+                    userProfile,
+                    subscription,
+                    plan,
+                    decodedEmailHostUrlPrefix
+                );
+                break;
+            case "payment-failure":
+                emailService.sendSubscriptionPaymentFailure(
+                    userProfile,
+                    subscription,
+                    plan,
+                    decodedEmailHostUrlPrefix
+                );
+                break;
+            case "cancellation":
+                emailService.sendSubscriptionCancellationEmail(
+                    userProfile,
+                    subscription,
+                    plan,
+                    decodedEmailHostUrlPrefix
+                );
+                break;
+            case "updated":
+                emailService.sendSubscriptionUpdatedEmail(
+                    userProfile,
+                    subscription,
+                    plan,
+                    decodedEmailHostUrlPrefix
+                );
+                break;
+            default:
+                log.warn("Unknown email type: {}", type);
+                return ResponseEntity.badRequest().build();
+        }
+
+        return ResponseEntity.ok().build();
+    } catch (Exception e) {
+        log.error("Failed to send subscription email", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    }
+}</code></pre>
+
+        <div class="section">
+            <h4>Key Points:</h4>
+            <ul>
+                <li>Follows same pattern as <code>EventTicketTransactionResource.sendTicketEmail()</code></li>
+                <li>Base64 decodes <code>emailHostUrlPrefix</code> from URL path</li>
+                <li>Validates subscription, user profile, and plan exist</li>
+                <li>Routes to appropriate email service method based on type</li>
+                <li>Returns appropriate HTTP status codes</li>
+            </ul>
+        </div>
+
+        <h3>2. Implement Email Service Methods</h3>
+
+        <div class="file-path">Backend File: <code>E:\project_workspace\malayalees-us-site-boot\src\main\java\...\service\EmailService.java</code> (ADD NEW METHODS)</div>
+
+        <h4>2.1 Welcome Email Method</h4>
+
+        <pre><code>/**
+ * Send subscription welcome email
+ * Similar to sendTicketEmail() but for subscriptions
+ */
+public void sendSubscriptionWelcomeEmail(
+    UserProfileDTO userProfile,
+    MembershipSubscriptionDTO subscription,
+    MembershipPlanDTO plan,
+    String emailHostUrlPrefix
+) {
+    try {
+        // Build email subject
+        String subject = String.format("Welcome to %s - Your Subscription is Active", plan.getPlanName());
+
+        // Build email body HTML using template
+        String emailBody = buildSubscriptionWelcomeEmailTemplate(
+            userProfile,
+            subscription,
+            plan,
+            emailHostUrlPrefix
+        );
+
+        // Send email via AWS SES or configured email service
+        sendEmail(
+            userProfile.getEmail(),
+            subject,
+            emailBody,
+            "SUBSCRIPTION_WELCOME",
+            subscription.getTenantId()
+        );
+
+        // Log email in email_log table
+        logEmailSent(
+            subscription.getTenantId(),
+            userProfile.getEmail(),
+            subject,
+            emailBody,
+            "SENT",
+            "TRANSACTIONAL",
+            null,
+            Map.of(
+                "subscriptionId", String.valueOf(subscription.getId()),
+                "emailType", "welcome",
+                "membershipPlanId", String.valueOf(plan.getId()),
+                "userProfileId", String.valueOf(userProfile.getId())
+            )
+        );
+
+        log.info("Subscription welcome email sent to: {}", userProfile.getEmail());
+    } catch (Exception e) {
+        log.error("Failed to send subscription welcome email", e);
+        throw new RuntimeException("Failed to send subscription welcome email", e);
+    }
+}</code></pre>
+
+        <h4>2.2 Payment Confirmation Email Method</h4>
+
+        <pre><code>/**
+ * Send subscription payment confirmation email
+ */
+public void sendSubscriptionPaymentConfirmation(
+    UserProfileDTO userProfile,
+    MembershipSubscriptionDTO subscription,
+    MembershipPlanDTO plan,
+    String emailHostUrlPrefix
+) {
+    try {
+        String subject = String.format("Payment Received - %s Subscription", plan.getPlanName());
+
+        String emailBody = buildSubscriptionPaymentConfirmationTemplate(
+            userProfile,
+            subscription,
+            plan,
+            emailHostUrlPrefix
+        );
+
+        sendEmail(
+            userProfile.getEmail(),
+            subject,
+            emailBody,
+            "SUBSCRIPTION_PAYMENT_CONFIRMATION",
+            subscription.getTenantId()
+        );
+
+        logEmailSent(
+            subscription.getTenantId(),
+            userProfile.getEmail(),
+            subject,
+            emailBody,
+            "SENT",
+            "TRANSACTIONAL",
+            null,
+            Map.of(
+                "subscriptionId", String.valueOf(subscription.getId()),
+                "emailType", "payment-confirmation",
+                "membershipPlanId", String.valueOf(plan.getId()),
+                "userProfileId", String.valueOf(userProfile.getId())
+            )
+        );
+
+        log.info("Subscription payment confirmation email sent to: {}", userProfile.getEmail());
+    } catch (Exception e) {
+        log.error("Failed to send subscription payment confirmation email", e);
+        throw new RuntimeException("Failed to send subscription payment confirmation email", e);
+    }
+}</code></pre>
+
+        <h4>2.3 Payment Failure Email Method</h4>
+
+        <pre><code>/**
+ * Send subscription payment failure email
+ */
+public void sendSubscriptionPaymentFailure(
+    UserProfileDTO userProfile,
+    MembershipSubscriptionDTO subscription,
+    MembershipPlanDTO plan,
+    String emailHostUrlPrefix
+) {
+    try {
+        String subject = String.format("Payment Failed - Action Required for %s", plan.getPlanName());
+
+        String emailBody = buildSubscriptionPaymentFailureTemplate(
+            userProfile,
+            subscription,
+            plan,
+            emailHostUrlPrefix
+        );
+
+        sendEmail(
+            userProfile.getEmail(),
+            subject,
+            emailBody,
+            "SUBSCRIPTION_PAYMENT_FAILURE",
+            subscription.getTenantId()
+        );
+
+        logEmailSent(
+            subscription.getTenantId(),
+            userProfile.getEmail(),
+            subject,
+            emailBody,
+            "SENT",
+            "TRANSACTIONAL",
+            null,
+            Map.of(
+                "subscriptionId", String.valueOf(subscription.getId()),
+                "emailType", "payment-failure",
+                "membershipPlanId", String.valueOf(plan.getId()),
+                "userProfileId", String.valueOf(userProfile.getId())
+            )
+        );
+
+        log.info("Subscription payment failure email sent to: {}", userProfile.getEmail());
+    } catch (Exception e) {
+        log.error("Failed to send subscription payment failure email", e);
+        throw new RuntimeException("Failed to send subscription payment failure email", e);
+    }
+}</code></pre>
+
+        <h4>2.4 Cancellation Email Method</h4>
+
+        <pre><code>/**
+ * Send subscription cancellation email
+ */
+public void sendSubscriptionCancellationEmail(
+    UserProfileDTO userProfile,
+    MembershipSubscriptionDTO subscription,
+    MembershipPlanDTO plan,
+    String emailHostUrlPrefix
+) {
+    try {
+        String subject = String.format("Subscription Cancelled - %s", plan.getPlanName());
+
+        String emailBody = buildSubscriptionCancellationTemplate(
+            userProfile,
+            subscription,
+            plan,
+            emailHostUrlPrefix
+        );
+
+        sendEmail(
+            userProfile.getEmail(),
+            subject,
+            emailBody,
+            "SUBSCRIPTION_CANCELLATION",
+            subscription.getTenantId()
+        );
+
+        logEmailSent(
+            subscription.getTenantId(),
+            userProfile.getEmail(),
+            subject,
+            emailBody,
+            "SENT",
+            "TRANSACTIONAL",
+            null,
+            Map.of(
+                "subscriptionId", String.valueOf(subscription.getId()),
+                "emailType", "cancellation",
+                "membershipPlanId", String.valueOf(plan.getId()),
+                "userProfileId", String.valueOf(userProfile.getId())
+            )
+        );
+
+        log.info("Subscription cancellation email sent to: {}", userProfile.getEmail());
+    } catch (Exception e) {
+        log.error("Failed to send subscription cancellation email", e);
+        throw new RuntimeException("Failed to send subscription cancellation email", e);
+    }
+}</code></pre>
+
+        <h4>2.5 Updated Email Method</h4>
+
+        <pre><code>/**
+ * Send subscription updated email (for plan upgrades/downgrades)
+ */
+public void sendSubscriptionUpdatedEmail(
+    UserProfileDTO userProfile,
+    MembershipSubscriptionDTO subscription,
+    MembershipPlanDTO plan,
+    String emailHostUrlPrefix
+) {
+    try {
+        String subject = String.format("Subscription Updated - %s", plan.getPlanName());
+
+        String emailBody = buildSubscriptionUpdatedTemplate(
+            userProfile,
+            subscription,
+            plan,
+            emailHostUrlPrefix
+        );
+
+        sendEmail(
+            userProfile.getEmail(),
+            subject,
+            emailBody,
+            "SUBSCRIPTION_UPDATED",
+            subscription.getTenantId()
+        );
+
+        logEmailSent(
+            subscription.getTenantId(),
+            userProfile.getEmail(),
+            subject,
+            emailBody,
+            "SENT",
+            "TRANSACTIONAL",
+            null,
+            Map.of(
+                "subscriptionId", String.valueOf(subscription.getId()),
+                "emailType", "updated",
+                "membershipPlanId", String.valueOf(plan.getId()),
+                "userProfileId", String.valueOf(userProfile.getId())
+            )
+        );
+
+        log.info("Subscription updated email sent to: {}", userProfile.getEmail());
+    } catch (Exception e) {
+        log.error("Failed to send subscription updated email", e);
+        throw new RuntimeException("Failed to send subscription updated email", e);
+    }
+}</code></pre>
+
+        <h3>3. Implement Email Template Builders</h3>
+
+        <div class="file-path">Backend File: <code>E:\project_workspace\malayalees-us-site-boot\src\main\java\...\service\EmailService.java</code> (ADD NEW METHODS)</div>
+
+        <h4>3.1 Welcome Email Template Builder</h4>
+
+        <pre><code>/**
+ * Build subscription welcome email HTML template
+ * Similar to buildTicketEmailTemplate() but for subscriptions
+ */
+private String buildSubscriptionWelcomeEmailTemplate(
+    UserProfileDTO userProfile,
+    MembershipSubscriptionDTO subscription,
+    MembershipPlanDTO plan,
+    String emailHostUrlPrefix
+) {
+    // Use Thymeleaf or similar template engine
+    // Include:
+    // - Tenant branding (logo, colors)
+    // - User name
+    // - Plan details
+    // - Billing information
+    // - Period dates
+    // - Manage subscription link
+    // - Support contact
+
+    return emailTemplateService.renderTemplate(
+        "subscription-welcome",
+        Map.of(
+            "userName", userProfile.getFirstName() + " " + userProfile.getLastName(),
+            "planName", plan.getPlanName(),
+            "planDescription", plan.getDescription(),
+            "billingAmount", plan.getPrice(),
+            "currency", plan.getCurrency(),
+            "periodStart", subscription.getCurrentPeriodStart(),
+            "periodEnd", subscription.getCurrentPeriodEnd(),
+            "nextBillingDate", subscription.getCurrentPeriodEnd(),
+            "billingInterval", plan.getBillingInterval(),
+            "manageSubscriptionUrl", emailHostUrlPrefix + "/membership/manage",
+            "supportEmail", getTenantSupportEmail(subscription.getTenantId()),
+            "tenantLogo", getTenantLogoUrl(subscription.getTenantId())
+        )
+    );
+}</code></pre>
+
+        <h4>3.2 Payment Confirmation Template Builder</h4>
+
+        <pre><code>private String buildSubscriptionPaymentConfirmationTemplate(
+    UserProfileDTO userProfile,
+    MembershipSubscriptionDTO subscription,
+    MembershipPlanDTO plan,
+    String emailHostUrlPrefix
+) {
+    return emailTemplateService.renderTemplate(
+        "subscription-payment-confirmation",
+        Map.of(
+            "userName", userProfile.getFirstName() + " " + userProfile.getLastName(),
+            "planName", plan.getPlanName(),
+            "paymentAmount", plan.getPrice(),
+            "currency", plan.getCurrency(),
+            "paymentDate", LocalDate.now(),
+            "periodStart", subscription.getCurrentPeriodStart(),
+            "periodEnd", subscription.getCurrentPeriodEnd(),
+            "nextBillingDate", subscription.getCurrentPeriodEnd(),
+            "receiptUrl", emailHostUrlPrefix + "/membership/receipt/" + subscription.getId(),
+            "manageSubscriptionUrl", emailHostUrlPrefix + "/membership/manage",
+            "supportEmail", getTenantSupportEmail(subscription.getTenantId()),
+            "tenantLogo", getTenantLogoUrl(subscription.getTenantId())
+        )
+    );
+}</code></pre>
+
+        <h4>3.3 Payment Failure Template Builder</h4>
+
+        <pre><code>private String buildSubscriptionPaymentFailureTemplate(
+    UserProfileDTO userProfile,
+    MembershipSubscriptionDTO subscription,
+    MembershipPlanDTO plan,
+    String emailHostUrlPrefix
+) {
+    return emailTemplateService.renderTemplate(
+        "subscription-payment-failure",
+        Map.of(
+            "userName", userProfile.getFirstName() + " " + userProfile.getLastName(),
+            "planName", plan.getPlanName(),
+            "amountDue", plan.getPrice(),
+            "currency", plan.getCurrency(),
+            "updatePaymentMethodUrl", emailHostUrlPrefix + "/membership/manage/payment",
+            "retryPaymentUrl", emailHostUrlPrefix + "/membership/manage/retry-payment",
+            "supportEmail", getTenantSupportEmail(subscription.getTenantId()),
+            "tenantLogo", getTenantLogoUrl(subscription.getTenantId())
+        )
+    );
+}</code></pre>
+
+        <h4>3.4 Cancellation Template Builder</h4>
+
+        <pre><code>private String buildSubscriptionCancellationTemplate(
+    UserProfileDTO userProfile,
+    MembershipSubscriptionDTO subscription,
+    MembershipPlanDTO plan,
+    String emailHostUrlPrefix
+) {
+    return emailTemplateService.renderTemplate(
+        "subscription-cancellation",
+        Map.of(
+            "userName", userProfile.getFirstName() + " " + userProfile.getLastName(),
+            "planName", plan.getPlanName(),
+            "accessUntilDate", subscription.getCurrentPeriodEnd(),
+            "reactivateUrl", emailHostUrlPrefix + "/membership/reactivate",
+            "supportEmail", getTenantSupportEmail(subscription.getTenantId()),
+            "tenantLogo", getTenantLogoUrl(subscription.getTenantId())
+        )
+    );
+}</code></pre>
+
+        <h4>3.5 Updated Template Builder</h4>
+
+        <pre><code>private String buildSubscriptionUpdatedTemplate(
+    UserProfileDTO userProfile,
+    MembershipSubscriptionDTO subscription,
+    MembershipPlanDTO plan,
+    String emailHostUrlPrefix
+) {
+    return emailTemplateService.renderTemplate(
+        "subscription-updated",
+        Map.of(
+            "userName", userProfile.getFirstName() + " " + userProfile.getLastName(),
+            "planName", plan.getPlanName(),
+            "planDescription", plan.getDescription(),
+            "billingAmount", plan.getPrice(),
+            "currency", plan.getCurrency(),
+            "effectiveDate", LocalDate.now(),
+            "manageSubscriptionUrl", emailHostUrlPrefix + "/membership/manage",
+            "supportEmail", getTenantSupportEmail(subscription.getTenantId()),
+            "tenantLogo", getTenantLogoUrl(subscription.getTenantId())
+        )
+    );
+}</code></pre>
+
+        <h3>4. Update Stripe Webhook Handler</h3>
+
+        <div class="file-path">Backend File: <code>E:\project_workspace\malayalees-us-site-boot\src\main\java\...\webhook\StripeWebhookHandler.java</code> (MODIFY EXISTING)</div>
+
+        <h4>4.1 Handle Invoice Payment Succeeded</h4>
+
+        <pre><code>/**
+ * Handle invoice.payment_succeeded webhook for subscription recurring payments
+ * ADD THIS METHOD to existing webhook handler
+ */
+private void handleInvoicePaymentSucceeded(Invoice invoice) {
+    String stripeSubscriptionId = invoice.getSubscription();
+
+    // Find subscription by Stripe subscription ID
+    MembershipSubscription subscription = membershipSubscriptionRepository
+        .findByStripeSubscriptionId(stripeSubscriptionId)
+        .orElse(null);
+
+    if (subscription == null) {
+        log.warn("Subscription not found for Stripe subscription: {}", stripeSubscriptionId);
+        return;
+    }
+
+    // Update period dates (existing logic)
+    // ... update subscription dates ...
+
+    // Send payment confirmation email
+    try {
+        UserProfile userProfile = userProfileRepository.findById(subscription.getUserProfileId())
+            .orElse(null);
+        MembershipPlan plan = membershipPlanRepository.findById(subscription.getMembershipPlanId())
+            .orElse(null);
+
+        if (userProfile != null && plan != null) {
+            String emailHostUrlPrefix = getEmailHostUrlPrefix(); // Get from config
+
+            emailService.sendSubscriptionPaymentConfirmation(
+                userProfileMapper.toDto(userProfile),
+                membershipSubscriptionMapper.toDto(subscription),
+                membershipPlanMapper.toDto(plan),
+                emailHostUrlPrefix
+            );
+
+            log.info("Payment confirmation email sent for subscription: {}", subscription.getId());
+        }
+    } catch (Exception e) {
+        log.error("Failed to send payment confirmation email", e);
+        // Don't fail webhook if email fails
+    }
+}</code></pre>
+
+        <h4>4.2 Handle Invoice Payment Failed</h4>
+
+        <pre><code>/**
+ * Handle invoice.payment_failed webhook
+ * ADD THIS METHOD to existing webhook handler
+ */
+private void handleInvoicePaymentFailed(Invoice invoice) {
+    String stripeSubscriptionId = invoice.getSubscription();
+
+    MembershipSubscription subscription = membershipSubscriptionRepository
+        .findByStripeSubscriptionId(stripeSubscriptionId)
+        .orElse(null);
+
+    if (subscription == null) {
+        return;
+    }
+
+    // Update status to PAST_DUE (existing logic)
+    // ... update subscription status ...
+
+    // Send payment failure email
+    try {
+        UserProfile userProfile = userProfileRepository.findById(subscription.getUserProfileId())
+            .orElse(null);
+        MembershipPlan plan = membershipPlanRepository.findById(subscription.getMembershipPlanId())
+            .orElse(null);
+
+        if (userProfile != null && plan != null) {
+            String emailHostUrlPrefix = getEmailHostUrlPrefix();
+
+            emailService.sendSubscriptionPaymentFailure(
+                userProfileMapper.toDto(userProfile),
+                membershipSubscriptionMapper.toDto(subscription),
+                membershipPlanMapper.toDto(plan),
+                emailHostUrlPrefix
+            );
+
+            log.info("Payment failure email sent for subscription: {}", subscription.getId());
+        }
+    } catch (Exception e) {
+        log.error("Failed to send payment failure email", e);
+        // Don't fail webhook if email fails
+    }
+}</code></pre>
+
+        <h2>Email Template Design</h2>
+
+        <h3>Template Files Required</h3>
+        <ol>
+            <li><code>subscription-welcome.html</code></li>
+            <li><code>subscription-payment-confirmation.html</code></li>
+            <li><code>subscription-payment-failure.html</code></li>
+            <li><code>subscription-cancellation.html</code></li>
+            <li><code>subscription-updated.html</code></li>
+        </ol>
+
+        <h3>Template Location</h3>
+        <p><strong>Backend templates directory</strong> (similar to ticket email templates)</p>
+
+        <h3>Template Engine</h3>
+        <p><strong>Thymeleaf or similar</strong> (match existing ticket email template system)</p>
+
+        <h3>Template Variables</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Variable</th>
+                    <th>Source</th>
+                    <th>Example</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>{{userName}}</code></td>
+                    <td>UserProfile.firstName + lastName</td>
+                    <td>"John Doe"</td>
+                </tr>
+                <tr>
+                    <td><code>{{planName}}</code></td>
+                    <td>MembershipPlan.planName</td>
+                    <td>"Premium Plan"</td>
+                </tr>
+                <tr>
+                    <td><code>{{billingAmount}}</code></td>
+                    <td>MembershipPlan.price</td>
+                    <td>29.99</td>
+                </tr>
+                <tr>
+                    <td><code>{{currency}}</code></td>
+                    <td>MembershipPlan.currency</td>
+                    <td>"USD"</td>
+                </tr>
+                <tr>
+                    <td><code>{{periodStart}}</code></td>
+                    <td>MembershipSubscription.currentPeriodStart</td>
+                    <td>"2025-12-05"</td>
+                </tr>
+                <tr>
+                    <td><code>{{periodEnd}}</code></td>
+                    <td>MembershipSubscription.currentPeriodEnd</td>
+                    <td>"2026-01-04"</td>
+                </tr>
+                <tr>
+                    <td><code>{{nextBillingDate}}</code></td>
+                    <td>MembershipSubscription.currentPeriodEnd</td>
+                    <td>"2026-01-04"</td>
+                </tr>
+                <tr>
+                    <td><code>{{billingInterval}}</code></td>
+                    <td>MembershipPlan.billingInterval</td>
+                    <td>"MONTHLY"</td>
+                </tr>
+                <tr>
+                    <td><code>{{manageSubscriptionUrl}}</code></td>
+                    <td>emailHostUrlPrefix + "/membership/manage"</td>
+                    <td>"https://example.com/membership/manage"</td>
+                </tr>
+                <tr>
+                    <td><code>{{tenantLogo}}</code></td>
+                    <td>TenantSettings.logoUrl</td>
+                    <td>"https://example.com/logo.png"</td>
+                </tr>
+                <tr>
+                    <td><code>{{supportEmail}}</code></td>
+                    <td>TenantSettings.supportEmail</td>
+                    <td>"support@example.com"</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Template Design Guidelines</h3>
+        <ul>
+            <li>✅ Use same HTML structure and CSS styling as ticket emails</li>
+            <li>✅ Include tenant branding (logo, colors)</li>
+            <li>✅ Responsive design for mobile and desktop</li>
+            <li>✅ Clear call-to-action buttons</li>
+            <li>✅ Footer with support information</li>
+        </ul>
+
+        <div class="section">
+            <h4>Key Sections:</h4>
+            <ol>
+                <li><strong>Header:</strong> Tenant logo and branding</li>
+                <li><strong>Greeting:</strong> Personalized message</li>
+                <li><strong>Main Content:</strong> Subscription details, billing info</li>
+                <li><strong>Action Buttons:</strong> Manage subscription, update payment method</li>
+                <li><strong>Footer:</strong> Support contact, unsubscribe link</li>
+            </ol>
+        </div>
+
+        <h2>Database Considerations</h2>
+
+        <h3>Email Logging</h3>
+
+        <div class="section">
+            <p><strong>Use Existing Table:</strong> <code>email_log</code> table (already exists in schema)</p>
+
+            <pre><code>CREATE TABLE email_log (
+    id bigint PRIMARY KEY,
+    tenant_id varchar(255) NOT NULL,
+    recipient_email varchar(255) NOT NULL,
+    subject varchar(255),
+    body VARCHAR(32768),
+    sent_at timestamp NOT NULL,
+    status varchar(50), -- SENT, FAILED, etc.
+    type varchar(50), -- TRANSACTIONAL, BULK
+    campaign_id bigint,
+    metadata VARCHAR(8192) -- JSON with subscriptionId, emailType, etc.
+);</code></pre>
+
+            <p><strong>Metadata JSON Structure:</strong></p>
+            <pre><code>{
+  "subscriptionId": 7453,
+  "emailType": "welcome",
+  "membershipPlanId": 4051,
+  "userProfileId": 4651
+}</code></pre>
+        </div>
+
+        <div class="status-box success">
+            <strong>✅ No Schema Changes Required:</strong> The existing <code>email_log</code> table is sufficient for logging subscription emails.
+        </div>
+
+        <h2>Integration Points</h2>
+
+        <h3>Backend Integration Points</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Location</th>
+                    <th>Action</th>
+                    <th>Email Type</th>
+                    <th>Trigger</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>StripeWebhookHandler.java</code></td>
+                    <td>Send payment confirmation</td>
+                    <td><code>payment-confirmation</code></td>
+                    <td><code>invoice.payment_succeeded</code> webhook</td>
+                </tr>
+                <tr>
+                    <td><code>StripeWebhookHandler.java</code></td>
+                    <td>Send payment failure</td>
+                    <td><code>payment-failure</code></td>
+                    <td><code>invoice.payment_failed</code> webhook</td>
+                </tr>
+                <tr>
+                    <td><code>StripeWebhookHandler.java</code></td>
+                    <td>Send cancellation email</td>
+                    <td><code>cancellation</code></td>
+                    <td><code>customer.subscription.deleted</code> webhook</td>
+                </tr>
+                <tr>
+                    <td><code>MembershipSubscriptionResource.java</code></td>
+                    <td>Send updated email</td>
+                    <td><code>updated</code></td>
+                    <td>After plan upgrade/downgrade</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Error Handling</h2>
+
+        <h3>Email Service Failures</h3>
+        <ul>
+            <li>✅ <strong>Webhook Processing:</strong> Don't fail webhook if email sending fails</li>
+            <li>✅ <strong>Logging:</strong> Log all email failures with details</li>
+            <li>⏳ <strong>Retry:</strong> Consider implementing retry logic for transient failures</li>
+            <li>✅ <strong>Fallback:</strong> Log to database even if email sending fails</li>
+        </ul>
+
+        <h3>Missing Data</h3>
+        <ul>
+            <li>✅ <strong>User Profile:</strong> Skip email if user profile not found</li>
+            <li>✅ <strong>Email Address:</strong> Skip email if user email is missing or invalid</li>
+            <li>✅ <strong>Subscription:</strong> Return 404 if subscription not found</li>
+        </ul>
+
+        <h2>Security Considerations</h2>
+        <ul>
+            <li>✅ <strong>Tenant Isolation:</strong> Ensure emails only sent to users in correct tenant</li>
+            <li>✅ <strong>Email Validation:</strong> Validate email addresses before sending</li>
+            <li>⏳ <strong>Rate Limiting:</strong> Consider rate limiting for email endpoints</li>
+            <li>✅ <strong>Template Sanitization:</strong> Sanitize user data in email templates</li>
+            <li>✅ <strong>Authentication:</strong> Email endpoints require JWT authentication</li>
+            <li>⏳ <strong>SPF/DKIM:</strong> Configure email authentication (backend responsibility)</li>
+        </ul>
+
+        <h2>Performance Considerations</h2>
+        <ul>
+            <li>✅ <strong>Asynchronous:</strong> Send emails asynchronously (non-blocking)</li>
+            <li>⏳ <strong>Queue System:</strong> Consider using email queue for high volume (future)</li>
+            <li>⏳ <strong>Batch Processing:</strong> For bulk operations, use batch email sending</li>
+            <li>⏳ <strong>Caching:</strong> Cache tenant settings and templates</li>
+            <li>⏳ <strong>Database:</strong> Use async logging for email_log entries</li>
+        </ul>
+
+        <h2>Implementation Checklist</h2>
+
+        <h3>Backend Implementation</h3>
+        <ul class="checklist">
+            <li>Add email endpoint to <code>MembershipSubscriptionResource.java</code></li>
+            <li>Implement <code>sendSubscriptionWelcomeEmail()</code> in <code>EmailService.java</code></li>
+            <li>Implement <code>sendSubscriptionPaymentConfirmation()</code> in <code>EmailService.java</code></li>
+            <li>Implement <code>sendSubscriptionPaymentFailure()</code> in <code>EmailService.java</code></li>
+            <li>Implement <code>sendSubscriptionCancellationEmail()</code> in <code>EmailService.java</code></li>
+            <li>Implement <code>sendSubscriptionUpdatedEmail()</code> in <code>EmailService.java</code></li>
+            <li class="pending">Create email template files (HTML)</li>
+            <li class="pending">Add template rendering logic</li>
+            <li>Update <code>StripeWebhookHandler.java</code> to send emails on webhook events</li>
+            <li class="pending">Add email logging to <code>email_log</code> table</li>
+            <li class="pending">Test email delivery</li>
+            <li class="pending">Verify tenant branding in emails</li>
+        </ul>
+
+        <h2>Testing Requirements</h2>
+        <ul class="checklist">
+            <li>Test welcome email after subscription creation</li>
+            <li>Test payment confirmation email via webhook</li>
+            <li>Test payment failure email via webhook</li>
+            <li>Test cancellation email</li>
+            <li class="pending">Test email template rendering</li>
+            <li class="pending">Test email logging</li>
+            <li class="pending">Test email delivery in production</li>
+            <li class="pending">Verify email links work correctly</li>
+            <li class="pending">Test email rendering in different email clients</li>
+        </ul>
+
+        <h2>Comparison with Existing Patterns</h2>
+
+        <h3>Ticket Email vs Subscription Email</h3>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Aspect</th>
+                    <th>Ticket Email</th>
+                    <th>Subscription Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Backend Endpoint</strong></td>
+                    <td><code>/api/events/{id}/transactions/{id}/emailHostUrlPrefix/{base64}/send-ticket-email</code></td>
+                    <td><code>/api/membership-subscriptions/{id}/emailHostUrlPrefix/{base64}/send-email</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Email Host Prefix</strong></td>
+                    <td>Base64 encoded in URL path</td>
+                    <td>Base64 encoded in URL path (same pattern)</td>
+                </tr>
+                <tr>
+                    <td><strong>Email Type</strong></td>
+                    <td>Single type (ticket confirmation)</td>
+                    <td>Multiple types (welcome, payment-confirmation, etc.)</td>
+                </tr>
+                <tr>
+                    <td><strong>Query Parameters</strong></td>
+                    <td><code>?to={email}</code></td>
+                    <td><code>?to={email}&type={emailType}</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Trigger Location</strong></td>
+                    <td>Success page after QR code display</td>
+                    <td>Success page + Webhook handlers</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Notes</h2>
+        <div class="section">
+            <ul>
+                <li>This implementation follows all existing patterns in the codebase</li>
+                <li>Subscription emails integrate seamlessly without breaking existing ticket email functionality</li>
+                <li>All code examples follow patterns established in backend Java codebase</li>
+                <li>Email sending is non-blocking and failures don't affect subscription operations</li>
+                <li>Webhook email sending doesn't fail webhook processing if email fails</li>
+            </ul>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #ddd;">
+
+        <p class="timestamp">
+            Analysis completed on December 6, 2025<br>
+            Backend Project: <code>E:\project_workspace\malayalees-us-site-boot</code><br>
+            Reference Patterns: Ticket Emails
+        </p>
+    </div>
+</body>
+</html>
+

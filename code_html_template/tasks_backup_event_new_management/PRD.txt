@@ -1,0 +1,911 @@
+# Event Management System - Frontend Integration Guide
+## Complete Backend Implementation Ready for Frontend Development
+
+### Document Information
+- **Version**: 1.0
+- **Date**: January 2025
+- **Purpose**: Frontend integration guide for completed backend implementation
+- **Target Audience**: Frontend developers, UI/UX teams, API consumers
+- **Backend Status**: ✅ COMPLETE AND READY
+
+---
+
+## 1. EXECUTIVE SUMMARY
+
+**🎯 BACKEND DEVELOPMENT COMPLETE - READY FOR FRONTEND INTEGRATION**
+
+This document provides complete specifications for frontend developers to integrate with fully implemented event management entities. All backend development, database setup, API endpoints, authentication, and infrastructure are complete and ready for frontend consumption.
+
+### ✅ Backend Implementation Status:
+- **Database Schema**: All 6 tables created with proper relationships and constraints
+- **REST API Endpoints**: 50+ endpoints implemented and documented
+- **Authentication & Security**: JWT-based authentication with role-based access
+- **Image Upload System**: AWS S3 integration with dynamic path construction
+- **Validation & Error Handling**: Comprehensive input validation and error responses
+- **Development Environment**: Fully configured and running
+- **Infrastructure**: AWS S3, CloudFront CDN, and database configured
+
+### 🚀 Frontend Development Focus:
+The new entities provide comprehensive management capabilities for event performers, contacts, sponsors, emails, and program directors.
+
+### New Entities Created:
+1. **EventFeaturedPerformers** - Management of featured performers/artists
+2. **EventContacts** - Event contact information management
+3. **EventSponsors** - Sponsor/company management with media assets
+4. **EventSponsorsJoin** - Many-to-many relationship between events and sponsors
+5. **EventEmails** - Event-level email management
+6. **EventProgramDirectors** - Program director information with photos and bios
+
+7. **cursor rules** - make sure to follow the cursor rules for rest api  .cursor\rules\nextjs_api_routes.mdc when implementing the api proxy calls and the rules .cursor\rules\ui_style_guide.mdc for the interface.
+
+---
+
+## 2. ARCHITECTURE OVERVIEW
+
+### 2.1 Backend Architecture
+- **Framework**: Spring Boot with JHipster
+- **Database**: PostgreSQL
+- **ORM**: JPA/Hibernate
+- **API**: RESTful services with Swagger documentation
+- **Validation**: Jakarta Bean Validation
+- **Mapping**: MapStruct for DTO conversions
+
+### 2.2 Frontend Integration Points
+- REST API endpoints for CRUD operations
+- DTO objects for data transfer
+- Swagger/OpenAPI documentation
+- Relationship management with EventDetails
+
+---
+
+## 3. IMPLEMENTATION STATUS
+
+### ✅ COMPLETED (Backend - Ready for Use)
+- **Database Tables**: All 6 tables created with proper indexes and constraints
+- **JPA Entities**: Complete domain objects with relationships
+- **DTOs**: Data transfer objects with validation annotations
+- **Repositories**: Spring Data JPA repositories with query methods
+- **Services**: Business logic layer with complete CRUD operations
+- **REST Controllers**: All API endpoints implemented and tested
+- **Mappers**: MapStruct mappers for entity-DTO conversion
+- **Authentication**: JWT-based security with role-based access control
+- **Image Upload**: AWS S3 integration with organized folder structure
+- **Validation**: Input validation and error handling
+- **Documentation**: Swagger/OpenAPI documentation generated
+- **Testing**: Unit and integration tests implemented
+
+### 🎯 FRONTEND DEVELOPMENT REQUIRED
+- **UI Components**: Create forms, tables, modals for entity management
+- **API Integration**: Connect frontend to existing REST endpoints
+- **Image Upload UI**: Implement drag-and-drop upload components
+- **Data Validation**: Client-side validation to complement backend validation
+- **User Experience**: Implement intuitive workflows for entity management
+- **Responsive Design**: Ensure mobile-friendly interfaces
+- **State Management**: Handle entity state and relationships in frontend
+- **Error Handling**: Display backend error messages appropriately
+
+---
+
+## 4. ENTITY SPECIFICATIONS
+
+### 4.1 EventFeaturedPerformers
+**Purpose**: Manage featured performers, artists, and entertainment for events
+
+#### Database Table: `event_featured_performers`
+```sql
+- id (bigint, PK, auto-generated)
+- event_id (bigint, FK → event_details.id, ON DELETE CASCADE)
+- name (varchar(255), NOT NULL)
+- stage_name (varchar(255))
+- role (varchar(100))
+- bio (text)
+- nationality (varchar(100))
+- date_of_birth (date)
+- email (varchar(255))
+- phone (varchar(50))
+- website_url (varchar(1024))
+- portrait_image_url (varchar(1024))
+- performance_image_url (varchar(1024))
+- gallery_image_urls (text, JSON array)
+- performance_duration_minutes (int4, CHECK > 0)
+- performance_order (int4, NOT NULL, default 0)
+- is_headliner (boolean, NOT NULL, default false)
+- facebook_url (varchar(1024))
+- twitter_url (varchar(1024))
+- instagram_url (varchar(1024))
+- youtube_url (varchar(1024))
+- linkedin_url (varchar(1024))
+- tiktok_url (varchar(1024))
+- is_active (boolean, NOT NULL, default true)
+- priority_ranking (int4, NOT NULL, default 0)
+- created_at (timestamp, NOT NULL)
+- updated_at (timestamp, NOT NULL)
+```
+
+#### DTO Object: EventFeaturedPerformersDTO
+```java
+{
+  "id": Long,
+  "name": String (required, max 255),
+  "stageName": String (max 255),
+  "role": String (max 100),
+  "bio": String,
+  "nationality": String (max 100),
+  "dateOfBirth": LocalDate,
+  "email": String (max 255),
+  "phone": String (max 50),
+  "websiteUrl": String (max 1024),
+  "portraitImageUrl": String (max 1024),
+  "performanceImageUrl": String (max 1024),
+  "galleryImageUrls": String (JSON array),
+  "performanceDurationMinutes": Integer (min 1),
+  "performanceOrder": Integer (min 0, default 0),
+  "isHeadliner": Boolean (default false),
+  "facebookUrl": String (max 1024),
+  "twitterUrl": String (max 1024),
+  "instagramUrl": String (max 1024),
+  "youtubeUrl": String (max 1024),
+  "linkedinUrl": String (max 1024),
+  "tiktokUrl": String (max 1024),
+  "isActive": Boolean (default true),
+  "priorityRanking": Integer (min 0, default 0),
+  "createdAt": ZonedDateTime,
+  "updatedAt": ZonedDateTime,
+  "event": EventDetailsDTO
+}
+```
+
+#### API Endpoints:
+```
+GET    /api/event-featured-performers           - List all performers
+GET    /api/event-featured-performers/{id}      - Get performer by ID
+POST   /api/event-featured-performers           - Create new performer
+PUT    /api/event-featured-performers/{id}      - Update performer
+PATCH  /api/event-featured-performers/{id}      - Partial update performer
+DELETE /api/event-featured-performers/{id}      - Delete performer
+GET    /api/event-featured-performers/count     - Count performers
+GET    /api/event-featured-performers/by-event/{eventId} - Get performers by event
+```
+
+---
+
+### 4.2 EventContacts
+**Purpose**: Manage contact information for events (booking contacts, organizers)
+
+#### Database Table: `event_contacts`
+```sql
+- id (bigint, PK, auto-generated)
+- event_id (bigint, FK → event_details.id, ON DELETE CASCADE)
+- name (varchar(255), NOT NULL)
+- phone (varchar(50), NOT NULL)
+- email (varchar(255))
+- created_at (timestamp, NOT NULL)
+- updated_at (timestamp, NOT NULL)
+```
+
+#### DTO Object: EventContactsDTO
+```java
+{
+  "id": Long,
+  "name": String (required, max 255),
+  "phone": String (required, max 50),
+  "email": String (max 255),
+  "createdAt": ZonedDateTime,
+  "updatedAt": ZonedDateTime,
+  "event": EventDetailsDTO
+}
+```
+
+#### API Endpoints:
+```
+GET    /api/event-contacts                      - List all contacts
+GET    /api/event-contacts/{id}                 - Get contact by ID
+POST   /api/event-contacts                      - Create new contact
+PUT    /api/event-contacts/{id}                 - Update contact
+PATCH  /api/event-contacts/{id}                 - Partial update contact
+DELETE /api/event-contacts/{id}                 - Delete contact
+GET    /api/event-contacts/count                - Count contacts
+GET    /api/event-contacts/by-event/{eventId}   - Get contacts by event
+```
+
+---
+
+### 4.3 EventSponsors
+**Purpose**: Manage sponsor companies with comprehensive details and media assets
+
+#### Database Table: `event_sponsors`
+```sql
+- id (bigint, PK, auto-generated)
+- name (varchar(255), NOT NULL)
+- type (varchar(100), NOT NULL)
+- company_name (varchar(255))
+- tagline (varchar(500))
+- description (text)
+- website_url (varchar(1024))
+- contact_email (varchar(255))
+- contact_phone (varchar(50))
+- logo_url (varchar(1024))
+- hero_image_url (varchar(1024))
+- banner_image_url (varchar(1024))
+- is_active (boolean, NOT NULL, default true)
+- priority_ranking (int4, NOT NULL, default 0)
+- facebook_url (varchar(1024))
+- twitter_url (varchar(1024))
+- linkedin_url (varchar(1024))
+- instagram_url (varchar(1024))
+- created_at (timestamp, NOT NULL)
+- updated_at (timestamp, NOT NULL)
+```
+
+#### DTO Object: EventSponsorsDTO
+```java
+{
+  "id": Long,
+  "name": String (required, max 255),
+  "type": String (required, max 100),
+  "companyName": String (max 255),
+  "tagline": String (max 500),
+  "description": String,
+  "websiteUrl": String (max 1024),
+  "contactEmail": String (max 255),
+  "contactPhone": String (max 50),
+  "logoUrl": String (max 1024),
+  "heroImageUrl": String (max 1024),
+  "bannerImageUrl": String (max 1024),
+  "isActive": Boolean (default true),
+  "priorityRanking": Integer (min 0, default 0),
+  "facebookUrl": String (max 1024),
+  "twitterUrl": String (max 1024),
+  "linkedinUrl": String (max 1024),
+  "instagramUrl": String (max 1024),
+  "createdAt": ZonedDateTime,
+  "updatedAt": ZonedDateTime,
+  "eventSponsorsJoins": Set<EventSponsorsJoinDTO>
+}
+```
+
+#### API Endpoints:
+```
+GET    /api/event-sponsors                      - List all sponsors
+GET    /api/event-sponsors/{id}                 - Get sponsor by ID
+POST   /api/event-sponsors                      - Create new sponsor
+PUT    /api/event-sponsors/{id}                 - Update sponsor
+PATCH  /api/event-sponsors/{id}                 - Partial update sponsor
+DELETE /api/event-sponsors/{id}                 - Delete sponsor
+GET    /api/event-sponsors/count                - Count sponsors
+GET    /api/event-sponsors/active               - Get active sponsors
+```
+
+---
+
+### 4.4 EventSponsorsJoin
+**Purpose**: Many-to-many relationship between events and sponsors
+
+#### Database Table: `event_sponsors_join`
+```sql
+- id (bigint, PK, auto-generated)
+- event_id (bigint, FK → event_details.id, ON DELETE CASCADE)
+- sponsor_id (bigint, FK → event_sponsors.id, ON DELETE CASCADE)
+- created_at (timestamp, NOT NULL)
+- UNIQUE constraint on (event_id, sponsor_id)
+```
+
+#### DTO Object: EventSponsorsJoinDTO
+```java
+{
+  "id": Long,
+  "createdAt": ZonedDateTime,
+  "event": EventDetailsDTO,
+  "sponsor": EventSponsorsDTO
+}
+```
+
+#### API Endpoints:
+```
+GET    /api/event-sponsors-join                 - List all sponsor relationships
+GET    /api/event-sponsors-join/{id}            - Get relationship by ID
+POST   /api/event-sponsors-join                 - Create new relationship
+PUT    /api/event-sponsors-join/{id}            - Update relationship
+PATCH  /api/event-sponsors-join/{id}            - Partial update relationship
+DELETE /api/event-sponsors-join/{id}            - Delete relationship
+GET    /api/event-sponsors-join/count           - Count relationships
+GET    /api/event-sponsors-join/by-event/{eventId} - Get sponsors for event
+GET    /api/event-sponsors-join/by-sponsor/{sponsorId} - Get events for sponsor
+```
+
+---
+
+### 4.5 EventEmails
+**Purpose**: Manage event-level email addresses for communication
+
+#### Database Table: `event_emails`
+```sql
+- id (bigint, PK, auto-generated)
+- event_id (bigint, FK → event_details.id, ON DELETE CASCADE)
+- email (varchar(255), NOT NULL)
+- created_at (timestamp, NOT NULL)
+- updated_at (timestamp, NOT NULL)
+```
+
+#### DTO Object: EventEmailsDTO
+```java
+{
+  "id": Long,
+  "email": String (required, max 255),
+  "createdAt": ZonedDateTime,
+  "updatedAt": ZonedDateTime,
+  "event": EventDetailsDTO
+}
+```
+
+#### API Endpoints:
+```
+GET    /api/event-emails                        - List all event emails
+GET    /api/event-emails/{id}                   - Get email by ID
+POST   /api/event-emails                        - Create new email
+PUT    /api/event-emails/{id}                   - Update email
+PATCH  /api/event-emails/{id}                   - Partial update email
+DELETE /api/event-emails/{id}                   - Delete email
+GET    /api/event-emails/count                  - Count emails
+GET    /api/event-emails/by-event/{eventId}     - Get emails by event
+```
+
+---
+
+### 4.6 EventProgramDirectors
+**Purpose**: Manage program directors with photos and biographical information
+
+#### Database Table: `event_program_directors`
+```sql
+- id (bigint, PK, auto-generated)
+- event_id (bigint, FK → event_details.id, ON DELETE CASCADE)
+- name (varchar(255), NOT NULL)
+- photo_url (varchar(1024))
+- bio (text)
+- created_at (timestamp, NOT NULL)
+- updated_at (timestamp, NOT NULL)
+```
+
+#### DTO Object: EventProgramDirectorsDTO
+```java
+{
+  "id": Long,
+  "name": String (required, max 255),
+  "photoUrl": String (max 1024),
+  "bio": String,
+  "createdAt": ZonedDateTime,
+  "updatedAt": ZonedDateTime,
+  "event": EventDetailsDTO
+}
+```
+
+#### API Endpoints:
+```
+GET    /api/event-program-directors             - List all program directors
+GET    /api/event-program-directors/{id}        - Get director by ID
+POST   /api/event-program-directors             - Create new director
+PUT    /api/event-program-directors/{id}        - Update director
+PATCH  /api/event-program-directors/{id}        - Partial update director
+DELETE /api/event-program-directors/{id}        - Delete director
+GET    /api/event-program-directors/count       - Count directors
+GET    /api/event-program-directors/by-event/{eventId} - Get directors by event
+```
+
+---
+
+## 4. RELATIONSHIP MANAGEMENT
+
+### 4.1 EventDetails Integration
+All new entities have a Many-to-One relationship with EventDetails:
+- **EventFeaturedPerformers** → EventDetails (Many performers per event)
+- **EventContacts** → EventDetails (Many contacts per event)
+- **EventEmails** → EventDetails (Many emails per event)
+- **EventProgramDirectors** → EventDetails (Many directors per event)
+- **EventSponsorsJoin** → EventDetails (Many sponsor relationships per event)
+
+### 4.2 EventSponsors Relationship
+- **EventSponsors** ↔ **EventDetails** (Many-to-Many via EventSponsorsJoin)
+- One sponsor can support multiple events
+- One event can have multiple sponsors
+
+### 4.3 Cascade Operations
+- **ON DELETE CASCADE**: When an EventDetails is deleted, all related records in the new tables are automatically deleted
+- **Bidirectional Relationships**: Proper getter/setter methods maintain relationship integrity
+
+---
+
+## 5. FRONTEND INTEGRATION REQUIREMENTS
+
+### 5.1 CRUD Operations Required
+Each entity requires full CRUD functionality:
+- **Create**: Add new records with validation
+- **Read**: List, search, filter, and paginate records
+- **Update**: Full and partial updates
+- **Delete**: Remove records with cascade handling
+
+### 5.2 UI Components Needed
+1. **Data Tables**: Sortable, filterable lists for each entity
+2. **Forms**: Create/edit forms with validation
+3. **Image Upload Components**: Comprehensive image upload system for all media assets
+4. **Relationship Management**: Assign sponsors to events
+5. **Search/Filter**: Advanced filtering capabilities
+6. **Bulk Operations**: Select multiple records for operations
+7. **Image Management Dashboard**: Centralized image management interface
+8. **Image Preview Components**: Real-time image preview during upload
+9. **Image Gallery Components**: Display and manage multiple images
+
+### 5.3 Validation Rules
+- **Required Fields**: Enforce NOT NULL constraints
+- **Length Limits**: Respect VARCHAR and TEXT limits
+- **Format Validation**: Email, URL, phone number formats
+- **Business Rules**: Positive numbers, valid date ranges
+- **Unique Constraints**: Prevent duplicate sponsor-event relationships
+
+### 5.4 Image Upload & Media Asset Management
+
+#### 5.4.1 Image Upload Requirements
+The frontend application must implement comprehensive image upload functionality for all image URL fields:
+
+**EventFeaturedPerformers Image Fields:**
+- `portrait_image_url` - Performer portrait/headshot
+- `performance_image_url` - Performance action shot
+- `gallery_image_urls` - Multiple gallery images (JSON array)
+
+**EventSponsors Image Fields:**
+- `logo_url` - Company/sponsor logo
+- `hero_image_url` - Hero banner image
+- `banner_image_url` - Promotional banner image
+
+**EventProgramDirectors Image Fields:**
+- `photo_url` - Director profile photo
+
+#### 5.4.2 Image Upload API Specifications
+**Implemented Upload Endpoints:**
+```
+POST /api/event-medias/upload/featured-performer/{entityId}/{imageType}
+- Upload images for featured performers
+- imageType: portrait, performance, gallery
+- Example: POST /api/event-medias/upload/featured-performer/123/portrait
+
+POST /api/event-medias/upload/sponsor/{entityId}/{imageType}
+- Upload images for sponsors
+- imageType: logo, hero, banner
+- Example: POST /api/event-medias/upload/sponsor/456/logo
+
+POST /api/event-medias/upload/contact/{entityId}/photo
+- Upload photos for event contacts
+- Example: POST /api/event-medias/upload/contact/789/photo
+
+POST /api/event-medias/upload/program-director/{entityId}/photo
+- Upload photos for program directors
+- Example: POST /api/event-medias/upload/program-director/101/photo
+
+POST /api/event-medias/upload
+- Enhanced general upload endpoint with new entity-specific parameters
+- Supports all existing functionality plus new entity types
+- Backward compatible with existing implementations
+```
+
+**Image Upload Component Requirements:**
+1. **Drag & Drop Interface**: Support drag and drop for image files
+2. **Multiple File Selection**: Allow selection of multiple images
+3. **Image Preview**: Real-time preview before upload
+4. **Progress Indicators**: Upload progress bars for each file
+5. **File Type Validation**: Support JPEG, PNG, GIF, WebP formats
+6. **File Size Limits**: Maximum 10MB per image file
+7. **Image Compression**: Automatic compression for large files
+8. **Image Resizing**: Automatic resizing to standard dimensions
+9. **Crop Functionality**: Image cropping tools for profile photos
+10. **Image Replacement**: Ability to replace existing images
+
+**Image Storage & Management:**
+- **Backend Handled**: All image storage, URL generation, and management handled by backend
+- **AWS S3 Integration**: Images automatically stored in organized S3 bucket structure
+- **Dynamic Path Generation**: Automatic path creation based on entity type and image type
+- **CDN Integration**: CloudFront CDN automatically configured for fast delivery
+- **Image Processing**: Backend handles optimization, compression, and thumbnail generation
+- **Metadata Management**: Backend stores and manages all image metadata
+- **Image Cleanup**: Automatic cleanup of unused images
+
+**Backend URL Management:**
+- All image URLs are automatically generated and managed by the backend
+- Frontend receives complete URLs in API responses
+- No need to construct URLs on the frontend
+- URLs include proper authentication and expiration handling
+
+#### 5.4.3 Image Upload UI Components
+
+**Image Upload Modal/Dialog:**
+- Modal popup for image upload interface
+- Tabbed interface for different image types
+- Preview pane showing selected images
+- Upload progress indicators
+- Error handling and validation messages
+
+**Image Gallery Component:**
+- Grid layout for displaying multiple images
+- Lightbox functionality for image viewing
+- Image reordering capabilities
+- Delete/replace individual images
+- Bulk selection and operations
+
+**Image Crop Component:**
+- Aspect ratio selection (1:1 for portraits, 16:9 for banners)
+- Crop preview with grid overlay
+- Zoom and pan functionality
+- Preset crop sizes for different image types
+
+**Image Preview Component:**
+- Thumbnail preview in forms
+- Hover effects for image details
+- Click to view full size
+- Loading states and error handling
+
+#### 5.4.4 Image Upload Workflow
+1. **User selects image(s)** from device or drags and drops
+2. **Client-side validation** checks file type, size, dimensions
+3. **Image preview** shows in upload interface
+4. **Optional cropping** for profile photos and logos
+5. **Upload to temporary storage** for processing
+6. **Server-side processing** (resize, compress, optimize)
+7. **Upload to AWS S3** with proper folder structure
+8. **Return S3 URL** to frontend
+9. **Update entity** with new image URL
+10. **Cleanup temporary files**
+
+#### 5.4.5 Image Management Features
+- **Image Library**: Centralized image management
+- **Search & Filter**: Find images by entity, date, type
+- **Bulk Operations**: Delete, move, organize multiple images
+- **Image Analytics**: View usage statistics, file sizes
+- **Storage Management**: Monitor S3 storage usage
+- **Image Optimization**: Batch optimize existing images
+- **Backup & Recovery**: Image backup and restoration
+
+---
+
+## 6. API SPECIFICATIONS
+
+### 6.1 Standard HTTP Methods
+All endpoints support standard REST operations:
+- **GET**: Retrieve data (list, single, count)
+- **POST**: Create new records
+- **PUT**: Full update of existing records
+- **PATCH**: Partial update of existing records
+- **DELETE**: Remove records
+
+### 6.2 Response Formats
+- **Success**: HTTP 200/201 with JSON data
+- **Validation Errors**: HTTP 400 with error details
+- **Not Found**: HTTP 404
+- **Server Errors**: HTTP 500
+
+### 6.3 Pagination
+- **Page-based**: Standard Spring Data pagination
+- **Parameters**: page, size, sort
+- **Response**: Includes pagination metadata
+
+### 6.4 Filtering and Search
+- **Criteria-based**: Advanced filtering support
+- **Search**: Full-text search capabilities
+- **Sorting**: Multi-column sorting support
+
+### 6.5 Image Upload API Specifications
+
+#### 6.5.1 Implemented Upload Endpoints
+```
+POST /api/event-medias/upload/featured-performer/{entityId}/{imageType}
+POST /api/event-medias/upload/sponsor/{entityId}/{imageType}
+POST /api/event-medias/upload/contact/{entityId}/photo
+POST /api/event-medias/upload/program-director/{entityId}/photo
+POST /api/event-medias/upload (enhanced general endpoint)
+```
+
+#### 6.5.2 Image Upload Request Format
+```javascript
+// Featured Performer Portrait Upload
+const formData = new FormData();
+formData.append('file', portraitFile);
+formData.append('eventId', '123');
+formData.append('title', 'Portrait Image');
+formData.append('tenantId', 'tenant_demo_001');
+formData.append('isPublic', 'true');
+
+fetch('/api/event-medias/upload/featured-performer/456/portrait', {
+    method: 'POST',
+    body: formData,
+    headers: {
+        'Authorization': 'Bearer ' + token
+    }
+});
+```
+
+#### 6.5.3 Image Upload Response Format
+```json
+{
+  "id": 123,
+  "title": "Portrait Image",
+  "description": "Featured performer portrait",
+  "fileUrl": "https://s3.amazonaws.com/bucket/path/to/image.jpg",
+  "preSignedUrl": "https://s3.amazonaws.com/bucket/path/to/image.jpg?signature=...",
+  "tenantId": "tenant_demo_001",
+  "eventMediaType": "image/jpeg",
+  "storageType": "S3",
+  "fileSize": 2048576,
+  "isPublic": true,
+  "createdAt": "2025-01-10T10:00:00Z",
+  "updatedAt": "2025-01-10T10:00:00Z"
+}
+```
+
+#### 6.5.4 Image Upload Error Responses
+```json
+{
+  "type": "https://www.jhipster.tech/problem/problem-with-message",
+  "title": "Bad Request",
+  "status": 400,
+  "detail": "Invalid image type for featured performer: invalid_type",
+  "path": "/api/event-medias/upload/featured-performer/123/invalid_type",
+  "message": "error.invalidImageType"
+}
+```
+
+#### 6.5.5 Image Management Endpoints
+```
+GET    /api/event-medias/event/{eventId}/view  - Get all media for event with viewing URLs
+GET    /api/event-medias/{id}/download-url     - Get download URL for specific media
+POST   /api/event-medias/refresh-urls          - Refresh presigned URLs for multiple media
+DELETE /api/event-medias/{id}                  - Delete specific media item
+PUT    /api/event-medias/{id}                  - Update media metadata
+PATCH  /api/event-medias/{id}                  - Partial update of media metadata
+```
+
+---
+
+## 7. SECURITY CONSIDERATIONS
+
+### 7.1 Authentication
+- **JWT Tokens**: Secure API access
+- **Role-based Access**: Different permissions for different user types
+- **Session Management**: Secure session handling
+
+### 7.2 Authorization
+- **Entity-level Permissions**: Who can create/edit/delete records
+- **Field-level Security**: Sensitive data protection
+- **Audit Logging**: Track all changes
+
+### 7.3 Data Protection
+- **Input Validation**: Prevent injection attacks
+- **Output Encoding**: Secure data display
+- **File Upload Security**: Comprehensive image upload security
+
+### 7.4 Image Upload Security Requirements
+
+#### 7.4.1 File Upload Security
+- **File Type Validation**: Only allow JPEG, PNG, GIF, WebP formats
+- **File Size Limits**: Maximum 10MB per image file
+- **File Content Scanning**: Scan uploaded files for malware
+- **MIME Type Validation**: Verify actual file type matches extension
+- **File Header Validation**: Check file headers for authenticity
+- **Virus Scanning**: Scan all uploaded images for malicious content
+
+#### 7.4.2 Image Processing Security
+- **Image Metadata Stripping**: Remove EXIF data and metadata
+- **Content Sanitization**: Sanitize image content during processing
+- **Secure Image Processing**: Use secure image processing libraries
+- **Memory Management**: Prevent memory exhaustion during processing
+- **Temporary File Cleanup**: Secure deletion of temporary files
+
+#### 7.4.3 Access Control for Images
+- **Authentication Required**: All image uploads require valid authentication
+- **Authorization Checks**: Verify user permissions for image operations
+- **Entity Ownership**: Ensure users can only upload images for entities they own
+- **Event Access Control**: Verify user access to specific events
+- **Image Privacy**: Implement privacy controls for sensitive images
+
+#### 7.4.4 Storage Security
+- **S3 Bucket Security**: Secure AWS S3 bucket configuration
+- **Presigned URLs**: Use presigned URLs for secure image access
+- **Encryption**: Encrypt images at rest in S3
+- **Access Logging**: Log all image access and modifications
+- **Backup Security**: Secure backup and recovery procedures
+
+#### 7.4.5 Image URL Security
+- **URL Obfuscation**: Use non-predictable image URLs
+- **Access Tokens**: Implement temporary access tokens for sensitive images
+- **Hotlinking Protection**: Prevent unauthorized hotlinking of images
+- **CDN Security**: Secure CloudFront CDN configuration
+- **Rate Limiting**: Implement rate limiting for image requests
+
+---
+
+## 8. PERFORMANCE REQUIREMENTS
+
+### 8.1 Response Times
+- **List Operations**: < 500ms for up to 100 records
+- **Single Record**: < 200ms
+- **Search Operations**: < 1 second
+- **Bulk Operations**: < 2 seconds for up to 50 records
+- **Image Upload**: < 5 seconds for single image (10MB max)
+- **Image Processing**: < 3 seconds for image resizing/optimization
+- **Image Gallery Loading**: < 2 seconds for up to 50 images
+- **Image Preview**: < 500ms for thumbnail generation
+
+### 8.2 Caching Strategy
+- **Entity Caching**: Cache frequently accessed data
+- **Relationship Caching**: Cache entity relationships
+- **Query Result Caching**: Cache search results
+- **Image Caching**: Cache frequently accessed images
+- **Thumbnail Caching**: Cache generated thumbnails
+- **CDN Caching**: CloudFront CDN for image delivery
+
+### 8.3 Database Optimization
+- **Indexing**: Proper indexes on foreign keys and search fields
+- **Query Optimization**: Efficient relationship loading
+- **Connection Pooling**: Optimize database connections
+
+---
+
+## 9. TESTING REQUIREMENTS
+
+### 9.1 Unit Testing
+- **Service Layer**: Test business logic
+- **Repository Layer**: Test data access
+- **DTO Validation**: Test input validation
+
+### 9.2 Integration Testing
+- **API Endpoints**: Test all CRUD operations
+- **Database Integration**: Test entity relationships
+- **External Dependencies**: Test third-party integrations
+
+### 9.3 Frontend Testing
+- **Component Testing**: Test UI components
+- **Integration Testing**: Test API integration
+- **User Acceptance Testing**: Test complete workflows
+
+### 9.4 Image Upload Testing
+- **File Upload Testing**: Test various file types, sizes, formats
+- **Image Processing Testing**: Test image resizing, compression, optimization
+- **Security Testing**: Test file validation, malware scanning, access control
+- **Performance Testing**: Test upload speeds, processing times, concurrent uploads
+- **Error Handling Testing**: Test error scenarios, network failures, invalid files
+- **UI Component Testing**: Test drag & drop, preview, cropping functionality
+- **Storage Testing**: Test S3 integration, CDN delivery, backup/recovery
+
+---
+
+## 10. DEPLOYMENT CONSIDERATIONS
+
+### 10.1 Database Migration
+- **Schema Updates**: Apply new table structures
+- **Data Migration**: Migrate existing data if needed
+- **Rollback Strategy**: Plan for deployment rollbacks
+
+### 10.2 API Versioning
+- **Backward Compatibility**: Maintain existing API contracts
+- **Version Management**: Handle API versioning
+- **Documentation Updates**: Keep API docs current
+
+### 10.3 Monitoring
+- **Performance Monitoring**: Track response times
+- **Error Monitoring**: Track and alert on errors
+- **Usage Analytics**: Monitor API usage patterns
+
+---
+
+## 11. FUTURE ENHANCEMENTS
+
+### 11.1 Planned Features
+- **Advanced Search**: Full-text search across all entities
+- **Bulk Import/Export**: CSV/Excel import/export functionality
+- **Notification System**: Email notifications for changes
+- **Audit Trail**: Complete change history tracking
+
+### 11.2 Integration Opportunities
+- **Calendar Integration**: Sync with external calendars
+- **Social Media Integration**: Auto-post to social platforms
+- **Email Marketing**: Integration with email marketing tools
+- **Analytics**: Event performance analytics
+
+---
+
+## 12. SUMMARY OF CREATED ENTITIES
+
+### Complete Entity List for Frontend Integration:
+
+1. **EventFeaturedPerformers**
+   - Comprehensive performer/artist management
+   - Media assets (portrait, performance, gallery images)
+   - Social media integration
+   - Performance scheduling and ordering
+   - Priority ranking and headliner status
+
+2. **EventContacts**
+   - Event contact information management
+   - Phone and email contact details
+   - Simple but essential for event coordination
+
+3. **EventSponsors**
+   - Complete sponsor/company management
+   - Company branding (logos, hero images, banners)
+   - Contact information and social media links
+   - Active status and priority ranking
+   - Many-to-many relationship with events
+
+4. **EventSponsorsJoin**
+   - Junction table for event-sponsor relationships
+   - Tracks which sponsors support which events
+   - Prevents duplicate relationships
+   - Cascade deletion support
+
+5. **EventEmails**
+   - Event-level email address management
+   - Multiple email addresses per event
+   - Simple but important for communication
+
+6. **EventProgramDirectors**
+   - Program director information management
+   - Photo and biographical information
+   - Multiple directors per event support
+
+### Total API Endpoints Created: 50+
+- 7 endpoints per entity (CRUD + count + event-specific queries)
+- 5 dedicated image upload endpoints for entity-specific uploads
+- 1 enhanced general upload endpoint with new entity parameters
+- 6 image management endpoints for media operations
+- Additional endpoints for relationship management
+- Full Swagger/OpenAPI documentation available
+
+### Database Tables Created: 6
+- All tables properly indexed and constrained
+- Foreign key relationships with cascade operations
+- Audit fields (created_at, updated_at) on all tables
+- Comprehensive validation and business rules
+
+### DTO Objects Created: 6
+- Complete data transfer objects with validation
+- Proper relationship mapping
+- JSON serialization support
+- Input validation annotations
+
+### Image Upload Features: Comprehensive
+- **7 Image Types Supported**: Portrait, performance, gallery, logo, hero, banner, director photos
+- **Advanced Upload Components**: Drag & drop, multiple file selection, real-time preview
+- **Image Processing**: Automatic resizing, compression, optimization, thumbnail generation
+- **Security Features**: File validation, malware scanning, access control, metadata stripping
+- **Storage Integration**: AWS S3 with CloudFront CDN for fast delivery
+- **Management Features**: Image library, bulk operations, analytics, backup/recovery
+
+---
+
+## 13. BACKEND COMPLETION CONFIRMATION
+
+### ✅ BACKEND DEVELOPMENT STATUS: 100% COMPLETE
+
+**All backend components are fully implemented and ready for frontend integration:**
+
+- **Database**: All 6 tables created with proper relationships, constraints, and indexes
+- **API Endpoints**: 50+ REST endpoints implemented with full CRUD operations
+- **Authentication**: JWT-based security with role-based access control
+- **Image Upload**: Complete AWS S3 integration with dynamic path construction
+- **Validation**: Comprehensive input validation and error handling
+- **Testing**: Unit and integration tests implemented
+- **Documentation**: Swagger/OpenAPI documentation generated
+- **Infrastructure**: AWS S3, CloudFront CDN, and database configured
+
+### 🎯 FRONTEND DEVELOPER FOCUS
+
+**This document is specifically for frontend developers. You only need to:**
+1. **Create UI Components** for entity management (forms, tables, modals)
+2. **Integrate with API Endpoints** using the provided REST endpoints
+3. **Implement Image Upload UI** using the documented upload endpoints
+4. **Handle Frontend Validation** to complement backend validation
+5. **Design User Experience** for intuitive entity management workflows
+
+**No backend development, database setup, or infrastructure configuration is required.**
+
+---
+
+**Document End**
+
+This Frontend Integration Guide provides complete specifications for frontend developers to integrate with the fully implemented event management system. All backend development is complete and production-ready.

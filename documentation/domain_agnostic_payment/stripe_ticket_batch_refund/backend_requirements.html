@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Backend Requirements: Stripe Ticket Batch Refund</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+
+      h1 {
+        font-size: 2.1rem;
+        margin-bottom: 0.75rem;
+      }
+
+      h2 {
+        font-size: 1.6rem;
+        margin-top: 2.5rem;
+      }
+
+      h3 {
+        font-size: 1.2rem;
+        margin-top: 1.6rem;
+      }
+
+      p,
+      li {
+        line-height: 1.75;
+        font-size: 1rem;
+      }
+
+      ul,
+      ol {
+        margin-left: 1.4rem;
+      }
+
+      code.inline {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+        padding: 0.15rem 0.35rem;
+        font-size: 0.95rem;
+        display: inline-block;
+      }
+
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .divider {
+        height: 1px;
+        background: rgba(42, 32, 23, 0.12);
+        margin: 2rem 0;
+      }
+
+      pre {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+        padding: 1rem;
+        line-height: 1.6;
+        overflow-x: auto;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Backend · January 2026</span>
+      <h1>Backend Requirements: Stripe Ticket Batch Refund</h1>
+      <p>
+        This document specifies backend service and API requirements to support batch refund functionality in the Spring Boot
+        service (<code class="inline">E:\project_workspace\malayalees-us-site-boot</code>). The implementation follows the
+        pattern established by the existing Stripe Fees and Tax Update batch job endpoint.
+      </p>
+
+      <div class="divider"></div>
+
+      <h2>1. REST Endpoint</h2>
+      <h3>1.1 Endpoint Specification</h3>
+      <ul>
+        <li><strong>URL:</strong> <code class="inline">POST /api/cron/stripe-ticket-batch-refund</code></li>
+        <li><strong>Authentication:</strong> Service JWT (Bearer token in Authorization header)</li>
+        <li><strong>Content-Type:</strong> <code class="inline">application/json</code></li>
+        <li><strong>Response Code:</strong> <code class="inline">202 Accepted</code> (job started asynchronously)</li>
+        <li><strong>Error Codes:</strong>
+          <ul>
+            <li><code class="inline">400 Bad Request</code> - Invalid request parameters</li>
+            <li><code class="inline">401 Unauthorized</code> - Missing or invalid JWT</li>
+            <li><code class="inline">403 Forbidden</code> - Tenant mismatch or insufficient permissions</li>
+            <li><code class="inline">404 Not Found</code> - Event not found</li>
+            <li><code class="inline">500 Internal Server Error</code> - Server error</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h3>1.2 Request DTO</h3>
+      <pre><code>public class StripeTicketBatchRefundRequest {
+    private String tenantId;        // Optional: Defaults to JWT tenant context
+    private Long eventId;           // Required: Event ID to refund tickets for
+    private String startDate;       // Optional: ISO 8601 format (future enhancement)
+    private String endDate;         // Optional: ISO 8601 format (future enhancement)
+    
+    // Getters and setters
+}</code></pre>
+
+      <h3>1.3 Response DTO</h3>
+      <pre><code>public class StripeTicketBatchRefundResponse {
+    private String jobId;                    // Unique job identifier
+    private String status;                   // STARTED, IN_PROGRESS, COMPLETED, FAILED
+    private String tenantId;                 // Tenant ID processed
+    private Long eventId;                    // Event ID processed
+    private Integer estimatedRecords;        // Estimated number of tickets to refund
+    private String estimatedCompletionTime;  // ISO 8601 format
+    private String message;                  // Human-readable message
+    
+    // Getters and setters
+}</code></pre>
+
+      <h2>2. Controller Implementation</h2>
+      <h3>2.1 Controller Class</h3>
+      <ul>
+        <li><strong>Location:</strong> <code class="inline">com.example.controller.CronController</code> or similar</li>
+        <li><strong>Method:</strong> <code class="inline">triggerStripeTicketBatchRefund()</code></li>
+        <li><strong>Annotations:</strong>
+          <ul>
+            <li><code class="inline">@PostMapping("/api/cron/stripe-ticket-batch-refund")</code></li>
+            <li><code class="inline">@PreAuthorize("hasRole('ADMIN')")</code> or similar authorization</li>
+            <li><code class="inline">@Valid @RequestBody StripeTicketBatchRefundRequest request</code></li>
+          </ul>
+        </li>
+      </ul>
+
+      <h3>2.2 Controller Logic</h3>
+      <ol>
+        <li>Validate request: eventId is required and not null</li>
+        <li>Extract tenantId from JWT context if not provided in request</li>
+        <li>Validate event exists and belongs to tenant</li>
+        <li>Query eligible tickets count (for estimatedRecords)</li>
+        <li>Trigger batch job service asynchronously</li>
+        <li>Generate unique job ID (format: <code class="inline">stripe-batch-refund-{timestamp}-{eventId}</code>)</li>
+        <li>Return response with job ID and status (HTTP 202 Accepted)</li>
+      </ol>
+
+      <h2>3. Service Layer</h2>
+      <h3>3.1 Service Interface</h3>
+      <ul>
+        <li><strong>Interface:</strong> <code class="inline">StripeTicketBatchRefundService</code></li>
+        <li><strong>Method:</strong> <code class="inline">triggerBatchRefundJob(StripeTicketBatchRefundRequest request)</code></li>
+        <li><strong>Return:</strong> <code class="inline">StripeTicketBatchRefundResponse</code></li>
+      </ul>
+
+      <h3>3.2 Service Implementation</h3>
+      <ul>
+        <li><strong>Class:</strong> <code class="inline">StripeTicketBatchRefundServiceImpl</code></li>
+        <li><strong>Dependencies:</strong>
+          <ul>
+            <li>EventTicketTransactionRepository (for querying tickets)</li>
+            <li>EventDetailsRepository (for validating event)</li>
+            <li>BatchJobService (for triggering batch job)</li>
+            <li>TenantContextService (for tenant validation)</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h3>3.3 Service Methods</h3>
+      <ul>
+        <li><strong>validateRequest():</strong> Validate eventId, tenantId, event existence</li>
+        <li><strong>countEligibleTickets():</strong> Count tickets matching refund criteria</li>
+        <li><strong>triggerBatchJob():</strong> Submit job to batch job service</li>
+        <li><strong>generateJobId():</strong> Generate unique job identifier</li>
+        <li><strong>estimateCompletionTime():</strong> Calculate estimated completion based on ticket count</li>
+      </ul>
+
+      <h2>4. Database Query</h2>
+      <h3>4.1 Eligible Tickets Query</h3>
+      <pre><code>SELECT COUNT(*) FROM event_ticket_transaction
+WHERE event_id = :eventId
+  AND tenant_id = :tenantId
+  AND stripe_payment_intent_id IS NOT NULL
+  AND status != 'REFUNDED'
+  AND stripe_payment_status IN ('succeeded', 'paid')
+  AND (startDate IS NULL OR purchase_date >= :startDate)
+  AND (endDate IS NULL OR purchase_date <= :endDate);</code></pre>
+
+      <h3>4.2 Repository Method</h3>
+      <ul>
+        <li><strong>Method:</strong> <code class="inline">countEligibleTicketsForRefund(Long eventId, String tenantId, LocalDateTime startDate, LocalDateTime endDate)</code></li>
+        <li><strong>Return:</strong> <code class="inline">Long</code> (count of eligible tickets)</li>
+        <li><strong>Query:</strong> Use <code class="inline">@Query</code> annotation with JPQL or native query</li>
+      </ul>
+
+      <h2>5. Batch Job Integration</h2>
+      <h3>5.1 Job Submission</h3>
+      <ul>
+        <li>Submit job to batch job service with job parameters</li>
+        <li>Job parameters:
+          <ul>
+            <li><code class="inline">eventId</code> - Event ID to process</li>
+            <li><code class="inline">tenantId</code> - Tenant ID for filtering</li>
+            <li><code class="inline">startDate</code> - Optional start date filter</li>
+            <li><code class="inline">endDate</code> - Optional end date filter</li>
+            <li><code class="inline">jobId</code> - Unique job identifier</li>
+          </ul>
+        </li>
+        <li>Reference existing batch job submission pattern (Stripe Fees and Tax Update)</li>
+      </ul>
+
+      <h3>5.2 Job Status</h3>
+      <ul>
+        <li>Return job status as <code class="inline">STARTED</code> immediately</li>
+        <li>Batch job service will update status as processing progresses</li>
+        <li>Status values: <code class="inline">STARTED</code>, <code class="inline">IN_PROGRESS</code>, <code class="inline">COMPLETED</code>, <code class="inline">FAILED</code></li>
+      </ul>
+
+      <h2>6. Validation & Error Handling</h2>
+      <h3>6.1 Request Validation</h3>
+      <ul>
+        <li><strong>eventId:</strong> Required, must be positive integer</li>
+        <li><strong>tenantId:</strong> Optional, validated against JWT context if not provided</li>
+        <li><strong>startDate/endDate:</strong> Optional, must be valid ISO 8601 format, startDate <= endDate</li>
+      </ul>
+
+      <h3>6.2 Business Validation</h3>
+      <ul>
+        <li>Event must exist in database</li>
+        <li>Event must belong to the specified tenant</li>
+        <li>At least one eligible ticket must exist (or return informative message if none)</li>
+      </ul>
+
+      <h3>6.3 Error Responses</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Error Condition</th>
+            <th>HTTP Status</th>
+            <th>Response Body</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Missing eventId</td>
+            <td>400 Bad Request</td>
+            <td><code class="inline">{"error": "eventId is required"}</code></td>
+          </tr>
+          <tr>
+            <td>Invalid eventId</td>
+            <td>400 Bad Request</td>
+            <td><code class="inline">{"error": "Invalid eventId format"}</code></td>
+          </tr>
+          <tr>
+            <td>Event not found</td>
+            <td>404 Not Found</td>
+            <td><code class="inline">{"error": "Event not found"}</code></td>
+          </tr>
+          <tr>
+            <td>Tenant mismatch</td>
+            <td>403 Forbidden</td>
+            <td><code class="inline">{"error": "Event does not belong to tenant"}</code></td>
+          </tr>
+          <tr>
+            <td>No eligible tickets</td>
+            <td>200 OK</td>
+            <td><code class="inline">{"message": "No eligible tickets found for refund"}</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>7. Security & Authorization</h2>
+      <ul>
+        <li>Endpoint requires admin role or appropriate permissions</li>
+        <li>JWT token validation for service-to-service communication</li>
+        <li>Tenant isolation: Only process tickets for the authenticated tenant</li>
+        <li>Event ownership validation: Ensure event belongs to tenant</li>
+        <li>Audit logging: Log all batch refund trigger attempts</li>
+      </ul>
+
+      <h2>8. Standards & Conventions</h2>
+      <ul>
+        <li>Follow existing batch job endpoint patterns (e.g., <code class="inline">/api/cron/stripe-fees-tax-update</code>)</li>
+        <li>Align DTOs with API schema in <code class="inline">documentation/Swagger_API_Docs/api-docs.json</code></li>
+        <li>Use Spring Data JPA repositories for database access</li>
+        <li>Follow Spring Boot best practices for error handling</li>
+        <li>Use proper transaction management for database operations</li>
+        <li>Implement proper logging (SLF4J/Logback)</li>
+      </ul>
+
+      <h2>9. Reference Implementation</h2>
+      <ul>
+        <li><strong>Similar Endpoint:</strong> <code class="inline">POST /api/cron/stripe-fees-tax-update</code></li>
+        <li><strong>Single Refund Logic:</strong> Reference frontend <code class="inline">ApiServerActions.ts</code> for Stripe refund API usage</li>
+        <li><strong>Database Schema:</strong> <code class="inline">code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></li>
+        <li><strong>Table:</strong> <code class="inline">event_ticket_transaction</code></li>
+      </ul>
+
+      <h2>10. Database Fields Reference</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Type</th>
+            <th>Usage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code class="inline">id</code></td>
+            <td>Long</td>
+            <td>Transaction identifier</td>
+          </tr>
+          <tr>
+            <td><code class="inline">event_id</code></td>
+            <td>Long</td>
+            <td>Filter by event</td>
+          </tr>
+          <tr>
+            <td><code class="inline">tenant_id</code></td>
+            <td>String</td>
+            <td>Tenant isolation</td>
+          </tr>
+          <tr>
+            <td><code class="inline">stripe_payment_intent_id</code></td>
+            <td>String</td>
+            <td>Required for Stripe refund</td>
+          </tr>
+          <tr>
+            <td><code class="inline">status</code></td>
+            <td>String</td>
+            <td>Filter: != 'REFUNDED'</td>
+          </tr>
+          <tr>
+            <td><code class="inline">stripe_payment_status</code></td>
+            <td>String</td>
+            <td>Filter: IN ('succeeded', 'paid')</td>
+          </tr>
+          <tr>
+            <td><code class="inline">final_amount</code></td>
+            <td>BigDecimal</td>
+            <td>Refund amount</td>
+          </tr>
+          <tr>
+            <td><code class="inline">purchase_date</code></td>
+            <td>Timestamp</td>
+            <td>Optional date range filter</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>11. Testing Requirements</h2>
+      <ul>
+        <li>Unit tests for service layer methods</li>
+        <li>Integration tests for REST endpoint</li>
+        <li>Test with valid eventId and eligible tickets</li>
+        <li>Test with invalid eventId (404 response)</li>
+        <li>Test with event from different tenant (403 response)</li>
+        <li>Test with event that has no eligible tickets</li>
+        <li>Test with missing eventId (400 response)</li>
+        <li>Test JWT authentication and authorization</li>
+      </ul>
+
+      <div class="divider"></div>
+
+      <h2>Implementation Checklist</h2>
+      <ul>
+        <li>Create <code class="inline">StripeTicketBatchRefundRequest</code> DTO</li>
+        <li>Create <code class="inline">StripeTicketBatchRefundResponse</code> DTO</li>
+        <li>Create controller endpoint <code class="inline">POST /api/cron/stripe-ticket-batch-refund</code></li>
+        <li>Create service interface and implementation</li>
+        <li>Add repository method for counting eligible tickets</li>
+        <li>Implement request validation logic</li>
+        <li>Implement event and tenant validation</li>
+        <li>Integrate with batch job service</li>
+        <li>Add error handling and appropriate HTTP status codes</li>
+        <li>Add audit logging</li>
+        <li>Write unit and integration tests</li>
+        <li>Update API documentation (Swagger/OpenAPI)</li>
+      </ul>
+    </main>
+  </body>
+</html>

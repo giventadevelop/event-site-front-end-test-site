@@ -1,0 +1,88 @@
+================================================================================
+BACKEND FIX REQUEST: Include publishableKey in PaymentSessionResponse
+================================================================================
+
+ISSUE:
+The frontend payment component requires the Stripe publishableKey to display
+payment options (Apple Pay, Google Pay, credit card forms). Currently, the
+backend response is missing this field or using a different field name.
+
+REQUIRED CHANGES:
+
+1. Update PaymentSessionResponse DTO
+   File: PaymentSessionResponse.java
+   Action: Add/ensure field named "publishableKey" (not "publicKey")
+
+   Example:
+   @Data
+   @Builder
+   public class PaymentSessionResponse {
+       private String transactionId;
+       private PaymentProviderType providerType;
+       private String clientSecret;
+       private String publishableKey; // ← ADD THIS FIELD
+       private String sessionUrl;
+       // ... other fields
+   }
+
+2. Update StripePaymentAdapter.initialize() Method
+   File: StripePaymentAdapter.java
+   Location: Where PaymentSession.builder() is called
+
+   Change FROM:
+   .publicKey(config.getPublicKey())
+
+   Change TO:
+   .publishableKey(config.getPublishableKey())  // or config.getPublicKey() if method name differs
+
+   Full example:
+   return PaymentSession.builder()
+       .transactionId(transaction.getId())
+       .providerType(PaymentProviderType.STRIPE)
+       .clientSecret(paymentIntent.getClientSecret())
+       .publishableKey(config.getPublishableKey()) // ← CHANGE THIS LINE
+       .metadata(Map.of(...))
+       .build();
+
+3. Verify PaymentProviderConfig
+   File: PaymentProviderConfig.java or PaymentProviderConfigService.java
+   Ensure: Method exists to get publishable key from database
+   - Check that publishable_key column exists in payment_provider_config table
+   - Verify getPublishableKey() or getPublicKey() method returns the value
+
+API ENDPOINT:
+POST /api/payments/initialize
+(Proxied through frontend: POST /api/proxy/payments/initialize)
+
+EXPECTED JSON RESPONSE:
+POST /api/payments/initialize should return:
+{
+  "transactionId": "4357",
+  "providerType": "STRIPE",
+  "clientSecret": "pi_xxx_secret_xxx",
+  "publishableKey": "pk_test_51JoBNqK5BrggeAHM...",  // ← REQUIRED FIELD
+  "paymentMethod": "card",
+  "metadata": {...}
+}
+
+WHY THIS IS NEEDED:
+- Multi-tenant: Each tenant has different Stripe accounts/keys
+- Frontend: Stripe.js requires publishableKey to initialize payment elements
+- Architecture: Backend should provide tenant-specific keys, not frontend env vars
+
+TESTING:
+1. Call POST /api/payments/initialize with valid request
+2. Verify response JSON includes "publishableKey" field
+3. Verify value matches publishable_key from payment_provider_config table
+4. Frontend will automatically use this value to display payment options
+
+FILES TO MODIFY:
+✓ PaymentSessionResponse.java - Add publishableKey field
+✓ StripePaymentAdapter.java - Change .publicKey() → .publishableKey()
+✓ PaymentSession.java (if separate) - Ensure publishableKey field exists
+✓ PaymentProviderConfig.java - Verify getPublishableKey() method
+
+================================================================================
+See documentation/backend_fix_publishable_key.md for detailed instructions
+================================================================================
+

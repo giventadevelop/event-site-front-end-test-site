@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Running parallel Cursor agents, branching from feature_MOSC_Redesign, and merging work back—plus automation test coverage for admin pages.">
+  <title>Parallel Cursor Agents, Git Merge Workflow &amp; Admin Page Test Coverage</title>
+  <style>
+    :root {
+      --text: #333;
+      --code-bg: #e8f4f8;
+      --code-text: #0d3b66;
+      --code-border: #b8d4e3;
+      --blue-accent: #0066cc;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--text);
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2em;
+      border-bottom: 3px solid var(--blue-accent);
+      padding-bottom: 0.5rem;
+      margin-top: 0;
+    }
+    h2 {
+      font-size: 1.5em;
+      border-left: 4px solid var(--blue-accent);
+      padding-left: 15px;
+      margin-top: 2rem;
+    }
+    h3 { font-size: 1.2em; color: #444; margin-top: 1.25rem; }
+    .meta { color: #666; font-size: 0.95rem; margin-bottom: 1.5rem; }
+    .toc {
+      background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+      border-left: 4px solid var(--blue-accent);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .toc ul { margin: 0.5rem 0; padding-left: 1.25rem; }
+    .toc a { color: var(--blue-accent); }
+    .section-container {
+      background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+      border-left: 4px solid var(--blue-accent);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+    }
+    .section-container.warning-theme {
+      background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+      border-left-color: #ffc107;
+    }
+    .section-container.success-theme {
+      background: linear-gradient(135deg, #e8f5e9 0%, #d4edda 100%);
+      border-left-color: #28a745;
+    }
+    .info {
+      background: #d1ecf1;
+      border: 1px solid #0c5460;
+      border-left-width: 4px;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    .warning {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-left-width: 4px;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    code, .code-inline {
+      background-color: var(--code-bg);
+      color: var(--code-text);
+      padding: 2px 6px;
+      border-radius: 3px;
+      border: 1px solid var(--code-border);
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+    pre.code-block {
+      background-color: var(--code-bg);
+      color: var(--code-text);
+      padding: 15px;
+      border-radius: 5px;
+      border: 1px solid var(--code-border);
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 15px 0;
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: left;
+    }
+    th {
+      background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+      color: white;
+      font-weight: bold;
+      font-size: 0.9em;
+    }
+    tr:nth-child(even) { background-color: #f8f9fa; }
+    ol.steps { padding-left: 1.5rem; }
+    ol.steps li { margin: 0.75rem 0; }
+    hr { border: none; border-top: 1px solid #ddd; margin: 2rem 0; }
+    .kbd { font-family: monospace; background: #eee; padding: 2px 6px; border-radius: 4px; }
+    footer.doc-footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid #ddd;
+      font-size: 0.9rem;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+
+  <main>
+    <h1>Parallel Cursor Agents, Git Merge Workflow &amp; Admin Page Test Coverage</h1>
+    <p class="meta">Location: <code class="code-inline">documentation/parallel_agents/cursor_parallel_agents_and_git_merge_guide.html</code></p>
+
+    <nav class="toc" aria-label="Table of contents">
+      <h2 class="toc-title" style="margin-top:0;border:none;padding:0;">Table of contents</h2>
+      <ul>
+        <li><a href="#coverage">1. Automation coverage for three admin URLs</a></li>
+        <li><a href="#gaps">2. What is not covered yet (feature-level testing)</a></li>
+        <li><a href="#parallel-cursor">3. Parallel work in Cursor IDE</a></li>
+        <li><a href="#git-workflow">4. Branch from <code class="code-inline">feature_MOSC_Redesign</code> and merge back (step by step)</a></li>
+        <li><a href="#feasibility">5. Feasibility: can an AI merge everything automatically?</a></li>
+      </ul>
+    </nav>
+
+    <section id="coverage" aria-labelledby="h-coverage">
+      <h2 id="h-coverage">1. Automation coverage for three admin URLs</h2>
+
+      <div class="section-container success-theme">
+        <p>The repository already includes these routes in the <strong>group admin Playwright suite</strong> (<code class="code-inline">TestSprite/admin-tests/comprehensive-admin-test-suite.js</code>), which iterates all configured admin pages after authentication:</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Admin URL path</th>
+              <th>Test ID</th>
+              <th>What the suite checks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="code-inline">/admin/event-sponsors</code></td>
+              <td><code class="code-inline">admin-015</code> — Event Sponsors (Global)</td>
+              <td>Smoke: page loads; expects <code class="code-inline">h1</code>, <code class="code-inline">table</code>, <code class="code-inline">button</code>, <code class="code-inline">form</code>.</td>
+            </tr>
+            <tr>
+              <td><code class="code-inline">/admin/tenant-management/organizations</code></td>
+              <td><code class="code-inline">admin-020</code> — Organizations</td>
+              <td>Smoke: <code class="code-inline">h1</code>, <code class="code-inline">table</code>, <code class="code-inline">button</code>, links containing <code class="code-inline">/organizations</code>.</td>
+            </tr>
+            <tr>
+              <td><code class="code-inline">/admin/tenant-management/settings</code></td>
+              <td><code class="code-inline">admin-021</code> — Tenant Settings</td>
+              <td>Smoke: <code class="code-inline">h1</code>, <code class="code-inline">table</code>, <code class="code-inline">button</code>, links containing <code class="code-inline">/settings</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info">
+        <strong>Sanity / comprehensive script:</strong> <code class="code-inline">TestSprite/sanity-tests/run-comprehensive-sanity-tests-with-testsprite.js</code> includes <strong>tenant organizations</strong> (<code class="code-inline">sanity-034</code>) and <strong>tenant settings</strong> (<code class="code-inline">sanity-035</code>) with slightly richer expected selectors. It does <strong>not</strong> define a dedicated entry for the <strong>global</strong> admin page <code class="code-inline">/admin/event-sponsors</code> (it does cover public <code class="code-inline">/sponsors</code> and per-event <code class="code-inline">/admin/events/1/sponsors</code>).
+      </div>
+
+      <p><strong>Run the admin group suite</strong> (after configuring <code class="code-inline">TestSprite/admin-tests/auth.json</code>):</p>
+      <pre class="code-block">node TestSprite/admin-tests/comprehensive-admin-test-suite.js</pre>
+    </section>
+
+    <section id="gaps" aria-labelledby="h-gaps">
+      <h2 id="h-gaps">2. What is not covered yet (feature-level testing)</h2>
+      <div class="warning">
+        <strong>Important:</strong> Existing tests are <strong>smoke / structural</strong> checks (navigation, headings, tables, buttons). They do <strong>not</strong> assert full product behavior: create/edit/delete sponsor, pagination edge cases, upload dialogs, tenant CRUD, validation messages, or every button click. Adding deeper scenarios would mean extending the Playwright scripts with explicit <strong>interactions</strong> (similar to <code class="code-inline">interactions</code> arrays used for focus groups or membership plans in the sanity runner).
+      </div>
+      <p>If you want parity with “every feature on the page,” plan additional test cases or a dedicated spec file—outside the scope of this documentation-only deliverable.</p>
+    </section>
+
+    <hr>
+
+    <section id="parallel-cursor" aria-labelledby="h-parallel">
+      <h2 id="h-parallel">3. Parallel work in Cursor IDE</h2>
+
+      <h3>3.1 What “parallel agents” means in Cursor</h3>
+      <ul>
+        <li><strong>Multiple chat sessions:</strong> Open additional Composer or Agent chats (e.g. new chat from the sidebar). Each session can run independent tasks. Your UI may label concurrent runs as multitasking or background agents depending on product version.</li>
+        <li><strong>Background agents:</strong> Some workflows allow an agent to continue while you work elsewhere; completion is signaled when the run finishes. Use this for long-running refactors or test additions.</li>
+        <li><strong>Same workspace caveat:</strong> Two agents editing the <strong>same file</strong> can produce conflicts. Prefer splitting work by <strong>directory or feature</strong> (e.g. one agent: <code class="code-inline">TestSprite/admin-tests/</code>; another: <code class="code-inline">documentation/</code>).</li>
+      </ul>
+
+      <h3>3.2 Practical steps (conceptual)</h3>
+      <ol class="steps">
+        <li>Ensure the dev server and dependencies are stable if agents need to run tests.</li>
+        <li>Open a <strong>new Agent or Composer</strong> conversation from the Cursor sidebar.</li>
+        <li>Paste a <strong>scoped prompt</strong> (single feature, single folder) so agents do not overlap.</li>
+        <li>If your Cursor build supports it, enable <strong>run in background</strong> for non-blocking runs.</li>
+        <li>When each agent finishes, <strong>review the diff</strong> before merging (see below).</li>
+      </ol>
+
+      <div class="section-container warning-theme">
+        <strong>Git parallelization alternative:</strong> For true isolation, developers often use <strong>git worktrees</strong> (separate folders, same repo, different branches) so two agents never touch one working tree. That requires terminal/Git discipline and is described in the next section.
+      </div>
+    </section>
+
+    <section id="git-workflow" aria-labelledby="h-git">
+      <h2 id="h-git">4. Branch from <code class="code-inline">feature_MOSC_Redesign</code> and merge back (step by step)</h2>
+
+      <p>Replace branch names if yours differ. On Windows PowerShell, run commands <strong>one per line</strong> (avoid <code class="code-inline">&amp;&amp;</code> unless your shell supports it).</p>
+
+      <h3>4.1 Confirm you are on the integration branch</h3>
+      <ol class="steps">
+        <li>Open the terminal in the project root.</li>
+        <li>Run: <pre class="code-block">git status -sb</pre> Verify the current branch is <code class="code-inline">feature_MOSC_Redesign</code> (or checkout that branch first).</li>
+      </ol>
+
+      <h3>4.2 Create a task branch for one agent’s work</h3>
+      <ol class="steps">
+        <li>Update your base branch: <pre class="code-block">git fetch origin
+git checkout feature_MOSC_Redesign
+git pull origin feature_MOSC_Redesign</pre></li>
+        <li>Create a branch: <pre class="code-block">git checkout -b agent/task-event-sponsors-tests</pre> (use a unique name per parallel stream).</li>
+        <li>Let the agent implement changes; then stage and commit: <pre class="code-block">git add &lt;paths&gt;
+git commit -m "test(admin): extend event-sponsors coverage"</pre></li>
+        <li>Optional push: <pre class="code-block">git push -u origin agent/task-event-sponsors-tests</pre></li>
+      </ol>
+
+      <h3>4.3 Merge back into <code class="code-inline">feature_MOSC_Redesign</code></h3>
+      <ol class="steps">
+        <li>Switch to the integration branch: <pre class="code-block">git checkout feature_MOSC_Redesign</pre></li>
+        <li>Merge the task branch: <pre class="code-block">git merge agent/task-event-sponsors-tests</pre></li>
+        <li>If Git reports conflicts, open the listed files, resolve markers (<code class="code-inline">&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code>), then: <pre class="code-block">git add &lt;resolved-files&gt;
+git commit</pre> (Completing the merge commit.)</li>
+        <li>Run tests and push: <pre class="code-block">git push origin feature_MOSC_Redesign</pre></li>
+      </ol>
+
+      <h3>4.4 Parallel agents with worktrees (advanced)</h3>
+      <div class="info">
+        From repo root, you can add a second working directory on another branch:
+        <pre class="code-block">git worktree add ../mosc-temp-agent2 agent/task-tenant-tests</pre>
+        Open <code class="code-inline">../mosc-temp-agent2</code> as a separate Cursor window so two agents never write the same files in one folder. Merge each branch into <code class="code-inline">feature_MOSC_Redesign</code> as in §4.3, then remove the worktree when done (<code class="code-inline">git worktree remove</code>).
+      </div>
+    </section>
+
+    <section id="feasibility" aria-labelledby="h-feas">
+      <h2 id="h-fe">5. Feasibility: can an AI merge everything automatically?</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>Feasible?</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Implement tests or docs in separate branches</td>
+            <td>Yes (with your approval in agent mode)</td>
+            <td>Standard edit + commit workflow.</td>
+          </tr>
+          <tr>
+            <td>Run <code class="code-inline">git merge</code> when there are no conflicts</td>
+            <td>Yes</td>
+            <td>Automatable in terminal.</td>
+          </tr>
+          <tr>
+            <td>Resolve merge conflicts without human judgment</td>
+            <td>Risky / often no</td>
+            <td>Conflicts need semantic decisions; wrong resolution can break the app.</td>
+          </tr>
+          <tr>
+            <td>Push to <code class="code-inline">origin</code> without your credentials</td>
+            <td>No</td>
+            <td>The IDE uses your Git remote auth; you must approve network operations and secrets.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="warning">
+        <strong>Bottom line:</strong> An assistant can prepare branches, edits, and merge commands, and can merge cleanly when Git succeeds. It cannot responsibly guarantee a silent “merge everything from all parallel agents” without your review—especially if multiple agents touched the same lines.
+      </div>
+    </section>
+
+    <footer class="doc-footer">
+      <p>Document purpose: operational guide for parallel Cursor usage and Git integration with <code class="code-inline">feature_MOSC_Redesign</code>, plus a factual snapshot of existing Playwright coverage for the three admin URLs. Update test IDs if the suite files change.</p>
+    </footer>
+  </main>
+
+</body>
+</html>

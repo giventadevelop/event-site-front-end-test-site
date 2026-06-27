@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sequence generator alignment, SQL reorder/renumber pipeline, and backend changes for event-site-manager-service and event-site-manager-batch-jobs.">
+  <title>Sequence and ID Alignment Guide</title>
+  <style>
+    :root { --text: #333; --code-bg: #e8f4f8; --code-text: #0d3b66; --code-border: #b8d4e3; --blue-accent: #0066cc; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: var(--text); max-width: 1200px; margin: 0 auto; padding: 20px; }
+    h1 { font-size: 2.5em; border-bottom: 3px solid var(--blue-accent); padding-bottom: 0.5rem; margin-top: 0; }
+    h2 { font-size: 1.8em; border-left: 4px solid var(--blue-accent); padding-left: 15px; margin-top: 2rem; }
+    h3 { font-size: 1.2em; color: #555; margin-top: 1.25rem; }
+    .meta { color: #666; font-size: 0.95rem; margin-bottom: 1.5rem; }
+    .toc { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid var(--blue-accent); border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .toc ul { margin: 0.5rem 0; padding-left: 1.25rem; }
+    .section-intro { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid var(--blue-accent); border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid var(--blue-accent); border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .section-container.usage { background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%); border-left-color: #9c27b0; }
+    .section-container.parameters { background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%); border-left-color: #ff9800; }
+    .section-container.output { background: linear-gradient(135deg, #e6ffe6 0%, #ccffcc 100%); border-left-color: #28a745; }
+    .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 20px -20px; border-radius: 8px 8px 0 0; font-size: 1.2em; font-weight: bold; }
+    .section-header.usage { background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%); }
+    .section-header.parameters { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); }
+    .section-header.output { background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%); }
+    .info { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 15px; border-radius: 6px; margin: 15px 0; }
+    .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 6px; margin: 15px 0; }
+    .success { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 6px; margin: 15px 0; }
+    .info code, .warning code, code.code-highlight { background: var(--code-bg); color: var(--code-text); padding: 2px 6px; border-radius: 3px; border: 1px solid var(--code-border); font-family: 'Courier New', monospace; font-size: 0.9em; }
+    code.script-name { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 10px; border-radius: 5px; font-family: 'Courier New', monospace; font-weight: bold; border: none; }
+    table { border-collapse: collapse; width: 100%; margin: 15px 0; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+    th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; font-weight: bold; }
+    tr:nth-child(even) { background-color: #f8f9fa; }
+    tr:hover { background-color: #e3f2fd; }
+    td code { background: var(--code-bg); color: var(--code-text); padding: 3px 8px; border-radius: 3px; border: 1px solid var(--code-border); font-family: 'Courier New', monospace; }
+    ol.steps { padding-left: 1.5rem; }
+    ol.steps li { margin: 0.75rem 0; }
+    pre.code-block { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    .command-block { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 2px solid #2196f3; border-radius: 8px; margin: 20px 0; overflow: hidden; }
+    .command-block.verify { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-color: #4caf50; }
+    .command-block.advance { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-color: #ff9800; }
+    .command-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: rgba(255,255,255,0.4); border-bottom: 1px solid rgba(0,0,0,0.1); }
+    .command-header-buttons { display: flex; gap: 8px; }
+    .copy-button, .copy-button-template { color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold; }
+    .copy-button { background-color: #0066cc; }
+    .copy-button-template { background-color: #6c757d; }
+    .copy-button.copied, .copy-button-template.copied { background-color: #28a745; }
+    .command-content { padding: 15px; font-family: 'Courier New', monospace; font-size: 0.95em; color: var(--code-text); word-break: break-all; }
+    .command-single-line { padding: 12px 15px; background: var(--code-bg); border-top: 1px solid var(--code-border); }
+    .command-single-line-label { font-size: 0.8em; color: #666; margin-bottom: 6px; }
+    .command-single-line code { background: transparent; color: var(--code-text); font-family: 'Courier New', monospace; }
+    footer.doc-footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #ddd; font-size: 0.9rem; color: #666; }
+    a { color: var(--blue-accent); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Sequence and ID Alignment Guide</h1>
+    <p class="meta">
+      Location: <code class="code-highlight">documentation/database_export_import/SEQUENCE_ID_ALIGNMENT_GUIDE.html</code><br>
+      Cursor rule: <code class="code-highlight">.cursor/rules/sequence_id_alignment_and_import.mdc</code><br>
+      Related: <a href="DATABASE_EXPORT_IMPORT_GUIDE.html">DATABASE_EXPORT_IMPORT_GUIDE.html</a>
+    </p>
+
+    <div class="section-intro">
+      <p>
+        Documents how <strong>primary key IDs</strong> and <strong>PostgreSQL sequences</strong> stay aligned across
+        the SQL import pipeline (<code class="code-highlight">reorder</code> → optional <code class="code-highlight">renumber</code> → import → sync)
+        and the two backend services:
+        <code class="code-highlight">event-site-manager-service</code> (REST API) and
+        <code class="code-highlight">event-site-manager-batch-jobs</code> (Spring Batch).
+      </p>
+    </div>
+
+    <nav class="toc" aria-label="Table of contents">
+      <h2 style="margin-top:0;border:none;padding:0;font-size:1.3em;">Table of contents</h2>
+      <ul>
+        <li><a href="#architecture">1. Architecture — one shared sequence</a></li>
+        <li><a href="#why-600k">2. Why next IDs start at 600000+</a></li>
+        <li><a href="#sql-pipeline">3. SQL scripts — reorder, renumber, sync</a></li>
+        <li><a href="#backend-service">4. Backend — event-site-manager-service</a></li>
+        <li><a href="#backend-batch">5. Backend — event-site-manager-batch-jobs</a></li>
+        <li><a href="#run-order">6. Run order (every database / machine)</a></li>
+        <li><a href="#verify">7. Verification</a></li>
+        <li><a href="#troubleshooting">8. Troubleshooting</a></li>
+        <li><a href="#file-index">9. File index</a></li>
+      </ul>
+    </nav>
+
+    <section id="architecture">
+      <h2>1. Architecture — per-table id sequences</h2>
+      <div class="section-container">
+        <div class="section-header">Three-layer alignment</div>
+        <table>
+          <thead><tr><th>Layer</th><th>Requirement</th></tr></thead>
+          <tbody>
+            <tr><td>PostgreSQL</td><td><code>CREATE SEQUENCE public.{table}_id_seq INCREMENT BY 1</code></td></tr>
+            <tr><td>Hibernate</td><td><code>@SequenceGenerator(..., sequenceName = "public.{table}_id_seq", allocationSize = 1)</code></td></tr>
+            <tr><td>After import</td><td><code>sync_all_table_sequences.sql</code> and/or <code>POST /api/admin/sync-sequence</code></td></tr>
+          </tbody>
+        </table>
+        <p>Most application tables use <code class="code-highlight">id bigint DEFAULT nextval('public.{table}_id_seq'::regclass)</code>.</p>
+        <p><strong>Separate sequences (do not merge):</strong></p>
+        <ul>
+          <li><code class="code-highlight">batch_job_seq</code>, <code class="code-highlight">batch_job_execution_seq</code>, <code class="code-highlight">batch_step_execution_seq</code> — Spring Batch framework</li>
+          <li><code class="code-highlight">batch_job_execution_log_id_seq</code> — <code class="code-highlight">batch_job_execution_log.id</code> (BIGSERIAL / IDENTITY)</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="why-600k">
+      <h2>2. Why next IDs start at 600000+</h2>
+      <table>
+        <thead><tr><th>Cause</th><th>Explanation</th></tr></thead>
+        <tbody>
+          <tr><td>MOSC seed block</td><td><code class="code-highlight">corrected_event_media_inserts.ordered.sql</code> includes tenant <code class="code-highlight">mosc_malankara_orthodox_2</code> rows at <strong>600001+</strong></td></tr>
+          <tr><td>Per-table sequences</td><td>Each table uses <code class="code-highlight">{table}_id_seq</code>; new ids are <code class="code-highlight">MAX(id)+1</code> for that table only</td></tr>
+          <tr><td>Import without sync</td><td>Manual INSERTs do not update <code class="code-highlight">last_value</code></td></tr>
+          <tr><td>Sync after ordered import</td><td><code class="code-highlight">setval</code> sets sequence to global <code class="code-highlight">MAX(id)</code> — ~600k is <strong>correct</strong> for that file</td></tr>
+          <tr><td>Legacy increment 50</td><td>Old JHipster DBs used <code class="code-highlight">INCREMENT BY 50</code> + <code class="code-highlight">allocationSize = 50</code></td></tr>
+        </tbody>
+      </table>
+      <div class="info">
+        <strong>Lower new IDs:</strong> Import <code class="code-highlight">sequence_fix_inserts/corrected_event_media_inserts.renumbered.sql</code>,
+        then run <code class="code-highlight">sync_all_table_sequences.sql</code>. Executive committee next id = that table's max + 1 (not inflated by <code class="code-highlight">event_media</code>).
+      </div>
+    </section>
+
+    <section id="sql-pipeline">
+      <h2>3. SQL scripts — reorder, renumber, sync</h2>
+
+      <h3>3.1 Reorder — FK-safe table order</h3>
+      <div class="section-container usage">
+        <div class="section-header usage">reorder_sql_inserts_final.cjs</div>
+        <p><strong>Path:</strong> <code class="code-highlight">code_html_template/SQLS/reorder_sql_inserts_final.cjs</code></p>
+        <p><strong>Input:</strong> <code class="code-highlight">export.sql</code> · <strong>Output:</strong> <code class="code-highlight">corrected_event_media_inserts.ordered.sql</code></p>
+        <p>Maintain <code class="code-highlight">TABLE_ORDER</code> when export adds tables. Console must report <code class="code-highlight">Extra tables (not in order): none</code>.</p>
+        <p>Spring Batch tables must appear in dependency order: instance → execution → context → params → step → step_context → log.</p>
+      </div>
+
+      <h3>3.2 Optional renumber — compact PKs + trim batch</h3>
+      <div class="section-container parameters">
+        <div class="section-header parameters">renumber_sql_insert_ids.cjs</div>
+        <p><strong>Path:</strong> <code class="code-highlight">code_html_template/SQLS/sequence_fix_inserts/renumber_sql_insert_ids.cjs</code></p>
+        <ul>
+          <li>Per-table PKs starting at <code class="code-highlight">1</code></li>
+          <li>Column-aware FK rewrite (schema + manual overrides)</li>
+          <li>Trim Spring Batch to first <code class="code-highlight">N</code> executions + <code class="code-highlight">N</code> log rows (default 3)</li>
+          <li>Output: <code class="code-highlight">corrected_event_media_inserts.renumbered.sql</code>, <code class="code-highlight">id-mapping-report.json</code></li>
+        </ul>
+        <p>Does <strong>not</strong> replace canonical <code class="code-highlight">SQLS/corrected_event_media_inserts.ordered.sql</code> until import is validated.</p>
+      </div>
+
+      <h3>3.3 Sync after import (mandatory)</h3>
+
+      <div class="command-block verify"
+           data-command-base="docker exec -i CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -v ON_ERROR_STOP=1"
+           data-template-command="docker exec -i CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -v ON_ERROR_STOP=1 -f code_html_template/SQLS/Current_Sqls/sync_all_table_sequences.sql">
+        <div class="command-header">
+          <span class="command-type">Step 7 — sync_all_table_sequences.sql</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'sync-main')" title="Copy template">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'sync-main')" title="Copy">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-content" id="sync-main">docker exec -i CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -v ON_ERROR_STOP=1 &lt; code_html_template/SQLS/Current_Sqls/sync_all_table_sequences.sql</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="sync-main-single-code">docker exec -i CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -v ON_ERROR_STOP=1 &lt; code_html_template/SQLS/Current_Sqls/sync_all_table_sequences.sql</code>
+        </div>
+      </div>
+
+      <div class="command-block verify"
+           data-command-base="docker exec -i CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -v ON_ERROR_STOP=1"
+           data-template-command="docker exec -i CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -v ON_ERROR_STOP=1 -f code_html_template/SQLS/Current_Sqls/sync_spring_batch_sequences.sql">
+        <div class="command-header">
+          <span class="command-type">Step 7b — sync_spring_batch_sequences.sql</span>
+          <div class="command-header-buttons">
+            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'sync-batch')" title="Copy template">📄 Template</button>
+            <button type="button" class="copy-button" onclick="copyCommand(this, 'sync-batch')" title="Copy">📋 Copy</button>
+          </div>
+        </div>
+        <div class="command-content" id="sync-batch">docker exec -i CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -v ON_ERROR_STOP=1 &lt; code_html_template/SQLS/Current_Sqls/sync_spring_batch_sequences.sql</div>
+        <div class="command-single-line">
+          <div class="command-single-line-label">Windows single-line:</div>
+          <code id="sync-batch-single-code">docker exec -i CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -v ON_ERROR_STOP=1 &lt; code_html_template/SQLS/Current_Sqls/sync_spring_batch_sequences.sql</code>
+        </div>
+      </div>
+
+      <div class="warning">
+        <strong>Deprecated:</strong> <code class="code-highlight">fix_sequence_generator_increment_by_one.sql</code> applied only to legacy shared <code class="code-highlight">sequence_generator</code> databases. Fresh installs use per-table <code class="code-highlight">*_id_seq</code> with <code class="code-highlight">INCREMENT BY 1</code>.
+      </div>
+
+      <div class="warning">
+        <strong>Run on every machine:</strong> Schema + import on a local DB does not sync sequences automatically.
+        Steps 7 and 7b must run on <em>that</em> database before relying on the app for new IDs.
+      </div>
+    </section>
+
+    <section id="backend-service">
+      <h2>4. Backend — event-site-manager-service</h2>
+      <p><strong>Repo:</strong> <code class="code-highlight">F:/project_workspace/event-site-manager-service</code> (active API; not legacy <code class="code-highlight">malayalees-us-site-boot</code>).</p>
+
+      <div class="section-container">
+        <div class="section-header">Expected entity annotation</div>
+        <pre class="code-block">@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
+@SequenceGenerator(
+    name = "sequenceGenerator",
+    sequenceName = "public.{table}_id_seq",
+    allocationSize = 1
+)</pre>
+        <p>All domain entities under <code class="code-highlight">src/main/java/com/eventsitemanager/domain/</code> (~78 files) must use <code class="code-highlight">allocationSize = 1</code>.</p>
+      </div>
+
+      <table>
+        <thead><tr><th>Component</th><th>Path (under service repo)</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td><code>SequenceSynchronizationService</code></td><td><code>src/main/java/.../service/SequenceSynchronizationService.java</code></td><td>Runtime <code class="code-highlight">setval</code> — static GREATEST list matching SQL script</td></tr>
+          <tr><td><code>SequenceSynchronizationAspect</code></td><td><code>src/main/java/.../aop/sequence/SequenceSynchronizationAspect.java</code></td><td>On duplicate PK: sync + retry</td></tr>
+          <tr><td><code>AdminController</code></td><td><code>src/main/java/.../web/rest/AdminController.java</code></td><td><code>POST /api/admin/sync-sequence</code></td></tr>
+          <tr><td>Duplicate-key rule</td><td><code>.cursor/rules/duplicate-key-prevention.mdc</code></td><td>Clear <code class="code-highlight">entity.setId(null)</code> on create</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info">
+        When adding a table: add <code class="code-highlight">{table}_id_seq</code> in
+        <code class="code-highlight">Latest_Schema_Post__Blob_Claude_12.sql</code>, unique
+        <code class="code-highlight">@SequenceGenerator</code> on the entity, and run
+        <code class="code-highlight">generate_per_table_sequences.cjs</code> to refresh
+        <code class="code-highlight">sync_all_table_sequences.sql</code> (runtime sync is dynamic via
+        <code class="code-highlight">SequenceSynchronizationService</code>).
+      </div>
+    </section>
+
+    <section id="backend-batch">
+      <h2>5. Backend — event-site-manager-batch-jobs</h2>
+      <p><strong>Repo:</strong> <code class="code-highlight">F:/project_workspace/event-site-manager-batch-jobs</code></p>
+
+      <table>
+        <thead><tr><th>Component</th><th>Path</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td><code>SequenceSynchronizationService</code></td><td><code>.../batch/service/SequenceSynchronizationService.java</code></td><td><strong>Dynamic</strong> sync — discovers all public tables with numeric <code class="code-highlight">id</code></td></tr>
+          <tr><td><code>synchronizeBatchJobExecutionLogSequence()</code></td><td>same file</td><td>Syncs <code class="code-highlight">batch_job_execution_log_id_seq</code></td></tr>
+          <tr><td><code>BatchJobExecutionService</code></td><td><code>.../batch/service/BatchJobExecutionService.java</code></td><td>Pre-sync before each batch job run</td></tr>
+          <tr><td><code>SequenceSynchronizationAspect</code></td><td><code>.../batch/aop/sequence/SequenceSynchronizationAspect.java</code></td><td>Duplicate-key recovery</td></tr>
+          <tr><td>Domain entities (11)</td><td><code>.../batch/domain/*.java</code></td><td><code class="code-highlight">allocationSize = 1</code></td></tr>
+          <tr><td><code>BatchJobExecution</code></td><td><code>.../batch/domain/BatchJobExecution.java</code></td><td><code class="code-highlight">GenerationType.IDENTITY</code> — not <code class="code-highlight">per-table id sequences</code></td></tr>
+        </tbody>
+      </table>
+
+      <div class="warning">
+        Batch runtime pre-sync does <strong>not</strong> replace post-import SQL sync on a freshly restored database.
+        Run <code class="code-highlight">sync_all_table_sequences.sql</code> and <code class="code-highlight">sync_spring_batch_sequences.sql</code> after import on each environment.
+      </div>
+    </section>
+
+    <section id="run-order">
+      <h2>6. Run order (every database / machine)</h2>
+      <div class="section-container output">
+        <div class="section-header output">Standard pipeline</div>
+        <ol class="steps">
+          <li><code class="code-highlight">Latest_Schema_Post__Blob_Claude_12.sql</code></li>
+          <li><code class="code-highlight">node reorder_sql_inserts_final.cjs</code></li>
+          <li><em>Optional:</em> <code class="code-highlight">node renumber_sql_insert_ids.cjs</code></li>
+          <li>Import ordered or renumbered INSERT file</li>
+          <li><strong><code class="code-highlight">sync_all_table_sequences.sql</code></strong></li>
+          <li><strong><code class="code-highlight">sync_spring_batch_sequences.sql</code></strong> (if batch data present)</li>
+          <li>Deploy backends with <code class="code-highlight">allocationSize = 1</code></li>
+          <li><em>Legacy once:</em> <code class="code-highlight">fix_per-table id sequences_increment_by_one.sql</code> if <code class="code-highlight">increment_by = 50</code></li>
+        </ol>
+      </div>
+    </section>
+
+    <section id="verify">
+      <h2>7. Verification</h2>
+      <pre class="code-block">SELECT sequencename, increment_by, last_value
+FROM pg_sequences
+WHERE schemaname = 'public'
+  AND sequencename IN (
+    'per-table id sequences',
+    'batch_job_seq',
+    'batch_job_execution_seq',
+    'batch_step_execution_seq'
+  );
+
+SELECT MAX(id) FROM event_details;
+SELECT MAX(id) FROM event_type_details;
+SELECT MAX(id) FROM event_media;</pre>
+      <p>After sync, <code class="code-highlight">per-table id sequences.last_value</code> ≥ global max <code class="code-highlight">id</code>. Create one row via the app to confirm no duplicate PK.</p>
+    </section>
+
+    <section id="troubleshooting">
+      <h2>8. Troubleshooting</h2>
+      <table>
+        <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td>Next ID ~600001+</td><td>Ordered import with MOSC block</td><td>Expected after sync; use renumbered import for lower IDs</td></tr>
+          <tr><td>Duplicate PK on create</td><td>Sequence behind data</td><td>Run sync SQL or <code class="code-highlight">POST /api/admin/sync-sequence</code></td></tr>
+          <tr><td>IDs jump by 50</td><td>Legacy increment / allocationSize</td><td>Deploy <code class="code-highlight">allocationSize = 1</code>; run fix script once</td></tr>
+          <tr><td>Wrong on other machine only</td><td>Sync not run on that DB</td><td>Run Steps 7 + 7b on that database</td></tr>
+          <tr><td>Batch duplicate PK</td><td>Spring Batch sequences stale</td><td><code class="code-highlight">sync_spring_batch_sequences.sql</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="file-index">
+      <h2>9. File index</h2>
+      <table>
+        <thead><tr><th>File</th><th>Repo / path</th></tr></thead>
+        <tbody>
+          <tr><td>Canonical schema</td><td><code>mosc-temp/code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></td></tr>
+          <tr><td>Reorder script</td><td><code>mosc-temp/code_html_template/SQLS/reorder_sql_inserts_final.cjs</code></td></tr>
+          <tr><td>Renumber script</td><td><code>mosc-temp/code_html_template/SQLS/sequence_fix_inserts/renumber_sql_insert_ids.cjs</code></td></tr>
+          <tr><td>Sync (app tables)</td><td><code>mosc-temp/code_html_template/SQLS/Current_Sqls/sync_all_table_sequences.sql</code></td></tr>
+          <tr><td>Sync (Spring Batch)</td><td><code>mosc-temp/code_html_template/SQLS/Current_Sqls/sync_spring_batch_sequences.sql</code></td></tr>
+          <tr><td>Legacy increment fix</td><td><code>mosc-temp/code_html_template/SQLS/Current_Sqls/fix_per-table id sequences_increment_by_one.sql</code></td></tr>
+          <tr><td>Batch refresh</td><td><code>mosc-temp/code_html_template/batch_files/database_export_import_refresh.bat</code></td></tr>
+          <tr><td>REST API</td><td><code>event-site-manager-service/</code></td></tr>
+          <tr><td>Batch jobs</td><td><code>event-site-manager-batch-jobs/</code></td></tr>
+          <tr><td>Cursor rule</td><td><code>mosc-temp/.cursor/rules/sequence_id_alignment_and_import.mdc</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer class="doc-footer">
+      <p>Last updated: June 2026 · See also <a href="DATABASE_EXPORT_IMPORT_GUIDE.html">DATABASE_EXPORT_IMPORT_GUIDE.html</a></p>
+    </footer>
+  </main>
+
+  <script>
+    function fallbackCopy(text, button) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        button.classList.add('copied');
+        var orig = button.textContent;
+        button.textContent = '✓ Copied!';
+        setTimeout(function () { button.classList.remove('copied'); button.textContent = orig; }, 2000);
+      } catch (e) { console.error(e); }
+      document.body.removeChild(ta);
+    }
+    function copyCommand(button, id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      var text = el.textContent.trim().replace(/&gt;/g, '>').replace(/&lt;/g, '<');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          button.classList.add('copied');
+          var orig = button.textContent;
+          button.textContent = '✓ Copied!';
+          setTimeout(function () { button.classList.remove('copied'); button.textContent = orig; }, 2000);
+        }).catch(function () { fallbackCopy(text, button); });
+      } else { fallbackCopy(text, button); }
+    }
+    function copyTemplateCommand(button, id) {
+      var block = button.closest('.command-block');
+      if (!block) return;
+      var text = (block.getAttribute('data-template-command') || '').replace(/&quot;/g, '"').replace(/&gt;/g, '>').replace(/&lt;/g, '<');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          button.classList.add('copied');
+          var orig = button.textContent;
+          button.textContent = '✓ Copied!';
+          setTimeout(function () { button.classList.remove('copied'); button.textContent = orig; }, 2000);
+        }).catch(function () { fallbackCopy(text, button); });
+      } else { fallbackCopy(text, button); }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Stripe Key Security Audit</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #e74c3c;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .alert {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .alert-info {
+            background-color: #d1ecf1;
+            border-color: #0c5460;
+            color: #0c5460;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .alert-critical {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+            font-weight: bold;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #e83e8c;
+        }
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+        .code-block {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .risk-high {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .risk-medium {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .risk-low {
+            color: #28a745;
+        }
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+        .checklist li:before {
+            content: "✅ ";
+            margin-right: 8px;
+        }
+        .checklist-danger li:before {
+            content: "❌ ";
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Frontend Stripe Key Security Audit</h1>
+        
+        <div class="alert alert-danger">
+            <strong>🔴 SECURITY INCIDENT:</strong> Live Stripe API key (<code>sk_live_***oP67X</code>) detected as publicly available online.
+        </div>
+
+        <h2>Executive Summary</h2>
+        <p>
+            This audit examines the <strong>frontend Next.js project</strong> for vulnerabilities related to Stripe secret key exposure.
+            The backend Java application stores keys encrypted in the database, but this audit focuses on the frontend codebase.
+        </p>
+
+        <div class="alert alert-success">
+            <h3>✅ Good News: Frontend Code is Secure</h3>
+            <ul class="checklist">
+                <li><strong>No client-side exposure:</strong> <code>STRIPE_SECRET_KEY</code> is only used in server-side code (API routes, server actions)</li>
+                <li><strong>No hardcoded keys:</strong> No secret keys are hardcoded in source code</li>
+                <li><strong>Environment files protected:</strong> <code>.env.local</code> and <code>.env.production</code> are in <code>.gitignore</code></li>
+                <li><strong>Only publishable keys in client:</strong> Only <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> (safe) is used in client components</li>
+            </ul>
+        </div>
+
+        <div class="alert alert-warning">
+            <h3>⚠️ Potential Risk: next.config.mjs env Section</h3>
+            <p>
+                <strong>Location:</strong> <code>next.config.mjs</code> line 165<br>
+                <strong>Issue:</strong> <code>STRIPE_SECRET_KEY</code> is declared in the <code>env</code> section
+            </p>
+            <p>
+                While this variable is <strong>NOT</strong> prefixed with <code>NEXT_PUBLIC_</code> (so it won't be bundled in client code),
+                the <code>env</code> section makes variables available at <strong>build time</strong>, which could expose them in:
+            </p>
+            <ul>
+                <li>Build logs (AWS Amplify, CI/CD pipelines)</li>
+                <li>CloudWatch logs if build scripts log environment variables</li>
+                <li>Docker build layers if building container images</li>
+            </ul>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #dee2e6;">
+
+        <h2>Detailed Code Analysis</h2>
+
+        <div class="section">
+            <h3>1. Secret Key Usage Locations</h3>
+            <p>All instances of <code>STRIPE_SECRET_KEY</code> are in <strong>server-side only</strong> files:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>File</th>
+                        <th>Type</th>
+                        <th>Risk Level</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>src/lib/stripe/init.ts</code></td>
+                        <td>Server utility</td>
+                        <td class="risk-low">✅ SAFE</td>
+                        <td>Server-side only, used by API routes</td>
+                    </tr>
+                    <tr>
+                        <td><code>src/pages/api/stripe/verify-payment-intent.ts</code></td>
+                        <td>API route</td>
+                        <td class="risk-low">✅ SAFE</td>
+                        <td>Server-side API endpoint</td>
+                    </tr>
+                    <tr>
+                        <td><code>src/app/api/webhooks/stripe/route.ts</code></td>
+                        <td>API route</td>
+                        <td class="risk-low">✅ SAFE</td>
+                        <td>Server-side webhook handler</td>
+                    </tr>
+                    <tr>
+                        <td><code>src/app/api/billing/manage-subscription/route.ts</code></td>
+                        <td>API route</td>
+                        <td class="risk-low">✅ SAFE</td>
+                        <td>Server-side API endpoint</td>
+                    </tr>
+                    <tr>
+                        <td><code>src/app/api/billing/cancel-subscription/route.ts</code></td>
+                        <td>API route</td>
+                        <td class="risk-low">✅ SAFE</td>
+                        <td>Server-side API endpoint</td>
+                    </tr>
+                    <tr>
+                        <td><code>src/app/api/event/success/process/route.ts</code></td>
+                        <td>API route</td>
+                        <td class="risk-low">✅ SAFE</td>
+                        <td>Server-side API endpoint</td>
+                    </tr>
+                    <tr>
+                        <td><code>src/app/event/success/ApiServerActions.ts</code></td>
+                        <td>Server action</td>
+                        <td class="risk-low">✅ SAFE</td>
+                        <td>Server-side only (runs on server)</td>
+                    </tr>
+                    <tr>
+                        <td><code>next.config.mjs</code> (line 165)</td>
+                        <td>Config file</td>
+                        <td class="risk-medium">⚠️ MEDIUM</td>
+                        <td>Available at build time - could appear in build logs</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h3>2. Publishable Key Usage (Safe)</h3>
+            <p>
+                <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> is correctly used in client components.
+                Publishable keys (<code>pk_*</code>) are <strong>designed to be public</strong> and safe to expose in client code.
+            </p>
+            <p><strong>Files using publishable key:</strong></p>
+            <ul>
+                <li><code>src/components/StripeDesktopCheckout.tsx</code> - ✅ Safe</li>
+                <li><code>src/components/StripePaymentRequestButton.tsx</code> - ✅ Safe</li>
+                <li><code>src/components/UniversalPaymentCheckout.tsx</code> - ✅ Safe</li>
+                <li><code>src/components/membership/MembershipDesktopCheckout.tsx</code> - ✅ Safe</li>
+                <li><code>src/components/membership/MembershipPaymentRequestButton.tsx</code> - ✅ Safe</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3>3. Console Logging Analysis</h3>
+            <p>
+                Searched for <code>console.log</code> statements that might expose secret keys.
+            </p>
+            <div class="alert alert-success">
+                <strong>✅ No Secret Key Logging Found</strong>
+                <ul>
+                    <li>All console.log statements only log <strong>presence/absence</strong> of keys (<code>hasSecretKey: !!secretKey</code>)</li>
+                    <li>No actual key values are logged</li>
+                    <li>Only masked values are logged (e.g., <code>key.substring(0, 20) + '...'</code>)
+                </ul>
+            </div>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #dee2e6;">
+
+        <h2>Most Likely Leak Sources (Frontend Perspective)</h2>
+
+        <div class="section">
+            <h3>1. AWS Amplify Build Logs <span class="risk-high">⚠️ HIGHEST RISK</span></h3>
+            <p><strong>Why This Is Likely:</strong></p>
+            <ul>
+                <li><code>next.config.mjs</code> declares <code>STRIPE_SECRET_KEY</code> in the <code>env</code> section (line 165)</li>
+                <li>Next.js build process may log environment variables during build</li>
+                <li>AWS Amplify build logs are often publicly accessible or indexed by search engines</li>
+                <li>CloudWatch logs may contain build output with environment variables</li>
+            </ul>
+
+            <p><strong>How to Check:</strong></p>
+            <div class="code-block">
+                <pre><code># Check AWS Amplify build logs
+aws amplify list-apps
+aws amplify get-app --app-id &lt;your-app-id&gt;
+
+# Check CloudWatch logs for environment variable exposure
+aws logs describe-log-groups --log-group-name-prefix "/aws/amplify"
+aws logs filter-log-events \
+  --log-group-name "/aws/amplify/&lt;app-name&gt;/build" \
+  --filter-pattern "STRIPE_SECRET_KEY"
+
+# Search for the leaked key pattern
+aws logs filter-log-events \
+  --log-group-name "/aws/amplify/&lt;app-name&gt;/build" \
+  --filter-pattern "sk_live"</code></pre>
+            </div>
+
+            <p><strong>What to Do:</strong></p>
+            <ol>
+                <li>Review all AWS Amplify build logs in CloudWatch</li>
+                <li>Check if Next.js build output logs environment variables</li>
+                <li>Verify Amplify build settings don't echo environment variables</li>
+                <li>Check if build scripts log <code>process.env</code> values</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h3>2. next.config.mjs env Section <span class="risk-medium">⚠️ MEDIUM RISK</span></h3>
+            <p>
+                <strong>Current Configuration:</strong>
+            </p>
+            <div class="code-block">
+                <pre><code>// next.config.mjs (line 165)
+env: {
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+  // ... other vars
+}</code></pre>
+            </div>
+
+            <p><strong>Risk:</strong></p>
+            <ul>
+                <li>The <code>env</code> section makes variables available at build time</li>
+                <li>If build scripts or Next.js logs these values, they could appear in build logs</li>
+                <li>While not bundled in client code (no <code>NEXT_PUBLIC_</code> prefix), build-time exposure is still a risk</li>
+            </ul>
+
+            <p><strong>Recommendation:</strong></p>
+            <div class="alert alert-info">
+                <strong>Option 1: Remove from env section (Recommended)</strong>
+                <p>
+                    Since <code>STRIPE_SECRET_KEY</code> is only used in server-side code (API routes, server actions),
+                    it doesn't need to be in the <code>env</code> section. Server-side code can access <code>process.env</code> directly.
+                </p>
+                <div class="code-block">
+                    <pre><code>// REMOVE these lines from next.config.mjs env section:
+// STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+// STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+
+// Keep them only in serverRuntimeConfig (line 26-27):
+serverRuntimeConfig: {
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || process.env.AMPLIFY_STRIPE_SECRET_KEY,
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || process.env.AMPLIFY_STRIPE_WEBHOOK_SECRET,
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>3. Browser Clipboard/Extensions <span class="risk-medium">⚠️ MEDIUM RISK</span></h3>
+            <p>
+                If you copied the Stripe key from AWS Amplify console or another source:
+            </p>
+            <ul>
+                <li>Browser clipboard history may have stored it</li>
+                <li>Browser extensions (password managers, clipboard managers) may have captured it</li>
+                <li>Browser developer tools console history may contain it</li>
+            </ul>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #dee2e6;">
+
+        <h2>Immediate Actions Required</h2>
+
+        <div class="alert alert-critical">
+            <h3>1. Rotate Stripe Keys IMMEDIATELY 🔴 CRITICAL</h3>
+            <ol>
+                <li>Go to <a href="https://dashboard.stripe.com/apikeys" target="_blank">Stripe Dashboard → API Keys</a></li>
+                <li>Revoke the compromised key: <code>sk_live_***oP67X</code></li>
+                <li>Create a new live secret key</li>
+                <li>Update AWS Amplify environment variables with the new key</li>
+                <li>Update backend database with new encrypted key</li>
+            </ol>
+        </div>
+
+        <h3>2. Remove STRIPE_SECRET_KEY from next.config.mjs env Section</h3>
+        <div class="code-block">
+            <pre><code>// In next.config.mjs, REMOVE these lines from the env section (around line 165):
+// STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+// STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+
+// Keep them ONLY in serverRuntimeConfig (lines 26-27):
+serverRuntimeConfig: {
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || process.env.AMPLIFY_STRIPE_SECRET_KEY,
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || process.env.AMPLIFY_STRIPE_WEBHOOK_SECRET,
+}</code></pre>
+        </div>
+
+        <p><strong>Why:</strong></p>
+        <ul>
+            <li>Server-side code (API routes, server actions) can access <code>process.env</code> directly</li>
+            <li>The <code>env</code> section is primarily for variables needed at build time or in client code</li>
+            <li>Removing from <code>env</code> reduces risk of build-time exposure</li>
+        </ul>
+
+        <h3>3. Audit AWS Amplify Build Logs</h3>
+        <div class="code-block">
+            <pre><code># Check if build logs contain the key
+aws logs filter-log-events \
+  --log-group-name "/aws/amplify/&lt;app-name&gt;/build" \
+  --filter-pattern "sk_live" \
+  --start-time $(date -d '30 days ago' +%s)000
+
+# Check for any environment variable dumps
+aws logs filter-log-events \
+  --log-group-name "/aws/amplify/&lt;app-name&gt;/build" \
+  --filter-pattern "STRIPE_SECRET_KEY"</code></pre>
+        </div>
+
+        <h3>4. Review Build Scripts</h3>
+        <p>Check if any build scripts (e.g., <code>amplify.yml</code>, <code>package.json</code> scripts) log environment variables:</p>
+        <div class="code-block">
+            <pre><code># Search for dangerous patterns
+grep -r "console.log.*process.env" .
+grep -r "echo.*STRIPE" .
+grep -r "printenv" .</code></pre>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #dee2e6;">
+
+        <h2>Prevention Measures</h2>
+
+        <h3>1. Update next.config.mjs</h3>
+        <div class="code-block">
+            <pre><code>// ✅ DO: Keep secret keys ONLY in serverRuntimeConfig
+serverRuntimeConfig: {
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || process.env.AMPLIFY_STRIPE_SECRET_KEY,
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || process.env.AMPLIFY_STRIPE_WEBHOOK_SECRET,
+},
+
+// ❌ DON'T: Include secret keys in env section
+env: {
+  // Remove STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET from here
+  // Only include NEXT_PUBLIC_* variables that are safe for client
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+}</code></pre>
+        </div>
+
+        <h3>2. Use AWS Secrets Manager (Recommended)</h3>
+        <p>
+            Instead of storing keys in AWS Amplify environment variables, use AWS Secrets Manager:
+        </p>
+        <div class="code-block">
+            <pre><code># Store in Secrets Manager
+aws secretsmanager create-secret \
+  --name "stripe/live/secret-key" \
+  --secret-string "sk_live_..."
+
+# Reference in amplify.yml build script
+version: 1
+backend:
+  phases:
+    build:
+      commands:
+        - |
+          export STRIPE_SECRET_KEY=$(aws secretsmanager get-secret-value \
+            --secret-id stripe/live/secret-key \
+            --query SecretString --output text)</code></pre>
+        </div>
+
+        <h3>3. Add Pre-commit Hook</h3>
+        <div class="code-block">
+            <pre><code>#!/bin/sh
+# .git/hooks/pre-commit
+# Check for exposed keys before commit
+if git diff --cached | grep -E "sk_live_|sk_test_"; then
+    echo "ERROR: Stripe secret keys detected in staged files!"
+    exit 1
+fi</code></pre>
+        </div>
+
+        <h3>4. Add Secret Scanning to CI/CD</h3>
+        <div class="code-block">
+            <pre><code># Add to GitHub Actions / GitLab CI
+- name: Scan for secrets
+  uses: trufflesecurity/trufflehog@main
+  with:
+    path: ./
+    base: ${{ github.event.repository.default_branch }}</code></pre>
+        </div>
+
+        <h3>5. Review Build Log Visibility</h3>
+        <ul>
+            <li>Ensure AWS Amplify build logs are not publicly accessible</li>
+            <li>Restrict CloudWatch log access to authorized personnel only</li>
+            <li>Enable CloudWatch log encryption</li>
+            <li>Set up alerts for sensitive data in logs</li>
+        </ul>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #dee2e6;">
+
+        <h2>Can Stripe Tell You the Source?</h2>
+
+        <div class="alert alert-info">
+            <p>
+                <strong>Stripe typically does NOT reveal exact leak sources</strong> for security reasons,
+                but you can ask Stripe Support:
+            </p>
+            <ol>
+                <li><strong>"When was the key first detected as exposed?"</strong> - Helps narrow down timeline</li>
+                <li><strong>"Are there any patterns in how the key was used?"</strong> - May indicate source type</li>
+                <li><strong>"Can you provide geographic/IP information about key usage?"</strong> - May indicate if it's automated scanning vs. actual use</li>
+                <li><strong>"What type of unauthorized activity was detected?"</strong> - Helps understand scope</li>
+            </ol>
+            <p>
+                This information can help you correlate with your own logs (AWS Amplify builds, deployment dates, etc.)
+                to identify when/where the leak occurred.
+            </p>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #dee2e6;">
+
+        <h2>CloudWatch Audit Results (Verified)</h2>
+
+        <div class="alert alert-success">
+            <h3>✅ AWS Amplify / CloudWatch Logs: No Stripe Secret Key Exposure Found</h3>
+            <p>
+                Log group <code>/aws/amplify/dlrfe56ydlilz</code> (region <code>us-east-2</code>) was audited.
+                The following filter patterns returned <strong>no events</strong>:
+            </p>
+            <ul>
+                <li><code>STRIPE_SECRET_KEY</code></li>
+                <li><code>sk_live</code></li>
+                <li><code>process.env</code></li>
+            </ul>
+            <p>
+                <strong>Conclusion:</strong> The Stripe secret key does <strong>not</strong> appear in Amplify build logs.
+                The frontend application / Amplify build process is <strong>not</strong> the source of the leak.
+            </p>
+        </div>
+
+        <h2>Summary</h2>
+
+        <div class="section">
+            <h3>Frontend Code Security Status: ✅ SECURE</h3>
+            <ul class="checklist">
+                <li>No secret keys in client-side code</li>
+                <li>No hardcoded keys in source files</li>
+                <li>Environment files properly ignored by Git</li>
+                <li>Only publishable keys used in client components</li>
+                <li>CloudWatch Amplify logs audited: no <code>STRIPE_SECRET_KEY</code>, <code>sk_live</code>, or <code>process.env</code> exposure</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3>Potential Leak Sources (Frontend-Related)</h3>
+            <ol>
+                <li><strong>AWS Amplify Build Logs</strong> — <span class="risk-low">✅ Ruled out</span> (CloudWatch audit: no matches)</li>
+                <li><strong>next.config.mjs env Section</strong> — Preventive fix applied (removed from <code>env</code> section)</li>
+                <li><strong>Browser Clipboard/Extensions</strong> — Medium risk if key was copied/pasted (not verifiable via logs)</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h3>Recommended Actions</h3>
+            <ol>
+                <li>✅ Rotate Stripe keys (as advised by Stripe support — routine rotation)</li>
+                <li>✅ Keep <code>STRIPE_SECRET_KEY</code> removed from <code>next.config.mjs</code> <code>env</code> section (preventive)</li>
+                <li>✅ CloudWatch Amplify logs audited; no exposure found</li>
+                <li>✅ No further frontend application changes required for this incident</li>
+                <li>Consider using AWS Secrets Manager instead of Amplify env vars (optional hardening)</li>
+                <li>Consider adding secret scanning to CI/CD pipeline (optional hardening)</li>
+            </ol>
+        </div>
+
+        <div class="alert alert-info">
+            <h3>Stripe Support Guidance</h3>
+            <p>
+                If Stripe support has advised to <strong>rotate the key as part of routine</strong> (and no further action),
+                that is consistent with these findings: the frontend/Amplify build is not logging the secret, and no
+                frontend code changes are needed. Rotate the key, update Amplify env vars and backend, and keep the
+                preventive <code>next.config.mjs</code> change in place.
+            </p>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #dee2e6;">
+
+        <p style="color: #6c757d; font-size: 0.9em;">
+            <strong>Document Version:</strong> 1.0<br>
+            <strong>Created:</strong> <span id="date"></span><br>
+            <strong>Related Documentation:</strong> 
+            <a href="STRIPE_KEY_LEAK_AUDIT_AND_PREVENTION.html">STRIPE_KEY_LEAK_AUDIT_AND_PREVENTION.html</a> (Backend-focused)
+        </p>
+    </div>
+
+    <script>
+        document.getElementById('date').textContent = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    </script>
+</body>
+</html>

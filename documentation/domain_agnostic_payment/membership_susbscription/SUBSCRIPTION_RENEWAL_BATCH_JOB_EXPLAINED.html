@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscription Renewal Batch Job - Plain English Explanation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 15px;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+
+        h3 {
+            color: #555;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        h4 {
+            color: #666;
+            margin-top: 25px;
+            margin-bottom: 12px;
+            font-size: 1.2em;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        .highlight-box {
+            background: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+
+        .code-block {
+            background: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .code-block-title {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background: #3498db;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .step-number {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .flow-diagram {
+            background: #f9f9f9;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+
+        .flow-step {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .flow-step::before {
+            content: "→";
+            position: absolute;
+            left: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #3498db;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .flow-step:first-child::before {
+            content: "";
+        }
+
+        .metadata {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+
+        .metadata-item {
+            margin: 5px 0;
+        }
+
+        .metadata-label {
+            font-weight: 600;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Subscription Renewal Batch Job - Plain English Explanation</h1>
+
+        <div class="metadata">
+            <div class="metadata-item">
+                <span class="metadata-label">Document Purpose:</span> Explain what the Subscription Renewal Batch Job actually does when triggered manually or scheduled
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">Based on:</span> Code analysis from <code>E:\project_workspace\event-site-manager-batch-jobs</code>
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">Related Documentation:</span> <code>SUBSCRIPTION_RENEWAL_BATCH_JOB_ANALYSIS_AND_TEST_STEPS.html</code> - Section 18.4.6
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">Last Updated:</span> December 31, 2025
+            </div>
+        </div>
+
+        <h2>1. What Is This Batch Job?</h2>
+
+        <p>
+            The <strong>Subscription Renewal Batch Job</strong> is an automated process that checks all active membership subscriptions
+            in your database and ensures they are synchronized with Stripe (the payment processor). Think of it as a "health check"
+            that runs periodically to make sure your database and Stripe are in sync.
+        </p>
+
+        <div class="highlight-box">
+            <strong>Simple Analogy:</strong> Imagine you have a library with books (subscriptions). Some books might have been checked out
+            or returned (renewed) by Stripe, but your library records (database) might not be updated yet. This batch job is like a
+            librarian who goes through all the books, checks with the actual checkout system (Stripe), and updates your records to match.
+        </div>
+
+        <h2>2. When Does It Run?</h2>
+
+        <h3>2.1 Scheduled Execution (Automatic)</h3>
+        <p>
+            The batch job runs automatically on a schedule:
+        </p>
+        <ul>
+            <li><strong>Default Schedule:</strong> Every 6 hours (at midnight, 6 AM, noon, and 6 PM)</li>
+            <li><strong>Configuration:</strong> Controlled by <code>batch.subscription-renewal.schedule-cron</code> in <code>application.yml</code></li>
+            <li><strong>Can Be Disabled:</strong> Set <code>batch.subscription-renewal.enabled=false</code> to turn off automatic runs</li>
+        </ul>
+
+        <div class="code-block">
+            <div class="code-block-title">Scheduled Execution (BatchJobScheduler.java)</div>
+            <pre>@Scheduled(cron = "${batch.subscription-renewal.schedule-cron:0 0 */6 * * *}")
+public void scheduledSubscriptionRenewal() {
+    // Runs automatically every 6 hours
+    batchJobOrchestrationService.runSubscriptionRenewalJob(null, null, null);
+}</pre>
+        </div>
+
+        <h3>2.2 Manual Trigger (On-Demand)</h3>
+        <p>
+            You can also trigger the batch job manually at any time:
+        </p>
+        <ul>
+            <li><strong>Via API:</strong> <code>POST /api/batch-jobs/subscription-renewal</code></li>
+            <li><strong>Via Script:</strong> <code>node scripts/test-subscription-renewal/trigger-batch-job.js</code></li>
+            <li><strong>Use Case:</strong> When you need to immediately sync subscriptions (e.g., after a webhook fails or for testing)</li>
+        </ul>
+
+        <div class="code-block">
+            <div class="code-block-title">Manual Trigger Example</div>
+            <pre>node scripts/test-subscription-renewal/trigger-batch-job.js \
+  --tenant-id=tenant_demo_002 \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --batch-size=10 \
+  --max-subscriptions=100</pre>
+        </div>
+
+        <h2>3. What Subscriptions Does It Process?</h2>
+
+        <p>
+            The batch job doesn't process <em>all</em> subscriptions. It only looks at subscriptions that meet specific criteria:
+        </p>
+
+        <h3>3.1 Selection Criteria</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Criteria</th>
+                    <th>What It Means</th>
+                    <th>Why</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Status Must Be ACTIVE or TRIALING</strong></td>
+                    <td>Only active subscriptions (not cancelled, expired, or past due)</td>
+                    <td>No point checking subscriptions that are already cancelled</td>
+                </tr>
+                <tr>
+                    <td><strong>Not Scheduled for Cancellation</strong></td>
+                    <td><code>cancel_at_period_end = false</code></td>
+                    <td>Skip subscriptions that are already set to cancel at the end of the period</td>
+                </tr>
+                <tr>
+                    <td><strong>Renewal Date Within Window</strong></td>
+                    <td><code>current_period_end</code> is within 7 days (or 30 days for Stripe-checked subscriptions)</td>
+                    <td>Only check subscriptions that are approaching renewal or recently renewed</td>
+                </tr>
+                <tr>
+                    <td><strong>Tenant-Scoped</strong></td>
+                    <td>Only subscriptions for the specified tenant</td>
+                    <td>Multi-tenant system - each tenant's subscriptions are processed separately</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="code-block">
+            <div class="code-block-title">Database Query (MembershipSubscriptionRepository.java)</div>
+            <pre>SELECT * FROM membership_subscription
+WHERE tenant_id = :tenantId
+  AND subscription_status IN ('ACTIVE', 'TRIALING')
+  AND cancel_at_period_end = false
+  AND (
+    current_period_end <= CURRENT_DATE + 7 days  -- Database date check
+    OR (stripe_subscription_id IS NOT NULL
+        AND current_period_end <= CURRENT_DATE + 30 days)  -- Extended window for Stripe-checked
+  )
+ORDER BY current_period_end ASC</pre>
+        </div>
+
+        <h2>4. What Happens During Processing? (Step-by-Step)</h2>
+
+        <div class="flow-diagram">
+            <h3>Processing Flow</h3>
+
+            <div class="flow-step">
+                <h4><span class="step-number">1</span> Reader Phase: Find Subscriptions</h4>
+                <p>
+                    The batch job queries the database to find all subscriptions that match the criteria above.
+                    It processes them in batches (default: 100 subscriptions at a time) to avoid overwhelming
+                    the system or Stripe's API.
+                </p>
+            </div>
+
+            <div class="flow-step">
+                <h4><span class="step-number">2</span> Processor Phase: Check Each Subscription</h4>
+                <p>
+                    For each subscription found, the processor does the following:
+                </p>
+                <ul>
+                    <li><strong>If subscription has Stripe ID:</strong>
+                        <ul>
+                            <li>Fetches the latest subscription data from Stripe</li>
+                            <li>Compares Stripe's dates with database dates</li>
+                            <li>Checks if the subscription is within the renewal window (7 days)</li>
+                            <li>Updates database dates if they don't match Stripe (self-healing)</li>
+                        </ul>
+                    </li>
+                    <li><strong>If subscription has NO Stripe ID:</strong>
+                        <ul>
+                            <li>Uses only database dates</li>
+                            <li>Checks if renewal date is within 7 days</li>
+                            <li>Marks for processing if within window</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="flow-step">
+                <h4><span class="step-number">3</span> Writer Phase: Save Updates</h4>
+                <p>
+                    After processing, the writer saves any changes back to the database:
+                </p>
+                <ul>
+                    <li>Updates <code>current_period_start</code> and <code>current_period_end</code> dates</li>
+                    <li>Updates <code>reconciliation_status</code> (SYNCED, UPDATED, PROCESSED, or ERROR)</li>
+                    <li>Records <code>last_reconciliation_at</code> timestamp</li>
+                    <li>Records <code>last_stripe_sync_at</code> timestamp (if Stripe was checked)</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>5. What Gets Updated in the Database?</h2>
+
+        <p>
+            The batch job updates the following fields in the <code>membership_subscription</code> table:
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>What Gets Updated</th>
+                    <th>When</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>current_period_start</code></td>
+                    <td>Start date of current billing period</td>
+                    <td>If Stripe's date differs from database</td>
+                </tr>
+                <tr>
+                    <td><code>current_period_end</code></td>
+                    <td>End date of current billing period (renewal date)</td>
+                    <td>If Stripe's date differs from database</td>
+                </tr>
+                <tr>
+                    <td><code>reconciliation_status</code></td>
+                    <td>Status: SYNCED, UPDATED, PROCESSED, or ERROR</td>
+                    <td>Always updated to reflect processing result</td>
+                </tr>
+                <tr>
+                    <td><code>last_reconciliation_at</code></td>
+                    <td>Timestamp of when this subscription was last checked</td>
+                    <td>Always updated</td>
+                </tr>
+                <tr>
+                    <td><code>last_stripe_sync_at</code></td>
+                    <td>Timestamp of when Stripe was last checked</td>
+                    <td>Only if subscription has Stripe ID</td>
+                </tr>
+                <tr>
+                    <td><code>reconciliation_error</code></td>
+                    <td>Error message if processing failed</td>
+                    <td>Only if an error occurred</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="success-box">
+            <strong>Important:</strong> The batch job does <strong>NOT</strong> charge customers or create new subscriptions.
+            It only <strong>reads</strong> data from Stripe and <strong>updates</strong> your database to match.
+            Stripe handles the actual billing and renewal automatically.
+        </div>
+
+        <h2>6. Self-Healing Feature</h2>
+
+        <p>
+            One of the most important features of this batch job is its "self-healing" capability:
+        </p>
+
+        <div class="highlight-box">
+            <h4>What Is Self-Healing?</h4>
+            <p>
+                If the database dates don't match Stripe's dates, the batch job automatically updates the database
+                to match Stripe (the source of truth). This fixes any discrepancies that might have occurred due to:
+            </p>
+            <ul>
+                <li>Webhook failures (Stripe sent an update but your system didn't receive it)</li>
+                <li>Manual changes in Stripe dashboard</li>
+                <li>System errors or downtime</li>
+                <li>Time zone differences</li>
+            </ul>
+        </div>
+
+        <h3>6.1 Example Scenario</h3>
+        <p>
+            <strong>Before Batch Job Runs:</strong>
+        </p>
+        <ul>
+            <li>Database says: <code>current_period_end = 2025-01-15</code></li>
+            <li>Stripe says: <code>current_period_end = 2025-01-22</code> (subscription was renewed)</li>
+        </ul>
+        <p>
+            <strong>After Batch Job Runs:</strong>
+        </p>
+        <ul>
+            <li>Database is updated to: <code>current_period_end = 2025-01-22</code></li>
+            <li><code>reconciliation_status = "UPDATED"</code></li>
+            <li><code>last_stripe_sync_at = 2025-12-31 12:00:00</code></li>
+        </ul>
+
+        <h2>7. Error Handling and Retry Logic</h2>
+
+        <p>
+            The batch job is designed to be resilient:
+        </p>
+
+        <h3>7.1 Retry Logic</h3>
+        <ul>
+            <li><strong>Stripe API Failures:</strong> If Stripe API call fails, the job retries up to 3 times</li>
+            <li><strong>Network Errors:</strong> Temporary network issues are retried automatically</li>
+            <li><strong>Rate Limiting:</strong> If Stripe rate limits the request, the job waits and retries</li>
+        </ul>
+
+        <h3>7.2 Fallback Behavior</h3>
+        <p>
+            If Stripe cannot be reached (network outage, API down, etc.), the batch job falls back to using
+            database dates only:
+        </p>
+        <ul>
+            <li>Checks if database <code>current_period_end</code> is within 7 days</li>
+            <li>Marks subscription as "PROCESSED" (not "SYNCED" since Stripe wasn't checked)</li>
+            <li>Logs a warning for manual review</li>
+        </ul>
+
+        <h3>7.3 Error Status</h3>
+        <p>
+            If processing fails completely (e.g., database error, invalid data), the subscription is marked with:
+        </p>
+        <ul>
+            <li><code>reconciliation_status = "ERROR"</code></li>
+            <li><code>reconciliation_error = "Error message here"</code></li>
+            <li>The batch job continues processing other subscriptions (doesn't stop on one error)</li>
+        </ul>
+
+        <h2>8. Configuration Options</h2>
+
+        <p>
+            The batch job behavior can be customized via configuration:
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Configuration</th>
+                    <th>Default Value</th>
+                    <th>What It Controls</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>batch.subscription-renewal.enabled</code></td>
+                    <td><code>true</code></td>
+                    <td>Enable/disable scheduled execution</td>
+                </tr>
+                <tr>
+                    <td><code>batch.subscription-renewal.schedule-cron</code></td>
+                    <td><code>0 0 */6 * * *</code></td>
+                    <td>Cron expression for schedule (every 6 hours)</td>
+                </tr>
+                <tr>
+                    <td><code>batch.subscription-renewal.batch-size</code></td>
+                    <td><code>100</code></td>
+                    <td>Number of subscriptions processed in each batch</td>
+                </tr>
+                <tr>
+                    <td><code>batch.subscription-renewal.max-subscriptions</code></td>
+                    <td><code>10000</code></td>
+                    <td>Maximum number of subscriptions to process in one run</td>
+                </tr>
+                <tr>
+                    <td><code>batch.subscription-renewal.renewal-days-ahead</code></td>
+                    <td><code>7</code></td>
+                    <td>How many days before renewal to start checking</td>
+                </tr>
+                <tr>
+                    <td><code>batch.subscription-renewal.stripe-check-extended-days</code></td>
+                    <td><code>30</code></td>
+                    <td>Extended window for subscriptions with Stripe ID</td>
+                </tr>
+                <tr>
+                    <td><code>subscription.renewal.use-database-fallback</code></td>
+                    <td><code>false</code></td>
+                    <td>Use database dates as fallback when Stripe dates differ (dev/testing only)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="warning-box">
+            <strong>Production Warning:</strong> The <code>use-database-fallback</code> option should be <code>false</code> in production.
+            Setting it to <code>true</code> means the batch job will use database dates even when Stripe dates differ, which can lead
+            to incorrect renewal processing. Only use <code>true</code> for development/testing environments.
+        </div>
+
+        <h2>9. What Happens When You Trigger It Manually? (Step 18.4.6)</h2>
+
+        <p>
+            When you run the command from Section 18.4.6:
+        </p>
+
+        <div class="code-block">
+            <div class="code-block-title">Manual Trigger Command</div>
+            <pre>node scripts/test-subscription-renewal/trigger-batch-job.js \
+  --tenant-id=tenant_demo_002 \
+  --subscription-id=sub_1SeifsK5BrggeAHMBvg2XE93 \
+  --batch-size=10 \
+  --max-subscriptions=100</pre>
+        </div>
+
+        <h3>9.1 What the Script Does</h3>
+        <ol>
+            <li><strong>Authenticates:</strong> Gets a JWT token from the backend API using credentials</li>
+            <li><strong>Sends Request:</strong> Makes a POST request to <code>/api/batch-jobs/subscription-renewal</code></li>
+            <li><strong>Passes Parameters:</strong>
+                <ul>
+                    <li><code>tenantId</code>: Which tenant's subscriptions to process</li>
+                    <li><code>stripeSubscriptionId</code> (optional): Process only one specific subscription</li>
+                    <li><code>batchSize</code>: How many subscriptions to process at once</li>
+                    <li><code>maxSubscriptions</code>: Maximum total subscriptions to process</li>
+                </ul>
+            </li>
+            <li><strong>Returns Immediately:</strong> The API returns a job execution ID (job runs asynchronously)</li>
+            <li><strong>Reports Statistics:</strong> After job completes, shows how many subscriptions were processed</li>
+        </ol>
+
+        <h3>9.2 What Happens Next</h3>
+        <p>
+            Once triggered, the batch job:
+        </p>
+        <ol>
+            <li>Finds subscriptions matching the criteria (or the specific subscription if ID provided)</li>
+            <li>Processes each one (checks Stripe, updates database)</li>
+            <li>Saves all updates to the database</li>
+            <li>Logs the results</li>
+        </ol>
+
+        <h2>10. Real-World Example</h2>
+
+        <p>
+            Let's walk through a concrete example:
+        </p>
+
+        <h3>10.1 Scenario</h3>
+        <p>
+            You have a subscription that renewed yesterday, but the webhook from Stripe failed to update your database.
+        </p>
+
+        <h3>10.2 Before Batch Job Runs</h3>
+        <table>
+            <tr>
+                <th>Field</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td>Subscription ID</td>
+                <td>123</td>
+            </tr>
+            <tr>
+                <td>Stripe Subscription ID</td>
+                <td>sub_1SeifsK5BrggeAHMBvg2XE93</td>
+            </tr>
+            <tr>
+                <td>Database current_period_end</td>
+                <td>2025-01-14 (yesterday - expired!)</td>
+            </tr>
+            <tr>
+                <td>Stripe current_period_end</td>
+                <td>2025-02-14 (renewed for another month)</td>
+            </tr>
+            <tr>
+                <td>reconciliation_status</td>
+                <td>PENDING (never checked)</td>
+            </tr>
+        </table>
+
+        <h3>10.3 Batch Job Processing</h3>
+        <ol>
+            <li><strong>Reader:</strong> Finds this subscription (because <code>current_period_end</code> is within 30-day window)</li>
+            <li><strong>Processor:</strong>
+                <ul>
+                    <li>Fetches subscription from Stripe</li>
+                    <li>Sees Stripe date is <code>2025-02-14</code> but database says <code>2025-01-14</code></li>
+                    <li>Updates database dates to match Stripe</li>
+                    <li>Sets <code>reconciliation_status = "UPDATED"</code></li>
+                </ul>
+            </li>
+            <li><strong>Writer:</strong> Saves updated subscription to database</li>
+        </ol>
+
+        <h3>10.4 After Batch Job Runs</h3>
+        <table>
+            <tr>
+                <th>Field</th>
+                <th>New Value</th>
+            </tr>
+            <tr>
+                <td>current_period_end</td>
+                <td>2025-02-14 ✅ (updated from Stripe)</td>
+            </tr>
+            <tr>
+                <td>current_period_start</td>
+                <td>2025-01-15 ✅ (updated from Stripe)</td>
+            </tr>
+            <tr>
+                <td>reconciliation_status</td>
+                <td>UPDATED ✅</td>
+            </tr>
+            <tr>
+                <td>last_reconciliation_at</td>
+                <td>2025-12-31 12:00:00 ✅</td>
+            </tr>
+            <tr>
+                <td>last_stripe_sync_at</td>
+                <td>2025-12-31 12:00:00 ✅</td>
+            </tr>
+        </table>
+
+        <div class="success-box">
+            <strong>Result:</strong> Your database is now in sync with Stripe! The subscription shows as active
+            and renewed, even though the webhook failed.
+        </div>
+
+        <h2>11. Key Takeaways</h2>
+
+        <div class="highlight-box">
+            <h3>What the Batch Job Does:</h3>
+            <ul>
+                <li>✅ Finds subscriptions approaching renewal (within 7-30 days)</li>
+                <li>✅ Checks Stripe for the latest subscription data</li>
+                <li>✅ Updates database dates to match Stripe (self-healing)</li>
+                <li>✅ Records when each subscription was last checked</li>
+                <li>✅ Handles errors gracefully (retries, fallbacks, continues on errors)</li>
+            </ul>
+
+            <h3>What the Batch Job Does NOT Do:</h3>
+            <ul>
+                <li>❌ Does NOT charge customers (Stripe handles billing)</li>
+                <li>❌ Does NOT create new subscriptions</li>
+                <li>❌ Does NOT cancel subscriptions</li>
+                <li>❌ Does NOT send emails or notifications</li>
+                <li>❌ Does NOT process payments</li>
+            </ul>
+        </div>
+
+        <h2>12. Why Is This Important?</h2>
+
+        <p>
+            This batch job is critical for maintaining data integrity:
+        </p>
+
+        <ul>
+            <li><strong>Webhook Reliability:</strong> Webhooks can fail due to network issues, server downtime, or Stripe outages.
+                The batch job ensures your database stays in sync even when webhooks fail.</li>
+            <li><strong>Manual Changes:</strong> If someone manually renews or modifies a subscription in Stripe dashboard,
+                the batch job will detect and sync those changes.</li>
+            <li><strong>Data Consistency:</strong> Ensures your database always reflects the true state of subscriptions in Stripe.</li>
+            <li><strong>Proactive Monitoring:</strong> By running every 6 hours, it catches discrepancies quickly before they cause issues.</li>
+        </ul>
+
+        <h2>13. Monitoring and Troubleshooting</h2>
+
+        <h3>13.1 How to Check If It's Working</h3>
+        <ul>
+            <li>Check logs for <code>[SUBSCRIPTION-RENEWAL]</code> entries</li>
+            <li>Query database: <code>SELECT * FROM batch_job_execution WHERE job_type = 'SUBSCRIPTION_RENEWAL' ORDER BY created_at DESC</code></li>
+            <li>Check <code>reconciliation_status</code> field in <code>membership_subscription</code> table</li>
+            <li>Look for <code>last_reconciliation_at</code> timestamps being updated</li>
+        </ul>
+
+        <h3>13.2 Common Issues</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Issue</th>
+                    <th>What It Means</th>
+                    <th>How to Fix</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>No subscriptions found</td>
+                    <td>No subscriptions match the criteria (all are outside renewal window)</td>
+                    <td>This is normal - wait for subscriptions to approach renewal</td>
+                </tr>
+                <tr>
+                    <td>Stripe API errors</td>
+                    <td>Cannot connect to Stripe or rate limited</td>
+                    <td>Check Stripe API key, network connectivity, or wait for rate limit to reset</td>
+                </tr>
+                <tr>
+                    <td>Date mismatches</td>
+                    <td>Database dates don't match Stripe dates</td>
+                    <td>Batch job will auto-fix this (self-healing). Check logs for "UPDATED" status.</td>
+                </tr>
+                <tr>
+                    <td>Job not running</td>
+                    <td>Scheduled job is disabled or cron expression is wrong</td>
+                    <td>Check <code>batch.subscription-renewal.enabled</code> and cron expression</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>14. Summary</h2>
+
+        <p>
+            The Subscription Renewal Batch Job is a <strong>synchronization and reconciliation tool</strong> that:
+        </p>
+
+        <ol>
+            <li><strong>Runs automatically</strong> every 6 hours (or on a custom schedule)</li>
+            <li><strong>Finds subscriptions</strong> that are approaching renewal (within 7-30 days)</li>
+            <li><strong>Checks Stripe</strong> to get the latest subscription data</li>
+            <li><strong>Updates your database</strong> to match Stripe (self-healing)</li>
+            <li><strong>Handles errors</strong> gracefully with retries and fallbacks</li>
+            <li><strong>Can be triggered manually</strong> when needed (e.g., after webhook failures)</li>
+        </ol>
+
+        <div class="success-box">
+            <strong>Bottom Line:</strong> This batch job ensures your database stays in sync with Stripe,
+            fixing any discrepancies automatically. It's like having a maintenance worker who checks all your
+            subscriptions regularly and fixes any data inconsistencies they find.
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #ddd;">
+
+        <h2>15. Technical Details (For Developers)</h2>
+
+        <h3>15.1 Code Components</h3>
+        <ul>
+            <li><strong>SubscriptionRenewalJobConfig.java:</strong> Defines the Spring Batch job structure</li>
+            <li><strong>SubscriptionRenewalReader.java:</strong> Queries database for subscriptions needing renewal</li>
+            <li><strong>SubscriptionRenewalProcessor.java:</strong> Checks Stripe and updates subscription data</li>
+            <li><strong>SubscriptionRenewalWriter.java:</strong> Saves updated subscriptions to database</li>
+            <li><strong>BatchJobOrchestrationService.java:</strong> Coordinates job execution</li>
+            <li><strong>BatchJobScheduler.java:</strong> Handles scheduled execution</li>
+            <li><strong>BatchJobController.java:</strong> REST API endpoint for manual triggers</li>
+        </ul>
+
+        <h3>15.2 Database Query Logic</h3>
+        <div class="code-block">
+            <div class="code-block-title">Repository Query (MembershipSubscriptionRepository.java)</div>
+            <pre>@Query("SELECT s FROM MembershipSubscription s " +
+       "WHERE s.tenantId = :tenantId " +
+       "AND s.subscriptionStatus IN ('ACTIVE', 'TRIALING') " +
+       "AND s.cancelAtPeriodEnd = false " +
+       "AND (" +
+       "  s.currentPeriodEnd <= :renewalDateThreshold " +
+       "  OR (s.stripeSubscriptionId IS NOT NULL " +
+       "      AND s.currentPeriodEnd <= :extendedDateThreshold)" +
+       ") " +
+       "ORDER BY s.currentPeriodEnd ASC")
+List&lt;MembershipSubscription&gt; findSubscriptionsNeedingRenewal(
+    @Param("tenantId") String tenantId,
+    @Param("renewalDateThreshold") LocalDate renewalDateThreshold,
+    @Param("extendedDateThreshold") LocalDate extendedDateThreshold
+);</pre>
+        </div>
+
+        <h3>15.3 Processing Logic Flow</h3>
+        <div class="code-block">
+            <div class="code-block-title">Processor Logic (SubscriptionRenewalProcessor.java)</div>
+            <pre>1. Check if subscription has Stripe ID
+   ├─ YES → Fetch from Stripe
+   │   ├─ Compare Stripe dates with database dates
+   │   ├─ If within renewal window → Process
+   │   ├─ Update database dates if different (self-healing)
+   │   └─ Set reconciliation_status = "SYNCED" or "UPDATED"
+   └─ NO → Use database dates only
+       ├─ Check if within renewal window
+       └─ Set reconciliation_status = "PROCESSED"</pre>
+        </div>
+
+        <h3>15.4 API Endpoint</h3>
+        <div class="code-block">
+            <div class="code-block-title">REST API (BatchJobController.java)</div>
+            <pre>POST /api/batch-jobs/subscription-renewal
+Content-Type: application/json
+
+{
+  "tenantId": "tenant_demo_002",
+  "batchSize": 100,
+  "maxSubscriptions": 10000,
+  "stripeSubscriptionId": "sub_xxx"  // Optional
+}</pre>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #ddd;">
+
+        <p style="text-align: center; color: #666; margin-top: 40px;">
+            <em>This documentation is based on code analysis from the event-site-manager-batch-jobs project.</em><br>
+            <em>For implementation details, see the source code files referenced above.</em>
+        </p>
+    </div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

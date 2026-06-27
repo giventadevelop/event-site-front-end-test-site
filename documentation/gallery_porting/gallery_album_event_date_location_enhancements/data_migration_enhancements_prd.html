@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Event Date &amp; Location — Data Migration PRD (v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .command-block { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border: 2px solid #b8d4e3; border-radius: 8px; padding: 16px; margin: 16px 0; }
+        .command-block pre { margin: 8px 0 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Event Date &amp; Location — Data Migration &amp; Backfill PRD</h1>
+    <p class="doc-meta">
+        <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 19, 2026<br>
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a> &nbsp;|&nbsp;
+        <strong>Schema:</strong> <a href="database_schema_enhancements_prd.html">database_schema_enhancements_prd.html</a>
+    </p>
+
+    <div class="lead">
+        <p>Backfill <strong>eventDateStart</strong>, <strong>eventDateEnd</strong>, and <strong>eventLocation</strong> on existing imported albums by parsing the manifest <code>date</code> field. No photo re-import. Requires backend E1 deployed.</p>
+    </div>
+
+    <h2>1. Migration phases</h2>
+    <table>
+        <thead><tr><th>Step</th><th>Action</th><th>Environment</th></tr></thead>
+        <tbody>
+            <tr><td>M1</td><td>Run DDL (<code>migrations/001_gallery_album_event_date_location_schema.sql</code> or Liquibase)</td><td>All</td></tr>
+            <tr><td>M2</td><td>Deploy backend with new DTO fields</td><td>Dev → staging → prod</td></tr>
+            <tr><td>M3</td><td>Run Node backfill script (see §4)</td><td>Per tenant after M2</td></tr>
+            <tr><td>M4</td><td>Verify (<code>migrations/003_verify_event_date_migration.sql</code>)</td><td>QA</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. Date string parser — parseManifestDateString()</h2>
+    <div class="section-container">
+        <div class="section-header">New: scripts/gallery-porting/parse-manifest-album-date.mjs</div>
+        <p>Input: manifest <code>date</code> string. Output:</p>
+<pre>{
+  eventDateStart: '2015-10-24' | null,  // ISO date
+  eventDateEnd: '2015-10-26' | null,
+  eventLocation: 'Indore' | null,
+  albumYear: 2015                       // always from year in string or start date
+}</pre>
+    </div>
+
+    <h3>Parse rules (order matters)</h3>
+    <ol>
+        <li><strong>Trim</strong> input; empty → all null, keep existing <code>albumYear</code>.</li>
+        <li><strong>Location split:</strong> If string matches <code>/,\s*([A-Za-z][A-Za-z\s.-]{0,100})$/</code>, extract location and remove from date portion. Example: <code>October 24-26, 2015, Indore</code> → date part <code>October 24-26, 2015</code>, location <code>Indore</code>.</li>
+        <li><strong>Year only:</strong> <code>/^\d{4}$/</code> → no event dates; <code>albumYear</code> = that year.</li>
+        <li><strong>Same-month range:</strong> <code>/^([A-Za-z]+)\s+(\d{1,2})-(\d{1,2}),\s*(\d{4})$/</code> → start = month day1 year, end = month day2 year.</li>
+        <li><strong>Single date:</strong> <code>Date.parse</code> or <code>new Date(datePart)</code> with en-US month names → start only.</li>
+        <li><strong>albumYear</strong> = year from start date or parsed year.</li>
+    </ol>
+
+    <h3>Reference rows</h3>
+    <table>
+        <thead><tr><th>slug</th><th>manifest date</th><th>start</th><th>end</th><th>location</th></tr></thead>
+        <tbody>
+            <tr><td><code>dharma-dhamma-conference</code></td><td>October 24-26, 2015, Indore</td><td>2015-10-24</td><td>2015-10-26</td><td>Indore</td></tr>
+            <tr><td><code>website-inauguration</code></td><td>November 25, 2015</td><td>2015-11-25</td><td>null</td><td>null</td></tr>
+            <tr><td><code>blessing-holy-myron</code></td><td>July 19, 2015, Beirut</td><td>2015-07-19</td><td>null</td><td>Beirut</td></tr>
+            <tr><td><code>russia-visit</code></td><td>2019</td><td>null</td><td>null</td><td>null</td></tr>
+        </tbody>
+    </table>
+
+    <h2>3. Extend import script</h2>
+    <p>File: <code>scripts/gallery-porting/import-static-gallery-to-api.mjs</code></p>
+    <ul>
+        <li>In <code>createAlbum()</code>, call parser on <code>albumMeta.date</code> and include <code>eventDateStart</code>, <code>eventDateEnd</code>, <code>eventLocation</code> in POST payload.</li>
+        <li>In category backfill PATCH path, include same fields when patching from manifest.</li>
+    </ul>
+
+    <h2>4. New backfill script</h2>
+    <div class="section-container">
+        <div class="section-header">scripts/gallery-porting/backfill-gallery-album-event-dates.mjs</div>
+        <ul>
+            <li>Load <code>static-gallery-manifest.json</code></li>
+            <li>GET all gallery albums for tenant</li>
+            <li>Match by <code>static_slug=</code> in description</li>
+            <li>PATCH each album with parsed event fields + <code>albumYear</code> if needed</li>
+            <li>Write report JSON: <code>event-date-backfill-report.json</code></li>
+            <li>Support <code>--dry-run</code></li>
+        </ul>
+    </div>
+
+    <h2>5. npm scripts (package.json)</h2>
+    <div class="command-block">
+        <strong>Commands to add</strong>
+<pre>npm run gallery:backfill-event-dates:dry
+npm run gallery:backfill-event-dates</pre>
+        <p>Maps to <code>node scripts/gallery-porting/backfill-gallery-album-event-dates.mjs</code> with optional <code>--dry-run</code>.</p>
+    </div>
+
+    <h2>6. Typical run order (after E1 backend deploy)</h2>
+    <div class="command-block">
+<pre>npm run gallery:extract-manifest
+npm run gallery:backfill-event-dates:dry
+npm run gallery:backfill-event-dates</pre>
+    </div>
+
+    <h2>7. SQL backfill alternative (optional)</h2>
+    <p>File: <code>migrations/002_backfill_event_dates_mosc_static.sql</code> — hand-maintained UPDATEs for known slugs if API script cannot run. Prefer Node script for parser parity.</p>
+
+    <h2>8. Verification</h2>
+    <pre>-- Albums with static_slug but missing event dates where manifest had full dates
+SELECT ga.id, ga.title, ga.album_year, ga.event_date_start, ga.event_location
+FROM gallery_album ga
+WHERE ga.description LIKE '%static_slug=dharma-dhamma-conference%';
+
+-- Expect: event_date_start = 2015-10-24, event_date_end = 2015-10-26, event_location = Indore</pre>
+
+    <div class="warning-box">
+        <strong>Prerequisite:</strong> Backend must accept PATCH with new fields before running M3. PATCH against old API will ignore or reject unknown properties.
+    </div>
+
+    <div class="info-box">
+        <strong>Next:</strong> <a href="implementation_roadmap.html">Implementation roadmap</a>
+    </div>
+
+</body>
+</html>

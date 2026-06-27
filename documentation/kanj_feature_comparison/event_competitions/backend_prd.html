@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Competitions — Backend PRD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .section-container.usage { background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%); border-left-color: #7b1fa2; }
+        .section-container.usage .section-header { background: linear-gradient(135deg, #7b1fa2 0%, #6a1b9a 100%); }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; overflow-x: auto; font-family: Consolas, monospace; font-size: 0.82em; line-height: 1.45; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Event Competitions — Backend PRD</h1>
+    <p class="doc-meta">
+        <strong>Project:</strong> <code>malayalees-us-site-boot</code> (JHipster 8 / Spring Boot 3.1)<br>
+        <strong>Date:</strong> May 21, 2026 &nbsp;|&nbsp; <strong>Version:</strong> 2.0<br>
+        <strong>Depends on:</strong> <a href="database_schema_prd.html">database_schema_prd.html</a><br>
+        <strong>Index:</strong> <a href="generic_prd.html">generic_prd.html</a> · <strong>Frontend:</strong> <a href="frontend_prd.html">frontend_prd.html</a>
+    </p>
+
+    <div class="lead">
+        <p>Seven REST resources plus <code>EventDetails</code> extension for the generic <strong>Event Competitions</strong> domain. Mirror <code>EventDetails</code>: entity, repository, DTO, MapStruct mapper, service, criteria, <code>*QueryService</code>, <code>*Resource</code>, <code>*ResourceIT</code>, Liquibase.</p>
+        <p><strong>Pattern reference:</strong> <code>com.nextjstemplate.domain.EventDetails</code>, <code>EventDetailsResource</code> at <code>/api/event-details</code>.</p>
+    </div>
+
+    <h2>1. REST resources</h2>
+    <table>
+        <thead><tr><th>REST path</th><th>Entity</th><th>Notes</th></tr></thead>
+        <tbody>
+            <tr><td><code>/api/event-competition-settings</code></td><td><code>EventCompetitionSettings</code></td><td>1:1 per <code>event_id</code>; <code>audience_mode</code>, <code>registration_mode</code></td></tr>
+            <tr><td><code>/api/event-competition-days</code></td><td><code>EventCompetitionDay</code></td><td>Filter <code>eventId.equals</code></td></tr>
+            <tr><td><code>/api/event-competitions</code></td><td><code>EventCompetition</code></td><td><code>eligible_audience</code>, <code>competition_type</code></td></tr>
+            <tr><td><code>/api/event-competition-participants</code></td><td><code>EventCompetitionParticipant</code></td><td><code>participantType</code>, guardian filters</td></tr>
+            <tr><td><code>/api/event-competition-registrations</code></td><td><code>EventCompetitionRegistration</code></td><td>Business rules in service layer</td></tr>
+            <tr><td><code>/api/event-competition-results</code></td><td><code>EventCompetitionResult</code></td><td>Prize fields, <code>winnerMediaId</code>; public read when published</td></tr>
+            <tr><td><code>/api/event-competition-content-blocks</code></td><td><code>EventCompetitionContentBlock</code></td><td>Unique <code>(event_id, block_type)</code></td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. Extend EventDetails</h2>
+    <ul>
+        <li><code>EventDetails</code> / <code>EventDetailsDTO</code> — add <code>isCompetitionEvent</code> (maps <code>is_competition_event</code>)</li>
+        <li><code>EventDetailsCriteria</code> — add <code>isCompetitionEvent.equals</code> for admin event lists</li>
+        <li>Liquibase: same changelog wave as competition tables</li>
+    </ul>
+
+    <h2>3. JHipster file checklist (per entity)</h2>
+    <div class="section-container usage">
+        <div class="section-header">Generate or hand-author per aggregate</div>
+        <ul>
+            <li><code>src/main/java/.../domain/EventCompetition*.java</code></li>
+            <li><code>repository/EventCompetition*Repository.java</code></li>
+            <li><code>service/dto/EventCompetition*DTO.java</code></li>
+            <li><code>service/mapper/EventCompetition*Mapper.java</code> (MapStruct)</li>
+            <li><code>service/impl/EventCompetition*ServiceImpl.java</code></li>
+            <li><code>service/criteria/EventCompetition*Criteria.java</code></li>
+            <li><code>service/EventCompetition*QueryService.java</code></li>
+            <li><code>web/rest/EventCompetition*Resource.java</code></li>
+            <li><code>src/test/java/.../web/rest/EventCompetition*ResourceIT.java</code></li>
+            <li><code>src/main/resources/config/liquibase/changelog/*_added_entity_EventCompetition*.xml</code></li>
+        </ul>
+    </div>
+
+    <h2>4. Validation rules (service layer)</h2>
+    <table>
+        <thead><tr><th>Rule</th><th>Source</th></tr></thead>
+        <tbody>
+            <tr><td>Registration blocked after <code>registration_deadline</code></td><td><code>event_competition_settings</code></td></tr>
+            <tr><td>Capacity: count registrations &lt; <code>max_participants</code> when set</td><td><code>event_competition</code></td></tr>
+            <tr><td>Unique <code>(competition_id, participant_profile_id)</code></td><td>DB + 409 on duplicate</td></tr>
+            <tr><td>GROUP: min/max group size from competition</td><td><code>competition_type = GROUP</code></td></tr>
+            <tr><td><code>eligible_audience</code> vs participant <code>participant_type</code></td><td>Reject CHILD on ADULT_ONLY, etc.</td></tr>
+            <tr><td><code>audience_mode = YOUTH</code>: guardian must own CHILD participant</td><td><code>guardian_user_profile_id</code></td></tr>
+            <tr><td><code>audience_mode = ADULT</code>: self participant only</td><td><code>participant_type = ADULT</code></td></tr>
+            <tr><td>Results: <code>display_name</code> required; privacy from <code>results_display_mode</code></td><td>Settings</td></tr>
+            <tr><td><code>winner_media_id</code> must belong to same <code>event_id</code></td><td><code>event_medias</code> FK check</td></tr>
+        </tbody>
+    </table>
+
+    <h2>5. API contract &amp; OpenAPI</h2>
+    <div class="info-box">
+        <p>Criteria query params: <code>eventId.equals</code>, <code>tenantId.equals</code>, <code>isActive.equals</code>, <code>isPublished.equals</code>, <code>participantType.equals</code>, <code>clerkUserId.equals</code>.</p>
+        <p><strong>Post-implementation:</strong> Regenerate OpenAPI from boot and sync to frontend <code>documentation/Swagger_API_Docs/api-docs.json</code>.</p>
+    </div>
+    <h3>Example criteria</h3>
+    <pre>GET /api/event-competitions?eventId.equals=42&amp;isActive.equals=true
+GET /api/event-competition-results?eventId.equals=42&amp;isPublished.equals=true&amp;sort=placement,asc</pre>
+    <h3>Registration status values</h3>
+    <pre>PENDING_PAYMENT | CONFIRMED | CANCELLED | REFUNDED</pre>
+
+    <h2>6. Security &amp; tenancy</h2>
+    <ul>
+        <li>JWT Bearer; tenant from <code>TenantContextFilter</code> and <code>X-Tenant-ID</code></li>
+        <li><strong>Guardian (YOUTH):</strong> mutate only own child participants and registrations</li>
+        <li><strong>Competitor (ADULT):</strong> mutate only self-linked participant rows</li>
+        <li><strong>Team captain:</strong> group registrations where <code>registered_by_user_profile_id</code> matches</li>
+        <li><strong>Admin:</strong> catalog CRUD, results entry, publish, winner media linkage</li>
+        <li><strong>Public read:</strong> published results, active competitions, content blocks (align with proxy public routes)</li>
+    </ul>
+
+    <h2>7. Out of scope (backend v1)</h2>
+    <div class="warning-box">
+        <ul>
+            <li><strong>Stripe webhook</strong> — Next.js (<a href="frontend_prd.html">frontend_prd.html</a>)</li>
+            <li><strong>Batch email jobs</strong> — <a href="batch_job_prd.html">batch_job_prd.html</a></li>
+            <li><strong>Ticket / QR flows</strong> — unchanged when <code>isCompetitionEvent=false</code></li>
+            <li><strong>Sports scorecard tables</strong> — see <a href="../../event_sports_arts_competition/Event_Sports_Arts_Competition_Results_Feature_Requirements.html">Sports/Arts Results</a> for <code>is_sports_event</code></li>
+        </ul>
+    </div>
+
+    <h2>8. Implementation checklist</h2>
+    <table>
+        <thead><tr><th>#</th><th>Task</th></tr></thead>
+        <tbody>
+            <tr><td>1</td><td>Liquibase per <a href="database_schema_prd.html">database_schema_prd.html</a></td></tr>
+            <tr><td>2</td><td>7 entities + extend <code>EventDetails</code></td></tr>
+            <tr><td>3</td><td>Registration service with <code>audience_mode</code> branches</td></tr>
+            <tr><td>4</td><td>Results service with prize/photo fields</td></tr>
+            <tr><td>5</td><td><code>*ResourceIT</code> for deadline, capacity, audience mismatch, publish</td></tr>
+            <tr><td>6</td><td>Sync <code>api-docs.json</code></td></tr>
+        </tbody>
+    </table>
+
+</body>
+</html>

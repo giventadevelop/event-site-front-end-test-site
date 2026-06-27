@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiveButter Frontend Control Flow Clarification</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .alert {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .alert-info {
+            background-color: #d1ecf1;
+            border-color: #0c5460;
+            color: #0c5460;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #e83e8c;
+;
+        }
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+        .code-block {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .flow-diagram {
+            background-color: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .flow-step {
+            padding: 10px;
+            margin: 10px 0;
+            background-color: white;
+            border-left: 4px solid #3498db;
+            border-radius: 3px;
+        }
+        .flow-step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>GiveButter Frontend Control Flow Clarification</h1>
+        
+        <div class="alert alert-info">
+            <strong>📋 Overview:</strong> This document clarifies how the GiveButter payment flow works from the frontend perspective, 
+            including API credential usage, webhook handling, and payment status determination.
+        </div>
+
+        <h2>Key Questions Answered</h2>
+        
+        <h3>1. Are GiveButter API Key and Secret Used in Frontend?</h3>
+        <div class="alert alert-warning">
+            <strong>❌ NO - Frontend Does NOT Use GiveButter API Credentials Directly</strong>
+        </div>
+        <p>
+            The frontend <strong>never</strong> accesses GiveButter API keys or secrets directly. All GiveButter API calls 
+            are made through <strong>backend proxy endpoints</strong>:
+        </p>
+        <ul>
+            <li><strong>Frontend calls:</strong> <code>/api/proxy/givebutter/donations/...</code></li>
+            <li><strong>Backend proxy:</strong> Forwards requests to GiveButter API using server-side credentials</li>
+            <li><strong>Backend credentials:</strong> Stored in environment variables or database (encrypted)</li>
+        </ul>
+        
+        <div class="code-block">
+            <pre><code>// ✅ CORRECT: Frontend calls backend proxy
+const response = await fetch(`${baseUrl}/api/proxy/givebutter/donations/${donationId}/status`);
+
+// ❌ WRONG: Frontend should NEVER call GiveButter API directly
+// const response = await fetch('https://api.givebutter.com/v1/donations/...', {
+//   headers: { 'Authorization': 'Bearer gb_live_xxx' } // NEVER expose API keys in frontend
+// });</code></pre>
+        </div>
+
+        <h3>2. Are We Listening on Webhooks in Frontend?</h3>
+        <div class="alert alert-success">
+            <strong>✅ YES - Frontend Listens to Webhooks (Similar to Stripe Flow)</strong>
+        </div>
+        <p>
+            The frontend <strong>now listens to GiveButter webhooks</strong> and forwards them to the backend, similar to the Stripe checkout flow pattern.
+            This ensures transaction data is persisted immediately when webhooks arrive.
+        </p>
+        <ul>
+            <li><strong>Frontend webhook endpoint:</strong> <code>/api/webhooks/givebutter/route.ts</code> (Next.js API route)</li>
+            <li><strong>Frontend webhook handler:</strong> Receives GiveButter webhook events, forwards to backend with JWT authentication</li>
+            <li><strong>Backend webhook processing:</strong> Backend verifies webhook signature, creates/updates donation transactions in database</li>
+            <li><strong>Frontend polling (fallback):</strong> Polls backend payment status endpoint if webhook hasn't processed yet (desktop/mobile flow)</li>
+        </ul>
+        <div class="code-block">
+            <pre><code>// ✅ CORRECT: Frontend webhook handler (similar to Stripe webhook handler)
+// Location: src/app/api/webhooks/givebutter/route.ts
+
+export async function POST(req: NextRequest) {
+  // 1. Read raw body and signature header
+  const signature = req.headers.get('x-givebutter-signature');
+  const rawBody = Buffer.from(await req.arrayBuffer());
+  
+  // 2. Get JWT token for backend authentication
+  let jwt = await getCachedApiJwt();
+  if (!jwt) jwt = await generateApiJwt();
+  
+  // 3. Forward webhook to backend with JWT authentication
+  const backendResponse = await fetch(`${API_BASE_URL}/api/webhooks/givebutter`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Givebutter-Signature': signature || '',
+      'Authorization': `Bearer ${jwt}`, // CRITICAL: JWT authentication required
+    },
+    body: rawBody,
+  });
+  
+  // 4. Return backend response to GiveButter
+  return new NextResponse(await backendResponse.text(), {
+    status: backendResponse.status,
+  });
+}</code></pre>
+        </div>
+
+        <h3>3. Is Payment Status Determined by Webhooks?</h3>
+        <div class="alert alert-success">
+            <strong>✅ YES - Frontend Listens to Webhooks and Calls Backend to Persist Data</strong>
+        </div>
+        <p>
+            Payment status is determined through a <strong>webhook-based approach</strong> (similar to Stripe checkout flow):
+        </p>
+        <ol>
+            <li><strong>Frontend receives webhook</strong> from GiveButter → <code>POST /api/webhooks/givebutter</code> (frontend endpoint)</li>
+            <li><strong>Frontend forwards webhook</strong> to backend with JWT authentication → Backend verifies signature and creates/updates transaction</li>
+            <li><strong>Frontend success page</strong> polls backend payment status endpoint → Reads transaction data from database</li>
+            <li><strong>Frontend detects success</strong> → Generates QR code, sends email (or uses data from webhook-created transaction)</li>
+        </ol>
+        <div class="alert alert-info">
+            <strong>📋 Pattern Match:</strong> This follows the same pattern as the Stripe checkout flow:
+            <ul>
+                <li><strong>Stripe:</strong> Frontend webhook handler at <code>/api/webhooks/stripe/route.ts</code> forwards to backend</li>
+                <li><strong>GiveButter:</strong> Frontend webhook handler at <code>/api/webhooks/givebutter/route.ts</code> forwards to backend</li>
+                <li><strong>Both:</strong> Use JWT authentication when forwarding to backend</li>
+                <li><strong>Both:</strong> Success pages poll for transaction data (desktop/mobile flow)</li>
+            </ul>
+        </div>
+
+        <h2>Complete Control Flow</h2>
+        
+        <div class="flow-diagram">
+            <h3>Donation-Based Checkout Flow (from /donation-checkout page)</h3>
+            
+            <div class="flow-step">
+                <span class="flow-step-number">1</span>
+                <strong>User initiates payment on /donation-checkout page</strong><br>
+                <code>POST /api/proxy/payments/initialize</code> with <code>paymentProvider: 'GIVEBUTTER'</code>
+            </div>
+
+            <div class="flow-step">
+                <span class="flow-step-number">2</span>
+                <strong>Backend initializes GiveButter payment</strong><br>
+                Backend uses GiveButter API key (from env/database) to create payment session<br>
+                Returns <code>checkoutUrl</code> or <code>sessionUrl</code> to frontend
+            </div>
+
+            <div class="flow-step">
+                <span class="flow-step-number">3</span>
+                <strong>Frontend redirects user to GiveButter</strong><br>
+                User completes payment on GiveButter's hosted checkout page
+            </div>
+
+            <div class="flow-step">
+                <span class="flow-step-number">4</span>
+                <strong>GiveButter processes payment and sends webhook</strong><br>
+                GiveButter → <code>POST /api/webhooks/givebutter</code> (frontend endpoint)<br>
+                <strong>Frontend webhook handler:</strong> Receives webhook, forwards to backend with JWT authentication<br>
+                <strong>Backend webhook processing:</strong> Verifies webhook signature, creates/updates donation transaction in database
+            </div>
+
+            <div class="flow-step">
+                <span class="flow-step-number">5</span>
+                <strong>GiveButter redirects user back to frontend</strong><br>
+                Redirect URL: <code>/events/[id]/donation/success?transactionId=xxx</code> or <code>?donationId=xxx</code>
+            </div>
+
+            <div class="flow-step">
+                <span class="flow-step-number">6</span>
+                <strong>Frontend success page (desktop/mobile detection)</strong><br>
+                <strong>Desktop flow:</strong> Polls <code>GET /api/events/donation/success/process?transactionId=xxx&eventId=xxx</code><br>
+                <strong>Mobile flow:</strong> Uses <code>POST /api/events/donation/success/process</code> as fallback if webhook hasn't processed<br>
+                Maximum 10 attempts (30 seconds total for desktop), similar to Stripe checkout flow
+            </div>
+
+            <div class="flow-step">
+                <span class="flow-step-number">7</span>
+                <strong>Backend returns transaction data</strong><br>
+                Transaction may already be created by webhook, or GET/POST endpoint creates it if webhook delayed<br>
+                Desktop flow can create transaction immediately if webhook hasn't processed (similar to Stripe desktop flow)
+            </div>
+
+            <div class="flow-step">
+                <span class="flow-step-number">8</span>
+                <strong>Frontend detects transaction created</strong><br>
+                Stops polling, displays transaction details (donation or ticket transaction)
+            </div>
+
+            <div class="flow-step">
+                <span class="flow-step-number">9</span>
+                <strong>Frontend generates QR code and sends email</strong><br>
+                Calls backend endpoints:
+                <ul>
+                    <li><code>POST /api/proxy/events/{eventId}/donations/{transactionId}/qrcode</code></li>
+                    <li><code>POST /api/proxy/events/{eventId}/donations/{transactionId}/send-email</code></li>
+                </ul>
+                Or uses QR code/email data already returned from success processing endpoint
+            </div>
+        </div>
+
+        <h2>Environment Variables and Credentials</h2>
+        
+        <h3>Frontend (.env.local)</h3>
+        <div class="code-block">
+            <pre><code># Frontend does NOT need GiveButter API credentials
+# All GiveButter API calls go through backend proxy endpoints
+
+# Only needed for backend API authentication
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+NEXT_PUBLIC_API_JWT_USER=...
+NEXT_PUBLIC_API_JWT_PASS=...</code></pre>
+        </div>
+
+        <h3>Backend (Environment Variables or Database)</h3>
+        <div class="code-block">
+            <pre><code># Backend uses these for GiveButter API calls and webhook verification
+# Stored in environment variables OR encrypted in payment_provider_config table
+
+# Option 1: Environment Variables (Development)
+GIVEBUTTER_API_KEY=gb_live_xxx
+GIVEBUTTER_WEBHOOK_SECRET=whsec_xxx
+
+# Option 2: Database (Production - Recommended)
+# Stored encrypted in payment_provider_config table:
+# - api_key (encrypted)
+# - webhook_secret (encrypted)
+# - metadata.campaignId</code></pre>
+        </div>
+
+        <h2>Webhook vs Polling Architecture</h2>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Aspect</th>
+                    <th>Webhook (Frontend → Backend)</th>
+                    <th>Polling (Frontend Success Page)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Location</strong></td>
+                    <td>Frontend endpoint: <code>/api/webhooks/givebutter/route.ts</code> → Backend: <code>/api/webhooks/givebutter</code></td>
+                    <td>Frontend success page: <code>/events/[id]/donation/success</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Trigger</strong></td>
+                    <td>GiveButter sends webhook when payment completes → Frontend receives and forwards to backend</td>
+                    <td>Frontend polls every 3 seconds (desktop) or uses POST fallback (mobile) after redirect</td>
+                </tr>
+                <tr>
+                    <td><strong>Purpose</strong></td>
+                    <td>Frontend forwards webhook to backend → Backend verifies signature and creates/updates transaction in database</td>
+                    <td>Check if transaction exists in database, create if webhook hasn't processed (desktop only)</td>
+                </tr>
+                <tr>
+                    <td><strong>Credentials Used</strong></td>
+                    <td>JWT token (for backend authentication) + Webhook secret (backend verifies signature)</td>
+                    <td>JWT token (for backend API authentication)</td>
+                </tr>
+                <tr>
+                    <td><strong>Data Flow</strong></td>
+                    <td>GiveButter → Frontend Webhook Handler → Backend (with JWT) → Database</td>
+                    <td>Frontend → Backend API (GET/POST) → Database → Frontend</td>
+                </tr>
+                <tr>
+                    <td><strong>Pattern</strong></td>
+                    <td>Same as Stripe webhook handler: <code>/api/webhooks/stripe/route.ts</code></td>
+                    <td>Same as Stripe success flow: Desktop polls GET, Mobile uses POST fallback</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Payment Status Determination Flow</h2>
+        
+        <div class="flow-diagram">
+            <h3>How Payment Status is Determined</h3>
+            
+            <div class="flow-step">
+                <strong>Scenario A: Webhook Arrives First (Primary Path)</strong>
+                <ol>
+                    <li>GiveButter sends webhook → Frontend receives at <code>/api/webhooks/givebutter</code></li>
+                    <li>Frontend forwards webhook to backend with JWT → Backend verifies signature and creates transaction</li>
+                    <li>User redirected to success page</li>
+                    <li>Frontend polls backend → Immediately finds transaction (created by webhook)</li>
+                    <li>Frontend proceeds with QR code and email</li>
+                </ol>
+            </div>
+
+            <div class="flow-step">
+                <strong>Scenario B: Desktop Flow Creates Transaction if Webhook Delayed</strong>
+                <ol>
+                    <li>User redirected to success page</li>
+                    <li>Frontend polls backend (GET endpoint) → Transaction not found</li>
+                    <li><strong>Desktop flow:</strong> GET endpoint creates transaction from GiveButter data if webhook hasn't processed</li>
+                    <li>Frontend gets transaction data → Proceeds with QR code and email</li>
+                    <li>Webhook arrives later (redundant, but safe - backend checks for existing transaction)</li>
+                </ol>
+            </div>
+
+            <div class="flow-step">
+                <strong>Scenario C: Mobile Flow Uses POST Fallback</strong>
+                <ol>
+                    <li>User redirected to success page</li>
+                    <li>Frontend detects mobile → Uses POST endpoint as fallback</li>
+                    <li><strong>Mobile flow:</strong> POST endpoint creates transaction from GiveButter data if webhook hasn't processed</li>
+                    <li>Frontend gets transaction data → Proceeds with QR code and email</li>
+                    <li>Webhook arrives later (redundant, but safe - backend checks for existing transaction)</li>
+                </ol>
+            </div>
+        </div>
+
+        <h2>Backend API Calls from Frontend</h2>
+        
+        <p>
+            All GiveButter-related API calls from the frontend go through backend proxy endpoints:
+        </p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Frontend Call</th>
+                    <th>Backend Proxy Endpoint</th>
+                    <th>Backend Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>POST /api/proxy/payments/initialize</code></td>
+                    <td>Backend: <code>POST /api/payments/initialize</code></td>
+                    <td>Uses GiveButter API key to create payment session</td>
+                </tr>
+                <tr>
+                    <td><code>GET /api/proxy/payments/{transactionId}</code></td>
+                    <td>Backend: <code>GET /api/payments/{transactionId}</code></td>
+                    <td>Returns payment status from database (may be updated by webhook)</td>
+                </tr>
+                <tr>
+                    <td><code>GET /api/proxy/givebutter/donations/{donationId}/status</code></td>
+                    <td>Backend: <code>GET /api/givebutter/donations/{donationId}/status</code></td>
+                    <td>Uses GiveButter API key to query GiveButter API directly</td>
+                </tr>
+                <tr>
+                    <td><code>POST /api/proxy/donations/create-from-givebutter</code></td>
+                    <td>Backend: <code>POST /api/donations/create-from-givebutter</code></td>
+                    <td>Creates donation transaction from GiveButter data</td>
+                </tr>
+                <tr>
+                    <td><code>POST /api/proxy/events/{eventId}/donations/{transactionId}/qrcode</code></td>
+                    <td>Backend: <code>POST /api/events/{eventId}/donations/{transactionId}/qrcode</code></td>
+                    <td>Generates QR code for donation</td>
+                </tr>
+                <tr>
+                    <td><code>POST /api/proxy/events/{eventId}/donations/{transactionId}/send-email</code></td>
+                    <td>Backend: <code>POST /api/events/{eventId}/donations/{transactionId}/send-email</code></td>
+                    <td>Sends confirmation email</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Summary</h2>
+        
+        <div class="alert alert-success">
+            <h3>✅ Frontend Implementation (Current State)</h3>
+            <ul>
+                <li>✅ <strong>NO GiveButter API credentials in frontend</strong> - All calls go through backend proxy</li>
+                <li>✅ <strong>NO webhook listeners in frontend</strong> - Webhooks handled by backend</li>
+                <li>✅ <strong>Uses polling</strong> to check payment status from backend</li>
+                <li>✅ <strong>Backend receives webhooks</strong> and updates database</li>
+                <li>✅ <strong>Frontend polls backend</strong> which reads from database (may be updated by webhook)</li>
+                <li>✅ <strong>All GiveButter API calls</strong> made by backend using server-side credentials</li>
+            </ul>
+        </div>
+
+        <div class="alert alert-info">
+            <h3>📋 Architecture Pattern (Matches Stripe Checkout Flow)</h3>
+            <p>
+                This is a <strong>webhook-based architecture with frontend listener</strong> (same pattern as Stripe):
+            </p>
+            <ul>
+                <li><strong>Frontend Webhook Handler:</strong> Receives GiveButter webhooks, forwards to backend with JWT authentication</li>
+                <li><strong>Backend Webhook Processing:</strong> Verifies webhook signature, creates/updates donation transactions in database</li>
+                <li><strong>Desktop Flow (GET):</strong> Polls GET endpoint, creates transaction if webhook hasn't processed (fallback)</li>
+                <li><strong>Mobile Flow (POST):</strong> Uses POST endpoint as fallback to create transaction if webhook hasn't processed</li>
+                <li><strong>Idempotency:</strong> Both webhook and GET/POST endpoints check for existing transactions before creating (prevents duplicates)</li>
+            </ul>
+            <p>
+                This ensures <strong>reliability</strong> - the system works even if webhooks fail or are delayed, matching the proven Stripe checkout flow pattern.
+            </p>
+            <p>
+                <strong>Key Similarity to Stripe Flow:</strong>
+            </p>
+            <ul>
+                <li><strong>Stripe:</strong> <code>/api/webhooks/stripe/route.ts</code> → Forwards to backend → Backend creates transaction</li>
+                <li><strong>GiveButter:</strong> <code>/api/webhooks/givebutter/route.ts</code> → Forwards to backend → Backend creates transaction</li>
+                <li><strong>Both:</strong> Success pages poll GET endpoint (desktop) or use POST fallback (mobile)</li>
+                <li><strong>Both:</strong> Desktop flow can create transaction immediately if webhook delayed</li>
+            </ul>
+        </div>
+
+        <h2>Code References</h2>
+        
+        <ul>
+            <li><strong>Frontend Webhook Handler:</strong> <code>src/app/api/webhooks/givebutter/route.ts</code> - Receives GiveButter webhooks, forwards to backend with JWT</li>
+            <li><strong>Donation Success Processing API:</strong> <code>src/app/api/events/donation/success/process/route.ts</code> - GET/POST handlers for desktop/mobile flow</li>
+            <li><strong>Donation Success Page (Desktop/Mobile Detection):</strong> <code>src/app/events/[id]/donation/success/DonationSuccessClient.tsx</code> - Polls GET endpoint (desktop) or uses POST fallback (mobile)</li>
+            <li><strong>Donation Transaction Lookup:</strong> <code>src/app/events/[id]/donation/success/ApiServerActions.ts</code> - <code>findDonationTransactionByTransactionId()</code>, <code>findDonationTransactionByDonationId()</code></li>
+            <li><strong>Payment Status API:</strong> <code>src/app/events/[id]/donation/ApiServerActions.ts</code> - <code>getPaymentTransactionStatus()</code></li>
+            <li><strong>GiveButter Proxy Endpoint:</strong> <code>src/pages/api/proxy/givebutter/donations/[...slug].ts</code></li>
+            <li><strong>Donation Checkout:</strong> <code>src/app/events/[id]/donation-checkout/DonationCheckoutClient.tsx</code></li>
+            <li><strong>Reference Implementation (Stripe):</strong> <code>src/app/api/webhooks/stripe/route.ts</code> - Similar webhook forwarding pattern</li>
+            <li><strong>Reference Implementation (Stripe Success):</strong> <code>src/app/event/success/SuccessClient.tsx</code> - Similar desktop/mobile detection and polling pattern</li>
+        </ul>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #dee2e6;">
+        
+        <p style="color: #6c757d; font-size: 0.9em;">
+            <strong>Document Version:</strong> 1.0<br>
+            <strong>Created:</strong> <span id="date"></span><br>
+            <strong>Related Documentation:</strong> 
+            <a href="DONATION_FLOW_SUMMARY.html">DONATION_FLOW_SUMMARY.html</a> | 
+            <a href="BACKEND_GIVEBUTTER_ROUTING_FIX.html">BACKEND_GIVEBUTTER_ROUTING_FIX.html</a>
+        </p>
+    </div>
+
+    <script>
+        document.getElementById('date').textContent = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    </script>
+</body>
+</html>

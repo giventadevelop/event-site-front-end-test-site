@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Competitions — Batch Job Enhancements (v2.1)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%); border-left: 4px solid #ff9800; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Event Competitions — Batch Job Enhancements (v2.1)</h1>
+    <p class="doc-meta">
+        <strong>Project:</strong> <code>event-site-manager-batch-jobs</code> &nbsp;|&nbsp; <strong>Phase:</strong> E5 (optional)<br>
+        <strong>Baseline:</strong> <a href="../batch_job_prd.html">batch_job_prd.html</a> &nbsp;|&nbsp;
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a>
+    </p>
+
+    <div class="warning-box">
+        <p><strong>Not blocking:</strong> Core v2.1 registration and results flows use REST + Stripe webhook. Batch jobs add polish after E4.</p>
+    </div>
+
+    <div class="lead">
+        <p>Optional emails and exports for <strong>team registrations</strong>, <strong>per-competition winners digests</strong>, and <strong>admin CSV reports</strong>. Reuse existing <code>EventCompetitionRegistrationEmailJobService</code> patterns.</p>
+    </div>
+
+    <h2>1. New / extended jobs</h2>
+    <table>
+        <thead><tr><th>Job</th><th>Trigger</th><th>Phase</th></tr></thead>
+        <tbody>
+            <tr><td>Team registration confirmation</td><td>After Stripe confirms GROUP registration (webhook invokes batch or inline)</td><td>E5</td></tr>
+            <tr><td>Per-competition winners published</td><td>Admin bulk-publishes results for one competition</td><td>E5</td></tr>
+            <tr><td>Registration CSV export</td><td>Admin request; grouped by competition</td><td>E5</td></tr>
+            <tr><td>Registration summary (existing stub)</td><td>Optional nightly cron to organizers</td><td>E5</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. API surface</h2>
+    <div class="section-container">
+        <div class="section-header">Batch controller routes (illustrative)</div>
+<pre>POST /batch-jobs/api/batch-jobs/event-competition-team-registration-email
+Body: {
+  eventId, registrationId, tenantId,
+  templateId?, includeRoster: true
+}
+
+POST /batch-jobs/api/batch-jobs/event-competition-winners-by-competition-email
+Body: {
+  eventId, competitionId, tenantId,
+  templateId?, recipientEmails?: []
+}
+
+POST /batch-jobs/api/batch-jobs/event-competition-registration-export
+Body: {
+  eventId, tenantId,
+  competitionId?, format: 'CSV',
+  recipientEmail, includeGroupMembers: true
+}</pre>
+    </div>
+
+    <h2>3. Team confirmation email payload</h2>
+    <table>
+        <thead><tr><th>Template variable</th><th>Source</th></tr></thead>
+        <tbody>
+            <tr><td><code>{{teamName}}</code></td><td><code>registration.team_name</code></td></tr>
+            <tr><td><code>{{competitionName}}</code></td><td><code>event_competition.name</code></td></tr>
+            <tr><td><code>{{rosterList}}</code></td><td>Group members sorted by <code>sort_order</code></td></tr>
+            <tr><td><code>{{eventName}}</code></td><td><code>event_details.title</code></td></tr>
+            <tr><td><code>{{myRegistrationsUrl}}</code></td><td><code>{appUrl}/events/{id}/competitions/my-registrations</code></td></tr>
+        </tbody>
+    </table>
+
+    <h2>4. Winners digest email</h2>
+    <ul>
+        <li>Top N placements for single <code>competitionId</code> (respect <code>max_placements</code>)</li>
+        <li>Include discipline and day/venue</li>
+        <li>Link to <code>/events/{id}/competitions/winners#{competitionId}</code> anchor</li>
+        <li>Optional: attach winner photo thumbnails (CDN URLs only)</li>
+    </ul>
+
+    <h2>5. CSV export columns</h2>
+    <table>
+        <thead><tr><th>Column</th><th>Notes</th></tr></thead>
+        <tbody>
+            <tr><td>competition_id, competition_name, discipline_code</td><td>Catalog</td></tr>
+            <tr><td>registration_id, status, fee_amount</td><td>Registration</td></tr>
+            <tr><td>participant_name, grade, team_name</td><td>Participant / team</td></tr>
+            <tr><td>group_member_names</td><td>Semicolon-separated when GROUP</td></tr>
+            <tr><td>registered_by_email</td><td>Guardian or captain</td></tr>
+            <tr><td>created_at</td><td>Timestamp</td></tr>
+        </tbody>
+    </table>
+
+    <h2>6. Integration with frontend / webhook</h2>
+    <div class="info-box">
+        <p><strong>Option A:</strong> Stripe webhook in mosc-temp calls batch job HTTP endpoint after team registration confirm (async).</p>
+        <p><strong>Option B:</strong> Admin results publish action triggers winners-by-competition email job.</p>
+        <p><strong>Option C:</strong> Admin registrations page "Export CSV" calls batch export job, emails download link or S3 presigned URL.</p>
+    </div>
+
+    <h2>7. Out of scope (v2.1 batch)</h2>
+    <ul>
+        <li>Waitlist automation</li>
+        <li>Moving registration CRUD into batch project</li>
+        <li>Stripe webhook processing inside batch (remains in Next.js)</li>
+    </ul>
+
+    <h2>8. Implementation checklist</h2>
+    <table>
+        <thead><tr><th>#</th><th>Task</th></tr></thead>
+        <tbody>
+            <tr><td>1</td><td>Add team email template to tenant email template store</td></tr>
+            <tr><td>2</td><td>Implement <code>EventCompetitionTeamRegistrationEmailJobService</code></td></tr>
+            <tr><td>3</td><td>Implement winners-by-competition job</td></tr>
+            <tr><td>4</td><td>Implement CSV export job + S3 or email attachment</td></tr>
+            <tr><td>5</td><td>Wire admin UI trigger (server action → batch HTTP)</td></tr>
+        </tbody>
+    </table>
+
+</body>
+</html>

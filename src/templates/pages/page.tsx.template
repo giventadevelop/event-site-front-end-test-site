@@ -1,0 +1,45 @@
+import { auth } from '@clerk/nextjs'
+import { db } from '@/lib/db'
+import { ClientComponent } from '@/components/client-component'
+
+interface PageProps {
+  params: {
+    id: string
+  }
+  searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export default async function Page({
+  params,
+  searchParams,
+}: PageProps) {
+  const { userId } = auth()
+
+  if (!userId) {
+    return null
+  }
+
+  // Fetch data from your database
+  const data = await db.YOUR_MODEL.findMany({
+    where: {
+      userId,
+    },
+  })
+
+  return (
+    <main className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Page Title</h1>
+
+      {/* Server-rendered content */}
+      <div className="mb-4">
+        {/* Add your server-rendered content here */}
+      </div>
+
+      {/* Client component with props */}
+      <ClientComponent
+        data={data}
+        // Add more props as needed
+      />
+    </main>
+  )
+}

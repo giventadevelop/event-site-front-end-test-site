@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Cover S3 — Data Migration &amp; Porting PRD (v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; margin: 12px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .command-block { border-radius: 8px; border: 2px solid #2196f3; margin: 1rem 0; overflow: hidden; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); }
+        .command-header { padding: 10px 15px; background: rgba(0,0,0,0.05); font-weight: 600; color: #0d3b66; }
+        .command-content { padding: 12px 15px; font-family: Consolas, monospace; font-size: 0.9em; color: #0d3b66; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Cover S3 — Data Migration &amp; Porting PRD</h1>
+    <p class="doc-meta">
+        <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 18, 2026<br>
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a> &nbsp;|&nbsp;
+        <strong>Porting guide:</strong> <a href="../../gallery_porting/GALLERY_STATIC_TO_DYNAMIC_PORTING_GUIDE.html">GALLERY_STATIC_TO_DYNAMIC_PORTING_GUIDE.html</a>
+    </p>
+
+    <div class="lead">
+        <p>Static gallery import currently sets <code>coverImageUrl</code> to paths like <code>/images/mosc/gallery/{slug}/cover.jpg</code>. This PRD defines how to upload those files to S3 and update albums after import (or as part of a new CLI phase).</p>
+    </div>
+
+    <h2>1. Current import behavior</h2>
+    <table>
+        <thead><tr><th>Mode</th><th>Cover</th><th>Photos</th></tr></thead>
+        <tbody>
+            <tr><td><code>--media-mode url</code> (default)</td><td>Local path in <code>cover_image_url</code></td><td><code>fileUrl</code> = local <code>/images/...</code></td></tr>
+            <tr><td><code>--media-mode file</code></td><td>Still URL from manifest unless extended</td><td>Multipart upload to S3 via Next proxy</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. Target: cover upload phase</h2>
+    <p>Add to <code>scripts/gallery-porting/import-static-gallery-to-api.mjs</code> (or sibling script <code>upload-gallery-album-covers.mjs</code>):</p>
+    <table>
+        <thead><tr><th>Flag</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td><code>--upload-covers</code></td><td>After album exists, read cover file from disk and POST to new cover upload endpoint</td></tr>
+            <tr><td><code>--covers-only</code></td><td>Skip album/photo import; only upload covers for albums matched by <code>static_slug=</code></td></tr>
+            <tr><td><code>--dry-run</code></td><td>Log S3 path and file existence only</td></tr>
+        </tbody>
+    </table>
+
+    <h2>3. Recommended porting order (full S3 migration)</h2>
+    <ol>
+        <li><code>npm run gallery:extract-manifest</code></li>
+        <li><code>npm run gallery:seed-categories</code> (if needed)</li>
+        <li><code>npm run gallery:import</code> — creates albums + URL-mode media (local paths OK for dev)</li>
+        <li><strong>NEW:</strong> <code>npm run gallery:upload-covers</code> — requires backend C1 endpoint + local files under <code>public/images/mosc/gallery/</code></li>
+        <li>Optional: re-run <code>npm run gallery:import:media --media-mode file</code> to move all photos to S3 (separate from covers)</li>
+    </ol>
+
+    <div class="command-block">
+        <div class="command-header">Proposed npm script</div>
+        <div class="command-content">npm run gallery:upload-covers</div>
+    </div>
+    <pre>// package.json
+"gallery:upload-covers": "node scripts/gallery-porting/upload-gallery-album-covers.mjs",
+"gallery:upload-covers:dry": "node scripts/gallery-porting/upload-gallery-album-covers.mjs --dry-run"</pre>
+
+    <h2>4. Script algorithm</h2>
+    <ol>
+        <li>Load manifest; for each album with <code>coverImageUrl</code> or <code>coverLocalPath</code>.</li>
+        <li>Resolve album id via GET <code>/api/gallery-albums</code> + parse <code>static_slug=</code> from description.</li>
+        <li>Map manifest path to filesystem: <code>public/images/mosc/gallery/{slug}/{filename}</code>.</li>
+        <li>If file missing, log warning and skip.</li>
+        <li>POST multipart to backend cover upload endpoint (direct backend URL + service JWT, same as import script — not Next proxy).</li>
+        <li>Verify response <code>fileUrl</code> starts with <code>https://</code> and album PATCH reflects new URL.</li>
+        <li>Write <code>cover-upload-report.json</code>.</li>
+    </ol>
+
+    <h2>5. Backfill existing imported albums</h2>
+    <p>For albums already in DB with local <code>cover_image_url</code> like <code>/images/mosc/gallery/...</code>:</p>
+    <ul>
+        <li>Run <code>gallery:upload-covers --covers-only</code> against dev/staging/prod API.</li>
+        <li>No SQL migration — only PATCH via upload endpoint.</li>
+    </ul>
+    <div class="warning-box">
+        Production run requires AWS credentials on backend and <code>public/images/mosc/gallery/</code> files available on the machine running the script (or fetch from deployed static assets first).
+    </div>
+
+    <h2>6. Verification SQL</h2>
+    <pre>SELECT id, title, cover_image_url
+FROM gallery_album
+WHERE tenant_id = 'tenant_demo_002'
+  AND cover_image_url LIKE '/images/%';
+
+-- After upload, expect zero rows with local prefix:
+SELECT COUNT(*) FROM gallery_album
+WHERE tenant_id = 'tenant_demo_002'
+  AND cover_image_url LIKE 'https://%.amazonaws.com/%';</pre>
+
+    <p><a href="generic_enhancement_prd.html">← Back to index</a></p>
+
+</body>
+</html>

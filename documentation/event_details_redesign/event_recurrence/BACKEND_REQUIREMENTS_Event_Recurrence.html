@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recurring Events - Backend Requirements</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #e74c3c;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+        }
+        h3 {
+            color: #555;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        h4 {
+            color: #666;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        p {
+            margin-bottom: 15px;
+        }
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        pre code {
+            background: transparent;
+            padding: 0;
+            color: #ecf0f1;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+        }
+        .info-box {
+            background: #d1ecf1;
+            padding: 15px;
+            border-left: 4px solid #17a2b8;
+            margin: 20px 0;
+        }
+        .warning-box {
+            background: #f8d7da;
+            padding: 15px;
+            border-left: 4px solid #dc3545;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: #e74c3c;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        .badge-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .badge-success {
+            background: #28a745;
+            color: white;
+        }
+        .badge-warning {
+            background: #ffc107;
+            color: #333;
+        }
+        .endpoint {
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #e74c3c;
+            margin: 15px 0;
+        }
+        .endpoint-method {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .method-get { background: #28a745; color: white; }
+        .method-post { background: #007bff; color: white; }
+        .method-put { background: #ffc107; color: #333; }
+        .method-delete { background: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Recurring Events Feature - Backend Requirements</h1>
+
+        <div class="info-box">
+            <strong>Date:</strong> 2025-01-XX<br>
+            <strong>Feature:</strong> Recurring Events Functionality - Backend Implementation<br>
+            <strong>Status:</strong> Requirements Analysis
+        </div>
+
+        <div class="section">
+            <h2>Executive Summary</h2>
+            <p>This document outlines the backend requirements for implementing recurring event functionality. The backend will handle recurrence calculation, event generation, API endpoints, and database schema changes to support recurring events.</p>
+        </div>
+
+        <div class="section">
+            <h2>Current System Analysis</h2>
+
+            <h3>Existing Database Structure</h3>
+            <p><strong>Table:</strong> <code>event_details</code></p>
+            <ul>
+                <li><code>start_date</code> (date, NOT NULL)</li>
+                <li><code>end_date</code> (date, NOT NULL)</li>
+                <li><code>start_time</code> (varchar(100), NOT NULL)</li>
+                <li><code>end_time</code> (varchar(100), NOT NULL)</li>
+                <li><code>timezone</code> (varchar(64), NOT NULL)</li>
+                <li><code>metadata</code> (TEXT) - Currently used for fundraiser/charity configuration (JSON)</li>
+            </ul>
+
+            <h3>Current API Endpoints</h3>
+            <ul>
+                <li><code>GET /api/proxy/event-details/:id</code> - Get single event</li>
+                <li><code>POST /api/proxy/event-details</code> - Create event</li>
+                <li><code>PUT /api/proxy/event-details/:id</code> - Update event</li>
+                <li><code>GET /api/proxy/event-details</code> - List events (with filters)</li>
+            </ul>
+
+            <div class="highlight">
+                <strong>Key Finding:</strong> The <code>metadata</code> field is already used for storing JSON configuration, making it a suitable place to store recurrence rules without requiring immediate database schema changes.
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Database Schema Changes</h2>
+
+            <h3>Option A: Extend event_details Table (Recommended for MVP)</h3>
+            <p>Add new columns to support recurring events:</p>
+            <pre><code>ALTER TABLE event_details
+ADD COLUMN is_recurring BOOLEAN DEFAULT false,
+ADD COLUMN recurrence_pattern VARCHAR(50) NULL,
+ADD COLUMN recurrence_interval INTEGER NULL,
+ADD COLUMN recurrence_end_type VARCHAR(20) NULL,
+ADD COLUMN recurrence_end_date DATE NULL,
+ADD COLUMN recurrence_occurrences INTEGER NULL,
+ADD COLUMN recurrence_weekly_days INTEGER[] NULL,
+ADD COLUMN recurrence_monthly_day INTEGER NULL,
+ADD COLUMN parent_event_id BIGINT NULL,
+ADD COLUMN recurrence_series_id BIGINT NULL;
+
+-- Add foreign key for parent event
+ALTER TABLE event_details
+ADD CONSTRAINT fk_parent_event
+FOREIGN KEY (parent_event_id) REFERENCES event_details(id);
+
+-- Add index for series lookup
+CREATE INDEX idx_recurrence_series_id ON event_details(recurrence_series_id);</code></pre>
+
+            <h3>Option B: Use metadata Field (Faster Implementation, No Migration)</h3>
+            <p>Store recurrence configuration in existing <code>metadata</code> JSON field (same approach as fundraiser config).</p>
+
+            <div class="warning-box">
+                <strong>Recommendation:</strong> Use Option B for MVP, migrate to Option A later if needed for performance.
+            </div>
+
+            <h3>Recurrence Configuration JSON Structure</h3>
+            <pre><code>{
+  "isRecurring": true,
+  "recurrenceConfig": {
+    "pattern": "DAILY" | "WEEKLY" | "BIWEEKLY" | "MONTHLY",
+    "interval": 1,
+    "endType": "END_DATE" | "OCCURRENCES",
+    "endDate": "2026-01-15",
+    "occurrences": 10,
+    "weeklyDays": [1, 3, 5],
+    "monthlyDay": 15
+  }
+}</code></pre>
+
+            <h3>New Database Table (For Advanced Features - Future)</h3>
+            <p><strong>Table:</strong> <code>event_recurrence_series</code></p>
+            <pre><code>CREATE TABLE event_recurrence_series (
+    id BIGINT PRIMARY KEY DEFAULT nextval('sequence_generator'),
+    tenant_id VARCHAR(255),
+    parent_event_id BIGINT NOT NULL,
+    pattern VARCHAR(50) NOT NULL,
+    interval INTEGER NOT NULL,
+    end_type VARCHAR(20) NOT NULL,
+    end_date DATE NULL,
+    occurrences INTEGER NULL,
+    weekly_days INTEGER[] NULL,
+    monthly_day INTEGER NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    CONSTRAINT fk_parent_event FOREIGN KEY (parent_event_id) REFERENCES event_details(id)
+);</code></pre>
+        </div>
+
+        <div class="section">
+            <h2>API Endpoint Changes</h2>
+
+            <h3>1. Event Creation/Update</h3>
+            <div class="endpoint">
+                <span class="endpoint-method method-post">POST</span>
+                <span class="endpoint-method method-put">PUT</span>
+                <code>/api/event-details</code> and <code>/api/event-details/:id</code>
+            </div>
+            <p><strong>Changes Required:</strong></p>
+            <ul>
+                <li>Accept recurrence configuration in request body</li>
+                <li>Validate recurrence rules</li>
+                <li>If recurring, generate child events (or schedule generation)</li>
+            </ul>
+
+            <h4>Request Body Example:</h4>
+            <pre><code>{
+  "title": "Weekly Meeting",
+  "startDate": "2025-01-15",
+  "endDate": "2025-01-15",
+  "startTime": "18:00",
+  "endTime": "19:00",
+  "timezone": "America/New_York",
+  "metadata": "{\"isRecurring\":true,\"recurrenceConfig\":{...}}",
+  // ... other fields
+}</code></pre>
+
+            <h3>2. Generate Recurring Events</h3>
+            <div class="endpoint">
+                <span class="endpoint-method method-post">POST</span>
+                <code>/api/event-details/:id/generate-recurring-events</code>
+            </div>
+            <p><strong>Purpose:</strong> Generate all child events for a recurring event series</p>
+            <p><strong>Request:</strong> None (uses parent event configuration)</p>
+            <p><strong>Response:</strong></p>
+            <pre><code>{
+  "parentEventId": 123,
+  "generatedEvents": [
+    {"id": 124, "startDate": "2025-01-15", ...},
+    {"id": 125, "startDate": "2025-01-22", ...},
+    ...
+  ],
+  "totalGenerated": 10
+}</code></pre>
+
+            <h3>3. Get Recurring Series</h3>
+            <div class="endpoint">
+                <span class="endpoint-method method-get">GET</span>
+                <code>/api/event-details/:id/recurring-series</code>
+            </div>
+            <p><strong>Purpose:</strong> Get all events in a recurring series</p>
+            <p><strong>Response:</strong></p>
+            <pre><code>{
+  "parentEvent": {...},
+  "childEvents": [
+    {"id": 124, "startDate": "2025-01-15", ...},
+    {"id": 125, "startDate": "2025-01-22", ...},
+    ...
+  ],
+  "totalOccurrences": 10
+}</code></pre>
+
+            <h3>4. Update Recurring Series</h3>
+            <div class="endpoint">
+                <span class="endpoint-method method-put">PUT</span>
+                <code>/api/event-details/:id/recurring-series</code>
+            </div>
+            <p><strong>Purpose:</strong> Update recurrence configuration and regenerate events</p>
+            <p><strong>Request Body:</strong></p>
+            <pre><code>{
+  "recurrenceConfig": {
+    "pattern": "WEEKLY",
+    "interval": 1,
+    "endType": "OCCURRENCES",
+    "occurrences": 20,
+    "weeklyDays": [1, 3, 5]
+  },
+  "regenerateEvents": true
+}</code></pre>
+
+            <h3>5. Delete Recurring Series</h3>
+            <div class="endpoint">
+                <span class="endpoint-method method-delete">DELETE</span>
+                <code>/api/event-details/:id/recurring-series</code>
+            </div>
+            <p><strong>Purpose:</strong> Delete parent event and all child events in series</p>
+            <p><strong>Response:</strong> <code>204 No Content</code></p>
+        </div>
+
+        <div class="section">
+            <h2>Service Layer Implementation</h2>
+
+            <h3>1. Recurrence Calculation Service</h3>
+            <p><strong>File:</strong> <code>RecurrenceCalculationService.java</code></p>
+            <p><strong>Methods:</strong></p>
+            <pre><code>public List&lt;LocalDate&gt; calculateOccurrences(
+    LocalDate startDate,
+    RecurrencePattern pattern,
+    int interval,
+    LocalDate endDate,
+    Integer maxOccurrences,
+    List&lt;Integer&gt; weeklyDays,
+    Integer monthlyDay
+);
+
+public LocalDate calculateNextOccurrence(
+    LocalDate startDate,
+    RecurrencePattern pattern,
+    int interval,
+    LocalDate currentDate,
+    List&lt;Integer&gt; weeklyDays,
+    Integer monthlyDay
+);
+
+public boolean validateRecurrenceEndDate(
+    LocalDate startDate,
+    LocalDate endDate
+);</code></pre>
+
+            <h3>2. Event Generation Service</h3>
+            <p><strong>File:</strong> <code>RecurringEventGenerationService.java</code></p>
+            <p><strong>Methods:</strong></p>
+            <pre><code>public List&lt;EventDetailsDTO&gt; generateRecurringEvents(
+    EventDetailsDTO parentEvent,
+    RecurrenceConfig recurrenceConfig
+);
+
+public void updateRecurringSeries(
+    Long parentEventId,
+    RecurrenceConfig newConfig,
+    boolean regenerateEvents
+);
+
+public void deleteRecurringSeries(Long parentEventId);</code></pre>
+        </div>
+
+        <div class="section">
+            <h2>Business Logic Rules</h2>
+
+            <h3>1. Event Generation</h3>
+            <ul>
+                <li>Generate child events when parent event is created/updated</li>
+                <li>Each child event inherits all properties from parent except dates</li>
+                <li>Child events have <code>parent_event_id</code> set to parent event ID</li>
+                <li>Child events have <code>recurrence_series_id</code> set to parent event ID (for grouping)</li>
+            </ul>
+
+            <h3>2. Event Updates</h3>
+            <ul>
+                <li>Updating parent event can optionally update all child events</li>
+                <li>Updating individual child event does not affect parent or siblings</li>
+                <li>Changing recurrence config regenerates all child events</li>
+            </ul>
+
+            <h3>3. Event Deletion</h3>
+            <ul>
+                <li>Deleting parent event deletes all child events (cascade)</li>
+                <li>Deleting individual child event does not affect parent or siblings</li>
+                <li>Option to "Delete this occurrence only" vs "Delete entire series"</li>
+            </ul>
+
+            <h3>4. Validation Rules</h3>
+            <ul>
+                <li>Maximum 5 years from start date for end date</li>
+                <li>Maximum 1000 occurrences</li>
+                <li>At least one weekday selected for WEEKLY/BIWEEKLY</li>
+                <li>Valid day of month for MONTHLY (handle month-end edge cases)</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>API Examples</h2>
+
+            <h3>Create Recurring Event</h3>
+            <p><strong>Request:</strong></p>
+            <pre><code>POST /api/proxy/event-details
+Content-Type: application/json
+
+{
+  "title": "Weekly Team Meeting",
+  "startDate": "2025-01-15",
+  "endDate": "2025-01-15",
+  "startTime": "14:00",
+  "endTime": "15:00",
+  "timezone": "America/New_York",
+  "location": "Conference Room A",
+  "metadata": "{\"isRecurring\":true,\"recurrenceConfig\":{\"pattern\":\"WEEKLY\",\"interval\":1,\"endType\":\"OCCURRENCES\",\"occurrences\":10,\"weeklyDays\":[2]}}"
+}</code></pre>
+
+            <p><strong>Response:</strong></p>
+            <pre><code>{
+  "id": 123,
+  "title": "Weekly Team Meeting",
+  "startDate": "2025-01-15",
+  "isRecurring": true,
+  "recurrenceSeriesId": 123,
+  "generatedEventsCount": 10
+}</code></pre>
+
+            <h3>Get Recurring Series</h3>
+            <p><strong>Request:</strong></p>
+            <pre><code>GET /api/proxy/event-details/123/recurring-series</code></pre>
+
+            <p><strong>Response:</strong></p>
+            <pre><code>{
+  "parentEvent": {
+    "id": 123,
+    "title": "Weekly Team Meeting",
+    "startDate": "2025-01-15",
+    ...
+  },
+  "childEvents": [
+    {
+      "id": 124,
+      "parentEventId": 123,
+      "startDate": "2025-01-15",
+      "endDate": "2025-01-15",
+      ...
+    },
+    {
+      "id": 125,
+      "parentEventId": 123,
+      "startDate": "2025-01-22",
+      "endDate": "2025-01-22",
+      ...
+    }
+  ],
+  "totalOccurrences": 10
+}</code></pre>
+        </div>
+
+        <div class="section">
+            <h2>File Changes Summary</h2>
+
+            <h3>New Files</h3>
+            <ol>
+                <li><code>RecurrenceCalculationService.java</code> - Calculate occurrence dates</li>
+                <li><code>RecurringEventGenerationService.java</code> - Generate child events</li>
+                <li><code>RecurrenceConfig.java</code> - DTO for recurrence configuration</li>
+                <li><code>RecurringEventResource.java</code> - REST controller for recurring events</li>
+            </ol>
+
+            <h3>Modified Files</h3>
+            <ol>
+                <li><code>EventDetailsDTO.java</code> - Add recurrence fields or parse from metadata</li>
+                <li><code>EventDetailsService.java</code> - Handle recurrence on create/update</li>
+                <li><code>EventDetailsResource.java</code> - Add recurring event endpoints</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>Implementation Phases</h2>
+
+            <h3>Phase 2: Backend API - Metadata Storage (Week 2-3)</h3>
+            <ul>
+                <li>[ ] Update EventDetailsDTO to parse recurrence config from metadata</li>
+                <li>[ ] Add validation for recurrence rules</li>
+                <li>[ ] Update create/update endpoints to accept recurrence config</li>
+                <li>[ ] Store recurrence config in metadata field</li>
+            </ul>
+
+            <h3>Phase 3: Backend API - Event Generation (Week 3-4)</h3>
+            <ul>
+                <li>[ ] Implement RecurrenceCalculationService</li>
+                <li>[ ] Implement RecurringEventGenerationService</li>
+                <li>[ ] Add generate-recurring-events endpoint</li>
+                <li>[ ] Add get-recurring-series endpoint</li>
+                <li>[ ] Add update-recurring-series endpoint</li>
+                <li>[ ] Add delete-recurring-series endpoint</li>
+            </ul>
+
+            <h3>Phase 4: Database Schema (Week 4-5) - Optional</h3>
+            <ul>
+                <li>[ ] Create migration script for new columns</li>
+                <li>[ ] Migrate existing metadata-based recurrence to columns</li>
+                <li>[ ] Update DTOs and services to use columns instead of metadata</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Technical Considerations</h2>
+
+            <h3>1. Performance</h3>
+            <p><strong>Concerns:</strong></p>
+            <ul>
+                <li>Generating 1000+ events could be slow</li>
+                <li>Database queries for recurring series could be expensive</li>
+            </ul>
+            <p><strong>Solutions:</strong></p>
+            <ul>
+                <li>Generate events asynchronously (background job)</li>
+                <li>Use pagination for large series</li>
+                <li>Add database indexes on <code>recurrence_series_id</code> and <code>parent_event_id</code></li>
+                <li>Consider lazy generation (generate on-demand)</li>
+            </ul>
+
+            <h3>2. Data Consistency</h3>
+            <p><strong>Concerns:</strong></p>
+            <ul>
+                <li>Parent event update should sync to children</li>
+                <li>Partial failures during generation</li>
+            </ul>
+            <p><strong>Solutions:</strong></p>
+            <ul>
+                <li>Use database transactions</li>
+                <li>Implement rollback on failure</li>
+                <li>Add "sync to series" option for updates</li>
+            </ul>
+
+            <h3>3. Edge Cases</h3>
+            <h4>Monthly Recurrence:</h4>
+            <ul>
+                <li>Handle months with different day counts (e.g., Jan 31 → Feb 28/29)</li>
+                <li>Strategy: Use "last day of month" or "closest valid day"</li>
+            </ul>
+            <h4>Timezone Handling:</h4>
+            <ul>
+                <li>All occurrences use same timezone as parent event</li>
+                <li>Daylight saving time transitions handled automatically by timezone library</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Testing Requirements</h2>
+
+            <h3>Backend Tests</h3>
+            <ul>
+                <li>[ ] Recurrence calculation for all patterns</li>
+                <li>[ ] Event generation creates correct number of events</li>
+                <li>[ ] End date validation (5 year limit)</li>
+                <li>[ ] Occurrences limit (1000 max)</li>
+                <li>[ ] Series queries return correct events</li>
+                <li>[ ] Update/delete operations work correctly</li>
+            </ul>
+
+            <h3>Integration Tests</h3>
+            <ul>
+                <li>[ ] Create recurring event via API</li>
+                <li>[ ] Generate events endpoint</li>
+                <li>[ ] Get series endpoint</li>
+                <li>[ ] Update series endpoint</li>
+                <li>[ ] Delete series endpoint</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Success Criteria</h2>
+            <ul>
+                <li>✅ All child events are generated correctly</li>
+                <li>✅ Parent and child events are linked properly</li>
+                <li>✅ Updates to parent can sync to children</li>
+                <li>✅ Series can be deleted as a whole</li>
+                <li>✅ Performance is acceptable for up to 1000 occurrences</li>
+                <li>✅ Recurrence end date is limited to 5 years maximum</li>
+                <li>✅ Validation prevents invalid recurrence configurations</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>References</h2>
+            <ul>
+                <li>Database Schema: <code>code_html_template/SQLS/Latest_Schema_Post__Blob_Claude_11.sql</code></li>
+                <li>Current API: <code>/api/proxy/event-details</code></li>
+                <li>Metadata Pattern: Similar to fundraiser/charity configuration</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+

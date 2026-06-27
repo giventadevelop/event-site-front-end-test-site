@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liturgical Calendar – Frontend Integration (Strapi)</title>
+  <style>
+    :root { --bg: #0f1419; --surface: #1a2332; --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff; --border: #30363d; --green: #3fb950; --warn: #d29922; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; margin: 0; padding: 2rem; }
+    .doc { max-width: 52rem; margin: 0 auto; }
+    h1 { font-size: 1.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-top: 0; }
+    h2 { font-size: 1.25rem; margin-top: 2rem; color: var(--accent); }
+    h3 { font-size: 1.05rem; margin-top: 1.25rem; }
+    h4 { font-size: 0.95rem; margin-top: 1rem; color: var(--text); }
+    p { margin: 0.5rem 0 1rem; color: var(--muted); }
+    code, kbd { background: var(--surface); padding: 0.15em 0.4em; border-radius: 4px; font-size: 0.9em; }
+    pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; font-size: 0.85rem; }
+    pre code { background: none; padding: 0; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; }
+    .note { background: rgba(88, 166, 255, 0.1); border-left: 4px solid var(--accent); padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 0 6px 6px 0; }
+    .warn { background: rgba(210, 153, 34, 0.1); border-left: 4px solid var(--warn); padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 0 6px 6px 0; }
+    .good { background: rgba(63, 185, 80, 0.1); border-left: 4px solid var(--green); padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 0 6px 6px 0; }
+    ul, ol { margin: 0.5rem 0 1rem; padding-left: 1.5rem; color: var(--muted); }
+    li { margin: 0.25rem 0; }
+    a { color: var(--accent); }
+    .toc { margin: 1.5rem 0; padding: 1rem; background: var(--surface); border-radius: 8px; }
+    .toc ul { list-style: none; padding-left: 0; }
+    .toc li { margin: 0.35rem 0; }
+    .toc a { text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+    .diagram { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 0.85rem; white-space: pre; color: var(--text); }
+    .file-badge { display: inline-block; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 0.1em 0.5em; font-size: 0.85em; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <div class="doc">
+    <h1>Liturgical Calendar &ndash; Frontend Integration (Strapi)</h1>
+    <p>How the Next.js / MOSC frontend (<code>mosc-temp</code>) calls the <strong>Strapi-backed</strong> liturgical calendar API, maps the response to the existing <code>LiturgyReading</code> format, and displays the data. Designed so the existing <code>SyroLiturgySection</code> component requires <strong>no changes</strong>.</p>
+
+    <nav class="toc" aria-label="Contents">
+      <h2 id="toc">Contents</h2>
+      <ul>
+        <li><a href="#overview">1. Overview &amp; Architecture</a></li>
+        <li><a href="#env">2. Environment Variables</a></li>
+        <li><a href="#api-route">3. Next.js API Route (<code>/api/liturgy</code>)</a></li>
+        <li><a href="#mapping">4. Strapi-to-Frontend Data Mapping</a></li>
+        <li><a href="#tenant">5. Tenant Handling</a></li>
+        <li><a href="#component">6. Frontend Component (No Changes)</a></li>
+        <li><a href="#error">7. Loading &amp; Error States</a></li>
+        <li><a href="#switching">8. Switching Between External API and Strapi</a></li>
+        <li><a href="#references">9. Related Documents</a></li>
+      </ul>
+    </nav>
+
+    <!-- 1 -->
+    <h2 id="overview">1. Overview &amp; Architecture</h2>
+    <p>The frontend component (<code>SyroLiturgySection</code>) calls <code>/api/liturgy?lng=en|ml</code> and expects the response <code>{ message: LiturgyReading[] }</code>. This contract stays the same regardless of backend. The <strong>Next.js API route</strong> acts as a proxy that:</p>
+    <ol>
+      <li>Receives <code>lng</code> (and optionally <code>date</code>) from the frontend.</li>
+      <li>Calls Strapi&rsquo;s <code>/api/liturgy-days</code> with tenant and date filters.</li>
+      <li>Maps the Strapi response (bilingual fields + readings component) to the flat <code>LiturgyReading[]</code> array using the requested language.</li>
+      <li>Returns <code>{ message: LiturgyReading[] }</code> to the frontend.</li>
+    </ol>
+
+    <h3>Data Flow</h3>
+    <div class="diagram">Browser (SyroLiturgySection)
+  |
+  |  GET /api/liturgy?lng=en
+  v
+Next.js API Route (src/app/api/liturgy/route.ts)
+  |
+  |  GET ${STRAPI_URL}/api/liturgy-days
+  |    ?filters[tenant][tenantId][$eq]=${tenantId}
+  |    &amp;filters[date][$eq]=${today}
+  |    &amp;populate[readings]=*
+  v
+Strapi (strapi-editorial-template)
+  |
+  |  Returns: { data: [{ dayHeadingEn, dayHeadingMl, seasonNameEn, seasonNameMl, readings: [...] }], meta }
+  v
+Next.js API Route
+  |
+  |  Maps to: { message: [{ liturgy_day_heading, season_name, liturgy_heading, content_place }, ...] }
+  v
+Browser (SyroLiturgySection)
+  |
+  |  Renders: day heading, season, list of readings
+  v
+User sees Liturgical Calendar</div>
+
+    <!-- 2 -->
+    <h2 id="env">2. Environment Variables</h2>
+    <table>
+      <tr><th>Variable</th><th>Required</th><th>Description</th><th>Example</th></tr>
+      <tr><td><code>STRAPI_URL</code></td><td>Yes</td><td>Base URL of the Strapi instance (server-only, not exposed to client).</td><td><code>https://cms.example.com</code></td></tr>
+      <tr><td><code>NEXT_PUBLIC_TENANT_ID</code></td><td>Yes</td><td>Tenant identifier for multi-tenant filtering.</td><td><code>tenant_demo_002</code></td></tr>
+      <tr><td><code>STRAPI_API_TOKEN</code></td><td>No</td><td>Strapi API token (only if public API access is not enabled).</td><td><code>abc123...</code></td></tr>
+      <tr><td><code>LITURGY_DATA_SOURCE</code></td><td>No</td><td>Set to <code>strapi</code> to use Strapi backend. Defaults to <code>external</code> (legacy SMCIM API).</td><td><code>strapi</code></td></tr>
+    </table>
+
+    <p>Add these to <code>.env.local</code>:</p>
+    <pre><code># Strapi liturgical calendar
+STRAPI_URL=http://localhost:1337
+LITURGY_DATA_SOURCE=strapi
+
+# Existing
+NEXT_PUBLIC_TENANT_ID=tenant_demo_002</code></pre>
+
+    <p>For production (AWS Amplify), also declare in <code>next.config.mjs</code> <code>env</code> block:</p>
+    <pre><code>env: {
+  // ... existing entries ...
+  STRAPI_URL: process.env.STRAPI_URL || process.env.AMPLIFY_STRAPI_URL,
+  LITURGY_DATA_SOURCE: process.env.LITURGY_DATA_SOURCE || process.env.AMPLIFY_LITURGY_DATA_SOURCE || 'external',
+}</code></pre>
+
+    <!-- 3 -->
+    <h2 id="api-route">3. Next.js API Route (<code>/api/liturgy</code>)</h2>
+    <p>The existing route at <span class="file-badge">src/app/api/liturgy/route.ts</span> currently calls the external SMCIM API. To support Strapi, add a conditional branch based on <code>LITURGY_DATA_SOURCE</code>.</p>
+
+    <h3>3.1 Updated Route (Pseudocode)</h3>
+    <pre><code>import { NextRequest, NextResponse } from 'next/server';
+
+const LITURGY_DATA_SOURCE = process.env.LITURGY_DATA_SOURCE || 'external';
+const STRAPI_URL = process.env.STRAPI_URL || 'http://localhost:1337';
+const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || '';
+
+export async function GET(request: NextRequest) {
+  const lng = request.nextUrl.searchParams.get('lng') ?? 'en';
+
+  if (LITURGY_DATA_SOURCE === 'strapi') {
+    return fetchFromStrapi(lng);
+  } else {
+    return fetchFromExternalApi(lng); // existing logic
+  }
+}
+
+async function fetchFromStrapi(lng: string) {
+  try {
+    // Today's date in YYYY-MM-DD
+    const today = new Date().toISOString().split('T')[0];
+
+    const params = new URLSearchParams({
+      'filters[tenant][tenantId][$eq]': TENANT_ID,
+      'filters[date][$eq]': today,
+      'populate[readings]': '*',
+      'sort': 'order:asc',
+    });
+
+    const headers: Record&lt;string, string&gt; = {
+      Accept: 'application/json',
+    };
+    if (process.env.STRAPI_API_TOKEN) {
+      headers['Authorization'] = `Bearer ${process.env.STRAPI_API_TOKEN}`;
+    }
+
+    const res = await fetch(`${STRAPI_URL}/api/liturgy-days?${params}`, {
+      method: 'GET',
+      headers,
+      next: { revalidate: 3600 }, // cache 1 hour
+    });
+
+    if (!res.ok) {
+      console.error('[Liturgy API] Strapi error:', res.status);
+      return NextResponse.json(
+        { error: 'Liturgy service unavailable' },
+        { status: 502 }
+      );
+    }
+
+    const json = await res.json();
+    const strapiDay = json.data?.[0];
+
+    if (!strapiDay) {
+      return NextResponse.json({ message: [] });
+    }
+
+    const message = mapStrapiToLegacy(strapiDay, lng);
+    return NextResponse.json({ message });
+  } catch (err) {
+    console.error('[Liturgy API] Error:', err);
+    return NextResponse.json(
+      { error: 'Failed to fetch liturgy readings' },
+      { status: 500 }
+    );
+  }
+}
+
+function mapStrapiToLegacy(day: any, lang: string) {
+  const isEn = lang === 'en';
+  const dayHeading = isEn ? day.dayHeadingEn : day.dayHeadingMl;
+  const seasonName = isEn ? day.seasonNameEn : day.seasonNameMl;
+
+  const readings = (day.readings || []).map((r: any) =&gt; ({
+    liturgy_day_heading: dayHeading || '',
+    season_name: seasonName || '',
+    liturgy_heading: isEn ? r.liturgyHeadingEn : r.liturgyHeadingMl || '',
+    content_place: isEn ? r.contentPlaceEn : r.contentPlaceMl || '',
+  }));
+
+  if (readings.length === 0) {
+    readings.push({
+      liturgy_day_heading: dayHeading || '',
+      season_name: seasonName || '',
+      liturgy_heading: '',
+      content_place: '',
+    });
+  }
+
+  return readings;
+}</code></pre>
+
+    <div class="note">
+      <strong>Note:</strong> The route retains the existing <code>fetchFromExternalApi</code> function for the legacy SMCIM API. Switching is controlled by the <code>LITURGY_DATA_SOURCE</code> environment variable. Set it to <code>strapi</code> to use the Strapi backend.
+    </div>
+
+    <h3>3.2 TypeScript Types</h3>
+    <pre><code>// Already defined in the project; no changes needed
+type LiturgyReading = {
+  liturgy_day_heading?: string;
+  season_name?: string;
+  liturgy_heading: string;
+  content_place: string;
+};
+
+type LiturgyApiResponse = {
+  message: LiturgyReading[];
+};
+
+// Strapi response types (for internal mapping)
+interface StrapiLiturgyReading {
+  id: number;
+  liturgyHeadingEn: string;
+  liturgyHeadingMl: string;
+  contentPlaceEn: string;
+  contentPlaceMl: string;
+}
+
+interface StrapiLiturgyDay {
+  id: number;
+  documentId: string;
+  date: string;
+  dayHeadingEn: string;
+  dayHeadingMl: string;
+  seasonNameEn: string;
+  seasonNameMl: string;
+  order: number;
+  readings: StrapiLiturgyReading[];
+}
+
+interface StrapiResponse {
+  data: StrapiLiturgyDay[];
+  meta: { pagination: { page: number; pageSize: number; pageCount: number; total: number } };
+}</code></pre>
+
+    <!-- 4 -->
+    <h2 id="mapping">4. Strapi-to-Frontend Data Mapping</h2>
+    <p>The mapping selects the appropriate language-specific fields from Strapi and produces the flat <code>LiturgyReading</code> array.</p>
+
+    <h3>4.1 Field Mapping Table</h3>
+    <table>
+      <tr><th>Frontend Field</th><th>Source (lng=en)</th><th>Source (lng=ml)</th></tr>
+      <tr><td><code>liturgy_day_heading</code></td><td><code>data[0].dayHeadingEn</code></td><td><code>data[0].dayHeadingMl</code></td></tr>
+      <tr><td><code>season_name</code></td><td><code>data[0].seasonNameEn</code></td><td><code>data[0].seasonNameMl</code></td></tr>
+      <tr><td><code>liturgy_heading</code></td><td><code>data[0].readings[i].liturgyHeadingEn</code></td><td><code>data[0].readings[i].liturgyHeadingMl</code></td></tr>
+      <tr><td><code>content_place</code></td><td><code>data[0].readings[i].contentPlaceEn</code></td><td><code>data[0].readings[i].contentPlaceMl</code></td></tr>
+    </table>
+
+    <h3>4.2 Structure Comparison</h3>
+    <table>
+      <tr><th>Aspect</th><th>Strapi Response</th><th>Frontend Contract</th></tr>
+      <tr><td>Wrapper</td><td><code>{ data: [...], meta: {...} }</code></td><td><code>{ message: [...] }</code></td></tr>
+      <tr><td>Day info</td><td>On the day object (bilingual)</td><td>Repeated on every reading object (single language)</td></tr>
+      <tr><td>Readings</td><td>Nested array under <code>readings</code></td><td>Flat array at root <code>message</code></td></tr>
+      <tr><td>Language</td><td>Both languages in same object (<code>*En</code>, <code>*Ml</code>)</td><td>Single language per response</td></tr>
+    </table>
+
+    <!-- 5 -->
+    <h2 id="tenant">5. Tenant Handling</h2>
+    <ul>
+      <li>The tenant ID comes from <code>process.env.NEXT_PUBLIC_TENANT_ID</code> (server-side) or from auth context.</li>
+      <li>It is injected into the Strapi query as <code>filters[tenant][tenantId][$eq]=&lt;tenantId&gt;</code>.</li>
+      <li>The frontend component does <strong>not</strong> send the tenant ID &ndash; the API route handles it.</li>
+      <li>This follows the same pattern as other proxy routes in the project (see <a href="../../src/lib/proxyHandler.ts"><code>proxyHandler.ts</code></a>).</li>
+    </ul>
+
+    <div class="warn">
+      <strong>Important:</strong> Never omit the tenant filter. Without it, readings from <em>all</em> tenants will be returned.
+    </div>
+
+    <!-- 6 -->
+    <h2 id="component">6. Frontend Component (No Changes)</h2>
+    <p>Because the API route maps Strapi&rsquo;s response to the same <code>{ message: LiturgyReading[] }</code> format, the existing <code>SyroLiturgySection</code> component requires <strong>no modifications</strong>.</p>
+
+    <h3>6.1 Current Component Behavior</h3>
+    <p><span class="file-badge">src/app/mosc/components/SyroLiturgySection.tsx</span></p>
+    <ol>
+      <li>Maintains <code>lng</code> state (<code>en</code> or <code>ml</code>).</li>
+      <li>On mount / language change, fetches <code>/api/liturgy?lng={lng}</code>.</li>
+      <li>Expects <code>{ message: LiturgyReading[] }</code> in the response.</li>
+      <li>Renders: day heading (<code>liturgy_day_heading</code>), season (<code>season_name</code>), list of readings with cross icon.</li>
+      <li>Shows loading spinner, error message, or &ldquo;no readings&rdquo; as appropriate.</li>
+    </ol>
+
+    <div class="good">
+      <strong>Zero UI changes required.</strong> The API route contract is preserved. The component is backend-agnostic.
+    </div>
+
+    <h3>6.2 Alternative: Direct Strapi Call (Not Recommended)</h3>
+    <p>If a project wants to bypass the Next.js API route and call Strapi directly from the client component, the component would need to:</p>
+    <ol>
+      <li>Know the Strapi URL (requires <code>NEXT_PUBLIC_STRAPI_URL</code> environment variable).</li>
+      <li>Include the tenant filter in the fetch URL.</li>
+      <li>Map the Strapi response to <code>LiturgyReading[]</code> in the component (duplicating the mapping logic).</li>
+    </ol>
+    <p>This approach is <strong>not recommended</strong> because it exposes the Strapi URL to the client, requires tenant handling on the client, and duplicates mapping logic.</p>
+
+    <!-- 7 -->
+    <h2 id="error">7. Loading &amp; Error States</h2>
+    <p>The component already handles these states. No changes needed:</p>
+    <table>
+      <tr><th>State</th><th>UI</th></tr>
+      <tr><td>Loading</td><td>Spinner with &ldquo;Loading liturgy readings&hellip;&rdquo;</td></tr>
+      <tr><td>Error</td><td>Amber warning box with message. If the error indicates unavailability, shows a link to the <a href="https://www.syromalabarliturgy.org/" target="_blank" rel="noopener">Syro-Malabar Commission for Liturgy</a>.</td></tr>
+      <tr><td>Empty</td><td>&ldquo;No readings available for this day.&rdquo;</td></tr>
+      <tr><td>Success</td><td>Day heading, season name, and list of readings with cross icon.</td></tr>
+    </table>
+
+    <h3>7.1 Error Scenarios</h3>
+    <table>
+      <tr><th>Scenario</th><th>HTTP Status</th><th>User Sees</th></tr>
+      <tr><td>Strapi unreachable</td><td>502</td><td>&ldquo;Daily readings are temporarily unavailable&rdquo; + link to official site</td></tr>
+      <tr><td>No entry for today</td><td>200 (empty array)</td><td>&ldquo;No readings available for this day.&rdquo;</td></tr>
+      <tr><td>Strapi returns error</td><td>502</td><td>&ldquo;Daily readings are temporarily unavailable&rdquo; + link</td></tr>
+      <tr><td>Network error</td><td>500</td><td>Generic error message</td></tr>
+    </table>
+
+    <!-- 8 -->
+    <h2 id="switching">8. Switching Between External API and Strapi</h2>
+    <p>The <code>LITURGY_DATA_SOURCE</code> environment variable controls which backend is used:</p>
+    <table>
+      <tr><th>Value</th><th>Backend</th><th>When to Use</th></tr>
+      <tr><td><code>external</code> (default)</td><td>External SMCIM API</td><td>When Strapi liturgy content type is not yet set up or populated.</td></tr>
+      <tr><td><code>strapi</code></td><td>Strapi <code>/api/liturgy-days</code></td><td>When Strapi is configured and has liturgy day entries.</td></tr>
+    </table>
+
+    <h3>8.1 Migration Steps</h3>
+    <ol>
+      <li>Set up the <code>liturgy-day</code> content type and <code>liturgy.reading</code> component in Strapi (see <a href="liturgical-calendar-strapi-server.html">Strapi Server Specification</a>).</li>
+      <li>Configure public permissions for <code>find</code> and <code>findOne</code> on <code>liturgy-day</code>.</li>
+      <li>Create at least one liturgy day entry for today&rsquo;s date in Strapi.</li>
+      <li>Set <code>STRAPI_URL</code> and <code>LITURGY_DATA_SOURCE=strapi</code> in <code>.env.local</code>.</li>
+      <li>Restart the Next.js dev server.</li>
+      <li>Verify the liturgy section displays Strapi data.</li>
+      <li>For production: set <code>STRAPI_URL</code>, <code>LITURGY_DATA_SOURCE=strapi</code> in AWS Amplify environment variables and add to <code>next.config.mjs</code> <code>env</code> block.</li>
+    </ol>
+
+    <h3>8.2 Rollback</h3>
+    <p>To revert to the external API, set <code>LITURGY_DATA_SOURCE=external</code> (or remove it entirely). No code changes needed.</p>
+
+    <!-- 9 -->
+    <h2 id="references">9. Related Documents</h2>
+    <table>
+      <tr><th>Document</th><th>Description</th></tr>
+      <tr>
+        <td><a href="liturgical-calendar-project-requirements.html">Project Requirements</a></td>
+        <td>Generic feature scope, functional requirements, EN+ML, tenant.</td>
+      </tr>
+      <tr>
+        <td><a href="liturgical-calendar-strapi-server.html">Strapi Server Specification</a></td>
+        <td>Content types, schema, REST API, tenant and language handling in Strapi.</td>
+      </tr>
+      <tr>
+        <td><a href="liturgical-calendar-api-integration.html">API Integration Guide (External)</a></td>
+        <td>External SMCIM API reference, legacy integration details.</td>
+      </tr>
+    </table>
+
+    <hr style="border: 0; border-top: 1px solid var(--border); margin: 2rem 0;">
+    <p style="font-size: 0.875rem; color: var(--muted);">Document version 1.0 &ndash; February 2026. Frontend integration guide for calling Strapi from <code>mosc-temp</code> Next.js application. Existing UI component (<code>SyroLiturgySection</code>) requires no changes.</p>
+  </div>
+</body>
+</html>

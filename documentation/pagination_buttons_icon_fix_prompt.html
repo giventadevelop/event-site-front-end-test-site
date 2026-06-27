@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagination Buttons Icon Fix - Prompt Documentation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #1e40af;
+            margin-top: 30px;
+            border-left: 4px solid #2563eb;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #3b82f6;
+            margin-top: 20px;
+        }
+        .issue-box {
+            background: #fef2f2;
+            border: 2px solid #fca5a5;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .solution-box {
+            background: #f0fdf4;
+            border: 2px solid #86efac;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .xpath {
+            background: #fff7ed;
+            border: 1px solid #fdba74;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        .checklist {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .checklist li {
+            margin: 8px 0;
+        }
+        .warning {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .reference {
+            background: #f3f4f6;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        ul, ol {
+            margin: 10px 0;
+            padding-left: 30px;
+        }
+        code {
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #dc2626;
+        }
+        .step {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .step-number {
+            display: inline-block;
+            background: #2563eb;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pagination Buttons Icon Fix - Implementation Prompt</h1>
+
+        <div class="issue-box">
+            <h2>🚨 Issue Description</h2>
+            <p><strong>Problem:</strong> Pagination buttons (Previous and Next) on the <code>/admin/manage-events</code> page are not displaying SVG icons according to the icon standards rule, even after multiple attempts to update the code.</p>
+
+            <h3>Affected Elements:</h3>
+            <ul>
+                <li><strong>Previous Button:</strong> <code class="xpath">/html/body/div[3]/div/div[7]/div[1]/button[1]</code></li>
+                <li><strong>Next Button:</strong> <code class="xpath">/html/body/div[3]/div/div[7]/div[1]/button[2]</code></li>
+            </ul>
+
+            <h3>Current Behavior:</h3>
+            <ul>
+                <li>Buttons appear as blue rounded rectangles with text ("Previous" and "Next")</li>
+                <li>No visible chevron icons (left/right arrows) are displayed</li>
+                <li>Icons should be visible even when buttons are disabled/grayed out</li>
+                <li>Buttons are located in the pagination footer section of the EventList component</li>
+            </ul>
+
+            <h3>Expected Behavior:</h3>
+            <ul>
+                <li>White chevron-left icon (←) visible in Previous button</li>
+                <li>White chevron-right icon (→) visible in Next button</li>
+                <li>Icons must be visible even when buttons are disabled (grayed out due to insufficient records)</li>
+                <li>Icons should follow the icon standards rule: <code>.cursor/rules/icon_standards.mdc</code></li>
+            </ul>
+        </div>
+
+        <div class="solution-box">
+            <h2>✅ Solution Requirements</h2>
+
+            <h3>File to Modify:</h3>
+            <p><code>src/components/EventList.tsx</code></p>
+
+            <h3>Icon Standards to Follow:</h3>
+            <div class="reference">
+                <p><strong>Reference Rule:</strong> <code>.cursor/rules/icon_standards.mdc</code></p>
+                <p><strong>Pattern:</strong> Small Inline Icons for buttons</p>
+                <ul>
+                    <li>Icon size: <code>w-5 h-5</code> (20px × 20px) for button icons</li>
+                    <li>Use inline SVG with <code>viewBox="0 0 24 24"</code></li>
+                    <li>Stroke width: <code>strokeWidth={2}</code> or <code>strokeWidth="2"</code></li>
+                    <li>Color: White (<code>stroke="white"</code> or <code>stroke="#FFFFFF"</code>) for icons on blue buttons</li>
+                </ul>
+            </div>
+
+            <h3>Implementation Steps:</h3>
+
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Remove react-icons imports</strong>
+                <div class="code-block">
+// ❌ REMOVE this line if it exists:
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+                </div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Update Previous Button (button[1])</strong>
+                <p>Replace the button content with inline SVG chevron-left icon:</p>
+                <div class="code-block">
+&lt;button
+  onClick={onPrevPage}
+  disabled={isPrevDisabled}
+  className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+  title="Previous Page"
+  aria-label="Previous Page"
+  type="button"
+&gt;
+  &lt;svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    style={{ display: 'block', width: '20px', height: '20px', flexShrink: 0, pointerEvents: 'none' }}
+  &gt;
+    &lt;path
+      d="M15 19l-7-7 7-7"
+      stroke="#FFFFFF"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    /&gt;
+  &lt;/svg&gt;
+  &lt;span className="text-white"&gt;Previous&lt;/span&gt;
+&lt;/button&gt;
+                </div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Update Next Button (button[2])</strong>
+                <p>Replace the button content with inline SVG chevron-right icon:</p>
+                <div class="code-block">
+&lt;button
+  onClick={onNextPage}
+  disabled={isNextDisabled}
+  className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+  title="Next Page"
+  aria-label="Next Page"
+  type="button"
+&gt;
+  &lt;span className="text-white"&gt;Next&lt;/span&gt;
+  &lt;svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    style={{ display: 'block', width: '20px', height: '20px', flexShrink: 0, pointerEvents: 'none' }}
+  &gt;
+    &lt;path
+      d="M9 5l7 7-7 7"
+      stroke="#FFFFFF"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    /&gt;
+  &lt;/svg&gt;
+&lt;/button&gt;
+                </div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">4</span>
+                <strong>Key Implementation Details</strong>
+                <ul>
+                    <li><strong>Explicit white color:</strong> Use <code>stroke="#FFFFFF"</code> (hex) instead of <code>stroke="white"</code> or <code>stroke="currentColor"</code></li>
+                    <li><strong>Thicker stroke:</strong> Use <code>strokeWidth="3"</code> for better visibility when button is disabled (50% opacity)</li>
+                    <li><strong>Block display:</strong> Use <code>display: 'block'</code> with explicit pixel dimensions</li>
+                    <li><strong>Pointer events:</strong> Add <code>pointerEvents: 'none'</code> to prevent interaction issues</li>
+                    <li><strong>Flex shrink:</strong> Add <code>flexShrink: 0</code> to prevent icon from shrinking</li>
+                    <li><strong>Text color:</strong> Ensure span has <code>className="text-white"</code> for consistency</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="warning">
+            <h2>⚠️ Important Notes</h2>
+            <ul>
+                <li><strong>Disabled State Visibility:</strong> The buttons use <code>disabled:opacity-50</code> which makes the entire button 50% transparent. The SVG icons must use explicit white color (<code>#FFFFFF</code>) and thicker stroke (<code>3</code>) to remain visible when disabled.</li>
+                <li><strong>No react-icons:</strong> Do NOT use <code>FaChevronLeft</code> or <code>FaChevronRight</code> from react-icons. Use inline SVG only.</li>
+                <li><strong>File Location:</strong> The pagination buttons are in the <code>EventList</code> component at approximately line 602-662 in <code>src/components/EventList.tsx</code></li>
+                <li><strong>Component Usage:</strong> The EventList component is used in <code>src/app/admin/manage-events/page.tsx</code></li>
+            </ul>
+        </div>
+
+        <div class="checklist">
+            <h2>✅ Verification Checklist</h2>
+            <p>After implementing the fix, verify:</p>
+            <ol>
+                <li>✅ No react-icons imports for chevron icons remain in EventList.tsx</li>
+                <li>✅ Previous button displays a white left chevron (←) icon</li>
+                <li>✅ Next button displays a white right chevron (→) icon</li>
+                <li>✅ Icons are visible when buttons are enabled (blue background)</li>
+                <li>✅ Icons are visible when buttons are disabled (grayed out, 50% opacity)</li>
+                <li>✅ Icons are properly aligned with the button text</li>
+                <li>✅ Icons use explicit white color (<code>#FFFFFF</code>)</li>
+                <li>✅ Icons have thick stroke width (<code>3</code>) for visibility</li>
+                <li>✅ No console errors in browser DevTools</li>
+                <li>✅ Icons render correctly in both enabled and disabled states</li>
+            </ol>
+        </div>
+
+        <h2>🔧 Troubleshooting Steps</h2>
+
+        <div class="step">
+            <h3>If Icons Still Don't Appear:</h3>
+            <ol>
+                <li><strong>Clear Next.js build cache:</strong>
+                    <div class="code-block">
+# Windows PowerShell
+Remove-Item -Path .next -Recurse -Force -ErrorAction SilentlyContinue
+                    </div>
+                </li>
+                <li><strong>Restart dev server completely:</strong>
+                    <div class="code-block">
+# Stop server (Ctrl+C)
+# Wait 2-3 seconds
+# Restart
+npm run dev
+                    </div>
+                </li>
+                <li><strong>Hard refresh browser:</strong>
+                    <ul>
+                        <li>Windows/Linux: <code>Ctrl + Shift + R</code> or <code>Ctrl + F5</code></li>
+                        <li>Mac: <code>Cmd + Shift + R</code></li>
+                    </ul>
+                </li>
+                <li><strong>Check browser DevTools:</strong>
+                    <ul>
+                        <li>Open DevTools (F12)</li>
+                        <li>Go to Elements/Inspector tab</li>
+                        <li>Find the button element: <code>/html/body/div[3]/div/div[7]/div[1]/button[2]</code></li>
+                        <li>Verify the SVG element exists inside the button</li>
+                        <li>Check for any CSS that might be hiding the SVG</li>
+                        <li>Check Console tab for any JavaScript errors</li>
+                    </ul>
+                </li>
+                <li><strong>Verify file was saved:</strong>
+                    <div class="code-block">
+# Check file modification time
+Get-Item src\components\EventList.tsx | Select-Object LastWriteTime
+                    </div>
+                </li>
+                <li><strong>Check for multiple EventList files:</strong>
+                    <div class="code-block">
+# Search for all EventList files
+Get-ChildItem -Recurse -Filter "*EventList*" | Select-Object FullName
+                    </div>
+                </li>
+            </ol>
+        </div>
+
+        <h2>📋 Complete Code Reference</h2>
+
+        <h3>Previous Button - Complete Implementation:</h3>
+        <div class="code-block">
+&lt;button
+  onClick={onPrevPage}
+  disabled={isPrevDisabled}
+  className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+  title="Previous Page"
+  aria-label="Previous Page"
+  type="button"
+&gt;
+  &lt;svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    style={{ display: 'block', width: '20px', height: '20px', flexShrink: 0, pointerEvents: 'none' }}
+  &gt;
+    &lt;path
+      d="M15 19l-7-7 7-7"
+      stroke="#FFFFFF"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    /&gt;
+  &lt;/svg&gt;
+  &lt;span className="text-white"&gt;Previous&lt;/span&gt;
+&lt;/button&gt;
+        </div>
+
+        <h3>Next Button - Complete Implementation:</h3>
+        <div class="code-block">
+&lt;button
+  onClick={onNextPage}
+  disabled={isNextDisabled}
+  className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+  title="Next Page"
+  aria-label="Next Page"
+  type="button"
+&gt;
+  &lt;span className="text-white"&gt;Next&lt;/span&gt;
+  &lt;svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    style={{ display: 'block', width: '20px', height: '20px', flexShrink: 0, pointerEvents: 'none' }}
+  &gt;
+    &lt;path
+      d="M9 5l7 7-7 7"
+      stroke="#FFFFFF"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    /&gt;
+  &lt;/svg&gt;
+&lt;/button&gt;
+        </div>
+
+        <h2>📚 Related Documentation</h2>
+        <ul>
+            <li><strong>Icon Standards Rule:</strong> <code>.cursor/rules/icon_standards.mdc</code></li>
+            <li><strong>Component File:</strong> <code>src/components/EventList.tsx</code></li>
+            <li><strong>Page Using Component:</strong> <code>src/app/admin/manage-events/page.tsx</code></li>
+            <li><strong>XPath to Next Button:</strong> <code>/html/body/div[3]/div/div[7]/div[1]/button[2]</code></li>
+        </ul>
+
+        <h2>🎯 Success Criteria</h2>
+        <p>The fix is successful when:</p>
+        <ul>
+            <li>✅ White chevron icons are visible in both Previous and Next buttons</li>
+            <li>✅ Icons are visible even when buttons are disabled (grayed out)</li>
+            <li>✅ Icons follow the icon standards rule (inline SVG, proper sizing, white color)</li>
+            <li>✅ No react-icons are used for these buttons</li>
+            <li>✅ Icons render consistently across different browsers</li>
+            <li>✅ No console errors or warnings</li>
+        </ul>
+
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e5e7eb; color: #6b7280; font-size: 14px;">
+            <p><strong>Document Created:</strong> 2025-12-20</p>
+            <p><strong>Last Updated:</strong> 2025-12-20</p>
+            <p><strong>Issue:</strong> Pagination buttons not displaying SVG icons in EventList component</p>
+            <p><strong>Status:</strong> Pending Resolution</p>
+        </div>
+    </div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

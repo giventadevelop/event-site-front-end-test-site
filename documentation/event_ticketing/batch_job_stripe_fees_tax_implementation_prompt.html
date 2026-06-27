@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Job Implementation Prompt: Stripe Fees and Tax Data Retrieval</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+        }
+        .prompt-box {
+            background-color: #f8f9fa;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 30px 0;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            line-height: 1.8;
+        }
+        .summary-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .code-block {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 15px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .field-name {
+            font-family: 'Courier New', monospace;
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .requirement {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .technical-detail {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Batch Job Implementation Prompt: Stripe Fees and Tax Data Retrieval</h1>
+        <p><strong>Document Date:</strong> January 11, 2026</p>
+        <p><strong>Purpose:</strong> Comprehensive implementation prompt for batch job to retrieve missing Stripe fee and tax data from Stripe API and update transaction records in the database.</p>
+        <p><strong>Target Project:</strong> <code>E:\project_workspace\event-site-manager-batch-jobs</code></p>
+        <p><strong>Backend API:</strong> <code>E:\project_workspace\malayalees-us-site-boot</code></p>
+
+        <div class="summary-box">
+            <h2>Executive Summary</h2>
+            <p>This document provides a comprehensive implementation prompt for creating a batch job that retrieves missing Stripe fee and tax data from Stripe's API and updates transaction records in the database. The batch job should handle both backfilling historical data and ongoing updates for transactions where webhook processing may have failed.</p>
+        </div>
+
+        <h2>Implementation Prompt</h2>
+        <div class="prompt-box">
+<strong>BATCH JOB IMPLEMENTATION REQUEST</strong>
+
+<strong>Project Context:</strong>
+- Frontend Project: Current workspace (mosc-temp)
+- Backend Project: E:\project_workspace\malayalees-us-site-boot
+- Batch Job Project: E:\project_workspace\event-site-manager-batch-jobs
+- Database Schema: code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql
+
+<strong>Problem Statement:</strong>
+The event_ticket_transaction table has two fields that are consistently NULL or 0.00 for all transactions:
+1. stripe_fee_amount (numeric(21,2)) - Stripe processing fee
+2. stripe_amount_tax (numeric(21,2)) - Tax collected by Stripe (if Stripe Tax enabled)
+
+While webhook infrastructure exists to capture this data automatically, it's not working reliably. We need a batch job to:
+1. Retrieve missing Stripe fee and tax data from Stripe API
+2. Update transaction records in the database
+3. Handle both historical backfill and ongoing updates
+4. Be idempotent (safe to run multiple times)
+
+<strong>Database Schema Reference:</strong>
+Table: event_ticket_transaction
+Key Fields:
+- id (bigint, PRIMARY KEY)
+- stripe_payment_intent_id (varchar(255)) - Used to retrieve data from Stripe
+- stripe_checkout_session_id (varchar(255)) - Alternative source for tax data
+- stripe_fee_amount (numeric(21,2)) - TO BE POPULATED
+- stripe_amount_tax (numeric(21,2)) - TO BE POPULATED
+- status (varchar(255)) - Only process COMPLETED transactions
+- tenant_id (varchar(255)) - Multi-tenant filtering required
+
+<strong>Implementation Requirements:</strong>
+
+1. <strong>Query Transactions:</strong>
+   - <strong>Multi-Tenant Support:</strong>
+     * If tenantId parameter is provided: Query only that tenant's transactions
+     * If tenantId parameter is NOT provided: Loop through all tenants and process each separately
+     * For each tenant, find all transactions where:
+       * stripe_fee_amount IS NULL OR stripe_fee_amount = 0 (unless forceUpdate=true)
+       * stripe_payment_intent_id IS NOT NULL
+       * status = 'COMPLETED'
+       * created_at >= startDate (if provided)
+       * created_at <= endDate (if provided)
+   - Process in batches (e.g., 100 transactions at a time) to avoid memory issues
+   - <strong>Tenant Loop Pattern:</strong>
+     * Query all distinct tenant_ids from event_ticket_transaction table
+     * For each tenant_id:
+       * Query transactions for that tenant (with date filters if provided)
+       * Process transactions in batches
+       * Log progress per tenant
+       * Continue to next tenant
+
+2. <strong>Retrieve Stripe Fee Amount:</strong>
+   For each transaction:
+   a. Retrieve PaymentIntent from Stripe using stripe_payment_intent_id
+   b. Get the charge associated with the PaymentIntent
+   c. Retrieve the balance transaction from the charge
+   d. Extract fee amount: balanceTx.fee / 100 (convert from cents to dollars)
+
+   Stripe API Flow:
+   - stripe.paymentIntents.retrieve(paymentIntentId)
+   - stripe.charges.list({ payment_intent: paymentIntentId, limit: 1 })
+   - stripe.balanceTransactions.retrieve(charge.balance_transaction)
+
+3. <strong>Retrieve Tax Amount:</strong>
+   For each transaction:
+   a. First, try to get tax from PaymentIntent metadata (if available)
+   b. If not available, try CheckoutSession (if stripe_checkout_session_id exists):
+      - stripe.checkout.sessions.retrieve(sessionId)
+      - Extract: session.total_details?.amount_tax / 100
+   c. If Stripe Tax is enabled, tax may be in:
+      - PaymentIntent.amount_details.tip (if applicable)
+      - CheckoutSession.total_details.amount_tax
+      - PaymentIntent.metadata.tax_amount
+
+4. <strong>Update Database:</strong>
+   - Use backend API PATCH endpoint: /api/event-ticket-transactions/{id}
+   - Payload: { "stripeFeeAmount": feeAmount, "stripeAmountTax": taxAmount }
+   - Content-Type: application/merge-patch+json
+   - Include JWT authentication (use service JWT, not user session)
+   - Handle errors gracefully (log and continue)
+
+5. <strong>Error Handling:</strong>
+   - Some transactions may not have charges (refunded, cancelled, failed)
+   - Some PaymentIntents may not exist (deleted, test mode)
+   - Implement retry logic for transient Stripe API errors
+   - Log all errors with transaction ID for debugging
+   - Continue processing remaining transactions even if some fail
+
+6. <strong>Rate Limiting:</strong>
+   - Stripe API has rate limits (100 requests per second in test mode, varies in live mode)
+   - Implement delays between requests (e.g., 100ms between API calls)
+   - Consider using Stripe's batch API if available
+   - Monitor rate limit headers and implement backoff
+
+7. <strong>Idempotency:</strong>
+   - Batch job must be safe to run multiple times
+   - Check if stripe_fee_amount is already populated before updating
+   - Skip transactions that already have fee data (unless force update flag is set)
+
+8. <strong>Scheduling and On-Demand Execution:</strong>
+   - <strong>CRITICAL:</strong> Batch job MUST support both scheduled and on-demand execution
+   - <strong>Scheduled:</strong> Run daily (e.g., 2 AM) to catch any missed webhook updates
+   - <strong>On-Demand:</strong> Provide REST API endpoint to trigger batch job manually
+   - <strong>API Endpoint Requirements:</strong>
+     * Endpoint: POST /api/batch-jobs/stripe-fees-tax-update
+     * Authentication: Service JWT (same as other batch job endpoints)
+     * Request Body Parameters (all optional):
+       - tenantId (string, optional): Filter by specific tenant ID
+       - startDate (ISO 8601 date string, optional): Process transactions created on or after this date
+       - endDate (ISO 8601 date string, optional): Process transactions created on or before this date
+       - forceUpdate (boolean, optional, default: false): If true, update even if stripe_fee_amount is already populated
+     * Response: JSON with job execution ID, status, and estimated completion time
+   - <strong>Multi-Tenant Processing:</strong>
+     * If tenantId is NOT provided, loop through all tenants and process each tenant's transactions separately
+     * If tenantId IS provided, process only that tenant's transactions
+     * Process tenants sequentially (one tenant at a time) to avoid resource contention
+     * Within each tenant, process transactions in batches (e.g., 100 at a time)
+   - <strong>Example API Request:</strong>
+     POST /api/batch-jobs/stripe-fees-tax-update
+     {
+       "tenantId": "tenant_demo_002",
+       "startDate": "2025-01-01T00:00:00Z",
+       "endDate": "2025-01-31T23:59:59Z",
+       "forceUpdate": false
+     }
+   - <strong>Example API Response:</strong>
+     {
+       "jobId": "stripe-fees-update-20250111-020000",
+       "status": "STARTED",
+       "tenantId": "tenant_demo_002",
+       "estimatedRecords": 150,
+       "estimatedCompletionTime": "2025-01-11T02:15:00Z"
+     }
+
+9. <strong>Logging and Monitoring:</strong>
+   - Log start time, end time, total transactions processed
+   - Log number of successful updates, failures, skipped
+   - Log any Stripe API errors with details
+   - Generate summary report after completion
+   - Alert on high failure rates (>10% failures)
+
+10. <strong>Configuration:</strong>
+    - Stripe API keys (from environment variables)
+    - Backend API base URL (from environment variables)
+    - JWT credentials for backend authentication
+    - Batch size (default: 100 transactions per batch)
+    - Rate limit delay (default: 100ms between requests)
+    - Tenant ID filter (optional, passed via API parameter or environment variable)
+    - <strong>API Endpoint Configuration:</strong>
+      * Endpoint path: /api/batch-jobs/stripe-fees-tax-update
+      * HTTP Method: POST
+      * Authentication: Service JWT required
+      * Request body: JSON with optional parameters (tenantId, startDate, endDate, forceUpdate)
+
+<strong>Technical Implementation Details:</strong>
+
+<strong>Stripe API Integration:</strong>
+- Use official Stripe SDK for your programming language
+- Handle both test mode and live mode API keys
+- Ensure proper error handling for API rate limits
+- Implement exponential backoff for retries
+
+<strong>Backend API Integration:</strong>
+- Use service JWT (not user session JWT) for authentication
+- JWT generation: Use API_JWT_USER and API_JWT_PASS environment variables
+- Endpoint: POST /api/authenticate to get JWT token
+- Cache JWT token (valid for 1 hour typically)
+- Retry on 401 Unauthorized (regenerate JWT)
+
+<strong>Database Query Examples (SQL):</strong>
+
+<strong>1. Query Distinct Tenant IDs (for multi-tenant processing):</strong>
+SELECT DISTINCT tenant_id
+FROM event_ticket_transaction
+WHERE tenant_id IS NOT NULL
+ORDER BY tenant_id;
+
+<strong>2. Query Transactions for Specific Tenant (with date range):</strong>
+SELECT id, stripe_payment_intent_id, stripe_checkout_session_id, tenant_id
+FROM event_ticket_transaction
+WHERE tenant_id = 'tenant_demo_002'
+  AND (stripe_fee_amount IS NULL OR stripe_fee_amount = 0)
+  AND stripe_payment_intent_id IS NOT NULL
+  AND status = 'COMPLETED'
+  AND created_at >= '2025-01-01'  -- Optional: startDate
+  AND created_at <= '2025-01-31'  -- Optional: endDate
+ORDER BY created_at DESC
+LIMIT 100 OFFSET 0;  -- Batch processing with pagination
+
+<strong>Stripe API Call Sequence:</strong>
+1. paymentIntent = stripe.paymentIntents.retrieve(paymentIntentId)
+2. charges = stripe.charges.list({ payment_intent: paymentIntentId, limit: 1 })
+3. if charges.data.length > 0:
+     charge = charges.data[0]
+     balanceTx = stripe.balanceTransactions.retrieve(charge.balance_transaction)
+     stripeFeeAmount = balanceTx.fee / 100
+4. if stripe_checkout_session_id:
+     session = stripe.checkout.sessions.retrieve(sessionId)
+     stripeAmountTax = session.total_details?.amount_tax ? session.total_details.amount_tax / 100 : null
+
+<strong>Backend API Update Example:</strong>
+PATCH /api/event-ticket-transactions/{transactionId}
+Headers:
+  Content-Type: application/merge-patch+json
+  Authorization: Bearer {jwt_token}
+Body:
+{
+  "stripeFeeAmount": 0.87,
+  "stripeAmountTax": 2.50
+}
+
+<strong>Expected Output/Results:</strong>
+- Updated transaction records with stripe_fee_amount and stripe_amount_tax populated
+- Summary report showing:
+  * Total tenants processed (if multi-tenant)
+  * Per-tenant statistics (if multi-tenant)
+  * Total transactions processed
+  * Successfully updated
+  * Failed (with reasons, including tenant ID)
+  * Skipped (already populated)
+  * Total fees retrieved
+  * Total tax retrieved
+- API Response (for on-demand execution):
+  * Job ID for tracking
+  * Status (STARTED, IN_PROGRESS, COMPLETED, FAILED)
+  * Estimated completion time
+  * Tenant ID (if processing single tenant)
+
+<strong>Testing Requirements:</strong>
+1. Test with test mode Stripe API keys first
+2. Test with small batch (10 transactions)
+3. Verify idempotency (run twice, ensure no duplicates)
+4. Test error handling (invalid payment intent IDs, missing charges)
+5. Test rate limiting behavior
+6. Verify database updates are correct
+
+<strong>Documentation Requirements:</strong>
+- Document configuration options
+- Document error scenarios and handling
+- Document how to run manually vs scheduled
+- Document monitoring and alerting setup
+
+<strong>References:</strong>
+- Analysis Document: documentation/event_ticketing/stripe_fees_taxes_revenue_calculation_analysis.html
+- Database Schema: code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql
+- Stripe API Docs: https://stripe.com/docs/api/balance_transactions
+- Stripe Tax Docs: https://stripe.com/docs/tax
+- Backend API: E:\project_workspace\malayalees-us-site-boot
+- Webhook Implementation Reference: src/app/api/webhooks/stripe/route.ts (handleChargeFeeUpdate function)
+
+<strong>Success Criteria:</strong>
+- Batch job successfully retrieves Stripe fees for all eligible transactions
+- Batch job successfully retrieves tax amounts (if Stripe Tax enabled)
+- Database records are updated correctly
+- Job is idempotent (safe to run multiple times)
+- Job handles errors gracefully without crashing
+- Job completes within reasonable time (e.g., < 1 hour for 1000 transactions)
+- Comprehensive logging and reporting
+
+<strong>Priority:</strong> HIGH
+<strong>Estimated Complexity:</strong> MEDIUM
+<strong>Dependencies:</strong> Stripe API access, Backend API access, Database access
+        </div>
+
+        <h2>Detailed Technical Specifications</h2>
+
+        <h3>1. Database Query Specification</h3>
+        <div class="technical-detail">
+            <p><strong>Query to Find Distinct Tenant IDs (for multi-tenant processing):</strong></p>
+            <div class="code-block">
+SELECT DISTINCT tenant_id
+FROM event_ticket_transaction
+WHERE tenant_id IS NOT NULL
+ORDER BY tenant_id;
+            </div>
+
+            <p><strong>Query to Find Transactions Needing Updates (per tenant):</strong></p>
+            <div class="code-block">
+SELECT
+    id,
+    stripe_payment_intent_id,
+    stripe_checkout_session_id,
+    tenant_id,
+    status,
+    created_at,
+    stripe_fee_amount,
+    stripe_amount_tax
+FROM event_ticket_transaction
+WHERE tenant_id = ?  -- Parameter: current tenant ID
+  AND (stripe_fee_amount IS NULL OR stripe_fee_amount = 0 OR ?)  -- Parameter: forceUpdate flag
+  AND stripe_payment_intent_id IS NOT NULL
+  AND status = 'COMPLETED'
+  AND (created_at >= ? OR ? IS NULL)  -- Parameter: startDate (optional)
+  AND (created_at <= ? OR ? IS NULL)  -- Parameter: endDate (optional)
+ORDER BY created_at DESC
+LIMIT ? OFFSET ?;  -- Parameters: batchSize, offset
+            </div>
+            <p><strong>Notes:</strong></p>
+            <ul>
+                <li><strong>Multi-Tenant Processing:</strong> If tenantId not provided, loop through all tenants from distinct query</li>
+                <li>Only process COMPLETED transactions (exclude PENDING, FAILED, REFUNDED, CANCELLED)</li>
+                <li>Only process transactions with stripe_payment_intent_id (required for Stripe API lookup)</li>
+                <li>Process in batches to avoid memory issues and API rate limits</li>
+                <li>Order by created_at DESC to process newest transactions first (optional)</li>
+                <li><strong>Date Range Filtering:</strong> Apply startDate and endDate filters if provided</li>
+                <li><strong>Force Update:</strong> If forceUpdate=true, process even if stripe_fee_amount is already populated</li>
+            </ul>
+        </div>
+
+        <h3>2. Stripe API Integration Details</h3>
+        <div class="technical-detail">
+            <h4>2.1 Stripe Fee Retrieval</h4>
+            <div class="code-block">
+// Pseudo-code for Stripe fee retrieval
+async function getStripeFee(paymentIntentId: string): Promise<number | null> {
+    try {
+        // Step 1: Retrieve PaymentIntent
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+        // Step 2: Get charges for this PaymentIntent
+        const charges = await stripe.charges.list({
+            payment_intent: paymentIntentId,
+            limit: 1
+        });
+
+        if (charges.data.length === 0) {
+            console.warn(`No charges found for PaymentIntent ${paymentIntentId}`);
+            return null;
+        }
+
+        const charge = charges.data[0];
+
+        // Step 3: Get balance transaction (contains fee)
+        if (!charge.balance_transaction) {
+            console.warn(`Charge ${charge.id} missing balance_transaction`);
+            return null;
+        }
+
+        const balanceTx = await stripe.balanceTransactions.retrieve(
+            charge.balance_transaction
+        );
+
+        // Step 4: Extract fee (convert from cents to dollars)
+        const feeAmount = balanceTx.fee / 100;
+
+        return feeAmount;
+    } catch (error) {
+        console.error(`Error retrieving Stripe fee for ${paymentIntentId}:`, error);
+        return null;
+    }
+}
+            </div>
+
+            <h4>2.2 Stripe Tax Retrieval</h4>
+            <div class="code-block">
+// Pseudo-code for Stripe tax retrieval
+async function getStripeTax(
+    paymentIntentId: string,
+    checkoutSessionId: string | null
+): Promise<number | null> {
+    try {
+        let taxAmount: number | null = null;
+
+        // Method 1: Try CheckoutSession first (most reliable for Stripe Tax)
+        if (checkoutSessionId) {
+            const session = await stripe.checkout.sessions.retrieve(checkoutSessionId);
+
+            // Stripe Tax is in total_details.amount_tax
+            if (session.total_details?.amount_tax) {
+                taxAmount = session.total_details.amount_tax / 100; // Convert from cents
+                return taxAmount;
+            }
+        }
+
+        // Method 2: Try PaymentIntent metadata
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+        if (paymentIntent.metadata?.tax_amount) {
+            taxAmount = parseFloat(paymentIntent.metadata.tax_amount);
+            return taxAmount;
+        }
+
+        // Method 3: Check PaymentIntent amount_details (if available)
+        if (paymentIntent.amount_details?.tip) {
+            // Note: This is for tips, not tax, but included for completeness
+        }
+
+        // No tax found
+        return null;
+    } catch (error) {
+        console.error(`Error retrieving Stripe tax:`, error);
+        return null;
+    }
+}
+            </div>
+        </div>
+
+        <h3>3. Backend API Integration</h3>
+        <div class="technical-detail">
+            <h4>3.1 JWT Authentication</h4>
+            <div class="code-block">
+// Pseudo-code for JWT authentication
+async function getBackendJWT(): Promise<string> {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+    const API_JWT_USER = process.env.API_JWT_USER || process.env.NEXT_PUBLIC_API_JWT_USER;
+    const API_JWT_PASS = process.env.API_JWT_PASS || process.env.NEXT_PUBLIC_API_JWT_PASS;
+
+    const response = await fetch(`${API_BASE_URL}/api/authenticate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            username: API_JWT_USER,
+            password: API_JWT_PASS,
+            rememberMe: true
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`JWT authentication failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.id_token; // Or whatever field contains the JWT
+}
+            </div>
+
+            <h4>3.2 Update Transaction Endpoint</h4>
+            <div class="code-block">
+// Pseudo-code for updating transaction
+async function updateTransaction(
+    transactionId: number,
+    stripeFeeAmount: number | null,
+    stripeAmountTax: number | null,
+    jwt: string
+): Promise<boolean> {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+
+    const payload: any = {};
+    if (stripeFeeAmount !== null) {
+        payload.stripeFeeAmount = stripeFeeAmount;
+    }
+    if (stripeAmountTax !== null) {
+        payload.stripeAmountTax = stripeAmountTax;
+    }
+
+    const response = await fetch(
+        `${API_BASE_URL}/api/event-ticket-transactions/${transactionId}`,
+        {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/merge-patch+json',
+                'Authorization': `Bearer ${jwt}`
+            },
+            body: JSON.stringify(payload)
+        }
+    );
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Failed to update transaction ${transactionId}:`, errorText);
+        return false;
+    }
+
+    return true;
+}
+            </div>
+        </div>
+
+        <h3>4. Batch Processing Logic</h3>
+        <div class="technical-detail">
+            <div class="code-block">
+// Pseudo-code for main batch processing logic with multi-tenant support
+async function processStripeFeesAndTax(
+    tenantId?: string,
+    startDate?: string,
+    endDate?: string,
+    forceUpdate: boolean = false
+) {
+    const BATCH_SIZE = 100;
+    const RATE_LIMIT_DELAY_MS = 100; // 100ms between Stripe API calls
+    const MAX_RETRIES = 3;
+
+    let globalStats = {
+        totalTenantsProcessed: 0,
+        totalProcessed: 0,
+        successfullyUpdated: 0,
+        failed: 0,
+        skipped: 0,
+        errors: [] as Array<{ transactionId: number; tenantId: string; error: string }>,
+        tenantStats: [] as Array<{ tenantId: string; processed: number; updated: number; failed: number }>
+    };
+
+    // Get JWT token (cache for 1 hour)
+    const jwt = await getBackendJWT();
+
+    // Determine which tenants to process
+    let tenantsToProcess: string[] = [];
+    if (tenantId) {
+        // Process only specified tenant
+        tenantsToProcess = [tenantId];
+    } else {
+        // Process all tenants - query distinct tenant_ids
+        tenantsToProcess = await queryDistinctTenantIds();
+    }
+
+    // Process each tenant sequentially
+    for (const currentTenantId of tenantsToProcess) {
+        console.log(`Processing tenant: ${currentTenantId}`);
+
+        let tenantStats = {
+            tenantId: currentTenantId,
+            processed: 0,
+            updated: 0,
+            failed: 0,
+            skipped: 0
+        };
+
+        // Query transactions for this tenant
+        let offset = 0;
+        let hasMore = true;
+
+        while (hasMore) {
+            const transactions = await queryTransactions(
+                currentTenantId,
+                BATCH_SIZE,
+                offset,
+                startDate,
+                endDate,
+                forceUpdate
+            );
+
+            if (transactions.length === 0) {
+                hasMore = false;
+                break;
+            }
+
+            for (const txn of transactions) {
+                tenantStats.processed++;
+                globalStats.totalProcessed++;
+
+                try {
+                    // Check if already populated (idempotency check, unless forceUpdate)
+                    if (!forceUpdate && txn.stripe_fee_amount && txn.stripe_fee_amount > 0) {
+                        tenantStats.skipped++;
+                        globalStats.skipped++;
+                        continue;
+                    }
+
+                    // Retrieve Stripe fee
+                    const stripeFee = await getStripeFee(txn.stripe_payment_intent_id);
+                    await delay(RATE_LIMIT_DELAY_MS);
+
+                    // Retrieve Stripe tax
+                    const stripeTax = await getStripeTax(
+                        txn.stripe_payment_intent_id,
+                        txn.stripe_checkout_session_id
+                    );
+                    await delay(RATE_LIMIT_DELAY_MS);
+
+                    // Update database
+                    const success = await updateTransaction(
+                        txn.id,
+                        stripeFee,
+                        stripeTax,
+                        jwt
+                    );
+
+                    if (success) {
+                        tenantStats.updated++;
+                        globalStats.successfullyUpdated++;
+                    } else {
+                        tenantStats.failed++;
+                        globalStats.failed++;
+                        globalStats.errors.push({
+                            transactionId: txn.id,
+                            tenantId: currentTenantId,
+                            error: 'Backend API update failed'
+                        });
+                    }
+                } catch (error) {
+                    tenantStats.failed++;
+                    globalStats.failed++;
+                    globalStats.errors.push({
+                        transactionId: txn.id,
+                        tenantId: currentTenantId,
+                        error: String(error)
+                    });
+                }
+            }
+
+            offset += BATCH_SIZE;
+
+            // Check if we've processed all transactions for this tenant
+            if (transactions.length < BATCH_SIZE) {
+                hasMore = false;
+            }
+        }
+
+        globalStats.totalTenantsProcessed++;
+        globalStats.tenantStats.push({
+            tenantId: currentTenantId,
+            processed: tenantStats.processed,
+            updated: tenantStats.updated,
+            failed: tenantStats.failed
+        });
+
+        console.log(`Completed tenant ${currentTenantId}:`, tenantStats);
+    }
+
+    // Generate summary report
+    console.log('Batch Job Summary:');
+    console.log(`Total Tenants Processed: ${globalStats.totalTenantsProcessed}`);
+    console.log(`Total Transactions Processed: ${globalStats.totalProcessed}`);
+    console.log(`Successfully Updated: ${globalStats.successfullyUpdated}`);
+    console.log(`Failed: ${globalStats.failed}`);
+    console.log(`Skipped: ${globalStats.skipped}`);
+
+    if (globalStats.errors.length > 0) {
+        console.log('Errors:', globalStats.errors);
+    }
+
+    return globalStats;
+}
+
+// Helper function to query distinct tenant IDs
+async function queryDistinctTenantIds(): Promise<string[]> {
+    // Query: SELECT DISTINCT tenant_id FROM event_ticket_transaction WHERE tenant_id IS NOT NULL
+    // Return array of tenant IDs
+}
+
+// Helper function to query transactions with filters
+async function queryTransactions(
+    tenantId: string,
+    batchSize: number,
+    offset: number,
+    startDate?: string,
+    endDate?: string,
+    forceUpdate: boolean = false
+): Promise<Transaction[]> {
+    // Build SQL query with filters:
+    // WHERE tenant_id = ?
+    // AND (stripe_fee_amount IS NULL OR stripe_fee_amount = 0 OR ?) -- if forceUpdate
+    // AND stripe_payment_intent_id IS NOT NULL
+    // AND status = 'COMPLETED'
+    // AND (created_at >= ? OR ? IS NULL)
+    // AND (created_at <= ? OR ? IS NULL)
+    // ORDER BY created_at DESC
+    // LIMIT ? OFFSET ?
+}
+            </div>
+        </div>
+
+        <h3>5. Error Scenarios and Handling</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Error Scenario</th>
+                    <th>Cause</th>
+                    <th>Handling Strategy</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>PaymentIntent not found</td>
+                    <td>PaymentIntent deleted, test mode mismatch, invalid ID</td>
+                    <td>Log error, skip transaction, continue processing</td>
+                </tr>
+                <tr>
+                    <td>Charge not found</td>
+                    <td>PaymentIntent exists but no charge created (refunded before charge)</td>
+                    <td>Log warning, set stripeFeeAmount to 0, continue</td>
+                </tr>
+                <tr>
+                    <td>Balance transaction missing</td>
+                    <td>Charge exists but balance_transaction not yet available</td>
+                    <td>Log warning, skip transaction (will be retried on next run)</td>
+                </tr>
+                <tr>
+                    <td>Stripe API rate limit</td>
+                    <td>Too many requests to Stripe API</td>
+                    <td>Implement exponential backoff, retry after delay</td>
+                </tr>
+                <tr>
+                    <td>Backend API 401 Unauthorized</td>
+                    <td>JWT token expired</td>
+                    <td>Regenerate JWT token, retry update</td>
+                </tr>
+                <tr>
+                    <td>Backend API 404 Not Found</td>
+                    <td>Transaction deleted from database</td>
+                    <td>Log warning, skip transaction, continue</td>
+                </tr>
+                <tr>
+                    <td>Network timeout</td>
+                    <td>Stripe API or backend API timeout</td>
+                    <td>Retry with exponential backoff (max 3 retries)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>6. Configuration Requirements</h3>
+        <div class="requirement">
+            <h4>Environment Variables Required:</h4>
+            <ul>
+                <li><strong>STRIPE_SECRET_KEY:</strong> Stripe secret key (test or live mode)</li>
+                <li><strong>NEXT_PUBLIC_API_BASE_URL:</strong> Backend API base URL (e.g., http://localhost:8080)</li>
+                <li><strong>API_JWT_USER:</strong> Backend API JWT username</li>
+                <li><strong>API_JWT_PASS:</strong> Backend API JWT password</li>
+                <li><strong>TENANT_ID:</strong> (Optional) Tenant ID for multi-tenant filtering</li>
+                <li><strong>BATCH_SIZE:</strong> (Optional) Number of transactions per batch (default: 100)</li>
+                <strong>RATE_LIMIT_DELAY_MS:</strong> (Optional) Delay between API calls in milliseconds (default: 100)</li>
+            </ul>
+        </div>
+
+        <h3>7. Scheduling and On-Demand Execution</h3>
+        <div class="info-box">
+            <h4>Execution Modes:</h4>
+            <ul>
+                <li><strong>Scheduled:</strong> Automatic execution on a schedule (e.g., daily at 2 AM)</li>
+                <li><strong>On-Demand:</strong> Manual triggering via REST API endpoint</li>
+            </ul>
+
+            <h4>Recommended Schedule:</h4>
+            <ul>
+                <li><strong>Daily:</strong> Run at 2 AM to catch any missed webhook updates from the previous day</li>
+                <li><strong>Weekly:</strong> Run full backfill for all historical transactions (if needed)</li>
+            </ul>
+
+            <h4>On-Demand API Endpoint:</h4>
+            <div class="code-block">
+<strong>Endpoint:</strong> POST /api/batch-jobs/stripe-fees-tax-update
+<strong>Authentication:</strong> Service JWT (Bearer token in Authorization header)
+<strong>Content-Type:</strong> application/json
+
+<strong>Request Body (all fields optional):</strong>
+{
+  "tenantId": "tenant_demo_002",           // Optional: Filter by tenant ID
+  "startDate": "2025-01-01T00:00:00Z",     // Optional: ISO 8601 date string
+  "endDate": "2025-01-31T23:59:59Z",       // Optional: ISO 8601 date string
+  "forceUpdate": false                      // Optional: Update even if already populated (default: false)
+}
+
+<strong>Response (202 Accepted - Job Started):</strong>
+{
+  "jobId": "stripe-fees-update-20250111-020000",
+  "status": "STARTED",
+  "tenantId": "tenant_demo_002",           // null if processing all tenants
+  "estimatedRecords": 150,
+  "estimatedCompletionTime": "2025-01-11T02:15:00Z",
+  "message": "Batch job started successfully"
+}
+
+<strong>Error Response (400 Bad Request):</strong>
+{
+  "error": "Invalid request",
+  "message": "startDate must be before endDate"
+}
+            </div>
+
+            <h4>Multi-Tenant Processing Logic:</h4>
+            <ul>
+                <li><strong>If tenantId is provided:</strong> Process only that tenant's transactions</li>
+                <li><strong>If tenantId is NOT provided:</strong>
+                    <ul>
+                        <li>Query all distinct tenant_ids from event_ticket_transaction table</li>
+                        <li>Loop through each tenant_id sequentially</li>
+                        <li>For each tenant, process transactions in batches</li>
+                        <li>Log progress per tenant</li>
+                        <li>Continue to next tenant after completing current tenant</li>
+                    </ul>
+                </li>
+                <li><strong>Date Range Filtering:</strong>
+                    <ul>
+                        <li>If startDate provided: Only process transactions created on or after this date</li>
+                        <li>If endDate provided: Only process transactions created on or before this date</li>
+                        <li>If both provided: Process transactions within the date range</li>
+                        <li>Date filtering applies to all tenants (if processing multiple tenants)</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>Scheduling Options:</h4>
+            <ul>
+                <li><strong>Cron Job:</strong> Use system cron (Linux/Mac) or Task Scheduler (Windows)</li>
+                <li><strong>Cloud Scheduler:</strong> Use AWS EventBridge, Google Cloud Scheduler, or Azure Scheduler</li>
+                <li><strong>Application Scheduler:</strong> Use job scheduling library (e.g., node-cron for Node.js)</li>
+                <li><strong>API Trigger:</strong> Scheduled jobs can call the API endpoint internally</li>
+            </ul>
+        </div>
+
+        <h3>8. Monitoring and Alerting</h3>
+        <div class="requirement">
+            <h4>Metrics to Track:</h4>
+            <ul>
+                <li>Total transactions processed</li>
+                <li>Successfully updated transactions</li>
+                <li>Failed transactions (with error types)</li>
+                <li>Skipped transactions (already populated)</li>
+                <li>Total Stripe fees retrieved (sum)</li>
+                <li>Total tax amounts retrieved (sum)</li>
+                <li>Job execution time</li>
+                <li>Stripe API call count</li>
+                <li>Backend API call count</li>
+            </ul>
+
+            <h4>Alert Conditions:</h4>
+            <ul>
+                <li>Failure rate > 10%</li>
+                <li>Job execution time > 1 hour</li>
+                <li>Stripe API rate limit errors</li>
+                <li>Backend API authentication failures</li>
+                <li>Job crashes or exceptions</li>
+            </ul>
+        </div>
+
+        <h3>9. Testing Strategy</h3>
+        <div class="requirement">
+            <h4>Test Scenarios:</h4>
+            <ol>
+                <li><strong>Unit Tests:</strong>
+                    <ul>
+                        <li>Test Stripe fee retrieval with mock PaymentIntent</li>
+                        <li>Test tax retrieval with mock CheckoutSession</li>
+                        <li>Test error handling for missing data</li>
+                    </ul>
+                </li>
+                <li><strong>Integration Tests:</strong>
+                    <ul>
+                        <li>Test with real Stripe test mode API</li>
+                        <li>Test with real backend API (test environment)</li>
+                        <li>Test with small batch (10 transactions)</li>
+                    </ul>
+                </li>
+                <li><strong>Idempotency Tests:</strong>
+                    <ul>
+                        <li>Run job twice on same dataset</li>
+                        <li>Verify no duplicate updates</li>
+                        <li>Verify skipped transactions are not re-processed</li>
+                    </ul>
+                </li>
+                <li><strong>Error Handling Tests:</strong>
+                    <ul>
+                        <li>Test with invalid PaymentIntent IDs</li>
+                        <li>Test with missing charges</li>
+                        <li>Test with expired JWT tokens</li>
+                        <li>Test with network timeouts</li>
+                    </ul>
+                </li>
+                <li><strong>Performance Tests:</strong>
+                    <ul>
+                        <li>Test with 1000+ transactions</li>
+                        <li>Verify rate limiting works correctly</li>
+                        <li>Measure execution time</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <h3>10. Implementation Checklist</h3>
+        <div class="requirement">
+            <h4>Development Tasks:</h4>
+            <ul>
+                <li>☐ Set up project structure in batch job repository</li>
+                <li>☐ Install Stripe SDK for chosen programming language</li>
+                <li>☐ Implement database query function (with tenant and date filtering)</li>
+                <li>☐ Implement distinct tenant ID query function</li>
+                <li>☐ Implement multi-tenant loop logic</li>
+                <li>☐ Implement Stripe fee retrieval function</li>
+                <li>☐ Implement Stripe tax retrieval function</li>
+                <li>☐ Implement backend JWT authentication</li>
+                <li>☐ Implement transaction update function</li>
+                <li>☐ Implement batch processing loop (per tenant)</li>
+                <li>☐ Implement error handling and retry logic</li>
+                <li>☐ Implement rate limiting</li>
+                <li>☐ Implement logging and reporting (per tenant and global)</li>
+                <li>☐ <strong>Implement REST API endpoint for on-demand triggering</strong></li>
+                <li>☐ <strong>Implement request validation (tenantId, date range, forceUpdate)</strong></li>
+                <li>☐ <strong>Implement async job execution (return job ID immediately)</strong></li>
+                <li>☐ <strong>Implement job status tracking (optional: job status endpoint)</strong></li>
+                <li>☐ Add configuration management</li>
+                <li>☐ Write unit tests</li>
+                <li>☐ Write integration tests</li>
+                <li>☐ Test with test mode Stripe API</li>
+                <li>☐ Test idempotency</li>
+                <li>☐ Test multi-tenant processing</li>
+                <li>☐ Test on-demand API endpoint</li>
+                <li>☐ Test date range filtering</li>
+                <li>☐ Set up scheduling (cron/cloud scheduler)</li>
+                <li>☐ Set up monitoring and alerting</li>
+                <li>☐ Document configuration and usage</li>
+                <li>☐ Document API endpoint usage</li>
+            </ul>
+        </div>
+
+        <h3>11. Expected Outcomes</h3>
+        <div class="summary-box">
+            <h4>After Implementation:</h4>
+            <ul>
+                <li>All eligible transactions have <span class="field-name">stripe_fee_amount</span> populated</li>
+                <li>All eligible transactions have <span class="field-name">stripe_amount_tax</span> populated (if Stripe Tax enabled)</li>
+                <li>Historical data is backfilled</li>
+                <li>Ongoing updates catch any missed webhook updates</li>
+                <li>Comprehensive reporting shows job execution results</li>
+                <li>Errors are logged and can be investigated</li>
+            </ul>
+
+            <h4>Business Value:</h4>
+            <ul>
+                <li>Complete financial records for accounting</li>
+                <li>Accurate cost analysis (Stripe fees)</li>
+                <li>Tax compliance (if Stripe Tax enabled)</li>
+                <li>Improved analytics and reporting</li>
+            </ul>
+        </div>
+
+        <h3>12. API Endpoint Implementation Details</h3>
+        <div class="requirement">
+            <h4>REST API Endpoint Specification:</h4>
+            <div class="code-block">
+<strong>Endpoint:</strong> POST /api/batch-jobs/stripe-fees-tax-update
+<strong>Authentication:</strong> Service JWT (Bearer token in Authorization header)
+<strong>Content-Type:</strong> application/json
+
+<strong>Request Body Schema:</strong>
+{
+  "tenantId": "string (optional)",        // Filter by specific tenant ID
+  "startDate": "string (optional)",       // ISO 8601 date: "2025-01-01T00:00:00Z"
+  "endDate": "string (optional)",         // ISO 8601 date: "2025-01-31T23:59:59Z"
+  "forceUpdate": "boolean (optional)"     // Default: false
+}
+
+<strong>Request Validation:</strong>
+- If startDate and endDate both provided: startDate must be <= endDate
+- tenantId must be valid (if provided)
+- Date strings must be valid ISO 8601 format
+
+<strong>Response (202 Accepted):</strong>
+{
+  "jobId": "stripe-fees-update-20250111-020000-tenant_demo_002",
+  "status": "STARTED",
+  "tenantId": "tenant_demo_002",          // null if processing all tenants
+  "startDate": "2025-01-01T00:00:00Z",     // null if not provided
+  "endDate": "2025-01-31T23:59:59Z",       // null if not provided
+  "forceUpdate": false,
+  "estimatedRecords": 150,
+  "estimatedCompletionTime": "2025-01-11T02:15:00Z",
+  "message": "Batch job started successfully"
+}
+
+<strong>Error Responses:</strong>
+- 400 Bad Request: Invalid request parameters
+- 401 Unauthorized: Missing or invalid JWT token
+- 500 Internal Server Error: Job failed to start
+
+<strong>Implementation Notes:</strong>
+- Endpoint should return immediately (202 Accepted) with job ID
+- Actual processing should happen asynchronously in background
+- Job execution should be logged with job ID for tracking
+- Consider implementing job status endpoint: GET /api/batch-jobs/stripe-fees-tax-update/{jobId}
+            </div>
+
+            <h4>Multi-Tenant Processing Logic:</h4>
+            <div class="info-box">
+                <p><strong>CRITICAL:</strong> The batch job MUST support processing all tenants when tenantId is not provided.</p>
+                <p><strong>Processing Flow:</strong></p>
+                <ol>
+                    <li><strong>If tenantId is provided:</strong>
+                        <ul>
+                            <li>Process only that tenant's transactions</li>
+                            <li>Apply date range filters (if provided)</li>
+                            <li>Process transactions in batches</li>
+                        </ul>
+                    </li>
+                    <li><strong>If tenantId is NOT provided:</strong>
+                        <ul>
+                            <li>Query all distinct tenant_ids from event_ticket_transaction table</li>
+                            <li>Loop through each tenant_id sequentially (one tenant at a time)</li>
+                            <li>For each tenant:
+                                <ul>
+                                    <li>Query transactions for that tenant (with date filters if provided)</li>
+                                    <li>Process transactions in batches (e.g., 100 at a time)</li>
+                                    <li>Log progress per tenant</li>
+                                    <li>Continue to next tenant after completing current tenant</li>
+                                </ul>
+                            </li>
+                            <li>Generate summary report with per-tenant statistics</li>
+                        </ul>
+                    </li>
+                </ol>
+                <p><strong>Why Sequential Tenant Processing:</strong></p>
+                <ul>
+                    <li>Avoids resource contention (database connections, Stripe API rate limits)</li>
+                    <li>Easier to track progress and debug issues</li>
+                    <li>Prevents overwhelming the system with parallel processing</li>
+                    <li>Allows for per-tenant error handling and recovery</li>
+                </ul>
+            </div>
+
+            <h4>Example API Usage Scenarios:</h4>
+            <div class="code-block">
+<strong>Scenario 1: Process all tenants (scheduled daily job)</strong>
+POST /api/batch-jobs/stripe-fees-tax-update
+Body: {}  // Empty body = process all tenants
+
+<strong>Scenario 2: Process specific tenant</strong>
+POST /api/batch-jobs/stripe-fees-tax-update
+Body: {
+  "tenantId": "tenant_demo_002"
+}
+
+<strong>Scenario 3: Process specific tenant for date range</strong>
+POST /api/batch-jobs/stripe-fees-tax-update
+Body: {
+  "tenantId": "tenant_demo_002",
+  "startDate": "2025-01-01T00:00:00Z",
+  "endDate": "2025-01-31T23:59:59Z"
+}
+
+<strong>Scenario 4: Process all tenants for date range (backfill)</strong>
+POST /api/batch-jobs/stripe-fees-tax-update
+Body: {
+  "startDate": "2025-01-01T00:00:00Z",
+  "endDate": "2025-01-31T23:59:59Z"
+}
+
+<strong>Scenario 5: Force update (reprocess even if already populated)</strong>
+POST /api/batch-jobs/stripe-fees-tax-update
+Body: {
+  "tenantId": "tenant_demo_002",
+  "forceUpdate": true
+}
+            </div>
+        </div>
+
+        <h3>13. References and Resources</h3>
+        <ul>
+            <li><strong>Analysis Document:</strong> <code>documentation/event_ticketing/stripe_fees_taxes_revenue_calculation_analysis.html</code></li>
+            <li><strong>Database Schema:</strong> <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></li>
+            <li><strong>Webhook Implementation:</strong> <code>src/app/api/webhooks/stripe/route.ts</code> (function: <code>handleChargeFeeUpdate</code>)</li>
+            <li><strong>Stripe Balance Transactions API:</strong> <a href="https://stripe.com/docs/api/balance_transactions" target="_blank">https://stripe.com/docs/api/balance_transactions</a></li>
+            <li><strong>Stripe Payment Intents API:</strong> <a href="https://stripe.com/docs/api/payment_intents" target="_blank">https://stripe.com/docs/api/payment_intents</a></li>
+            <li><strong>Stripe Checkout Sessions API:</strong> <a href="https://stripe.com/docs/api/checkout/sessions" target="_blank">https://stripe.com/docs/api/checkout/sessions</a></li>
+            <li><strong>Stripe Tax Documentation:</strong> <a href="https://stripe.com/docs/tax" target="_blank">https://stripe.com/docs/tax</a></li>
+            <li><strong>Backend Project:</strong> <code>E:\project_workspace\malayalees-us-site-boot</code></li>
+            <li><strong>Frontend Project:</strong> Current workspace (mosc-temp)</li>
+            <li><strong>Batch Job Project:</strong> <code>E:\project_workspace\event-site-manager-batch-jobs</code></li>
+        </ul>
+
+        <h3>14. Additional Notes</h3>
+        <div class="info-box">
+            <h4>Important Considerations:</h4>
+            <ul>
+                <li><strong>Test Mode vs Live Mode:</strong> Ensure batch job can handle both test and live Stripe API keys. Test mode and live mode have separate data.</li>
+                <li><strong>Multi-Tenant Support:</strong> If the system supports multiple tenants, ensure the batch job filters by tenant_id when querying transactions.</li>
+                <li><strong>Data Consistency:</strong> The batch job should not overwrite existing valid data. Only update NULL or 0.00 values.</li>
+                <li><strong>Performance:</strong> For large datasets (10,000+ transactions), consider parallel processing with worker threads/processes, but respect Stripe API rate limits.</li>
+                <li><strong>Cost:</strong> Stripe API calls are free, but monitor usage to avoid unnecessary calls.</li>
+                <li><strong>Security:</strong> Store Stripe API keys and JWT credentials securely (environment variables, secrets manager).</li>
+            </ul>
+        </div>
+
+        <hr>
+        <p><em>Document generated: January 11, 2026</em></p>
+        <p><em>Last updated: January 11, 2026</em></p>
+        <p><em>For questions or clarifications, refer to the analysis document: <code>stripe_fees_taxes_revenue_calculation_analysis.html</code></em></p>
+    </div>
+</body>
+</html>

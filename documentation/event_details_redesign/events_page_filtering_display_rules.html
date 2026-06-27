@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Events Page Filtering and Display Rules - Documentation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #1e40af;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2563eb;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #3b82f6;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        h4 {
+            color: #60a5fa;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        code {
+            background-color: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #dc2626;
+        }
+        pre {
+            background-color: #1f2937;
+            color: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        pre code {
+            background-color: transparent;
+            color: #f9fafb;
+            padding: 0;
+        }
+        .rule-box {
+            background-color: #eff6ff;
+            border-left: 4px solid #2563eb;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .success-box {
+            background-color: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #e5e7eb;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f3f4f6;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .toc {
+            background-color: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .toc ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin: 8px 0;
+        }
+        .toc a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        .toc a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Events Page Filtering and Display Rules</h1>
+
+        <div class="toc">
+            <h2>Table of Contents</h2>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#event-filtering">Event Filtering Rules</a></li>
+                <li><a href="#buy-tickets-display">Buy Tickets Display Rules</a></li>
+                <li><a href="#routing-logic">Payment Flow Routing Logic</a></li>
+                <li><a href="#recurring-events">Recurring Event Handling</a></li>
+                <li><a href="#implementation">Implementation Details</a></li>
+                <li><a href="#troubleshooting">Troubleshooting</a></li>
+            </ul>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>
+            This documentation defines the filtering logic, display rules, and "Buy Tickets" button/image display logic
+            for the events listing page (<code>/events</code>). These rules ensure consistent event filtering, proper
+            handling of recurring events, and correct routing for ticket purchases based on event payment configuration.
+        </p>
+
+        <h2 id="event-filtering">Event Filtering Rules</h2>
+
+        <h3>1. Active Events Only</h3>
+        <div class="rule-box">
+            <strong>Rule:</strong> Only events with <code>isActive === true</code> are displayed in the public events listing.
+            <br><strong>Backend Query:</strong> <code>isActive.equals=true</code>
+            <br><strong>Rationale:</strong> Inactive events should not appear in public listings to prevent confusion.
+        </div>
+
+        <h3>2. Date-Based Filtering</h3>
+
+        <h4>Future Events (Default View)</h4>
+        <ul>
+            <li><strong>Rule:</strong> Show events where <code>startDate >= today</code> (including events happening today)</li>
+            <li><strong>Backend Query:</strong> <code>startDate.greaterThanOrEqual=today</code> (format: YYYY-MM-DD)</li>
+            <li><strong>Sort Order:</strong> <code>sort=startDate,asc</code> (earliest events first)</li>
+            <li><strong>Display Logic:</strong> Events happening today or in the future</li>
+        </ul>
+
+        <h4>Past Events (Toggle View)</h4>
+        <ul>
+            <li><strong>Rule:</strong> Show events where <code>endDate < today</code></li>
+            <li><strong>Backend Query:</strong> <code>endDate.lessThan=today</code> (format: YYYY-MM-DD)</li>
+            <li><strong>Sort Order:</strong> <code>sort=startDate,desc</code> (most recent first)</li>
+            <li><strong>Display Logic:</strong> Events that have already ended</li>
+        </ul>
+
+        <h4>Date Range Search (Overrides Toggle)</h4>
+        <div class="warning-box">
+            <strong>Priority:</strong> If user specifies a date range in search, it overrides the Future/Past toggle.
+        </div>
+        <ul>
+            <li><strong>Backend Query:</strong>
+                <ul>
+                    <li><code>startDate.greaterThanOrEqual=searchDateFrom</code> (if provided)</li>
+                    <li><code>startDate.lessThanOrEqual=searchDateTo</code> (if provided)</li>
+                </ul>
+            </li>
+            <li><strong>Behavior:</strong> Date range search takes precedence over Future/Past toggle</li>
+        </ul>
+
+        <h3>3. Title Search Filter</h3>
+        <ul>
+            <li><strong>Rule:</strong> Filter events by title containing search term (case-insensitive)</li>
+            <li><strong>Backend Query:</strong> <code>title.contains=searchTitle</code> (trimmed, case-insensitive)</li>
+            <li><strong>Combines With:</strong> Date filtering (both filters apply simultaneously)</li>
+        </ul>
+
+        <h3>4. Recurring Event Handling</h3>
+
+        <h4>Recurring Event Detection</h4>
+        <ul>
+            <li><strong>Rule:</strong> Event is considered recurring if <code>isRecurring === true</code></li>
+            <li><strong>Series Identification:</strong> Uses <code>recurrenceSeriesId</code> or <code>parentEventId</code> or <code>event.id</code> as series identifier</li>
+        </ul>
+
+        <h4>Next Occurrence Calculation</h4>
+        <ul>
+            <li><strong>Rule:</strong> Calculate next occurrence date using <code>getNextOccurrenceDate(event, todayDate)</code></li>
+            <li><strong>Time Window:</strong> Only show next occurrence if it's within 1 year from today</li>
+            <li><strong>Date Update:</strong> Update event's <code>startDate</code> to next occurrence date for display purposes</li>
+        </ul>
+
+        <h4>Series Deduplication</h4>
+        <ul>
+            <li><strong>Rule:</strong> Only show one event per recurring series (the one with earliest next occurrence)</li>
+            <li><strong>Logic:</strong>
+                <ul>
+                    <li>First event from series: Add to map</li>
+                    <li>Subsequent events from same series: Compare dates, keep earlier occurrence</li>
+                </ul>
+            </li>
+            <li><strong>Skip Child Events:</strong> Skip events with <code>parentEventId</code> or <code>recurrenceSeriesId</code> but <code>isRecurring === false</code></li>
+        </ul>
+
+        <h4>Recurring Event Filtering Flow</h4>
+        <pre><code>// Process events and filter recurring events to show only next occurrence
+eventList.forEach((event) => {
+  if (isRecurringEvent(event)) {
+    const seriesId = event.recurrenceSeriesId || event.parentEventId || event.id;
+    const nextOccurrence = getNextOccurrenceDate(event, todayDate);
+
+    if (!nextOccurrence || nextOccurrence > oneYearFromNow) {
+      return; // Skip if no next occurrence or beyond 1 year
+    }
+
+    // Update event startDate to next occurrence
+    const eventWithNextOccurrence = { ...event, startDate: nextOccurrenceStr };
+
+    // Keep only earliest occurrence per series
+    const existingSeriesEvent = recurringSeriesMap.get(seriesId);
+    if (!existingSeriesEvent || nextOccurrence < new Date(existingSeriesEvent.startDate!)) {
+      recurringSeriesMap.set(seriesId, eventWithNextOccurrence);
+    }
+  } else {
+    // Skip child events (have parentEventId/recurrenceSeriesId but not recurring)
+    const seriesId = event.recurrenceSeriesId || event.parentEventId;
+    if (seriesId) {
+      return; // Skip child event
+    }
+    // Non-recurring event - add directly
+    processedEvents.push(event);
+  }
+});</code></pre>
+
+        <h3>5. Pagination</h3>
+        <ul>
+            <li><strong>Backend Fetch Size:</strong> <code>BACKEND_FETCH_SIZE = 50</code> (fetch more to account for filtering)</li>
+            <li><strong>Display Size:</strong> <code>EVENTS_PAGE_SIZE = 20</code> (display 20 events per page after filtering)</li>
+            <li><strong>Rationale:</strong> Fetch more events than displayed because recurring event filtering reduces count</li>
+        </ul>
+
+        <h2 id="buy-tickets-display">Buy Tickets Image/Button Display Rules</h2>
+
+        <h3>Display Conditions</h3>
+
+        <h4>1. Event Must Be Ticketed</h4>
+        <div class="rule-box">
+            <strong>Rule:</strong> <code>event.admissionType?.toUpperCase() === 'TICKETED'</code>
+            <br><strong>Case Handling:</strong> Case-insensitive check (handles 'TICKETED', 'ticketed', etc.)
+            <br><strong>Rationale:</strong> Only ticketed events should show Buy Tickets option
+        </div>
+
+        <h4>2. Event Must Be Upcoming</h4>
+        <div class="rule-box">
+            <strong>Rule:</strong> Event date must be today or in the future
+            <br><strong>Date Calculation:</strong>
+            <pre><code>const today = new Date();
+const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+const eventDateStr = event.startDate?.split('T')[0]; // YYYY-MM-DD
+const isToday = eventDateStr === todayStr;
+const isFuture = eventDateStr > todayStr;
+const isUpcomingLocal = isToday || isFuture;</code></pre>
+            <strong>Rationale:</strong> Past events should not show Buy Tickets option
+        </div>
+
+        <h4>3. Combined Display Rule</h4>
+        <pre><code>const showBuyTicketsButton =
+  event.admissionType?.toUpperCase() === 'TICKETED' &&
+  isUpcomingLocal;</code></pre>
+
+        <h2 id="routing-logic">Payment Flow Routing Logic</h2>
+
+        <h3>Manual Payment Checkout Route</h3>
+        <div class="success-box">
+            <strong>Condition:</strong> Route to manual checkout if:
+            <ul>
+                <li><code>event.manualPaymentEnabled === true</code> AND</li>
+                <li>(<code>event.paymentFlowMode === 'MANUAL_ONLY'</code> OR <code>event.paymentFlowMode === 'HYBRID'</code>)</li>
+            </ul>
+            <strong>Route:</strong> <code>/events/${eventId}/manual-checkout</code>
+            <br><strong>Use Case:</strong> Events configured for fee-free manual payments (Zelle, Venmo, Cash App, etc.)
+        </div>
+
+        <h3>Stripe Checkout Route (Default)</h3>
+        <div class="rule-box">
+            <strong>Condition:</strong> All other ticketed events
+            <br><strong>Route:</strong> <code>/events/${eventId}/checkout</code>
+            <br><strong>Use Case:</strong> Standard Stripe payment flow
+        </div>
+
+        <h3>Routing Implementation</h3>
+        <pre><code>const checkoutRoute =
+  event.manualPaymentEnabled === true &&
+  (event.paymentFlowMode === 'MANUAL_ONLY' || event.paymentFlowMode === 'HYBRID')
+    ? `/events/${eventId}/manual-checkout`
+    : `/events/${eventId}/checkout`;</code></pre>
+
+        <h3>Image Specifications</h3>
+        <table>
+            <tr>
+                <th>Property</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td>Source</td>
+                <td><code>/images/buy_tickets_click_here_red.webp</code></td>
+            </tr>
+            <tr>
+                <td>Mobile Sizing</td>
+                <td><code>w-[150px] h-[52px]</code></td>
+            </tr>
+            <tr>
+                <td>Desktop Sizing</td>
+                <td><code>sm:w-[200px] sm:h-[70px]</code></td>
+            </tr>
+            <tr>
+                <td>Styling</td>
+                <td><code>object-contain</code> (maintains aspect ratio, no cropping)</td>
+            </tr>
+            <tr>
+                <td>Hover Effect</td>
+                <td><code>hover:scale-105 transition-transform</code></td>
+            </tr>
+            <tr>
+                <td>Accessibility</td>
+                <td><code>title="Buy Tickets"</code> and <code>aria-label="Buy Tickets"</code></td>
+            </tr>
+        </table>
+
+        <h3>Display Locations</h3>
+
+        <h4>1. Top Right Corner (Overlay on Event Image)</h4>
+        <ul>
+            <li><strong>Position:</strong> <code>absolute top-4 right-4 lg:top-6 lg:right-6 z-10</code></li>
+            <li><strong>Layout:</strong> Vertical stack if both Register and Buy Tickets buttons shown</li>
+            <li><strong>Condition:</strong> Only shown if event is ticketed and upcoming</li>
+        </ul>
+
+        <h4>2. Action Buttons Section (Bottom of Event Card)</h4>
+        <ul>
+            <li><strong>Position:</strong> After "See Event Details" button in action buttons flex container</li>
+            <li><strong>Layout:</strong> Horizontal flex layout with other action buttons</li>
+            <li><strong>Condition:</strong> Same as top-right (ticketed and upcoming)</li>
+        </ul>
+
+        <h2 id="recurring-events">Recurring Event Handling Details</h2>
+
+        <h3>Recurring Event Fields</h3>
+        <table>
+            <tr>
+                <th>Field</th>
+                <th>Type</th>
+                <th>Purpose</th>
+            </tr>
+            <tr>
+                <td><code>isRecurring</code></td>
+                <td>boolean</td>
+                <td>Indicates if event is part of a recurring series</td>
+            </tr>
+            <tr>
+                <td><code>recurrenceSeriesId</code></td>
+                <td>number</td>
+                <td>Groups events into recurring series</td>
+            </tr>
+            <tr>
+                <td><code>parentEventId</code></td>
+                <td>number</td>
+                <td>Identifies parent event in recurring series</td>
+            </tr>
+        </table>
+
+        <h3>Filtering Logic</h3>
+        <ol>
+            <li>Identify recurring events by <code>isRecurring === true</code></li>
+            <li>Calculate next occurrence date using <code>getNextOccurrenceDate()</code></li>
+            <li>Filter out occurrences beyond 1 year</li>
+            <li>Group by series ID (<code>recurrenceSeriesId</code> or <code>parentEventId</code>)</li>
+            <li>Keep only the earliest next occurrence per series</li>
+            <li>Skip child events (have <code>parentEventId</code>/<code>recurrenceSeriesId</code> but <code>isRecurring === false</code>)</li>
+        </ol>
+
+        <h2 id="implementation">Implementation Details</h2>
+
+        <h3>Complete Display Logic Flow</h3>
+
+        <h4>Step 1: Fetch Events</h4>
+        <pre><code>// Backend query parameters
+const queryParams = new URLSearchParams({
+  sort: showPastEvents ? 'startDate,desc' : 'startDate,asc',
+  page: page.toString(),
+  size: BACKEND_FETCH_SIZE.toString(), // 50
+  'isActive.equals': 'true',
+  // Date filter based on toggle or search
+  // Title filter if searchTitle provided
+});</code></pre>
+
+        <h4>Step 2: Process Recurring Events</h4>
+        <pre><code>// Filter recurring events to show only next occurrence
+// Group by series, keep earliest next occurrence
+// Skip child events</code></pre>
+
+        <h4>Step 3: Limit Display</h4>
+        <pre><code>// Limit to EVENTS_PAGE_SIZE (20) events after filtering
+const limitedProcessedEvents = processedEvents.slice(0, EVENTS_PAGE_SIZE);</code></pre>
+
+        <h4>Step 4: Render Buy Tickets Button/Image</h4>
+        <pre><code>// For each event:
+// 1. Check if ticketed: event.admissionType?.toUpperCase() === 'TICKETED'
+// 2. Check if upcoming: isUpcomingLocal (today or future)
+// 3. Determine route: manual checkout or Stripe checkout
+// 4. Render image with appropriate route</code></pre>
+
+        <h3>EventDetailsDTO Fields Used</h3>
+
+        <h4>Filtering Fields</h4>
+        <table>
+            <tr>
+                <th>Field</th>
+                <th>Type</th>
+                <th>Usage</th>
+            </tr>
+            <tr>
+                <td><code>isActive</code></td>
+                <td>boolean</td>
+                <td>Must be <code>true</code> for event to display</td>
+            </tr>
+            <tr>
+                <td><code>startDate</code></td>
+                <td>string</td>
+                <td>Used for date filtering (YYYY-MM-DD format)</td>
+            </tr>
+            <tr>
+                <td><code>endDate</code></td>
+                <td>string</td>
+                <td>Used for past event filtering</td>
+            </tr>
+            <tr>
+                <td><code>title</code></td>
+                <td>string</td>
+                <td>Used for title search filtering</td>
+            </tr>
+            <tr>
+                <td><code>isRecurring</code></td>
+                <td>boolean</td>
+                <td>Determines if event is recurring</td>
+            </tr>
+            <tr>
+                <td><code>recurrenceSeriesId</code></td>
+                <td>number</td>
+                <td>Groups recurring events into series</td>
+            </tr>
+            <tr>
+                <td><code>parentEventId</code></td>
+                <td>number</td>
+                <td>Identifies child events in recurring series</td>
+            </tr>
+        </table>
+
+        <h4>Buy Tickets Display Fields</h4>
+        <table>
+            <tr>
+                <th>Field</th>
+                <th>Type</th>
+                <th>Usage</th>
+            </tr>
+            <tr>
+                <td><code>admissionType</code></td>
+                <td>string</td>
+                <td>Must be 'TICKETED' (case-insensitive)</td>
+            </tr>
+            <tr>
+                <td><code>startDate</code></td>
+                <td>string</td>
+                <td>Used to determine if event is upcoming</td>
+            </tr>
+            <tr>
+                <td><code>manualPaymentEnabled</code></td>
+                <td>boolean</td>
+                <td>Determines if manual payment is enabled</td>
+            </tr>
+            <tr>
+                <td><code>paymentFlowMode</code></td>
+                <td>'STRIPE_ONLY' | 'MANUAL_ONLY' | 'HYBRID'</td>
+                <td>Determines payment flow type</td>
+            </tr>
+        </table>
+
+        <h3>Backend Query Parameters Reference</h3>
+
+        <h4>Standard Filters</h4>
+        <table>
+            <tr>
+                <th>Parameter</th>
+                <th>Example</th>
+                <th>Purpose</th>
+            </tr>
+            <tr>
+                <td><code>isActive.equals</code></td>
+                <td><code>true</code></td>
+                <td>Only active events</td>
+            </tr>
+            <tr>
+                <td><code>startDate.greaterThanOrEqual</code></td>
+                <td><code>2026-01-18</code></td>
+                <td>Future events (including today)</td>
+            </tr>
+            <tr>
+                <td><code>endDate.lessThan</code></td>
+                <td><code>2026-01-18</code></td>
+                <td>Past events</td>
+            </tr>
+            <tr>
+                <td><code>startDate.lessThanOrEqual</code></td>
+                <td><code>2026-12-31</code></td>
+                <td>Date range end</td>
+            </tr>
+            <tr>
+                <td><code>title.contains</code></td>
+                <td><code>concert</code></td>
+                <td>Title search (case-insensitive)</td>
+            </tr>
+        </table>
+
+        <h4>Sorting</h4>
+        <table>
+            <tr>
+                <th>Parameter</th>
+                <th>Value</th>
+                <th>Purpose</th>
+            </tr>
+            <tr>
+                <td><code>sort</code></td>
+                <td><code>startDate,asc</code></td>
+                <td>Future events (earliest first)</td>
+            </tr>
+            <tr>
+                <td><code>sort</code></td>
+                <td><code>startDate,desc</code></td>
+                <td>Past events (most recent first)</td>
+            </tr>
+        </table>
+
+        <h4>Pagination</h4>
+        <table>
+            <tr>
+                <th>Parameter</th>
+                <th>Value</th>
+                <th>Purpose</th>
+            </tr>
+            <tr>
+                <td><code>page</code></td>
+                <td><code>0</code></td>
+                <td>Page number (0-based)</td>
+            </tr>
+            <tr>
+                <td><code>size</code></td>
+                <td><code>50</code></td>
+                <td>Backend fetch size (fetch more than displayed)</td>
+            </tr>
+        </table>
+
+        <h3>Auto-Switch Logic</h3>
+        <div class="rule-box">
+            <strong>Rule:</strong> On initial load, check both future and past event counts
+            <br><strong>Auto-Switch:</strong> If <code>futureEventCount === 0</code> and <code>pastEventCount > 0</code>, automatically switch to past events view
+            <br><strong>Rationale:</strong> Better UX - show available events instead of empty future events list
+        </div>
+
+        <h2 id="troubleshooting">Troubleshooting</h2>
+
+        <h3>Events Not Showing?</h3>
+        <ul>
+            <li>Check <code>isActive</code> field - must be <code>true</code></li>
+            <li>Check date filtering - verify <code>startDate</code>/<code>endDate</code> values</li>
+            <li>Check recurring event logic - ensure next occurrence is calculated correctly</li>
+            <li>Verify backend query parameters match filtering rules</li>
+        </ul>
+
+        <h3>Buy Tickets Not Showing?</h3>
+        <ul>
+            <li>Verify <code>admissionType === 'TICKETED'</code> (case-insensitive)</li>
+            <li>Check event date - must be today or future (<code>isUpcomingLocal === true</code>)</li>
+            <li>Verify <code>startDate</code> is present and valid</li>
+        </ul>
+
+        <h3>Wrong Checkout Route?</h3>
+        <ul>
+            <li>Check <code>manualPaymentEnabled</code> - must be <code>true</code> for manual checkout</li>
+            <li>Check <code>paymentFlowMode</code> - must be <code>'MANUAL_ONLY'</code> or <code>'HYBRID'</code> for manual checkout</li>
+            <li>Verify routing logic matches the rules above</li>
+        </ul>
+
+        <h3>Recurring Events Showing Multiple Times?</h3>
+        <ul>
+            <li>Check <code>recurrenceSeriesId</code> or <code>parentEventId</code> grouping logic</li>
+            <li>Verify <code>getNextOccurrenceDate()</code> is calculating correctly</li>
+            <li>Ensure child events are being skipped</li>
+        </ul>
+
+        <h2>Summary</h2>
+        <div class="success-box">
+            <h3>Key Rules:</h3>
+            <ol>
+                <li><strong>Active Events Only:</strong> <code>isActive === true</code></li>
+                <li><strong>Date Filtering:</strong> Future (<code>startDate >= today</code>) or Past (<code>endDate < today</code>)</li>
+                <li><strong>Recurring Events:</strong> Show only next occurrence within 1 year, one per series</li>
+                <li><strong>Buy Tickets Display:</strong> <code>admissionType === 'TICKETED'</code> AND event is upcoming (today or future)</li>
+                <li><strong>Buy Tickets Routing:</strong> Manual checkout if <code>manualPaymentEnabled === true</code> AND (<code>MANUAL_ONLY</code> or <code>HYBRID</code>), otherwise Stripe checkout</li>
+            </ol>
+            <h3>Display Locations:</h3>
+            <ul>
+                <li>Top-right corner overlay on event image</li>
+                <li>Action buttons section at bottom of event card</li>
+            </ul>
+        </div>
+
+        <h2>Reference Files</h2>
+        <ul>
+            <li><strong>Events Listing Page:</strong> <code>src/app/events/page.tsx</code></li>
+            <li><strong>Event Details Page:</strong> <code>src/app/events/[id]/page.tsx</code></li>
+            <li><strong>Recurring Event Utilities:</strong> <code>src/lib/eventUtils.ts</code></li>
+            <li><strong>EventDetailsDTO:</strong> <code>src/types/index.ts</code></li>
+        </ul>
+
+        <hr style="margin-top: 40px; border: none; border-top: 2px solid #e5e7eb;">
+        <p style="text-align: center; color: #6b7280; margin-top: 20px;">
+            Documentation generated for Events Page Filtering and Display Rules
+        </p>
+    </div>
+</body>
+</html>

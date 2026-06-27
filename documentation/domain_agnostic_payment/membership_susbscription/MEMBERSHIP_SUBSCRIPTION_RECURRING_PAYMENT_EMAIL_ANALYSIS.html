@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Membership Subscription Recurring Payment & Email Notification Analysis</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 20px;
+        }
+        .status-box {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .info {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+        .warning {
+            background-color: #fff3e0;
+            border-left: 4px solid #ff9800;
+        }
+        .success {
+            background-color: #e8f5e9;
+            border-left: 4px solid #4caf50;
+        }
+        .error {
+            background-color: #ffebee;
+            border-left: 4px solid #f44336;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #e83e8c;
+        }
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+        .checklist li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        .checklist li:before {
+            content: "☐";
+            position: absolute;
+            left: 0;
+            font-size: 20px;
+        }
+        .checklist li.completed:before {
+            content: "✅";
+        }
+        .checklist li.pending:before {
+            content: "⏳";
+        }
+        .checklist li.required:before {
+            content: "🔴";
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background-color: #fafafa;
+            border-radius: 5px;
+        }
+        .flow-diagram {
+            background-color: #fff;
+            padding: 20px;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .flow-step {
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Membership Subscription Recurring Payment & Email Notification Analysis</h1>
+        <p class="timestamp">Generated: December 6, 2025</p>
+
+        <div class="status-box info">
+            <strong>Analysis Scope:</strong> This document analyzes the current subscription implementation, identifies gaps in recurring payment handling and email notifications, and provides recommendations for improvements.
+        </div>
+
+        <h2>1. Current State Analysis</h2>
+
+        <h3>1.1 Understanding the Date Display</h3>
+        <div class="status-box success">
+            <strong>✅ Current Behavior is CORRECT:</strong> The dates shown (12/5/2025 to 1/4/2026) represent the <strong>first billing period</strong> of a monthly subscription. This is the expected behavior for Stripe subscriptions.
+        </div>
+
+        <p><strong>What's happening:</strong></p>
+        <ul>
+            <li>When a user subscribes, Stripe creates a subscription with a billing period (e.g., monthly)</li>
+            <li>The <code>currentPeriodStart</code> and <code>currentPeriodEnd</code> fields in the database represent the <strong>current active billing period</strong></li>
+            <li>For a monthly subscription starting on 12/5/2025, the first period ends on 1/4/2026 (30 days)</li>
+            <li>Stripe automatically handles recurring billing - it will charge the customer again on 1/4/2026</li>
+        </ul>
+
+        <h3>1.2 Current Implementation Flow</h3>
+        <div class="flow-diagram">
+            <div class="flow-step">
+                <strong>Step 1:</strong> User subscribes via <code>/membership/subscribe/[planId]</code>
+            </div>
+            <div class="flow-step">
+                <strong>Step 2:</strong> Frontend creates Stripe Checkout Session (mode: 'subscription')
+            </div>
+            <div class="flow-step">
+                <strong>Step 3:</strong> User completes payment on Stripe Checkout
+            </div>
+            <div class="flow-step">
+                <strong>Step 4:</strong> User redirected to <code>/membership/success</code>
+            </div>
+            <div class="flow-step">
+                <strong>Step 5:</strong> Frontend calls <code>processMembershipSubscriptionSessionServer()</code>
+            </div>
+            <div class="flow-step">
+                <strong>Step 6:</strong> Subscription created in database with:
+                <ul>
+                    <li><code>currentPeriodStart</code> = Today's date</li>
+                    <li><code>currentPeriodEnd</code> = Today + billing interval (e.g., 30 days for monthly)</li>
+                    <li><code>stripeSubscriptionId</code> = Stripe subscription ID</li>
+                    <li><code>subscriptionStatus</code> = 'ACTIVE' or 'TRIAL'</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>1.3 Database Schema</h3>
+        <pre><code>CREATE TABLE membership_subscription (
+    id bigint PRIMARY KEY,
+    tenant_id varchar(255) NOT NULL,
+    user_profile_id bigint NOT NULL,
+    membership_plan_id bigint NOT NULL,
+    subscription_status varchar(20) DEFAULT 'ACTIVE',
+    current_period_start date NOT NULL,      -- Start of current billing period
+    current_period_end date NOT NULL,        -- End of current billing period
+    trial_start date,
+    trial_end date,
+    cancel_at_period_end boolean DEFAULT false,
+    cancelled_at timestamp,
+    cancellation_reason text,
+    stripe_subscription_id varchar(255),     -- Stripe subscription ID
+    stripe_customer_id varchar(255),         -- Stripe customer ID
+    created_at timestamp DEFAULT now(),
+    updated_at timestamp DEFAULT now()
+);</code></pre>
+
+        <h2>2. Identified Issues</h2>
+
+        <h3>2.1 Issue #1: Recurring Payment Period Updates</h3>
+        <div class="status-box warning">
+            <strong>⚠️ PROBLEM:</strong> When Stripe automatically charges the customer for the next billing period (e.g., on 1/4/2026), the <code>currentPeriodStart</code> and <code>currentPeriodEnd</code> dates in the database are <strong>NOT automatically updated</strong>.
+        </div>
+
+        <p><strong>Expected Behavior:</strong></p>
+        <ul>
+            <li>On 1/4/2026, Stripe charges the customer automatically</li>
+            <li>Stripe sends <code>invoice.payment_succeeded</code> webhook</li>
+            <li>Backend should update:
+                <ul>
+                    <li><code>currentPeriodStart</code> = 1/4/2026</li>
+                    <li><code>currentPeriodEnd</code> = 2/3/2026 (next month)</li>
+                    <li><code>subscriptionStatus</code> = 'ACTIVE'</li>
+                </ul>
+            </li>
+        </ul>
+
+        <p><strong>Current State:</strong></p>
+        <ul>
+            <li>❌ No webhook handler for <code>invoice.payment_succeeded</code></li>
+            <li>❌ Dates remain at initial values (12/5/2025 to 1/4/2026)</li>
+            <li>❌ Admin page shows outdated period dates</li>
+        </ul>
+
+        <h3>2.2 Issue #2: Email Notification Missing</h3>
+        <div class="status-box error">
+            <strong>❌ PROBLEM:</strong> No email is sent to the subscriber after successful subscription creation or recurring payment.
+        </div>
+
+        <p><strong>Expected Behavior:</strong></p>
+        <ul>
+            <li>After initial subscription: Send welcome email with subscription details</li>
+            <li>After recurring payment: Send payment confirmation email</li>
+            <li>On payment failure: Send payment failure notification</li>
+            <li>On cancellation: Send cancellation confirmation</li>
+        </ul>
+
+        <p><strong>Current State:</strong></p>
+        <ul>
+            <li>❌ No email sending logic in subscription creation flow</li>
+            <li>❌ No email template for subscription confirmations</li>
+            <li>❌ No email sending in webhook handlers</li>
+        </ul>
+
+        <h3>2.3 Issue #3: UI Clarity - Recurring Indicator</h3>
+        <div class="status-box info">
+            <strong>💡 ENHANCEMENT:</strong> The admin page should clearly indicate that this is a recurring subscription, not just show the current period dates.
+        </div>
+
+        <p><strong>Suggested UI Improvements:</strong></p>
+        <ul>
+            <li>Add "Recurring: Monthly" badge next to status</li>
+            <li>Show "Next Billing Date: 1/4/2026" in details modal</li>
+            <li>Display billing interval (Monthly, Yearly) prominently</li>
+            <li>Add visual indicator that subscription auto-renews</li>
+        </ul>
+
+        <h2>3. Required Backend Changes</h2>
+
+        <h3>3.1 Stripe Webhook Handler Implementation</h3>
+        <p><strong>Location:</strong> <code>E:\project_workspace\malayalees-us-site-boot\src\main\java\...\webhook\StripeWebhookHandler.java</code></p>
+
+        <p><strong>Required Webhook Events:</strong></p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Webhook Event</th>
+                    <th>Purpose</th>
+                    <th>Actions Required</th>
+                    <th>Priority</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>checkout.session.completed</code></td>
+                    <td>Initial subscription creation</td>
+                    <td>Create subscription record (already done ✅)</td>
+                    <td>✅ Complete</td>
+                </tr>
+                <tr>
+                    <td><code>invoice.payment_succeeded</code></td>
+                    <td>Recurring payment success</td>
+                    <td>
+                        <ul>
+                            <li>Update <code>currentPeriodStart</code> and <code>currentPeriodEnd</code></li>
+                            <li>Set <code>subscriptionStatus</code> = 'ACTIVE'</li>
+                            <li>Send payment confirmation email</li>
+                        </ul>
+                    </td>
+                    <td>🔴 Required</td>
+                </tr>
+                <tr>
+                    <td><code>invoice.payment_failed</code></td>
+                    <td>Recurring payment failure</td>
+                    <td>
+                        <ul>
+                            <li>Set <code>subscriptionStatus</code> = 'PAST_DUE'</li>
+                            <li>Send payment failure email</li>
+                            <li>Track failure count</li>
+                        </ul>
+                    </td>
+                    <td>🔴 Required</td>
+                </tr>
+                <tr>
+                    <td><code>customer.subscription.updated</code></td>
+                    <td>Subscription plan change</td>
+                    <td>
+                        <ul>
+                            <li>Update <code>membershipPlanId</code> if changed</li>
+                            <li>Update period dates</li>
+                            <li>Send update confirmation email</li>
+                        </ul>
+                    </td>
+                    <td>⏳ Recommended</td>
+                </tr>
+                <tr>
+                    <td><code>customer.subscription.deleted</code></td>
+                    <td>Subscription cancelled</td>
+                    <td>
+                        <ul>
+                            <li>Set <code>subscriptionStatus</code> = 'CANCELLED'</li>
+                            <li>Set <code>cancelledAt</code> timestamp</li>
+                            <li>Send cancellation email</li>
+                        </ul>
+                    </td>
+                    <td>🔴 Required</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>3.2 Webhook Handler Implementation Details</h3>
+
+        <h4>3.2.1 invoice.payment_succeeded Handler</h4>
+        <pre><code>@PostMapping("/api/webhooks/stripe")
+public ResponseEntity&lt;String&gt; handleStripeWebhook(
+    @RequestBody String payload,
+    @RequestHeader("Stripe-Signature") String sigHeader
+) {
+    Event event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
+
+    if ("invoice.payment_succeeded".equals(event.getType())) {
+        Invoice invoice = (Invoice) event.getDataObjectDeserializer()
+            .getObject().orElse(null);
+
+        if (invoice != null && invoice.getSubscription() != null) {
+            handleInvoicePaymentSucceeded(invoice);
+        }
+    }
+
+    return ResponseEntity.ok("Webhook processed");
+}
+
+private void handleInvoicePaymentSucceeded(Invoice invoice) {
+    String stripeSubscriptionId = invoice.getSubscription();
+
+    // Find subscription by Stripe subscription ID
+    MembershipSubscription subscription = membershipSubscriptionRepository
+        .findByStripeSubscriptionId(stripeSubscriptionId)
+        .orElse(null);
+
+    if (subscription == null) {
+        log.warn("Subscription not found for Stripe subscription: {}", stripeSubscriptionId);
+        return;
+    }
+
+    // Retrieve updated subscription from Stripe
+    Subscription stripeSubscription = stripeService
+        .retrieveSubscription(stripeSubscriptionId);
+
+    // Update period dates from Stripe subscription
+    subscription.setCurrentPeriodStart(
+        LocalDate.ofEpochDay(stripeSubscription.getCurrentPeriodStart())
+    );
+    subscription.setCurrentPeriodEnd(
+        LocalDate.ofEpochDay(stripeSubscription.getCurrentPeriodEnd())
+    );
+    subscription.setSubscriptionStatus("ACTIVE");
+    subscription.setUpdatedAt(LocalDateTime.now());
+
+    membershipSubscriptionRepository.save(subscription);
+
+    // Send payment confirmation email
+    emailService.sendSubscriptionPaymentConfirmation(
+        subscription.getUserProfile(),
+        subscription,
+        invoice.getAmountPaid()
+    );
+
+    log.info("Updated subscription {} for recurring payment", subscription.getId());
+}</code></pre>
+
+        <h4>3.2.2 invoice.payment_failed Handler</h4>
+        <pre><code>private void handleInvoicePaymentFailed(Invoice invoice) {
+    String stripeSubscriptionId = invoice.getSubscription();
+
+    MembershipSubscription subscription = membershipSubscriptionRepository
+        .findByStripeSubscriptionId(stripeSubscriptionId)
+        .orElse(null);
+
+    if (subscription == null) {
+        return;
+    }
+
+    // Update status to PAST_DUE
+    subscription.setSubscriptionStatus("PAST_DUE");
+    subscription.setUpdatedAt(LocalDateTime.now());
+    membershipSubscriptionRepository.save(subscription);
+
+    // Send payment failure email
+    emailService.sendSubscriptionPaymentFailure(
+        subscription.getUserProfile(),
+        subscription,
+        invoice.getAmountDue()
+    );
+
+    log.warn("Subscription {} payment failed", subscription.getId());
+}</code></pre>
+
+        <h3>3.3 Email Service Implementation</h3>
+        <p><strong>Location:</strong> <code>E:\project_workspace\malayalees-us-site-boot\src\main\java\...\service\EmailService.java</code></p>
+
+        <p><strong>Required Email Methods:</strong></p>
+        <ul>
+            <li><code>sendSubscriptionWelcomeEmail(UserProfile, MembershipSubscription, MembershipPlan)</code></li>
+            <li><code>sendSubscriptionPaymentConfirmation(UserProfile, MembershipSubscription, Long amountPaid)</code></li>
+            <li><code>sendSubscriptionPaymentFailure(UserProfile, MembershipSubscription, Long amountDue)</code></li>
+            <li><code>sendSubscriptionCancellationEmail(UserProfile, MembershipSubscription)</code></li>
+        </ul>
+
+        <h4>3.3.1 Email Template Structure</h4>
+        <pre><code>// Email template should include:
+- Subscription plan name
+- Billing amount and currency
+- Current period dates
+- Next billing date
+- Billing interval (Monthly/Yearly)
+- Subscription management link
+- Support contact information</code></pre>
+
+        <h3>3.4 Backend API Endpoints (Verify Existence)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Endpoint</th>
+                    <th>Method</th>
+                    <th>Purpose</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>/api/membership-subscriptions</code></td>
+                    <td>POST</td>
+                    <td>Create subscription</td>
+                    <td>✅ Exists</td>
+                </tr>
+                <tr>
+                    <td><code>/api/membership-subscriptions/{id}</code></td>
+                    <td>PATCH</td>
+                    <td>Update subscription</td>
+                    <td>✅ Exists</td>
+                </tr>
+                <tr>
+                    <td><code>/api/webhooks/stripe</code></td>
+                    <td>POST</td>
+                    <td>Handle Stripe webhooks</td>
+                    <td>✅ Exists (needs enhancement)</td>
+                </tr>
+                <tr>
+                    <td><code>/api/email/send-subscription-confirmation</code></td>
+                    <td>POST</td>
+                    <td>Send subscription email</td>
+                    <td>❌ Needs Creation</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>4. Required Frontend Changes</h2>
+
+        <h3>4.1 Admin Subscriptions Page Enhancements</h3>
+        <p><strong>File:</strong> <code>src/app/admin/membership/subscriptions/AdminSubscriptionsClient.tsx</code></p>
+
+        <h4>4.1.1 Add Recurring Indicator</h4>
+        <pre><code>// Add to subscription table row:
+&lt;td className="py-3 px-4 font-body text-sm"&gt;
+  &lt;div className="flex items-center gap-2"&gt;
+    &lt;span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-800"&gt;
+      {subscription.membershipPlan?.billingInterval || 'MONTHLY'}
+    &lt;/span&gt;
+    &lt;span className="text-xs text-gray-500"&gt;Recurring&lt;/span&gt;
+  &lt;/div&gt;
+&lt;/td&gt;</code></pre>
+
+        <h4>4.1.2 Add Next Billing Date to Details Modal</h4>
+        <pre><code>// Add to subscription details modal:
+&lt;div className="bg-white rounded-lg p-4 border border-green-100"&gt;
+  &lt;label className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-2 block"&gt;
+    Next Billing Date
+  &lt;/label&gt;
+  &lt;p className="text-sm font-medium text-gray-800"&gt;
+    {formatDate(subscription.currentPeriodEnd)}
+  &lt;/p&gt;
+  &lt;p className="text-xs text-gray-500 mt-1"&gt;
+    Amount: ${subscription.membershipPlan?.price} {subscription.membershipPlan?.currency}
+  &lt;/p&gt;
+&lt;/div&gt;</code></pre>
+
+        <h3>4.2 Subscription Success Page Enhancement</h3>
+        <p><strong>File:</strong> <code>src/app/membership/success/MembershipSuccessClient.tsx</code></p>
+
+        <h4>4.2.1 Add Email Sending After Subscription Creation</h4>
+        <pre><code>// After successful subscription creation:
+useEffect(() => {
+  if (subscription && userProfile && plan) {
+    // Send welcome email
+    sendSubscriptionWelcomeEmail({
+      subscriptionId: subscription.id,
+      userEmail: userProfile.email,
+      planName: plan.planName,
+      amount: plan.price,
+      currency: plan.currency,
+      periodStart: subscription.currentPeriodStart,
+      periodEnd: subscription.currentPeriodEnd
+    });
+  }
+}, [subscription, userProfile, plan]);
+
+async function sendSubscriptionWelcomeEmail(params: {
+  subscriptionId: number;
+  userEmail: string;
+  planName: string;
+  amount: number;
+  currency: string;
+  periodStart: string;
+  periodEnd: string;
+}) {
+  try {
+    const response = await fetch('/api/proxy/membership-subscriptions/send-welcome-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
+
+    if (response.ok) {
+      console.log('[MEMBERSHIP-SUCCESS] Welcome email sent');
+    }
+  } catch (error) {
+    console.error('[MEMBERSHIP-SUCCESS] Failed to send welcome email:', error);
+  }
+}</code></pre>
+
+        <h3>4.3 Frontend API Server Actions</h3>
+        <p><strong>File:</strong> <code>src/app/admin/membership/subscriptions/ApiServerActions.ts</code></p>
+
+        <p><strong>No changes required</strong> - existing server actions are sufficient for current functionality.</p>
+
+        <h2>5. Implementation Checklist</h2>
+
+        <h3>5.1 Backend Implementation</h3>
+        <ul class="checklist">
+            <li class="required">Implement <code>invoice.payment_succeeded</code> webhook handler</li>
+            <li class="required">Implement <code>invoice.payment_failed</code> webhook handler</li>
+            <li class="required">Implement <code>customer.subscription.deleted</code> webhook handler</li>
+            <li class="required">Create email service methods for subscription emails</li>
+            <li class="required">Create email templates for subscription confirmations</li>
+            <li class="pending">Add email sending endpoint: <code>POST /api/membership-subscriptions/{id}/send-welcome-email</code></li>
+            <li class="pending">Add email sending endpoint: <code>POST /api/membership-subscriptions/{id}/send-payment-confirmation</code></li>
+            <li class="pending">Test webhook handlers with Stripe test events</li>
+            <li class="pending">Add logging for webhook processing</li>
+            <li class="pending">Add error handling for webhook failures</li>
+        </ul>
+
+        <h3>5.2 Frontend Implementation</h3>
+        <ul class="checklist">
+            <li class="pending">Add recurring indicator badge to subscription table</li>
+            <li class="pending">Add "Next Billing Date" to subscription details modal</li>
+            <li class="pending">Add billing interval display (Monthly/Yearly)</li>
+            <li class="pending">Add email sending call after subscription creation</li>
+            <li class="pending">Add visual indicator for auto-renewal</li>
+            <li class="pending">Update UI to show subscription is recurring</li>
+        </ul>
+
+        <h3>5.3 Testing Requirements</h3>
+        <ul class="checklist">
+            <li class="pending">Test subscription creation flow</li>
+            <li class="pending">Test webhook handling with Stripe CLI</li>
+            <li class="pending">Test recurring payment webhook (<code>invoice.payment_succeeded</code>)</li>
+            <li class="pending">Test payment failure webhook (<code>invoice.payment_failed</code>)</li>
+            <li class="pending">Test email delivery for all subscription events</li>
+            <li class="pending">Verify period dates update correctly on recurring payment</li>
+            <li class="pending">Test admin page displays updated dates</li>
+        </ul>
+
+        <h2>6. Database Considerations</h2>
+
+        <div class="status-box success">
+            <strong>✅ No Database Schema Changes Required:</strong> The existing <code>membership_subscription</code> table schema is sufficient for recurring payment handling.
+        </div>
+
+        <p><strong>Fields Used for Recurring Payments:</strong></p>
+        <ul>
+            <li><code>current_period_start</code> - Updated on each successful payment</li>
+            <li><code>current_period_end</code> - Updated on each successful payment</li>
+            <li><code>subscription_status</code> - Updated based on payment success/failure</li>
+            <li><code>stripe_subscription_id</code> - Used to identify subscription in webhooks</li>
+        </ul>
+
+        <h2>7. Stripe Configuration</h2>
+
+        <h3>7.1 Required Webhook Events</h3>
+        <p>Ensure the following webhook events are enabled in Stripe Dashboard:</p>
+        <ul>
+            <li>✅ <code>checkout.session.completed</code> (already enabled)</li>
+            <li>🔴 <code>invoice.payment_succeeded</code> (needs to be enabled)</li>
+            <li>🔴 <code>invoice.payment_failed</code> (needs to be enabled)</li>
+            <li>⏳ <code>customer.subscription.updated</code> (recommended)</li>
+            <li>🔴 <code>customer.subscription.deleted</code> (needs to be enabled)</li>
+        </ul>
+
+        <h3>7.2 Webhook Endpoint URL</h3>
+        <p><strong>Production:</strong> <code>https://your-domain.com/api/webhooks/stripe</code></p>
+        <p><strong>Development:</strong> Use Stripe CLI for local testing:</p>
+        <pre><code>stripe listen --forward-to localhost:8080/api/webhooks/stripe</code></pre>
+
+        <h2>8. Email Template Requirements</h2>
+
+        <h3>8.1 Welcome Email Template</h3>
+        <p><strong>Subject:</strong> "Welcome to [Plan Name] - Your Subscription is Active"</p>
+        <p><strong>Content Should Include:</strong></p>
+        <ul>
+            <li>Greeting with user's name</li>
+            <li>Subscription plan name</li>
+            <li>Billing amount and currency</li>
+            <li>Current period dates</li>
+            <li>Next billing date</li>
+            <li>Billing interval (Monthly/Yearly)</li>
+            <li>Link to manage subscription</li>
+            <li>Support contact information</li>
+        </ul>
+
+        <h3>8.2 Payment Confirmation Email Template</h3>
+        <p><strong>Subject:</strong> "Payment Received - [Plan Name] Subscription"</p>
+        <p><strong>Content Should Include:</strong></p>
+        <ul>
+            <li>Payment confirmation message</li>
+            <li>Amount paid</li>
+            <li>Payment date</li>
+            <li>Updated period dates</li>
+            <li>Next billing date</li>
+            <li>Receipt/invoice link</li>
+        </ul>
+
+        <h3>8.3 Payment Failure Email Template</h3>
+        <p><strong>Subject:</strong> "Payment Failed - Action Required for [Plan Name]"</p>
+        <p><strong>Content Should Include:</strong></p>
+        <ul>
+            <li>Payment failure notification</li>
+            <li>Amount due</li>
+            <li>Failure reason (if available)</li>
+            <li>Link to update payment method</li>
+            <li>Support contact information</li>
+            <li>Warning about service interruption</li>
+        </ul>
+
+        <h2>9. API Integration Points</h2>
+
+        <h3>9.1 Frontend → Backend API Calls</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Endpoint</th>
+                    <th>Method</th>
+                    <th>Purpose</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>/api/proxy/membership-subscriptions</code></td>
+                    <td>POST</td>
+                    <td>Create subscription</td>
+                    <td>✅ Working</td>
+                </tr>
+                <tr>
+                    <td><code>/api/proxy/membership-subscriptions/{id}</code></td>
+                    <td>PATCH</td>
+                    <td>Update subscription</td>
+                    <td>✅ Working</td>
+                </tr>
+                <tr>
+                    <td><code>/api/proxy/membership-subscriptions/{id}</code></td>
+                    <td>GET</td>
+                    <td>Get subscription details</td>
+                    <td>✅ Working</td>
+                </tr>
+                <tr>
+                    <td><code>/api/proxy/membership-subscriptions/{id}/send-welcome-email</code></td>
+                    <td>POST</td>
+                    <td>Send welcome email</td>
+                    <td>❌ Needs Creation</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>9.2 Backend → Stripe API Calls</h3>
+        <p><strong>Required Stripe API Methods:</strong></p>
+        <ul>
+            <li><code>stripe.subscriptions.retrieve(subscriptionId)</code> - Get updated subscription details</li>
+            <li><code>stripe.invoices.retrieve(invoiceId)</code> - Get invoice details</li>
+            <li><code>stripe.customers.retrieve(customerId)</code> - Get customer details</li>
+        </ul>
+
+        <h2>10. Error Handling & Edge Cases</h2>
+
+        <h3>10.1 Webhook Processing Errors</h3>
+        <ul>
+            <li><strong>Subscription not found:</strong> Log warning and return 200 (idempotent)</li>
+            <li><strong>Stripe API failure:</strong> Retry with exponential backoff</li>
+            <li><strong>Database update failure:</strong> Log error and return 500 (Stripe will retry)</li>
+            <li><strong>Email sending failure:</strong> Log error but don't fail webhook (non-critical)</li>
+        </ul>
+
+        <h3>10.2 Edge Cases</h3>
+        <ul>
+            <li><strong>Duplicate webhook events:</strong> Make handlers idempotent</li>
+            <li><strong>Out-of-order webhooks:</strong> Use timestamps to handle correctly</li>
+            <li><strong>Subscription already cancelled:</strong> Skip processing</li>
+            <li><strong>Missing user profile:</strong> Log error and skip email</li>
+        </ul>
+
+        <h2>11. Security Considerations</h2>
+
+        <ul>
+            <li>✅ Webhook signature verification (already implemented)</li>
+            <li>✅ Tenant isolation (already implemented)</li>
+            <li>✅ JWT authentication for API endpoints (already implemented)</li>
+            <li>⏳ Rate limiting for email sending (recommended)</li>
+            <li>⏳ Email template sanitization (recommended)</li>
+        </ul>
+
+        <h2>12. Performance Considerations</h2>
+
+        <ul>
+            <li><strong>Webhook Processing:</strong> Process asynchronously to avoid timeout</li>
+            <li><strong>Email Sending:</strong> Use queue system for email delivery</li>
+            <li><strong>Database Updates:</strong> Use transactions for consistency</li>
+            <li><strong>Caching:</strong> Cache Stripe subscription data to reduce API calls</li>
+        </ul>
+
+        <h2>13. Monitoring & Logging</h2>
+
+        <h3>13.1 Required Logging</h3>
+        <ul>
+            <li>Webhook event received (with event type and ID)</li>
+            <li>Subscription found/not found</li>
+            <li>Period dates updated (before/after values)</li>
+            <li>Email sent/failed (with recipient email)</li>
+            <li>Errors and exceptions</li>
+        </ul>
+
+        <h3>13.2 Metrics to Track</h3>
+        <ul>
+            <li>Number of recurring payments processed</li>
+            <li>Number of payment failures</li>
+            <li>Email delivery success rate</li>
+            <li>Webhook processing time</li>
+            <li>Subscription renewal rate</li>
+        </ul>
+
+        <h2>14. Testing Strategy</h2>
+
+        <h3>14.1 Unit Tests</h3>
+        <ul>
+            <li>Test webhook handler logic</li>
+            <li>Test period date calculation</li>
+            <li>Test email service methods</li>
+            <li>Test subscription status updates</li>
+        </ul>
+
+        <h3>14.2 Integration Tests</h3>
+        <ul>
+            <li>Test webhook endpoint with Stripe test events</li>
+            <li>Test subscription creation flow</li>
+            <li>Test email delivery</li>
+            <li>Test database updates</li>
+        </ul>
+
+        <h3>14.3 End-to-End Tests</h3>
+        <ul>
+            <li>Test complete subscription flow (signup → payment → webhook → email)</li>
+            <li>Test recurring payment flow (webhook → update → email)</li>
+            <li>Test payment failure flow (webhook → status update → email)</li>
+            <li>Test admin page displays correct information</li>
+        </ul>
+
+        <h2>15. Migration & Deployment Plan</h2>
+
+        <h3>15.1 Phase 1: Backend Webhook Handlers</h3>
+        <ol>
+            <li>Implement <code>invoice.payment_succeeded</code> handler</li>
+            <li>Implement <code>invoice.payment_failed</code> handler</li>
+            <li>Implement <code>customer.subscription.deleted</code> handler</li>
+            <li>Test with Stripe CLI</li>
+            <li>Deploy to staging</li>
+            <li>Enable webhook events in Stripe Dashboard</li>
+        </ol>
+
+        <h3>15.2 Phase 2: Email Service</h3>
+        <ol>
+            <li>Create email service methods</li>
+            <li>Create email templates</li>
+            <li>Test email delivery</li>
+            <li>Integrate with webhook handlers</li>
+            <li>Deploy to staging</li>
+        </ol>
+
+        <h3>15.3 Phase 3: Frontend Enhancements</h3>
+        <ol>
+            <li>Add recurring indicator to admin page</li>
+            <li>Add next billing date to details modal</li>
+            <li>Add email sending after subscription creation</li>
+            <li>Test UI changes</li>
+            <li>Deploy to production</li>
+        </ol>
+
+        <h2>16. Summary & Recommendations</h2>
+
+        <div class="section">
+            <h3>16.1 Key Findings</h3>
+            <ol>
+                <li><strong>Date Display is Correct:</strong> The dates shown (12/5/2025 to 1/4/2026) are correct for the first billing period. The issue is that these dates are not being updated when recurring payments occur.</li>
+                <li><strong>Recurring Payment Updates Missing:</strong> No webhook handler exists to update period dates when Stripe processes recurring payments.</li>
+                <li><strong>Email Notifications Missing:</strong> No email is sent to subscribers after subscription creation or recurring payments.</li>
+                <li><strong>UI Clarity Needed:</strong> Admin page should clearly indicate that subscriptions are recurring.</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h3>16.2 Priority Actions</h3>
+            <ol>
+                <li><strong>HIGH PRIORITY:</strong> Implement <code>invoice.payment_succeeded</code> webhook handler to update period dates</li>
+                <li><strong>HIGH PRIORITY:</strong> Implement email sending for subscription welcome and payment confirmations</li>
+                <li><strong>MEDIUM PRIORITY:</strong> Implement <code>invoice.payment_failed</code> webhook handler</li>
+                <li><strong>MEDIUM PRIORITY:</strong> Add recurring indicator to admin UI</li>
+                <li><strong>LOW PRIORITY:</strong> Implement <code>customer.subscription.updated</code> webhook handler</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h3>16.3 Estimated Implementation Time</h3>
+            <ul>
+                <li><strong>Backend Webhook Handlers:</strong> 2-3 days</li>
+                <li><strong>Email Service Implementation:</strong> 2-3 days</li>
+                <li><strong>Frontend UI Enhancements:</strong> 1 day</li>
+                <li><strong>Testing & QA:</strong> 2 days</li>
+                <li><strong>Total:</strong> 7-9 days</li>
+            </ul>
+        </div>
+
+        <div class="status-box info">
+            <strong>Note:</strong> This analysis is based on the current codebase structure and Stripe subscription model. All recommendations follow the existing patterns in the codebase and adhere to the rules defined in <code>nextjs_api_routes.mdc</code> and <code>ui_style_guide.mdc</code>.
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #ddd;">
+
+        <p class="timestamp" style="text-align: center; color: #999;">
+            Analysis completed on December 6, 2025<br>
+            Frontend Project: <code>E:\project_workspace\code_backup\mosc-temp</code><br>
+            Backend Project: <code>E:\project_workspace\malayalees-us-site-boot</code>
+        </p>
+    </div>
+</body>
+</html>
+

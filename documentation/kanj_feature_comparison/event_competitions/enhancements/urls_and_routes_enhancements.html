@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Competitions — URLs &amp; Routes Enhancements (v2.1)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        a { color: #0066cc; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .section-container.usage { background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%); border-left-color: #7b1fa2; }
+        .section-container.usage .section-header { background: linear-gradient(135deg, #7b1fa2 0%, #6a1b9a 100%); }
+        .section-container.parameters { background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%); border-left-color: #ff9800; }
+        .section-container.parameters .section-header { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        tbody tr:nth-child(even) { background-color: #f8f9fa; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .tag-new { background: #d4edda; color: #155724; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 600; }
+        .tag-ext { background: #fff3cd; color: #856404; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <h1>Event Competitions — URLs &amp; Routes Enhancements (v2.1)</h1>
+    <p class="doc-meta">
+        <strong>Project:</strong> <code>mosc-temp</code> &nbsp;|&nbsp; <strong>Date:</strong> June 6, 2026<br>
+        <strong>Baseline:</strong> <a href="../urls_and_entry_points.html">urls_and_entry_points.html</a> &nbsp;|&nbsp;
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a>
+    </p>
+
+    <div class="lead">
+        <p>Route map for v2.1 enhancements. Replace <code>{eventId}</code> and <code>{compId}</code> with numeric IDs. Local base: <code>http://localhost:3000</code>.</p>
+    </div>
+
+    <h2>1. Public App Router pages</h2>
+    <table>
+        <thead><tr><th>Route</th><th>Auth</th><th>v2.1 change</th></tr></thead>
+        <tbody>
+            <tr><td><code>/events/{eventId}/competitions</code></td><td>Public</td><td><span class="tag-ext">Extended</span> Cards link to detail</td></tr>
+            <tr><td><code>/events/{eventId}/competitions/{compId}</code></td><td>Public</td><td><span class="tag-new">New</span> Detail, rules, register CTA</td></tr>
+            <tr><td><code>/events/{eventId}/competitions/register</code></td><td>Clerk</td><td><span class="tag-ext">Extended</span> <code>?competitionId=</code> deep link</td></tr>
+            <tr><td><code>/events/{eventId}/competitions/register?competitionId={compId}</code></td><td>Clerk</td><td><span class="tag-new">New</span> Single-competition entry</td></tr>
+            <tr><td><code>/events/{eventId}/competitions/my-registrations</code></td><td>Clerk</td><td><span class="tag-ext">Extended</span> Per-comp + team roster</td></tr>
+            <tr><td><code>/events/{eventId}/competitions/winners</code></td><td>Public</td><td><span class="tag-ext">Extended</span> Podium by competition; anchor <code>#{compId}</code></td></tr>
+            <tr><td><code>/events/{eventId}/competitions/rules</code></td><td>Public</td><td>Unchanged</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. Admin App Router pages</h2>
+    <table>
+        <thead><tr><th>Route</th><th>Auth</th><th>v2.1 change</th></tr></thead>
+        <tbody>
+            <tr><td><code>/admin/events/{eventId}/competitions/settings</code></td><td>Admin</td><td><span class="tag-ext">Extended</span> 4th place points, default placements</td></tr>
+            <tr><td><code>/admin/events/{eventId}/competitions/days</code></td><td>Admin</td><td>Unchanged</td></tr>
+            <tr><td><code>/admin/events/{eventId}/competitions/list</code></td><td>Admin</td><td><span class="tag-ext">Extended</span> Discipline column</td></tr>
+            <tr><td><code>/admin/events/{eventId}/competitions/list/new</code></td><td>Admin</td><td><span class="tag-ext">Extended</span> Guardrail fields</td></tr>
+            <tr><td><code>/admin/events/{eventId}/competitions/{compId}/edit</code></td><td>Admin</td><td><span class="tag-ext">Extended</span> Full v2.1 form</td></tr>
+            <tr><td><code>/admin/events/{eventId}/competitions/registrations</code></td><td>Admin</td><td><span class="tag-ext">Extended</span> Team + roster expand</td></tr>
+            <tr><td><code>/admin/events/{eventId}/competitions/{compId}/registrations</code></td><td>Admin</td><td><span class="tag-new">New</span> Optional filtered view (E5)</td></tr>
+            <tr><td><code>/admin/events/{eventId}/competitions/results</code></td><td>Admin</td><td><span class="tag-ext">Extended</span> Podium presets, bulk publish</td></tr>
+        </tbody>
+    </table>
+
+    <h2>3. Proxy routes (Pages API)</h2>
+    <div class="section-container">
+        <div class="section-header">Next.js → backend via createProxyHandler</div>
+        <table>
+            <thead><tr><th>Browser path</th><th>Backend path</th><th>v2.1</th></tr></thead>
+            <tbody>
+                <tr><td><code>/api/proxy/event-competition-settings/*</code></td><td><code>/api/event-competition-settings</code></td><td>Existing</td></tr>
+                <tr><td><code>/api/proxy/event-competition-days/*</code></td><td><code>/api/event-competition-days</code></td><td>Existing</td></tr>
+                <tr><td><code>/api/proxy/event-competitions/*</code></td><td><code>/api/event-competitions</code></td><td>Extended DTO fields</td></tr>
+                <tr><td><code>/api/proxy/event-competition-participants/*</code></td><td><code>/api/event-competition-participants</code></td><td>Existing</td></tr>
+                <tr><td><code>/api/proxy/event-competition-registrations/*</code></td><td><code>/api/event-competition-registrations</code></td><td>Team fields; composites via server actions</td></tr>
+                <tr><td><code>/api/proxy/event-competition-results/*</code></td><td><code>/api/event-competition-results</code></td><td>Existing</td></tr>
+                <tr><td><code>/api/proxy/event-competition-content-blocks/*</code></td><td><code>/api/event-competition-content-blocks</code></td><td>Existing</td></tr>
+                <tr><td><code>/api/proxy/event-competition-group-members/*</code></td><td><code>/api/event-competition-group-members</code></td><td><span class="tag-new">New</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2>4. App-specific API routes (Next.js)</h2>
+    <table>
+        <thead><tr><th>Route</th><th>Purpose</th></tr></thead>
+        <tbody>
+            <tr><td><code>/api/stripe/competition-payment-intent</code></td><td>Stripe PI for registration cart (extend TEAM/BULK metadata)</td></tr>
+            <tr><td><code>/api/webhooks/stripe</code></td><td>Confirm registrations; optional batch email trigger</td></tr>
+        </tbody>
+    </table>
+
+    <h2>5. Backend REST (direct — server actions only)</h2>
+    <div class="section-container usage">
+        <div class="section-header">malayalees-us-site-boot — new paths</div>
+        <pre>GET  /api/event-competitions/{id}/eligibility-check?participantId=
+POST /api/event-competition-registrations/team
+POST /api/event-competition-registrations/bulk
+POST /api/event-competition-results/publish-by-competition/{competitionId}  (optional)
+
+CRUD /api/event-competition-group-members
+CRUD /api/event-competition-group-members/{id}</pre>
+    </div>
+
+    <h2>6. Auth matrix</h2>
+    <table>
+        <thead><tr><th>Route class</th><th>Clerk</th><th>Backend JWT</th><th>Notes</th></tr></thead>
+        <tbody>
+            <tr><td>Public hub, detail, winners, rules</td><td>Public route</td><td>Proxy JWT (service)</td><td><code>/api/proxy/*</code> in middleware <code>ignoredRoutes</code></td></tr>
+            <tr><td>Register, my-registrations</td><td>Required</td><td>Server actions</td><td>Not in publicPaths for session</td></tr>
+            <tr><td>Admin competitions/*</td><td>Required + ADMIN role</td><td>Server actions</td><td>Admin layout guard</td></tr>
+            <tr><td>Stripe webhook</td><td>N/A</td><td>Service JWT to backend</td><td>Direct backend PATCH</td></tr>
+        </tbody>
+    </table>
+
+    <h2>7. Deep link examples</h2>
+    <div class="section-container parameters">
+        <div class="section-header">Copy-paste URLs (event 123, competition 456)</div>
+<pre>Public detail:
+  http://localhost:3000/events/123/competitions/456
+
+Register this competition only:
+  http://localhost:3000/events/123/competitions/register?competitionId=456
+
+Winners anchor:
+  http://localhost:3000/events/123/competitions/winners#456
+
+Admin edit:
+  http://localhost:3000/admin/events/123/competitions/456/edit
+
+Admin per-comp registrations (E5):
+  http://localhost:3000/admin/events/123/competitions/456/registrations</pre>
+    </div>
+
+    <h2>8. Navigation flow (v2.1)</h2>
+    <ol>
+        <li>Event page → Competitions button → Hub</li>
+        <li>Hub card → <strong>Competition detail</strong> (new)</li>
+        <li>Detail → Register → Wizard (pre-selected competition)</li>
+        <li>GROUP path → Team roster step → Payment</li>
+        <li>Admin list → Edit competition → Guardrails + discipline</li>
+        <li>Admin results → Publish → Public winners podium section</li>
+    </ol>
+
+    <div class="info-box">
+        <strong>Middleware:</strong> Keep <code>/api/proxy/(.*)</code> in <code>ignoredRoutes</code> for mobile browser compatibility (see workspace rules).
+    </div>
+
+</body>
+</html>

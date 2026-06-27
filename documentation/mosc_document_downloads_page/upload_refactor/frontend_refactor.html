@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MOSC Upload Refactor - Frontend</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; line-height: 1.5; color: #1f2937; }
+    h1, h2, h3 { color: #111827; }
+    code, pre { background: #f3f4f6; border-radius: 6px; }
+    code { padding: 2px 6px; }
+    pre { padding: 12px; overflow: auto; }
+    .ok { color: #065f46; font-weight: bold; }
+    .note { background: #fef3c7; border: 1px solid #f59e0b; padding: 10px; border-radius: 8px; }
+    ul { margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Official Document Upload Refactor - Frontend</h1>
+  <p>
+    This document describes frontend and script updates for hierarchy-aware upload and paginated tree display.
+  </p>
+
+  <h2>1) Implemented in Next.js app</h2>
+  <ul>
+    <li>
+      Added explicit DTO fields in <code>src/types/index.ts</code>:
+      <code>hierarchyPath</code>, <code>hierarchyCategoryLabel</code>, <code>displayPriority</code>.
+    </li>
+    <li>
+      Public tree API implemented at <code>src/pages/api/public/official-documents-tree.ts</code>,
+      with priority-first ordering and pagination response.
+    </li>
+    <li>
+      Downloads redesign page now supports:
+      <ul>
+        <li>hierarchical tree rendering</li>
+        <li>category filters</li>
+        <li>page navigation</li>
+        <li>priority-first display</li>
+      </ul>
+      Files:
+      <code>src/app/mosc-redesign/(syro)/downloads/page.tsx</code>,
+      <code>DownloadsPageClient.tsx</code>,
+      <code>ApiServerActions.ts</code>.
+    </li>
+  </ul>
+
+  <h2>2) Auto-upload script refactor</h2>
+  <p>
+    Script: <code>scripts/mosc-in-migration/upload-mirror-to-official-docs.mjs</code>
+  </p>
+  <ul>
+    <li>Reads mirror report and converts filesystem structure into hierarchy metadata.</li>
+    <li>Uploads each file via tenant official-document API.</li>
+    <li>Patches uploaded records with:
+      <code>hierarchyPath</code>,
+      <code>hierarchyCategoryLabel</code>,
+      <code>displayPriority</code>,
+      <code>priorityRanking</code>.
+    </li>
+    <li>Keeps legacy description markers for backward compatibility.</li>
+  </ul>
+
+  <h2>3) NPM commands</h2>
+  <pre><code>npm run mosc:migration:upload:mirror:dry
+npm run mosc:migration:upload:mirror</code></pre>
+
+  <h2>4) Data compatibility strategy</h2>
+  <p>
+    Rendering code uses this priority:
+  </p>
+  <ol>
+    <li>Explicit DB fields (<code>hierarchyPath</code>, <code>hierarchyCategoryLabel</code>, <code>displayPriority</code>)</li>
+    <li>Fallback to description markers for old data</li>
+  </ol>
+
+  <div class="note">
+    This means no data loss during migration: old rows still render correctly until DB/API rollout completes.
+  </div>
+
+  <h2>5) Required backend alignment</h2>
+  <ul>
+    <li>Persist new columns from request payload in backend entity/DTO mapping.</li>
+    <li>Expose new fields in response JSON for list/detail endpoints.</li>
+    <li>Keep old marker-based data untouched until fully migrated.</li>
+  </ul>
+
+  <h2>6) Verification checklist</h2>
+  <ul>
+    <li>Upload dry run completes without failures.</li>
+    <li>Real upload inserts rows and patches hierarchy columns.</li>
+    <li><code>/mosc-redesign/downloads</code> renders tree and paginates by priority.</li>
+    <li>Category filters keep hierarchy structure within selected category.</li>
+  </ul>
+
+  <p class="ok">Result: hierarchy + priority are now first-class fields with backward compatibility.</p>
+</body>
+</html>
+

@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiveButter Donation Flow - Frontend Implementation PRD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #2D2A26;
+            background-color: #F5F1E8;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #8B7D6B;
+            border-bottom: 3px solid #8B7D6B;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        h2 {
+            color: #6B4E3D;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-left: 4px solid #8B7D6B;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #8B7D6B;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+        h4 {
+            color: #A0926B;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        .meta {
+            background: #EDE7D3;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            border-left: 4px solid #8B7D6B;
+        }
+        .meta p { margin: 5px 0; }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-ready { background: #4A6741; color: white; }
+        .highlight-box {
+            background: #EDE7D3;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #8B7D6B;
+        }
+        .warning-box {
+            background: #FFF4E6;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #A67C52;
+        }
+        .success-box {
+            background: #F0F9F0;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #4A6741;
+        }
+        .code-block {
+            background: #2D2A26;
+            color: #F5F1E8;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #8B7D6B;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: #EDE7D3;
+            font-weight: bold;
+            color: #2D2A26;
+        }
+        ul, ol { margin-left: 30px; margin-top: 10px; }
+        li { margin: 8px 0; }
+        .tag {
+            display: inline-block;
+            background: #8B7D6B;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="meta">
+            <p><strong>Document Type:</strong> Frontend Product Requirements Document (PRD)</p>
+            <p><strong>Project:</strong> GiveButter Donation-Based Event Flow</p>
+            <p><strong>Repository:</strong> <code>E:\project_workspace\mosc-temp</code></p>
+            <p><strong>Version:</strong> 1.0</p>
+            <p><strong>Date:</strong> January 2025</p>
+            <p><strong>Status:</strong> <span class="status-badge status-ready">Ready for Implementation</span></p>
+            <p><strong>Reference Flow:</strong> <code>http://localhost:3000/events/6852/checkout</code> (Reference Only - DO NOT Modify)</p>
+        </div>
+
+        <h1>GiveButter Donation Flow - Frontend Implementation PRD<br><small style="font-size: 0.6em; color: #A0926B;">Separate Flow for Non-Profit Fundraiser Events</small></h1>
+
+        <div class="highlight-box">
+            <h4>Critical Requirements</h4>
+            <ul>
+                <li><strong>Separate Flow:</strong> Create completely separate components and routes for GiveButter donation flow. DO NOT modify existing checkout flow.</li>
+                <li><strong>Reference Only:</strong> Use <code>/events/[id]/checkout</code> as reference for transaction creation, QR code generation, and email sending patterns only.</li>
+                <li><strong>Event Detection:</strong> Use existing event edit page fields (<code>isFundraiserEvent</code>, <code>isCharityEvent</code>, <code>donationMetadata</code>) to determine if event is donation-based.</li>
+                <li><strong>Predefined Buttons:</strong> Support predefined donation amount buttons ($5, $10, $25, $50, $100, custom) for church offerings and Mass collections.</li>
+                <li><strong>Data Persistence:</strong> All donations must be persisted to database for admin dashboard statistics.</li>
+            </ul>
+        </div>
+
+        <h2>1. Executive Summary</h2>
+        <p>This PRD outlines the frontend implementation of a GiveButter-based donation flow for non-profit fundraiser events. The implementation creates a completely separate flow from the existing ticket checkout, while maintaining similar patterns for transaction creation, QR code generation, and email sending.</p>
+
+        <div class="success-box">
+            <h4>Key Objectives</h4>
+            <ul>
+                <li>Enable zero-fee donations for non-profit fundraiser events using GiveButter API</li>
+                <li>Support ticketed fundraiser events with donation-based payment routing</li>
+                <li>Support Mass offerings with predefined donation buttons and prayer intentions</li>
+                <li>Maintain separate flow from existing Stripe checkout (reference only)</li>
+                <li>Persist all donation data for admin dashboard analytics</li>
+                <li>Generate QR codes and send confirmation emails similar to ticket purchase flow</li>
+            </ul>
+        </div>
+
+        <h2>2. Event Configuration Detection</h2>
+        
+        <h3>2.1 Event Edit Page Fields</h3>
+        <p>The following fields in the event edit page (<code>src/components/EventForm.tsx</code>) determine if an event is donation-based:</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Location</th>
+                    <th>Purpose</th>
+                    <th>Values</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>isFundraiserEvent</code></td>
+                    <td><code>donationMetadata.isFundraiserEvent</code></td>
+                    <td>Marks event as fundraiser</td>
+                    <td><code>true</code> / <code>false</code></td>
+                </tr>
+                <tr>
+                    <td><code>isCharityEvent</code></td>
+                    <td><code>donationMetadata.isCharityEvent</code></td>
+                    <td>Marks event as charity</td>
+                    <td><code>true</code> / <code>false</code></td>
+                </tr>
+                <tr>
+                    <td><code>zeroFeeProvider</code></td>
+                    <td><code>donationMetadata.zeroFeeProvider</code></td>
+                    <td>Payment provider for zero-fee processing</td>
+                    <td><code>"GIVEBUTTER"</code></td>
+                </tr>
+                <tr>
+                    <td><code>givebutterCampaignId</code></td>
+                    <td><code>donationMetadata.givebutterCampaignId</code></td>
+                    <td>GiveButter campaign ID (optional)</td>
+                    <td>String or <code>null</code></td>
+                </tr>
+                <tr>
+                    <td><code>admissionType</code></td>
+                    <td><code>event_details.admission_type</code></td>
+                    <td>Event admission type</td>
+                    <td><code>"DONATION_BASED"</code> or <code>"TICKETED"</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2.2 Detection Logic</h3>
+        <div class="code-block">
+<code>// Event is donation-based if:
+// 1. admissionType === 'DONATION_BASED' OR
+// 2. (isFundraiserEvent === true OR isCharityEvent === true) AND zeroFeeProvider === 'GIVEBUTTER'
+
+function isDonationBasedEvent(event: EventDetailsDTO): boolean {
+  // Check admission type
+  if (event.admissionType === 'DONATION_BASED') {
+    return true;
+  }
+  
+  // Check fundraiser/charity configuration
+  if (event.donationMetadata) {
+    const donationMeta = JSON.parse(event.donationMetadata);
+    const isFundraiser = donationMeta.isFundraiserEvent === true;
+    const isCharity = donationMeta.isCharityEvent === true;
+    const provider = donationMeta.zeroFeeProvider;
+    
+    if ((isFundraiser || isCharity) && provider === 'GIVEBUTTER') {
+      return true;
+    }
+  }
+  
+  return false;
+}</code>
+        </div>
+
+        <h2>3. Component Architecture</h2>
+
+        <h3>3.1 New Routes and Components</h3>
+        <p><strong>CRITICAL:</strong> All new components must be separate from existing checkout flow. Create new files, do not modify existing checkout components.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Route</th>
+                    <th>Component</th>
+                    <th>Purpose</th>
+                    <th>Reference</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>/events/[id]/donation</code></td>
+                    <td><code>DonationCheckoutPage</code></td>
+                    <td>Donation checkout page (similar to <code>/events/[id]/checkout</code>)</td>
+                    <td><code>src/app/events/[id]/checkout</code> (reference only)</td>
+                </tr>
+                <tr>
+                    <td><code>/events/[id]/donation/success</code></td>
+                    <td><code>DonationSuccessPage</code></td>
+                    <td>Donation success page with QR code and confirmation</td>
+                    <td><code>src/app/event/success</code> (reference only)</td>
+                </tr>
+                <tr>
+                    <td><code>/events/[id]/offering</code></td>
+                    <td><code>MassOfferingPage</code></td>
+                    <td>Mass offering page with predefined buttons</td>
+                    <td>New component</td>
+                </tr>
+                <tr>
+                    <td><code>/events/[id]/offering/success</code></td>
+                    <td><code>OfferingSuccessPage</code></td>
+                    <td>Offering success page</td>
+                    <td>New component</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>3.2 Component Structure</h3>
+        <div class="code-block">
+<code>src/app/events/[id]/
+  ├── donation/
+  │   ├── page.tsx                    # Server component (fetches event data)
+  │   ├── DonationCheckoutClient.tsx  # Client component (donation form)
+  │   └── DonationServerData.tsx      # Server data fetching
+  │
+  ├── donation/
+  │   └── success/
+  │       ├── page.tsx                # Server component
+  │       └── DonationSuccessClient.tsx # Client component (QR code, email)
+  │
+  ├── offering/
+  │   ├── page.tsx                    # Server component
+  │   ├── MassOfferingClient.tsx      # Client component (predefined buttons)
+  │   └── OfferingServerData.tsx      # Server data fetching
+  │
+  └── offering/
+      └── success/
+          ├── page.tsx                # Server component
+          └── OfferingSuccessClient.tsx # Client component
+
+src/components/donation/
+  ├── DonationAmountSelector.tsx      # Amount selection (preset + custom)
+  ├── PredefinedDonationButtons.tsx   # $5, $10, $25, $50, $100 buttons
+  ├── PrayerIntentionInput.tsx        # Prayer intention field (for offerings)
+  └── RecurringDonationToggle.tsx    # Recurring donation option</code>
+        </div>
+
+        <h2>4. Donation Checkout Flow</h2>
+
+        <h3>4.1 User Flow</h3>
+        <ol>
+            <li>User visits event page (<code>/events/[id]</code>)</li>
+            <li>If event is donation-based, show "Make a Donation" button instead of "Buy Tickets"</li>
+            <li>User clicks "Make a Donation" → redirects to <code>/events/[id]/donation</code></li>
+            <li>User selects donation amount (preset buttons or custom input)</li>
+            <li>User enters email, name, phone (optional)</li>
+            <li>User clicks "Donate" → calls <code>POST /api/proxy/payments/initialize</code> with GiveButter payment type</li>
+            <li>Backend returns GiveButter checkout URL → redirect to GiveButter</li>
+            <li>User completes payment on GiveButter</li>
+            <li>GiveButter redirects to <code>/events/[id]/donation/success?transactionId=xxx</code></li>
+            <li>Success page displays QR code (if applicable) and sends confirmation email</li>
+        </ol>
+
+        <h3>4.2 Donation Checkout Page Implementation</h3>
+        
+        <h4>File: <code>src/app/events/[id]/donation/page.tsx</code></h4>
+        <div class="code-block">
+<code>import { unstable_noStore } from 'next/cache';
+import { getDonationCheckoutData } from './DonationServerData';
+import DonationCheckoutClient from './DonationCheckoutClient';
+
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function DonationCheckoutPage({ params }: PageProps) {
+  unstable_noStore();
+  const resolvedParams = await params;
+  const eventId = resolvedParams.id;
+
+  try {
+    const checkoutData = await getDonationCheckoutData(eventId);
+    
+    // Verify event is donation-based
+    if (!checkoutData.isDonationBased) {
+      return &lt;div&gt;This event does not support donations.&lt;/div&gt;;
+    }
+
+    return &lt;DonationCheckoutClient initialData={checkoutData} eventId={eventId} /&gt;;
+  } catch (error) {
+    // Error handling
+    return &lt;div&gt;Error loading donation page&lt;/div&gt;;
+  }
+}</code>
+        </div>
+
+        <h4>File: <code>src/app/events/[id]/donation/DonationCheckoutClient.tsx</code></h4>
+        <div class="warning-box">
+            <strong>Key Requirements:</strong>
+            <ul>
+                <li>Separate component from <code>CheckoutClient.tsx</code> (reference only)</li>
+                <li>Support preset donation buttons ($5, $10, $25, $50, $100, custom)</li>
+                <li>Collect email, name, phone (optional)</li>
+                <li>Call <code>POST /api/proxy/payments/initialize</code> with <code>paymentType: "DONATION"</code> or <code>"DONATION_ZERO_FEE"</code></li>
+                <li>Include <code>paymentProvider: "GIVEBUTTER"</code> in request</li>
+                <li>Handle GiveButter checkout URL redirect</li>
+            </ul>
+        </div>
+
+        <div class="code-block">
+<code>'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import PredefinedDonationButtons from '@/components/donation/PredefinedDonationButtons';
+import DonationAmountSelector from '@/components/donation/DonationAmountSelector';
+
+interface DonationCheckoutClientProps {
+  initialData: DonationCheckoutData;
+  eventId: string;
+}
+
+export default function DonationCheckoutClient({ 
+  initialData, 
+  eventId 
+}: DonationCheckoutClientProps) {
+  const router = useRouter();
+  const [donationAmount, setDonationAmount] = useState&lt;number | null&gt;(null);
+  const [customAmount, setCustomAmount] = useState&lt;string&gt;('');
+  const [email, setEmail] = useState&lt;string&gt;('');
+  const [firstName, setFirstName] = useState&lt;string&gt;('');
+  const [lastName, setLastName] = useState&lt;string&gt;('');
+  const [phone, setPhone] = useState&lt;string&gt;('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errors, setErrors] = useState&lt;Record&lt;string, string&gt;&gt;({});
+
+  const handlePresetAmount = (amount: number) => {
+    setDonationAmount(amount);
+    setCustomAmount('');
+  };
+
+  const handleCustomAmount = (value: string) => {
+    setCustomAmount(value);
+    const numValue = parseFloat(value);
+    setDonationAmount(isNaN(numValue) ? null : numValue);
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Record&lt;string, string&gt; = {};
+
+    if (!donationAmount || donationAmount &lt; 1) {
+      newErrors.amount = 'Please select or enter a donation amount (minimum $1)';
+    }
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (!firstName?.trim()) {
+      newErrors.firstName = 'First name is required';
+    }
+
+    if (!lastName?.trim()) {
+      newErrors.lastName = 'Last name is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleDonate = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      
+      // Call payment initialization endpoint
+      const response = await fetch(`${baseUrl}/api/proxy/payments/initialize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId: parseInt(eventId),
+          paymentType: 'DONATION_ZERO_FEE', // or 'DONATION'
+          paymentProvider: 'GIVEBUTTER',
+          amount: donationAmount,
+          email: email,
+          firstName: firstName,
+          lastName: lastName,
+          phone: phone || undefined,
+          metadata: {
+            givebutterCampaignId: initialData.givebutterCampaignId,
+            isFundraiser: initialData.isFundraiserEvent,
+            isCharity: initialData.isCharityEvent,
+          },
+          returnUrl: `${baseUrl}/events/${eventId}/donation/success`,
+          cancelUrl: `${baseUrl}/events/${eventId}`,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to initialize donation');
+      }
+
+      const data = await response.json();
+      
+      // Redirect to GiveButter checkout URL
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (error) {
+      console.error('Donation error:', error);
+      alert('Failed to process donation. Please try again.');
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    &lt;div className="min-h-screen bg-gray-50 py-12 px-4"&gt;
+      &lt;div className="max-w-2xl mx-auto"&gt;
+        &lt;h1 className="text-3xl font-bold mb-6"&gt;Make a Donation&lt;/h1&gt;
+        
+        {/* Preset Donation Buttons */}
+        &lt;PredefinedDonationButtons
+          onAmountSelect={handlePresetAmount}
+          selectedAmount={donationAmount}
+          presets={[5, 10, 25, 50, 100]}
+        /&gt;
+
+        {/* Custom Amount Input */}
+        &lt;DonationAmountSelector
+          value={customAmount}
+          onChange={handleCustomAmount}
+          error={errors.amount}
+        /&gt;
+
+        {/* Donor Information Form */}
+        &lt;div className="mt-6 space-y-4"&gt;
+          &lt;input
+            type="email"
+            placeholder="Email *"
+            value={email}
+            onChange={(e) =&gt; setEmail(e.target.value)}
+            className="w-full px-4 py-3 border rounded-lg"
+          /&gt;
+          {errors.email && &lt;div className="text-red-500 text-sm"&gt;{errors.email}&lt;/div&gt;}
+
+          &lt;input
+            type="text"
+            placeholder="First Name *"
+            value={firstName}
+            onChange={(e) =&gt; setFirstName(e.target.value)}
+            className="w-full px-4 py-3 border rounded-lg"
+          /&gt;
+          {errors.firstName && &lt;div className="text-red-500 text-sm"&gt;{errors.firstName}&lt;/div&gt;}
+
+          &lt;input
+            type="text"
+            placeholder="Last Name *"
+            value={lastName}
+            onChange={(e) =&gt; setLastName(e.target.value)}
+            className="w-full px-4 py-3 border rounded-lg"
+          /&gt;
+          {errors.lastName && &lt;div className="text-red-500 text-sm"&gt;{errors.lastName}&lt;/div&gt;}
+
+          &lt;input
+            type="tel"
+            placeholder="Phone (Optional)"
+            value={phone}
+            onChange={(e) =&gt; setPhone(e.target.value)}
+            className="w-full px-4 py-3 border rounded-lg"
+          /&gt;
+        &lt;/div&gt;
+
+        {/* Donate Button */}
+        &lt;button
+          onClick={handleDonate}
+          disabled={isProcessing || !donationAmount}
+          className="mt-6 w-full bg-teal-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 disabled:opacity-50"
+        &gt;
+          {isProcessing ? 'Processing...' : `Donate $${donationAmount?.toFixed(2)}`}
+        &lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code>
+        </div>
+
+        <h2>5. Mass Offering Flow</h2>
+
+        <h3>5.1 Use Cases</h3>
+        <ul>
+            <li><strong>In-Person Mass:</strong> QR codes displayed during collection, quick mobile donations</li>
+            <li><strong>Live-Streamed Mass:</strong> Real-time donation widget embedded in live stream</li>
+            <li><strong>Sunday Collection:</strong> Weekly recurring offerings with optional prayer intentions</li>
+            <li><strong>Special Collections:</strong> Designated offerings for specific causes (building fund, missions, etc.)</li>
+            <li><strong>Votive Offerings:</strong> Spontaneous offerings with prayer intentions</li>
+        </ul>
+
+        <h3>5.2 Predefined Donation Buttons Component</h3>
+        <div class="code-block">
+<code>// File: src/components/donation/PredefinedDonationButtons.tsx
+'use client';
+
+interface PredefinedDonationButtonsProps {
+  onAmountSelect: (amount: number) =&gt; void;
+  selectedAmount: number | null;
+  presets?: number[]; // Default: [5, 10, 25, 50, 100]
+}
+
+export default function PredefinedDonationButtons({
+  onAmountSelect,
+  selectedAmount,
+  presets = [5, 10, 25, 50, 100],
+}: PredefinedDonationButtonsProps) {
+  return (
+    &lt;div className="mb-6"&gt;
+      &lt;h3 className="text-lg font-semibold mb-4"&gt;Select Amount&lt;/h3&gt;
+      &lt;div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3"&gt;
+        {presets.map((amount) =&gt; (
+          &lt;button
+            key={amount}
+            onClick={() =&gt; onAmountSelect(amount)}
+            className={`px-4 py-3 rounded-lg font-semibold transition-all ${
+              selectedAmount === amount
+                ? 'bg-teal-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          &gt;
+            ${amount}
+          &lt;/button&gt;
+        ))}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code>
+        </div>
+
+        <h3>5.3 Prayer Intention Input</h3>
+        <div class="code-block">
+<code>// File: src/components/donation/PrayerIntentionInput.tsx
+'use client';
+
+interface PrayerIntentionInputProps {
+  value: string;
+  onChange: (value: string) =&gt; void;
+  optional?: boolean;
+}
+
+export default function PrayerIntentionInput({
+  value,
+  onChange,
+  optional = true,
+}: PrayerIntentionInputProps) {
+  return (
+    &lt;div className="mt-4"&gt;
+      &lt;label className="block text-sm font-medium mb-2"&gt;
+        Prayer Intention {optional && &lt;span className="text-gray-500"&gt;(Optional)&lt;/span&gt;}
+      &lt;/label&gt;
+      &lt;textarea
+        value={value}
+        onChange={(e) =&gt; onChange(e.target.value)}
+        placeholder="Enter your prayer intention..."
+        rows={3}
+        className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500"
+        maxLength={500}
+      /&gt;
+      &lt;div className="text-sm text-gray-500 mt-1"&gt;
+        {value.length}/500 characters
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code>
+        </div>
+
+        <h2>6. Donation Success Page (Frontend Polling Pattern)</h2>
+
+        <div class="warning-box">
+            <strong>CRITICAL:</strong> Following the existing checkout flow pattern, the frontend handles all webhook-like behavior through polling. No backend webhook listener is needed.
+        </div>
+
+        <h3>6.1 Success Page Flow</h3>
+        <ol>
+            <li>User completes payment on GiveButter</li>
+            <li>GiveButter redirects to <code>/events/[id]/donation/success?transactionId=xxx</code> or <code>?donationId=xxx</code></li>
+            <li>Success page polls donation status (similar to Stripe polling pattern)</li>
+            <li>Frontend calls GiveButter API directly (or via backend status endpoint) to check donation status</li>
+            <li>When status becomes "COMPLETED", frontend calls backend APIs to persist data</li>
+            <li>Display donation confirmation with QR code (if applicable)</li>
+            <li>Send confirmation email via backend API call</li>
+            <li>Show donation receipt details</li>
+        </ol>
+
+        <h3>6.2 Success Page Implementation (Frontend Polling Pattern)</h3>
+        <div class="code-block">
+<code>// File: src/app/events/[id]/donation/success/DonationSuccessClient.tsx
+'use client';
+
+import { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Image from 'next/image';
+import { getAppUrl } from '@/lib/env';
+
+interface DonationSuccessClientProps {
+  eventId: string;
+  initialTransactionId?: string;
+  initialDonationId?: string; // GiveButter donation ID from redirect
+}
+
+export default function DonationSuccessClient({
+  eventId,
+  initialTransactionId,
+  initialDonationId,
+}: DonationSuccessClientProps) {
+  const searchParams = useSearchParams();
+  const transactionId = initialTransactionId || searchParams.get('transactionId');
+  const givebutterDonationId = initialDonationId || searchParams.get('donationId');
+  
+  const [donationData, setDonationData] = useState&lt;DonationTransactionDTO | null&gt;(null);
+  const [loading, setLoading] = useState(true);
+  const [polling, setPolling] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState&lt;string | null&gt;(null);
+  
+  const pollingIntervalRef = useRef&lt;NodeJS.Timeout | null&gt;(null);
+  const pollingAttemptsRef = useRef(0);
+  const MAX_POLLING_ATTEMPTS = 30; // 30 attempts * 2 seconds = 60 seconds max
+  const POLLING_INTERVAL = 2000; // 2 seconds
+
+  // Poll GiveButter donation status (similar to Stripe polling pattern)
+  async function pollDonationStatus() {
+    if (pollingAttemptsRef.current &gt;= MAX_POLLING_ATTEMPTS) {
+      console.warn('[DonationSuccessClient] Polling timeout reached');
+      setPolling(false);
+      setLoading(false);
+      return;
+    }
+
+    pollingAttemptsRef.current++;
+    console.log(`[DonationSuccessClient] Polling attempt ${pollingAttemptsRef.current}/${MAX_POLLING_ATTEMPTS}`);
+
+    try {
+      const baseUrl = getAppUrl();
+      
+      // Option 1: Poll via backend status endpoint (recommended)
+      if (transactionId) {
+        const response = await fetch(
+          `${baseUrl}/api/proxy/payments/${transactionId}`,
+          { cache: 'no-store' }
+        );
+
+        if (response.ok) {
+          const paymentData = await response.json();
+          const normalizedStatus = paymentData.status?.toUpperCase() || paymentData.status;
+
+          if (normalizedStatus === 'SUCCEEDED' || normalizedStatus === 'COMPLETED') {
+            console.log('[DonationSuccessClient] Payment succeeded via polling');
+            setPolling(false);
+            if (pollingIntervalRef.current) {
+              clearInterval(pollingIntervalRef.current);
+              pollingIntervalRef.current = null;
+            }
+            
+            // Fetch donation transaction details
+            await fetchDonationData(transactionId);
+            setLoading(false);
+          } else if (normalizedStatus === 'FAILED' || normalizedStatus === 'CANCELLED') {
+            setPolling(false);
+            setLoading(false);
+            // Show error message
+          } else {
+            // Continue polling
+            console.log(`[DonationSuccessClient] Payment still ${normalizedStatus}, continuing to poll...`);
+          }
+        }
+      }
+      
+      // Option 2: Poll GiveButter API directly (if donationId available)
+      else if (givebutterDonationId) {
+        // Call backend API that checks GiveButter status
+        const response = await fetch(
+          `${baseUrl}/api/proxy/givebutter/donations/${givebutterDonationId}/status`,
+          { cache: 'no-store' }
+        );
+
+        if (response.ok) {
+          const statusData = await response.json();
+          if (statusData.status === 'completed' || statusData.status === 'succeeded') {
+            // Create or update donation transaction via backend
+            await createDonationFromGiveButter(givebutterDonationId, statusData);
+            setPolling(false);
+            setLoading(false);
+          } else {
+            // Continue polling
+            console.log(`[DonationSuccessClient] Donation still ${statusData.status}, continuing to poll...`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[DonationSuccessClient] Error polling donation status:', error);
+    }
+  }
+
+  // Create donation transaction from GiveButter data (similar to Stripe transaction creation)
+  async function createDonationFromGiveButter(donationId: string, givebutterData: any) {
+    try {
+      const baseUrl = getAppUrl();
+      
+      // Call backend API to create/update donation transaction
+      const response = await fetch(
+        `${baseUrl}/api/proxy/donations/create-from-givebutter`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            eventId: parseInt(eventId),
+            givebutterDonationId: donationId,
+            givebutterData: givebutterData,
+          }),
+          cache: 'no-store',
+        }
+      );
+
+      if (response.ok) {
+        const donation = await response.json();
+        setDonationData(donation);
+        
+        // Generate QR code and send email
+        await processDonationSuccess(donation.id);
+      }
+    } catch (error) {
+      console.error('Error creating donation from GiveButter:', error);
+    }
+  }
+
+  // Fetch donation data after transaction is created
+  async function fetchDonationData(txId: string) {
+    try {
+      const baseUrl = getAppUrl();
+      
+      const response = await fetch(
+        `${baseUrl}/api/proxy/donation-transactions/${txId}?eventId=${eventId}`,
+        { cache: 'no-store' }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setDonationData(data);
+        await processDonationSuccess(data.id);
+      }
+    } catch (error) {
+      console.error('Error fetching donation data:', error);
+    }
+  }
+
+  // Process donation success (QR code, email)
+  async function processDonationSuccess(donationTransactionId: number) {
+    try {
+      const baseUrl = getAppUrl();
+      
+      // Generate QR code if not exists
+      if (!qrCodeUrl) {
+        const qrResponse = await fetch(
+          `${baseUrl}/api/proxy/events/${eventId}/donations/${donationTransactionId}/qrcode`,
+          { method: 'POST', cache: 'no-store' }
+        );
+        
+        if (qrResponse.ok) {
+          const qrData = await qrResponse.json();
+          setQrCodeUrl(qrData.qrCodeUrl);
+        }
+      }
+
+      // Send confirmation email
+      if (donationData?.email && !donationData.emailSent) {
+        fetch(
+          `${baseUrl}/api/proxy/events/${eventId}/donations/${donationTransactionId}/send-email?to=${donationData.email}`,
+          { method: 'POST', cache: 'no-store' }
+        ).catch(err =&gt; console.error('Email send error:', err));
+      }
+    } catch (error) {
+      console.error('Error processing donation success:', error);
+    }
+  }
+
+  useEffect(() =&gt; {
+    if (!transactionId && !givebutterDonationId) {
+      setLoading(false);
+      return;
+    }
+
+    // Start polling immediately
+    if (transactionId || givebutterDonationId) {
+      setPolling(true);
+      pollingAttemptsRef.current = 0;
+      pollingIntervalRef.current = setInterval(pollDonationStatus, POLLING_INTERVAL);
+    }
+
+    // Cleanup on unmount
+    return () =&gt; {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, [transactionId, givebutterDonationId, eventId]);
+
+  if (loading || polling) {
+    return (
+      &lt;div className="min-h-screen bg-gray-50 py-12 px-4 flex items-center justify-center"&gt;
+        &lt;div className="text-center"&gt;
+          &lt;div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"&gt;&lt;/div&gt;
+          &lt;p className="text-gray-600"&gt;
+            {polling ? 'Processing your donation...' : 'Please wait while your donation is being verified...'}
+          &lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    );
+  }
+
+  if (!donationData) {
+    return &lt;div&gt;Donation not found&lt;/div&gt;;
+  }
+
+  return (
+    &lt;div className="min-h-screen bg-gray-50 py-12 px-4"&gt;
+      &lt;div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8"&gt;
+        &lt;h1 className="text-3xl font-bold text-green-600 mb-6"&gt;
+          Thank You for Your Donation!
+        &lt;/h1&gt;
+
+        &lt;div className="space-y-6"&gt;
+          {/* Donation Details */}
+          &lt;div className="bg-gray-50 p-6 rounded-lg"&gt;
+            &lt;h2 className="text-xl font-semibold mb-4"&gt;Donation Details&lt;/h2&gt;
+            &lt;div className="space-y-2"&gt;
+              &lt;div className="flex justify-between"&gt;
+                &lt;span&gt;Amount:&lt;/span&gt;
+                &lt;span className="font-bold"&gt;${donationData.amount.toFixed(2)}&lt;/span&gt;
+              &lt;/div&gt;
+              &lt;div className="flex justify-between"&gt;
+                &lt;span&gt;Date:&lt;/span&gt;
+                &lt;span&gt;{new Date(donationData.createdAt).toLocaleDateString()}&lt;/span&gt;
+              &lt;/div&gt;
+              &lt;div className="flex justify-between"&gt;
+                &lt;span&gt;Transaction ID:&lt;/span&gt;
+                &lt;span className="font-mono text-sm"&gt;{donationData.transactionReference}&lt;/span&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          {/* QR Code (if applicable) */}
+          {qrCodeUrl && (
+            &lt;div className="bg-gray-50 p-6 rounded-lg text-center"&gt;
+              &lt;h2 className="text-xl font-semibold mb-4"&gt;Your Donation QR Code&lt;/h2&gt;
+              &lt;Image
+                src={qrCodeUrl}
+                alt="Donation QR Code"
+                width={200}
+                height={200}
+                className="mx-auto"
+              /&gt;
+              &lt;p className="text-sm text-gray-600 mt-4"&gt;
+                A confirmation email has been sent to {donationData.email}
+              &lt;/p&gt;
+            &lt;/div&gt;
+          )}
+
+          {/* Return to Event */}
+          &lt;a
+            href={`/events/${eventId}`}
+            className="block w-full bg-teal-600 text-white text-center px-6 py-3 rounded-lg font-semibold hover:bg-teal-700"
+          &gt;
+            Return to Event
+          &lt;/a&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code>
+        </div>
+
+        <h2>7. Ticketed Fundraiser Events</h2>
+
+        <h3>7.1 Flow for Ticketed Fundraisers</h3>
+        <p>For events that are both ticketed AND fundraiser/charity events:</p>
+        <ol>
+            <li>User selects tickets on event page (same as regular ticket flow)</li>
+            <li>User clicks "Checkout" → backend detects <code>isFundraiserEvent: true</code> and <code>zeroFeeProvider: "GIVEBUTTER"</code></li>
+            <li>Backend routes payment to GiveButter instead of Stripe</li>
+            <li>User completes payment on GiveButter</li>
+            <li>Success flow is same as regular ticket purchase (QR code, email, etc.)</li>
+        </ol>
+
+        <div class="warning-box">
+            <strong>Important:</strong> For ticketed fundraiser events, the existing checkout flow (<code>/events/[id]/checkout</code>) should be used, but the backend will automatically route to GiveButter based on event configuration. No frontend changes needed for ticketed fundraisers.
+        </div>
+
+        <h2>8. Frontend Polling Pattern (No Backend Webhooks)</h2>
+
+        <div class="highlight-box">
+            <h4>Architecture Decision: Frontend Polling Instead of Backend Webhooks</h4>
+            <p>Following the existing checkout flow pattern (<code>/events/[id]/checkout</code>), the frontend handles all webhook-like behavior through polling. This approach:</p>
+            <ul>
+                <li>Eliminates the need for backend webhook listeners</li>
+                <li>Provides immediate feedback to users</li>
+                <li>Matches the existing Stripe payment flow pattern</li>
+                <li>Allows frontend to control transaction creation timing</li>
+            </ul>
+        </div>
+
+        <h3>8.1 Polling Flow Pattern</h3>
+        <div class="code-block">
+<code>// Pattern: Similar to Stripe payment polling in PaymentSuccessClient.tsx
+
+1. User completes payment on GiveButter
+2. GiveButter redirects to success page with transactionId or donationId
+3. Frontend starts polling donation status:
+   - Option A: Poll backend status endpoint: GET /api/proxy/payments/{transactionId}
+   - Option B: Poll GiveButter status: GET /api/proxy/givebutter/donations/{donationId}/status
+4. When status becomes "COMPLETED" or "SUCCEEDED":
+   - Frontend calls backend to create/update donation transaction
+   - Frontend calls backend to generate QR code
+   - Frontend calls backend to send confirmation email
+5. Display success page with QR code and confirmation</code>
+        </div>
+
+        <h3>8.2 Polling Implementation Details</h3>
+        <div class="code-block">
+<code>// Polling constants (same as Stripe polling)
+const MAX_POLLING_ATTEMPTS = 30; // 30 attempts * 2 seconds = 60 seconds max
+const POLLING_INTERVAL = 2000; // 2 seconds
+
+// Polling logic
+const pollingIntervalRef = useRef&lt;NodeJS.Timeout | null&gt;(null);
+const pollingAttemptsRef = useRef(0);
+
+async function pollDonationStatus() {
+  if (pollingAttemptsRef.current &gt;= MAX_POLLING_ATTEMPTS) {
+    // Timeout - stop polling
+    setPolling(false);
+    return;
+  }
+
+  pollingAttemptsRef.current++;
+  
+  try {
+    // Poll backend status endpoint
+    const response = await fetch(`${baseUrl}/api/proxy/payments/${transactionId}`, {
+      cache: 'no-store'
+    });
+    
+    if (response.ok) {
+      const paymentData = await response.json();
+      const status = paymentData.status?.toUpperCase();
+      
+      if (status === 'SUCCEEDED' || status === 'COMPLETED') {
+        // Stop polling, process success
+        setPolling(false);
+        await processDonationSuccess(paymentData);
+      } else if (status === 'FAILED' || status === 'CANCELLED') {
+        // Stop polling, show error
+        setPolling(false);
+        setError('Payment failed');
+      } else {
+        // Continue polling
+        // Interval already set, will poll again
+      }
+    }
+  } catch (error) {
+    console.error('Polling error:', error);
+  }
+}
+
+// Start polling on mount
+useEffect(() =&gt; {
+  if (transactionId) {
+    setPolling(true);
+    pollingAttemptsRef.current = 0;
+    pollingIntervalRef.current = setInterval(pollDonationStatus, POLLING_INTERVAL);
+  }
+  
+  return () =&gt; {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+  };
+}, [transactionId]);</code>
+        </div>
+
+        <h2>9. API Integration</h2>
+
+        <h3>9.1 Required API Endpoints</h3>
+        <p>All API calls must go through proxy endpoints. See <code>.cursor/rules/nextjs_api_routes.mdc</code> for API call patterns.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Endpoint</th>
+                    <th>Method</th>
+                    <th>Purpose</th>
+                    <th>Request Body</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>/api/proxy/payments/initialize</code></td>
+                    <td>POST</td>
+                    <td>Initialize GiveButter donation payment</td>
+                    <td><code>{ eventId, paymentType: "DONATION_ZERO_FEE", paymentProvider: "GIVEBUTTER", amount, email, ... }</code></td>
+                </tr>
+                <tr>
+                    <td><code>/api/proxy/donation-transactions/{id}</code></td>
+                    <td>GET</td>
+                    <td>Get donation transaction details</td>
+                    <td>Query params: <code>eventId</code></td>
+                </tr>
+                <tr>
+                    <td><code>/api/proxy/events/{eventId}/donations/{transactionId}/qrcode</code></td>
+                    <td>POST</td>
+                    <td>Generate QR code for donation</td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <td><code>/api/proxy/events/{eventId}/donations/{transactionId}/send-email</code></td>
+                    <td>POST</td>
+                    <td>Send donation confirmation email</td>
+                    <td>Query params: <code>to</code> (email address)</td>
+                </tr>
+                <tr>
+                    <td><code>/api/proxy/givebutter/donations/{donationId}/status</code></td>
+                    <td>GET</td>
+                    <td>Check GiveButter donation status (for polling)</td>
+                    <td>Returns GiveButter donation status</td>
+                </tr>
+                <tr>
+                    <td><code>/api/proxy/donations/create-from-givebutter</code></td>
+                    <td>POST</td>
+                    <td>Create donation transaction from GiveButter data</td>
+                    <td><code>{ eventId, givebutterDonationId, givebutterData }</code></td>
+                </tr>
+                <tr>
+                    <td><code>/api/proxy/payments/{transactionId}</code></td>
+                    <td>GET</td>
+                    <td>Get payment transaction status (for polling)</td>
+                    <td>Returns payment status (similar to Stripe polling)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>8.2 Frontend Polling Pattern</h3>
+        <div class="highlight-box">
+            <strong>Pattern:</strong> Following the existing checkout flow, the frontend polls donation status instead of using backend webhooks. The frontend acts as the "webhook listener" by polling GiveButter API or backend status endpoint.
+        </div>
+
+        <h3>8.3 Server Actions Pattern</h3>
+        <div class="warning-box">
+            <strong>CRITICAL:</strong> Client components must NOT make direct API calls to backend. Use server actions or server components. However, for GiveButter status polling, frontend can call backend proxy endpoints that check GiveButter API. See <code>nextjs_api_routes.mdc</code> for patterns.
+        </div>
+
+        <div class="code-block">
+<code>// File: src/app/events/[id]/donation/ApiServerActions.ts
+'use server';
+
+import { getAppUrl } from '@/lib/env';
+import { fetchWithJwtRetry } from '@/lib/proxyHandler';
+
+export async function initializeDonationPayment(data: {
+  eventId: number;
+  amount: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  givebutterCampaignId?: string;
+}) {
+  const baseUrl = getAppUrl();
+  
+  const response = await fetchWithJwtRetry(
+    `${baseUrl}/api/proxy/payments/initialize`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...data,
+        paymentType: 'DONATION_ZERO_FEE',
+        paymentProvider: 'GIVEBUTTER',
+        returnUrl: `${baseUrl}/events/${data.eventId}/donation/success`,
+        cancelUrl: `${baseUrl}/events/${data.eventId}`,
+      }),
+      cache: 'no-store',
+    },
+    'initializeDonationPayment'
+  );
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to initialize donation');
+  }
+
+  return await response.json();
+}</code>
+        </div>
+
+        <h2>9. Environment Variables</h2>
+
+        <h3>9.1 Development Environment</h3>
+        <div class="code-block">
+<code># .env.local
+# GiveButter API credentials (used by backend proxy endpoints)
+DEV_GBTTR_API_KEY=8444|3hrww9PxiamJunblhPMKn8uwVFA5xf8R8Wy8rUhU
+DEV_GBTTR_WEBHOOK_SECRET=bQVval9RQAGYlV3EEXmfmCkIfiLBVlobLgZMRscpbvyNH3SyPQr4AeWDNip6bOj4dS5MjpedPQhCbQIzP9KlvQUDZZIySggiIPAn</code>
+        </div>
+
+        <h3>9.2 Production Environment (AWS Amplify)</h3>
+        <div class="code-block">
+<code># AWS Amplify Console Environment Variables
+# Note: AWS Amplify prefixes variables with AMPLIFY_ in runtime
+# Use AMPLIFY_ prefix for production compatibility
+
+AMPLIFY_GBTTR_API_KEY=your_production_api_key
+AMPLIFY_GBTTR_WEBHOOK_SECRET=your_production_webhook_secret
+
+# Also declare in next.config.mjs env section:
+export default {
+  env: {
+    GBTTR_API_KEY: process.env.AMPLIFY_GBTTR_API_KEY || process.env.GBTTR_API_KEY,
+    GBTTR_WEBHOOK_SECRET: process.env.AMPLIFY_GBTTR_WEBHOOK_SECRET || process.env.GBTTR_WEBHOOK_SECRET,
+  },
+};</code>
+        </div>
+
+        <div class="warning-box">
+            <strong>Note:</strong> These environment variables are for backend use only. Frontend should NEVER access GiveButter API keys directly. All GiveButter API calls must go through backend proxy endpoints. The webhook secret is used for signature verification if GiveButter requires it for status checks, but we're using polling (not webhook listening).
+        </div>
+
+        <h2>11. UI/UX Guidelines</h2>
+
+        <h3>10.1 Styling Standards</h3>
+        <p>Follow existing UI standards from <code>ui_style_guide.mdc</code>:</p>
+        <ul>
+            <li>Use MOSC color palette (warm earth tones: #8B7D6B, #F5F1E8, etc.)</li>
+            <li>Follow form validation patterns from <code>form_validation_styling.mdc</code></li>
+            <li>Use consistent button styling from <code>admin_action_buttons_styling.mdc</code></li>
+            <li>Maintain responsive design patterns</li>
+        </ul>
+
+        <h3>10.2 Donation Button Styling</h3>
+        <div class="code-block">
+<code>// Predefined donation buttons should use:
+className="px-4 py-3 rounded-lg font-semibold transition-all
+  bg-gray-100 text-gray-700 hover:bg-gray-200
+  selected: bg-teal-600 text-white shadow-md"
+
+// Custom amount input should use:
+className="w-full px-4 py-3 border border-gray-400 rounded-xl
+  focus:border-blue-500 focus:ring-blue-500"
+
+// Donate button should use:
+className="w-full bg-teal-600 text-white px-6 py-3 rounded-lg
+  font-semibold hover:bg-teal-700 disabled:opacity-50"</code>
+        </div>
+
+        <h2>11. Testing Checklist</h2>
+
+        <h3>12.1 Functional Testing</h3>
+        <ul>
+            <li>[ ] Event detection: Verify donation-based events show "Make a Donation" button</li>
+            <li>[ ] Preset buttons: Test all predefined amount buttons ($5, $10, $25, $50, $100)</li>
+            <li>[ ] Custom amount: Test custom donation amount input</li>
+            <li>[ ] Form validation: Test email, name, phone validation</li>
+            <li>[ ] Payment flow: Test GiveButter checkout redirect</li>
+            <li>[ ] Polling: Test frontend polling of donation status</li>
+            <li>[ ] Success page: Verify QR code generation and display</li>
+            <li>[ ] Email sending: Verify confirmation email is sent via API call</li>
+            <li>[ ] Prayer intention: Test prayer intention field (for offerings)</li>
+            <li>[ ] Recurring donations: Test recurring donation toggle (if implemented)</li>
+        </ul>
+
+        <h3>12.2 Integration Testing</h3>
+        <ul>
+            <li>[ ] Backend API: Verify all proxy endpoints work correctly</li>
+            <li>[ ] Polling endpoints: Verify status polling endpoints work</li>
+            <li>[ ] Transaction creation: Verify frontend can create transactions via API</li>
+            <li>[ ] Database: Verify donation transactions are persisted</li>
+            <li>[ ] Admin dashboard: Verify donation statistics are displayed</li>
+            <li>[ ] QR code: Verify QR code is generated and stored</li>
+            <li>[ ] Email: Verify email template and delivery</li>
+        </ul>
+
+        <h3>12.3 Edge Cases</h3>
+        <ul>
+            <li>[ ] Minimum donation amount validation</li>
+            <li>[ ] Maximum donation amount validation (if applicable)</li>
+            <li>[ ] Network errors during payment initialization</li>
+            <li>[ ] GiveButter checkout cancellation</li>
+            <li>[ ] Polling timeout handling</li>
+            <li>[ ] Duplicate transaction prevention</li>
+            <li>[ ] Missing event configuration handling</li>
+            <li>[ ] Polling retry logic on network failures</li>
+        </ul>
+
+        <h2>13. Admin Dashboard Integration</h2>
+
+        <h3>12.1 Donation Statistics</h3>
+        <p>The admin dashboard should display donation statistics similar to ticket sales:</p>
+        <ul>
+            <li>Total donations count</li>
+            <li>Total donation amount</li>
+            <li>Average donation amount</li>
+            <li>Donations by date range</li>
+            <li>Top donors list</li>
+            <li>Recurring donations count</li>
+        </ul>
+
+        <h3>12.2 Data Persistence</h3>
+        <p>All donation data must be persisted to database tables:</p>
+        <ul>
+            <li><code>donation_transaction</code> - Main donation records</li>
+            <li><code>event_ticket_transaction</code> - For ticketed fundraiser events</li>
+            <li><code>payment_transaction</code> - Payment orchestration records</li>
+        </ul>
+
+        <h2>13. References</h2>
+
+        <h3>13.1 Existing Components (Reference Only)</h3>
+        <ul>
+            <li><code>src/app/events/[id]/checkout/CheckoutClient.tsx</code> - Checkout flow pattern</li>
+            <li><code>src/app/event/success/PaymentSuccessClient.tsx</code> - Success page pattern</li>
+            <li><code>src/components/UniversalPaymentCheckout.tsx</code> - Payment component pattern</li>
+        </ul>
+
+        <h3>13.2 Documentation</h3>
+        <ul>
+            <li><code>documentation/domain_agnostic_payment/Non_Profit_FundRaiser_GiveButter/FEE_FREE_FUNDRAISER_ANALYSIS.html</code></li>
+            <li><code>documentation/domain_agnostic_payment/Non_Profit_FundRaiser_GiveButter/GIVEBUTTER_INTEGRATION_PRD.html</code></li>
+            <li><code>.cursor/rules/nextjs_api_routes.mdc</code> - API call patterns</li>
+            <li><code>.cursor/rules/ui_style_guide.mdc</code> - UI standards</li>
+            <li><code>documentation/Swagger_API_Docs/api-docs.json</code> - API schema</li>
+        </ul>
+
+        <h2>15. Implementation Priority</h2>
+
+        <ol>
+            <li><strong>Phase 1:</strong> Donation checkout page and basic flow</li>
+            <li><strong>Phase 2:</strong> Success page with QR code and email</li>
+            <li><strong>Phase 3:</strong> Mass offering page with predefined buttons</li>
+            <li><strong>Phase 4:</strong> Prayer intention and recurring donations</li>
+            <li><strong>Phase 5:</strong> Admin dashboard statistics integration</li>
+        </ol>
+
+        <h2>16. Key Differences from Webhook-Based Approach</h2>
+
+        <div class="highlight-box">
+            <h4>Frontend Polling vs Backend Webhooks</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Aspect</th>
+                        <th>Webhook-Based (NOT Used)</th>
+                        <th>Frontend Polling (Used)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Status Detection</strong></td>
+                        <td>Backend receives webhook events from GiveButter</td>
+                        <td>Frontend polls backend status endpoint or GiveButter API</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Transaction Creation</strong></td>
+                        <td>Backend webhook handler creates transaction</td>
+                        <td>Frontend calls backend API to create transaction after detecting success</td>
+                    </tr>
+                    <tr>
+                        <td><strong>QR Code Generation</strong></td>
+                        <td>Backend webhook handler generates QR code</td>
+                        <td>Frontend calls backend API to generate QR code</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Email Sending</strong></td>
+                        <td>Backend webhook handler sends email</td>
+                        <td>Frontend calls backend API to send email</td>
+                    </tr>
+                    <tr>
+                        <td><strong>User Experience</strong></td>
+                        <td>User waits for webhook to process (may be delayed)</td>
+                        <td>User sees immediate polling feedback (better UX)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Pattern Reference</strong></td>
+                        <td>N/A (not used)</td>
+                        <td><code>/events/[id]/checkout</code> flow (existing pattern)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="success-box">
+            <h4>✅ Ready for Implementation</h4>
+            <p>This PRD provides complete specifications for implementing the GiveButter donation flow using frontend polling (no backend webhooks). All components should be created as separate files, following the patterns referenced but not modifying existing checkout flow.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<context>
+# Overview
+This PRD describes the end-to-end user journey and system requirements for event ticket purchasing on the Giventa Event Management platform. The goal is to enable users to seamlessly buy tickets for events, apply discount codes, and complete secure payments, while ensuring all transactions and inventory are accurately tracked in the backend. This feature is targeted at event attendees and supports both general and special ticket types, with real-time inventory and discount management.
+
+# Core Features
+- **Hero Section Buy Tickets CTA**: Prominent, visually inviting "Buy Tickets" call-to-action in the hero section, routing users to the ticketing page for the selected event.
+- **Ticketing Page**: Displays event details and all available ticket types (from `event_ticket_type`), each in a card layout. Users can select quantities for each type.
+- **Discount Code Application**: Users can enter and apply discount codes, which are validated against the backend (`discount_code`), with real-time price updates.
+- **Real-Time Price Calculation**: Subtotal, discounts, and total are updated as users select tickets and apply codes.
+- **Checkout & Transaction Recording**: On checkout, a pending transaction is created in `event_ticket_transaction` with all relevant details.
+- **Stripe Payment Integration**: Users are redirected to Stripe Checkout for secure payment. On success, the system updates transaction status, decrements inventory, and issues tickets.
+- **Confirmation & Error Handling**: Users see a confirmation page on success, or an error/cancel page if payment fails or is cancelled.
+- **Admin/Reporting**: All sales, discount usage, and inventory changes are recorded for admin reporting.
+
+# User Experience
+- **Personas**: Event attendees (general public, members, VIPs), event organizers (admin/reporting).
+- **Key User Flows**:
+  1. User clicks "Buy Tickets" in hero section.
+  2. User reviews event details and ticket types, selects quantities.
+  3. User optionally enters a discount code and sees updated pricing.
+  4. User proceeds to checkout, enters required info, and is redirected to Stripe.
+  5. On payment success, user is shown confirmation and receives ticket(s) via email.
+  6. On payment failure/cancel, user is shown an error/cancel page.
+- **UI/UX Considerations**:
+  - Hero CTA is visually prominent and inviting.
+  - Ticket types are shown in responsive card layouts.
+  - Discount code input is clear and provides instant feedback.
+  - Price updates in real time as selections change.
+  - All forms follow the custom-forms-checkbox-grid.mdc rule for consistency.
+  - Error states and confirmations are clear and actionable.
+</context>
+<PRD>
+# Technical Architecture
+- **System Components**:
+  - Next.js frontend (React, server/client components)
+  - Backend REST API (Spring Boot, as per provided OpenAPI spec)
+  - Stripe integration for payments
+  - PostgreSQL database (event_details, event_ticket_type, event_ticket_transaction, discount_code, etc.)
+- **Data Models**:
+  - `EventDetailsDTO`, `EventTicketTypeDTO`, `DiscountCodeDTO`, `EventTicketTransactionDTO` (all defined in src/types/index.ts and used across API and UI)
+- **APIs and Integrations**:
+  - `/api/event-details/{id}`: Fetch event info
+  - `/api/event-ticket-types?eventId.equals={id}`: List ticket types for event
+  - `/api/discount-codes?eventId.equals={id}`: List/validate discount codes
+  - `/api/event-ticket-transactions`: Create/update ticket transactions
+  - Stripe Checkout API for payment
+  - All API calls follow nextjs_api_routes.mdc and use shared DTOs
+- **Infrastructure Requirements**:
+  - Secure environment for Stripe keys
+  - Webhook endpoint for Stripe payment events
+  - Email service for ticket confirmation
+
+# Development Roadmap
+- **MVP Requirements**:
+  1. Hero CTA and ticketing page UI (event details, ticket type cards, discount input)
+  2. Backend integration for ticket types, discount codes, and transaction creation
+  3. Stripe Checkout integration and webhook handling
+  4. Confirmation and error/cancel pages
+  5. Admin reporting for sales and inventory
+- **Future Enhancements**:
+  - Support for reserved seating, group discounts, or multi-event bundles
+  - User account integration for ticket history
+  - Mobile wallet ticket delivery (Apple/Google Pay)
+  - Advanced analytics and reporting
+
+# Logical Dependency Chain
+- Foundation: Shared DTOs in src/types/index.ts, API proxy routes, and backend endpoints
+- UI: Ticketing page, ticket type cards, discount code input, real-time price updates
+- Checkout: Transaction creation, Stripe session, redirect
+- Payment: Stripe webhook, transaction update, inventory decrement, ticket issuance
+- Confirmation: Success/cancel pages, email delivery
+- Admin: Reporting and reconciliation
+
+# Risks and Mitigations
+- **Technical challenges**: Stripe integration, real-time inventory, discount validation. Mitigation: Use proven libraries, test edge cases, and handle race conditions.
+- **MVP scope**: Focus on core ticketing and payment flow; defer advanced features.
+- **Resource constraints**: Modularize features for phased delivery.
+- **Data consistency**: Use transactions and webhooks to ensure accurate inventory and transaction status.
+
+# Appendix
+- **API/DTO References**: See OpenAPI spec for event_ticket_type, event_ticket_transaction, discount_code endpoints and DTOs.
+- **UI Example**: See http://localhost:3000/events/6152 for ticketing page layout.
+- **Rules**: All API calls follow nextjs_api_routes.mdc; all forms use custom-forms-checkbox-grid.mdc; DTOs are centralized in src/types/index.ts.
+- **Table Relationships**:
+  - event_details ←→ event_ticket_type (one-to-many)
+  - event_ticket_type ←→ event_ticket_transaction (one-to-many)
+  - event_ticket_transaction ←→ user_profile, discount_code, Stripe payment
+  - event_attendee or user_ticket for ticket assignment
+</PRD>

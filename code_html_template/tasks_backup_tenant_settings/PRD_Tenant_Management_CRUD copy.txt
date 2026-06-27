@@ -1,0 +1,415 @@
+# Product Requirements Document (PRD)
+## Tenant Organization & Settings Management System
+
+### Project Overview
+This PRD outlines the implementation of comprehensive CRUD (Create, Read, Update, Delete) operations for tenant organization and tenant settings management within the existing Malayalees US Site admin panel. The system will provide administrators with full control over tenant configurations, organization details, and platform settings.
+
+### Prerequisites & Assumptions
+**IMPORTANT**: All basic infrastructure, database setup, table creation, and core development environment setup is already completed. This implementation focuses solely on:
+- Frontend UI screens and components
+- Backend API integration
+- Admin user interface development
+- Data validation and form handling
+
+### Database Schema Analysis
+
+#### Tenant Organization Table
+- **Primary Key**: `id` (bigint, auto-increment)
+- **Unique Constraints**: `tenant_id`, `domain`
+- **Foreign Key**: None (root table)
+- **Key Fields**:
+  - `tenant_id` (varchar(255), NOT NULL)
+  - `organization_name` (varchar(255), NOT NULL)
+  - `domain` (varchar(255), unique)
+  - `primary_color` (varchar(7)) - Hex color code
+  - `secondary_color` (varchar(7)) - Hex color code
+  - `logo_url` (varchar(1024))
+  - `contact_email` (varchar(255), NOT NULL)
+  - `contact_phone` (varchar(50))
+  - `subscription_plan` (varchar(20))
+  - `subscription_status` (varchar(20))
+  - `subscription_start_date` (date)
+  - `subscription_end_date` (date)
+  - `monthly_fee_usd` (numeric(21,2))
+  - `stripe_customer_id` (varchar(255))
+  - `is_active` (boolean, default true)
+  - `created_at`, `updated_at` (timestamp)
+
+#### Tenant Settings Table
+- **Primary Key**: `id` (bigint, auto-increment)
+- **Unique Constraints**: `tenant_id`
+- **Foreign Key**: `tenant_id` → `tenant_organization(tenant_id)` (CASCADE DELETE)
+- **Key Fields**:
+  - `tenant_id` (varchar(255), NOT NULL)
+  - `allow_user_registration` (boolean, default true)
+  - `require_admin_approval` (boolean, default false)
+  - `enable_whatsapp_integration` (boolean, default false)
+  - `enable_email_marketing` (boolean, default false)
+  - `whatsapp_api_key` (varchar(500))
+  - `email_provider_config` (varchar(2048))
+  - `custom_css` (varchar(8192))
+  - `custom_js` (varchar(16384))
+  - `max_events_per_month` (integer)
+  - `max_attendees_per_event` (integer)
+  - `enable_guest_registration` (boolean, default true)
+  - `max_guests_per_attendee` (integer, default 5)
+  - `default_event_capacity` (integer, default 100)
+  - `platform_fee_percentage` (decimal(6,4))
+  - `created_at`, `updated_at` (timestamp)
+
+### API Endpoints (From Swagger Documentation)
+
+#### Tenant Organization Endpoints
+- `GET /api/tenant-organizations` - List all tenant organizations
+- `GET /api/tenant-organizations/{id}` - Get specific tenant organization
+- `POST /api/tenant-organizations` - Create new tenant organization
+- `PUT /api/tenant-organizations/{id}` - Update tenant organization
+- `PATCH /api/tenant-organizations/{id}` - Partial update tenant organization
+- `DELETE /api/tenant-organizations/{id}` - Delete tenant organization
+
+#### Tenant Settings Endpoints
+- `GET /api/tenant-settings` - List all tenant settings
+- `GET /api/tenant-settings/{id}` - Get specific tenant settings
+- `POST /api/tenant-settings` - Create new tenant settings
+- `PUT /api/tenant-settings/{id}` - Update tenant settings
+- `PATCH /api/tenant-settings/{id}` - Partial update tenant settings
+- `DELETE /api/tenant-settings/{id}` - Delete tenant settings
+
+### DTOs (Data Transfer Objects)
+
+#### TenantOrganizationDTO
+```typescript
+interface TenantOrganizationDTO {
+  id?: number;
+  tenantId: string;
+  organizationName: string;
+  domain?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  logoUrl?: string;
+  contactEmail: string;
+  contactPhone?: string;
+  subscriptionPlan?: string;
+  subscriptionStatus?: string;
+  subscriptionStartDate?: string; // YYYY-MM-DD
+  subscriptionEndDate?: string;   // YYYY-MM-DD
+  monthlyFeeUsd?: number;
+  stripeCustomerId?: string;
+  isActive?: boolean;
+  createdAt: string; // ISO date-time
+  updatedAt: string; // ISO date-time
+}
+```
+
+#### TenantSettingsDTO
+```typescript
+interface TenantSettingsDTO {
+  id?: number;
+  tenantId: string;
+  allowUserRegistration?: boolean;
+  requireAdminApproval?: boolean;
+  enableWhatsappIntegration?: boolean;
+  enableEmailMarketing?: boolean;
+  whatsappApiKey?: string;
+  emailProviderConfig?: string;
+  maxEventsPerMonth?: number;
+  maxAttendeesPerEvent?: number;
+  enableGuestRegistration?: boolean;
+  maxGuestsPerAttendee?: number;
+  defaultEventCapacity?: number;
+  platformFeePercentage?: number;
+  customCss?: string;
+  customJs?: string;
+  createdAt: string; // ISO date-time
+  updatedAt: string; // ISO date-time
+  tenantOrganization?: TenantOrganizationDTO;
+}
+```
+
+### Functional Requirements
+
+#### 1. Tenant Organization Management
+1.1 **List View**
+- Display all tenant organizations in a paginated table
+- Show key information: organization name, domain, contact email, subscription status, is_active
+- Include search/filter functionality by organization name, domain, or contact email
+- Sort by organization name, created date, or subscription status
+- Action buttons: View, Edit, Delete, Toggle Active Status
+
+1.2 **Create/Edit Form**
+- Form fields for all tenant organization properties
+- Color picker for primary and secondary colors
+- File upload for logo (with preview)
+- Date pickers for subscription dates
+- Validation for required fields and data formats
+- Real-time validation for unique constraints (domain, tenant_id)
+
+1.3 **View Details**
+- Read-only view of complete tenant organization information
+- Display related tenant settings if available
+- Show creation and modification timestamps
+- Action buttons: Edit, Delete, Manage Settings
+
+#### 2. Tenant Settings Management
+2.1 **List View**
+- Display all tenant settings in a paginated table
+- Show key information: tenant_id, allow_user_registration, enable_whatsapp_integration, max_events_per_month
+- Include search/filter functionality by tenant_id
+- Sort by tenant_id, created date
+- Action buttons: View, Edit, Delete
+
+2.2 **Create/Edit Form**
+- Form fields for all tenant settings properties
+- Toggle switches for boolean fields
+- Number inputs with validation for numeric fields
+- Text areas for custom CSS/JS with syntax highlighting
+- JSON editor for email provider configuration
+- Validation for numeric constraints and field limits
+
+2.3 **View Details**
+- Read-only view of complete tenant settings information
+- Display associated tenant organization details
+- Show creation and modification timestamps
+- Action buttons: Edit, Delete
+
+#### 3. Relationship Management
+3.1 **Tenant Organization → Settings**
+- When creating tenant settings, must reference existing tenant organization
+- When deleting tenant organization, cascade delete tenant settings
+- Display tenant settings link in organization details view
+- Display organization details in settings view
+
+3.2 **Data Integrity**
+- Ensure tenant_id consistency between organization and settings
+- Validate foreign key relationships
+- Handle cascade operations properly
+
+### Technical Requirements
+
+#### 1. Frontend Implementation
+1.1 **File Structure**
+```
+src/app/admin/tenant-management/
+├── organizations/
+│   ├── page.tsx                    # List view
+│   ├── [id]/
+│   │   ├── page.tsx               # View details
+│   │   ├── edit/
+│   │   │   └── page.tsx           # Edit form
+│   │   └── settings/
+│   │       └── page.tsx           # Manage settings
+│   ├── new/
+│   │   └── page.tsx               # Create form
+│   └── ApiServerActions.ts        # Server actions
+├── settings/
+│   ├── page.tsx                   # List view
+│   ├── [id]/
+│   │   ├── page.tsx               # View details
+│   │   └── edit/
+│   │       └── page.tsx           # Edit form
+│   ├── new/
+│   │   └── page.tsx               # Create form
+│   └── ApiServerActions.ts        # Server actions
+└── components/
+    ├── TenantOrganizationForm.tsx
+    ├── TenantSettingsForm.tsx
+    ├── TenantOrganizationList.tsx
+    ├── TenantSettingsList.tsx
+    └── TenantDetailsModal.tsx
+```
+
+1.2 **UI Components**
+- Follow existing admin panel design patterns
+- Use consistent form styling from ui_style_guide.mdc
+- Implement responsive design for mobile/tablet/desktop
+- Include loading states and error handling
+- Use tooltips for complex field explanations
+
+1.3 **Form Validation**
+- Client-side validation using React Hook Form
+- Server-side validation through API responses
+- Real-time validation for unique constraints
+- Clear error messages and field highlighting
+
+#### 2. Backend Integration
+2.1 **API Proxy Routes**
+- Create proxy handlers following nextjs_api_routes.mdc patterns
+- Implement proper JWT authentication and tenant ID injection
+- Use fetchWithJwtRetry for all backend API calls
+- Handle errors gracefully with user-friendly messages
+
+2.2 **Server Actions**
+- Implement server actions for all CRUD operations
+- Follow established patterns from existing admin modules
+- Include proper error handling and logging
+- Use withTenantId utility for DTO preparation
+
+2.3 **Data Validation**
+- Validate all input data before sending to backend
+- Handle backend validation errors appropriately
+- Implement proper type checking with TypeScript
+
+#### 3. Security & Access Control
+3.1 **Admin Authentication**
+- All operations require admin authentication
+- Use Clerk session management
+- Implement proper authorization checks
+
+3.2 **Data Protection**
+- Sanitize all user inputs
+- Validate file uploads for logo images
+- Implement proper CSRF protection
+- Use secure file storage for uploaded assets
+
+### User Experience Requirements
+
+#### 1. Navigation
+- Add "Tenant Management" section to admin navigation
+- Include breadcrumb navigation for deep pages
+- Provide quick access to related records (org ↔ settings)
+
+#### 2. Search & Filtering
+- Global search across organization names and domains
+- Filter by subscription status, active status
+- Sort by multiple columns
+- Pagination with configurable page sizes
+
+#### 3. Bulk Operations
+- Bulk delete for multiple records
+- Bulk status updates (activate/deactivate)
+- Export functionality for data analysis
+
+#### 4. Notifications
+- Success messages for successful operations
+- Error messages with specific details
+- Confirmation dialogs for destructive actions
+- Loading indicators during API calls
+
+### Performance Requirements
+
+#### 1. Loading Performance
+- Implement pagination to handle large datasets
+- Use server-side filtering and sorting
+- Lazy load non-critical data
+- Optimize image loading for logos
+
+#### 2. User Experience
+- Sub-second response times for list views
+- Smooth form interactions with real-time validation
+- Efficient re-rendering with React optimization
+- Proper loading states and skeleton screens
+
+### Error Handling
+
+#### 1. Client-Side Errors
+- Form validation errors with field-specific messages
+- Network error handling with retry options
+- User-friendly error messages for common issues
+- Graceful degradation for non-critical features
+
+#### 2. Server-Side Errors
+- Proper HTTP status code handling
+- Detailed error logging for debugging
+- User-friendly error messages
+- Fallback UI for critical errors
+
+### Testing Requirements
+
+#### 1. Unit Testing
+- Test all form validation logic
+- Test API integration functions
+- Test utility functions and helpers
+
+#### 2. Integration Testing
+- Test complete CRUD workflows
+- Test error scenarios and edge cases
+- Test data validation and constraints
+
+#### 3. User Acceptance Testing
+- Test all user workflows end-to-end
+- Verify responsive design across devices
+- Test accessibility compliance
+
+### Deployment Considerations
+
+#### 1. Environment Configuration
+- Ensure all environment variables are properly configured
+- Test API endpoints in staging environment
+- Verify database constraints and relationships
+
+#### 2. Data Migration
+- No data migration required (tables already exist)
+- Verify existing data integrity
+- Test with production-like data volumes
+
+### Success Criteria
+
+#### 1. Functional Success
+- All CRUD operations work correctly
+- Data validation prevents invalid entries
+- Relationships between tables are maintained
+- Admin users can manage tenants effectively
+
+#### 2. Technical Success
+- Code follows established patterns and conventions
+- Performance meets requirements
+- Security measures are properly implemented
+- Error handling is comprehensive
+
+#### 3. User Experience Success
+- Intuitive interface for admin users
+- Efficient workflows for common tasks
+- Responsive design works across devices
+- Clear feedback for all user actions
+
+### Implementation Priority
+
+#### Phase 1: Core CRUD Operations
+1. Tenant Organization list, create, edit, delete
+2. Tenant Settings list, create, edit, delete
+3. Basic form validation and error handling
+
+#### Phase 2: Enhanced Features
+1. Search and filtering capabilities
+2. Relationship management between org and settings
+3. Advanced form features (color picker, file upload)
+
+#### Phase 3: Polish & Optimization
+1. Bulk operations
+2. Export functionality
+3. Performance optimizations
+4. Advanced UI enhancements
+
+### Dependencies
+
+#### External Dependencies
+- Existing admin panel infrastructure
+- Clerk authentication system
+- Backend API endpoints (already implemented)
+- Database tables (already created)
+
+#### Internal Dependencies
+- UI component library and styling
+- Form validation utilities
+- API integration patterns
+- Error handling frameworks
+
+### Risks & Mitigation
+
+#### 1. Data Integrity Risks
+- **Risk**: Inconsistent data between organization and settings
+- **Mitigation**: Implement proper foreign key constraints and validation
+
+#### 2. Performance Risks
+- **Risk**: Slow loading with large datasets
+- **Mitigation**: Implement pagination and server-side filtering
+
+#### 3. Security Risks
+- **Risk**: Unauthorized access to tenant data
+- **Mitigation**: Implement proper authentication and authorization
+
+### Conclusion
+
+This PRD provides a comprehensive roadmap for implementing tenant organization and settings management within the existing admin panel. The implementation will follow established patterns and conventions while providing administrators with powerful tools to manage tenant configurations effectively.
+
+The modular approach allows for phased implementation, ensuring that core functionality is delivered quickly while advanced features can be added incrementally. All technical requirements align with the existing codebase architecture and follow the established cursor rules for consistency and maintainability.

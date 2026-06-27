@@ -1,0 +1,214 @@
+{
+  "mcpServer": {
+    "name": "TestSprite Sanity Tests",
+    "version": "1.0.0",
+    "description": "Quick sanity tests for Malayalees US Site basic functionality"
+  },
+  "project": {
+    "name": "Malayalees US Site Event Registration",
+    "baseUrl": "http://localhost:3000",
+    "type": "frontend",
+    "framework": "nextjs"
+  },
+  "testSuite": {
+    "name": "sanity-tests",
+    "duration": "3 minutes",
+    "scope": "basic-functionality",
+    "priority": "high"
+  },
+  "testConfiguration": {
+    "timeout": 10000,
+    "retries": 1,
+    "screenshotOnFailure": true,
+    "performanceTiming": false,
+    "mobileTesting": false,
+    "browserTesting": true
+  },
+  "testCases": [
+    {
+      "id": "sanity-001",
+      "name": "Homepage Load Test",
+      "description": "Verify homepage loads with essential elements",
+      "url": "/",
+      "type": "page-load",
+      "priority": "critical",
+      "expectedElements": [
+        "h2:contains('Malayalees')",
+        "nav",
+        "a[href='/events']",
+        "main"
+      ],
+      "validation": [
+        "Page loads without JavaScript errors",
+        "Navigation menu is visible and functional",
+        "At least one event card is displayed",
+        "Page title is correct"
+      ]
+    },
+    {
+      "id": "sanity-002",
+      "name": "Event List Page Test",
+      "description": "Verify events listing page functionality",
+      "url": "/events",
+      "type": "page-load",
+      "priority": "high",
+      "expectedElements": [
+        "h1",
+        ".event-list",
+        ".event-card"
+      ],
+      "validation": [
+        "Event list page loads successfully",
+        "Event cards are visible and clickable",
+        "No console errors on page load"
+      ]
+    },
+    {
+      "id": "sanity-003",
+      "name": "Event Details Page Test",
+      "description": "Verify individual event page loads",
+      "url": "/event/sample-event",
+      "type": "page-load",
+      "priority": "medium",
+      "expectedElements": [
+        "h1",
+        ".event-details",
+        ".register-button"
+      ],
+      "validation": [
+        "Event details page loads",
+        "Event information is displayed",
+        "Registration button is present and clickable"
+      ]
+    },
+    {
+      "id": "sanity-004",
+      "name": "Admin Dashboard Access Test",
+      "description": "Verify admin dashboard is accessible (user already logged in via social login)",
+      "url": "/admin",
+      "type": "page-load",
+      "priority": "high",
+      "expectedElements": [
+        "h1:contains('Admin Event Management')",
+        ".admin-nav",
+        "div:contains('Search Events')"
+      ],
+      "validation": [
+        "Admin dashboard loads (user already authenticated)",
+        "Admin navigation is visible",
+        "Dashboard content is present"
+      ]
+    },
+    {
+      "id": "sanity-005",
+      "name": "Admin Events Management Test",
+      "description": "Verify admin events management page (user already logged in)",
+      "url": "/admin/events",
+      "type": "page-load",
+      "priority": "high",
+      "expectedElements": [
+        "h1:contains('Event Management Hub')",
+        ".admin-nav",
+        ".grid",
+        "p:contains('Manage events, registrations, and analytics')"
+      ],
+      "validation": [
+        "Events management page loads",
+        "Admin navigation works correctly",
+        "Events interface is accessible"
+      ]
+    },
+    {
+      "id": "sanity-006",
+      "name": "Admin Registrations Management Test",
+      "description": "Verify admin registrations management page (user already logged in)",
+      "url": "/admin/events/registrations",
+      "type": "page-load",
+      "priority": "high",
+      "expectedElements": [
+        "h1:contains('Registration Management')",
+        "table",
+        "select",
+        "input[type='text']"
+      ],
+      "validation": [
+        "Registrations page loads successfully",
+        "Search functionality is present",
+        "Table structure is visible and functional"
+      ]
+    },
+    {
+      "id": "sanity-007",
+      "name": "User Profile Page Test",
+      "description": "Verify user profile page functionality (user already logged in)",
+      "url": "/profile",
+      "type": "page-load",
+      "priority": "medium",
+      "expectedElements": [
+        "h1:contains('Profile')",
+        "p:contains('Manage your account information')",
+        "form",
+        "input[name='firstName']"
+      ],
+      "validation": [
+        "Profile page loads (user already authenticated)",
+        "Profile form is present and editable",
+        "User data fields are functional"
+      ]
+    },
+    {
+      "id": "sanity-009",
+      "name": "Navigation Test",
+      "description": "Verify main navigation works across pages",
+      "type": "navigation-test",
+      "priority": "high",
+      "testSteps": [
+        {
+          "action": "navigate",
+          "url": "/"
+        },
+        {
+          "action": "click",
+          "selector": "a[href='/events']"
+        },
+        {
+          "action": "verify",
+          "element": "h1:contains('Events')"
+        },
+        {
+          "action": "click",
+          "selector": "a[href='/pricing']"
+        },
+        {
+          "action": "verify",
+          "element": "h1:contains('Pricing')"
+        }
+      ],
+      "validation": [
+        "Navigation links work correctly",
+        "Page transitions are smooth",
+        "No broken links or 404 errors"
+      ]
+    }
+  ],
+  "testData": {
+    "authentication": {
+      "method": "social-login",
+      "description": "User is already logged in via social authentication (Google, Facebook, etc.)",
+      "note": "No manual login required - assumes user is already authenticated"
+    }
+  },
+  "browsers": ["chrome"],
+  "reporting": {
+    "format": "html",
+    "template": "test-report-template.html",
+    "includeScreenshots": true,
+    "includeConsoleLogs": true,
+    "includeNetworkLogs": false,
+    "outputPath": "./test-results"
+  },
+  "cleanup": {
+    "enabled": false,
+    "cleanupAfter": "test-suite"
+  }
+}

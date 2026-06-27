@@ -1,0 +1,86 @@
+# Task ID: 4
+# Title: Implement event registration API endpoints
+# Status: done
+# Dependencies: 3 ✅
+# Priority: high
+# Description: Create API endpoints for registering for free events and managing registrations.
+# Details:
+Task 004 Requirements
+The task file .task-master/tasks/task_004.txt requires implementing these API endpoints:
+POST /api/events/:id/register - for event registration
+GET /api/events/:id/guest-stats - for retrieving guest statistics
+PUT /api/registrations/:id/guests/:guestId - for updating guest information
+Existing API Endpoints in Swagger Documentation
+The Swagger documentation (documentation/api-docs.json) already contains extensive event-related infrastructure but NOT the specific registration endpoints needed for Task 004.
+✅ Available (Can Be Reused):
+Event Management:
+/api/event-details - CRUD operations for event details
+/api/event-attendees - CRUD operations for event attendees
+/api/event-attendee-guests - CRUD operations for guest management
+/api/event-ticket-types - Ticket type management
+/api/event-ticket-transactions - Transaction handling
+/api/event-medias - Event media management
+/api/event-organizers - Organizer management
+/api/event-admins - Admin management
+User Management:
+/api/user-profiles - User profile CRUD operations
+/api/user-registration-requests - User registration handling
+Supporting Infrastructure:
+/api/discount-codes - Discount management
+/api/qr-code-usages - QR code functionality
+/api/email-logs - Email communication
+/api/whats-app-logs - WhatsApp communication
+❌ Missing (Need to Implement):
+Event Registration Endpoints:
+POST /api/events/:id/register - NOT FOUND
+GET /api/events/:id/guest-stats - NOT FOUND
+PUT /api/registrations/:id/guests/:guestId - NOT FOUND
+Public Event Access:
+GET /api/events/public - NOT FOUND
+GET /api/events/:id - NOT FOUND (only /api/event-details/:id exists)
+Suggested Implementation Paths
+1. Leverage Existing Infrastructure (Recommended)
+Use existing endpoints as building blocks:
+Event Details: /api/event-details for event information
+Attendee Management: /api/event-attendees for registration records
+Guest Management: /api/event-attendee-guests for guest details
+User Profiles: /api/user-profiles for user information
+Create new registration endpoints that integrate with existing tables:
+Implement:
+- POST /api/events/:id/register for event registration
+- GET /api/events/:id/guest-stats for retrieving guest statistics
+- PUT /api/registrations/:id/guests/:guestId for updating guest information
+2. Database Schema Alignment
+The existing Swagger shows these relevant tables are already available:
+event_details ✅
+event_attendee ✅
+event_attendee_guest ✅
+user_profile ✅
+No need to create new database tables - the existing schema supports the registration workflow.
+3. Implementation Strategy
+Phase 1: Registration Endpoints
+Create POST /api/events/:id/register that:
+Validates event exists via /api/event-details/:id
+Creates attendee record via /api/event-attendees
+Creates guest records via /api/event-attendee-guests
+Links to user profile via /api/user-profiles
+Phase 2: Statistics & Management
+Create GET /api/events/:id/guest-stats that:
+Queries /api/event-attendees?eventId.equals=:id
+Aggregates guest counts from /api/event-attendee-guests
+Returns summary statistics
+Phase 3: Guest Updates
+Create PUT /api/registrations/:id/guests/:guestId that:
+Updates specific guest via /api/event-attendee-guests/:guestId
+Maintains data consistency across related tables
+Summary
+Good News: 80% of the infrastructure is already available in the Swagger documentation.
+What to Reuse: All database tables, user management, event management, and supporting services.
+What to Build: Only the 3 specific registration endpoints mentioned in Task 004, leveraging the existing robust event management infrastructure.
+Recommendation: Implement the new registration endpoints as thin orchestration layers that coordinate between the existing, well-established event management APIs rather than building everything from scratch.
+
+
+Include logic for handling both existing and new user profiles.
+
+# Test Strategy:
+Test registration flow with various scenarios including different guest counts and special requirements. Verify guest statistics are correctly calculated.

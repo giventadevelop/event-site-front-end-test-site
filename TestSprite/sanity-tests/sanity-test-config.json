@@ -1,0 +1,161 @@
+{
+  "project": {
+    "name": "Malayalees US Site - Sanity Tests",
+    "version": "1.0.0",
+    "type": "web-app",
+    "baseUrl": "http://localhost:3000",
+    "testDuration": "3 minutes",
+    "description": "Basic sanity tests for static pages and admin functionality"
+  },
+  "testSettings": {
+    "timeout": 10000,
+    "retries": 1,
+    "screenshotOnFailure": true,
+    "performanceTiming": false
+  },
+  "testScenarios": [
+    {
+      "id": "sanity-001",
+      "name": "Homepage Load Test",
+      "url": "/",
+      "type": "page-load",
+      "priority": "high",
+      "expectedElements": [
+        "h2:contains('Malayalees')",
+        "nav",
+        "a[href='/events']",
+        "main"
+      ],
+      "validation": [
+        "Page loads without errors",
+        "Navigation menu is visible",
+        "At least one event card is displayed"
+      ]
+    },
+    {
+      "id": "sanity-002",
+      "name": "Event List Page Test",
+      "url": "/events",
+      "type": "page-load",
+      "priority": "high",
+      "expectedElements": [
+        "h1",
+        ".event-list",
+        ".event-card"
+      ],
+      "validation": [
+        "Event list page loads",
+        "Event cards are visible",
+        "No JavaScript errors"
+      ]
+    },
+    {
+      "id": "sanity-003",
+      "name": "Event Details Page Test",
+      "url": "/event/sample-event",
+      "type": "page-load",
+      "priority": "medium",
+      "expectedElements": [
+        "h1",
+        ".event-details",
+        ".register-button"
+      ],
+      "validation": [
+        "Event details page loads",
+        "Registration button is present",
+        "Event information is displayed"
+      ]
+    },
+    {
+      "id": "sanity-004",
+      "name": "Admin Dashboard Access Test",
+      "url": "/admin",
+      "type": "page-load",
+      "priority": "high",
+      "expectedElements": [
+        "h1:contains('Admin Event Management')",
+        ".admin-nav",
+        "div:contains('Search Events')"
+      ],
+      "validation": [
+        "Admin dashboard loads (user already logged in via social login)",
+        "Admin navigation is visible",
+        "Dashboard content is present"
+      ]
+    },
+    {
+      "id": "sanity-005",
+      "name": "Admin Events Page Test",
+      "url": "/admin/events",
+      "type": "page-load",
+      "priority": "high",
+      "expectedElements": [
+        "h1:contains('Event Management Hub')",
+        ".admin-nav",
+        ".grid",
+        "p:contains('Manage events, registrations, and analytics')"
+      ],
+      "validation": [
+        "Events management page loads",
+        "Admin navigation works",
+        "Events interface is accessible"
+      ]
+    },
+    {
+      "id": "sanity-006",
+      "name": "Admin Registrations Page Test",
+      "url": "/admin/events/registrations",
+      "type": "page-load",
+      "priority": "high",
+      "expectedElements": [
+        "h1:contains('Registration Management')",
+        "table",
+        "select",
+        "input[type='text']"
+      ],
+      "validation": [
+        "Registrations page loads",
+        "Search functionality is present",
+        "Table structure is visible"
+      ]
+    },
+    {
+      "id": "sanity-007",
+      "name": "Profile Page Test",
+      "url": "/profile",
+      "type": "page-load",
+      "priority": "medium",
+      "expectedElements": [
+        "h1:contains('Profile')",
+        "p:contains('Manage your account information')",
+        "form",
+        "input[name='firstName']"
+      ],
+      "validation": [
+        "Profile page loads (user already logged in via social login)",
+        "Profile form is present",
+        "User data fields are editable"
+      ]
+    },
+  ],
+  "testData": {
+    "authentication": {
+      "method": "social-login",
+      "description": "User is already logged in via social authentication (Google, Facebook, etc.)",
+      "note": "No manual login required - assumes user is already authenticated"
+    }
+  },
+  "browsers": ["chrome"],
+  "mobile": {
+    "enabled": false
+  },
+  "reporting": {
+    "format": "html",
+    "includeScreenshots": true,
+    "includeConsoleLogs": true,
+    "includeNetworkLogs": false
+  },
+  "cleanup": {
+    "enabled": false
+  }
+}

@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Membership Subscription Email Notification - Frontend Implementation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            border-left: 5px solid #3498db;
+            padding-left: 20px;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            background-color: #f8f9fa;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 8px;
+        }
+        h4 {
+            color: #666;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+        .status-box {
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border-left: 5px solid;
+        }
+        .info {
+            background-color: #e3f2fd;
+            border-left-color: #2196f3;
+        }
+        .success {
+            background-color: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #e83e8c;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            border-left: 4px solid #3498db;
+        }
+        pre code {
+            background-color: transparent;
+            color: #f8f8f2;
+            padding: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 14px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+        .checklist li {
+            padding: 10px 0;
+            padding-left: 35px;
+            position: relative;
+            margin: 8px 0;
+        }
+        .checklist li:before {
+            content: "☐";
+            position: absolute;
+            left: 0;
+            font-size: 22px;
+            color: #666;
+        }
+        .checklist li.completed:before {
+            content: "✅";
+            color: #4caf50;
+        }
+        .checklist li.pending:before {
+            content: "⏳";
+            color: #ff9800;
+        }
+        .section {
+            margin: 35px 0;
+            padding: 25px;
+            background-color: #fafafa;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+        .file-path {
+            background-color: #e8eaf6;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            display: inline-block;
+            margin: 5px 0;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+            font-style: italic;
+            text-align: center;
+            margin-top: 30px;
+        }
+        .comparison-table {
+            background-color: #fff;
+            border: 2px solid #3498db;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Membership Subscription Email Notification - Frontend Implementation</h1>
+        <p class="timestamp">Generated: December 6, 2025 | Status: Implementation Plan</p>
+
+        <div class="status-box info">
+            <strong>Overview:</strong> This document outlines the frontend implementation for membership subscription email notifications. The implementation follows existing patterns from ticket emails and promotional emails to ensure consistency.
+        </div>
+
+        <h2>Critical Requirements</h2>
+        <ul>
+            <li>✅ Follow existing email patterns (ticket emails and promotional emails)</li>
+            <li>✅ Use Base64 encoding for emailHostUrlPrefix (same as ticket emails)</li>
+            <li>✅ Non-blocking email sending (don't block UI)</li>
+            <li>✅ Prevent duplicate emails using sessionStorage</li>
+            <li>✅ Handle errors gracefully without breaking subscription flow</li>
+        </ul>
+
+        <h2>Reference Patterns</h2>
+
+        <h3>Ticket Email Pattern (Reference)</h3>
+        <ul>
+            <li><strong>Frontend Utility:</strong> <code>src/lib/emailUtils.ts</code></li>
+            <li><strong>Proxy Handler:</strong> <code>src/pages/api/proxy/events/[id]/transactions/[transactionId]/send-ticket-email.ts</code></li>
+            <li><strong>Trigger:</strong> <code>src/app/event/success/PaymentSuccessClient.tsx</code></li>
+        </ul>
+
+        <h3>Promotional Email Pattern (Reference)</h3>
+        <ul>
+            <li><strong>Server Action:</strong> <code>src/app/admin/promotion-emails/serverActions.ts</code></li>
+            <li><strong>Proxy Handler:</strong> <code>src/pages/api/proxy/send-promotion-emails/index.ts</code></li>
+        </ul>
+
+        <h2>Implementation Tasks</h2>
+
+        <h3>1. Create Subscription Email Utility</h3>
+
+        <div class="file-path">File: <code>src/lib/subscriptionEmailUtils.ts</code> (NEW FILE)</div>
+
+        <pre><code>/**
+ * Utility functions for sending subscription emails
+ * Follows the same pattern as ticket emails (src/lib/emailUtils.ts)
+ */
+
+export interface SendSubscriptionEmailParams {
+  subscriptionId: number;
+  email: string;
+  emailType: 'welcome' | 'payment-confirmation' | 'payment-failure' | 'cancellation' | 'updated';
+  emailHostUrlPrefix?: string;
+}
+
+/**
+ * Sends a subscription email for a completed subscription
+ * Similar to sendTicketEmail() but for subscriptions
+ */
+export async function sendSubscriptionEmail({
+  subscriptionId,
+  email,
+  emailType,
+  emailHostUrlPrefix
+}: SendSubscriptionEmailParams): Promise&lt;{ success: boolean; error?: string }&gt; {
+  try {
+    // Get the current domain for email context if not provided
+    const hostUrlPrefix = emailHostUrlPrefix ||
+      (typeof window !== 'undefined' ? window.location.origin : '');
+
+    // Validate that we have a valid host URL prefix
+    if (!hostUrlPrefix) {
+      console.error('[SUBSCRIPTION EMAIL UTILS] No emailHostUrlPrefix provided');
+      return {
+        success: false,
+        error: 'Email host URL prefix is required for proper email context'
+      };
+    }
+
+    console.log('[SUBSCRIPTION EMAIL UTILS] Sending subscription email:', {
+      subscriptionId,
+      email,
+      emailType,
+      hostUrlPrefix
+    });
+
+    const response = await fetch(
+      `/api/proxy/membership-subscriptions/${subscriptionId}/send-email?to=${encodeURIComponent(email)}&type=${emailType}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-email-host-url-prefix': hostUrlPrefix
+        },
+      }
+    );
+
+    if (response.ok) {
+      console.log('[SUBSCRIPTION EMAIL UTILS] Subscription email sent successfully');
+      return { success: true };
+    } else {
+      const errorText = await response.text();
+      console.error('[SUBSCRIPTION EMAIL UTILS] Failed to send email:', response.status, errorText);
+      return {
+        success: false,
+        error: `Failed to send email: ${response.status} - ${errorText}`
+      };
+    }
+  } catch (error: any) {
+    console.error('[SUBSCRIPTION EMAIL UTILS] Exception sending email:', error);
+    return {
+      success: false,
+      error: `Email sending failed: ${error.message || 'Unknown error'}`
+    };
+  }
+}
+
+/**
+ * Sends subscription email asynchronously without blocking the UI
+ * Similar to sendTicketEmailAsync() pattern
+ */
+export function sendSubscriptionEmailAsync(params: SendSubscriptionEmailParams): void {
+  // Send email in background without blocking
+  sendSubscriptionEmail(params).then(result => {
+    if (result.success) {
+      console.log('[SUBSCRIPTION EMAIL UTILS] Background email sent successfully');
+    } else {
+      console.warn('[SUBSCRIPTION EMAIL UTILS] Background email failed:', result.error);
+    }
+  }).catch(error => {
+    console.error('[SUBSCRIPTION EMAIL UTILS] Background email exception:', error);
+  });
+}</code></pre>
+
+        <div class="section">
+            <h4>Key Points:</h4>
+            <ul>
+                <li>Follows same pattern as <code>sendTicketEmail()</code> and <code>sendTicketEmailAsync()</code></li>
+                <li>Uses <code>x-email-host-url-prefix</code> header</li>
+                <li>Non-blocking async function</li>
+                <li>Proper error handling</li>
+            </ul>
+        </div>
+
+        <h3>2. Create Proxy Handler for Subscription Emails</h3>
+
+        <div class="file-path">File: <code>src/pages/api/proxy/membership-subscriptions/[id]/send-email.ts</code> (NEW FILE)</div>
+
+        <pre><code>import { createProxyHandler } from '@/lib/proxyHandler';
+import { getEmailHostUrlPrefix } from '@/lib/env';
+
+// Custom handler for subscription email sending
+// Follows the same pattern as send-ticket-email.ts
+export default async function handler(req: any, res: any) {
+  const { id } = req.query;
+  const { type } = req.query; // email type: welcome, payment-confirmation, etc.
+
+  // Get emailHostUrlPrefix from request headers or use default
+  const emailHostUrlPrefix = req.headers['x-email-host-url-prefix'] as string ||
+                           getEmailHostUrlPrefix();
+
+  // Validate that we have a valid host URL prefix
+  if (!emailHostUrlPrefix) {
+    console.error('[Send Subscription Email Proxy] No emailHostUrlPrefix available');
+    return res.status(400).json({
+      error: 'Email host URL prefix is required for proper email context',
+      details: 'Please ensure NEXT_PUBLIC_APP_URL is set in environment variables or pass x-email-host-url-prefix header'
+    });
+  }
+
+  // Use Base64 encoding like the working ticket email endpoint
+  const encodedEmailHostUrlPrefix = Buffer.from(emailHostUrlPrefix).toString('base64');
+
+  // Create a custom backend path that includes the Base64-encoded emailHostUrlPrefix
+  const customBackendPath = `/api/membership-subscriptions/${id}/emailHostUrlPrefix/${encodedEmailHostUrlPrefix}/send-email?type=${type}`;
+
+  console.log('[Send Subscription Email Proxy] Using Base64 encoding:', {
+    subscriptionId: id,
+    emailType: type,
+    emailHostUrlPrefix: emailHostUrlPrefix,
+    encodedBase64: encodedEmailHostUrlPrefix,
+    backendPath: customBackendPath
+  });
+
+  // Use the shared proxy handler with the custom backend path
+  const proxyHandler = createProxyHandler({
+    backendPath: customBackendPath,
+    allowedMethods: ['POST'],
+    injectTenantId: false  // Don't inject tenant ID as it's in the subscription record
+  });
+
+  return proxyHandler(req, res);
+}</code></pre>
+
+        <div class="section">
+            <h4>Key Points:</h4>
+            <ul>
+                <li>Follows same pattern as <code>send-ticket-email.ts</code></li>
+                <li>Base64 encodes <code>emailHostUrlPrefix</code> in URL path</li>
+                <li>Uses <code>createProxyHandler()</code> for consistency</li>
+                <li>Extracts email type from query parameters</li>
+            </ul>
+        </div>
+
+        <h3>3. Update Membership Success Page</h3>
+
+        <div class="file-path">File: <code>src/app/membership/success/MembershipSuccessClient.tsx</code> (MODIFY EXISTING)</div>
+
+        <h4>Changes Required:</h4>
+
+        <p><strong>1. Add import at top:</strong></p>
+        <pre><code>import { sendSubscriptionEmailAsync } from '@/lib/subscriptionEmailUtils';</code></pre>
+
+        <p><strong>2. Add email sending effect after subscription is successfully created:</strong></p>
+        <pre><code>// Add email sending effect after subscription is successfully created
+useEffect(() => {
+  // Only send email if:
+  // 1. Subscription is successfully created
+  // 2. We have user profile with email
+  // 3. Email hasn't been sent yet (check sessionStorage to prevent duplicates)
+  if (
+    subscriptionDetails?.subscription?.id &&
+    subscriptionDetails?.userProfile?.email &&
+    typeof window !== 'undefined'
+  ) {
+    // Check if email already sent (prevent duplicate sends on page refresh)
+    const emailSentKey = `subscription_email_sent_${subscriptionDetails.subscription.id}`;
+    if (sessionStorage.getItem(emailSentKey)) {
+      console.log('[MEMBERSHIP-SUCCESS] Welcome email already sent, skipping');
+      return;
+    }
+
+    // Mark as sent BEFORE sending to prevent race conditions
+    sessionStorage.setItem(emailSentKey, 'true');
+
+    console.log('[MEMBERSHIP-SUCCESS] Sending welcome email:', {
+      subscriptionId: subscriptionDetails.subscription.id,
+      email: subscriptionDetails.userProfile.email
+    });
+
+    // Send welcome email asynchronously (non-blocking)
+    sendSubscriptionEmailAsync({
+      subscriptionId: subscriptionDetails.subscription.id,
+      email: subscriptionDetails.userProfile.email,
+      emailType: 'welcome'
+    });
+  }
+}, [subscriptionDetails?.subscription?.id, subscriptionDetails?.userProfile?.email]);</code></pre>
+
+        <div class="section">
+            <h4>Key Points:</h4>
+            <ul>
+                <li>Uses <code>sessionStorage</code> to prevent duplicate emails (same pattern as ticket emails)</li>
+                <li>Non-blocking email sending</li>
+                <li>Only sends if subscription and email are available</li>
+                <li>Prevents race conditions by marking as sent before sending</li>
+            </ul>
+        </div>
+
+        <h3>4. Update Subscription Cancellation Flow</h3>
+
+        <div class="file-path">File: <code>src/app/admin/membership/subscriptions/ApiServerActions.ts</code> (MODIFY EXISTING)</div>
+
+        <h4>Add new function:</h4>
+
+        <pre><code>// Add import at top
+import { getAppUrl, getEmailHostUrlPrefix } from '@/lib/env';
+import { fetchWithJwtRetry } from '@/lib/proxyHandler';
+
+// Add new function after cancelUserSubscriptionServer()
+export async function sendSubscriptionCancellationEmailServer(
+  subscriptionId: number,
+  userEmail: string
+): Promise&lt;{ success: boolean }&gt; {
+  const baseUrl = getAppUrl();
+  const emailHostUrlPrefix = getEmailHostUrlPrefix();
+
+  // Base64 encode emailHostUrlPrefix
+  const encodedEmailHostUrlPrefix = Buffer.from(emailHostUrlPrefix).toString('base64');
+
+  const url = `${baseUrl}/api/proxy/membership-subscriptions/${subscriptionId}/send-email?to=${encodeURIComponent(userEmail)}&type=cancellation`;
+
+  const res = await fetchWithJwtRetry(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-email-host-url-prefix': emailHostUrlPrefix
+    },
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    console.error('Failed to send cancellation email:', res.status);
+    return { success: false };
+  }
+
+  return { success: true };
+}</code></pre>
+
+        <div class="file-path">File: <code>src/app/admin/membership/subscriptions/AdminSubscriptionsClient.tsx</code> (MODIFY EXISTING)</div>
+
+        <h4>Update handleCancelConfirm function:</h4>
+
+        <pre><code>// Update handleCancelConfirm function to send email after cancellation
+const handleCancelConfirm = async () => {
+  if (!cancelSubscriptionId) return;
+
+  try {
+    setIsLoading(cancelSubscriptionId);
+    setCancelError(null);
+
+    // Cancel subscription
+    const cancelledSubscription = await cancelUserSubscriptionServer(cancelSubscriptionId);
+
+    // Send cancellation email
+    if (cancelledSubscription.userProfile?.email) {
+      try {
+        await sendSubscriptionCancellationEmailServer(
+          cancelSubscriptionId,
+          cancelledSubscription.userProfile.email
+        );
+      } catch (emailError) {
+        // Log but don't fail the cancellation if email fails
+        console.warn('Failed to send cancellation email:', emailError);
+      }
+    }
+
+    setCancelSuccess(true);
+    setTimeout(() => {
+      setShowCancelModal(false);
+      setCancelSubscriptionId(null);
+      setCancelSuccess(false);
+      router.refresh();
+    }, 1500);
+  } catch (err) {
+    setCancelError(err instanceof Error ? err.message : 'Failed to cancel subscription');
+  } finally {
+    setIsLoading(null);
+  }
+};</code></pre>
+
+        <div class="section">
+            <h4>Key Points:</h4>
+            <ul>
+                <li>Email sending doesn't block cancellation</li>
+                <li>Errors are logged but don't fail the operation</li>
+                <li>Uses server action pattern for authenticated calls</li>
+            </ul>
+        </div>
+
+        <h2>Integration Points</h2>
+
+        <h3>Frontend Integration Points</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Location</th>
+                    <th>Action</th>
+                    <th>Email Type</th>
+                    <th>Trigger</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>src/app/membership/success/MembershipSuccessClient.tsx</code></td>
+                    <td>Send welcome email</td>
+                    <td><code>welcome</code></td>
+                    <td>After subscription creation</td>
+                </tr>
+                <tr>
+                    <td><code>src/app/admin/membership/subscriptions/AdminSubscriptionsClient.tsx</code></td>
+                    <td>Send cancellation email</td>
+                    <td><code>cancellation</code></td>
+                    <td>After admin cancels subscription</td>
+                </tr>
+                <tr>
+                    <td><code>src/app/membership/manage/page.tsx</code> (future)</td>
+                    <td>Send cancellation email</td>
+                    <td><code>cancellation</code></td>
+                    <td>After user cancels subscription</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Email Types Supported</h2>
+        <ol>
+            <li><strong>welcome</strong> - Sent after successful subscription creation</li>
+            <li><strong>payment-confirmation</strong> - Sent after recurring payment succeeds (webhook)</li>
+            <li><strong>payment-failure</strong> - Sent after recurring payment fails (webhook)</li>
+            <li><strong>cancellation</strong> - Sent after subscription cancellation</li>
+            <li><strong>updated</strong> - Sent after plan upgrade/downgrade (future)</li>
+        </ol>
+
+        <h2>Error Handling</h2>
+
+        <h3>Email Sending Failures</h3>
+        <ul>
+            <li>✅ <strong>Non-blocking:</strong> Email failures should not block subscription creation or cancellation</li>
+            <li>✅ <strong>Logging:</strong> Log errors to console for debugging</li>
+            <li>✅ <strong>User Feedback:</strong> Don't show error to user if email fails (subscription still succeeds)</li>
+            <li>⏳ <strong>Retry Logic:</strong> Consider adding retry logic for failed emails (future enhancement)</li>
+        </ul>
+
+        <h3>Duplicate Email Prevention</h3>
+        <ul>
+            <li>✅ <strong>SessionStorage:</strong> Use sessionStorage to track sent emails (like ticket emails)</li>
+            <li>✅ <strong>Key Format:</strong> <code>subscription_email_sent_{subscriptionId}</code></li>
+            <li>✅ <strong>Persistence:</strong> Persists across page refreshes</li>
+        </ul>
+
+        <h2>Testing Checklist</h2>
+        <ul class="checklist">
+            <li>Test welcome email after subscription creation</li>
+            <li>Test cancellation email after admin cancellation</li>
+            <li>Verify duplicate email prevention (sessionStorage)</li>
+            <li>Test email sending from frontend</li>
+            <li>Verify error handling doesn't break subscription flow</li>
+            <li>Test email sending with missing emailHostUrlPrefix</li>
+            <li>Test email sending with invalid subscription ID</li>
+            <li>Verify email links work correctly</li>
+        </ul>
+
+        <h2>Comparison with Existing Patterns</h2>
+
+        <h3>Ticket Email vs Subscription Email</h3>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Aspect</th>
+                    <th>Ticket Email</th>
+                    <th>Subscription Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Frontend Utility</strong></td>
+                    <td><code>src/lib/emailUtils.ts</code></td>
+                    <td><code>src/lib/subscriptionEmailUtils.ts</code> (NEW)</td>
+                </tr>
+                <tr>
+                    <td><strong>Proxy Handler</strong></td>
+                    <td><code>src/pages/api/proxy/events/[id]/transactions/[transactionId]/send-ticket-email.ts</code></td>
+                    <td><code>src/pages/api/proxy/membership-subscriptions/[id]/send-email.ts</code> (NEW)</td>
+                </tr>
+                <tr>
+                    <td><strong>Backend Endpoint</strong></td>
+                    <td><code>/api/events/{id}/transactions/{id}/emailHostUrlPrefix/{base64}/send-ticket-email</code></td>
+                    <td><code>/api/membership-subscriptions/{id}/emailHostUrlPrefix/{base64}/send-email</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Email Host Prefix</strong></td>
+                    <td>Base64 encoded in URL path</td>
+                    <td>Base64 encoded in URL path (same pattern)</td>
+                </tr>
+                <tr>
+                    <td><strong>Email Type</strong></td>
+                    <td>Single type (ticket confirmation)</td>
+                    <td>Multiple types (welcome, payment-confirmation, etc.)</td>
+                </tr>
+                <tr>
+                    <td><strong>Query Parameters</strong></td>
+                    <td><code>?to={email}</code></td>
+                    <td><code>?to={email}&type={emailType}</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Trigger Location</strong></td>
+                    <td>Success page after QR code display</td>
+                    <td>Success page + Webhook handlers</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Implementation Checklist</h2>
+
+        <h3>Frontend Implementation</h3>
+        <ul class="checklist">
+            <li class="completed">Create <code>src/lib/subscriptionEmailUtils.ts</code> with email utility functions</li>
+            <li class="completed">Create <code>src/pages/api/proxy/membership-subscriptions/[id]/send-email.ts</code> proxy handler</li>
+            <li>Update <code>src/app/membership/success/MembershipSuccessClient.tsx</code> to send welcome email</li>
+            <li>Update <code>src/app/admin/membership/subscriptions/ApiServerActions.ts</code> to add cancellation email function</li>
+            <li>Update <code>src/app/admin/membership/subscriptions/AdminSubscriptionsClient.tsx</code> to send cancellation email</li>
+            <li class="pending">Add email sending to user subscription management page (future)</li>
+            <li>Test email sending from frontend</li>
+            <li>Verify duplicate email prevention (sessionStorage)</li>
+        </ul>
+
+        <h2>Security Considerations</h2>
+        <ul>
+            <li>✅ <strong>Authentication:</strong> Email endpoints require JWT authentication via proxy handler</li>
+            <li>✅ <strong>Tenant Isolation:</strong> Tenant ID is automatically handled by backend</li>
+            <li>✅ <strong>Email Validation:</strong> Backend validates email addresses</li>
+            <li>⏳ <strong>Rate Limiting:</strong> Consider rate limiting for email endpoints (future)</li>
+        </ul>
+
+        <h2>Performance Considerations</h2>
+        <ul>
+            <li>✅ <strong>Asynchronous:</strong> Send emails asynchronously (non-blocking)</li>
+            <li>✅ <strong>Background Processing:</strong> Email sending doesn't block UI</li>
+            <li>✅ <strong>Error Handling:</strong> Failures don't affect subscription operations</li>
+        </ul>
+
+        <h2>Notes</h2>
+        <div class="section">
+            <ul>
+                <li>This implementation follows all existing patterns in the codebase</li>
+                <li>Subscription emails integrate seamlessly without breaking existing ticket email or promotional email functionality</li>
+                <li>All code examples follow patterns established in <code>nextjs_api_routes.mdc</code> and project standards</li>
+                <li>Email sending is non-blocking and failures don't affect subscription operations</li>
+            </ul>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #ddd;">
+
+        <p class="timestamp">
+            Analysis completed on December 6, 2025<br>
+            Frontend Project: <code>E:\project_workspace\code_backup\mosc-temp</code><br>
+            Reference Patterns: Ticket Emails, Promotional Emails
+        </p>
+    </div>
+</body>
+</html>
+

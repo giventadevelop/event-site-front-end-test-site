@@ -1,0 +1,99 @@
+# Task ID: 9
+# Title: Implement checkout process
+# Status: done
+# Dependencies: 7 ✅, 8 ✅
+# Priority: high
+# Description: Create the checkout flow to collect user information and initiate payment.
+# Details:
+- Create checkout form to collect necessary user information
+- Implement client and server-side validation
+- Create transaction record in event_ticket_transaction with pending status
+- Initiate Stripe Checkout session
+- Redirect user to Stripe payment page
+- Follow custom-forms-checkbox-grid.mdc for form elements
+
+  Right now the floor starts from this page where the user clicks the proceed with process checkout button and it goes to stripe and comes back to the event to success page http://localhost:3000/event/success?session_id=cs_test_a1sp5Rsnu6YqyRCour6VIMndp5Zqc2z4DR9TggtCpaNomtkzlcCs7yznO8  We want to customize the success page such that it shows the same headers and hero section similar to that of the ticket page and then the ticket purchase status below with all the relevant details plus we also want to persist that event ticket transaction details by calling the rest api make sure to follow all the necessary rules defined in the rest api cursor rule @nextjs_api_routes.mdc   and the rest api schema is   "EventTicketTransactionDTO": {
+        "required": [
+          "createdAt",
+          "email",
+          "pricePerUnit",
+          "purchaseDate",
+          "quantity",
+          "status",
+          "totalAmount",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tenantId": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "firstName": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "lastName": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pricePerUnit": {
+            "type": "number"
+          },
+          "totalAmount": {
+            "type": "number"
+          },
+          "status": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "purchaseDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "discountCodeId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "discountAmount": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "event": {
+            "$ref": "#/components/schemas/EventDetailsDTO"
+          },
+          "ticketType": {
+            "$ref": "#/components/schemas/EventTicketTypeDTO"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserProfileDTO"
+          }
+        }
+      }  Also wondering whether we need to refactor the event ticket transaction dto with additional fields from stripe transaction processing which might be helpful in referring back to the stripe transaction later let me know if there is any suggestion to this design.
+
+# Test Strategy:
+Test the complete checkout flow. Verify form validation works correctly. Ensure transaction is created with pending status.

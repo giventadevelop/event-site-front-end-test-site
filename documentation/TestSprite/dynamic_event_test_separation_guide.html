@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Event Test Suite - Separation Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .success-box {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .command {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .feature-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .feature-card h4 {
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+        ul, ol {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dynamic Event Test Suite - Separation Guide</h1>
+        <p><strong>Date:</strong> January 7, 2026</p>
+        <p><strong>Purpose:</strong> Separate dynamic event discovery and testing into its own script for better maintainability and independent execution.</p>
+
+        <h2>Overview</h2>
+        <p>The dynamic event testing logic has been extracted from the main admin test suite into a separate, dedicated script. This allows:</p>
+        <ul>
+            <li>Independent execution of dynamic event tests</li>
+            <li>Separate test reports for dynamic event pages</li>
+            <li>Easier debugging of event discovery logic</li>
+            <li>Faster execution of static admin page tests</li>
+            <li>Better organization and maintainability</li>
+        </ul>
+
+        <h2>File Structure</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Purpose</th>
+                    <th>Report Output</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>comprehensive-admin-test-suite.js</code></td>
+                    <td>Tests static admin pages (dashboard, settings, etc.)</td>
+                    <td><code>admin-test-report.html</code></td>
+                </tr>
+                <tr>
+                    <td><code>dynamic-event-test-suite.js</code></td>
+                    <td>Discovers events and tests dynamic event pages</td>
+                    <td><code>dynamic-event-test-report.html</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>NPM Scripts</h2>
+        <div class="info-box">
+            <h3>Available Commands</h3>
+            <div class="command">
+                <strong>npm run test:admin</strong><br>
+                Runs static admin page tests only (faster, no event discovery)
+            </div>
+            <div class="command">
+                <strong>npm run test:admin:dynamic</strong><br>
+                Runs dynamic event discovery and tests event-specific pages
+            </div>
+            <div class="command">
+                <strong>npm run test:admin:all</strong><br>
+                Runs both static and dynamic tests sequentially
+            </div>
+        </div>
+
+        <h2>Dynamic Event Test Suite Features</h2>
+        <div class="feature-list">
+            <div class="feature-card">
+                <h4>🔍 Smart Event Discovery</h4>
+                <ul>
+                    <li>Navigates to /admin/manage-events</li>
+                    <li>Uses exact XPath paths for reliability</li>
+                    <li>Automatically toggles Future/Past events</li>
+                    <li>Retries up to 3 times with increased wait times</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <h4>📊 Page Structure Debugging</h4>
+                <ul>
+                    <li>Logs DOM structure at each step</li>
+                    <li>Shows element counts and hierarchy</li>
+                    <li>Helps troubleshoot discovery failures</li>
+                    <li>Detailed console logging from page context</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <h4>🎯 Exact XPath Paths</h4>
+                <ul>
+                    <li>Toggle button: /html/body/div[3]/div/div[5]/div/div[3]/button</li>
+                    <li>Events table: /html/body/div[3]/div/table</li>
+                    <li>Media links: /html/body/div[3]/div/table/tbody/tr[1]/td[9]/a</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <h4>⏱️ Enhanced Wait Times</h4>
+                <ul>
+                    <li>8 seconds initial page load</li>
+                    <li>8 seconds after toggle</li>
+                    <li>5 seconds for data loading</li>
+                    <li>20 seconds network idle timeout</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <h4>🐛 Enhanced Error Reporting</h4>
+                <ul>
+                    <li>Full JavaScript stack traces</li>
+                    <li>Console error locations (file:line:column)</li>
+                    <li>Detailed error messages</li>
+                    <li>Separate HTML report</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <h4>📄 Separate Report</h4>
+                <ul>
+                    <li>Independent HTML report file</li>
+                    <li>Event-specific test results</li>
+                    <li>Enhanced error details</li>
+                    <li>Easy to share and review</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>Dynamic Event Pages Tested</h2>
+        <p>The dynamic event test suite tests the following pages for each discovered event:</p>
+        <ol>
+            <li><strong>Event Details Page</strong> - <code>/admin/events/{eventId}</code></li>
+            <li><strong>Event Media Upload Page</strong> - <code>/admin/events/{eventId}/media</code></li>
+            <li><strong>Event Media List Page</strong> - <code>/admin/events/{eventId}/media/list</code></li>
+            <li><strong>Event Tickets List Page</strong> - <code>/admin/events/{eventId}/tickets/list</code></li>
+            <li><strong>Event Ticket Types List Page</strong> - <code>/admin/events/{eventId}/ticket-types/list</code></li>
+        </ol>
+
+        <h2>Event Discovery Process</h2>
+        <ol>
+            <li><strong>Navigate</strong> to <code>/admin/manage-events</code></li>
+            <li><strong>Wait</strong> 8 seconds for page to fully load</li>
+            <li><strong>Check</strong> for events table using exact XPath</li>
+            <li><strong>If no events:</strong>
+                <ul>
+                    <li>Find toggle button using exact XPath</li>
+                    <li>Click toggle to switch Future/Past events</li>
+                    <li>Wait 8 seconds for data reload</li>
+                    <li>Check again for events</li>
+                </ul>
+            </li>
+            <li><strong>Extract</strong> event IDs from "Upload Media Files" links (column 9)</li>
+            <li><strong>Select</strong> up to 3 random events for testing</li>
+            <li><strong>Test</strong> all dynamic event pages for selected events</li>
+        </ol>
+
+        <h2>Usage Examples</h2>
+
+        <h3>Run Only Static Admin Tests</h3>
+        <div class="code-block">
+npm run test:admin
+        </div>
+        <p>This runs quickly and tests all static admin pages without event discovery.</p>
+
+        <h3>Run Only Dynamic Event Tests</h3>
+        <div class="code-block">
+npm run test:admin:dynamic
+        </div>
+        <p>This discovers events and tests event-specific pages. Takes longer due to discovery process.</p>
+
+        <h3>Run Both Test Suites</h3>
+        <div class="code-block">
+npm run test:admin:all
+        </div>
+        <p>This runs both test suites sequentially. Use for comprehensive testing.</p>
+
+        <h2>Report Files</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Report File</th>
+                    <th>Location</th>
+                    <th>Contents</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>admin-test-report.html</code></td>
+                    <td><code>TestSprite/admin-tests/</code></td>
+                    <td>Static admin page test results</td>
+                </tr>
+                <tr>
+                    <td><code>dynamic-event-test-report.html</code></td>
+                    <td><code>TestSprite/admin-tests/</code></td>
+                    <td>Dynamic event page test results</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Benefits of Separation</h2>
+        <div class="success-box">
+            <h3>✅ Advantages</h3>
+            <ul>
+                <li><strong>Faster Static Tests:</strong> Static admin tests run faster without event discovery overhead</li>
+                <li><strong>Independent Execution:</strong> Run dynamic tests separately when needed</li>
+                <li><strong>Better Debugging:</strong> Easier to debug event discovery issues in isolation</li>
+                <li><strong>Separate Reports:</strong> Clear separation of test results</li>
+                <li><strong>Maintainability:</strong> Each script has a focused responsibility</li>
+                <li><strong>Flexibility:</strong> Can run different test suites based on needs</li>
+            </ul>
+        </div>
+
+        <h2>Configuration</h2>
+        <p>Both scripts use the same authentication configuration:</p>
+        <ul>
+            <li><strong>Config File:</strong> <code>TestSprite/admin-tests/auth.json</code></li>
+            <li><strong>Auth State:</strong> <code>TestSprite/admin-tests/.auth-state.json</code> (shared)</li>
+            <li><strong>Screenshots:</strong> <code>TestSprite/admin-tests/screenshots/</code> (shared)</li>
+        </ul>
+
+        <h2>Troubleshooting</h2>
+
+        <h3>No Events Found</h3>
+        <p>If the dynamic test suite can't find events:</p>
+        <ol>
+            <li>Check that events exist in the system</li>
+            <li>Verify you can access <code>/admin/manage-events</code> manually</li>
+            <li>Try toggling between Future/Past events manually</li>
+            <li>Check the console logs for page structure debugging info</li>
+            <li>Verify the XPath paths match your page structure</li>
+        </ol>
+
+        <h3>Event Discovery Fails</h3>
+        <p>The script includes detailed debugging output:</p>
+        <ul>
+            <li>Page structure information (body children, div counts, etc.)</li>
+            <li>Table detection status</li>
+            <li>Toggle button detection status</li>
+            <li>Event ID extraction details</li>
+        </ul>
+        <p>Review the console output to see exactly what's happening at each step.</p>
+
+        <h2>Future Enhancements</h2>
+        <p>Potential improvements for the dynamic event test suite:</p>
+        <ul>
+            <li>Support for testing multiple events in parallel</li>
+            <li>Configurable event selection (first N, random, specific IDs)</li>
+            <li>Event filtering by date range or status</li>
+            <li>Integration with CI/CD pipelines</li>
+            <li>Performance metrics for event pages</li>
+        </ul>
+
+        <h2>Related Files</h2>
+        <ul>
+            <li><code>TestSprite/admin-tests/comprehensive-admin-test-suite.js</code> - Main admin test suite (static pages)</li>
+            <li><code>TestSprite/admin-tests/dynamic-event-test-suite.js</code> - Dynamic event test suite (NEW)</li>
+            <li><code>TestSprite/admin-tests/auth.json</code> - Authentication configuration (shared)</li>
+            <li><code>package.json</code> - NPM scripts configuration</li>
+            <li><code>documentation/TestSprite/test_suite_improvements_summary.html</code> - Previous improvements documentation</li>
+        </ul>
+
+        <h2>Summary</h2>
+        <div class="success-box">
+            <p><strong>The dynamic event testing has been successfully separated into its own script.</strong></p>
+            <p>You can now:</p>
+            <ul>
+                <li>Run static admin tests quickly: <code>npm run test:admin</code></li>
+                <li>Run dynamic event tests separately: <code>npm run test:admin:dynamic</code></li>
+                <li>Run both together: <code>npm run test:admin:all</code></li>
+                <li>Get separate reports for each test suite</li>
+                <li>Debug event discovery independently</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

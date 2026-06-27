@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MOSC Upload Refactor - Backend</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; line-height: 1.5; color: #1f2937; }
+    h1, h2, h3 { color: #111827; }
+    code, pre { background: #f3f4f6; border-radius: 6px; }
+    code { padding: 2px 6px; }
+    pre { padding: 12px; overflow: auto; }
+    .ok { color: #065f46; font-weight: bold; }
+    .note { background: #eff6ff; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 8px; }
+    th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; }
+    th { background: #f9fafb; }
+  </style>
+</head>
+<body>
+  <h1>Official Document Upload Refactor - Backend</h1>
+  <p>
+    This document defines backend changes for explicit hierarchy storage and priority-first listing.
+  </p>
+
+  <h2>1) Database schema changes</h2>
+  <p>Apply SQL migration:</p>
+  <pre><code>documentation/mosc_document_downloads_page/upload_refactor/migration_official_document_hierarchy_fields.sql</code></pre>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Column</th>
+        <th>Type</th>
+        <th>Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>hierarchy_path</code></td>
+        <td><code>TEXT</code></td>
+        <td>Canonical tree path (for hierarchy traversal)</td>
+      </tr>
+      <tr>
+        <td><code>hierarchy_category_label</code></td>
+        <td><code>TEXT</code></td>
+        <td>Top-level visual category/folder label</td>
+      </tr>
+      <tr>
+        <td><code>display_priority</code></td>
+        <td><code>INTEGER</code></td>
+        <td>Explicit display priority for public downloads pagination</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>2) Upload endpoints - request contract updates</h2>
+  <p>Extend upload and patch flows to accept and persist:</p>
+  <ul>
+    <li><code>hierarchyPath</code> -> <code>event_media.hierarchy_path</code></li>
+    <li><code>hierarchyCategoryLabel</code> -> <code>event_media.hierarchy_category_label</code></li>
+    <li><code>displayPriority</code> -> <code>event_media.display_priority</code></li>
+  </ul>
+
+  <div class="note">
+    Keep backward compatibility: continue accepting old description markers while new fields are gradually populated.
+  </div>
+
+  <h2>3) Listing endpoints - ordering and filters</h2>
+  <p>For public downloads listing API, use this order:</p>
+  <pre><code>ORDER BY COALESCE(display_priority, priority_ranking, 999999) ASC, created_at DESC</code></pre>
+
+  <p>Recommended criteria for public listing:</p>
+  <ul>
+    <li><code>tenant_id = :tenantId</code></li>
+    <li><code>is_event_management_official_document = true</code></li>
+    <li><code>is_public = true</code></li>
+    <li>Optional: <code>official_document_category_id</code>, <code>official_document_year</code></li>
+  </ul>
+
+  <h2>4) Backfill strategy</h2>
+  <p>The SQL migration includes optional backfill from legacy markers:</p>
+  <ul>
+    <li><code>[[MOSC_TREE_PATH]]</code></li>
+    <li><code>[[MOSC_CATEGORY_LABEL]]</code></li>
+    <li><code>[[MOSC_PRIORITY]]</code></li>
+  </ul>
+
+  <p class="ok">Result: existing rows continue to work, new uploads write explicit structured fields.</p>
+
+  <h2>5) API examples (patch)</h2>
+  <pre><code>{
+  "id": 12345,
+  "hierarchyPath": "Kalpana 2023\\Kalpana 110 Commission\\Kalpana-Commission-1.pdf",
+  "hierarchyCategoryLabel": "local body Election winners award ceremony – Photos",
+  "displayPriority": 7,
+  "priorityRanking": 7
+}</code></pre>
+
+  <h2>6) Validation rules</h2>
+  <ul>
+    <li><code>hierarchyPath</code> must not contain traversal sequences (<code>..</code>)</li>
+    <li><code>displayPriority</code> must be non-negative integer</li>
+    <li>Prefer storing path separator as <code>\</code> for consistency with migration scripts</li>
+  </ul>
+
+  <h2>7) Upload authorization prerequisite (jwtadmin)</h2>
+  <p>
+    Real migration upload uses server-side service authentication. If upload fails with
+    <code>Admin access required</code>, fix backend authority mapping for the service subject.
+  </p>
+
+  <div class="note">
+    This is a backend fix. Frontend and migration scripts are already calling the correct upload endpoint.
+  </div>
+
+  <h3>Required behavior</h3>
+  <ul>
+    <li>Service JWT for <code>jwtadmin</code> must resolve to <code>ROLE_ADMIN</code> authority.</li>
+    <li><code>requireAdmin()</code> checks must pass for official-document upload endpoint.</li>
+  </ul>
+
+  <h3>Implementation options</h3>
+  <ol>
+    <li>
+      <strong>Preferred:</strong> include admin role claim in service JWT
+      (roles/authorities contains <code>ROLE_ADMIN</code>) and map claim to
+      <code>GrantedAuthority</code>.
+    </li>
+    <li>
+      <strong>Workaround:</strong> in <code>ClerkJwtAuthenticationFilter</code> (or equivalent),
+      if <code>sub == "jwtadmin"</code>, inject <code>ROLE_ADMIN</code> authority before building Authentication.
+    </li>
+  </ol>
+
+  <h3>Backend prompt template</h3>
+  <pre><code>We need a backend auth fix for MOSC migration uploads.
+
+Context:
+- Upload endpoint: POST /api/event-medias/upload/tenant-official-document
+- Failure: 400 "Admin access required" from EventMediaResource.requireAdmin()
+- Service auth user: jwtadmin
+- Current authentication succeeds, but Granted Authorities is empty.
+
+Please implement:
+1) Preferred fix:
+   - Ensure service JWT for jwtadmin contains admin role/authority claim
+     (e.g., authorities or roles includes ROLE_ADMIN), and
+   - Backend JWT-to-GrantedAuthority mapping consumes this claim.
+
+2) Safe fallback workaround:
+   - In ClerkJwtAuthenticationFilter (or equivalent JWT auth converter),
+     if subject == "jwtadmin", add SimpleGrantedAuthority("ROLE_ADMIN")
+     before creating Authentication.
+
+Acceptance criteria:
+- jwtadmin can upload via /api/event-medias/upload/tenant-official-document
+  without "Admin access required".
+- Security logs show ROLE_ADMIN in Granted Authorities for jwtadmin.
+- Non-jwtadmin users are unchanged.
+- Add unit/integration test for authority mapping.</code></pre>
+</body>
+</html>
+

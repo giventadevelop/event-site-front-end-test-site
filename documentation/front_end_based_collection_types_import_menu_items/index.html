@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar CMS Menu Items – Front-end PRD Index</title>
+  <style>
+    :root { --bg: #0f1419; --surface: #1a2332; --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff; --border: #30363d; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; margin: 0; padding: 2rem; }
+    .doc { max-width: 80rem; margin: 0 auto; }
+    h1 { font-size: 1.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-top: 0; }
+    h2 { font-size: 1.25rem; margin-top: 2rem; color: var(--accent); }
+    p { margin: 0.5rem 0 1rem; color: var(--muted); }
+    code, kbd { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 0.15em 0.4em; border-radius: 4px; font-size: 0.9em; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; font-weight: 600; }
+    tr:hover td { background: rgba(88, 166, 255, 0.06); }
+    a { color: var(--accent); }
+    .section-intro { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .section-intro p, .section-intro li { color: #333; }
+    .note { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 0 6px 6px 0; color: #0d3b66; }
+    .warn { background: #fff3cd; border-left: 4px solid #ffc107; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 0 6px 6px 0; color: #333; }
+    .status-done { color: #3fb950; font-weight: 600; }
+    .status-planned { color: #d29922; font-weight: 600; }
+    .status-pending { color: #f85149; font-weight: 600; }
+    ul { margin: 0.5rem 0 1rem; padding-left: 1.5rem; color: var(--muted); }
+    .code-highlight { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 2px 6px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="doc">
+    <h1>Calendar CMS Menu Items – Front-end PRD Index</h1>
+    <p>Documentation for adding <strong>Calendar</strong> submenu entries in <strong>mosc-temp</strong> that mirror static MOSC redesign pages with Strapi-backed <code>-cms</code> routes. Strapi content lives in <code>C:\project_workspace\strapi-editorial-template</code>.</p>
+
+    <div class="section-intro">
+      <p><strong>Scope:</strong> Documentation only — no implementation in this folder.</p>
+      <p><strong>Reference pattern:</strong> <a href="holy-synod-cms-menu-item-prd.html">Holy Synod CMS</a> (already wired in mosc-temp).</p>
+      <p><strong>Menu config file:</strong> <code class="code-highlight">src/components/mosc-redesign/calendarNav.ts</code></p>
+      <p><strong>Strapi import runbooks:</strong> <code class="code-highlight">strapi-editorial-template/documentation/front_end_based_collection_types_import/</code></p>
+    </div>
+
+    <h2>Architecture (static → Strapi → CMS route)</h2>
+    <ol>
+      <li><strong>Static source</strong> — Hard-coded TSX under <code>src/app/mosc-redesign/(syro)/{section}/</code> (legacy, preserved).</li>
+      <li><strong>Strapi</strong> — Collection type in strapi-editorial-template; import scripts populate entries from static TSX + images.</li>
+      <li><strong>CMS route</strong> — New <code>/mosc-redesign/{section}-cms</code> list + <code>[slug]</code> detail pages fetch from Strapi at request time.</li>
+      <li><strong>Calendar menu</strong> — Add <code>{ label: '{Section} CMS', href: '/mosc-redesign/{section}-cms' }</code> to <code>CALENDAR_MENU_ITEMS</code>.</li>
+    </ol>
+
+    <h2>Collection types and PRDs</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Section</th>
+          <th>Strapi collection</th>
+          <th>Static REF URL</th>
+          <th>CMS route (planned)</th>
+          <th>Front-end PRD</th>
+          <th>Strapi status</th>
+          <th>CMS wired</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Catholicate</td>
+          <td><code>catholicate-entry</code></td>
+          <td><code>/mosc-redesign/catholicate</code></td>
+          <td><code>/mosc-redesign/catholicate-cms</code></td>
+          <td><a href="catholicate-cms-menu-item-prd.html">Catholicate CMS PRD</a></td>
+          <td class="status-done">Implemented</td>
+          <td class="status-pending">Pending</td>
+        </tr>
+        <tr>
+          <td>Ecumenical</td>
+          <td><code>ecumenical-article</code></td>
+          <td><code>/mosc-redesign/ecumenical</code></td>
+          <td><code>/mosc-redesign/ecumenical-cms</code></td>
+          <td><a href="ecumenical-cms-menu-item-prd.html">Ecumenical CMS PRD</a></td>
+          <td class="status-done">Implemented</td>
+          <td class="status-pending">Pending</td>
+        </tr>
+        <tr>
+          <td>Saints</td>
+          <td><code>saint-entry</code></td>
+          <td><code>/mosc-redesign/saints</code></td>
+          <td><code>/mosc-redesign/saints-cms</code></td>
+          <td><a href="saints-cms-menu-item-prd.html">Saints CMS PRD</a></td>
+          <td class="status-done">Implemented</td>
+          <td class="status-pending">Pending</td>
+        </tr>
+        <tr>
+          <td>Publications</td>
+          <td><code>publication-entry</code></td>
+          <td><code>/mosc-redesign/publications</code></td>
+          <td><code>/mosc-redesign/publications-cms</code></td>
+          <td><a href="publications-cms-menu-item-prd.html">Publications CMS PRD</a></td>
+          <td class="status-planned">PRD only</td>
+          <td class="status-pending">Pending</td>
+        </tr>
+        <tr>
+          <td>Theological seminaries</td>
+          <td><code>theological-seminary-entry</code></td>
+          <td><code>/mosc-redesign/theological-seminaries</code></td>
+          <td><code>/mosc-redesign/theological-seminaries-cms</code></td>
+          <td><a href="theological-seminaries-cms-menu-item-prd.html">Theological Seminaries CMS PRD</a></td>
+          <td class="status-planned">PRD only</td>
+          <td class="status-pending">Pending</td>
+        </tr>
+        <tr>
+          <td>Holy Synod</td>
+          <td><code>holy-synod-member</code></td>
+          <td><code>/mosc-redesign/holy-synod</code></td>
+          <td><code>/mosc-redesign/holy-synod-cms</code></td>
+          <td><a href="holy-synod-cms-menu-item-prd.html">Holy Synod CMS PRD</a></td>
+          <td class="status-done">Implemented</td>
+          <td class="status-done">Done</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <strong>Local dev URLs:</strong> Prefix with <code>http://localhost:3000</code> (mosc-temp Next.js). Strapi default: <code>http://localhost:1337</code>.
+    </div>
+
+    <div class="warn">
+      <strong>Publications</strong> and <strong>Theological Seminaries</strong> Strapi collection types may not exist in the repo yet. Front-end PRDs still define the target API contract; implement Strapi schema + import first (see strapi-editorial-template PRDs), then wire mosc-temp CMS routes.
+    </div>
+
+    <h2>Related documentation</h2>
+    <ul>
+      <li>Strapi import index: <code>strapi-editorial-template/documentation/front_end_based_collection_types_import/index.html</code></li>
+      <li>Holy Synod import + API: <code>strapi-editorial-template/documentation/holy_synod/holy-synod-import-and-api-guide.html</code></li>
+      <li>mosc-temp Strapi client: <code>src/lib/strapi.ts</code></li>
+    </ul>
+  </div>
+</body>
+</html>

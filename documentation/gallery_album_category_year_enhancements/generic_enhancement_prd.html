@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Category &amp; Year — Enhancement PRD (Index v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; background: #fff; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        a { color: #0066cc; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .toc { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 24px 0; }
+        .toc h2 { margin-top: 0; border: none; padding: 0; font-size: 1.25em; }
+        .layer-cards { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 20px 0; }
+        @media (min-width: 640px) { .layer-cards { grid-template-columns: 1fr 1fr; } }
+        .layer-card { background: #fff; border: 2px solid #b8d4e3; border-radius: 8px; padding: 16px; }
+        .layer-card h3 { margin-top: 0; color: #0052a3; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .section-container.usage { background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%); border-left-color: #7b1fa2; }
+        .section-container.usage .section-header { background: linear-gradient(135deg, #7b1fa2 0%, #6a1b9a 100%); }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; border-radius: 6px; overflow: hidden; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        tbody tr:hover { background: #f5faff; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.9em; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px 16px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px 16px; border-radius: 6px; margin: 16px 0; }
+        .companion { background: #d4edda; border-left: 4px solid #28a745; padding: 14px 18px; border-radius: 8px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Category &amp; Year — Enhancement PRD (Index v1.0)</h1>
+    <p class="doc-meta">
+        <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 17, 2026 &nbsp;|&nbsp; <strong>Status:</strong> Draft<br>
+        <strong>Baseline:</strong> <a href="../gallery_feature_and_album/FRONTEND_PRD_GALLERY_ALBUM_FEATURE.md">Gallery Album Feature PRD</a> &nbsp;|&nbsp;
+        <strong>Design reference:</strong> MOSC redesign gallery album card (category pill, year, photo count, View Album)<br>
+        <strong>Repos:</strong> <code>mosc-temp</code> (frontend) · <code>malayalees-us-site-boot</code> (backend) · canonical SQL in mosc-temp
+    </p>
+
+    <div class="lead">
+        <p>This pack extends the existing <strong>Gallery Album</strong> feature so public cards can be driven from <strong>admin/API data</strong> instead of hardcoded arrays in <code>mosc-redesign/(syro)/gallery/page.tsx</code>. It adds a tenant-scoped <strong>gallery category</strong> lookup and an <strong>album year</strong> field on each album for display (e.g. “Ecumenical Visits”, “2019”).</p>
+        <p><strong>Non-breaking rule:</strong> New columns and tables are nullable or have safe defaults. Existing albums without category/year continue to render with fallbacks.</p>
+    </div>
+
+    <div class="companion">
+        <p><strong>Baseline PRD:</strong> <a href="../gallery_feature_and_album/BACKEND_PRD_GALLERY_ALBUM_FEATURE.md">Backend PRD</a> ·
+        <a href="../gallery_feature_and_album/FRONTEND_PRD_GALLERY_ALBUM_FEATURE.md">Frontend PRD</a> ·
+        Schema: <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code> (<code>gallery_album</code>)</p>
+    </div>
+
+    <nav class="toc" aria-label="Enhancement PRD index">
+        <h2>Enhancement layer PRDs</h2>
+        <div class="layer-cards">
+            <div class="layer-card">
+                <h3><a href="gap_analysis_prd.html">Gap analysis</a></h3>
+                <p>Card UI vs DB fields, static MOSC gallery vs API gallery, field mapping matrix.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="database_schema_enhancements_prd.html">Database schema (v1.0)</a></h3>
+                <p>New <code>gallery_category</code> table; <code>album_year</code> + <code>gallery_category_id</code> on <code>gallery_album</code>.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="backend_enhancements_prd.html">Backend enhancements</a></h3>
+                <p>GalleryCategory REST resource, DTO extensions, criteria filters, optional media count.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="frontend_enhancements_prd.html">Frontend enhancements</a></h3>
+                <p>Redesign album card, admin forms, replace static gallery data, DTO/types/proxy routes.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="data_migration_enhancements_prd.html">Data migration &amp; seed</a></h3>
+                <p>Seed categories from static MOSC gallery; backfill album year/category for legacy albums.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="urls_and_routes_enhancements.html">URLs &amp; routes</a></h3>
+                <p>Public/admin/proxy route map, album detail linking strategy.</p>
+            </div>
+            <div class="layer-card">
+                <h3><a href="implementation_roadmap.html">Implementation roadmap</a></h3>
+                <p>Cross-repo sprint order G0–G4, dependencies, test checklist.</p>
+            </div>
+        </div>
+    </nav>
+
+    <h2 id="executive-summary">Executive summary</h2>
+    <div class="section-container usage">
+        <div class="section-header">Problem and solution</div>
+        <p>The MOSC redesign gallery shows rich album cards (cover image, “60 photos” badge, category pill “Ecumenical Visits”, title, year “2019”, View Album CTA). That data is <strong>hardcoded</strong> in <code>src/app/mosc-redesign/(syro)/gallery/page.tsx</code>. The database-backed gallery at <code>/gallery</code> uses <code>GalleryAlbumCard</code> with title, cover, photo count, and <code>createdAt</code> — but <strong>no category tag</strong> and <strong>no visit/event year</strong>.</p>
+        <p><strong>Solution (v1.0):</strong> Add <code>gallery_category</code> (tenant lookup) and <code>album_year</code> on <code>gallery_album</code>; expose via REST + proxy; extend admin album create/edit; update public cards to match redesign styling; optionally wire MOSC redesign gallery to the same API.</p>
+    </div>
+
+    <h2 id="card-field-mapping">Target card → data mapping</h2>
+    <table>
+        <thead><tr><th>UI element</th><th>Source after v1.0</th><th>Notes</th></tr></thead>
+        <tbody>
+            <tr><td>Cover image</td><td><code>gallery_album.cover_image_url</code></td><td>Fallback: first public <code>event_media</code> in album</td></tr>
+            <tr><td>Photo count badge</td><td><code>totalMediaCount</code> (computed)</td><td>Count of public media where <code>album_id</code> matches</td></tr>
+            <tr><td>Category pill</td><td><code>gallery_category.display_name</code></td><td>Via <code>gallery_category_id</code> FK; hide pill if null</td></tr>
+            <tr><td>Title</td><td><code>gallery_album.title</code></td><td>Existing</td></tr>
+            <tr><td>Year</td><td><code>gallery_album.album_year</code></td><td>Display as 4-digit year only (not <code>created_at</code>)</td></tr>
+            <tr><td>View Album</td><td>Route link or slideshow</td><td>MOSC: link to album slug/page; main app: existing slideshow modal</td></tr>
+        </tbody>
+    </table>
+
+    <h2 id="phases">Enhancement phases (G0–G4)</h2>
+    <table>
+        <thead><tr><th>Phase</th><th>Depends on</th><th>Deliverable</th><th>PRD</th></tr></thead>
+        <tbody>
+            <tr><td><strong>G0 — Docs</strong></td><td>—</td><td>This HTML PRD pack</td><td>This index</td></tr>
+            <tr><td><strong>G1 — Schema + API</strong></td><td>G0</td><td>Liquibase, GalleryCategory stack, album DTO fields</td><td><a href="database_schema_enhancements_prd.html">Database</a>, <a href="backend_enhancements_prd.html">Backend</a></td></tr>
+            <tr><td><strong>G2 — Admin UI</strong></td><td>G1</td><td>Category CRUD (optional minimal), album form category + year</td><td><a href="frontend_enhancements_prd.html">Frontend</a></td></tr>
+            <tr><td><strong>G3 — Public cards</strong></td><td>G1</td><td>Redesign-style card on <code>/gallery</code> and MOSC gallery from API</td><td><a href="frontend_enhancements_prd.html">Frontend</a></td></tr>
+            <tr><td><strong>G4 — Migration</strong></td><td>G2</td><td>Seed categories; import static albums to DB (optional script)</td><td><a href="data_migration_enhancements_prd.html">Data migration</a></td></tr>
+        </tbody>
+    </table>
+
+    <h2 id="open-questions">Open questions — recommended defaults</h2>
+    <div class="warning-box">
+        <ol>
+            <li><strong>Category model:</strong> Use normalized <code>gallery_category</code> table (recommended) — not free-text on album — for consistent pills and admin dropdown.</li>
+            <li><strong>Year semantics:</strong> <code>album_year</code> = calendar year of the visit/event, not record <code>created_at</code>.</li>
+            <li><strong>Album detail URL (MOSC):</strong> Keep existing static routes (<code>/mosc-redesign/gallery/russia-visit</code>) until CMS slug field is added; v1.0 can use optional <code>slug</code> column deferred to v1.1.</li>
+            <li><strong>Category admin:</strong> v1.0 — seed fixed list + admin dropdown only; full category CRUD page optional in G2.</li>
+            <li><strong>Filter on gallery page:</strong> Defer category/year filter chips to v1.1; v1.0 display-only on cards.</li>
+        </ol>
+    </div>
+
+    <h2 id="success-criteria">Success criteria</h2>
+    <ul>
+        <li>Admin can assign category and album year when creating/editing a gallery album.</li>
+        <li>Public gallery album cards show category pill and year matching the redesign mockup.</li>
+        <li>Photo count and cover image continue to work from existing media association.</li>
+        <li>MOSC redesign gallery can load albums from API (or shared server action) with same card shape.</li>
+        <li>Existing albums without category/year render without errors (graceful fallbacks).</li>
+    </ul>
+
+    <div class="info-box">
+        <strong>Related:</strong> <a href="gap_analysis_prd.html">Gap analysis</a> ·
+        <a href="implementation_roadmap.html">Implementation roadmap</a> ·
+        Static reference: <code>src/app/mosc-redesign/(syro)/gallery/page.tsx</code>
+    </div>
+
+</body>
+</html>

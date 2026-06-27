@@ -1,0 +1,30 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - nvm use 20
+        - npm ci
+    build:
+      commands:
+        # Large build compute (16GiB): give webpack headroom; keep 1 page-data worker (next.config experimental.cpus).
+        # 3584MB heap caused "JavaScript heap out of memory" during webpack; 3 workers caused spawn ENOMEM earlier.
+        - export NODE_OPTIONS="--max-old-space-size=10240"
+        - export NEXT_BUILD_WORKERS=1
+        # Required for Next.js Lambda React bundling on Amplify
+        - echo "__NEXT_PRIVATE_PREBUNDLED_REACT=next" >> .env.production
+        # Inject Amplify environment variables into .env.production for SSR Lambda runtime
+        - env | grep -E '^(NEXT_PUBLIC_|AMPLIFY_|STRIPE_|CLERK_|API_JWT|DATABASE_URL|DIRECT_URL|POOLED_URL|SUPABASE_|STRAPI_)' >> .env.production || true
+        # Optional: AMPLIFY_ROUTE_SET=redesign-only drops mosc + mosc-old (~600 routes) to fit ~220MB cap
+        - node scripts/amplify-prepare-build.mjs
+        - npm run build
+        # Shrink .next under Amplify ~220MB SSR cap (maps, cache, .next/node_modules, @swc/@esbuild binaries).
+        - node scripts/prune-amplify-next-artifact.mjs
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*

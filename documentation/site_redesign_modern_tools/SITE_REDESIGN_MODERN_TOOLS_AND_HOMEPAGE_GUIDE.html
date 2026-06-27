@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Modern tools for homepage redesign: hero guidelines, Claude Code, Framer Motion (npm, no API key), 21st.dev (browser copy vs MCP API key), UI/UX Pro Max, Huashu Design, Cursor skills, videos, repo audit.">
+    <title>Site Redesign — Modern Tools &amp; Homepage Facelift Guide</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+        }
+        h1 {
+            font-size: 2.5em;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+        }
+        h2 {
+            font-size: 1.8em;
+            border-left: 4px solid #0066cc;
+            padding-left: 15px;
+            margin-top: 28px;
+            margin-bottom: 16px;
+        }
+        h3 { font-size: 1.4em; color: #333; margin-top: 20px; margin-bottom: 10px; }
+        h4 { font-size: 1.2em; color: #555; margin-top: 16px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin: 12px 0 12px 24px; }
+        li { margin-bottom: 8px; }
+        a { color: #0066cc; }
+        a:focus { outline: 2px solid #0066cc; outline-offset: 2px; }
+
+        .toc {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 24px 0;
+        }
+        .toc h2 { margin-top: 0; border: none; padding: 0; font-size: 1.3em; }
+        .toc ul { margin: 12px 0 0 20px; }
+        .toc a { font-weight: 600; }
+
+        .section-intro {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-intro code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+
+        .section-container {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-container.usage {
+            background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%);
+            border-left-color: #9c27b0;
+        }
+        .section-container.parameters {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left-color: #ff9800;
+        }
+        .section-container.output {
+            background: linear-gradient(135deg, #e6ffe6 0%, #ccffcc 100%);
+            border-left-color: #28a745;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            padding: 12px 20px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 8px 8px 0 0;
+            font-size: 1.2em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-header.usage {
+            background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+        }
+        .section-header.parameters {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+        .section-header.output {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+        }
+
+        .parameters-list {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left: 4px solid #ff9800;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .parameters-list code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+
+        .info {
+            background: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            padding: 16px 20px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+        .info code, .info .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 16px 20px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+        .warning code, .warning .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 16px 20px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+
+        .script-name {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+        }
+
+        .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+
+        .code-block, pre, pre code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #b8d4e3;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        tr:hover { background-color: #e3f2fd; transition: background-color 0.2s ease; }
+        td code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+        }
+
+        .command-block {
+            border: 2px solid #2196f3;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+        }
+        .command-block.setup { border-color: #2196f3; }
+        .command-block.advance {
+            border-color: #ff9800;
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        }
+        .command-block.verify {
+            border-color: #4caf50;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        }
+        .command-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.6);
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+        }
+        .command-type { font-weight: bold; color: #1565c0; }
+        .command-block.advance .command-type { color: #e65100; }
+        .command-block.verify .command-type { color: #2e7d32; }
+        .command-header-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .copy-button, .copy-button-template, .prompt-copy-btn {
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .copy-button, .prompt-copy-btn {
+            background-color: #0066cc;
+        }
+        .copy-button:hover, .prompt-copy-btn:hover { background-color: #0052a3; transform: translateY(-1px); }
+        .copy-button.copied, .prompt-copy-btn.copied { background-color: #28a745; }
+        .copy-button-template {
+            background-color: #6c757d;
+        }
+        .copy-button-template:hover { background-color: #5a6268; }
+        .copy-button-template.copied { background-color: #28a745; }
+
+        .command-parameters {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.5);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .command-parameters h5 {
+            margin: 0 0 12px 0;
+            font-size: 0.9em;
+            color: #333;
+            font-weight: bold;
+        }
+        .parameter-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .parameter-group.single { grid-template-columns: 1fr; }
+        .parameter-input { display: flex; flex-direction: column; gap: 4px; }
+        .parameter-input label { font-size: 0.8em; color: #555; font-weight: 600; }
+        .parameter-input input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            transition: border-color 0.2s ease;
+        }
+        .parameter-input input:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+        @media (max-width: 768px) {
+            .parameter-group { grid-template-columns: 1fr; }
+            body { padding: 10px; }
+            h1 { font-size: 1.75em; }
+        }
+
+        .command-content {
+            padding: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #0d3b66;
+            background: #fff;
+            word-break: break-all;
+        }
+        .command-single-line {
+            padding: 12px 15px;
+            background: #e8f4f8;
+            border-top: 1px solid #b8d4e3;
+        }
+        .command-single-line-label {
+            font-size: 0.75em;
+            color: #666;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .command-single-line code {
+            display: block;
+            background: transparent;
+            border: none;
+            padding: 0;
+            color: #0d3b66;
+            font-size: 0.95em;
+        }
+
+        .prompt-block {
+            border: 2px solid #9c27b0;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+            box-shadow: 0 2px 8px rgba(156, 39, 176, 0.12);
+        }
+        .prompt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.65);
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            font-weight: bold;
+            color: #6a1b9a;
+        }
+        .prompt-body {
+            padding: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.88em;
+            color: #0d3b66;
+            background: #fff;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.5;
+        }
+
+        main { margin-bottom: 48px; }
+
+        .overview-link {
+            margin-top: 12px;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Site Redesign — Modern Tools &amp; Homepage Facelift</h1>
+
+    <div class="section-intro">
+        <p><strong>Purpose.</strong> This guide lists AI-assisted design and animation tools, where they live, whether they are already present in the <code class="code-highlight">mosc-temp</code> repository, how to install or adopt them, and how they help upgrade the <strong>homepage look and feel</strong> without abandoning existing MOSC styling rules. It also records an open product goal: projecting an <strong>underlying theme of Malayalees in the United States / Keralites in America</strong> through research-backed copy, imagery, and layout (see <a href="#diaspora-theme">section 4 — diaspora narrative</a>). It complements <code class="script-name">documentation/ui-ux-pro-max-docs/UI_UX_PRO_MAX_CURSOR_AND_NEXTJS_GUIDE.html</code> and <code class="script-name">documentation/cursor_skills/INSTALL_IMPECCABLE_SKILL_GLOBAL_GUIDE.html</code>.</p>
+        <p class="overview-link"><strong>Short version:</strong> <a href="SITE_REDESIGN_MODERN_TOOLS_OVERVIEW.html">SITE_REDESIGN_MODERN_TOOLS_OVERVIEW.html</a> — plain-English overview of this document.</p>
+    </div>
+
+    <nav class="toc" aria-label="Table of contents">
+        <h2>Table of Contents</h2>
+        <ul>
+            <li><a href="#repo-status">1. Availability in this repository (quick audit)</a></li>
+            <li><a href="#workflow">2. Recommended four-step workflow</a></li>
+            <li><a href="#tools">3. Tool reference: use, location, install, value</a> — <a href="#motion-21st-accounts">3b. Framer Motion &amp; 21st.dev: accounts and API keys</a> — <a href="#preferred-reference-urls">3c. Preferred reference URLs</a></li>
+            <li><a href="#homepage">4. Homepage improvements for mosc-temp</a> — <a href="#diaspora-theme">4b. Malayalee / Keralite diaspora theme (research)</a></li>
+            <li><a href="#hero-guidelines">5. Hero design: top guidelines &amp; templates</a></li>
+            <li><a href="#hero-sites">6. Hero-named sites &amp; hero-focused libraries</a></li>
+            <li><a href="#familiarize">7. Step-by-step: getting familiar</a></li>
+            <li><a href="#commands">8. Copy-paste commands</a></li>
+            <li><a href="#videos">9. Curated learning videos (YouTube)</a></li>
+            <li><a href="#prompt">10. Sample agent prompt (homepage facelift)</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <h2 id="repo-status">1. Availability in this repository (quick audit)</h2>
+        <p>The table below reflects the <strong>root application</strong> at <code class="code-highlight">package.json</code> (Next.js App Router). Some subfolders (for example isolated redesign demos under <code class="code-highlight">documentation/event_details_redesign/</code>) may declare extra packages; the main site build uses the root manifest.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Tool / capability</th>
+                    <th>In root <code>package.json</code>?</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>framer-motion</code></td>
+                    <td><strong>No</strong></td>
+                    <td>Not listed in root dependencies. Appears in some nested demo <code>package.json</code> files only. Add with <code>npm install framer-motion</code> if you want motion primitives beyond Tailwind animation utilities.</td>
+                </tr>
+                <tr>
+                    <td>Tailwind animation helpers (<code>tailwindcss-animate</code>, <code>tw-animate-css</code>)</td>
+                    <td><strong>Yes</strong></td>
+                    <td>Root project already includes lightweight animation support via Tailwind-oriented packages.</td>
+                </tr>
+                <tr>
+                    <td>UI/UX Pro Max (Cursor skill)</td>
+                    <td>N/A (not npm)</td>
+                    <td>Present at <code class="code-highlight">.cursor/skills/ui-ux-pro-max/</code> with <code class="code-highlight">scripts/search.py</code>. Use Python to run design-system searches.</td>
+                </tr>
+                <tr>
+                    <td>Impeccable skill (global)</td>
+                    <td>N/A</td>
+                    <td>Not bundled inside this repo by default. Install per <code class="script-name">documentation/cursor_skills/INSTALL_IMPECCABLE_SKILL_GLOBAL_GUIDE.html</code> (user-level <code>.agents/skills</code> or Cursor skills path).</td>
+                </tr>
+                <tr>
+                    <td>Claude Code CLI</td>
+                    <td>N/A</td>
+                    <td>External Anthropic product; install from official Claude Code documentation. Not a Node dependency.</td>
+                </tr>
+                <tr>
+                    <td>21st.dev / Huashu Design / shadcn-style CLIs</td>
+                    <td>Varies</td>
+                    <td>Not part of root dependencies. Integrated by running vendor CLI commands and committing generated files. Verify package names on npm before running any <code>npx</code> installer.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info">
+            <strong>Homepage code touchpoints in this repo:</strong>
+            <ul>
+                <li><code class="code-highlight">src/components/HeroSection.tsx</code> — primary hero layout.</li>
+                <li><code class="code-highlight">src/app/page.tsx</code> — homepage composition.</li>
+                <li><code class="code-highlight">src/app/globals.css</code> — hero breakpoints and mobile image containment overrides.</li>
+                <li><code class="code-highlight">.cursor/rules/mosc_styling_standards.mdc</code> and <code class="code-highlight">.cursor/rules/hero_mobile_image_containment_aspect_ratio.mdc</code> — must stay aligned for brand consistency.</li>
+            </ul>
+        </div>
+
+        <h2 id="workflow">2. Recommended four-step workflow</h2>
+        <div class="section-container output">
+            <div class="section-header output">High-level process</div>
+            <ol>
+                <li><strong>Claude Code (or Cursor Agent)</strong> — Use an agentic CLI or IDE agent to plan refactors, keep files consistent, and apply multi-file edits with review.</li>
+                <li><strong>Framer Motion (optional)</strong> — Add when you need orchestrated enter/exit transitions, scroll-linked motion, or gesture-driven UI on the hero and sections. If you only need subtle fades, prefer existing Tailwind animation utilities first.</li>
+                <li><strong>UI/UX Pro Max skill</strong> — Run <code class="code-highlight">--design-system</code> queries to avoid generic layouts and to get palette, typography, and pattern recommendations tuned to “nonprofit / cultural / community” keywords; extend queries with <strong>Malayalee diaspora / Keralites in America</strong> language once <a href="#diaspora-theme">research themes</a> are defined.</li>
+                <li><strong>21st.dev (and similar)</strong> — Browse community React/Tailwind blocks (for example premium hero scaffolding) as <strong>reference or starting points</strong>. Port patterns manually into this codebase so they comply with MOSC tokens and accessibility rules.</li>
+            </ol>
+        </div>
+
+        <h2 id="tools">3. Tool reference: use, location, install, value</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tool</th>
+                    <th>How to use it</th>
+                    <th>Where to find it</th>
+                    <th>If not installed</th>
+                    <th>Value for the website</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Claude Code</strong></td>
+                    <td>Terminal agent for multi-step coding: implement components, run builds, iterate on design feedback.</td>
+                    <td>Official Anthropic Claude Code documentation and installer for your OS.</td>
+                    <td>Sign in and install per vendor instructions; authenticate CLI.</td>
+                    <td>Faster iteration across many files (hero, CSS, layout) with consistent TypeScript and project rules.</td>
+                </tr>
+                <tr>
+                    <td><strong>Framer Motion</strong></td>
+                    <td>React animation library: <code>motion</code> components, variants, layout animations.</td>
+                    <td><a href="https://www.framer.com/motion/" rel="noopener noreferrer">framer.com/motion</a></td>
+                    <td><code>npm install framer-motion</code> in repo root; import in client components only (<code>'use client'</code>). <strong>No vendor account or API key</strong> for the library—install from npm and follow docs/snippets.</td>
+                    <td>Polished section reveals, hero emphasis, and micro-interactions; use sparingly for performance.</td>
+                </tr>
+                <tr>
+                    <td><strong>UI/UX Pro Max</strong> (Cursor skill)</td>
+                    <td>Run Python search script with <code>--design-system</code> to get styles, colors, typography stacks, and anti-patterns.</td>
+                    <td><code class="code-highlight">.cursor/skills/ui-ux-pro-max/</code>; upstream <a href="https://github.com/nextlevelbuilder/ui-ux-pro-max-skill" rel="noopener noreferrer">ui-ux-pro-max-skill</a>.</td>
+                    <td>Requires Python 3. See project guide under <code class="code-highlight">documentation/ui-ux-pro-max-docs/</code>.</td>
+                    <td>Reduces “generic AI” UI; gives structured rationale tied to product type and stack (Next.js row in CSV data).</td>
+                </tr>
+                <tr>
+                    <td><strong>Impeccable</strong> (skill)</td>
+                    <td>Invoke when asking the agent to audit, polish, or redesign UI with strict UX criteria.</td>
+                    <td>User-global install: see <code class="script-name">INSTALL_IMPECCABLE_SKILL_GLOBAL_GUIDE.html</code>.</td>
+                    <td>Copy skill into Cursor’s skills directory per that HTML guide.</td>
+                    <td>Stronger visual hierarchy, accessibility, and interaction quality on homepage sections.</td>
+                </tr>
+                <tr>
+                    <td><strong>21st.dev</strong></td>
+                    <td>Discover React components; copy/adapt into your tree; respect licensing and attribution. See <a href="#motion-21st-accounts">3b — accounts and API keys</a>.</td>
+                    <td><a href="https://21st.dev/" rel="noopener noreferrer">21st.dev</a> — example community hero: <a href="https://21st.dev/r/erikvalencia1/hero-odyssey" rel="noopener noreferrer">Hero Odyssey</a>.</td>
+                    <td><strong>Browser only:</strong> no npm install; copy snippets by hand—usually <strong>no API key</strong>. <strong>Magic MCP / CLI:</strong> account + API key per 21st.dev (Magic Console). Optional: pair browser snippets with AI to translate into this repo’s patterns.</td>
+                    <td>Accelerates exploration of premium landing layouts; still requires manual integration with MOSC styles.</td>
+                </tr>
+                <tr>
+                    <td><strong>Huashu Design</strong></td>
+                    <td>Open-source skill/repo positioned as a local “design infrastructure” for agentic coding workflows.</td>
+                    <td>GitHub: <a href="https://github.com/alchaincyf/huashu-design" rel="noopener noreferrer">alchaincyf/huashu-design</a>.</td>
+                    <td>Clone or follow repo README; wire into your agent’s skill path per upstream docs.</td>
+                    <td>Offline or self-hosted design prompts and patterns; useful if you want alternatives to paid design copilots.</td>
+                </tr>
+                <tr>
+                    <td><strong>shadcn/ui CLI</strong> (common pattern)</td>
+                    <td>Add accessible primitives: <code>npx shadcn@latest add button</code> etc., after project is initialized for shadcn.</td>
+                    <td><a href="https://ui.shadcn.com/" rel="noopener noreferrer">ui.shadcn.com</a></td>
+                    <td>Requires alignment with Next.js + Tailwind setup; not a one-line drop-in if the repo was not scaffolded for shadcn.</td>
+                    <td>Consistent component primitives if you adopt the stack; evaluate bundle and design-system overlap with existing Radix usage.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 id="preferred-reference-urls">3c. Preferred reference URLs</h3>
+        <p>Bookmark these when researching homepage facelift ideas, AI-assisted layout workflows, hero treatments, and visual polish. Use as <strong>reference only</strong>—port patterns into this repo with MOSC tokens (<code class="code-highlight">mosc_styling_standards.mdc</code>) and existing hero containment rules.</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Heading / topic</th>
+                    <th>Link</th>
+                    <th>Why look here</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td><strong>Neuform</strong> — AI design workflow (try with Google <code class="code-highlight">design.md</code> + Gemini 3.1 Pro)</td>
+                    <td><a href="https://neuform.ai" rel="noopener noreferrer">neuform.ai</a></td>
+                    <td>Explore agentic UI generation and design-system-style workflows; pair with a <code class="code-highlight">design.md</code> file in the repo for consistent agent context (see also row 3).</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td><strong>Aura</strong> — clone or copy a site (layout reference)</td>
+                    <td><a href="https://aura.build" rel="noopener noreferrer">aura.build</a></td>
+                    <td>Rapid visual exploration: recreate or adapt an existing site’s structure and styling ideas before re-implementing in React + Tailwind for mosc-temp.</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td><strong>Google’s design.md Just Changed AI Design</strong> (My Full AI Workflow Using Gemini 3.1 Pro)</td>
+                    <td><a href="https://www.youtube.com/watch?v=g-1K7MPpMyc" rel="noopener noreferrer">youtube.com/watch?v=g-1K7MPpMyc</a></td>
+                    <td>End-to-end narrative for keeping design rules in a project file and using Gemini-class models for UI work; complements section 9 row on Design.md.</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td><strong>I made this AMAZING Hero Section Completely using AI</strong> — Claude Design Tutorial</td>
+                    <td><a href="https://www.youtube.com/watch?v=R4RvqfIvSdk" rel="noopener noreferrer">youtube.com/watch?v=R4RvqfIvSdk</a></td>
+                    <td>Hero-section-focused AI design walkthrough; useful before changing <code class="code-highlight">HeroSection.tsx</code>.</td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td><strong>Make Your Website Look 10X Better With This!</strong> [Shaders]</td>
+                    <td><a href="https://www.youtube.com/watch?v=_B0fVMb6Eko" rel="noopener noreferrer">youtube.com/watch?v=_B0fVMb6Eko</a></td>
+                    <td>Shader / visual-effect techniques for premium feel—evaluate performance and <code class="code-highlight">prefers-reduced-motion</code> before adding heavy effects to the public homepage.</td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td><strong>Stop Building AI Slop Websites (Do This Instead)</strong> — Luke Carter (GPT Image 2 + Codex)</td>
+                    <td><a href="https://www.youtube.com/watch?v=uPIIJDmq5OU" rel="noopener noreferrer">youtube.com/watch?v=uPIIJDmq5OU</a></td>
+                    <td>Visual-composition workflow: generate a non-template hero reference and clean background plate, code the hero in Codex with a fidelity pass, optional animated hero video, then an “Art Bible” to extend the rest of the page—useful for avoiding generic AI layouts when exploring homepage ideas (port patterns into MOSC tokens, not copy wholesale).</td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td><strong>Building Animated WebGL Landing Pages with Gemini 3.1 Pro + design.md</strong> — Made by Sourasith</td>
+                    <td><a href="https://www.youtube.com/watch?v=tiwh7Ef9dsU" rel="noopener noreferrer">youtube.com/watch?v=tiwh7Ef9dsU</a> (<a href="https://youtu.be/tiwh7Ef9dsU?si=MwhxTipt23TYJ-uE" rel="noopener noreferrer">youtu.be/tiwh7Ef9dsU</a>)</td>
+                    <td>WebGL + motion landing-page workflow using <code class="code-highlight">design.md</code> and Gemini 3.1 Pro; pair with Neuform / Design.md rows above—test on mobile and respect reduced-motion before shipping heavy hero effects.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info" id="motion-21st-accounts">
+            <p><strong>Framer Motion and 21st.dev — registration and API keys</strong></p>
+            <ul>
+                <li><strong>Framer Motion</strong> — This is an <strong>open-source npm package</strong> for React. You <strong>do not</strong> register on a site or obtain an API token to use it in your app. Install with <code class="code-highlight">npm install framer-motion</code>, read <a href="https://www.framer.com/motion/" rel="noopener noreferrer">framer.com/motion</a>, and <strong>copy or adapt examples</strong> from the docs into your components (typically under <code class="code-highlight">'use client'</code>). Licensing is the library’s open-source license, not a separate “Framer login” for the motion package. (Framer’s <em>hosted site builder</em> product is separate; this guide refers to the <strong>motion library</strong> in code.)</li>
+                <li><strong>21st.dev — browsing the site (inspiration / copy snippets)</strong> — You can usually open <a href="https://21st.dev/" rel="noopener noreferrer">21st.dev</a> in the browser, browse components, and <strong>copy code by hand</strong> without setting up an API key. Anything that is clearly “log in to see this” or “Pro” follows their product rules on the site.</li>
+                <li><strong>21st.dev — Magic MCP, CLI, or integrated IDE flows</strong> — If you use their <strong>Cursor MCP</strong>, official <strong>CLI</strong> (<code class="code-highlight">npx @21st-dev/cli</code>), or similar, you typically need a <strong>21st.dev account and an API key</strong> (often from their Magic Console). Store keys only in local MCP or environment configuration—never commit secrets. See current 21st.dev documentation for exact env var names and setup.</li>
+            </ul>
+            <p><strong>Short overview of the same points:</strong> <a href="SITE_REDESIGN_MODERN_TOOLS_OVERVIEW.html#motion-and-21st">SITE_REDESIGN_MODERN_TOOLS_OVERVIEW.html</a>.</p>
+        </div>
+
+        <div class="warning">
+            <strong>About <code class="code-highlight">npx adcn@latest add</code>:</strong> Some community workflows mention an <code>adcn</code> package for pulling high-end components. <strong>Always verify the package on npm and the upstream author</strong> before running it in your project. If the intent is <strong>shadcn/ui</strong>, the widely documented command is <code class="code-highlight">npx shadcn@latest add &lt;component&gt;</code>. Do not run unverified CLIs against production branches.
+        </div>
+
+        <h2 id="homepage">4. Homepage improvements for mosc-temp</h2>
+        <div class="section-container usage">
+            <div class="section-header usage">Design and technology actions</div>
+            <ul>
+                <li><strong>Respect existing sacred / MOSC palette</strong> — Use <code class="code-highlight">mosc_styling_standards.mdc</code> tokens (cream background, earth tones) unless the org approves a full rebrand.</li>
+                <li><strong>Hero clarity</strong> — Keep the four-section hero narrative but tighten typography scale, contrast, and CTA hierarchy; ensure mobile containment rules in <code class="code-highlight">globals.css</code> stay correct.</li>
+                <li><strong>Motion policy</strong> — Prefer CSS and Tailwind for small hovers; add Framer Motion only for hero or key CTAs if you need staged reveals. Avoid heavy animation on first paint (LCP).</li>
+                <li><strong>Content blocks below the fold</strong> — Apply UI/UX Pro Max output to “events teaser”, “community stories”, or “donation / membership” rows for a more SaaS-like clarity while staying on-brand.</li>
+                <li><strong>Accessibility</strong> — Preserve focus rings, semantic headings, and reduced-motion respect (<code>prefers-reduced-motion</code>) when adding motion libraries.</li>
+                <li><strong>Performance</strong> — Lazy-load non-critical sections; keep hero images optimized and aligned with <code class="code-highlight">next/image</code> patterns already in the app.</li>
+                <li><strong>Diaspora narrative</strong> — The homepage should gradually reflect <strong>Malayalees in the USA / Keralites in America</strong> as an <em>underlying</em> theme (not a one-line slogan only). Plan this via <a href="#diaspora-theme">research and design cues below</a>.</li>
+            </ul>
+        </div>
+
+        <h3 id="diaspora-theme">Malayalee / Keralite diaspora in America — underlying homepage theme (research backlog)</h3>
+        <div class="warning">
+            <strong>Status: to be researched and validated with stakeholders.</strong> The points below are a <em>design brief</em>, not final copy or art direction. Community leaders should review tone, terminology (Malayalee vs Keralite vs region-specific), and imagery so the site feels authentic and inclusive rather than decorative or stereotypical.
+        </div>
+
+        <div class="section-container">
+            <div class="section-header">Why this theme matters</div>
+            <p>MCEFEE / MOSC serves a community that spans <strong>heritage rooted in Kerala</strong> and <strong>everyday life in the United States</strong>. The homepage should signal—quietly and consistently—that visitors belong to that <strong>bridge</strong>: cultural programs, families, professionals, and donors who identify with Malayali/Keralite culture while living in America.</p>
+        </div>
+
+        <div class="section-container usage">
+            <div class="section-header usage">Research to schedule (before locking visuals)</div>
+            <ul>
+                <li><strong>Language &amp; naming</strong> — Preferred terms in your audience (Malayalee, Malayali, Keralite, NRI, diaspora); bilingual headline or subcopy strategy (English primary; optional Malayalam accents for names or taglines—accessibility and readability first).</li>
+                <li><strong>Audience segments</strong> — First-generation vs second-generation; geographic chapters in the US; what “home” means in messaging without excluding anyone.</li>
+                <li><strong>Visual authenticity</strong> — Photo sources: real community events vs stock; representation of generations, genders, and US contexts (not only Kerala tourism imagery).</li>
+                <li><strong>Competitive / peer scan</strong> — How other Malayalee associations and South Asian nonprofits in the US express identity on the hero and above the fold.</li>
+                <li><strong>Legal / cultural sensitivity</strong> — Flags, maps, religious motifs: use only with clear org policy; prefer neutral cultural cues (arts, language, food as event context, community gathering) over clichés.</li>
+            </ul>
+        </div>
+
+        <div class="parameters-list">
+            <p><strong>How to project the idea in homepage design (once research is done)</strong></p>
+            <ul>
+                <li><strong>Copy architecture</strong> — Hero subtitle and supporting line that name the <em>two anchors</em> (e.g. cultural heritage × American community life) without long essays; repeat the thread in one section below the fold (e.g. “Who we serve”).</li>
+                <li><strong>Imagery &amp; collage</strong> — Side-by-side or layered storytelling: US locale cues + cultural programming; consistent color grading so MOSC earth tones still dominate per <code class="code-highlight">mosc_styling_standards.mdc</code>.</li>
+                <li><strong>Programs as proof</strong> — Feature event types, language classes, youth, charity work—concrete modules that show <em>Malayalee life in America</em> in action.</li>
+                <li><strong>Typography &amp; micro-details</strong> — Optional Malayalam-friendly font stack for short phrases if design system allows; ensure Latin text remains primary for WCAG and non-Malayalam readers.</li>
+                <li><strong>Motion &amp; rhythm</strong> — Subtle transitions between hero panels can suggest “connection” or “journey”; avoid gimmicks that trivialize identity.</li>
+                <li><strong>SEO &amp; metadata</strong> — Page title and description can include phrases like “Malayalee community in [region]” where accurate—coordinate with content owners.</li>
+            </ul>
+        </div>
+
+        <div class="info">
+            <strong>Traceability:</strong> When this research completes, add a short <code class="code-highlight">documentation/</code> memo (or PRD excerpt) with agreed vocabulary and image guidelines, and link it from this guide so future redesigns stay consistent.
+        </div>
+
+        <h2 id="hero-guidelines">5. Hero design: guidelines, templates &amp; galleries</h2>
+        <p>Curated mix of <strong>best-practice articles</strong>, <strong>layout pattern guides</strong>, and <strong>visual inspiration</strong> for redesigning <code class="code-highlight">HeroSection.tsx</code>. Rankings emphasize usefulness for structure, copy, conversion, and performance—not generic stock imagery dumps.</p>
+
+        <h3>Top 5 — hero section templates &amp; design guidelines</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Resource</th>
+                    <th>Why it matters</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td><strong>Hero Section Design: Best Practices &amp; Examples for 2026</strong> — Perfect Afternoon<br><a href="https://www.perfectafternoon.com/2025/hero-section-design/" rel="noopener noreferrer">perfectafternoon.com/2025/hero-section-design/</a></td>
+                    <td>Most on-target guideline article: best practices, examples, and conversion strategies (Dec 2025).</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td><strong>Website Hero Section Best Practices + Examples</strong> — Prismic<br><a href="https://prismic.io/blog/website-hero-section" rel="noopener noreferrer">prismic.io/blog/website-hero-section</a></td>
+                    <td>Actionable guide from a CMS perspective: layout, copy, performance.</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td><strong>Common Hero Section Design Layouts and When to Use Them</strong> — Orizon<br><a href="https://www.orizon.co/blog/common-hero-section-design-layouts-and-when-to-use-them" rel="noopener noreferrer">orizon.co/blog/common-hero-section-design-layouts-and-when-to-use-them</a></td>
+                    <td>Catalogs standard patterns (split, centered, video background, etc.) with strengths and weaknesses—useful for picking structure before pixels.</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td><strong>Collection of 25 Hero Sections (Vol. 01)</strong> — Figma Community<br><a href="https://www.figma.com/community/file/1340365221542220705/collection-of-25-hero-sections-vol-01" rel="noopener noreferrer">figma.com/community/file/1340365221542220705/collection-of-25-hero-sections-vol-01</a></td>
+                    <td>Free Figma file to copy and remix—fast path to a working layout scaffold.</td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td><strong>135 Hero Section Examples for Design Inspiration</strong> — Saaspo<br><a href="https://saaspo.com/section-type/saas-hero-section-examples" rel="noopener noreferrer">saaspo.com/section-type/saas-hero-section-examples</a></td>
+                    <td>Large SaaS-focused gallery; browse by company or style for visual trends.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="section-container output">
+            <div class="section-header output">Honorable mentions</div>
+            <ul>
+                <li><strong>Dribbble</strong> — <a href="https://dribbble.com/tags/hero-section" rel="noopener noreferrer">dribbble.com/tags/hero-section</a> (large tag archive for visual exploration).</li>
+                <li><strong>Supahero</strong> — <a href="https://supahero.io/" rel="noopener noreferrer">supahero.io</a> (handpicked hero-section library; also listed in section 6).</li>
+                <li><strong>Unsection</strong> — <a href="https://www.unsection.com/" rel="noopener noreferrer">unsection.com</a> — 3000+ curated sections; filter by hero, CTA, pricing, testimonials, etc.</li>
+            </ul>
+        </div>
+
+        <div class="info">
+            <strong>Using this with mosc-temp:</strong> Treat Figma and SaaS galleries as <strong>structure and hierarchy</strong> references. Re-implement in React + Tailwind using MOSC tokens (<code class="code-highlight">mosc_styling_standards.mdc</code>) and keep mobile hero rules in <code class="code-highlight">hero_mobile_image_containment_aspect_ratio.mdc</code>.
+        </div>
+
+        <h2 id="hero-sites">6. Sites with “hero” in the name &amp; hero-focused libraries</h2>
+        <p>Resources discovered for keyword searches like “hero section design library” and domains or brands containing <em>hero</em>. Ranked by usefulness for <strong>hero-section design</strong> (not generic marketing).</p>
+
+        <h3>Sites with “hero” in the name</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Site</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td><strong>Supahero</strong> — <a href="https://supahero.io/" rel="noopener noreferrer">supahero.io</a></td>
+                    <td>Strong match: handpicked library of website hero sections; browse by style or category for inspiration.</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td><strong>HeroUI</strong> (formerly NextUI) — <a href="https://www.heroui.com/" rel="noopener noreferrer">heroui.com</a></td>
+                    <td>React / Tailwind component library—not hero-only, but high-quality primitives for building hero UI (buttons, cards, overlays).</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td><strong>Landingfolio — Hero components</strong> — <a href="https://www.landingfolio.com/library/hero" rel="noopener noreferrer">landingfolio.com/library/hero</a></td>
+                    <td>“Hero” in the path, not the domain: large copy-paste hero component library; bookmark for implementation references.</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td><strong>Webflow — Hero websites gallery</strong> — <a href="https://webflow.com/made-in-webflow/hero" rel="noopener noreferrer">webflow.com/made-in-webflow/hero</a></td>
+                    <td>Curated sites with strong hero designs; useful for layout and motion ideas (adapt concepts to Next.js, not Webflow-only).</td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td><strong>Superhero Design</strong> — <a href="https://superherodesign.co/" rel="noopener noreferrer">superherodesign.co</a></td>
+                    <td>Brand name includes “hero”; oriented to Showit / Canva templates for coaches and photographers—full site templates, not a hero-section pattern library. Use if you need that ecosystem.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Bonus — related libraries</h3>
+        <ul>
+            <li><strong>Unsection</strong> — <a href="https://www.unsection.com/" rel="noopener noreferrer">unsection.com</a> — 3000+ curated sections; filter includes hero, CTA, pricing; companion quality to Supahero.</li>
+            <li><strong>Framer Community — Website hero section library</strong> — <a href="https://www.framer.community/c/showcase/website-hero-section-library" rel="noopener noreferrer">framer.community/c/showcase/website-hero-section-library</a> — handpicked showcase collection inside Framer’s community.</li>
+        </ul>
+
+        <div class="section-container parameters">
+            <div class="section-header parameters">If you only open two links</div>
+            <ul>
+                <li><strong>Supahero</strong> — quick scan of what is trending in hero treatments.</li>
+                <li><strong>Landingfolio /library/hero</strong> — component-level ideas closer to copy-paste structure for React/Tailwind ports.</li>
+            </ul>
+        </div>
+
+        <h2 id="familiarize">7. Step-by-step: getting familiar</h2>
+        <div class="parameters-list">
+            <p><strong>Week 1 — Orientation</strong></p>
+            <ol>
+                <li>Read <code class="code-highlight">.cursor/rules/mosc_styling_standards.mdc</code>, skim <code class="code-highlight">HeroSection.tsx</code>, and review <a href="#diaspora-theme">diaspora theme research backlog</a> with stakeholders.</li>
+                <li>Watch one overview video from the <a href="#videos">curated list</a> (pick “premium SaaS UX” or “Impeccable” based on your focus).</li>
+                <li>Run a UI/UX Pro Max design-system query for your niche (see commands below).</li>
+            </ol>
+            <p><strong>Week 2 — Prototype</strong></p>
+            <ol start="4">
+                <li>Branch in Git; optionally install Framer Motion and animate a single client subcomponent.</li>
+                <li>Pull one inspiration block from 21st.dev or <a href="#hero-guidelines">section 5</a> / <a href="#hero-sites">section 6</a>; <strong>redraw</strong> it using MOSC colors (do not paste vendor CSS blindly).</li>
+                <li>Run <code>npm run build</code> to catch SSR/client boundary issues.</li>
+            </ol>
+            <p><strong>Week 3 — Integrate</strong></p>
+            <ol start="7">
+                <li>Peer review against <code class="code-highlight">icons_buttons_styles.mdc</code> and <code class="code-highlight">image_containment_prevention_hero_images_cards.mdc</code>.</li>
+                <li>Test on real mobile devices (middleware and public proxy rules already document mobile pitfalls).</li>
+            </ol>
+        </div>
+
+        <h2 id="commands">8. Copy-paste commands</h2>
+        <p>Adjust paths if your Python launcher is <code class="code-highlight">py</code> instead of <code class="code-highlight">python</code> on Windows.</p>
+
+        <div class="command-block setup"
+             data-command-type="setup"
+             data-command-base="npm install framer-motion"
+             data-template-command="npm install framer-motion">
+            <div class="command-header">
+                <span class="command-type">Install Framer Motion (root app)</span>
+                <div class="command-header-buttons">
+                    <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cb-framer')" title="Copy template command">📄 Template</button>
+                    <button type="button" class="copy-button" onclick="copyCommand(this, 'cb-framer')" title="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>🔧 Customize Parameters:</h5>
+                <div class="parameter-group single">
+                    <div class="parameter-input">
+                        <label for="cb-framer-version">Optional version suffix (e.g. 12.23.12, no &quot;@&quot;):</label>
+                        <input type="text" id="cb-framer-version" value="" placeholder="12.23.12" oninput="updateCommand('cb-framer', 'version', this.value)" autocomplete="off">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="cb-framer">npm install framer-motion</div>
+            <div class="command-single-line">
+                <div class="command-single-line-label">Windows single-line:</div>
+                <code id="cb-framer-single-code">npm install framer-motion</code>
+            </div>
+        </div>
+
+        <div class="command-block verify"
+             data-command-type="verify"
+             data-command-base="python .cursor/skills/ui-ux-pro-max/scripts/search.py"
+             data-template-command="python .cursor/skills/ui-ux-pro-max/scripts/search.py &quot;Malayalee Keralite diaspora USA community nonprofit cultural homepage reverent&quot; --design-system -p &quot;MOSC Homepage&quot; -f markdown">
+            <div class="command-header">
+                <span class="command-type">UI/UX Pro Max — homepage-oriented design system</span>
+                <div class="command-header-buttons">
+                    <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cb-home-ds')" title="Copy template command">📄 Template</button>
+                    <button type="button" class="copy-button" onclick="copyCommand(this, 'cb-home-ds')" title="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>🔧 Customize Parameters:</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="cb-home-ds-query">Query:</label>
+                        <input type="text" id="cb-home-ds-query" value="Malayalee Keralite diaspora USA community nonprofit cultural homepage reverent" oninput="updateCommand('cb-home-ds', 'query', this.value)" autocomplete="off">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="cb-home-ds-project">Project name (-p):</label>
+                        <input type="text" id="cb-home-ds-project" value="MOSC Homepage" oninput="updateCommand('cb-home-ds', 'project', this.value)" autocomplete="off">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="cb-home-ds">python .cursor/skills/ui-ux-pro-max/scripts/search.py "Malayalee Keralite diaspora USA community nonprofit cultural homepage reverent" --design-system -p "MOSC Homepage" -f markdown</div>
+            <div class="command-single-line">
+                <div class="command-single-line-label">Windows single-line:</div>
+                <code id="cb-home-ds-single-code">python .cursor/skills/ui-ux-pro-max/scripts/search.py "Malayalee Keralite diaspora USA community nonprofit cultural homepage reverent" --design-system -p "MOSC Homepage" -f markdown</code>
+            </div>
+        </div>
+
+        <div class="command-block advance"
+             data-command-type="advance"
+             data-command-base="npx shadcn@latest add"
+             data-template-command="npx shadcn@latest add button">
+            <div class="command-header">
+                <span class="command-type">shadcn/ui — add component (example)</span>
+                <div class="command-header-buttons">
+                    <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'cb-shadcn')" title="Copy template command">📄 Template</button>
+                    <button type="button" class="copy-button" onclick="copyCommand(this, 'cb-shadcn')" title="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>🔧 Customize Parameters:</h5>
+                <div class="parameter-group single">
+                    <div class="parameter-input">
+                        <label for="cb-shadcn-comp">Component name:</label>
+                        <input type="text" id="cb-shadcn-comp" value="button" oninput="updateCommand('cb-shadcn', 'comp', this.value)" autocomplete="off">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="cb-shadcn">npx shadcn@latest add button</div>
+            <div class="command-single-line">
+                <div class="command-single-line-label">Windows single-line:</div>
+                <code id="cb-shadcn-single-code">npx shadcn@latest add button</code>
+            </div>
+        </div>
+
+        <div class="success">
+            <strong>Dev server (sanity check after UI changes):</strong>
+            <pre><code>npm run dev</code></pre>
+        </div>
+
+        <h2 id="videos">9. Curated learning videos (YouTube)</h2>
+        <p>Use these to build intuition for modern marketing sites, agentic design workflows, and motion-heavy experiences. Titles reflect the source labels you provided; channels may update thumbnails or descriptions over time. For site tools (Neuform, Aura) and the latest preferred links in one table, see <a href="#preferred-reference-urls">section 3c — Preferred reference URLs</a>.</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Topic (as provided)</th>
+                    <th>Link</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Claude Video — content creation</td>
+                    <td><a href="https://www.youtube.com/watch?v=k8igQH7SLwI" rel="noopener noreferrer">youtube.com/watch?v=k8igQH7SLwI</a></td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Claude Video — overview</td>
+                    <td><a href="https://www.youtube.com/watch?v=LExvOtxjXUg" rel="noopener noreferrer">youtube.com/watch?v=LExvOtxjXUg</a></td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Hermes + DeepSeek — full website build narrative</td>
+                    <td><a href="https://www.youtube.com/watch?v=0ezSfX4DW5w" rel="noopener noreferrer">youtube.com/watch?v=0ezSfX4DW5w</a></td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>Impeccable v3 — Claude web design upgrade</td>
+                    <td><a href="https://www.youtube.com/watch?v=hicdJVLnp-Q" rel="noopener noreferrer">youtube.com/watch?v=hicdJVLnp-Q</a></td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td>Claude Code — 3D animated websites</td>
+                    <td><a href="https://www.youtube.com/watch?v=GzNTzfSUkBI" rel="noopener noreferrer">youtube.com/watch?v=GzNTzfSUkBI</a></td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td>OpenAI Codex Chrome plugin</td>
+                    <td><a href="https://www.youtube.com/watch?v=JoWD0xzYwRQ" rel="noopener noreferrer">youtube.com/watch?v=JoWD0xzYwRQ</a></td>
+                </tr>
+                <tr>
+                    <td>7</td>
+                    <td>Open Design — vibe coding</td>
+                    <td><a href="https://www.youtube.com/watch?v=MmTBkDmunk4" rel="noopener noreferrer">youtube.com/watch?v=MmTBkDmunk4</a></td>
+                </tr>
+                <tr>
+                    <td>8</td>
+                    <td>Open source alternative to Claude Design</td>
+                    <td><a href="https://www.youtube.com/watch?v=2QyC5juxtro" rel="noopener noreferrer">youtube.com/watch?v=2QyC5juxtro</a></td>
+                </tr>
+                <tr>
+                    <td>9</td>
+                    <td>Basic AI sites → premium SaaS UX/UI</td>
+                    <td><a href="https://www.youtube.com/watch?v=e4pxF2zBuwo" rel="noopener noreferrer">youtube.com/watch?v=e4pxF2zBuwo</a></td>
+                </tr>
+                <tr>
+                    <td>10</td>
+                    <td>Google Design.md — design team in a file</td>
+                    <td><a href="https://www.youtube.com/watch?v=oLu32YpiIJw" rel="noopener noreferrer">youtube.com/watch?v=oLu32YpiIJw</a></td>
+                </tr>
+                <tr>
+                    <td>11</td>
+                    <td>Google’s design.md Just Changed AI Design (Gemini 3.1 Pro workflow; try <a href="https://neuform.ai" rel="noopener noreferrer">neuform.ai</a>)</td>
+                    <td><a href="https://www.youtube.com/watch?v=g-1K7MPpMyc" rel="noopener noreferrer">youtube.com/watch?v=g-1K7MPpMyc</a></td>
+                </tr>
+                <tr>
+                    <td>12</td>
+                    <td>I made this AMAZING Hero Section Completely using AI — Claude Design Tutorial</td>
+                    <td><a href="https://www.youtube.com/watch?v=R4RvqfIvSdk" rel="noopener noreferrer">youtube.com/watch?v=R4RvqfIvSdk</a></td>
+                </tr>
+                <tr>
+                    <td>13</td>
+                    <td>Make Your Website Look 10X Better With This! [Shaders]</td>
+                    <td><a href="https://www.youtube.com/watch?v=_B0fVMb6Eko" rel="noopener noreferrer">youtube.com/watch?v=_B0fVMb6Eko</a></td>
+                </tr>
+                <tr>
+                    <td>14</td>
+                    <td>Building Animated WebGL Landing Pages with Gemini 3.1 Pro + design.md — Made by Sourasith</td>
+                    <td><a href="https://www.youtube.com/watch?v=tiwh7Ef9dsU" rel="noopener noreferrer">youtube.com/watch?v=tiwh7Ef9dsU</a> (<a href="https://youtu.be/tiwh7Ef9dsU?si=MwhxTipt23TYJ-uE" rel="noopener noreferrer">youtu.be/tiwh7Ef9dsU</a>)</td>
+                </tr>
+                <tr>
+                    <td>14</td>
+                    <td>Stop Building AI Slop Websites (Do This Instead) — GPT Image 2 + Codex hero workflow (see <a href="#preferred-reference-urls">section 3c</a> row 6)</td>
+                    <td><a href="https://www.youtube.com/watch?v=uPIIJDmq5OU" rel="noopener noreferrer">youtube.com/watch?v=uPIIJDmq5OU</a></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 id="prompt">10. Sample agent prompt (homepage facelift)</h2>
+        <p>Copy the block below into Cursor or Claude Code when you want a <strong>scoped</strong> redesign that still obeys repo rules.</p>
+
+        <div class="prompt-block" aria-label="Homepage facelift prompt">
+            <div class="prompt-header">
+                <span>Homepage facelift prompt</span>
+                <button type="button" class="prompt-copy-btn" onclick="copyCommand(this, 'prompt-home-facelift')" title="Copy prompt" aria-label="Copy prompt to clipboard">📋 Copy</button>
+            </div>
+            <div class="prompt-body" id="prompt-home-facelift">You are working in the mosc-temp Next.js App Router repo. Goal: improve the public homepage look and feel (especially HeroSection and first screen) while STRICTLY preserving MOSC design tokens from .cursor/rules/mosc_styling_standards.mdc and hero mobile rules in .cursor/rules/hero_mobile_image_containment_aspect_ratio.mdc.
+
+Underlying narrative (coordinate with stakeholders; do not invent sensitive cultural claims): The organization serves Malayalees / Keralites in the United States. Propose how the homepage can subtly project that bridge—heritage rooted in Kerala and community life in America—through copy hierarchy, imagery direction, and section storytelling. Avoid stereotypes and decorative clichés; prefer authentic community programming, inclusive representation, and clear English-first readability (optional Malayalam only where agreed and accessible).
+
+Constraints:
+- Do not break Clerk, proxy routes, or server/client boundaries (client components only for motion).
+- Prefer existing Tailwind and tailwindcss-animate; add framer-motion only if justified and tree-shaken.
+- Maintain accessibility: focus states, contrast, semantic headings, prefers-reduced-motion.
+- Align buttons/icons with .cursor/rules/icons_buttons_styles.mdc.
+
+Deliverables:
+1) Short audit of src/components/HeroSection.tsx and src/app/page.tsx (what to improve).
+2) Concrete UI changes (spacing, typography, CTA hierarchy, optional subtle motion).
+3) Brief “diaspora theme” recommendations: headline/subcopy ideas, imagery notes, and one below-the-fold section concept—explicitly marked as needing leadership/content review.
+4) List of files touched and manual test steps (desktop + mobile).</div>
+        </div>
+
+        <div class="section-container parameters">
+            <div class="section-header parameters">Related internal docs</div>
+            <ul>
+                <li><code class="script-name">documentation/ui-ux-pro-max-docs/UI_UX_PRO_MAX_CURSOR_AND_NEXTJS_GUIDE.html</code></li>
+                <li><code class="script-name">documentation/ui-ux-pro-max-docs/DESIGN_SYSTEM_CREATION_AND_USAGE_GUIDE.html</code></li>
+                <li><code class="script-name">documentation/cursor_skills/INSTALL_IMPECCABLE_SKILL_GLOBAL_GUIDE.html</code></li>
+            </ul>
+        </div>
+    </main>
+
+    <script>
+        const commandParams = {};
+
+        function escapeQueryForCmd(s) {
+            if (!s) return '';
+            return String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        }
+
+        function updateCommand(commandId, paramName, paramValue) {
+            if (!commandParams[commandId]) commandParams[commandId] = {};
+            commandParams[commandId][paramName] = paramValue;
+
+            const commandElement = document.getElementById(commandId);
+            if (!commandElement) return;
+
+            const block = commandElement.closest('.command-block');
+            if (!block) return;
+
+            let command = '';
+
+            if (commandId === 'cb-framer') {
+                const v = (commandParams[commandId].version || '').trim();
+                command = 'npm install framer-motion' + (v ? '@' + v.replace(/^@/, '') : '');
+            } else if (commandId === 'cb-home-ds') {
+                const q = commandParams[commandId].query != null ? commandParams[commandId].query : 'Malayalee Keralite diaspora USA community nonprofit cultural homepage reverent';
+                const p = commandParams[commandId].project != null ? commandParams[commandId].project : 'MOSC Homepage';
+                command = 'python .cursor/skills/ui-ux-pro-max/scripts/search.py "' + escapeQueryForCmd(q) + '" --design-system -p "' + escapeQueryForCmd(p) + '" -f markdown';
+            } else if (commandId === 'cb-shadcn') {
+                const comp = (commandParams[commandId].comp || 'button').trim() || 'button';
+                command = 'npx shadcn@latest add ' + comp;
+            }
+
+            commandElement.textContent = command;
+            const singleLineCode = document.getElementById(commandId + '-single-code');
+            if (singleLineCode) singleLineCode.textContent = command;
+        }
+
+        function fallbackCopy(text, button) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'absolute';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                if (button) {
+                    button.classList.add('copied');
+                    const isTemplate = button.classList.contains('copy-button-template');
+                    const isPrompt = button.classList.contains('prompt-copy-btn');
+                    button.textContent = '✓ Copied!';
+                    setTimeout(function () {
+                        button.classList.remove('copied');
+                        if (isPrompt) button.textContent = '📋 Copy';
+                        else button.textContent = isTemplate ? '📄 Template' : '📋 Copy';
+                    }, 2000);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+            document.body.removeChild(ta);
+        }
+
+        function copyCommand(button, commandId) {
+            const commandElement = document.getElementById(commandId);
+            if (!commandElement) return;
+            const commandText = commandElement.textContent.trim();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(commandText).then(function () {
+                    button.classList.add('copied');
+                    button.textContent = '✓ Copied!';
+                    setTimeout(function () {
+                        button.classList.remove('copied');
+                        button.textContent = button.classList.contains('prompt-copy-btn') ? '📋 Copy' : '📋 Copy';
+                    }, 2000);
+                }).catch(function () {
+                    fallbackCopy(commandText, button);
+                });
+            } else {
+                fallbackCopy(commandText, button);
+            }
+        }
+
+        function copyTemplateCommand(button, commandId) {
+            const commandBlock = button.closest('.command-block');
+            if (!commandBlock) return;
+            let templateCommand = commandBlock.getAttribute('data-template-command');
+            if (!templateCommand) {
+                const commandElement = document.getElementById(commandId);
+                if (!commandElement) return;
+                templateCommand = commandElement.textContent.trim();
+            }
+            templateCommand = templateCommand.replace(/&quot;/g, '"');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(templateCommand).then(function () {
+                    button.classList.add('copied');
+                    button.textContent = '✓ Copied!';
+                    setTimeout(function () {
+                        button.classList.remove('copied');
+                        button.textContent = '📄 Template';
+                    }, 2000);
+                }).catch(function () {
+                    fallbackCopy(templateCommand, button);
+                });
+            } else {
+                fallbackCopy(templateCommand, button);
+            }
+        }
+
+        function initializeCommands() {
+            document.querySelectorAll('.command-block[data-command-base]').forEach(function (block) {
+                const commandContent = block.querySelector('.command-content');
+                if (!commandContent || !commandContent.id) return;
+                const commandId = commandContent.id;
+
+                block.querySelectorAll('.parameter-input input, .parameter-input select').forEach(function (input) {
+                    const inputId = input.id;
+                    if (!inputId || inputId.indexOf(commandId + '-') !== 0) return;
+                    const paramName = inputId.substring(commandId.length + 1);
+                    if (!commandParams[commandId]) commandParams[commandId] = {};
+                    commandParams[commandId][paramName] = input.value || '';
+                });
+                updateCommand(commandId, '_init', '');
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            initializeCommands();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Implementation PRD: QR Scanner & Enhanced Reporting</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-left: 15px;
+            border-left: 5px solid #3498db;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        h4 {
+            color: #666;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        table th {
+            background: #3498db;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        table tr:hover {
+            background: #f8f9fa;
+        }
+        .required {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .optional {
+            background: #fff3cd;
+            color: #856404;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .verified {
+            background: #d4edda;
+            color: #155724;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .summary-box {
+            background: #e7f3ff;
+            padding: 20px;
+            border-left: 4px solid #0066cc;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .warning-box {
+            background: #fff3cd;
+            padding: 20px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .success-box {
+            background: #d4edda;
+            padding: 20px;
+            border-left: 4px solid #28a745;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .info-box {
+            background: #d1ecf1;
+            padding: 20px;
+            border-left: 4px solid #17a2b8;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        ul, ol {
+            margin-left: 30px;
+            margin-top: 10px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .api-endpoint {
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #6c757d;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .task-card {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid #6c757d;
+        }
+        .task-card.required {
+            border-left-color: #dc3545;
+        }
+        .task-card.optional {
+            border-left-color: #ffc107;
+        }
+        .task-card.verified {
+            border-left-color: #28a745;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .badge-high { background: #dc3545; color: white; }
+        .badge-medium { background: #ffc107; color: #333; }
+        .badge-low { background: #6c757d; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Backend Implementation PRD: QR Scanner & Enhanced Reporting</h1>
+        <p><strong>Generated:</strong> January 2026</p>
+        <p><strong>Frontend Project:</strong> E:\project_workspace\mosc-temp</p>
+        <p><strong>Backend Project:</strong> E:\project_workspace\malayalees-us-site-boot</p>
+        <p><strong>Batch Job Project:</strong> E:\project_workspace\event-site-manager-batch-jobs</p>
+        <p><strong>Source:</strong> .task-master/tasks/tasks.json</p>
+
+        <div class="summary-box">
+            <h2>Executive Summary</h2>
+            <p><strong>Purpose:</strong> This PRD outlines backend implementation requirements for QR Scanner and Enhanced Reporting features for the event ticketing system.</p>
+            <p><strong>Total Tasks:</strong> 18 tasks</p>
+            <p><strong>Backend Verification Required:</strong> 2 tasks (Tasks 6, 9)</p>
+            <p><strong>Backend Enhancements Recommended:</strong> 2 optional endpoints</p>
+            <p><strong>Database Changes:</strong> None required (all fields exist)</p>
+            <p><strong>Priority:</strong> High - Critical for event management and analytics</p>
+        </div>
+
+        <h2>1. Project Context & Architecture</h2>
+
+        <h3>1.1 System Architecture</h3>
+        <div class="info-box">
+            <p><strong>Frontend:</strong> Next.js 15+ application (E:\project_workspace\mosc-temp)</p>
+            <ul>
+                <li>Uses Next.js API routes as proxy handlers</li>
+                <li>All backend calls go through <code>/api/proxy/*</code> endpoints</li>
+                <li>Proxy handlers inject <code>tenantId.equals</code> automatically</li>
+                <li>Uses JWT authentication via <code>fetchWithJwtRetry</code></li>
+            </ul>
+            <p><strong>Backend:</strong> Spring Boot REST API (E:\project_workspace\malayalees-us-site-boot)</p>
+            <ul>
+                <li>Spring Data REST for CRUD operations</li>
+                <li>JHipster-style criteria query filters</li>
+                <li>JWT authentication required</li>
+                <li>Multi-tenant architecture (tenant-scoped data)</li>
+            </ul>
+            <p><strong>Batch Jobs:</strong> Spring Batch (E:\project_workspace\event-site-manager-batch-jobs)</p>
+            <ul>
+                <li>Handles scheduled tasks and data processing</li>
+                <li>May be used for analytics aggregation (optional)</li>
+            </ul>
+        </div>
+
+        <h3>1.2 Database Schema</h3>
+        <div class="info-box">
+            <p><strong>Primary Table:</strong> <code>event_ticket_transaction</code></p>
+            <p><strong>Key Fields for This PRD:</strong></p>
+            <ul>
+                <li><code>id</code> (BIGINT, PRIMARY KEY)</li>
+                <li><code>event_id</code> (BIGINT, FK to event_details)</li>
+                <li><code>tenant_id</code> (VARCHAR(255))</li>
+                <li><code>check_in_status</code> (VARCHAR(20), default 'NOT_CHECKED_IN')</li>
+                <li><code>check_in_time</code> (TIMESTAMP)</li>
+                <li><code>check_out_time</code> (TIMESTAMP)</li>
+                <li><code>number_of_guests_checked_in</code> (INTEGER)</li>
+                <li><code>qr_code_image_url</code> (VARCHAR(2048))</li>
+                <li><code>status</code> (ENUM: 'PENDING', 'COMPLETED', 'FAILED', 'REFUNDED', 'CANCELLED')</li>
+                <li><code>purchase_date</code> (TIMESTAMP)</li>
+                <li><code>total_amount</code> (NUMERIC(21,2))</li>
+                <li><code>final_amount</code> (NUMERIC(21,2))</li>
+                <li><code>discount_amount</code> (NUMERIC(21,2))</li>
+                <li><code>refund_amount</code> (NUMERIC(21,2))</li>
+                <li><code>payment_method</code> (VARCHAR(50))</li>
+                <li><code>transaction_reference</code> (VARCHAR(255), UNIQUE, auto-generated as 'TKTN' + id)</li>
+            </ul>
+            <p><strong>Schema File:</strong> <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></p>
+            <p><strong>Status:</strong> ✅ All required fields exist - No database migrations needed</p>
+        </div>
+
+        <h2>2. Task List & Backend Requirements</h2>
+
+        <h3>2.1 Task Overview</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Task ID</th>
+                    <th>Title</th>
+                    <th>Backend Impact</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1-5</td>
+                    <td>QR Scanner Setup & Implementation</td>
+                    <td><span class="verified">Uses Existing APIs</span></td>
+                    <td><span class="badge badge-high">High</span></td>
+                    <td>✅ No backend changes needed</td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td>Check-In History Server Actions</td>
+                    <td><span class="required">Verification Required</span></td>
+                    <td><span class="badge badge-medium">Medium</span></td>
+                    <td>⚠️ Verify filter support</td>
+                </tr>
+                <tr>
+                    <td>7-8</td>
+                    <td>Check-In Analytics & Export</td>
+                    <td><span class="verified">Frontend Calculated</span></td>
+                    <td><span class="badge badge-medium">Medium</span></td>
+                    <td>✅ No backend changes needed</td>
+                </tr>
+                <tr>
+                    <td>9</td>
+                    <td>Sales Analytics Server Actions</td>
+                    <td><span class="required">Verification Required</span></td>
+                    <td><span class="badge badge-medium">Medium</span></td>
+                    <td>⚠️ Verify date range support</td>
+                </tr>
+                <tr>
+                    <td>10-18</td>
+                    <td>UI Components & Testing</td>
+                    <td><span class="verified">Frontend Only</span></td>
+                    <td><span class="badge badge-medium">Medium</span></td>
+                    <td>✅ No backend changes needed</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>3. Backend API Requirements</h2>
+
+        <h3>3.1 Existing Endpoints (Verified ✅)</h3>
+        <div class="success-box">
+            <h4>✅ These endpoints already exist and are working:</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Purpose</th>
+                        <th>Used By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/api/event-ticket-transactions</code></td>
+                        <td>GET</td>
+                        <td>List transactions with filters</td>
+                        <td>Task 6 (check-in history)</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/event-ticket-transactions/{id}</code></td>
+                        <td>GET</td>
+                        <td>Get single transaction</td>
+                        <td>Task 3 (QR verification)</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/event-ticket-transactions/{id}</code></td>
+                        <td>PATCH</td>
+                        <td>Update transaction (check-in)</td>
+                        <td>Task 5 (check-in flow)</td>
+                    </tr>
+                    <tr>
+                        <td><code>/api/event-ticket-transactions/statistics/{eventId}</code></td>
+                        <td>GET</td>
+                        <td>Get event statistics</td>
+                        <td>Task 9 (sales analytics)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>3.2 Endpoints Requiring Verification (⚠️)</h3>
+        <div class="warning-box">
+            <h4>⚠️ Task 6: Check-In History Filter Support</h4>
+            <p><strong>Required:</strong> Verify that Spring Data REST criteria queries support the following filters:</p>
+            <div class="api-endpoint">
+                <strong>GET</strong> /api/event-ticket-transactions<br><br>
+                <strong>Required Query Parameters:</strong>
+                <ul>
+                    <li><code>eventId.equals={eventId}</code> ✅ (Verified - already works)</li>
+                    <li><code>checkInStatus.equals=CHECKED_IN</code> ⚠️ (Needs verification)</li>
+                    <li><code>checkInTime.greaterThanOrEqual={startDate}</code> ⚠️ (Needs verification)</li>
+                    <li><code>checkInTime.lessThanOrEqual={endDate}</code> ⚠️ (Needs verification)</li>
+                    <li><code>sort=checkInTime,desc</code> ✅ (Verified - Spring Data REST supports sorting)</li>
+                    <li><code>page={page}</code> ✅ (Verified - pagination works)</li>
+                    <li><code>size={size}</code> ✅ (Verified - page size works)</li>
+                </ul>
+                <br>
+                <strong>Example Request:</strong>
+                <div class="code-block">
+GET /api/event-ticket-transactions?eventId.equals=456&checkInStatus.equals=CHECKED_IN&checkInTime.greaterThanOrEqual=2026-01-01T00:00:00Z&checkInTime.lessThanOrEqual=2026-01-31T23:59:59Z&sort=checkInTime,desc&page=0&size=20&tenantId.equals=tenant_demo_001
+                </div>
+                <br>
+                <strong>Expected Response:</strong>
+                <div class="code-block">
+{
+  "content": [
+    {
+      "id": 12345,
+      "eventId": 456,
+      "checkInStatus": "CHECKED_IN",
+      "checkInTime": "2026-01-15T10:30:00Z",
+      "numberOfGuestsCheckedIn": 2,
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "john@example.com",
+      ...
+    }
+  ],
+  "totalElements": 75,
+  "totalPages": 4,
+  "size": 20,
+  "number": 0
+}
+                </div>
+                <br>
+                <strong>Verification Steps:</strong>
+                <ol>
+                    <li>Test if <code>checkInStatus.equals</code> filter works on <code>check_in_status</code> field</li>
+                    <li>Test if <code>checkInTime.greaterThanOrEqual</code> filter works on <code>check_in_time</code> TIMESTAMP field</li>
+                    <li>Test if <code>checkInTime.lessThanOrEqual</code> filter works on <code>check_in_time</code> TIMESTAMP field</li>
+                    <li>Test combination of all filters together</li>
+                    <li>Verify results match database queries</li>
+                </ol>
+                <br>
+                <strong>If Filters Don't Work:</strong>
+                <ul>
+                    <li>Frontend will implement client-side filtering fallback</li>
+                    <li>Backend can optionally add custom endpoint: <code>GET /api/event-ticket-transactions/check-ins</code></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="warning-box">
+            <h4>⚠️ Task 9: Sales Analytics Date Range Support</h4>
+            <p><strong>Required:</strong> Verify if the statistics endpoint supports date range filtering:</p>
+            <div class="api-endpoint">
+                <strong>GET</strong> /api/event-ticket-transactions/statistics/{eventId}<br><br>
+                <strong>Current Implementation:</strong> Returns overall statistics for an event<br><br>
+                <strong>Question:</strong> Does it support date range query parameters?<br><br>
+                <strong>Proposed Query Parameters:</strong>
+                <ul>
+                    <li><code>startDate={startDate}</code> (ISO 8601 format: YYYY-MM-DD)</li>
+                    <li><code>endDate={endDate}</code> (ISO 8601 format: YYYY-MM-DD)</li>
+                </ul>
+                <br>
+                <strong>Example Request:</strong>
+                <div class="code-block">
+GET /api/event-ticket-transactions/statistics/456?startDate=2026-01-01&endDate=2026-01-31&tenantId.equals=tenant_demo_001
+                </div>
+                <br>
+                <strong>Expected Response (if date range supported):</strong>
+                <div class="code-block">
+{
+  "eventId": 456,
+  "totalSales": 1000,
+  "totalRevenue": 50000.00,
+  "netRevenue": 47500.00,
+  "totalDiscounts": 2000.00,
+  "totalRefunds": 500.00,
+  "averageTicketPrice": 50.00,
+  "dateRange": {
+    "startDate": "2026-01-01",
+    "endDate": "2026-01-31"
+  }
+}
+                </div>
+                <br>
+                <strong>Verification Steps:</strong>
+                <ol>
+                    <li>Test current endpoint: <code>GET /api/event-ticket-transactions/statistics/{eventId}</code></li>
+                    <li>Check if it accepts <code>startDate</code> and <code>endDate</code> query parameters</li>
+                    <li>If not supported, document current response format</li>
+                    <li>Frontend will calculate date-filtered analytics from transaction data if not supported</li>
+                </ol>
+                <br>
+                <strong>If Date Range Not Supported:</strong>
+                <ul>
+                    <li>Frontend will fetch all transactions and filter client-side</li>
+                    <li>Backend can optionally add: <code>GET /api/event-ticket-transactions/sales-analytics/{eventId}</code></li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>3.3 Optional Backend Enhancements (💡 Recommended)</h3>
+        <div class="info-box">
+            <h4>💡 Optional: Performance Optimization Endpoints</h4>
+            <p>These endpoints are <strong>optional</strong> but recommended for better performance with large datasets:</p>
+
+            <div class="task-card optional">
+                <h4>Endpoint 1: Check-In Analytics Aggregation</h4>
+                <div class="api-endpoint">
+                    <strong>GET</strong> /api/event-ticket-transactions/check-in-analytics/{eventId}?startDate={startDate}&endDate={endDate}<br><br>
+                    <strong>Purpose:</strong> Pre-aggregated check-in analytics (server-side calculation)<br><br>
+                    <strong>Query Parameters:</strong>
+                    <ul>
+                        <li><code>eventId</code> (path parameter, required)</li>
+                        <li><code>startDate</code> (query parameter, optional, ISO 8601: YYYY-MM-DD)</li>
+                        <li><code>endDate</code> (query parameter, optional, ISO 8601: YYYY-MM-DD)</li>
+                        <li><code>tenantId.equals</code> (automatically injected by proxy)</li>
+                    </ul>
+                    <br>
+                    <strong>Response (200 OK):</strong>
+                    <div class="code-block">
+{
+  "eventId": 456,
+  "totalTickets": 100,
+  "checkedInCount": 75,
+  "notCheckedInCount": 20,
+  "noShowCount": 5,
+  "checkInPercentage": 75.0,
+  "checkInsByHour": [
+    {"hour": "09:00", "count": 10},
+    {"hour": "10:00", "count": 25},
+    {"hour": "11:00", "count": 30},
+    {"hour": "12:00", "count": 10}
+  ],
+  "checkInsByTicketType": {
+    "VIP": 20,
+    "General": 55
+  },
+  "peakCheckInTime": "10:00-11:00",
+  "averageCheckInTime": "10:15",
+  "dateRange": {
+    "startDate": "2026-01-01",
+    "endDate": "2026-01-31"
+  }
+}
+                    </div>
+                    <br>
+                    <strong>Implementation Notes:</strong>
+                    <ul>
+                        <li>Aggregate data server-side for better performance</li>
+                        <li>Use SQL GROUP BY for hourly breakdown</li>
+                        <li>Calculate percentages server-side</li>
+                        <li>Filter by date range if provided</li>
+                        <li>Return empty arrays/objects if no data</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="task-card optional">
+                <h4>Endpoint 2: Sales Analytics Aggregation</h4>
+                <div class="api-endpoint">
+                    <strong>GET</strong> /api/event-ticket-transactions/sales-analytics/{eventId}?startDate={startDate}&endDate={endDate}<br><br>
+                    <strong>Purpose:</strong> Pre-aggregated sales analytics (server-side calculation)<br><br>
+                    <strong>Query Parameters:</strong>
+                    <ul>
+                        <li><code>eventId</code> (path parameter, required)</li>
+                        <li><code>startDate</code> (query parameter, optional, ISO 8601: YYYY-MM-DD)</li>
+                        <li><code>endDate</code> (query parameter, optional, ISO 8601: YYYY-MM-DD)</li>
+                        <li><code>tenantId.equals</code> (automatically injected by proxy)</li>
+                    </ul>
+                    <br>
+                    <strong>Response (200 OK):</strong>
+                    <div class="code-block">
+{
+  "eventId": 456,
+  "totalSales": 1000,
+  "totalRevenue": 50000.00,
+  "netRevenue": 47500.00,
+  "totalDiscounts": 2000.00,
+  "totalRefunds": 500.00,
+  "averageTicketPrice": 50.00,
+  "salesByDate": [
+    {"date": "2026-01-01", "count": 50, "revenue": 2500.00},
+    {"date": "2026-01-02", "count": 75, "revenue": 3750.00},
+    ...
+  ],
+  "salesByTicketType": {
+    "VIP": {"count": 200, "revenue": 20000.00},
+    "General": {"count": 800, "revenue": 30000.00}
+  },
+  "salesByPaymentMethod": {
+    "STRIPE": {"count": 800, "revenue": 40000.00},
+    "CASH": {"count": 200, "revenue": 10000.00}
+  },
+  "dateRange": {
+    "startDate": "2026-01-01",
+    "endDate": "2026-01-31"
+  }
+}
+                    </div>
+                    <br>
+                    <strong>Implementation Notes:</strong>
+                    <ul>
+                        <li>Aggregate data server-side for better performance</li>
+                        <li>Use SQL GROUP BY for daily/hourly breakdown</li>
+                        <li>Calculate net revenue: <code>finalAmount - refundAmount</code></li>
+                        <li>Filter by date range using <code>purchase_date</code> field</li>
+                        <li>Exclude REFUNDED and CANCELLED transactions</li>
+                        <li>Return empty arrays/objects if no data</li>
+                    </ul>
+                </div>
+            </div>
+
+            <p><strong>Note:</strong> These endpoints are optional. Frontend can calculate analytics from transaction data if backend doesn't provide them. However, server-side aggregation is more efficient for large datasets.</p>
+        </div>
+
+        <h2>4. Database Schema Reference</h2>
+
+        <h3>4.1 Event Ticket Transaction Table</h3>
+        <div class="code-block">
+CREATE TABLE public.event_ticket_transaction (
+    id BIGINT PRIMARY KEY,
+    tenant_id VARCHAR(255),
+    event_id BIGINT NOT NULL,
+    transaction_reference VARCHAR(255) UNIQUE GENERATED ALWAYS AS ('TKTN' || id::text) STORED,
+    email VARCHAR(255) NOT NULL,
+    first_name VARCHAR(255),
+    last_name VARCHAR(255),
+
+    -- Check-in fields (used by Tasks 5, 6, 7)
+    check_in_status VARCHAR(20) DEFAULT 'NOT_CHECKED_IN',
+    check_in_time TIMESTAMP,
+    check_out_time TIMESTAMP,
+    number_of_guests_checked_in INTEGER,
+
+    -- QR code field (used by Task 3)
+    qr_code_image_url VARCHAR(2048),
+
+    -- Status field (used by Task 3, 9)
+    status VARCHAR(50), -- 'PENDING', 'COMPLETED', 'FAILED', 'REFUNDED', 'CANCELLED'
+
+    -- Sales analytics fields (used by Task 9)
+    purchase_date TIMESTAMP,
+    total_amount NUMERIC(21,2),
+    final_amount NUMERIC(21,2),
+    discount_amount NUMERIC(21,2),
+    refund_amount NUMERIC(21,2),
+    payment_method VARCHAR(50),
+
+    -- Other fields...
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+
+    CONSTRAINT fk_ticket_transaction__event_id FOREIGN KEY (event_id) REFERENCES event_details(id)
+);
+        </div>
+
+        <h3>4.2 Check-In Status Enum</h3>
+        <div class="code-block">
+-- Note: Database uses VARCHAR(20), but values should match enum:
+-- 'NOT_CHECKED_IN' (default)
+-- 'CHECKED_IN'
+-- 'NO_SHOW'
+-- 'LEFT_EARLY'
+        </div>
+
+        <h3>4.3 Transaction Status Enum</h3>
+        <div class="code-block">
+-- Values:
+-- 'PENDING'
+-- 'COMPLETED'
+-- 'FAILED'
+-- 'REFUNDED'
+-- 'CANCELLED'
+        </div>
+
+        <h2>5. API Integration Patterns</h2>
+
+        <h3>5.1 Frontend Proxy Pattern</h3>
+        <div class="info-box">
+            <p><strong>Important:</strong> Frontend calls backend through Next.js proxy routes:</p>
+            <ul>
+                <li>Frontend calls: <code>/api/proxy/event-ticket-transactions/...</code></li>
+                <li>Proxy handler forwards to: <code>{BACKEND_URL}/api/event-ticket-transactions/...</code></li>
+                <li>Proxy automatically injects <code>tenantId.equals</code> parameter</li>
+                <li>Proxy handles JWT authentication via <code>fetchWithJwtRetry</code></li>
+            </ul>
+            <p><strong>Backend Should:</strong></p>
+            <ul>
+                <li>Accept <code>tenantId.equals</code> in query parameters</li>
+                <li>Filter all queries by tenant_id for multi-tenant security</li>
+                <li>Return data scoped to the tenant</li>
+            </ul>
+        </div>
+
+        <h3>5.2 Query Parameter Format</h3>
+        <div class="code-block">
+// Spring Data REST Criteria Query Format:
+// Field name + operation = value
+
+// Examples:
+eventId.equals=456
+checkInStatus.equals=CHECKED_IN
+checkInTime.greaterThanOrEqual=2026-01-01T00:00:00Z
+checkInTime.lessThanOrEqual=2026-01-31T23:59:59Z
+sort=checkInTime,desc
+page=0
+size=20
+tenantId.equals=tenant_demo_001
+
+// Supported Operations (Spring Data REST):
+// .equals, .notEquals, .contains, .greaterThan, .greaterThanOrEqual,
+// .lessThan, .lessThanOrEqual, .in, .notIn, .isNull, .isNotNull
+        </div>
+
+        <h3>5.3 Date/Time Format</h3>
+        <div class="info-box">
+            <p><strong>ISO 8601 Format:</strong> All dates/times should use ISO 8601 format</p>
+            <ul>
+                <li>Date only: <code>YYYY-MM-DD</code> (e.g., <code>2026-01-15</code>)</li>
+                <li>Date with time: <code>YYYY-MM-DDTHH:mm:ssZ</code> (e.g., <code>2026-01-15T10:30:00Z</code>)</li>
+                <li>Database stores as <code>TIMESTAMP</code> (timezone-aware)</li>
+                <li>Backend should accept both formats and convert appropriately</li>
+            </ul>
+        </div>
+
+        <h2>6. Implementation Requirements by Task</h2>
+
+        <div class="task-card verified">
+            <h3>Task 3: QR Verification API Route</h3>
+            <p><strong>Backend Endpoint:</strong> <code>GET /api/event-ticket-transactions/{id}</code></p>
+            <p><strong>Status:</strong> ✅ Already exists</p>
+            <p><strong>Requirements:</strong></p>
+            <ul>
+                <li>Return transaction details by ID</li>
+                <li>Include <code>checkInStatus</code>, <code>qrCodeImageUrl</code>, <code>status</code> fields</li>
+                <li>Validate that transaction is not REFUNDED or CANCELLED</li>
+                <li>Return 404 if transaction not found</li>
+                <li>Return 403 if transaction belongs to different tenant</li>
+            </ul>
+            <p><strong>No Changes Needed:</strong> Endpoint already works as required</p>
+        </div>
+
+        <div class="task-card verified">
+            <h3>Task 5: Check-In Flow Update</h3>
+            <p><strong>Backend Endpoint:</strong> <code>PATCH /api/event-ticket-transactions/{id}</code></p>
+            <p><strong>Status:</strong> ✅ Already exists</p>
+            <p><strong>Requirements:</strong></p>
+            <ul>
+                <li>Accept PATCH requests with merge-patch+json content type</li>
+                <li>Update <code>checkInStatus</code> to 'CHECKED_IN'</li>
+                <li>Update <code>checkInTime</code> to current timestamp</li>
+                <li>Update <code>numberOfGuestsCheckedIn</code> (if provided)</li>
+                <li>Validate that transaction is not already checked in (prevent duplicates)</li>
+                <li>Validate that transaction is not REFUNDED or CANCELLED</li>
+                <li>Return updated transaction object</li>
+            </ul>
+            <p><strong>Request Body Example:</strong></p>
+            <div class="code-block">
+{
+  "id": 12345,
+  "checkInStatus": "CHECKED_IN",
+  "checkInTime": "2026-01-15T10:30:00Z",
+  "numberOfGuestsCheckedIn": 2,
+  "updatedAt": "2026-01-15T10:30:00Z"
+}
+            </div>
+            <p><strong>Verification:</strong> Test that PATCH endpoint accepts these fields and updates correctly</p>
+        </div>
+
+        <div class="task-card required">
+            <h3>Task 6: Check-In History Server Actions</h3>
+            <p><strong>Backend Endpoint:</strong> <code>GET /api/event-ticket-transactions</code></p>
+            <p><strong>Status:</strong> ⚠️ Verification Required</p>
+            <p><strong>Required Filters:</strong></p>
+            <ul>
+                <li><code>eventId.equals={eventId}</code> ✅ (Verified)</li>
+                <li><code>checkInStatus.equals=CHECKED_IN</code> ⚠️ (Needs verification)</li>
+                <li><code>checkInTime.greaterThanOrEqual={startDate}</code> ⚠️ (Needs verification)</li>
+                <li><code>checkInTime.lessThanOrEqual={endDate}</code> ⚠️ (Needs verification)</li>
+                <li><code>sort=checkInTime,desc</code> ✅ (Verified)</li>
+            </ul>
+            <p><strong>Action Required:</strong></p>
+            <ol>
+                <li>Test if Spring Data REST criteria supports <code>checkInStatus.equals</code> filter</li>
+                <li>Test if Spring Data REST criteria supports <code>checkInTime.greaterThanOrEqual</code> filter</li>
+                <li>Test if Spring Data REST criteria supports <code>checkInTime.lessThanOrEqual</code> filter</li>
+                <li>Document results and share with frontend team</li>
+                <li>If filters don't work, consider adding custom endpoint (optional)</li>
+            </ol>
+            <p><strong>Fallback:</strong> Frontend will implement client-side filtering if backend doesn't support filters</p>
+        </div>
+
+        <div class="task-card required">
+            <h3>Task 9: Sales Analytics Server Actions</h3>
+            <p><strong>Backend Endpoint:</strong> <code>GET /api/event-ticket-transactions/statistics/{eventId}</code></p>
+            <p><strong>Status:</strong> ⚠️ Verification Required</p>
+            <p><strong>Current Implementation:</strong> Returns overall statistics for an event</p>
+            <p><strong>Question:</strong> Does it support date range query parameters?</p>
+            <p><strong>Proposed Query Parameters:</strong></p>
+            <ul>
+                <li><code>startDate={startDate}</code> (ISO 8601: YYYY-MM-DD)</li>
+                <li><code>endDate={endDate}</code> (ISO 8601: YYYY-MM-DD)</li>
+            </ul>
+            <p><strong>Action Required:</strong></p>
+            <ol>
+                <li>Test current endpoint: <code>GET /api/event-ticket-transactions/statistics/{eventId}</code></li>
+                <li>Check if it accepts <code>startDate</code> and <code>endDate</code> query parameters</li>
+                <li>If not supported, document current response format</li>
+                <li>Consider adding date range support (optional enhancement)</li>
+            </ol>
+            <p><strong>Fallback:</strong> Frontend will fetch all transactions and calculate date-filtered analytics client-side</p>
+        </div>
+
+        <h2>7. Testing Requirements</h2>
+
+        <h3>7.1 Backend Verification Tests</h3>
+        <div class="code-block">
+// Test 1: Check-In Status Filter
+GET /api/event-ticket-transactions?eventId.equals=456&checkInStatus.equals=CHECKED_IN&tenantId.equals=tenant_demo_001
+Expected: Returns only transactions with checkInStatus = 'CHECKED_IN'
+Result: [PASS/FAIL] - Document result
+
+// Test 2: Check-In Time Greater Than Or Equal Filter
+GET /api/event-ticket-transactions?eventId.equals=456&checkInTime.greaterThanOrEqual=2026-01-01T00:00:00Z&tenantId.equals=tenant_demo_001
+Expected: Returns only transactions checked in on or after 2026-01-01
+Result: [PASS/FAIL] - Document result
+
+// Test 3: Check-In Time Less Than Or Equal Filter
+GET /api/event-ticket-transactions?eventId.equals=456&checkInTime.lessThanOrEqual=2026-01-31T23:59:59Z&tenantId.equals=tenant_demo_001
+Expected: Returns only transactions checked in on or before 2026-01-31
+Result: [PASS/FAIL] - Document result
+
+// Test 4: Combined Filters
+GET /api/event-ticket-transactions?eventId.equals=456&checkInStatus.equals=CHECKED_IN&checkInTime.greaterThanOrEqual=2026-01-01T00:00:00Z&checkInTime.lessThanOrEqual=2026-01-31T23:59:59Z&sort=checkInTime,desc&tenantId.equals=tenant_demo_001
+Expected: Returns checked-in transactions within date range, sorted by check-in time descending
+Result: [PASS/FAIL] - Document result
+
+// Test 5: Statistics Date Range Support
+GET /api/event-ticket-transactions/statistics/456?startDate=2026-01-01&endDate=2026-01-31&tenantId.equals=tenant_demo_001
+Expected: Returns statistics filtered by date range (if supported)
+Result: [PASS/FAIL] - Document result and current response format
+        </div>
+
+        <h3>7.2 Integration Tests</h3>
+        <div class="info-box">
+            <p><strong>Required Integration Tests:</strong></p>
+            <ol>
+                <li><strong>QR Verification Flow:</strong>
+                    <ul>
+                        <li>Test GET /api/event-ticket-transactions/{id} returns correct data</li>
+                        <li>Test that REFUNDED/CANCELLED transactions are handled correctly</li>
+                        <li>Test tenant isolation (user can't access other tenant's transactions)</li>
+                    </ul>
+                </li>
+                <li><strong>Check-In Flow:</strong>
+                    <ul>
+                        <li>Test PATCH /api/event-ticket-transactions/{id} updates check-in fields</li>
+                        <li>Test duplicate check-in prevention</li>
+                        <li>Test that REFUNDED/CANCELLED transactions can't be checked in</li>
+                    </ul>
+                </li>
+                <li><strong>Check-In History:</strong>
+                    <ul>
+                        <li>Test filter combinations work correctly</li>
+                        <li>Test pagination works with filters</li>
+                        <li>Test sorting works correctly</li>
+                    </ul>
+                </li>
+                <li><strong>Sales Analytics:</strong>
+                    <ul>
+                        <li>Test statistics endpoint returns accurate data</li>
+                        <li>Test date range filtering (if supported)</li>
+                        <li>Test that REFUNDED/CANCELLED transactions are excluded</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <h2>8. Security Requirements</h2>
+
+        <h3>8.1 Multi-Tenant Security</h3>
+        <div class="warning-box">
+            <p><strong>CRITICAL:</strong> All endpoints must enforce tenant isolation</p>
+            <ul>
+                <li>All queries must filter by <code>tenantId.equals</code></li>
+                <li>Users can only access data for their tenant</li>
+                <li>Return 403 Forbidden if user tries to access other tenant's data</li>
+                <li>Validate tenant_id on all create/update operations</li>
+            </ul>
+        </div>
+
+        <h3>8.2 Authentication & Authorization</h3>
+        <div class="info-box">
+            <p><strong>Required:</strong></p>
+            <ul>
+                <li>All endpoints require JWT authentication</li>
+                <li>JWT token must be valid and not expired</li>
+                <li>Admin endpoints require ADMIN role verification</li>
+                <li>Check-in operations require appropriate permissions</li>
+            </ul>
+        </div>
+
+        <h3>8.3 Data Validation</h3>
+        <div class="info-box">
+            <p><strong>Required Validations:</strong></p>
+            <ul>
+                <li>Validate <code>checkInStatus</code> enum values</li>
+                <li>Validate <code>checkInTime</code> is not in the future</li>
+                <li>Validate <code>numberOfGuestsCheckedIn</code> is non-negative</li>
+                <li>Prevent duplicate check-ins (idempotency)</li>
+                <li>Validate transaction is not REFUNDED/CANCELLED before check-in</li>
+            </ul>
+        </div>
+
+        <h2>9. Performance Considerations</h2>
+
+        <h3>9.1 Database Indexes (Optional but Recommended)</h3>
+        <div class="info-box">
+            <p><strong>Recommended Indexes for Better Performance:</strong></p>
+            <div class="code-block">
+-- Index for check-in status filtering
+CREATE INDEX IF NOT EXISTS idx_event_ticket_transaction_check_in_status
+ON event_ticket_transaction(event_id, check_in_status)
+WHERE check_in_status IS NOT NULL;
+
+-- Index for check-in time filtering
+CREATE INDEX IF NOT EXISTS idx_event_ticket_transaction_check_in_time
+ON event_ticket_transaction(event_id, check_in_time)
+WHERE check_in_time IS NOT NULL;
+
+-- Composite index for check-in queries
+CREATE INDEX IF NOT EXISTS idx_event_ticket_transaction_check_in_composite
+ON event_ticket_transaction(event_id, check_in_status, check_in_time)
+WHERE check_in_status = 'CHECKED_IN' AND check_in_time IS NOT NULL;
+
+-- Index for sales analytics (purchase date filtering)
+CREATE INDEX IF NOT EXISTS idx_event_ticket_transaction_purchase_date
+ON event_ticket_transaction(event_id, purchase_date)
+WHERE purchase_date IS NOT NULL AND status = 'COMPLETED';
+            </div>
+            <p><strong>Note:</strong> These indexes are optional performance optimizations. The system will work without them, but queries may be slower for large datasets.</p>
+        </div>
+
+        <h3>9.2 Query Optimization</h3>
+        <div class="info-box">
+            <p><strong>Best Practices:</strong></p>
+            <ul>
+                <li>Use pagination for large result sets (default: 20 items per page)</li>
+                <li>Limit maximum page size to prevent performance issues</li>
+                <li>Use database indexes for frequently filtered fields</li>
+                <li>Consider caching for statistics endpoints (if data doesn't change frequently)</li>
+                <li>Use server-side aggregation for analytics (if optional endpoints are implemented)</li>
+            </ul>
+        </div>
+
+        <h2>10. Error Handling</h2>
+
+        <h3>10.1 Standard Error Responses</h3>
+        <div class="code-block">
+// 400 Bad Request - Invalid parameters
+{
+  "error": "Bad Request",
+  "message": "Invalid date format. Expected ISO 8601 format (YYYY-MM-DD).",
+  "status": 400
+}
+
+// 401 Unauthorized - Missing or invalid JWT
+{
+  "error": "Unauthorized",
+  "message": "JWT token is missing or invalid.",
+  "status": 401
+}
+
+// 403 Forbidden - Tenant access denied
+{
+  "error": "Forbidden",
+  "message": "You do not have access to this resource.",
+  "status": 403
+}
+
+// 404 Not Found - Transaction not found
+{
+  "error": "Not Found",
+  "message": "Transaction with ID 12345 not found.",
+  "status": 404
+}
+
+// 409 Conflict - Duplicate check-in
+{
+  "error": "Conflict",
+  "message": "Transaction is already checked in.",
+  "status": 409
+}
+
+// 422 Unprocessable Entity - Validation error
+{
+  "error": "Unprocessable Entity",
+  "message": "Cannot check in REFUNDED transaction.",
+  "status": 422
+}
+
+// 500 Internal Server Error
+{
+  "error": "Internal Server Error",
+  "message": "An unexpected error occurred.",
+  "status": 500
+}
+        </div>
+
+        <h2>11. Implementation Checklist</h2>
+
+        <h3>11.1 Immediate Actions (Backend Team)</h3>
+        <div class="task-card required">
+            <h4>✅ Phase 1: Verification (Required)</h4>
+            <ol>
+                <li>✅ Test <code>GET /api/event-ticket-transactions</code> with <code>checkInStatus.equals</code> filter</li>
+                <li>✅ Test <code>GET /api/event-ticket-transactions</code> with <code>checkInTime.greaterThanOrEqual</code> filter</li>
+                <li>✅ Test <code>GET /api/event-ticket-transactions</code> with <code>checkInTime.lessThanOrEqual</code> filter</li>
+                <li>✅ Test combined filters together</li>
+                <li>✅ Test <code>GET /api/event-ticket-transactions/statistics/{eventId}</code> with date range parameters</li>
+                <li>✅ Document test results and share with frontend team</li>
+            </ol>
+        </div>
+
+        <h3>11.2 Optional Enhancements (Backend Team)</h3>
+        <div class="task-card optional">
+            <h4>💡 Phase 2: Performance Optimization (Optional)</h4>
+            <ol>
+                <li>💡 Add database indexes for check-in queries (see Section 9.1)</li>
+                <li>💡 Implement <code>GET /api/event-ticket-transactions/check-in-analytics/{eventId}</code> endpoint</li>
+                <li>💡 Implement <code>GET /api/event-ticket-transactions/sales-analytics/{eventId}</code> endpoint</li>
+                <li>💡 Add date range support to statistics endpoint</li>
+                <li>💡 Add caching for analytics endpoints (if appropriate)</li>
+            </ol>
+        </div>
+
+        <h2>12. Frontend Integration Points</h2>
+
+        <h3>12.1 Proxy Route Pattern</h3>
+        <div class="info-box">
+            <p><strong>Frontend will create proxy routes:</strong></p>
+            <ul>
+                <li><code>/api/proxy/event-ticket-transactions/[...slug].ts</code> - Already exists</li>
+                <li>Proxy automatically injects <code>tenantId.equals</code></li>
+                <li>Proxy handles JWT authentication</li>
+                <li>Proxy forwards requests to backend</li>
+            </ul>
+            <p><strong>Backend should:</strong></p>
+            <ul>
+                <li>Accept standard Spring Data REST query parameters</li>
+                <li>Filter by <code>tenantId.equals</code> (security requirement)</li>
+                <li>Return standard JSON responses</li>
+                <li>Handle errors gracefully</li>
+            </ul>
+        </div>
+
+        <h3>12.2 Expected Response Formats</h3>
+        <div class="code-block">
+// List Response (GET /api/event-ticket-transactions)
+{
+  "content": [...],  // Array of transaction objects
+  "totalElements": 100,
+  "totalPages": 5,
+  "size": 20,
+  "number": 0,
+  "first": true,
+  "last": false
+}
+
+// Single Object Response (GET /api/event-ticket-transactions/{id})
+{
+  "id": 12345,
+  "eventId": 456,
+  "checkInStatus": "CHECKED_IN",
+  "checkInTime": "2026-01-15T10:30:00Z",
+  ...
+}
+
+// Statistics Response (GET /api/event-ticket-transactions/statistics/{eventId})
+{
+  "eventId": 456,
+  "totalSales": 1000,
+  "totalRevenue": 50000.00,
+  ...
+}
+        </div>
+
+        <h2>13. Detailed Prompt for Backend Team</h2>
+
+        <div class="summary-box">
+            <h3>📋 Complete Implementation Prompt</h3>
+            <p><strong>Copy this prompt and provide it to the backend team:</strong></p>
+            <div class="code-block" style="white-space: pre-wrap; background: #f8f9fa; color: #333; border: 1px solid #ddd;">
+We need backend support for QR Scanner and Enhanced Reporting features for our event ticketing system.
+
+**PROJECT CONTEXT:**
+- Frontend: Next.js 15+ (E:\project_workspace\mosc-temp)
+- Backend: Spring Boot REST API (E:\project_workspace\malayalees-us-site-boot)
+- Database: PostgreSQL (schema: code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql)
+
+**REQUIREMENTS:**
+
+1. **VERIFY EXISTING API FILTER SUPPORT** (Required):
+   - Test if GET /api/event-ticket-transactions supports:
+     * checkInStatus.equals filter (on check_in_status VARCHAR field)
+     * checkInTime.greaterThanOrEqual filter (on check_in_time TIMESTAMP field)
+     * checkInTime.lessThanOrEqual filter (on check_in_time TIMESTAMP field)
+   - Test if GET /api/event-ticket-transactions/statistics/{eventId} supports:
+     * startDate query parameter (ISO 8601: YYYY-MM-DD)
+     * endDate query parameter (ISO 8601: YYYY-MM-DD)
+   - Document test results and share with frontend team
+
+2. **ENSURE CHECK-IN ENDPOINT WORKS** (Required):
+   - Verify PATCH /api/event-ticket-transactions/{id} accepts:
+     * checkInStatus field (set to 'CHECKED_IN')
+     * checkInTime field (TIMESTAMP)
+     * numberOfGuestsCheckedIn field (INTEGER)
+   - Add validation to prevent duplicate check-ins
+   - Add validation to prevent check-in of REFUNDED/CANCELLED transactions
+
+3. **OPTIONAL PERFORMANCE ENDPOINTS** (Recommended):
+   - Add GET /api/event-ticket-transactions/check-in-analytics/{eventId} endpoint
+     * Accepts startDate and endDate query parameters
+     * Returns aggregated check-in statistics (see PRD Section 3.3)
+   - Add GET /api/event-ticket-transactions/sales-analytics/{eventId} endpoint
+     * Accepts startDate and endDate query parameters
+     * Returns aggregated sales statistics (see PRD Section 3.3)
+
+4. **DATABASE INDEXES** (Optional):
+   - Add indexes for check-in queries (see PRD Section 9.1)
+
+**SECURITY REQUIREMENTS:**
+- All endpoints must filter by tenantId.equals (multi-tenant security)
+- All endpoints require JWT authentication
+- Validate tenant_id on all operations
+
+**TESTING:**
+- Run verification tests (see PRD Section 7.1)
+- Document results and share with frontend team
+
+**REFERENCE DOCUMENTS:**
+- Full PRD: documentation/event_ticketing/backend_implementation_prd.html
+- Database Schema: code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql
+- API Docs: documentation/Swagger_API_Docs/api-docs.json
+
+**PRIORITY:**
+- Phase 1 (Verification): HIGH - Required for frontend implementation
+- Phase 2 (Optional Endpoints): MEDIUM - Performance optimization
+
+Please review the full PRD document for complete specifications and implementation details.
+            </div>
+        </div>
+
+        <h2>14. Success Criteria</h2>
+
+        <div class="success-box">
+            <h3>✅ Phase 1 Success Criteria (Required)</h3>
+            <ul>
+                <li>✅ Backend team verifies filter support and documents results</li>
+                <li>✅ Frontend team receives verification results</li>
+                <li>✅ Check-in endpoint works correctly with validation</li>
+                <li>✅ All security requirements are met</li>
+            </ul>
+
+            <h3>💡 Phase 2 Success Criteria (Optional)</h3>
+            <ul>
+                <li>💡 Optional analytics endpoints are implemented (if chosen)</li>
+                <li>💡 Database indexes are added (if chosen)</li>
+                <li>💡 Performance improvements are measurable</li>
+            </ul>
+        </div>
+
+        <h2>15. Timeline & Priorities</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Phase</th>
+                    <th>Tasks</th>
+                    <th>Priority</th>
+                    <th>Timeline</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Phase 1: Verification</td>
+                    <td>Test filter support, document results</td>
+                    <td><span class="badge badge-high">HIGH</span></td>
+                    <td>Week 1</td>
+                </tr>
+                <tr>
+                    <td>Phase 2: Check-In Validation</td>
+                    <td>Add duplicate check-in prevention, validation</td>
+                    <td><span class="badge badge-high">HIGH</span></td>
+                    <td>Week 1</td>
+                </tr>
+                <tr>
+                    <td>Phase 3: Optional Endpoints</td>
+                    <td>Implement analytics endpoints (if chosen)</td>
+                    <td><span class="badge badge-medium">MEDIUM</span></td>
+                    <td>Week 2-3</td>
+                </tr>
+                <tr>
+                    <td>Phase 4: Performance</td>
+                    <td>Add database indexes (if chosen)</td>
+                    <td><span class="badge badge-low">LOW</span></td>
+                    <td>Week 3-4</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>16. Contact & Questions</h2>
+
+        <div class="info-box">
+            <p><strong>For Questions or Clarifications:</strong></p>
+            <ul>
+                <li>Review this PRD document thoroughly</li>
+                <li>Check database schema: <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></li>
+                <li>Check API documentation: <code>documentation/Swagger_API_Docs/api-docs.json</code></li>
+                <li>Check frontend cursor rules: <code>.cursor/rules/nextjs_api_routes.mdc</code></li>
+                <li>Test existing endpoints to understand current implementation</li>
+            </ul>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #ddd;">
+
+        <p style="text-align: center; color: #666; font-size: 14px;">
+            Generated: January 2026 | Backend Implementation PRD: QR Scanner & Enhanced Reporting
+            <br>
+            Frontend: E:\project_workspace\mosc-temp | Backend: E:\project_workspace\malayalees-us-site-boot
+            <br>
+            Batch Jobs: E:\project_workspace\event-site-manager-batch-jobs
+        </p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PRD: News Portal – Generic Design &amp; Scope</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+      h1, h2, h3, h4 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+      h1 { font-size: 2.3rem; margin-bottom: 0.75rem; }
+      h2 { font-size: 1.7rem; margin-top: 2.5rem; }
+      h3 { font-size: 1.3rem; margin-top: 1.8rem; }
+      h4 { font-size: 1.1rem; margin-top: 1.2rem; }
+      p, li { line-height: 1.75; font-size: 1rem; }
+      ul, ol { margin-left: 1.4rem; }
+      table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+      th, td { border: 1px solid rgba(42, 32, 23, 0.15); padding: 0.75rem; vertical-align: top; }
+      th { background: rgba(213, 201, 182, 0.35); font-weight: 600; }
+      code, pre {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+      }
+      pre { padding: 1rem; line-height: 1.6; overflow-x: auto; }
+      code.inline { padding: 0.15rem 0.35rem; font-size: 0.95rem; display: inline-block; }
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .divider { height: 1px; background: rgba(42, 32, 23, 0.12); margin: 2rem 0; }
+      .callout {
+        border-left: 4px solid #8b7d6b;
+        background: rgba(213, 201, 182, 0.3);
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
+        margin: 1.8rem 0;
+      }
+      .toc ol { list-style: decimal; }
+      .toc a { color: #1f4c8f; text-decoration: none; }
+      .toc a:hover { text-decoration: underline; }
+      footer { margin-top: 4rem; text-align: center; font-size: 0.9rem; color: #7a7066; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>PRD: News Portal – Generic Design &amp; Scope</h1>
+        <p class="tag">Strapi CMS · MOSC</p>
+        <p>Product Requirements Document for the Strapi-backed News Portal within the Malankara Orthodox Syrian Church (MOSC) site. For stakeholder review before implementation.</p>
+      </header>
+
+      <nav class="toc" aria-label="Table of contents">
+        <h2>Contents</h2>
+        <ol>
+          <li><a href="#summary">Title and summary</a></li>
+          <li><a href="#goals">Goals and non-goals</a></li>
+          <li><a href="#user-stories">User stories</a></li>
+          <li><a href="#layout-mapping">Layout and content mapping</a></li>
+          <li><a href="#strapi-connectivity">Strapi connectivity</a></li>
+          <li><a href="#functional">Functional requirements</a></li>
+          <li><a href="#data-api">Data and API</a></li>
+          <li><a href="#ui-ux">UI/UX constraints</a></li>
+          <li><a href="#out-of-scope">Out of scope / future</a></li>
+          <li><a href="#references">References</a></li>
+        </ol>
+      </nav>
+
+      <section id="summary">
+        <h2>1. Title and summary</h2>
+        <p><strong>News Portal (Strapi-backed) for MOSC.</strong> Add a &ldquo;News&rdquo; link in the MOSC top menu next to &ldquo;Saints&rdquo; that navigates to a news portal. The news portal is displayed and implemented using data from Strapi CMS. The current MOSC header and hero/photo remain unchanged; the news content (flash, main/featured/press release, most read, sidebar) appears inside the main content area, within the existing header and footer.</p>
+      </section>
+
+      <section id="goals">
+        <h2>2. Goals and non-goals</h2>
+        <h3>Goals</h3>
+        <ul>
+          <li>Strapi-driven news UI: all news content (articles, flash, sidebar, ads) sourced from Strapi.</li>
+          <li>Same MOSC header and footer; news layout confined to the main content region.</li>
+          <li>Sidebar promotional block (e.g. Facebook embed) replicated from legacy behaviour, with content from Strapi.</li>
+          <li>Layout aligned with the reference screenshots (news_template_layout_final.jpeg, news_template_layout_annotated_diagram.jpeg).</li>
+        </ul>
+        <h3>Non-goals</h3>
+        <ul>
+          <li>Authentication required to read news (news is public).</li>
+          <li>Editing or authoring content in the Next.js app (content is managed in Strapi Admin only).</li>
+        </ul>
+      </section>
+
+      <section id="user-stories">
+        <h2>3. User stories</h2>
+        <ul>
+          <li>As a visitor, I see a &ldquo;News&rdquo; item in the MOSC top menu next to &ldquo;Saints&rdquo; so that I can open the news portal.</li>
+          <li>As a visitor, I see a news homepage with flash news (if enabled), main news, featured news, press release, and most read sections, so that I can browse the latest content.</li>
+          <li>As a visitor, I see a sidebar with a promotional block (e.g. Facebook) and ad slots, so that the layout matches the legacy Catholicate News experience.</li>
+          <li>As a visitor, I can open an article from the list and read the full content on an article detail page.</li>
+        </ul>
+      </section>
+
+      <section id="layout-mapping">
+        <h2>4. Layout and content mapping</h2>
+        <p>Each section of the news portal maps to Strapi content types as follows. See <a href="catholicatenews_strapi_content_mapping.md">catholicatenews_strapi_content_mapping.md</a> for full detail.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Section</th>
+              <th>Strapi content type</th>
+              <th>Retrieval</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Flash News (red bar)</td>
+              <td>Homepage (single)</td>
+              <td><code class="inline">GET /api/homepage</code> — flashNewsMessage, flashNewsActive</td>
+            </tr>
+            <tr>
+              <td>Main News</td>
+              <td>Article (collection)</td>
+              <td>Filter <code class="inline">category.slug=main-news</code></td>
+            </tr>
+            <tr>
+              <td>Featured News</td>
+              <td>Article (collection)</td>
+              <td>Filter <code class="inline">isFeatured=true</code></td>
+            </tr>
+            <tr>
+              <td>Press Release</td>
+              <td>Article (collection)</td>
+              <td>Filter <code class="inline">category.slug=press-release</code></td>
+            </tr>
+            <tr>
+              <td>Most Read</td>
+              <td>Article (collection)</td>
+              <td>Sort <code class="inline">views:desc</code>, limit 5</td>
+            </tr>
+            <tr>
+              <td>Sidebar (Facebook, video, promo)</td>
+              <td>Sidebar Promotional Block (single)</td>
+              <td><code class="inline">GET /api/sidebar-promotional-block</code></td>
+            </tr>
+            <tr>
+              <td>Sidebar ads</td>
+              <td>Advertisement Slot (collection)</td>
+              <td>Filter <code class="inline">position=sidebar</code></td>
+            </tr>
+          </tbody>
+        </table>
+        <p>Layout reference images: <strong>news_template_layout_final.jpeg</strong>, <strong>news_template_layout_annotated_diagram.jpeg</strong> (in this folder).</p>
+      </section>
+
+      <section id="strapi-connectivity">
+        <h2>5. Strapi connectivity</h2>
+        <p>The Next.js application reads Strapi configuration from environment variables and performs all Strapi API calls <strong>server-side only</strong> (no API token exposure to the client).</p>
+        <ul>
+          <li><strong>Strapi URL:</strong> <code class="inline">NEXT_PUBLIC_STRAPI_URL</code> (e.g. <code class="inline">http://localhost:1337</code> or production Strapi URL).</li>
+          <li><strong>API token:</strong> <code class="inline">STRAPI_API_TOKEN</code> (server-only; not prefixed with <code class="inline">NEXT_PUBLIC_</code>). For public read-only access, Strapi can expose a read-only API token; the Next.js app uses it in server components or API routes only.</li>
+        </ul>
+        <p>A small helper (e.g. <code class="inline">src/lib/strapi.ts</code>) reads these env values and exports the base URL and headers for Strapi fetch. All data fetching for the news portal is done in server components or server actions so the token is never sent to the browser.</p>
+      </section>
+
+      <section id="functional">
+        <h2>6. Functional requirements</h2>
+        <ul>
+          <li><strong>Menu:</strong> Add a &ldquo;News&rdquo; link in the MOSC top menu, placed next to &ldquo;Saints&rdquo;, pointing to the news portal route.</li>
+          <li><strong>Route:</strong> News portal at <code class="inline">/mosc/news</code> (or as decided; alternative is making news the default MOSC content at <code class="inline">/mosc</code>).</li>
+          <li><strong>Main content:</strong> Flash news bar (visible only when enabled in Strapi); main news; featured news; press release; most read. All within existing MOSC header and footer.</li>
+          <li><strong>Sidebar:</strong> Promotional block (e.g. Facebook embed from Strapi sidebar block); advertisement slots (position=sidebar).</li>
+          <li><strong>Article detail:</strong> Dynamic route for single article (e.g. <code class="inline">/mosc/news/[slug]</code>), showing title, cover image, body, metadata; optional view-count increment.</li>
+        </ul>
+      </section>
+
+      <section id="data-api">
+        <h2>7. Data and API</h2>
+        <p>Strapi REST API endpoints and filters (from content mapping document):</p>
+        <ul>
+          <li><strong>Homepage (flash):</strong> <code class="inline">GET {STRAPI_URL}/api/homepage?populate=*</code> → flashNewsMessage, flashNewsActive.</li>
+          <li><strong>Featured articles:</strong> <code class="inline">GET {STRAPI_URL}/api/articles?filters[isFeatured][$eq]=true&amp;filters[publishedAt][$notNull]=true&amp;populate=cover,category,author&amp;sort=publishedAt:desc&amp;pagination[limit]=6</code> (add tenant filter if Strapi has tenant).</li>
+          <li><strong>Main news:</strong> <code class="inline">GET {STRAPI_URL}/api/articles?filters[category][slug][$eq]=main-news&amp;filters[publishedAt][$notNull]=true&amp;populate=cover,category,author&amp;sort=publishedAt:desc&amp;pagination[limit]=10</code>.</li>
+          <li><strong>Press release:</strong> <code class="inline">GET {STRAPI_URL}/api/articles?filters[category][slug][$eq]=press-release&amp;filters[publishedAt][$notNull]=true&amp;populate=cover,category,author&amp;sort=publishedAt:desc&amp;pagination[limit]=10</code>.</li>
+          <li><strong>Most read:</strong> <code class="inline">GET {STRAPI_URL}/api/articles?filters[publishedAt][$notNull]=true&amp;populate=cover,category&amp;sort=views:desc&amp;pagination[limit]=5</code>.</li>
+          <li><strong>Sidebar promotional block:</strong> <code class="inline">GET {STRAPI_URL}/api/sidebar-promotional-block</code> (or equivalent single-type endpoint).</li>
+          <li><strong>Advertisement slots:</strong> <code class="inline">GET {STRAPI_URL}/api/advertisement-slots?filters[position][$eq]=sidebar</code> (plus tenant filter if applicable).</li>
+          <li><strong>Global (optional):</strong> <code class="inline">GET {STRAPI_URL}/api/global</code> for site name, favicon, etc. if needed.</li>
+        </ul>
+      </section>
+
+      <section id="ui-ux">
+        <h2>8. UI/UX constraints</h2>
+        <ul>
+          <li>Reuse the MOSC design system (typography, colors, spacing, components) as defined in project styling standards.</li>
+          <li>Responsive layout: main column + sidebar; sidebar stacks or reflows appropriately on small screens.</li>
+          <li>Sidebar behaviour (promo block, ads) should replicate the legacy index.html experience where applicable, with content driven by Strapi (embedCode, videoUrl, etc.).</li>
+        </ul>
+      </section>
+
+      <section id="out-of-scope">
+        <h2>9. Out of scope / future</h2>
+        <ul>
+          <li>Full i18n for news content (can be added later via Strapi i18n).</li>
+          <li>Multi-tenant Strapi (single tenant assumed unless specified).</li>
+          <li>View-count increment for &ldquo;Most Read&rdquo; can be deferred (custom Strapi controller or PATCH with auth).</li>
+        </ul>
+      </section>
+
+      <section id="references">
+        <h2>10. References</h2>
+        <ul>
+          <li>Layout: <strong>news_template_layout_final.jpeg</strong>, <strong>news_template_layout_annotated_diagram.jpeg</strong> (this folder).</li>
+          <li>Content mapping: <a href="catholicatenews_strapi_content_mapping.md">catholicatenews_strapi_content_mapping.md</a>.</li>
+          <li>CMS setup and Next.js connection: <a href="cms_setup_next_steps.html">cms_setup_next_steps.html</a> (Phase 5).</li>
+          <li>Admin and data source: <a href="user_guide/admin_user_guide.html">user_guide/admin_user_guide.html</a>.</li>
+          <li>Init requirements: <a href="init_requirements_spec.html">init_requirements_spec.html</a>.</li>
+          <li>Legacy layout reference: <a href="index.html">index.html</a> (sidebar promotional blog / Facebook).</li>
+        </ul>
+      </section>
+
+      <footer>
+        <p>PRD: News Portal – Generic Design &amp; Scope. For review before implementation.</p>
+      </footer>
+    </main>
+  </body>
+</html>

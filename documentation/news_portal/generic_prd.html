@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PRD: News Portal – Generic Design &amp; Scope</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+      h1, h2, h3, h4 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+      h1 { font-size: 2.3rem; margin-bottom: 0.75rem; }
+      h2 { font-size: 1.7rem; margin-top: 2.5rem; }
+      h3 { font-size: 1.3rem; margin-top: 1.8rem; }
+      h4 { font-size: 1.1rem; margin-top: 1.2rem; }
+      p, li { line-height: 1.75; font-size: 1rem; }
+      ul, ol { margin-left: 1.4rem; }
+      table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+      th, td { border: 1px solid rgba(42, 32, 23, 0.15); padding: 0.75rem; vertical-align: top; }
+      th { background: rgba(213, 201, 182, 0.35); font-weight: 600; }
+      code, pre {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+      }
+      pre { padding: 1rem; line-height: 1.6; overflow-x: auto; }
+      code.inline { padding: 0.15rem 0.35rem; font-size: 0.95rem; display: inline-block; }
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .divider { height: 1px; background: rgba(42, 32, 23, 0.12); margin: 2rem 0; }
+      .callout {
+        border-left: 4px solid #8b7d6b;
+        background: rgba(213, 201, 182, 0.3);
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
+        margin: 1.8rem 0;
+      }
+      .toc ol { list-style: decimal; }
+      .toc a { color: #1f4c8f; text-decoration: none; }
+      .toc a:hover { text-decoration: underline; }
+      footer { margin-top: 4rem; text-align: center; font-size: 0.9rem; color: #7a7066; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Draft · News Portal</span>
+      <h1>PRD: News Portal – Generic Design &amp; Scope</h1>
+      <p>
+        <strong>Project:</strong> MCEFEE Multi-Tenant Event Management Platform<br />
+        <strong>Document Version:</strong> 1.0<br />
+        <strong>Date:</strong> January 2026<br />
+        <strong>Status:</strong> Draft
+      </p>
+
+      <div class="divider"></div>
+
+      <h2 id="executive-summary">Executive Summary</h2>
+      <p>
+        This document defines the generic design and scope for a <strong>News Portal</strong> feature within the existing
+        MCEFEE platform. The portal replaces the legacy WordPress-hosted static HTML news site (e.g. catholicatenews.in)
+        with a dynamic, database-driven section. News is categorized (Main News, Featured News, Press Release, Flash News, etc.),
+        and each display section can have its own configurable banner/hero image managed by editors via an admin dashboard.
+        The News Portal is a separate page reachable from the main site menu and presents content from the database with
+        proper categorization, dates, and section-level display configuration.
+      </p>
+
+      <div class="callout">
+        <strong>Key Concept:</strong> The legacy site is static HTML exported from WordPress. The new system stores
+        articles, categories, section display config, and news flashes in the database and serves them via REST API
+        and Next.js front-end, with an admin UI for editors to update content and section images independently.
+      </div>
+
+      <h2 id="table-of-contents">Table of Contents</h2>
+      <nav class="toc">
+        <ol>
+          <li><a href="#background">Background &amp; Context</a></li>
+          <li><a href="#goals">Goals &amp; Non-Goals</a></li>
+          <li><a href="#legacy-structure">Legacy News Structure (Reference)</a></li>
+          <li><a href="#scope">Scope &amp; Sections</a></li>
+          <li><a href="#stakeholders">Stakeholders &amp; Users</a></li>
+          <li><a href="#database-design">Database Design</a></li>
+          <li><a href="#integration">Integration Points</a></li>
+          <li><a href="#open-questions">Open Questions</a></li>
+        </ol>
+      </nav>
+
+      <div class="divider"></div>
+
+      <section id="background">
+        <h2>1. Background &amp; Context</h2>
+        <ul>
+          <li><strong>Frontend:</strong> Next.js 15+ application in <code class="inline">E:\project_workspace\mosc-temp</code></li>
+          <li><strong>Backend:</strong> Spring Boot service in <code class="inline">E:\project_workspace\malayalees-us-site-boot</code></li>
+          <li><strong>Batch Jobs:</strong> Spring Batch in <code class="inline">E:\project_workspace\event-site-manager-batch-jobs</code></li>
+          <li><strong>Legacy Reference:</strong> <code class="inline">E:\project_workspace\catholicatenews_in\index.html</code> (WordPress-exported static HTML)</li>
+          <li><strong>Schema Reference:</strong> <code class="inline">code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></li>
+          <li><strong>API Schema:</strong> <code class="inline">documentation/Swagger_API_Docs/api-docs.json</code></li>
+          <li><strong>UI Standards:</strong> <code class="inline">.cursor/rules/ui_style_guide.mdc</code>, <code class="inline">mosc_styling_standards.mdc</code></li>
+          <li><strong>API Rules:</strong> <code class="inline">nextjs_api_routes.mdc</code> for REST/proxy patterns</li>
+        </ul>
+      </section>
+
+      <section id="goals">
+        <div class="divider"></div>
+        <h2>2. Goals &amp; Non-Goals</h2>
+        <h3>Goals</h3>
+        <ul>
+          <li>Provide a dedicated News section as a menu item (or submenu) leading to a dynamic news landing page.</li>
+          <li>Store news articles, categories, and section display configuration in the database (multi-tenant).</li>
+          <li>Allow editors to update section images (e.g. Main News, Featured News, Flash News banner) independently per section.</li>
+          <li>Support categorization consistent with legacy: Main News, Featured News, Press Release, Most Read, Flash News, and extensible categories.</li>
+          <li>Display news by category with pagination and publication dates; support “flash” carousel/spotlight items.</li>
+          <li>Admin dashboard that is user-friendly and self-guiding so editors can update news and section images regularly without developer help.</li>
+        </ul>
+        <h3>Non-Goals</h3>
+        <ul>
+          <li>Migrating legacy WordPress content automatically (can be a separate migration task).</li>
+          <li>Replacing or duplicating existing event or gallery features; News is an additive section.</li>
+        </ul>
+      </section>
+
+      <section id="legacy-structure">
+        <div class="divider"></div>
+        <h2>3. Legacy News Structure (Reference)</h2>
+        <p>From <code class="inline">catholicatenews_in/index.html</code>, category pages, and <code class="inline">documentation/news_portal/catholicatenews_in_full_screen_shot.png</code>:</p>
+        <ul>
+          <li><strong>Flash News:</strong> Carousel/ticker at top; short headlines linking to full article.</li>
+          <li><strong>Main News:</strong> Section with title “Main News” linking to <code class="inline">category/main-news</code>; grid/list of articles with image, title, date, excerpt.</li>
+          <li><strong>Featured News:</strong> Section with title “Featured News” linking to <code class="inline">category/featured-news</code>; same card pattern.</li>
+          <li><strong>Most Read:</strong> Section listing popular or highly-read articles; two-column list with headlines, dates, and optional small thumbnails.</li>
+          <li><strong>Press Release:</strong> Section linking to <code class="inline">category/press-release</code>.</li>
+          <li><strong>Right Sidebar (Promotional / Advertisement area):</strong> Dedicated right column containing: social/profile widget, embedded video block with play button, “More Videos” list, and space suitable for rotating banner ads or sponsored content. This block is configurable (e.g. main banner/video thumbnail image, optional ad slots).</li>
+          <li><strong>LIVE (menu item):</strong> A dedicated “LIVE” menu item in the primary navigation that links to a page for embedding live videos (e.g. YouTube Live, other streaming embeds). Editors can set the current live stream URL or embed code so visitors can watch live events directly from the news portal.</li>
+        </ul>
+        <p>Each article has: featured image (e.g. <code class="inline">uploads/YYYY/MM/...</code>), title, publication date (post-info), excerpt. Categories used: main-news, featured-news, press-release, most-read, and equivalents for flash/uncategorized. Pagination: <code class="inline">category/main-news/page/1</code>, etc.</p>
+      </section>
+
+      <section id="scope">
+        <div class="divider"></div>
+        <h2>4. Scope &amp; Sections</h2>
+        <h3>Display Sections (Configurable)</h3>
+        <p>All sections below are visible on the legacy news portal (see <code class="inline">catholicatenews_in_full_screen_shot.png</code>). Each has an optional section-level image (or promotional creative) editable independently in the admin dashboard.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Section Key</th>
+              <th>Purpose</th>
+              <th>Editable Image</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>flash_news</td>
+              <td>Carousel/ticker at top; short headlines</td>
+              <td>Optional banner/background for flash area</td>
+            </tr>
+            <tr>
+              <td>main_news</td>
+              <td>Main news listing block</td>
+              <td>Section header/banner image</td>
+            </tr>
+            <tr>
+              <td>featured_news</td>
+              <td>Featured news listing block</td>
+              <td>Section header/banner image</td>
+            </tr>
+            <tr>
+              <td>most_read</td>
+              <td>Most-read/popular articles block (headlines, dates, optional small thumbnails)</td>
+              <td>Section header/banner image</td>
+            </tr>
+            <tr>
+              <td>press_release</td>
+              <td>Press release listing block</td>
+              <td>Section header/banner image</td>
+            </tr>
+            <tr>
+              <td>sidebar_promotional_block</td>
+              <td>Right sidebar: embedded video, “More Videos” list, social widget, or rotating banner ads / sponsored content</td>
+              <td>Main banner or video thumbnail image; rotating banners stored in <code class="inline">news_sidebar_promotion</code>, retrieved and shown as slideshow with configurable timer</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>Each section can have an optional image (URL or media reference) managed in the admin dashboard independently. The <code class="inline">sidebar_promotional_block</code> is the primary area for promotional or advertisement content.</p>
+        <h3>Sidebar &amp; Advertisement Areas</h3>
+        <ul>
+          <li><strong>Sidebar promotional block:</strong> The right column is modeled as a configurable section (<code class="inline">sidebar_promotional_block</code>) in <code class="inline">news_section_display_config</code> (section-level title/banner override) plus a dedicated table <code class="inline">news_sidebar_promotion</code> for <strong>rotating banner ads</strong>. Each promotion row stores: image URL, optional link URL, display order, and <strong>display_duration_seconds</strong> (timer per slide). The front end retrieves active promotions for the tenant (filtered by <code class="inline">is_active</code> and optional <code class="inline">valid_from</code> / <code class="inline">valid_to</code>), orders by <code class="inline">display_order</code>, and renders them as a <strong>slideshow with timer</strong> (auto-advance after <code class="inline">display_duration_seconds</code> seconds per slide). Editors manage promotions in the admin dashboard (add, reorder, set duration and validity).</li>
+          <li><strong>Generic ad slots (future):</strong> Additional ad slots (e.g. top banner, between sections, in-article) can be added later via extra config or a dedicated ad-slot table if needed.</li>
+        </ul>
+        <h3>Live Video (LIVE Menu)</h3>
+        <ul>
+          <li><strong>Purpose:</strong> The legacy portal includes a “LIVE” menu item that takes users to a page where live videos (e.g. YouTube Live streams) are embedded. The new system must support this.</li>
+          <li><strong>Behaviour:</strong> A dedicated public page (e.g. <code class="inline">/news/live</code>) displays the currently configured live stream embed. Editors set the active live stream URL (or embed URL) and optional title in the admin dashboard; the page renders the embed (e.g. YouTube iframe) so visitors can watch without leaving the site.</li>
+          <li><strong>Config:</strong> One “current” live stream per tenant: embed URL (e.g. YouTube embed src), optional title, and active flag. Stored in a small config table or in section display config (e.g. section_key <code class="inline">live_stream</code> with an embed_url field).</li>
+        </ul>
+        <h3>News Categories</h3>
+        <p>Categories align with legacy and are stored in DB: e.g. Main News, Featured News, Press Release, Most Read, Flash News, Achievements, English News, Uncategorized. New categories can be added by admins.</p>
+      </section>
+
+      <section id="stakeholders">
+        <div class="divider"></div>
+        <h2>5. Stakeholders &amp; Users</h2>
+        <ul>
+          <li><strong>Public visitors:</strong> View news landing page, category pages, and article detail; no auth required for reading.</li>
+          <li><strong>News editors / admins:</strong> Use admin dashboard to create/edit articles, manage categories, and set section images for each section (flash, main, featured, most read, press release, sidebar promotional block).</li>
+          <li><strong>Developers:</strong> Integrate backend APIs and front-end pages per nextjs_api_routes and UI standards.</li>
+        </ul>
+      </section>
+
+      <section id="database-design">
+        <div class="divider"></div>
+        <h2>6. Database Design</h2>
+        <p>New tables follow existing schema patterns: <code class="inline">tenant_id</code>, <code class="inline">created_at</code>, <code class="inline">updated_at</code> where applicable (see <code class="inline">Latest_Schema_Post__Blob_Claude_12.sql</code>).</p>
+        <h3>Proposed Tables</h3>
+        <ul>
+          <li>
+            <strong>news_category</strong> – Categories for articles (e.g. Main News, Featured News, Press Release).
+            Fields: id, tenant_id, name, slug, description, display_order, is_active, created_at, updated_at.
+          </li>
+          <li>
+            <strong>news_article</strong> – Single news item.
+            Fields: id, tenant_id, title, slug, excerpt, body (or body_html), featured_image_url (or media_id), published_at, status (DRAFT/PUBLISHED/ARCHIVED), author_id (FK user_profile), created_at, updated_at.
+          </li>
+          <li>
+            <strong>news_article_category</strong> – Many-to-many between news_article and news_category.
+            Fields: id, news_article_id, news_category_id, is_primary (boolean), created_at.
+          </li>
+          <li>
+            <strong>news_section_display_config</strong> – Per-section display settings (one row per section per tenant).
+            Fields: id, tenant_id, section_key (e.g. flash_news, main_news, featured_news, most_read, press_release, sidebar_promotional_block), section_title_override, banner_image_url (or media_id), display_order, is_active, created_at, updated_at.
+          </li>
+          <li>
+            <strong>news_sidebar_promotion</strong> – Rotating banner ads / promotional items for the right sidebar. Stored in the database, retrieved by tenant (and optional valid_from/valid_to), ordered by display_order, and displayed as a <strong>slideshow with configurable timer</strong> (display_duration_seconds per slide).
+            Fields: id, tenant_id, title (optional), image_url, link_url (optional), display_order, display_duration_seconds (seconds per slide in slideshow), valid_from, valid_to, is_active, created_at, updated_at.
+          </li>
+          <li>
+            <strong>news_flash</strong> – Short “flash” items for carousel/ticker.
+            Fields: id, tenant_id, headline, link_url (or news_article_id), display_order, valid_from, valid_to, is_active, created_at, updated_at.
+          </li>
+          <li>
+            <strong>news_live_stream_config</strong> – Current live stream for the LIVE page (one active config per tenant).
+            Fields: id, tenant_id, embed_url (e.g. YouTube embed src), title (optional), is_active, created_at, updated_at.
+          </li>
+        </ul>
+        <p>Author can reference <code class="inline">user_profile.id</code>. Media can reference existing event_media or a dedicated news_media table if needed; otherwise URL fields suffice for MVP.</p>
+      </section>
+
+      <section id="integration">
+        <div class="divider"></div>
+        <h2>7. Integration Points</h2>
+        <ul>
+          <li><strong>Frontend:</strong> New route(s) under app (e.g. <code class="inline">/news</code>, <code class="inline">/news/category/[slug]</code>, <code class="inline">/news/[slug]</code>). Menu item added in Header/navigation to “News” or under an existing submenu.</li>
+          <li><strong>Backend:</strong> REST APIs for news articles, categories, section config, and news flash (CRUD + list with filters). See <a href="backend_prd.html">backend_prd.html</a>.</li>
+          <li><strong>Proxy:</strong> Next.js proxy routes under <code class="inline">/api/proxy/</code> for news endpoints, using <code class="inline">createProxyHandler</code> and JWT; public read can use same proxy with optional tenant scoping.</li>
+          <li><strong>Admin:</strong> Admin dashboard under <code class="inline">/admin/news</code> (or similar) for articles, categories, section images, flash items, <strong>sidebar rotating promotions</strong> (slideshow timer), and live stream config; server actions and proxy per nextjs_api_routes.mdc.</li>
+          <li><strong>Batch (optional):</strong> Jobs in event-site-manager-batch-jobs for scheduled publish/unpublish or sync; not required for MVP.</li>
+        </ul>
+      </section>
+
+      <section id="open-questions">
+        <div class="divider"></div>
+        <h2>8. Open Questions</h2>
+        <ul>
+          <li>Exact menu placement (top-level “News” and “LIVE” vs under a “News” submenu).</li>
+          <li>Whether to reuse event_media or introduce news-specific media storage.</li>
+          <li>RSS/feed support for the new portal.</li>
+        </ul>
+      </section>
+
+      <footer>
+        <p>News Portal PRD – Generic Design · MCEFEE Platform</p>
+      </footer>
+    </main>
+  </body>
+</html>

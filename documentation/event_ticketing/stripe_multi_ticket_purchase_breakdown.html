@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Multi-Ticket Purchase Breakdown</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+        }
+        .example-box {
+            background-color: #f8f9fa;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .calculation-box {
+            background-color: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .comparison-box {
+            background-color: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .code {
+            font-family: 'Courier New', monospace;
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #d63384;
+        }
+        .ticket-row {
+            background-color: #f0f8ff;
+        }
+        .total-row {
+            background-color: #e8f5e9;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Stripe Multi-Ticket Purchase Breakdown</h1>
+        <p><strong>Document Date:</strong> January 11, 2026</p>
+        <p><strong>Example:</strong> Purchasing 2 tickets ($1.00 + $2.00 = $3.00 total) in a single transaction</p>
+
+        <div class="example-box">
+            <h2>Purchase Scenario</h2>
+            <ul>
+                <li><strong>Ticket 1:</strong> $1.00</li>
+                <li><strong>Ticket 2:</strong> $2.00</li>
+                <li><strong>Total Transaction Amount:</strong> $3.00</li>
+                <li><strong>Payment Method:</strong> Single Stripe transaction (one checkout)</li>
+            </ul>
+        </div>
+
+        <h2>1. Single Transaction Calculation</h2>
+
+        <div class="info-box">
+            <h3>Key Point: Stripe Charges ONE Fee Per Transaction</h3>
+            <p>When you purchase multiple tickets in a <strong>single checkout</strong>, Stripe treats it as <strong>one transaction</strong> and charges the processing fee <strong>once</strong> on the total amount.</p>
+        </div>
+
+        <div class="calculation-box">
+            <h3>Breakdown: $3.00 Total Purchase</h3>
+            <table>
+                <tr>
+                    <th>Item</th>
+                    <th>Amount</th>
+                    <th>Calculation</th>
+                </tr>
+                <tr class="ticket-row">
+                    <td>Ticket 1</td>
+                    <td>$1.00</td>
+                    <td>Individual ticket price</td>
+                </tr>
+                <tr class="ticket-row">
+                    <td>Ticket 2</td>
+                    <td>$2.00</td>
+                    <td>Individual ticket price</td>
+                </tr>
+                <tr>
+                    <td><strong>Subtotal (Before Stripe Fee)</strong></td>
+                    <td><strong>$3.00</strong></td>
+                    <td>$1.00 + $2.00</td>
+                </tr>
+                <tr>
+                    <td>Stripe Processing Fee (2.9%)</td>
+                    <td>$0.087</td>
+                    <td>$3.00 × 0.029 = $0.087</td>
+                </tr>
+                <tr>
+                    <td>Stripe Fixed Fee</td>
+                    <td>$0.30</td>
+                    <td>Fixed per transaction (charged once)</td>
+                </tr>
+                <tr>
+                    <td><strong>Total Stripe Fee</strong></td>
+                    <td><span class="highlight">$0.387</span></td>
+                    <td>$0.087 + $0.30</td>
+                </tr>
+                <tr class="total-row">
+                    <td><strong>Net Payout to Your Bank</strong></td>
+                    <td><span class="highlight">$2.613</span></td>
+                    <td>$3.00 - $0.387 = $2.613</td>
+                </tr>
+            </table>
+        </div>
+
+        <h2>2. Comparison: Single Transaction vs. Separate Transactions</h2>
+
+        <div class="comparison-box">
+            <h3>Scenario A: Single Transaction (Recommended)</h3>
+            <table>
+                <tr>
+                    <th>Item</th>
+                    <th>Amount</th>
+                </tr>
+                <tr>
+                    <td>Total Purchase</td>
+                    <td>$3.00</td>
+                </tr>
+                <tr>
+                    <td>Stripe Fee (2.9% + $0.30)</td>
+                    <td>$0.387</td>
+                </tr>
+                <tr class="total-row">
+                    <td><strong>Net Payout</strong></td>
+                    <td><strong>$2.613</strong></td>
+                </tr>
+                <tr>
+                    <td>Fee Percentage</td>
+                    <td>12.9% of transaction</td>
+                </tr>
+            </table>
+
+            <h3>Scenario B: Two Separate Transactions (Not Recommended)</h3>
+            <table>
+                <tr>
+                    <th>Transaction</th>
+                    <th>Amount</th>
+                    <th>Stripe Fee</th>
+                    <th>Net Payout</th>
+                </tr>
+                <tr>
+                    <td>Transaction 1 ($1.00 ticket)</td>
+                    <td>$1.00</td>
+                    <td>$0.329</td>
+                    <td>$0.671</td>
+                </tr>
+                <tr>
+                    <td>Transaction 2 ($2.00 ticket)</td>
+                    <td>$2.00</td>
+                    <td>$0.358</td>
+                    <td>$1.642</td>
+                </tr>
+                <tr class="total-row">
+                    <td><strong>Total</strong></td>
+                    <td><strong>$3.00</strong></td>
+                    <td><strong>$0.687</strong></td>
+                    <td><strong>$2.313</strong></td>
+                </tr>
+                <tr>
+                    <td>Fee Percentage</td>
+                    <td colspan="3">22.9% of total (much higher!)</td>
+                </tr>
+            </table>
+
+            <div class="warning-box">
+                <h4>⚠️ Key Insight:</h4>
+                <p><strong>Single Transaction is MUCH Better!</strong></p>
+                <ul>
+                    <li>Single transaction: <strong>$2.613</strong> net payout (fee: $0.387)</li>
+                    <li>Two transactions: <strong>$2.313</strong> net payout (fee: $0.687)</li>
+                    <li><strong>Savings:</strong> $0.30 more in your pocket with single transaction!</li>
+                </ul>
+                <p><strong>Why?</strong> The $0.30 fixed fee is charged <strong>once</strong> in a single transaction, but <strong>twice</strong> if you split into separate transactions.</p>
+            </div>
+        </div>
+
+        <h2>3. With Sales Tax (8% Example)</h2>
+
+        <div class="calculation-box">
+            <h3>Breakdown: $3.00 Purchase + 8% Sales Tax</h3>
+            <table>
+                <tr>
+                    <th>Item</th>
+                    <th>Amount</th>
+                    <th>Who Pays</th>
+                </tr>
+                <tr class="ticket-row">
+                    <td>Ticket 1</td>
+                    <td>$1.00</td>
+                    <td>Customer</td>
+                </tr>
+                <tr class="ticket-row">
+                    <td>Ticket 2</td>
+                    <td>$2.00</td>
+                    <td>Customer</td>
+                </tr>
+                <tr>
+                    <td><strong>Subtotal</strong></td>
+                    <td><strong>$3.00</strong></td>
+                    <td>Customer</td>
+                </tr>
+                <tr>
+                    <td>Sales Tax (8%)</td>
+                    <td>$0.24</td>
+                    <td>Customer (collected by you)</td>
+                </tr>
+                <tr>
+                    <td><strong>Total Customer Pays</strong></td>
+                    <td><strong>$3.24</strong></td>
+                    <td>Customer</td>
+                </tr>
+                <tr>
+                    <td>Stripe Fee (2.9% of $3.24)</td>
+                    <td>$0.094</td>
+                    <td>You (deducted from payout)</td>
+                </tr>
+                <tr>
+                    <td>Stripe Fixed Fee</td>
+                    <td>$0.30</td>
+                    <td>You (deducted from payout)</td>
+                </tr>
+                <tr>
+                    <td><strong>Total Stripe Fee</strong></td>
+                    <td><span class="highlight">$0.394</span></td>
+                    <td>You</td>
+                </tr>
+                <tr class="total-row">
+                    <td><strong>Net Payout to Your Bank</strong></td>
+                    <td><strong>$2.846</strong></td>
+                    <td>You receive</td>
+                </tr>
+                <tr>
+                    <td>Tax Collected</td>
+                    <td>$0.24</td>
+                    <td>You must remit to tax authority</td>
+                </tr>
+                <tr class="total-row">
+                    <td><strong>Your Net Revenue (after tax remittance)</strong></td>
+                    <td><strong>$2.606</strong></td>
+                    <td>$2.846 - $0.24 (tax to remit)</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="info-box">
+            <h4>Important Tax Note:</h4>
+            <p>Stripe calculates the fee on the <strong>total amount including tax</strong> ($3.24), not just the ticket prices ($3.00). This is because the customer pays $3.24 total, and Stripe's fee is based on what the customer actually pays.</p>
+        </div>
+
+        <h2>4. Database Fields for Multi-Ticket Purchase</h2>
+
+        <p>In your <code>event_ticket_transaction</code> table, a single transaction record represents the entire purchase:</p>
+        <table>
+            <tr>
+                <th>Database Field</th>
+                <th>Value</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td><code>quantity</code></td>
+                <td>2</td>
+                <td>Number of tickets purchased</td>
+            </tr>
+            <tr>
+                <td><code>total_amount</code></td>
+                <td>$3.00</td>
+                <td>Sum of individual ticket prices ($1.00 + $2.00)</td>
+            </tr>
+            <tr>
+                <td><code>tax_amount</code></td>
+                <td>$0.24</td>
+                <td>Sales tax collected (if applicable)</td>
+            </tr>
+            <tr>
+                <td><code>final_amount</code></td>
+                <td>$3.24</td>
+                <td>Total amount customer paid (including tax)</td>
+            </tr>
+            <tr>
+                <td><code>stripe_fee_amount</code></td>
+                <td>$0.394</td>
+                <td>Stripe processing fee (on $3.24 total)</td>
+            </tr>
+            <tr>
+                <td><code>stripe_amount_tax</code></td>
+                <td>$0.24</td>
+                <td>Tax collected (if Stripe Tax enabled)</td>
+            </tr>
+            <tr>
+                <td><code>net_payout_amount</code></td>
+                <td>$2.846</td>
+                <td>Net amount you receive ($3.24 - $0.394)</td>
+            </tr>
+        </table>
+
+        <h2>5. Stripe Balance Transaction Details</h2>
+
+        <p>When you retrieve the <code>BalanceTransaction</code> from Stripe API for this purchase:</p>
+        <table>
+            <tr>
+                <th>Stripe Field</th>
+                <th>Value (in cents)</th>
+                <th>Value (in dollars)</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td><code>amount</code></td>
+                <td>324 cents</td>
+                <td>$3.24</td>
+                <td>Gross transaction amount (what customer paid)</td>
+            </tr>
+            <tr>
+                <td><code>fee</code></td>
+                <td>39 cents</td>
+                <td>$0.39</td>
+                <td>Stripe processing fee (rounded from $0.394)</td>
+            </tr>
+            <tr>
+                <td><code>net</code></td>
+                <td>285 cents</td>
+                <td>$2.85</td>
+                <td>Net payout amount (rounded from $2.846)</td>
+            </tr>
+        </table>
+
+        <div class="info-box">
+            <h4>Note on Rounding:</h4>
+            <p>Stripe stores amounts in <strong>cents</strong> (integers), so there may be slight rounding differences. The <code>net</code> field is the most accurate representation of what you'll receive.</p>
+        </div>
+
+        <h2>6. Payout Timeline</h2>
+
+        <div class="info-box">
+            <h3>Timeline for $3.00 Multi-Ticket Purchase</h3>
+            <ul>
+                <li><strong>Day 0:</strong> Customer purchases 2 tickets ($3.00 total), payment authorized</li>
+                <li><strong>Day 1-2:</strong> Stripe settles the transaction</li>
+                <li><strong>Day 2-4:</strong> Stripe initiates payout (standard account)</li>
+                <li><strong>Day 4-7:</strong> Bank processes ACH transfer</li>
+                <li><strong>Day 5-9:</strong> <strong>$2.85</strong> (approximately) available in your bank account</li>
+            </ul>
+            <p><strong>Total Time:</strong> Approximately <span class="highlight">5-9 business days</span> from purchase to funds in your bank account.</p>
+        </div>
+
+        <h2>7. Summary Comparison Table</h2>
+
+        <table>
+            <tr>
+                <th>Scenario</th>
+                <th>Total Purchase</th>
+                <th>Stripe Fee</th>
+                <th>Net Payout</th>
+                <th>Fee %</th>
+            </tr>
+            <tr>
+                <td><strong>Single Transaction</strong><br>(2 tickets: $1 + $2)</td>
+                <td>$3.00</td>
+                <td>$0.387</td>
+                <td><strong>$2.613</strong></td>
+                <td>12.9%</td>
+            </tr>
+            <tr>
+                <td><strong>Two Separate Transactions</strong><br>($1 ticket + $2 ticket)</td>
+                <td>$3.00</td>
+                <td>$0.687</td>
+                <td>$2.313</td>
+                <td>22.9%</td>
+            </tr>
+            <tr>
+                <td><strong>Single Transaction + Tax</strong><br>($3.00 + $0.24 tax)</td>
+                <td>$3.24</td>
+                <td>$0.394</td>
+                <td><strong>$2.846</strong></td>
+                <td>12.2%</td>
+            </tr>
+        </table>
+
+        <div class="calculation-box">
+            <h3>Key Takeaways:</h3>
+            <ul>
+                <li>✅ <strong>Single transaction saves $0.30</strong> compared to separate transactions</li>
+                <li>✅ <strong>Stripe fee is calculated once</strong> on the total amount</li>
+                <li>✅ <strong>Net payout is higher</strong> with single transaction ($2.613 vs $2.313)</li>
+                <li>✅ <strong>Tax is collected from customer</strong> and must be remitted separately</li>
+                <li>✅ <strong>Payout timing is the same</strong> regardless of transaction amount (5-9 business days)</li>
+            </ul>
+        </div>
+
+        <h2>8. Recommendations</h2>
+
+        <div class="info-box">
+            <h3>8.1 For Multi-Ticket Purchases</h3>
+            <ul>
+                <li><strong>Always use single checkout:</strong> Encourage customers to purchase all tickets in one transaction</li>
+                <li><strong>Offer bundle discounts:</strong> Incentivize multi-ticket purchases to increase transaction value</li>
+                <li><strong>Set minimum quantities:</strong> Consider requiring minimum 2 tickets per purchase</li>
+            </ul>
+
+            <h3>8.2 For Fee Optimization</h3>
+            <ul>
+                <li><strong>Higher transaction values:</strong> The $0.30 fixed fee becomes a smaller percentage on larger purchases</li>
+                <li><strong>Example:</strong> $10 purchase = $0.59 fee (5.9%), $100 purchase = $3.20 fee (3.2%)</li>
+                <li><strong>Encourage larger purchases:</strong> Offer discounts for buying 5+ tickets</li>
+            </ul>
+        </div>
+
+        <h2>9. Related Documentation</h2>
+        <ul>
+            <li><a href="stripe_payout_fees_tax_summary.html">Stripe Payout, Fees, and Tax Summary</a> (single ticket example)</li>
+            <li><a href="stripe_fees_tax_net_revenue_complete_implementation_plan.html">Complete Implementation Plan</a></li>
+            <li><strong>Stripe Documentation:</strong> <a href="https://stripe.com/docs/payments/checkout" target="_blank">Stripe Checkout</a></li>
+            <li><strong>Stripe Documentation:</strong> <a href="https://stripe.com/docs/payments/balance-transactions" target="_blank">Balance Transactions</a></li>
+        </ul>
+
+        <hr>
+        <p><em>Document generated: January 11, 2026</em></p>
+        <p><em>Last updated: January 11, 2026</em></p>
+        <p><em>Note: Stripe fees and payout timing may vary by country and account type. Refer to your Stripe Dashboard for specific rates and schedules.</em></p>
+    </div>
+</body>
+</html>

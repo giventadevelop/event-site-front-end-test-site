@@ -1,0 +1,963 @@
+[
+  {
+    "id": "ADMIN-001",
+    "title": "Admin Login and Authentication",
+    "description": "Verify admin can successfully log in and access admin dashboard",
+    "category": "sanity",
+    "priority": "Critical",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to sign-in page (/sign-in)"
+      },
+      {
+        "type": "action",
+        "description": "Wait for Clerk sign-in form to load (look for email input field)"
+      },
+      {
+        "type": "action",
+        "description": "Fill in email input field with admin email from environment variable TEST_ADMIN_EMAIL (required for admin tests)"
+      },
+      {
+        "type": "action",
+        "description": "Fill in password input field with admin password from environment variable TEST_ADMIN_PASSWORD (required for admin tests)"
+      },
+      {
+        "type": "action",
+        "description": "Click sign-in button or submit form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify successful login (redirected away from /sign-in page, admin menu visible)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify admin dashboard is accessible (URL contains /admin or redirected to /admin)"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-002",
+    "title": "Admin Home Page Navigation",
+    "description": "Verify admin home page loads and all navigation buttons are accessible",
+    "category": "functional",
+    "priority": "Critical",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to admin home page (/admin)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors (HTTP 200, no console errors)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify admin navigation buttons grid is visible (Admin Home, Manage Users, Manage Events, etc.)"
+      },
+      {
+        "type": "action",
+        "description": "Click on 'Manage Users' button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify navigation to /admin/manage-usage page is successful"
+      },
+      {
+        "type": "action",
+        "description": "Navigate back to admin home page (/admin)"
+      },
+      {
+        "type": "action",
+        "description": "Click on 'Manage Events' button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify navigation to /admin/manage-events page is successful"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-003",
+    "title": "Manage Users Page - List and Display",
+    "description": "Verify manage users page displays user list with proper data",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to manage users page (/admin/manage-usage)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page title or header indicates user management"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user list table or grid is visible (may be empty)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify table headers or column labels are visible (Name, Email, Role, Status, etc.)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify pagination controls are visible (if users exist)"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-004",
+    "title": "Manage Users - Search and Filter",
+    "description": "Verify search and filter functionality works on manage users page",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to manage users page (/admin/manage-usage)"
+      },
+      {
+        "type": "action",
+        "description": "Wait for user list to load"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify search input field is visible (if present)"
+      },
+      {
+        "type": "action",
+        "description": "Type in search field (if present) to test search functionality"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify filter options or dropdowns are visible (if present)"
+      },
+      {
+        "type": "action",
+        "description": "Clear search field (if modified)"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-005",
+    "title": "Manage Users - Edit User Role",
+    "description": "Verify edit user functionality opens modal/form correctly",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to manage users page (/admin/manage-usage)"
+      },
+      {
+        "type": "action",
+        "description": "Wait for user list to load"
+      },
+      {
+        "type": "action",
+        "description": "Click on 'Edit' button for the first user in the list (if users exist)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify edit modal or form opens (if users exist)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify form fields are visible (Role dropdown, Status, etc.)"
+      },
+      {
+        "type": "action",
+        "description": "Close edit modal without saving (click Cancel or X button)"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-006",
+    "title": "Manage Events Page - List and Display",
+    "description": "Verify manage events page displays event list with proper data",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to manage events page (/admin/manage-events)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page title or header indicates event management"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify events list or grid is visible (may be empty)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify event cards or table rows display event information (title, date, location, etc.)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify pagination controls are visible (if events exist)"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-007",
+    "title": "Manage Events - Future/Past Toggle",
+    "description": "Verify future/past events toggle switch works correctly",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to manage events page (/admin/manage-events)"
+      },
+      {
+        "type": "action",
+        "description": "Wait for events list to load"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify toggle switch is visible (Future Events / Past Events)"
+      },
+      {
+        "type": "action",
+        "description": "Click on toggle switch to switch between Future and Past events"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify events list updates based on toggle selection"
+      },
+      {
+        "type": "action",
+        "description": "Switch toggle back to original state"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-008",
+    "title": "Manage Events - Navigate to Event Details",
+    "description": "Verify clicking on event navigates to event details page",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to manage events page (/admin/manage-events)"
+      },
+      {
+        "type": "action",
+        "description": "Wait for events list to load"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first available event card or row (if events exist)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify navigation to event details page (/admin/events/[id])"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify event details page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify event information is displayed (title, date, description, etc.)"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-009",
+    "title": "Event Details - Navigation Buttons",
+    "description": "Verify event details page has navigation buttons for sub-pages",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to an event details page (/admin/events/[id]) - use first available event"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify navigation button group is visible (Tickets, Ticket Types, Media, etc.)"
+      },
+      {
+        "type": "action",
+        "description": "Click on 'Tickets' button (if present)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify navigation to tickets list page (/admin/events/[id]/tickets/list)"
+      },
+      {
+        "type": "action",
+        "description": "Navigate back to event details page"
+      },
+      {
+        "type": "action",
+        "description": "Click on 'Media' button (if present)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify navigation to media list page (/admin/events/[id]/media/list)"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-010",
+    "title": "Event Tickets List - Display and Pagination",
+    "description": "Verify event tickets list page displays tickets with pagination",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to an event tickets list page (/admin/events/[id]/tickets/list) - use first available event"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify tickets list or table is visible (may be empty)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify ticket information columns are visible (Ticket Type, Buyer, Status, etc.)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify pagination controls are visible (if tickets exist)"
+      },
+      {
+        "type": "action",
+        "description": "Click 'Next' button on pagination (if available and not disabled)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page number updates and tickets list refreshes"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-011",
+    "title": "Event Media List - Display and Actions",
+    "description": "Verify event media list page displays media with edit/delete actions",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to an event media list page (/admin/events/[id]/media/list) - use first available event"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify media grid or list is visible (may be empty)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify media items display thumbnails or preview images"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify Edit and Delete buttons are visible on media items (if media exists)"
+      },
+      {
+        "type": "action",
+        "description": "Click on Edit button for first media item (if media exists)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify edit modal or form opens (if media exists)"
+      },
+      {
+        "type": "action",
+        "description": "Close edit modal without saving"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-012",
+    "title": "Media Management Page - Grid Display",
+    "description": "Verify media management page displays media grid with proper styling",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to media management page (/admin/media)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify media grid container is visible with gradient background"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify media cards are displayed in grid layout (may be empty)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify each media card shows thumbnail, title, and action buttons"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify pagination controls are visible (if media exists)"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-013",
+    "title": "Media Management - Edit Media Modal",
+    "description": "Verify edit media modal opens and displays form correctly",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to media management page (/admin/media)"
+      },
+      {
+        "type": "action",
+        "description": "Wait for media grid to load"
+      },
+      {
+        "type": "action",
+        "description": "Click on Edit button for first media item (if media exists)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify edit modal opens (if media exists)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify modal title indicates editing media"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify form fields are visible (Title, Description, File URL, etc.)"
+      },
+      {
+        "type": "action",
+        "description": "Close modal without saving (click Cancel or X button)"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-014",
+    "title": "Poll Management - List and Create",
+    "description": "Verify poll management page displays polls and create button works",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to poll management page (/admin/polls)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify polls list or table is visible (may be empty)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify 'Create Poll' or 'Add Poll' button is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on 'Create Poll' button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify create poll modal or form opens"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify form fields are visible (Question, Options, etc.)"
+      },
+      {
+        "type": "action",
+        "description": "Close create modal without saving"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-015",
+    "title": "Membership Plans - List Display",
+    "description": "Verify membership plans page displays plans list correctly",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to membership plans page (/admin/membership/plans)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify membership plans list or table is visible (may be empty)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify plan information columns are visible (Name, Price, Duration, etc.)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify 'Create Plan' or 'Add Plan' button is visible (if present)"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-016",
+    "title": "Membership Subscriptions - List and Filter",
+    "description": "Verify membership subscriptions page displays subscriptions with filtering",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to membership subscriptions page (/admin/membership/subscriptions)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify subscriptions list or table is visible (may be empty)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify subscription information columns are visible (User, Plan, Status, Start Date, etc.)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify filter options or search field is visible (if present)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify pagination controls are visible (if subscriptions exist)"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-017",
+    "title": "Executive Committee - List and Actions",
+    "description": "Verify executive committee page displays team members with edit/delete actions",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to executive committee page (/admin/executive-committee)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify team members list or grid is visible (may be empty)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify member information is displayed (Name, Role, Photo, etc.)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify 'Add Member' or 'Create' button is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify Edit and Delete buttons are visible on member items (if members exist)"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-018",
+    "title": "Executive Committee - Create Member Modal",
+    "description": "Verify create member modal opens and displays form correctly",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to executive committee page (/admin/executive-committee)"
+      },
+      {
+        "type": "action",
+        "description": "Click on 'Add Member' or 'Create' button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify create member modal or form opens"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify form fields are visible (Name, Role, Email, Photo, Priority Order, etc.)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify 'Is Active' checkbox or toggle is visible"
+      },
+      {
+        "type": "action",
+        "description": "Close modal without saving"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-019",
+    "title": "Event Sponsors - List and Create",
+    "description": "Verify event sponsors page displays sponsors and create functionality",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to event sponsors page (/admin/event-sponsors)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify sponsors list or grid is visible (may be empty)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify sponsor information is displayed (Name, Company, Logo, etc.)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify 'Add Sponsor' or 'Create' button is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on 'Add Sponsor' button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify create sponsor modal or form opens"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify form fields are visible (Name, Company, Contact Info, Logo URL, etc.)"
+      },
+      {
+        "type": "action",
+        "description": "Close modal without saving"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-020",
+    "title": "Tenant Organizations - List Display",
+    "description": "Verify tenant organizations page displays organizations list",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to tenant organizations page (/admin/tenant-management/organizations)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify organizations list or table is visible (may be empty)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify organization information columns are visible (Name, Tenant ID, etc.)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify action buttons are visible (View, Edit, etc.)"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-021",
+    "title": "Tenant Settings - List and View",
+    "description": "Verify tenant settings page displays settings list and view functionality",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to tenant settings page (/admin/tenant-management/settings)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify settings list or table is visible (may be empty)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify settings information columns are visible (Key, Value, Description, etc.)"
+      },
+      {
+        "type": "action",
+        "description": "Click on 'View' button for first setting (if settings exist)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify view details page or modal opens (if settings exist)"
+      },
+      {
+        "type": "action",
+        "description": "Navigate back to settings list"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-022",
+    "title": "Bulk Email - Page Load and Interface",
+    "description": "Verify bulk email page loads and displays email interface",
+    "category": "functional",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to bulk email page (/admin/bulk-email)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify bulk email interface is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify email composition form or interface elements are visible"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-023",
+    "title": "Test Stripe - Page Load",
+    "description": "Verify test Stripe page loads and displays payment testing interface",
+    "category": "functional",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to test Stripe page (/admin/test-stripe)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify Stripe test interface is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify payment form or test buttons are visible"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-024",
+    "title": "Event Analytics Dashboard - Display",
+    "description": "Verify event analytics dashboard displays charts and statistics",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to event analytics dashboard (/admin/events/dashboard)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify analytics dashboard content is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify charts, graphs, or statistics are displayed (if data exists)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify date range filters or event selector is visible (if present)"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-025",
+    "title": "Event Registrations - List and Details",
+    "description": "Verify event registrations page displays registrations with details",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to event registrations page (/admin/events/registrations)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify registrations list or table is visible (may be empty)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify registration information columns are visible (Event, Attendee, Ticket Type, Status, etc.)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify filter options or search field is visible (if present)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify pagination controls are visible (if registrations exist)"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-026",
+    "title": "Global Contacts - List and Create",
+    "description": "Verify global contacts page displays contacts and create functionality",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to global contacts page (/admin/event-contacts)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify contacts list or table is visible (may be empty)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify contact information columns are visible (Name, Phone, Email, Event, etc.)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify 'Add Contact' or 'Create' button is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on 'Add Contact' button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify create contact modal or form opens"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify form fields are visible (Name, Phone, Email, Event, etc.)"
+      },
+      {
+        "type": "action",
+        "description": "Close modal without saving"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-027",
+    "title": "Global Performers - List Display",
+    "description": "Verify global performers page displays performers list",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to global performers page (/admin/event-featured-performers)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify page loads without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify performers list or grid is visible (may be empty)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify performer information is displayed (Name, Bio, Photo, etc.)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify action buttons are visible (Edit, Delete, etc.)"
+      }
+    ]
+  },
+  {
+    "id": "ADMIN-028",
+    "title": "Admin Navigation - All Pages Accessible",
+    "description": "Verify all admin navigation buttons lead to correct pages",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to admin home page (/admin)"
+      },
+      {
+        "type": "action",
+        "description": "Verify all navigation buttons are visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on each navigation button and verify correct page loads: Admin Home, Manage Users, Manage Events, Event Analytics, Registrations, Poll Management, Focus Groups, Membership Plans, Membership Subscriptions, Bulk Email, Test Stripe, Media Management, Executive Committee, Event Sponsors, Organizations, Tenant Settings"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify each page loads without errors (HTTP 200, no console errors)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify each page displays appropriate content for its function"
+      }
+    ]
+  }
+]
+

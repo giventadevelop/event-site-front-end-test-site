@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Competitions — Frontend PRD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; overflow-x: auto; font-family: Consolas, monospace; font-size: 0.82em; line-height: 1.45; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Event Competitions — Frontend PRD</h1>
+    <p class="doc-meta">
+        <strong>Project:</strong> <code>mosc-temp</code> (Next.js 15 App Router)<br>
+        <strong>Date:</strong> May 21, 2026 &nbsp;|&nbsp; <strong>Version:</strong> 2.0<br>
+        <strong>Depends on:</strong> <a href="backend_prd.html">backend_prd.html</a><br>
+        <strong>Index:</strong> <a href="generic_prd.html">generic_prd.html</a> &nbsp;|&nbsp;
+        <strong>URLs:</strong> <a href="urls_and_entry_points.html">urls_and_entry_points.html</a>
+    </p>
+
+    <div class="lead">
+        <p>All backend access via <strong>proxy routes</strong> (<code>/api/proxy/...</code>) and <strong>server actions</strong> using <code>fetchWithJwtRetry</code>. Client components never call the backend URL directly. DTOs live in <code>src/types/index.ts</code>.</p>
+    </div>
+
+    <h2>1. Proxy routes</h2>
+    <p>Each resource: <code>src/pages/api/proxy/{resource}/index.ts</code> + <code>[...slug].ts</code> using <code>createProxyHandler</code>. PATCH slug routes require <code>export const config = { api: { bodyParser: false } }</code>.</p>
+    <table>
+        <thead><tr><th>Proxy folder</th><th>Backend path</th></tr></thead>
+        <tbody>
+            <tr><td><code>event-competition-settings/</code></td><td><code>/api/event-competition-settings</code></td></tr>
+            <tr><td><code>event-competition-days/</code></td><td><code>/api/event-competition-days</code></td></tr>
+            <tr><td><code>event-competitions/</code></td><td><code>/api/event-competitions</code></td></tr>
+            <tr><td><code>event-competition-participants/</code></td><td><code>/api/event-competition-participants</code></td></tr>
+            <tr><td><code>event-competition-registrations/</code></td><td><code>/api/event-competition-registrations</code></td></tr>
+            <tr><td><code>event-competition-results/</code></td><td><code>/api/event-competition-results</code></td></tr>
+            <tr><td><code>event-competition-content-blocks/</code></td><td><code>/api/event-competition-content-blocks</code></td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. Server actions</h2>
+    <table>
+        <thead><tr><th>File</th><th>Scope</th></tr></thead>
+        <tbody>
+            <tr><td><code>src/app/events/[id]/competitions/ApiServerActions.ts</code></td><td>Public reads + registrant mutations</td></tr>
+            <tr><td><code>src/app/admin/events/[id]/competitions/ApiServerActions.ts</code></td><td>Admin CRUD, results + winner media</td></tr>
+        </tbody>
+    </table>
+    <p>Registration wizard branches on <code>audience_mode</code> from settings (fetched server-side). Guard all calls when <code>userId</code> or required IDs are undefined.</p>
+
+    <h2>3. DTOs (<code>src/types/index.ts</code>)</h2>
+    <ul>
+        <li><code>EventCompetitionSettingsDTO</code> — includes <code>audienceMode</code>, <code>registrationMode</code>, <code>resultsDisplayMode</code></li>
+        <li><code>EventCompetitionDayDTO</code></li>
+        <li><code>EventCompetitionDTO</code> — <code>eligibleAudience</code>, <code>divisionLabel</code></li>
+        <li><code>EventCompetitionParticipantDTO</code> — <code>participantType</code>, <code>guardianUserProfileId</code></li>
+        <li><code>EventCompetitionRegistrationDTO</code></li>
+        <li><code>EventCompetitionResultDTO</code> — <code>prizeTitle</code>, <code>prizeDetails</code>, <code>winnerPhotoUrl</code>, <code>winnerMediaId</code>, <code>displayName</code>, <code>placementLabel</code></li>
+        <li><code>EventCompetitionContentBlockDTO</code></li>
+        <li>Extend <code>EventDetailsDTO</code> with <code>isCompetitionEvent?: boolean</code></li>
+    </ul>
+
+    <h2>4. App Router pages</h2>
+    <table>
+        <thead><tr><th>Route</th><th>Auth</th><th>Purpose</th></tr></thead>
+        <tbody>
+            <tr><td><code>/events/[id]</code> (extend)</td><td>Public</td><td>Competitions panel when <code>isCompetitionEvent</code></td></tr>
+            <tr><td><code>/events/[id]/competitions</code></td><td>Public</td><td>Hub: schedule, catalog, links</td></tr>
+            <tr><td><code>/events/[id]/competitions/register</code></td><td>Clerk</td><td>Wizard: YOUTH (children) or ADULT (self) or MIXED branch</td></tr>
+            <tr><td><code>/events/[id]/competitions/my-registrations</code></td><td>Clerk</td><td>Family or self dashboard</td></tr>
+            <tr><td><code>/events/[id]/competitions/winners</code></td><td>Public</td><td>Published winners board + gallery</td></tr>
+            <tr><td><code>/events/[id]/competitions/rules</code></td><td>Public</td><td>Content blocks</td></tr>
+            <tr><td><code>/admin/events/[id]/competitions/settings</code></td><td>Admin</td><td>Settings incl. audience mode</td></tr>
+            <tr><td><code>/admin/events/[id]/competitions/days</code></td><td>Admin</td><td>Schedule days</td></tr>
+            <tr><td><code>/admin/events/[id]/competitions/list</code></td><td>Admin</td><td>Competition catalog</td></tr>
+            <tr><td><code>/admin/events/[id]/competitions/[compId]/edit</code></td><td>Admin</td><td>Edit competition</td></tr>
+            <tr><td><code>/admin/events/[id]/competitions/registrations</code></td><td>Admin</td><td>Registration list / export</td></tr>
+            <tr><td><code>/admin/events/[id]/competitions/results</code></td><td>Admin</td><td>Results entry, prize, winner photo upload, publish</td></tr>
+        </tbody>
+    </table>
+
+    <h2>5. Components</h2>
+    <div class="section-container">
+        <div class="section-header">Public — src/components/competitions/</div>
+        <ul>
+            <li><code>CompetitionHub.tsx</code> — hub layout</li>
+            <li><code>CompetitionCatalog.tsx</code> — list by day / division / category</li>
+            <li><code>ParticipantProfileForm.tsx</code> — child or adult self profile</li>
+            <li><code>RegistrationWizard.tsx</code> — branches on <code>audienceMode</code></li>
+            <li><code>RegistrationCart.tsx</code> — Stripe checkout</li>
+            <li><code>MyRegistrationsList.tsx</code></li>
+            <li><code>PublishedWinnersView.tsx</code> — cards: photo, <code>displayName</code>, placement, <code>prizeTitle</code></li>
+            <li><code>WinnersGallery.tsx</code> — grid of 1st-place published photos (optional)</li>
+            <li><code>RulesContent.tsx</code></li>
+        </ul>
+    </div>
+    <div class="section-container">
+        <div class="section-header">Admin — src/components/admin/competitions/</div>
+        <ul>
+            <li><code>EventCompetitionSettingsForm.tsx</code> — audience mode, registration mode, results display</li>
+            <li><code>EventCompetitionDayList.tsx</code> / <code>EventCompetitionDayForm.tsx</code></li>
+            <li><code>EventCompetitionList.tsx</code> / <code>EventCompetitionForm.tsx</code></li>
+            <li><code>CompetitionRegistrationAdminTable.tsx</code></li>
+            <li><code>CompetitionResultsEntryGrid.tsx</code> — placement, prize fields, publish</li>
+            <li><code>WinnerPhotoUpload.tsx</code> — reuse event media upload pattern → set <code>winnerMediaId</code></li>
+            <li><code>CompetitionAdminNav.tsx</code> — admin button group</li>
+        </ul>
+    </div>
+
+    <h2>6. Winner photo upload (admin)</h2>
+    <div class="info-box">
+        <p>Follow existing <strong>event media</strong> upload flow (admin event media pages). After upload, PATCH result with <code>winnerMediaId</code> and optional denormalized <code>winnerPhotoUrl</code> from media <code>fileUrl</code>. Same S3 bucket patterns as gallery.</p>
+    </div>
+
+    <h2>7. UI standards</h2>
+    <ul>
+        <li>Admin layout: <code>ui_style_guide.mdc</code></li>
+        <li>Admin nav: unique colors per button (<code>admin_home_button_groups_styling.mdc</code>)</li>
+        <li>Forms: <code>form_validation_styling.mdc</code></li>
+        <li>Currency: <code>numerical_value_display.mdc</code></li>
+        <li>Public winner cards: MOSC card patterns; photos use <code>object-contain</code> or circular medallion per design review</li>
+    </ul>
+
+    <h2>8. EventForm extension</h2>
+    <p>Add <code>isCompetitionEvent</code> toggle mirroring <code>isSportsEvent</code>. When enabled, show link to competition admin section.</p>
+
+    <h2>9. Middleware</h2>
+    <ul>
+        <li>Public: hub, winners, rules under <code>/events(.*)</code></li>
+        <li>Protected: register, my-registrations</li>
+        <li><code>/api/proxy(.*)</code> in <code>ignoredRoutes</code></li>
+    </ul>
+
+    <h2>10. Stripe webhook</h2>
+    <p>On <code>payment_intent.succeeded</code>, when <code>metadata.registrationType === 'event_competition'</code>:</p>
+    <pre>metadata: {
+  registrationType: 'event_competition',
+  eventId: '123',
+  competitionRegistrationIds: '1,2,3',
+  tenantId: 'tenant_demo_002'
+}</pre>
+    <p>PATCH registrations to <code>CONFIRMED</code> via service JWT. Do not alter standard ticket metadata paths.</p>
+
+    <h2>11. Compatibility matrix</h2>
+    <table>
+        <thead><tr><th>Flag</th><th>Checkout</th><th>Admin</th></tr></thead>
+        <tbody>
+            <tr><td><code>isCompetitionEvent=false</code></td><td>Ticket flow only</td><td>Unchanged</td></tr>
+            <tr><td><code>isCompetitionEvent=true</code></td><td>Competition registration cart</td><td>Competitions admin section</td></tr>
+            <tr><td><code>allow_ticket_sales=true</code> (settings)</td><td>May allow tickets + competitions (open question)</td><td>—</td></tr>
+        </tbody>
+    </table>
+
+    <h2>12. Frontend checklist</h2>
+    <table>
+        <thead><tr><th>#</th><th>Task</th><th>Phase</th></tr></thead>
+        <tbody>
+            <tr><td>1</td><td>7 proxy handlers</td><td>P0</td></tr>
+            <tr><td>2</td><td>DTOs + ApiServerActions</td><td>P0</td></tr>
+            <tr><td>3</td><td>Admin settings + catalog</td><td>P1</td></tr>
+            <tr><td>4</td><td>Registration wizard (YOUTH + ADULT)</td><td>P2</td></tr>
+            <tr><td>5</td><td>Stripe webhook branch</td><td>P2</td></tr>
+            <tr><td>6</td><td>Results admin + winner photo upload</td><td>P3</td></tr>
+            <tr><td>7</td><td>PublishedWinnersView + gallery</td><td>P3</td></tr>
+            <tr><td>8</td><td>EventForm <code>isCompetitionEvent</code></td><td>P1</td></tr>
+        </tbody>
+    </table>
+
+</body>
+</html>

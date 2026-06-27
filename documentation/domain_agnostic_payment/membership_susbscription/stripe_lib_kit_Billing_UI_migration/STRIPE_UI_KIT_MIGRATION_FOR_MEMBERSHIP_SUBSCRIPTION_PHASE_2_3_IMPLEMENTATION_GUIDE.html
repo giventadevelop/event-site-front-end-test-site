@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Phase 2/3 implementation guide for migrating membership subscriptions to Stripe Checkout as the primary/only payment method. Stripe Checkout-only approach.">
+    <title>Stripe UI Kit Migration for Membership Subscription - Phase 2/3 Implementation Guide</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+            background-color: #fff;
+        }
+        h1 {
+            color: #1a1a1a;
+            border-bottom: 3px solid #635BFF;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        h2 {
+            color: #635BFF;
+            margin-top: 30px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #333;
+            margin-top: 25px;
+        }
+        h4 {
+            color: #555;
+            margin-top: 20px;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: #d4d4d4;
+        }
+        ul, ol {
+            margin-left: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px 15px;
+            margin: 15px 0;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            padding: 10px 15px;
+            margin: 15px 0;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 10px 15px;
+            margin: 15px 0;
+        }
+        .toc {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .toc ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin: 8px 0;
+        }
+        .toc a {
+            color: #635BFF;
+            text-decoration: none;
+        }
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        .comparison-table th {
+            background-color: #635BFF;
+            color: white;
+            font-weight: 600;
+        }
+        .comparison-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+        .checklist li:before {
+            content: "☐ ";
+            margin-right: 8px;
+        }
+        .checklist li.done:before {
+            content: "☑ ";
+        }
+    </style>
+</head>
+<body>
+    <h1>Stripe UI Kit Migration for Membership Subscription - Phase 2/3 Implementation Guide</h1>
+
+    <div class="info">
+        <strong>📋 Overview:</strong> This guide documents the Phase 2/3 implementation where Stripe Checkout becomes the <strong>primary/only</strong> payment method when <code>NEXT_PUBLIC_USE_STRIPE_CHECKOUT=true</code>. Stripe Elements (inline payment) are hidden in Phase 2/3, making Checkout the exclusive payment option.
+    </div>
+
+    <div class="toc">
+        <h3>Table of Contents</h3>
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#what-changed">What Changed in Phase 2/3</a></li>
+            <li><a href="#implementation-status">Implementation Status</a></li>
+            <li><a href="#code-changes">Code Changes</a></li>
+            <li><a href="#user-experience">User Experience Comparison</a></li>
+            <li><a href="#enabling-checkout">Enabling Checkout-Only Flow</a></li>
+            <li><a href="#testing">Testing Checklist</a></li>
+            <li><a href="#rollback">Rollback Instructions</a></li>
+            <li><a href="#next-steps">Next Steps (Phase 3 Cleanup)</a></li>
+        </ul>
+    </div>
+
+    <section id="overview">
+        <h2>Overview</h2>
+        <p>Phase 2/3 makes Stripe Checkout the <strong>primary and only</strong> payment method when enabled. This differs from Phase 1 (hybrid approach) where both Stripe Elements and Stripe Checkout were available.</p>
+
+        <div class="success">
+            <strong>✅ Phase 2/3 Goals:</strong>
+            <ul>
+                <li>Make Stripe Checkout the ONLY payment option (no inline payment)</li>
+                <li>Hide Stripe Elements components when <code>useCheckoutFlow === true</code></li>
+                <li>Simplify user experience (single payment path)</li>
+                <li>Reduce code complexity (no dual payment flows)</li>
+            </ul>
+        </div>
+
+        <h3>Phase Comparison</h3>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Phase 1 (Hybrid)</th>
+                    <th>Phase 2/3 (Checkout Only)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Stripe Elements</strong></td>
+                    <td>✅ Shown (inline payment)</td>
+                    <td>❌ Hidden</td>
+                </tr>
+                <tr>
+                    <td><strong>Stripe Checkout</strong></td>
+                    <td>✅ Shown (alternative option)</td>
+                    <td>✅ Shown (only option)</td>
+                </tr>
+                <tr>
+                    <td><strong>User Choice</strong></td>
+                    <td>User chooses between both</td>
+                    <td>User only sees Checkout</td>
+                </tr>
+                <tr>
+                    <td><strong>Code Complexity</strong></td>
+                    <td>Medium (both flows maintained)</td>
+                    <td>Low (Checkout only)</td>
+                </tr>
+                <tr>
+                    <td><strong>Mobile PRB</strong></td>
+                    <td>Custom implementation (Elements)</td>
+                    <td>Automatic (Checkout)</td>
+                </tr>
+                <tr>
+                    <td><strong>Desktop PRB</strong></td>
+                    <td>Custom implementation (Elements)</td>
+                    <td>Automatic (Checkout)</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="what-changed">
+        <h2>What Changed in Phase 2/3</h2>
+
+        <h3>✅ Completed Changes</h3>
+        <ul>
+            <li><strong>Stripe Elements Hidden:</strong> <code>MembershipDesktopCheckout</code> component is only shown when <code>useCheckoutFlow === false</code></li>
+            <li><strong>Mobile PRB Hidden:</strong> <code>MembershipPaymentRequestButton</code> component is only shown when <code>useCheckoutFlow === false</code></li>
+            <li><strong>Checkout-Only UI:</strong> When <code>useCheckoutFlow === true</code>, only the "Proceed to Checkout" button is shown</li>
+            <li><strong>Updated Messaging:</strong> Messages reflect Checkout-only approach (removed references to inline payment)</li>
+            <li><strong>Removed Dividers:</strong> No "or" dividers needed in Phase 2/3 (only one payment option)</li>
+        </ul>
+
+        <h3>Code Changes Summary</h3>
+        <div class="info">
+            <strong>File Modified:</strong> <code>src/app/membership/subscribe/[planId]/SubscriptionSignupClient.tsx</code>
+            <ul>
+                <li>Stripe Elements sections wrapped with <code>{!useCheckoutFlow && ...}</code></li>
+                <li>Mobile PRB section wrapped with <code>{!useCheckoutFlow && ...}</code></li>
+                <li>Checkout button section updated with Phase 2/3 messaging</li>
+                <li>Dividers conditionally shown only in Phase 1</li>
+            </ul>
+        </div>
+    </section>
+
+    <section id="implementation-status">
+        <h2>Implementation Status</h2>
+
+        <h3>✅ Completed</h3>
+        <ul class="checklist">
+            <li class="done">Hide Stripe Elements when <code>useCheckoutFlow === true</code></li>
+            <li class="done">Hide Mobile Payment Request Button when <code>useCheckoutFlow === true</code></li>
+            <li class="done">Update messaging for Checkout-only approach</li>
+            <li class="done">Remove dividers in Phase 2/3</li>
+            <li class="done">Show only "Proceed to Checkout" button in Phase 2/3</li>
+        </ul>
+
+        <h3>⏳ Remaining (Phase 3 Cleanup)</h3>
+        <ul class="checklist">
+            <li>Remove Payment Intent creation code (optional - can keep for rollback)</li>
+            <li>Remove subscription creation logic from Payment Intent flow (optional)</li>
+            <li>Remove polling logic (optional - Checkout doesn't need polling)</li>
+            <li>Simplify webhook handlers (optional)</li>
+        </ul>
+
+        <div class="warning">
+            <strong>⚠️ Note:</strong> Phase 2/3 implementation keeps the Payment Intent code in place (just hidden) for easy rollback. Full Phase 3 cleanup would remove this code entirely, but it's optional since it's already hidden.
+        </div>
+    </section>
+
+    <section id="code-changes">
+        <h2>Code Changes</h2>
+
+        <h3>Key Change: Conditional Rendering Based on Feature Flag</h3>
+        <pre><code>// Phase 2/3: When useCheckoutFlow is true, Stripe Checkout is the ONLY payment option
+// Phase 1 (useCheckoutFlow=false): Show Stripe Elements inline payment form
+{!useCheckoutFlow && userId && canEnablePayment && (
+  &lt;&gt;
+    &lt;MembershipDesktopCheckout ... /&gt;
+  &lt;/&gt;
+)}
+
+// Mobile Payment Request Button - Phase 1 only (hidden in Phase 2/3)
+{!useCheckoutFlow && isMobile && userId && canEnablePayment && (
+  &lt;MembershipPaymentRequestButton ... /&gt;
+)}
+
+// Stripe Checkout Session redirect button
+// Phase 2/3 (useCheckoutFlow=true): Show as PRIMARY/ONLY payment option
+{useCheckoutFlow ? (
+  &lt;&gt;
+    &lt;p&gt;You will be redirected to our secure Stripe Checkout page...&lt;/p&gt;
+    &lt;Button&gt;Proceed to Checkout&lt;/Button&gt;
+  &lt;/&gt;
+) : (
+  &lt;&gt;
+    {/* Phase 1: Fallback messaging */}
+    &lt;Button&gt;Proceed to Checkout&lt;/Button&gt;
+  &lt;/&gt;
+)}
+</code></pre>
+
+        <h3>What This Means</h3>
+        <ul>
+            <li><strong>When <code>NEXT_PUBLIC_USE_STRIPE_CHECKOUT=true</code>:</strong>
+                <ul>
+                    <li>❌ Stripe Elements hidden (no inline payment)</li>
+                    <li>❌ Mobile PRB hidden (no inline payment)</li>
+                    <li>✅ Only "Proceed to Checkout" button shown</li>
+                    <li>✅ User redirected to Stripe's hosted Checkout page</li>
+                </ul>
+            </li>
+            <li><strong>When <code>NEXT_PUBLIC_USE_STRIPE_CHECKOUT=false</code>:</strong>
+                <ul>
+                    <li>✅ Stripe Elements shown (Phase 1 - hybrid approach)</li>
+                    <li>✅ Mobile PRB shown (Phase 1 - hybrid approach)</li>
+                    <li>✅ "Proceed to Checkout" button shown as fallback</li>
+                </ul>
+            </li>
+        </ul>
+    </section>
+
+    <section id="user-experience">
+        <h2>User Experience Comparison</h2>
+
+        <h3>Phase 1 (Hybrid - useCheckoutFlow=false)</h3>
+        <div class="info">
+            <strong>User sees:</strong>
+            <ol>
+                <li>Stripe Elements payment form (desktop) or PRB buttons (mobile)</li>
+                <li>"or" divider</li>
+                <li>"Proceed to Checkout" button</li>
+                <li>User can choose between inline payment or hosted checkout</li>
+            </ol>
+        </div>
+
+        <h3>Phase 2/3 (Checkout Only - useCheckoutFlow=true)</h3>
+        <div class="success">
+            <strong>User sees:</strong>
+            <ol>
+                <li>Message: "You will be redirected to our secure Stripe Checkout page..."</li>
+                <li>"Proceed to Checkout" button (only option)</li>
+                <li>User clicks button → Redirected to Stripe's hosted Checkout page</li>
+                <li>Stripe Checkout page shows Apple Pay, Google Pay, Link buttons automatically</li>
+                <li>User completes payment on Stripe's page</li>
+                <li>Redirected back to success page</li>
+            </ol>
+        </div>
+
+        <h3>Benefits of Phase 2/3</h3>
+        <ul>
+            <li>✅ <strong>Simpler UX:</strong> One payment path, no confusion</li>
+            <li>✅ <strong>Automatic PRB:</strong> Apple Pay/Google Pay appear automatically on Stripe's page</li>
+            <li>✅ <strong>Better Mobile:</strong> Stripe optimizes Checkout for all devices</li>
+            <li>✅ <strong>Less Code:</strong> No inline payment components to maintain</li>
+            <li>✅ <strong>More Reliable:</strong> Stripe handles all edge cases</li>
+        </ul>
+    </section>
+
+    <section id="enabling-checkout">
+        <h2>Enabling Checkout-Only Flow (Phase 2/3)</h2>
+
+        <h3>Step 1: Set Environment Variable</h3>
+        <p>Set <code>NEXT_PUBLIC_USE_STRIPE_CHECKOUT=true</code> to enable Phase 2/3 (Checkout-only flow).</p>
+
+        <h4>Local Development (.env.local)</h4>
+        <pre><code>NEXT_PUBLIC_USE_STRIPE_CHECKOUT=true</code></pre>
+
+        <h4>Production (AWS Amplify Console)</h4>
+        <ol>
+            <li>Go to App Settings → Environment Variables</li>
+            <li>Add or update: <code>NEXT_PUBLIC_USE_STRIPE_CHECKOUT</code> = <code>true</code></li>
+            <li>Redeploy application</li>
+        </ol>
+
+        <h3>Step 2: Verify Behavior</h3>
+        <p>After enabling the flag, verify that:</p>
+        <ul>
+            <li>✅ Stripe Elements components are hidden</li>
+            <li>✅ Only "Proceed to Checkout" button is shown</li>
+            <li>✅ Clicking button redirects to Stripe Checkout page</li>
+            <li>✅ Stripe Checkout page shows Apple Pay/Google Pay buttons (if available)</li>
+            <li>✅ Payment completes successfully</li>
+            <li>✅ Success page shows subscription details</li>
+        </ul>
+    </section>
+
+    <section id="testing">
+        <h2>Testing Checklist</h2>
+
+        <h3>✅ Desktop Testing</h3>
+        <ul class="checklist">
+            <li>Visit subscription page with <code>NEXT_PUBLIC_USE_STRIPE_CHECKOUT=true</code></li>
+            <li>Verify Stripe Elements form is NOT shown</li>
+            <li>Verify "Proceed to Checkout" button IS shown</li>
+            <li>Click "Proceed to Checkout" button</li>
+            <li>Verify redirect to Stripe Checkout page (checkout.stripe.com)</li>
+            <li>Verify Stripe Checkout page shows Google Pay button (if Chrome + Google Pay set up)</li>
+            <li>Verify Stripe Checkout page shows Apple Pay button (if Safari macOS + Apple Pay set up)</li>
+            <li>Complete payment using card form</li>
+            <li>Verify redirect to success page</li>
+            <li>Verify subscription details shown on success page</li>
+            <li>Verify database record created with correct <code>stripe_subscription_id</code></li>
+        </ul>
+
+        <h3>✅ Mobile Testing</h3>
+        <ul class="checklist">
+            <li>Visit subscription page on mobile device with <code>NEXT_PUBLIC_USE_STRIPE_CHECKOUT=true</code></li>
+            <li>Verify Mobile Payment Request Button is NOT shown</li>
+            <li>Verify "Proceed to Checkout" button IS shown</li>
+            <li>Click "Proceed to Checkout" button</li>
+            <li>Verify redirect to Stripe Checkout page (mobile-optimized)</li>
+            <li>Verify Stripe Checkout page shows Apple Pay button (if iOS Safari + Apple Pay set up)</li>
+            <li>Verify Stripe Checkout page shows Google Pay button (if Android Chrome + Google Pay set up)</li>
+            <li>Complete payment using mobile payment method or card form</li>
+            <li>Verify redirect to success page</li>
+            <li>Verify subscription details shown on success page</li>
+        </ul>
+
+        <h3>✅ Rollback Testing</h3>
+        <ul class="checklist">
+            <li>Set <code>NEXT_PUBLIC_USE_STRIPE_CHECKOUT=false</code></li>
+            <li>Verify Stripe Elements form IS shown (Phase 1 - hybrid)</li>
+            <li>Verify Mobile Payment Request Button IS shown (Phase 1 - hybrid)</li>
+            <li>Verify both payment options work (Elements + Checkout fallback)</li>
+        </ul>
+    </section>
+
+    <section id="rollback">
+        <h2>Rollback Instructions</h2>
+
+        <p>If you need to rollback to Phase 1 (hybrid approach), simply set:</p>
+        <pre><code>NEXT_PUBLIC_USE_STRIPE_CHECKOUT=false</code></pre>
+
+        <p>This will restore the hybrid approach where both Stripe Elements and Stripe Checkout are available.</p>
+
+        <div class="warning">
+            <strong>⚠️ Important:</strong> The Payment Intent code is still in place (just hidden), so rollback is immediate with no code changes needed. This is by design for safety.
+        </div>
+    </section>
+
+    <section id="next-steps">
+        <h2>Next Steps (Phase 3 Cleanup - Optional)</h2>
+
+        <p>Phase 2/3 is complete - Stripe Checkout is now the primary/only payment method. Phase 3 cleanup is optional and involves removing the Payment Intent code entirely.</p>
+
+        <h3>Phase 3 Cleanup Tasks (Optional)</h3>
+        <ul>
+            <li><strong>Remove Payment Intent API Route:</strong> <code>src/app/api/stripe/membership-payment-intent/route.ts</code> (optional - can keep for rollback)</li>
+            <li><strong>Remove Subscription Creation Logic:</strong> <code>processMembershipSubscriptionFromPaymentIntent</code> function (optional - can keep for rollback)</li>
+            <li><strong>Remove Polling Logic:</strong> Success page polling for Payment Intent flow (optional - Checkout doesn't need polling)</li>
+            <li><strong>Remove Component Imports:</strong> <code>MembershipDesktopCheckout</code> and <code>MembershipPaymentRequestButton</code> imports (optional - can keep for rollback)</li>
+            <li><strong>Simplify Webhook Handlers:</strong> Remove Payment Intent webhook handlers (optional - can keep for existing subscriptions)</li>
+        </ul>
+
+        <div class="info">
+            <strong>💡 Recommendation:</strong> Keep the Payment Intent code in place (just hidden) for now. This allows for easy rollback if needed. You can remove it later after confirming Phase 2/3 works well in production.
+        </div>
+    </section>
+
+    <section>
+        <h2>Summary</h2>
+        <div class="success">
+            <strong>✅ Phase 2/3 Implementation Complete:</strong>
+            <ul>
+                <li>Stripe Checkout is now the <strong>primary/only</strong> payment method when enabled</li>
+                <li>Stripe Elements are hidden in Phase 2/3</li>
+                <li>Simpler user experience (single payment path)</li>
+                <li>Automatic PRB support (Apple Pay/Google Pay on mobile + desktop)</li>
+                <li>Code remains for easy rollback (Payment Intent code hidden but not removed)</li>
+            </ul>
+            <p><strong>To Enable:</strong> Set <code>NEXT_PUBLIC_USE_STRIPE_CHECKOUT=true</code></p>
+            <p><strong>To Rollback:</strong> Set <code>NEXT_PUBLIC_USE_STRIPE_CHECKOUT=false</code></p>
+        </div>
+    </section>
+
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e0e0e0; color: #666; font-size: 14px;">
+        <p><strong>Document Version:</strong> 1.0</p>
+        <p><strong>Last Updated:</strong> January 4, 2026</p>
+        <p><strong>Author:</strong> AI Assistant</p>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PRD: Focus Group – Member Join &amp; Organisers (Batch Jobs)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+      h1, h2, h3, h4 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+      h1 { font-size: 2.3rem; margin-bottom: 0.75rem; }
+      h2 { font-size: 1.7rem; margin-top: 2.5rem; }
+      h3 { font-size: 1.3rem; margin-top: 1.8rem; }
+      h4 { font-size: 1.1rem; margin-top: 1.2rem; }
+      p, li { line-height: 1.75; font-size: 1rem; }
+      ul, ol { margin-left: 1.4rem; }
+      table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+      th, td { border: 1px solid rgba(42, 32, 23, 0.15); padding: 0.75rem; vertical-align: top; }
+      th { background: rgba(213, 201, 182, 0.35); font-weight: 600; }
+      code, pre {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+      }
+      pre { padding: 1rem; line-height: 1.6; overflow-x: auto; }
+      code.inline { padding: 0.15rem 0.35rem; font-size: 0.95rem; display: inline-block; }
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .divider { height: 1px; background: rgba(42, 32, 23, 0.12); margin: 2rem 0; }
+      .callout {
+        border-left: 4px solid #8b7d6b;
+        background: rgba(213, 201, 182, 0.3);
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
+        margin: 1.8rem 0;
+      }
+      .toc ol { list-style: decimal; }
+      .toc a { color: #1f4c8f; text-decoration: none; }
+      .toc a:hover { text-decoration: underline; }
+      footer { margin-top: 4rem; text-align: center; font-size: 0.9rem; color: #7a7066; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Draft · Batch Jobs</span>
+      <h1>PRD: Focus Group – Member Join &amp; Organisers (Batch Jobs)</h1>
+      <p>
+        <strong>Project:</strong> event-site-manager-batch-jobs<br />
+        <strong>Path:</strong> <code class="inline">E:\project_workspace\event-site-manager-batch-jobs</code><br />
+        <strong>Document Version:</strong> 1.0<br />
+        <strong>Date:</strong> March 2026<br />
+        <strong>Status:</strong> Draft
+      </p>
+
+      <div class="divider"></div>
+
+      <h2 id="requirement">Requirement</h2>
+      <p>
+        Focus group <strong>member join</strong> and <strong>executive/organising committee</strong> list are handled by
+        the application backend and frontend. Batch jobs do <strong>not</strong> create or update
+        <code class="inline">focus_group_members</code> for join or leave. This PRD documents the data model for any
+        batch job that may <em>read</em> focus groups or members (e.g. notifications, reports).
+      </p>
+
+      <h2 id="schema">Schema / Tables</h2>
+      <p>
+        No new tables or columns. Use existing <code class="inline">focus_group</code> and
+        <code class="inline">focus_group_members</code>. The <code class="inline">role</code> column allows values
+        MEMBER, LEAD, ADMIN, EXECUTIVE, ORGANISER (EXECUTIVE and ORGANISER = executive/organising committee).
+        <code class="inline">status</code>: PENDING, ACTIVE, INACTIVE. If the batch project keeps a copy of the
+        canonical schema, ensure it includes the COMMENTs on <code class="inline">focus_group_members.role</code> and
+        <code class="inline">focus_group_members.status</code> from
+        <code class="inline">code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code>.
+      </p>
+
+      <h2 id="jobs">Jobs</h2>
+      <p>
+        If any job reads <code class="inline">focus_group</code> or <code class="inline">focus_group_members</code>
+        (e.g. to send notifications to committee members or to report on membership), use the existing tables and
+        role values. No changes to job logic are required for this feature unless a new use case (e.g. “email
+        organisers when a user joins”) is added later.
+      </p>
+
+      <div class="callout">
+        <strong>No changes required:</strong> For the current scope (end-user join and committee list), no batch job
+        changes are required. This PRD is for reference if batch jobs later need to read focus group or member data.
+      </div>
+
+      <h2 id="references">References</h2>
+      <ul>
+        <li><a href="generic_prd.html">generic_prd.html</a> – Data model and role/status values</li>
+        <li>Canonical schema: <code class="inline">code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code> (in frontend repo)</li>
+      </ul>
+
+      <footer>
+        <p>Focus Group – Member Join &amp; Organisers (Batch Jobs) PRD · MCEFEE Platform</p>
+      </footer>
+    </main>
+  </body>
+</html>

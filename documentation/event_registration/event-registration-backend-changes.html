@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Event Registration Enhancements - Backend Changes</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; line-height: 1.5; color: #1f2937; }
+    h1, h2 { color: #0f172a; }
+    code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; }
+    .owner { background: #fff7ed; padding: 10px 12px; border-left: 4px solid #ea580c; }
+  </style>
+</head>
+<body>
+  <h1>Event Registration Enhancements - Backend Changes</h1>
+  <p>Backend implementation details for <code>E:/project_workspace/malayalees-us-site-boot</code>.</p>
+
+  <h2>Data and Validation Changes</h2>
+  <ul>
+    <li>Updated attendee notes validation/entity column length from 1000 to 1500:
+      <ul>
+        <li><code>EventAttendee.java</code> (@Size and column length)</li>
+        <li><code>EventAttendeeDTO.java</code> (@Size max)</li>
+        <li>Liquibase: <code>20260227090010_increase_event_attendee_notes_length.xml</code></li>
+      </ul>
+    </li>
+  </ul>
+
+  <h2>New Attachment Module</h2>
+  <ul>
+    <li>New entity: <code>EventAttendeeAttachment</code></li>
+    <li>New DTO: <code>EventAttendeeAttachmentDTO</code></li>
+    <li>New repository/service/mapper/resource classes for CRUD and upload flow.</li>
+    <li>REST base path: <code>/api/event-attendee-attachments</code></li>
+    <li>Multipart upload endpoint: <code>POST /api/event-attendee-attachments/upload</code></li>
+  </ul>
+
+  <h2>S3 Integration</h2>
+  <ul>
+    <li>Added <code>S3Service.generateEventAttendeeAttachmentPath(...)</code></li>
+    <li>Implemented in <code>S3ServiceImpl</code> using profile-aware key prefix.</li>
+    <li>Used by upload endpoint to generate and persist attachment URL metadata.</li>
+  </ul>
+
+  <h2>Liquibase and Migration Files</h2>
+  <ul>
+    <li><code>20260227090000_added_entity_EventAttendeeAttachment.xml</code></li>
+    <li><code>20260227090000_added_entity_constraints_EventAttendeeAttachment.xml</code></li>
+    <li><code>20260227090010_increase_event_attendee_notes_length.xml</code></li>
+    <li><code>master.xml</code> updated to include all new changelogs.</li>
+  </ul>
+
+  <h2>DB Schema Requirements</h2>
+  <p>Table <code>event_attendee_attachment</code> includes:</p>
+  <ul>
+    <li><code>id, tenant_id, attendee_id, event_id, title, description</code></li>
+    <li><code>file_url, content_type, file_size, original_filename</code></li>
+    <li><code>storage_type, event_media_type, is_public, uploaded_by_id</code></li>
+    <li><code>created_at, updated_at</code></li>
+    <li>FKs to <code>event_attendee(id)</code> and <code>event_details(id)</code></li>
+    <li>Index on <code>(attendee_id, created_at)</code></li>
+  </ul>
+
+  <h2>Integration Test Matrix</h2>
+  <ul>
+    <li>Create attendee only (no files).</li>
+    <li>Create attendee + 1 file upload.</li>
+    <li>Create attendee + 2 file uploads.</li>
+    <li>Reject invalid attendee ID upload.</li>
+    <li>Verify list endpoint filters by <code>attendeeId.equals</code> and <code>eventId.equals</code>.</li>
+  </ul>
+
+  <div class="owner">
+    <h2>Ownership</h2>
+    <p><strong>Backend Team:</strong> Maintain API contract, migration integrity, and S3 path consistency.</p>
+    <p><strong>DBA/Platform:</strong> Run Liquibase migrations and verify indexes/FKs in target environments.</p>
+  </div>
+</body>
+</html>

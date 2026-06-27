@@ -1,0 +1,448 @@
+/* Richer purple glass — shared by all homepage cards + header/footer tokens on particle canvas */
+body.home-page-background {
+  --homepage-purple-glass-gradient: linear-gradient(
+    145deg,
+    rgba(196, 181, 253, 0.96) 0%,
+    rgba(167, 139, 250, 0.94) 48%,
+    rgba(183, 148, 252, 0.95) 100%
+  );
+  --homepage-purple-glass-border: rgba(237, 233, 254, 0.82);
+  --homepage-purple-glass-shadow:
+    0 4px 14px rgba(76, 29, 149, 0.16),
+    0 1px 0 rgba(255, 255, 255, 0.75) inset;
+  --homepage-purple-glass-shadow-hover:
+    0 10px 28px rgba(76, 29, 149, 0.22),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  --header-bg-glass: transparent;
+  --header-text-primary: #f8fafc;
+  --header-text-secondary: rgba(248, 250, 252, 0.94);
+  --header-text-muted: rgba(226, 232, 240, 0.88);
+  --header-hover-bg: rgba(255, 255, 255, 0.1);
+  --header-active-bg: rgba(167, 139, 250, 0.28);
+  --header-border: rgba(255, 255, 255, 0.14);
+  --header-dropdown-bg: rgba(30, 27, 75, 0.96);
+  --header-dropdown-border: rgba(196, 181, 253, 0.35);
+  --header-dropdown-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+  --header-focus-ring: rgba(196, 181, 253, 0.55);
+}
+
+/* Fixed viewport particle background — homepage only (via HomeParticleBackground) */
+.home-particle-background {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/*
+ * Full-page visibility: fixed canvas stays in place while content scrolls over it.
+ * Only section shells are cleared — cards/panels keep their own backgrounds.
+ */
+body.home-page-background .home-page-layout .home-hero-viewport-filler,
+body.home-page-background .home-page-layout .home-hero-viewport-filler .hero-container-split,
+body.home-page-background .home-page-layout .hero-slideshow-ken-burns {
+  background: transparent !important;
+}
+
+/* Hero top row (Kerala + slideshow) — mobile uses light section bg in globals; show particles instead */
+@media (max-width: 767px) {
+  body.home-page-background .home-page-layout .hero-brand-card,
+  body.home-page-background .home-page-layout .hero-brand-image-wrap,
+  body.home-page-background .home-page-layout .hero-right-wrap,
+  body.home-page-background .home-page-layout .hero-right-panel,
+  body.home-page-background .home-page-layout .hero-slideshow-neon-frame,
+  body.home-page-background .home-page-layout .hero-slideshow-wrapper,
+  body.home-page-background .home-page-layout .hero-slideshow-ken-burns,
+  body.home-page-background .home-page-layout .hero-crossfade-stack,
+  body.home-page-background .home-page-layout .hero-crossfade-layer {
+    background: transparent !important;
+  }
+}
+
+/* Green section wrappers */
+body.home-page-background .home-page-layout section.bg-green-50,
+body.home-page-background .home-page-layout div.bg-green-50.py-12,
+body.home-page-background .home-page-layout div.bg-green-50.py-16,
+body.home-page-background .home-page-layout div.bg-green-50.py-24,
+body.home-page-background .home-page-layout #contact.bg-green-50,
+body.home-page-background .home-page-layout div#about-us,
+body.home-page-background .home-page-layout div#team-section {
+  background-color: transparent !important;
+}
+
+/* Gradient section wrappers (live events, featured, services) */
+body.home-page-background .home-page-layout section[class*='bg-gradient-to'],
+body.home-page-background .home-page-layout section.featured-events-section,
+body.home-page-background .home-page-layout > div.relative.overflow-hidden.py-24[class*='bg-gradient'] {
+  background: transparent !important;
+  background-image: none !important;
+}
+
+/* Services decorative overlay — would block particles */
+body.home-page-background .home-page-layout > div.relative.overflow-hidden.py-24 > .pointer-events-none.absolute {
+  display: none;
+}
+
+/* Projects band — glass so particles show through */
+body.home-page-background .home-page-layout div.bg-gray-800.py-24.text-white {
+  background-color: rgba(31, 41, 55, 0.42) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* ── Header & footer: transparent over particle canvas (homepage only) ── */
+body.home-page-background .header-glass.header-glass--home {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  border-bottom: none !important;
+  transition:
+    background 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    backdrop-filter 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    -webkit-backdrop-filter 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Scrolled: frosted glass so body content under the sticky header stays readable */
+body.home-page-background .header-glass.header-glass--home.header-glass--scrolled {
+  background: linear-gradient(
+    180deg,
+    rgba(26, 10, 46, 0.92) 0%,
+    rgba(26, 10, 46, 0.78) 72%,
+    rgba(26, 10, 46, 0.55) 100%
+  ) !important;
+  backdrop-filter: blur(18px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.35),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset !important;
+}
+
+/* Soft fade strip below header when scrolled (extra separation from content) */
+body.home-page-background .header-glass.header-glass--home.header-glass--scrolled::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1.25rem;
+  height: 1.25rem;
+  pointer-events: none;
+  z-index: -1;
+  background: linear-gradient(
+    180deg,
+    rgba(26, 10, 46, 0.45) 0%,
+    transparent 100%
+  );
+}
+
+body.home-page-background .header-logo-brand {
+  color: #ede9fe !important;
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.45))
+    drop-shadow(0 0 12px rgba(167, 139, 250, 0.35));
+}
+
+body.home-page-background .header-nav-link {
+  color: rgba(248, 250, 252, 0.95) !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+body.home-page-background .header-nav-link:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.home-page-background .header-nav-link.active {
+  color: #fbbf24 !important;
+}
+
+body.home-page-background .header-nav-link.active::after {
+  background: #fbbf24 !important;
+}
+
+body.home-page-background .header-cta {
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.75) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+body.home-page-background .header-cta:hover {
+  color: #1e1b4b !important;
+}
+
+body.home-page-background .header-hamburger-line {
+  background: rgba(248, 250, 252, 0.95) !important;
+}
+
+body.home-page-background .header-mobile-menu {
+  background: rgba(30, 27, 75, 0.96) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  border-left: none !important;
+}
+
+body.home-page-background .header-mobile-menu-close {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #f8fafc !important;
+}
+
+body.home-page-background .header-mobile-menu .from-violet-50,
+body.home-page-background .header-mobile-menu [class*='from-violet-50'] {
+  background: rgba(255, 255, 255, 0.08) !important;
+  background-image: none !important;
+}
+
+/* Footer — no solid bar; particle background shows through */
+body.home-page-background footer.footer-edge-to-edge,
+body.home-page-background footer.footer-edge-to-edge .bg-gray-900,
+body.home-page-background footer.footer-edge-to-edge [class*='bg-gray-900'] {
+  background-color: transparent !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.home-page-background footer.footer-edge-to-edge {
+  position: relative;
+  z-index: 1;
+  color: #e2e8f0;
+  border-top: none;
+}
+
+body.home-page-background footer.footer-edge-to-edge .text-gray-300 {
+  color: #e2e8f0 !important;
+}
+
+body.home-page-background footer.footer-edge-to-edge .text-gray-400 {
+  color: #cbd5e1 !important;
+}
+
+body.home-page-background footer.footer-edge-to-edge .text-white {
+  color: #f8fafc !important;
+}
+
+body.home-page-background footer.footer-edge-to-edge h3,
+body.home-page-background footer.footer-edge-to-edge .font-semibold.text-white {
+  color: #f8fafc !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+body.home-page-background footer.footer-edge-to-edge .border-gray-800 {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+body.home-page-background footer.footer-edge-to-edge a[class*='bg-gray-800'] {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #e2e8f0 !important;
+}
+
+body.home-page-background footer.footer-edge-to-edge a[class*='bg-gray-800']:hover {
+  color: #ffffff !important;
+}
+
+body.home-page-background footer.footer-edge-to-edge a.text-gray-300:hover,
+body.home-page-background footer.footer-edge-to-edge a.text-gray-400:hover {
+  color: #c4b5fd !important;
+}
+
+/* ── Homepage light purple glass panels (matches Cultural Workshops cards) ── */
+body.home-page-background .home-page-layout .bg-white {
+  position: relative;
+  overflow: hidden;
+  background: var(--homepage-purple-glass-gradient) !important;
+  background-color: transparent !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--homepage-purple-glass-border) !important;
+  box-shadow: var(--homepage-purple-glass-shadow);
+  transition:
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.45s ease,
+    border-color 0.45s ease;
+}
+
+body.home-page-background .home-page-layout .bg-white:hover {
+  transform: translateY(-2px) scale(1.004);
+  border-color: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: var(--homepage-purple-glass-shadow-hover);
+}
+
+body.home-page-background .home-page-layout .homepage-glass-card.services-glass-card-face:hover {
+  transform: translateY(-2px) scale(1.004);
+}
+
+/* Team member cards — content panel (global class; CSS module hashes break .teamCard .cardContent) */
+body.home-page-background .home-page-layout .team-card-content {
+  background: var(--homepage-purple-glass-gradient) !important;
+  background-color: transparent !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--homepage-purple-glass-border) !important;
+  box-shadow: var(--homepage-purple-glass-shadow);
+}
+
+body.home-page-background .featured-event-card-details {
+  background: var(--homepage-purple-glass-gradient) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+body.home-page-background .featured-event-meta-row {
+  background: rgba(167, 139, 250, 0.35) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+body.home-page-background .live-event-details-panel {
+  background: var(--homepage-purple-glass-gradient) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--homepage-purple-glass-border);
+}
+
+/* Readable text on purple glass panels */
+body.home-page-background .home-page-layout .bg-white .text-gray-900,
+body.home-page-background .home-page-layout .bg-white .text-gray-800,
+body.home-page-background .featured-event-card-details .text-slate-900,
+body.home-page-background .featured-event-card-details .text-slate-800,
+body.home-page-background .live-event-details-panel .text-slate-800 {
+  color: #1e1b4b !important;
+}
+
+body.home-page-background .home-page-layout .bg-white .text-gray-600,
+body.home-page-background .home-page-layout .bg-white .text-gray-500,
+body.home-page-background .featured-event-card-details .text-slate-700,
+body.home-page-background .featured-event-card-details .text-slate-600,
+body.home-page-background .live-event-details-panel .text-slate-600 {
+  color: #312e81 !important;
+}
+
+/* Readable text on team card purple glass */
+body.home-page-background .home-page-layout .team-card-content .text-gray-900,
+body.home-page-background .home-page-layout .team-card-content .text-gray-800,
+body.home-page-background .home-page-layout .team-card-content h3 {
+  color: #1e1b4b !important;
+}
+
+body.home-page-background .home-page-layout .team-card-content .group:hover h3 {
+  color: #4c1d95 !important;
+}
+
+body.home-page-background .home-page-layout .team-card-content .text-gray-700,
+body.home-page-background .home-page-layout .team-card-content .text-gray-600,
+body.home-page-background .home-page-layout .team-card-content .text-gray-500 {
+  color: #312e81 !important;
+}
+
+body.home-page-background .home-page-layout .team-card-content .text-gray-400 {
+  color: #4338ca !important;
+}
+
+body.home-page-background .home-page-layout .team-card-content .text-blue-600 {
+  color: #4c1d95 !important;
+}
+
+body.home-page-background .home-page-layout .team-card-content .bg-blue-50 {
+  background: rgba(255, 255, 255, 0.38) !important;
+  border: 1px solid rgba(237, 233, 254, 0.65);
+}
+
+body.home-page-background .home-page-layout .team-card-content .border-gray-100 {
+  border-color: rgba(237, 233, 254, 0.55) !important;
+}
+
+body.home-page-background .home-page-layout .team-card-content a:hover {
+  color: #5b21b6 !important;
+}
+
+body.home-page-background .home-page-layout .homepage-glass-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+body.home-page-background .home-page-layout .homepage-glass-card .text-gray-700 {
+  color: #312e81 !important;
+}
+
+/* Team + Sponsors + Events pages: homepage-like header behavior
+ * - At top: transparent (no separate header background color)
+ * - On scroll: dark frosted backdrop appears
+ */
+body.team-page-background .header-glass,
+body.sponsors-page-background .header-glass,
+body.events-page-background .header-glass,
+body.polls-page-background .header-glass,
+body.gallery-page-background .header-glass,
+body.calendar-page-background .header-glass,
+body.focus-groups-page-background .header-glass,
+body.profile-page-background .header-glass,
+body.member-portal-page-background .header-glass,
+body.membership-page-background .header-glass {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  border-bottom: none !important;
+  transition:
+    background 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    backdrop-filter 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    -webkit-backdrop-filter 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.team-page-background .header-glass.header-glass--scrolled,
+body.sponsors-page-background .header-glass.header-glass--scrolled,
+body.events-page-background .header-glass.header-glass--scrolled,
+body.polls-page-background .header-glass.header-glass--scrolled,
+body.gallery-page-background .header-glass.header-glass--scrolled,
+body.calendar-page-background .header-glass.header-glass--scrolled,
+body.focus-groups-page-background .header-glass.header-glass--scrolled,
+body.profile-page-background .header-glass.header-glass--scrolled,
+body.member-portal-page-background .header-glass.header-glass--scrolled,
+body.membership-page-background .header-glass.header-glass--scrolled {
+  background: linear-gradient(
+    180deg,
+    rgba(26, 10, 46, 0.95) 0%,
+    rgba(26, 10, 46, 0.84) 72%,
+    rgba(26, 10, 46, 0.62) 100%
+  ) !important;
+  backdrop-filter: blur(18px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.35),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset !important;
+}
+
+body.team-page-background .header-glass.header-glass--scrolled::after,
+body.sponsors-page-background .header-glass.header-glass--scrolled::after,
+body.events-page-background .header-glass.header-glass--scrolled::after,
+body.polls-page-background .header-glass.header-glass--scrolled::after,
+body.gallery-page-background .header-glass.header-glass--scrolled::after,
+body.calendar-page-background .header-glass.header-glass--scrolled::after,
+body.focus-groups-page-background .header-glass.header-glass--scrolled::after,
+body.profile-page-background .header-glass.header-glass--scrolled::after,
+body.member-portal-page-background .header-glass.header-glass--scrolled::after,
+body.membership-page-background .header-glass.header-glass--scrolled::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1.25rem;
+  height: 1.25rem;
+  pointer-events: none;
+  z-index: -1;
+  background: linear-gradient(
+    180deg,
+    rgba(26, 10, 46, 0.45) 0%,
+    transparent 100%
+  );
+}

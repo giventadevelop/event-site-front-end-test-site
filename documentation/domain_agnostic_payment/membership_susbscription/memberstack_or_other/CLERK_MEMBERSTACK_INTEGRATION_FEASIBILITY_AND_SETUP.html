@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Clerk + Memberstack (or alternative) integration: feasibility, setup steps, and implementation details for SSO and membership gating.">
+    <title>Clerk + Memberstack Integration – Feasibility and Setup</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #2D2A26;
+            background-color: #F5F1E8;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #8B7D6B;
+            border-bottom: 3px solid #8B7D6B;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        h2 {
+            color: #6B4E3D;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-left: 4px solid #8B7D6B;
+            padding-left: 15px;
+        }
+        h3 { color: #8B7D6B; margin-top: 30px; margin-bottom: 15px; font-size: 1.4em; }
+        h4 { color: #A0926B; margin-top: 20px; margin-bottom: 10px; font-size: 1.2em; }
+        .meta {
+            background: #EDE7D3;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            border-left: 4px solid #8B7D6B;
+        }
+        .step {
+            background: #F9F9F9;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #8B7D6B;
+        }
+        .step-number {
+            display: inline-block;
+            background: #8B7D6B;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .highlight-box, .info-box {
+            background: #EDE7D3;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #8B7D6B;
+        }
+        .warning-box {
+            background: #FFF4E6;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #A67C52;
+        }
+        .success-box {
+            background: #F0F9F0;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #4A6741;
+        }
+        .code-block {
+            background: #e8f4f8;
+            color: #0d3b66;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #b8d4e3;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .code-block code { color: #0d3b66; background: transparent; }
+        code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        ul, ol { margin-left: 30px; margin-bottom: 15px; }
+        li { margin-bottom: 8px; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+        }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #E0E0E0; }
+        th { background: #8B7D6B; color: white; font-weight: bold; }
+        tr:hover { background: #F9F9F9; }
+        td code { background-color: #e8f4f8; color: #0d3b66; padding: 2px 6px; border: 1px solid #b8d4e3; }
+        figure.doc-fig { margin: 24px 0; text-align: center; }
+        figure.doc-fig img { max-width: 100%; height: auto; border: 1px solid #E0E0E0; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        figure.doc-fig figcaption { margin-top: 10px; font-size: 0.95em; color: #6B4E3D; }
+        .toc {
+            background: #EDE7D3;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+        .toc ul { list-style: none; margin-left: 0; }
+        .toc li { margin: 8px 0; }
+        .toc a { color: #6B4E3D; text-decoration: none; }
+        .toc a:hover { text-decoration: underline; }
+        .flow-diagram {
+            background: #F5F1E8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            border-left: 4px solid #8B7D6B;
+        }
+        .mermaid {
+            background: #F5F1E8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #8B7D6B;
+        }
+        a { color: #8B7D6B; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Clerk + Memberstack (or Alternative) Integration</h1>
+        <p style="font-size: 1.1em; color: #6B4E3D;">Feasibility and Setup – SSO, membership gating, and separate flow from current Stripe membership</p>
+
+        <div class="meta">
+            <p><strong>Document version:</strong> 1.0</p>
+            <p><strong>Date:</strong> February 2025</p>
+            <p><strong>Status:</strong> Feasibility and setup documentation (no implementation)</p>
+            <p><strong>Frontend repo:</strong> <code>mosc-temp</code> (Next.js, Clerk)</p>
+            <p><strong>Backend repo:</strong> <code>malayalees-us-site-boot</code> (if applicable)</p>
+            <p><strong>Purpose:</strong> Single sign-on from Clerk into a membership platform (Memberstack first); optional separate flow from current <code>/membership</code> and <code>/pricing</code>; document setup and implementation details.</p>
+        </div>
+
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#overview">1. Overview</a></li>
+                <li><a href="#feasibility">2. Feasibility</a></li>
+                <li><a href="#platform-choice">3. Platform choice and feature fit</a></li>
+                <li><a href="#high-level-steps">4. High-level steps (Memberstack portal)</a></li>
+                <li><a href="#info-from-portal">5. Information to obtain from Memberstack portal</a></li>
+                <li><a href="#memberstack-ui-clerk">5a. Memberstack Test Mode: Add Custom SSO (Clerk) – form fields and values</a></li>
+                <li><a href="#clerk-three-steps">5b. Three steps in Clerk (Discovery URL, Client ID, Client Secret, Redirect URIs)</a></li>
+                <li><a href="#current-workflow">6. Current workflow (existing membership flow)</a></li>
+                <li><a href="#implementation-details">7. Implementation details (our side)</a></li>
+                <li><a href="#iframe-embed">8. Iframe and “looks like our site”</a></li>
+                <li><a href="#checklist">9. Step-by-step checklist</a></li>
+                <li><a href="#references">10. References and links</a></li>
+            </ul>
+        </div>
+
+        <section id="overview">
+            <h2>1. Overview</h2>
+            <p>This document covers the <strong>feasibility</strong> and <strong>setup steps</strong> for integrating a membership platform (Memberstack as primary, Outseta as alternative) with <strong>Clerk</strong> authentication. The goal is:</p>
+            <ul>
+                <li><strong>Single sign-on (SSO):</strong> User signs in once via Clerk; the membership platform accepts Clerk’s identity (e.g. via OpenID Connect) so the user does not log in again.</li>
+                <li><strong>Optional separate path:</strong> A different flow from the existing Stripe-based membership pages (<code>/membership</code>, <code>/pricing</code>), e.g. a new route prefix such as <code>/member-portal</code> or <code>/membership-v2</code> that uses Memberstack for gating and subscription UX.</li>
+                <li><strong>Implementation details:</strong> What to configure in Memberstack (and Clerk), what information to obtain from the Memberstack portal, and how our app would use it.</li>
+            </ul>
+        </section>
+
+        <section id="feasibility">
+            <h2>2. Feasibility</h2>
+
+            <h3>Full integration (Clerk as identity, membership platform as relying party)</h3>
+            <p><strong>Feasible.</strong> Clerk can act as an <strong>OpenID Connect (OIDC) Identity Provider</strong>. Memberstack supports <strong>SSO via OpenID Connect</strong> (v2). The flow “user signs in via Clerk → Clerk issues OIDC/JWT → membership platform validates token and grants access” is supported by both.</p>
+            <div class="warning-box">
+                <p><strong>Caveat:</strong> Memberstack’s OIDC documentation often describes configuring <strong>Memberstack as IdP</strong> (e.g. for enterprise SSO). For “Clerk as IdP, Memberstack as RP” you need Memberstack to accept an <strong>external OIDC provider</strong> (Clerk). Memberstack’s “SSO via OpenID Connect” feature supports this; exact steps (discovery URL, client ID/secret, redirect URIs) should be taken from the Memberstack dashboard and confirmed in their docs.</p>
+            </div>
+
+            <h3>Separate path / flow (alternative to current membership pages)</h3>
+            <p><strong>Feasible.</strong> You can keep the existing Stripe-based membership flow and add a <strong>parallel</strong> flow:</p>
+            <ul>
+                <li><strong>Option A:</strong> New route prefix (e.g. <code>/member-portal</code> or <code>/membership-v2</code>) that uses Memberstack for gating and subscription UX, with Clerk handling auth and passing identity via OIDC.</li>
+                <li><strong>Option B:</strong> Same URLs with a feature-flag or tenant setting to switch between “Stripe subscription” and “Memberstack-backed” experience.</li>
+            </ul>
+            <p>This document describes the conceptual separate path and what would be required (new routes, env vars, OIDC config); no code changes are implemented here.</p>
+
+            <h3>Iframe / “run their site inside our SaaS”</h3>
+            <p><strong>Partially feasible; document limitations.</strong></p>
+            <ul>
+                <li>Memberstack provides <strong>widget/script embeds</strong> and MemberScripts (e.g. iframe with <code>src</code> from a custom field), not a single “embed the whole Memberstack dashboard” URL.</li>
+                <li>Many SaaS products set <strong>X-Frame-Options</strong> or <strong>Content-Security-Policy</strong> so their full site cannot be iframed. <strong>Embedding Memberstack’s full site in an iframe is not guaranteed;</strong> prefer their <strong>widget/embed</strong> options on our pages so the experience “looks like ours” (our layout + their widget).</li>
+                <li>If you need “their site in an iframe,” confirm with Memberstack (custom domain / white-label / iframe policy) and refer to their public docs for widget vs full-page behavior.</li>
+            </ul>
+
+            <h3>Platform recommendation</h3>
+            <ul>
+                <li><strong>Primary:</strong> <strong>Memberstack</strong> – OIDC SSO, membership gating, plans, and flexible integration; fits “Clerk as IdP + membership layer.”</li>
+                <li><strong>Alternative:</strong> <strong>Outseta</strong> – all-in-one (auth, billing, CRM, gated content) with OIDC/token federation; consider if you want to consolidate more than “membership + gating.”</li>
+            </ul>
+        </section>
+
+        <section id="platform-choice">
+            <h2>3. Platform choice and feature fit</h2>
+            <p><strong>Memberstack</strong> supports OIDC SSO; membership plans, gating, and APIs. It is sufficient for “Clerk + membership gating + optional subscription/billing” if plan structure aligns with their model. <strong>Outseta</strong> is an alternative with OIDC/token federation and broader CRM/billing features.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Memberstack</th>
+                        <th>Outseta</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Clerk compatibility (OIDC as IdP)</td>
+                        <td>Yes (SSO via OpenID Connect)</td>
+                        <td>Yes (OIDC/token federation)</td>
+                    </tr>
+                    <tr>
+                        <td>SSO</td>
+                        <td>Yes</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Social login</td>
+                        <td>Via Clerk (Clerk handles Google, GitHub, etc.)</td>
+                        <td>Via Clerk or native</td>
+                    </tr>
+                    <tr>
+                        <td>Gated content</td>
+                        <td>Yes</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Billing / subscriptions</td>
+                        <td>Yes (plans, payments)</td>
+                        <td>Yes (all-in-one)</td>
+                    </tr>
+                    <tr>
+                        <td>Embed / iframe</td>
+                        <td>Widget/script embed on our pages; full-site iframe not guaranteed</td>
+                        <td>Widget/embed options; full-site iframe policy varies</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="high-level-steps">
+            <h2>4. High-level steps (Memberstack portal)</h2>
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Create Memberstack account</strong> and select a plan that includes SSO / OIDC (e.g. v2).
+            </div>
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Create project/app</strong> in the Memberstack dashboard; note the project ID and API keys.
+            </div>
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Configure SSO / OpenID Connect</strong> in Memberstack: add external IdP (Clerk) with discovery URL, client ID, client secret, redirect URI(s), and scopes (e.g. <code>openid</code>, <code>email</code>, <code>profile</code>). Confirm in Memberstack docs/dashboard the exact location (e.g. Dashboard → SSO / Integrations).
+            </div>
+            <div class="step">
+                <span class="step-number">4</span>
+                <strong>Define membership plans/tiers</strong> in Memberstack (names, pricing if applicable, gates).
+            </div>
+            <div class="step">
+                <span class="step-number">5</span>
+                <strong>Configure allowed redirect/callback URLs</strong> to include our app origin(s) (e.g. <code>https://yourdomain.com/*</code>, <code>http://localhost:3000/*</code> for dev).
+            </div>
+            <div class="step">
+                <span class="step-number">6</span>
+                <strong>Note required values for our app:</strong> Memberstack project ID, public key, OIDC callback path, and any webhook or API secret if we call Memberstack from the backend.
+            </div>
+        </section>
+
+        <section id="info-from-portal">
+            <h2>5. Information to obtain from Memberstack portal</h2>
+            <p>The following table lists what to obtain from Memberstack and how our app would use it. Where the exact dashboard location is unknown, confirm in Memberstack docs or dashboard.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field / value</th>
+                        <th>Where to find it</th>
+                        <th>How we use it (env var or usage)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Discovery URL (or Issuer URL)</td>
+                        <td>Clerk dashboard (we expose this to Memberstack)</td>
+                        <td>Configure in Memberstack as OIDC discovery endpoint</td>
+                    </tr>
+                    <tr>
+                        <td>Client ID</td>
+                        <td>Clerk: OIDC application / enterprise connection</td>
+                        <td>Enter in Memberstack as OIDC client ID</td>
+                    </tr>
+                    <tr>
+                        <td>Client Secret</td>
+                        <td>Clerk: same as above</td>
+                        <td>Enter in Memberstack as OIDC client secret</td>
+                    </tr>
+                    <tr>
+                        <td>Authorization URL, Token URL, JWKS URL</td>
+                        <td>From Clerk discovery or manual config</td>
+                        <td>Use if Memberstack does not support discovery URL</td>
+                    </tr>
+                    <tr>
+                        <td>Project ID</td>
+                        <td>Memberstack dashboard → App / Project settings</td>
+                        <td><code>MEMBERSTACK_PROJECT_ID</code> or <code>NEXT_PUBLIC_MEMBERSTACK_PROJECT_ID</code></td>
+                    </tr>
+                    <tr>
+                        <td>Public API Key</td>
+                        <td>Memberstack dashboard → API / Keys</td>
+                        <td><code>NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY</code> (client-side if needed)</td>
+                    </tr>
+                    <tr>
+                        <td>Secret Key</td>
+                        <td>Memberstack dashboard → API / Keys</td>
+                        <td><code>MEMBERSTACK_SECRET_KEY</code> (server-only, for API calls)</td>
+                    </tr>
+                    <tr>
+                        <td>Webhook signing secret</td>
+                        <td>Memberstack dashboard → Webhooks</td>
+                        <td>Verify webhook payloads if we consume Memberstack webhooks</td>
+                    </tr>
+                    <tr>
+                        <td>API base URL</td>
+                        <td>Memberstack developer docs</td>
+                        <td>Server-side calls (e.g. check member, assign plan)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="memberstack-ui-clerk">
+            <h2>5a. Memberstack Test Mode: Add Custom SSO (Clerk) – form fields and values</h2>
+            <p>This section maps the <strong>Memberstack dashboard (Test Mode)</strong> to the values you enter for Clerk. Navigate to <strong>Dev Tools → Custom SSO Integrations</strong>, then click <strong>Add Integration</strong>.</p>
+
+            <div class="info-box">
+                <p><strong>Test Mode vs SSO setup.</strong> The Memberstack dashboard shows: <em>“You’re viewing and editing Test Mode Data. You will need to update API Keys and SSO Integrations when you switch to Live Mode.”</em> In <strong>Test Mode</strong>, the UI often does <strong>not</strong> show any option to enter Clerk’s OIDC details (Discovery URL, Client ID, Client Secret). You do <strong>not</strong> need to complete the Clerk SSO integration steps in Test Mode. Use Test Mode for API keys and app integration (e.g. member-portal callback); configure <strong>Custom SSO and Clerk’s details when you switch to Live Mode</strong>, where the “Configure Identity Provider” or equivalent fields are typically available.</p>
+            </div>
+
+            <h3>Form 1: “Add a New Custom SSO Integration”</h3>
+            <p>In the modal you see the following fields. Use the values below.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Memberstack field</th>
+                        <th>What to enter (Clerk integration)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Integration Name</strong></td>
+                        <td>A label for this SSO connection, e.g. <code>Clerk</code> or <code>Clerk Authentication</code>. Replace the default “Circle Community” with this.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Redirect URIs</strong></td>
+                        <td>URL(s) where the user is sent <em>after</em> authenticating with Clerk. Memberstack’s copy says “Used after authenticating through an external provider.”<br><br>
+                        <strong>For Test Mode</strong> use your app’s callback URL, for example:<br>
+                        <code>http://localhost:3000/member-portal/callback</code> (local) or<br>
+                        <code>https://yourdomain.com/member-portal/callback</code> (staging/prod).<br><br>
+                        You may need to add the exact callback URL that Memberstack shows after you save (e.g. from the integration’s detail page). This same URI must be added in <strong>Clerk</strong> as an allowed redirect/callback for the OIDC application used by Memberstack.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Set a Signup Link</strong> (optional)</td>
+                        <td>If Memberstack’s hosted login UI should offer a “Sign up” link, point it to your app’s sign-up page, e.g. <code>https://yourdomain.com/sign-up</code> or <code>http://localhost:3000/sign-up</code>. Optional.</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p>Click <strong>Save</strong>. After saving, check whether the integration has an <strong>Edit</strong> or an extra step where you can add the <strong>Identity Provider (Clerk)</strong> details below.</p>
+
+            <h3>Where to enter Clerk’s OIDC details (Discovery URL, Client ID, Client Secret)</h3>
+            <p>In <strong>Test Mode</strong>, the first modal (and often the whole Custom SSO area) only shows <strong>Integration Name</strong> and <strong>Redirect URIs</strong>. Fields for Discovery URL, Client ID, and Client Secret are typically <strong>not</strong> visible in Test Mode. You can skip entering Clerk’s OIDC details until you switch to <strong>Live Mode</strong>.</p>
+            <p>In <strong>Live Mode</strong>, Clerk’s details are usually configured in one of these ways:</p>
+            <ul>
+                <li><strong>After Save:</strong> Open the Custom SSO integration you created and look for an <strong>Edit</strong> or <strong>Configure Identity Provider</strong> section with fields for Discovery URL, Client ID, and Client Secret. If you don’t see them in Test Mode, they may appear only in Live Mode.</li>
+                <li><strong>Help / Tutorial:</strong> Use “Watch Tutorial” or Memberstack’s Help Docs (e.g. “Custom SSO” or “OpenID Connect”) to confirm the exact screen where Memberstack asks for the external IdP’s Discovery URL, Client ID, and Client Secret (often documented for Live Mode).</li>
+            </ul>
+            <div class="warning-box">
+                <p>If you never see fields for <strong>Discovery URL</strong>, <strong>Client ID</strong>, or <strong>Client Secret</strong>, you may be in Test Mode (where they are often hidden), or the form may be for a different flow (e.g. Memberstack as IdP). Configure Clerk when in Live Mode, or look in <strong>Settings</strong> / <strong>Dev Tools</strong> for “External Identity Provider,” “OIDC Provider,” or “Custom OIDC.”</p>
+            </div>
+
+            <h3 id="memberstack-edit-sso-auto-generated">Memberstack Edit SSO App (production) and auto-generated credentials</h3>
+            <p>When you edit a Custom SSO integration in Memberstack (e.g. “Edit SSO App” for <code>event_site_manager_clerk_integration</code>), the modal shows <strong>Integration Name</strong>, <strong>Redirect URIs</strong>, <strong>Client ID</strong>, and <strong>Secret Key</strong>. After you create the integration, add Redirect URIs, and save, Memberstack <strong>auto-generates</strong> the <strong>Client ID</strong> and <strong>Secret Key</strong> and displays them in this screen (with copy and show/hide).</p>
+            <p><strong>Important finding:</strong> There is <strong>no field in the Memberstack dashboard</strong> to enter or paste Clerk’s Client ID, Client Secret, or Discovery URL. The Edit SSO App screen only shows Memberstack’s own generated Client ID and Secret Key (and Redirect URIs you added). So Clerk’s Application credentials and Discovery URL from the Clerk Configure tab cannot be “integrated” into Memberstack in the obvious way. The connection between Clerk and Memberstack may work by Memberstack providing its <em>own</em> Client ID and Secret (and Redirect URIs) to Clerk—i.e. you would add Memberstack’s Redirect URI in Clerk’s OAuth application, and possibly register Memberstack as a client in Clerk using Memberstack’s generated Client ID/Secret if Clerk supports that flow—or Memberstack may use a different SSO/OIDC flow. If SSO is not working, confirm with Memberstack support where (if anywhere) Clerk’s Discovery URL, Client ID, and Client Secret should be entered, or whether the integration is entirely driven by Memberstack’s credentials in Clerk.</p>
+            <figure class="doc-fig">
+                <img src="memberstack-edit-sso-app.png" alt="Memberstack Edit SSO App modal: Integration Name, Redirect URIs, Client ID, Secret Key (auto-generated), Delete Integration, Save" width="900" height="auto">
+                <figcaption><strong>Figure.</strong> Memberstack Edit SSO App (production) — Integration Name, Redirect URIs, and <strong>auto-generated</strong> Client ID and Secret Key. There is no field here to enter Clerk’s Client ID or Client Secret.</figcaption>
+            </figure>
+
+            <h3>Values to get from Clerk and enter in Memberstack</h3>
+            <p>Have these ready from the <strong>Clerk Dashboard</strong> so you can paste them into Memberstack when you find the right fields.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Value</th>
+                        <th>Where to get it in Clerk</th>
+                        <th>Example / format</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Discovery URL (Issuer URL)</strong></td>
+                        <td>Clerk Dashboard → <strong>Configure → SSO &amp; SSOCONFIG</strong> or <strong>OIDC / Enterprise connections</strong>. Use the OpenID Connect discovery endpoint (e.g. <code>https://&lt;your-clerk-frontend-api&gt;/.well-known/openid-configuration</code>). For Clerk, the issuer is typically <code>https://&lt;your-clerk-domain&gt;</code> and discovery is <code>https://&lt;your-clerk-domain&gt;/.well-known/openid-configuration</code>.</td>
+                        <td><code>https://your-clerk-instance.clerk.accounts.dev/.well-known/openid-configuration</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Client ID</strong></td>
+                        <td>Create an <strong>OIDC application</strong> (or Enterprise connection) in Clerk for Memberstack. Clerk generates a Client ID for that application.</td>
+                        <td>String like <code>oidc_xxxxx</code> or similar (Clerk-specific format).</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Client Secret</strong></td>
+                        <td>Same OIDC application in Clerk; copy the Client Secret (show/reveal if masked).</td>
+                        <td>Long secret string; store securely.</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p>In Clerk, when creating the OIDC application for Memberstack, add the <strong>Redirect URI(s)</strong> you entered in Memberstack (e.g. <code>http://localhost:3000/member-portal/callback</code> and your production callback). Use scopes such as <code>openid</code>, <code>email</code>, <code>profile</code> if Memberstack lets you request them.</p>
+
+            <h3>Test Mode vs Live Mode</h3>
+            <p>In <strong>Test Mode</strong>, use the App ID and API Keys from Dev Tools (Test Mode Application ID, Test Mode API Keys) in your app as <code>MEMBERSTACK_PROJECT_ID</code>, <code>NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY</code>, and <code>MEMBERSTACK_SECRET_KEY</code>. The dashboard reminder applies: <em>“You will need to update API Keys and SSO Integrations when you switch to Live Mode.”</em> Custom SSO (Clerk) setup—entering Discovery URL, Client ID, and Client Secret—is not required in Test Mode if the UI doesn’t show those fields. When you switch to <strong>Live Mode</strong>, create or edit the Custom SSO Integration and enter Clerk’s OIDC details there; also update API keys and any redirect URIs for production.</p>
+            <h4>Production mode: pricing plan and API keys</h4>
+            <p>To use <strong>production (Live) mode</strong> in Memberstack, you must first choose and activate a <strong>paid pricing plan</strong>. Memberstack is free to test; you only pay when you go live. In the dashboard, go to <strong>Settings</strong> → <strong>Billing</strong>. There you will see plans such as Basic ($25/mo billed yearly), Professional ($39/mo), and Business ($79/mo). Click <strong>Activate Basic</strong>, <strong>Activate Professional</strong>, or <strong>Activate Business</strong> (or another plan) to start paying for hosting your membership application. Only after a plan is activated do the <strong>public key</strong> and <strong>secret key</strong> for production mode become available in <strong>Dev Tools</strong>. Until then, Dev Tools shows Test Mode keys only.</p>
+            <figure class="doc-fig">
+                <img src="memberstack-settings-billing-plans.png" alt="Memberstack Settings → Billing: pricing plans (Basic, Professional, Business) and Activate buttons; 100% free to test - only pay when you go live" width="900" height="auto">
+                <figcaption><strong>Figure.</strong> Memberstack Settings → Billing — Choose and activate a pricing plan to go live; only then can you access production API keys.</figcaption>
+            </figure>
+            <figure class="doc-fig">
+                <img src="memberstack-dev-tools-test-mode-api-keys.png" alt="Memberstack Dev Tools: Test Mode toggle and API Keys section (Public Key, Secret Key)" width="900" height="auto">
+                <figcaption><strong>Figure.</strong> Memberstack Dev Tools — Test Mode toggle and API Keys. After activating a plan, switch to Live Mode here to obtain production public and secret keys.</figcaption>
+            </figure>
+
+            <h4 id="memberstack-plan-price-ids">Obtaining Plan ID and Price ID for .env</h4>
+            <p>To integrate plan and price IDs into your app (e.g. <code>NEXT_PUBLIC_MEMBERSTACK_FREE_PLAN_ID</code>, <code>NEXT_PUBLIC_MEMBERSTACK_BRONZE_PRICE_ID</code>), obtain them from the Memberstack dashboard <strong>Plans</strong> page.</p>
+            <p><strong>Plan ID</strong> (for free and paid plans): In the dashboard, go to <strong>Plans</strong>. For each plan (e.g. Free Member, Bronze), click the <strong>three-dot menu</strong> (⋮) next to the plan name, then choose <strong>Copy Plan ID</strong>. Paste the value into your <code>.env.local</code> (e.g. <code>NEXT_PUBLIC_MEMBERSTACK_FREE_PLAN_ID=pln_...</code> for the free plan).</p>
+            <p><strong>Price ID</strong> (for each price on a plan): In the same <strong>Plans</strong> page, select a plan in the left column (e.g. Bronze). The right-hand panel shows <strong>Prices</strong> for that plan. For each price (e.g. “$2 USD / month – Pro Monthly”), click the <strong>three-dot button</strong> next to that price and use the <strong>copy</strong> button next to the Price ID (e.g. <code>prc_...</code>) to copy it. Use this value in <code>.env.local</code> (e.g. <code>NEXT_PUBLIC_MEMBERSTACK_BRONZE_PRICE_ID=prc_...</code>). Repeat for any other paid plans you need.</p>
+            <figure class="doc-fig">
+                <img src="memberstack-plans-copy-plan-id.png" alt="Memberstack Plans: three-dot menu with Copy Plan ID for a plan (e.g. Free Member)" width="900" height="auto">
+                <figcaption><strong>Figure.</strong> Memberstack Plans — For each plan, open the three-dot menu and use <strong>Copy Plan ID</strong> to copy the Plan ID for your .env file.</figcaption>
+            </figure>
+            <figure class="doc-fig">
+                <img src="memberstack-prices-copy-price-id.png" alt="Memberstack Prices panel: Price ID and copy button for a price (e.g. Bronze Pro Monthly)" width="900" height="auto">
+                <figcaption><strong>Figure.</strong> Memberstack Prices (right panel) — For each price, use the three-dot menu and the copy button next to the Price ID to copy it for your .env file.</figcaption>
+            </figure>
+        </section>
+
+        <section id="clerk-three-steps">
+            <h2>5b. Three steps in Clerk (Discovery URL, Client ID, Client Secret, Redirect URIs)</h2>
+            <p>Use <strong>OAuth applications</strong> in Clerk so Clerk acts as the Identity Provider (IdP) for Memberstack. The <strong>SSO connections</strong> page (Configure → User &amp; authentication → SSO connections) is for adding <em>external</em> IdPs to Clerk (e.g. “Sign in with Google”). For “Sign in with [Your App]” (Clerk as IdP), use <strong>OAuth applications</strong> instead. You can create the Clerk OAuth app and get Client ID, Client Secret, and Discovery URL anytime; you’ll enter them in Memberstack when you configure Custom SSO in <strong>Live Mode</strong> (see section 5a — in Test Mode, Memberstack often doesn’t show those fields).</p>
+
+            <h3>Step 1: Open OAuth applications and create an app</h3>
+            <p>In the Clerk Dashboard, go to <strong>OAuth applications</strong> (Configure → Developers → OAuth applications). You should see the list of applications and an option to add a new one:</p>
+            <figure class="doc-fig">
+                <img src="clerk-oauth-applications-list.png" alt="Clerk OAuth applications list with Memberstack app and Add OAuth application button" width="900" height="auto">
+                <figcaption><strong>Figure 1.</strong> Clerk OAuth applications list — locate “Memberstack” (or your app) and use “+ Add OAuth application” to create a new app.</figcaption>
+            </figure>
+            <ol>
+                <li>Click <strong>Add OAuth application</strong> (or <strong>Add application</strong>).</li>
+                <li>In the configuration screen, fill in:
+                    <ul>
+                        <li><strong>Name:</strong> e.g. <code>Memberstack</code> (so you can find it later).</li>
+                        <li><strong>Redirect URIs:</strong> Add the <strong>exact</strong> callback URL(s) you configured in Memberstack (Test Mode Custom SSO Integration). For example <code>http://localhost:3000/member-portal/callback</code> for local, and your production callback if you have one. You can add multiple URIs (dev + prod).</li>
+                        <li><strong>Scopes:</strong> Select <code>openid</code>, <code>profile</code>, and <code>email</code> (and <code>offline_access</code> if needed) so Memberstack receives an OIDC ID token and user claims.</li>
+                    </ul>
+                </li>
+                <li>Optionally enable <strong>Consent screen</strong> (recommended). For web apps, <strong>Public</strong> (PKCE) is often used.</li>
+                <li>Click <strong>Add</strong> (or <strong>Create</strong>). Clerk will show the <strong>Client Secret</strong> once; copy it and store it securely (e.g. in Memberstack’s SSO config). You cannot view it again.</li>
+                <li>On the new app’s settings page, copy and save the <strong>Client ID</strong> (you can always see it again later).</li>
+            </ol>
+            <figure class="doc-fig">
+                <img src="clerk-oauth-memberstack-config.png" alt="Clerk Memberstack OAuth application configuration (Name, Scopes, Redirect URIs)" width="900" height="auto">
+                <figcaption><strong>Figure 2.</strong> Memberstack OAuth application configuration — Name, Scopes (email, offline_access, profile), Public/Consent screen, and Redirect URIs.</figcaption>
+            </figure>
+            <p>You now have <strong>Client ID</strong> and <strong>Client Secret</strong> to enter in Memberstack wherever it asks for the OIDC provider’s Client ID and Client Secret.</p>
+
+            <h3>Where to find Application credentials and Discovery URL in Clerk (production)</h3>
+            <p>In the Clerk Dashboard, open your <strong>Memberstack</strong> OAuth application and go to the <strong>Configure</strong> tab. There you will find:</p>
+            <ul>
+                <li><strong>Application credentials</strong> — <strong>Client ID</strong> (read-only, with copy icon) and <strong>Client Secret</strong> (masked, with Regenerate and copy). These are the OAuth 2.0 credentials that an external app (e.g. Memberstack) uses to identify itself to Clerk.</li>
+                <li><strong>Application configuration URLs</strong> — <strong>Discovery URL</strong> (e.g. <code>https://clerk.adwiise.com/.well-known/openid-configuration</code>) and <strong>Authorize URL</strong> (e.g. <code>https://clerk.adwiise.com/oauth/authorize</code>). The Discovery URL is what you would enter as the “Discovery URL” or “Issuer URL” in an external IdP configuration. Use the copy icons to copy these values.</li>
+                <li><strong>Basic info</strong> — Name (e.g. Memberstack). <strong>Scopes</strong> — e.g. <code>email</code>, <code>offline_access</code>, <code>openid</code>, <code>profile</code>, <code>public_metadata</code>, <code>private_metadata</code>. <strong>Public</strong> toggle — if enabled, Authorization Code with PKCE can be used. <strong>Redirect URIs</strong> — must include the exact callback URL(s) from Memberstack (e.g. your production callback).</li>
+            </ul>
+            <figure class="doc-fig">
+                <img src="clerk-production-oauth-configure.png" alt="Clerk Configure tab for Memberstack OAuth app: Application credentials (Client ID, Client Secret), Application configuration URLs (Discovery URL, Authorize URL), Scopes, Public toggle, Redirect URIs" width="900" height="auto">
+                <figcaption><strong>Figure.</strong> Clerk (production) — Configure tab for the Memberstack OAuth application: Application credentials (Client ID, Client Secret) and Application configuration URLs (Discovery URL, Authorize URL). Copy these for use in the external IdP configuration.</figcaption>
+            </figure>
+
+            <h3>Step 2: Get the Discovery URL (Issuer URL)</h3>
+            <ol>
+                <li>In the Clerk Dashboard, go to <strong>API keys</strong>: <a href="https://dashboard.clerk.com/~/api-keys" target="_blank" rel="noopener">dashboard.clerk.com → API keys</a> (often under Configure or Developers).</li>
+                <li>Find your <strong>Frontend API</strong> URL (or “Clerk Frontend API URL”). It looks like <code>https://&lt;something&gt;.clerk.accounts.dev</code> (development) or <code>https://clerk.&lt;your-domain&gt;.com</code> (production).</li>
+                <li>The <strong>Discovery URL</strong> for Memberstack is that URL with <code>/.well-known/openid-configuration</code> appended:<br>
+                    <code>https://&lt;your-clerk-frontend-api&gt;/.well-known/openid-configuration</code><br>
+                    Example (dev): <code>https://verb-noun-00.clerk.accounts.dev/.well-known/openid-configuration</code></li>
+            </ol>
+            <p>Enter this Discovery URL in Memberstack wherever it asks for the “Discovery URL,” “Issuer URL,” or “OpenID Connect discovery endpoint” of the external IdP.</p>
+
+            <h3>Step 3: Enter all three in Memberstack (when fields are available)</h3>
+            <p>If Memberstack’s Custom SSO Integration provides fields for the external IdP, enter Discovery URL, Client ID, and Client Secret from Clerk there. In practice, the <strong>Edit SSO App</strong> screen in Memberstack shows only <strong>auto-generated</strong> Client ID and Secret Key (see <a href="#memberstack-edit-sso-auto-generated">§5a Memberstack Edit SSO App and auto-generated credentials</a>). There is no visible field in the Memberstack dashboard to paste Clerk’s Client ID or Client Secret. If your Memberstack project does show fields for Discovery URL / Client ID / Client Secret, use the table below; otherwise the connection may rely on Memberstack’s credentials being registered in Clerk.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Memberstack field</th>
+                        <th>Value from Clerk</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Discovery URL / Issuer URL / OIDC discovery endpoint</td>
+                        <td><code>https://&lt;your-clerk-frontend-api&gt;/.well-known/openid-configuration</code> (from Step 2)</td>
+                    </tr>
+                    <tr>
+                        <td>Client ID</td>
+                        <td>From the OAuth application you created in Step 1</td>
+                    </tr>
+                    <tr>
+                        <td>Client Secret</td>
+                        <td>From the same OAuth application (copied when created)</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="success-box">
+                <p><strong>Summary:</strong> (1) Create an OAuth application in Clerk with Redirect URIs from Memberstack and scopes <code>openid</code>, <code>profile</code>, <code>email</code> → get Client ID and Client Secret from the <strong>Configure</strong> tab (Application credentials). (2) Get Discovery URL from the same Configure tab (Application configuration URLs) or from Clerk API keys (Frontend API URL + <code>/.well-known/openid-configuration</code>). (3) If Memberstack exposes fields for the IdP, enter Discovery URL, Client ID, and Client Secret there; otherwise note that Memberstack’s Edit SSO App <strong>auto-generates</strong> its own Client ID and Secret and does not provide a place to enter Clerk’s credentials—see §5a for details and how the two may connect.</p>
+            </div>
+        </section>
+
+        <section id="current-workflow">
+            <h2>6. Current workflow (existing membership flow)</h2>
+            <p>This section summarizes the <strong>current</strong> membership flow so the document is self-contained. No changes to this flow are in scope for the Memberstack integration doc.</p>
+            <ul>
+                <li><strong>Auth:</strong> Clerk (sign-in, social login, multi-domain/satellite if applicable).</li>
+                <li><strong>Routes:</strong> <code>/membership</code>, <code>/membership/plans</code>, <code>/membership/subscribe/[planId]</code>, <code>/membership/manage</code>, <code>/membership/success</code>, <code>/pricing</code>. Header/nav link to “Membership” and tenant setting <code>isMembershipSubscriptionEnabled</code> control visibility.</li>
+                <li><strong>Data:</strong> Backend <code>membership_plan</code> and <code>membership_subscription</code> (or equivalent); frontend uses proxy <code>membership-plans</code>, <code>membership-subscriptions</code> (or user-subscriptions). Stripe Checkout creates subscriptions; Stripe webhooks handle lifecycle.</li>
+            </ul>
+            <div class="info-box">
+                <p><strong>Reference:</strong> For full detail on the current membership feature, see <code>documentation/domain_agnostic_payment/membership_susbscription/MEMBERSHIP_SUBSCRIPTION_PRD.md</code> and <code>README.md</code> in the same folder.</p>
+            </div>
+        </section>
+
+        <section id="implementation-details">
+            <h2>7. Implementation details (our side)</h2>
+
+            <h3>Clerk as OIDC IdP</h3>
+            <p>Enable OIDC in Clerk so Memberstack can use Clerk as an external identity provider. Clerk supports custom OIDC applications and enterprise connections; you need to expose a discovery endpoint and issue ID tokens with correct <code>iss</code>, <code>aud</code>, <code>sub</code>, and optionally <code>email</code>/<code>name</code>. See Clerk docs for “Custom OpenID Connect (OIDC) Provider” or “Enterprise connections” and JWT/session configuration.</p>
+
+            <h3>Environment variables (integration-only)</h3>
+            <p>Add only what is needed for the Memberstack integration; do not change existing Stripe/Clerk vars. Example list:</p>
+            <div class="code-block">
+                <code>MEMBERSTACK_PROJECT_ID=...<br>
+                NEXT_PUBLIC_MEMBERSTACK_PROJECT_ID=...   # if client needs it<br>
+                NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY=...  # if client-side widget<br>
+                MEMBERSTACK_SECRET_KEY=...              # server-only<br>
+                # Clerk issuer URL is used in Memberstack OIDC config</code>
+            </div>
+
+            <h3>Redirect flow (intended sequence)</h3>
+            <ol>
+                <li>User is on our site.</li>
+                <li>User signs in with Clerk.</li>
+                <li>We redirect to Memberstack OIDC callback (or Memberstack login URL that accepts our token/code).</li>
+                <li>Memberstack validates the token/code and creates a membership session; user has access without logging in again.</li>
+            </ol>
+            <div class="mermaid">
+                flowchart LR
+                    User[User on our site]
+                    ClerkSignIn["Sign in with Clerk"]
+                    ClerkIssues["Clerk issues OIDC/JWT"]
+                    Redirect["Redirect to Memberstack"]
+                    MemberstackValidates["Memberstack validates"]
+                    Session["Membership session created"]
+                    User --> ClerkSignIn --> ClerkIssues --> Redirect --> MemberstackValidates --> Session
+            </div>
+            <div class="flow-diagram">
+                User on our site → Sign in with Clerk → Clerk issues OIDC/JWT → Redirect to Memberstack with token/code → Memberstack validates → Membership session created
+            </div>
+
+            <h3>Separate flow implementation (conceptual)</h3>
+            <p>For a separate path (e.g. <code>/member-portal</code>): add a new page that loads the Memberstack script or widget and passes the Clerk session (or token) if Memberstack accepts it client-side; or redirect to Memberstack’s OIDC callback with the token so Memberstack creates the session and then redirects back to our app.</p>
+        </section>
+
+        <section id="iframe-embed">
+            <h2>8. Iframe and “looks like our site”</h2>
+
+            <h3>Widget / embed (recommended)</h3>
+            <p>Prefer embedding the Memberstack <strong>widget</strong> or <strong>script</strong> on <strong>our</strong> pages (our layout, our domain). That way the experience is clearly “our SaaS” with their membership layer inside our UI. This is the recommended approach.</p>
+
+            <h3>Full-site iframe</h3>
+            <p>Embedding Memberstack’s <strong>full site</strong> in an iframe may be blocked by response headers (X-Frame-Options, Content-Security-Policy) and is not documented as supported. If you need “their site in an iframe,” confirm with Memberstack (white-label, custom domain, iframe policy) and refer to their docs for widget vs full-page behavior. Similar to the GiveButter pattern: only the widget is embeddable; the full GiveButter page cannot be iframed.</p>
+        </section>
+
+        <section id="checklist">
+            <h2>9. Step-by-step checklist</h2>
+            <p>Summary of steps with pointers to the sections above.</p>
+            <ol>
+                <li><strong>Sign up at Memberstack</strong> and choose a plan with SSO/OIDC. → <a href="#high-level-steps">§4</a></li>
+                <li><strong>Create project/app</strong> in Memberstack; note project ID and API keys. → <a href="#high-level-steps">§4</a>, <a href="#info-from-portal">§5</a></li>
+                <li><strong>Configure Clerk as OIDC IdP</strong> (discovery URL, client ID, client secret for Memberstack). → <a href="#implementation-details">§7</a></li>
+                <li><strong>In Memberstack, add Clerk as external OIDC provider</strong> (discovery URL, client ID, client secret, redirect URIs, scopes). → <a href="#high-level-steps">§4</a></li>
+                <li><strong>Define membership plans/tiers</strong> in Memberstack. → <a href="#high-level-steps">§4</a></li>
+                <li><strong>Configure redirect/callback URLs</strong> in Memberstack to include our app origin(s). → <a href="#high-level-steps">§4</a></li>
+                <li><strong>Add env vars</strong> for Memberstack (project ID, public key, secret key) in our app. → <a href="#implementation-details">§7</a>, <a href="#info-from-portal">§5</a></li>
+                <li><strong>Implement redirect flow</strong> (after Clerk sign-in → Memberstack callback with token/code). → <a href="#implementation-details">§7</a></li>
+                <li><strong>Optional: add separate route</strong> (e.g. <code>/member-portal</code>) and embed Memberstack widget. → <a href="#implementation-details">§7</a>, <a href="#iframe-embed">§8</a></li>
+                <li><strong>Verify SSO and gated content</strong> (sign in with Clerk, access Memberstack-gated content without second login). → <a href="#feasibility">§2</a></li>
+            </ol>
+        </section>
+
+        <section id="implemented-menu-and-env">
+            <h2>10. Implemented: Members menu and env vars</h2>
+            <p>The app includes a <strong>Members</strong> item under <strong>Features</strong> that links to the member portal. It is shown only when the user is logged in (Clerk).</p>
+
+            <h3>Environment variables (.env.local)</h3>
+            <p>Add these to <code>.env.local</code> (and to production env). The client-side Memberstack init uses the public key; optional plan/price IDs enable signup with free plan and Bronze checkout.</p>
+            <div class="code-block">
+<pre>MEMBERSTACK_PROJECT_ID=...
+NEXT_PUBLIC_MEMBERSTACK_PROJECT_ID=...   # if client needs it
+NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY=...  # required for client-side widget / member portal page
+MEMBERSTACK_SECRET_KEY=...               # server-only
+
+# Optional: for plan selection and Plans tab in profile modal
+NEXT_PUBLIC_MEMBERSTACK_FREE_PLAN_ID=...   # e.g. pln_free-member-lwm70ejm — signup assigns this plan so Plans tab appears
+NEXT_PUBLIC_MEMBERSTACK_BRONZE_PRICE_ID=... # e.g. prc_pro-monthly-0gqt0es4 — for "Upgrade to Bronze" checkout</pre>
+            </div>
+
+            <h3 id="production-env-verification">Production .env verification (.env.production)</h3>
+            <p>To run Memberstack in production and access the member portal from your application, the app only <strong>reads</strong> the following (verified in <code>MemberPortalClient.tsx</code> and <code>next.config.mjs</code>):</p>
+            <ul>
+                <li><strong>Required:</strong> <code>NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY</code> — from Memberstack <strong>Dev Tools → Live Mode</strong> (production API Keys). Without this, the member portal shows “Memberstack is not configured.”</li>
+                <li><strong>Optional but recommended:</strong> <code>NEXT_PUBLIC_MEMBERSTACK_FREE_PLAN_ID</code> (Plan ID from Memberstack Plans → Copy Plan ID for your free plan), <code>NEXT_PUBLIC_MEMBERSTACK_BRONZE_PRICE_ID</code> (Price ID from Memberstack Plans → Prices panel for Bronze). These enable “Sign up (Free)” and “Upgrade to Bronze” in the portal.</li>
+                <li><strong>Optional:</strong> <code>MEMBERSTACK_PROJECT_ID</code>, <code>NEXT_PUBLIC_MEMBERSTACK_PROJECT_ID</code>, <code>MEMBERSTACK_SECRET_KEY</code> — exposed in config but not used by the current member-portal client; useful for server-side API or reference.</li>
+            </ul>
+            <p><strong>Valid .env.production example (Memberstack production):</strong></p>
+            <div class="code-block">
+<pre>##### Memberstack (production — from Memberstack Dev Tools, Live Mode) #####
+MEMBERSTACK_PROJECT_ID=app_xxxxx
+NEXT_PUBLIC_MEMBERSTACK_PROJECT_ID=app_xxxxx
+NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY=pk_live_xxxxx    # required for member portal
+MEMBERSTACK_SECRET_KEY=sk_live_xxxxx                 # server-only, optional for current app
+
+NEXT_PUBLIC_MEMBERSTACK_FREE_PLAN_ID=pln_xxxxx       # from Plans → Copy Plan ID (free plan)
+NEXT_PUBLIC_MEMBERSTACK_BRONZE_PRICE_ID=prc_xxxxx    # from Plans → Prices → copy Price ID</pre>
+            </div>
+            <p><strong>Notes on Clerk / SSO credentials and naming:</strong></p>
+            <ul>
+                <li><strong>Integration Name and Redirect URIs</strong> are not environment variables. They are set in the <strong>Memberstack dashboard</strong> (Edit SSO App: Integration Name e.g. <code>event_site_manager_clerk_integration</code>, Redirect URIs e.g. <code>https://mosc-temp.com/member-portal/callback</code>) and in the <strong>Clerk dashboard</strong> (OAuth application → Redirect URIs). The callback URL must match in both.</li>
+                <li>If you keep Clerk or Memberstack SSO values in .env for reference or future server-side use, use <strong>valid variable names</strong> (no spaces): e.g. <code>MEMBERSTACK_CLERK_CLIENT_ID</code> and <code>MEMBERSTACK_CLERK_SECRET_KEY</code> for Clerk’s OAuth app credentials; <code>MEMBERSTACK_SSO_CLIENT_ID</code> and <code>MEMBERSTACK_SSO_SECRET_KEY</code> for Memberstack’s auto-generated SSO credentials from Edit SSO App. The <strong>current app does not read these</strong>; SSO is configured between Clerk and Memberstack in their dashboards.</li>
+            </ul>
+            <p>With <code>NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY</code> set to your <strong>Live Mode</strong> public key (and optionally the plan/price IDs), the app can run Memberstack in production and users can access the member portal from your deployed application.</p>
+
+            <h3>Where it is implemented</h3>
+            <ul>
+                <li><strong>Header:</strong> <code>src/components/Header.tsx</code> — Features dropdown includes <code>Members</code> with <code>href: '/member-portal'</code> and <code>requiresAuth: true</code>.</li>
+                <li><strong>Member portal page:</strong> <code>src/app/member-portal/page.tsx</code> and <code>MemberPortalClient.tsx</code> — initializes <code>@memberstack/dom</code> with <code>NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY</code> (no hardcoded key).</li>
+                <li><strong>Next.js config:</strong> <code>next.config.mjs</code> — <code>NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY</code> and <code>NEXT_PUBLIC_MEMBERSTACK_PROJECT_ID</code> are exposed in <code>env</code> for the client.</li>
+            </ul>
+
+            <h3>SSO sign-up behavior</h3>
+            <div class="info-box">
+                <p>Sign-up in Memberstack does <strong>not</strong> happen until the user opens the member experience. When a user is already logged in with Clerk and clicks <strong>Members</strong>, they go to <code>/member-portal</code>. With Clerk configured as a custom SSO IdP in Memberstack, the <strong>first time</strong> they complete the SSO flow (e.g. redirect to Clerk and back), Memberstack creates or links their member record. So it is “automatic” only in the sense that the first visit plus SSO flow creates the member; the user must open the Members page at least once.</p>
+            </div>
+
+            <h3>Where plans and billing appear</h3>
+            <p>The Member profile modal (opened via <strong>Member profile</strong> on <code>/member-portal</code>) has a sidebar that can include <strong>Profile</strong>, <strong>Security</strong>, <strong>Plans</strong>/<strong>Billing</strong>, and optionally <strong>Team</strong>. The <strong>Plans</strong> tab is only shown when the member has at least one plan assigned. If you only see Profile and Security, the member has no plan yet: use <strong>Sign up (Free)</strong> (with <code>NEXT_PUBLIC_MEMBERSTACK_FREE_PLAN_ID</code> set) so new signups get the free plan, or assign a plan in the Memberstack dashboard — then refresh and the Plans tab will appear. The <strong>Billing</strong> tab appears when plans and billing are enabled in the Memberstack dashboard.</p>
+
+            <h3>How to show plan choice and the Plans tab</h3>
+            <p>Follow these steps so members can pick a plan and the Plans tab appears in the profile modal.</p>
+            <ol>
+                <li><strong>Obtain Plan ID and Price ID from Memberstack:</strong> In the Memberstack dashboard, go to <strong>Plans</strong>. For each plan, use the three-dot menu → <strong>Copy Plan ID</strong> to get the Plan ID. For each price, open the plan’s <strong>Prices</strong> panel (right side), then use the three-dot button and the copy button next to the Price ID. See <a href="#memberstack-plan-price-ids">§5a Obtaining Plan ID and Price ID for .env</a> for step-by-step instructions and screenshots.</li>
+                <li><strong>Set env vars:</strong> In <code>.env.local</code> add <code>NEXT_PUBLIC_MEMBERSTACK_FREE_PLAN_ID=pln_...</code> (your free plan ID from Copy Plan ID) and <code>NEXT_PUBLIC_MEMBERSTACK_BRONZE_PRICE_ID=prc_...</code> (your Bronze price ID from the Prices panel). Restart the dev server.</li>
+                <li><strong>Signup with free plan:</strong> The member portal “Sign up” becomes “Sign up (Free)” when the free plan ID is set. It opens the signup modal with <code>signup: { plans: [freePlanId] }</code>, so new members get the free plan and the <strong>Plans</strong> tab appears.</li>
+                <li><strong>View plans / Upgrade:</strong> The <code>@memberstack/dom</code> package does <strong>not</strong> support a dedicated “PLANS” modal (calling <code>openModal('PLANS')</code> would gray the screen with no content). Use <strong>Member profile</strong> to see and manage plans. “Upgrade to Bronze” is shown only when the member is signed in, the Bronze price ID is set, and the member does <strong>not</strong> already have that plan (we check <code>getCurrentMember().data.planConnections</code> for a matching <code>payment.priceId</code>). It calls <code>purchasePlansWithCheckout({ priceId })</code> for checkout.</li>
+            </ol>
+            <p><strong>Why you didn’t see a plan choice during signup:</strong> The signup form doesn’t show plans unless you pass <code>plans</code> in the signup options. Setting <code>NEXT_PUBLIC_MEMBERSTACK_FREE_PLAN_ID</code> and using “Sign up (Free)” assigns the free plan by default.</p>
+            <p><strong>Why the Plans tab was missing:</strong> The Plans tab only appears if the member has at least one plan. Assigning the free plan on signup (via the env var) or manually in the dashboard fixes this.</p>
+
+            <h3>Cancelling a subscription (Manage Subscriptions → Stripe)</h3>
+            <p>When a member clicks <strong>Manage Subscriptions</strong> in the Member profile <strong>Plans</strong> tab, they are sent to Stripe’s customer portal. If they cancel there, Stripe usually <strong>schedules cancellation at the end of the current billing period</strong> (e.g. “Cancels Mar 22”) rather than cancelling immediately. Until that date:</p>
+            <ul>
+                <li>Stripe keeps the subscription active; the member may see a “Don’t cancel subscription” button to undo.</li>
+                <li>Memberstack (via Stripe webhooks) continues to show the member as having that plan until the subscription actually ends.</li>
+                <li>The member portal and Member profile will still show the plan as enabled; this is expected.</li>
+            </ul>
+            <p>After the period end, Stripe sends a subscription-ended event, Memberstack updates the member’s plan, and the plan will no longer appear in the dashboard or in the app. No fix is required for this behavior; the member portal includes a short note explaining cancel-at-period-end so users know why the plan still appears.</p>
+
+            <h3>Multi-tenant and single Clerk</h3>
+            <p>You can use <strong>one Clerk application</strong> (one client ID/secret) for all tenants; tenant isolation is handled by your app (e.g. <code>tenantId</code> in your backend and <code>NEXT_PUBLIC_TENANT_ID</code> per deployment). Clerk does not require a separate app per tenant. For Memberstack you can either:</p>
+            <ul>
+                <li><strong>One Memberstack project per tenant:</strong> Each tenant has its own Memberstack project (own project ID, public key, secret). The app chooses which Memberstack keys to use based on the current tenant (e.g. from tenant config or <code>NEXT_PUBLIC_TENANT_ID</code>). Plans and members are then isolated per tenant.</li>
+                <li><strong>Single Memberstack project for all tenants:</strong> One set of Memberstack keys for the platform. Simpler to run, but all tenants’ members and plans live in one Memberstack project (no per-tenant isolation inside Memberstack).</li>
+            </ul>
+
+            <h3>Logged-in user not showing in dashboard (Members list)</h3>
+            <p>If a user has signed in on the member portal (and sees “Member profile”) but does <strong>not</strong> appear in the Memberstack dashboard under Members, check the following:</p>
+            <ul>
+                <li><strong>Test vs Live:</strong> The dashboard keeps <strong>Test</strong> and <strong>Live</strong> members separate. The “Members” view often shows “Test Members” or has a toggle. If your app uses a <strong>live</strong> public key, the member is created as a live member and will not appear in “Test Members”. Switch the dashboard to view <strong>Live</strong> members (or the equivalent) to see them. Conversely, if the app uses a test/sandbox key, the member appears under Test Members.</li>
+                <li><strong>Same project:</strong> Ensure the public key in your app (<code>NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY</code>) is from the <strong>same Memberstack project</strong> you have open in the dashboard. If the app points to a different project, members created on the site will appear in that other project’s dashboard.</li>
+                <li><strong>Refresh / delay:</strong> After the first SSO or social sign-in, Memberstack creates the member; a dashboard refresh or switching between Test and Live may be needed.</li>
+            </ul>
+        </section>
+
+        <section id="references">
+            <h2>11. References and links</h2>
+            <ul>
+                <li><strong>Memberstack:</strong> SSO via OpenID Connect (<a href="https://www.memberstack.com/features/sso-via-openid-connect" target="_blank" rel="noopener">memberstack.com/features/sso-via-openid-connect</a>), Advanced Integration / DOM Package (<a href="https://developers.memberstack.com/dom-package/advanced-integration" target="_blank" rel="noopener">developers.memberstack.com</a>), API docs.</li>
+                <li><strong>Clerk:</strong> Custom OIDC provider / enterprise connections (<a href="https://clerk.com/docs/authentication/enterprise-connections/oidc/custom-provider" target="_blank" rel="noopener">clerk.com/docs</a>), JWT/session.</li>
+                <li><strong>Internal:</strong> <code>documentation/domain_agnostic_payment/membership_susbscription/MEMBERSHIP_SUBSCRIPTION_PRD.md</code>, <code>README.md</code> in same folder; existing membership routes and proxy usage in <code>src/app/membership</code>, <code>src/app/pricing</code>, and <code>src/pages/api/proxy/membership-plans</code>, <code>membership-subscriptions</code>.</li>
+            </ul>
+        </section>
+    </div>
+</body>
+</html>

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PRD: News Portal – Backend (Spring Boot &amp; Database)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+      h1, h2, h3, h4 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+      h1 { font-size: 2.3rem; margin-bottom: 0.75rem; }
+      h2 { font-size: 1.7rem; margin-top: 2.5rem; }
+      h3 { font-size: 1.3rem; margin-top: 1.8rem; }
+      h4 { font-size: 1.1rem; margin-top: 1.2rem; }
+      p, li { line-height: 1.75; font-size: 1rem; }
+      ul, ol { margin-left: 1.4rem; }
+      table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+      th, td { border: 1px solid rgba(42, 32, 23, 0.15); padding: 0.75rem; vertical-align: top; }
+      th { background: rgba(213, 201, 182, 0.35); font-weight: 600; }
+      code, pre {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+      }
+      pre { padding: 1rem; line-height: 1.6; overflow-x: auto; }
+      code.inline { padding: 0.15rem 0.35rem; font-size: 0.95rem; display: inline-block; }
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .divider { height: 1px; background: rgba(42, 32, 23, 0.12); margin: 2rem 0; }
+      .callout {
+        border-left: 4px solid #8b7d6b;
+        background: rgba(213, 201, 182, 0.3);
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
+        margin: 1.8rem 0;
+      }
+      .toc ol { list-style: decimal; }
+      .toc a { color: #1f4c8f; text-decoration: none; }
+      .toc a:hover { text-decoration: underline; }
+      footer { margin-top: 4rem; text-align: center; font-size: 0.9rem; color: #7a7066; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Draft · News Portal Backend</span>
+      <h1>PRD: News Portal – Backend (Spring Boot &amp; Database)</h1>
+      <p>
+        <strong>Project:</strong> MCEFEE Multi-Tenant Event Management Platform<br />
+        <strong>Backend Repo:</strong> <code class="inline">E:\project_workspace\malayalees-us-site-boot</code><br />
+        <strong>Document Version:</strong> 1.0<br />
+        <strong>Date:</strong> January 2026<br />
+        <strong>Status:</strong> Draft
+      </p>
+
+      <div class="divider"></div>
+
+      <h2 id="executive-summary">Executive Summary</h2>
+      <p>
+        This document defines the <strong>backend</strong> requirements for the News Portal: REST API design, database schema
+        (Liquibase migrations), entities, security, and optional batch jobs. The backend must align with existing
+        patterns (tenant_id, JWT auth, criteria queries) and with <code class="inline">documentation/Swagger_API_Docs/api-docs.json</code>
+        schema conventions. Database design should be consistent with <code class="inline">code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code>.
+      </p>
+
+      <h2 id="table-of-contents">Table of Contents</h2>
+      <nav class="toc">
+        <ol>
+          <li><a href="#database-schema">Database Schema</a></li>
+          <li><a href="#rest-api">REST API Endpoints</a></li>
+          <li><a href="#entities-dtos">Entities &amp; DTOs</a></li>
+          <li><a href="#security">Security &amp; Multi-Tenancy</a></li>
+          <li><a href="#batch-jobs">Batch Jobs (Optional)</a></li>
+        </ol>
+      </nav>
+
+      <div class="divider"></div>
+
+      <section id="database-schema">
+        <h2>1. Database Schema</h2>
+        <p>New tables live in the same PostgreSQL database; add Liquibase changelogs under the backend project’s migrations directory. Follow existing patterns: <code class="inline">tenant_id VARCHAR(255)</code>, <code class="inline">created_at TIMESTAMP DEFAULT now()</code>, <code class="inline">updated_at</code> where applicable.</p>
+        <h3>news_category</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>id</td><td>BIGSERIAL</td><td>PK</td></tr>
+            <tr><td>tenant_id</td><td>VARCHAR(255)</td><td>NOT NULL</td></tr>
+            <tr><td>name</td><td>VARCHAR(255)</td><td>NOT NULL</td></tr>
+            <tr><td>slug</td><td>VARCHAR(255)</td><td>NOT NULL, unique per tenant</td></tr>
+            <tr><td>description</td><td>TEXT</td><td>Nullable</td></tr>
+            <tr><td>display_order</td><td>INTEGER</td><td>Default 0</td></tr>
+            <tr><td>is_active</td><td>BOOLEAN</td><td>Default true</td></tr>
+            <tr><td>created_at</td><td>TIMESTAMP</td><td>DEFAULT now()</td></tr>
+            <tr><td>updated_at</td><td>TIMESTAMP</td><td>DEFAULT now()</td></tr>
+          </tbody>
+        </table>
+        <p>Unique constraint: <code class="inline">(tenant_id, slug)</code>.</p>
+
+        <h3>news_article</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>id</td><td>BIGSERIAL</td><td>PK</td></tr>
+            <tr><td>tenant_id</td><td>VARCHAR(255)</td><td>NOT NULL</td></tr>
+            <tr><td>title</td><td>VARCHAR(500)</td><td>NOT NULL</td></tr>
+            <tr><td>slug</td><td>VARCHAR(500)</td><td>NOT NULL, unique per tenant</td></tr>
+            <tr><td>excerpt</td><td>TEXT</td><td>Nullable</td></tr>
+            <tr><td>body</td><td>TEXT</td><td>Nullable (or body_html)</td></tr>
+            <tr><td>featured_image_url</td><td>VARCHAR(1024)</td><td>Nullable</td></tr>
+            <tr><td>published_at</td><td>TIMESTAMP</td><td>Nullable</td></tr>
+            <tr><td>status</td><td>VARCHAR(50)</td><td>DRAFT, PUBLISHED, ARCHIVED</td></tr>
+            <tr><td>author_id</td><td>BIGINT</td><td>FK user_profile(id), nullable</td></tr>
+            <tr><td>created_at</td><td>TIMESTAMP</td><td>DEFAULT now()</td></tr>
+            <tr><td>updated_at</td><td>TIMESTAMP</td><td>DEFAULT now()</td></tr>
+          </tbody>
+        </table>
+        <p>Unique constraint: <code class="inline">(tenant_id, slug)</code>.</p>
+
+        <h3>news_article_category</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>id</td><td>BIGSERIAL</td><td>PK</td></tr>
+            <tr><td>news_article_id</td><td>BIGINT</td><td>FK news_article(id)</td></tr>
+            <tr><td>news_category_id</td><td>BIGINT</td><td>FK news_category(id)</td></tr>
+            <tr><td>is_primary</td><td>BOOLEAN</td><td>Default false</td></tr>
+            <tr><td>created_at</td><td>TIMESTAMP</td><td>DEFAULT now()</td></tr>
+          </tbody>
+        </table>
+        <p>Unique constraint: <code class="inline">(news_article_id, news_category_id)</code>.</p>
+
+        <h3>news_section_display_config</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>id</td><td>BIGSERIAL</td><td>PK</td></tr>
+            <tr><td>tenant_id</td><td>VARCHAR(255)</td><td>NOT NULL</td></tr>
+            <tr><td>section_key</td><td>VARCHAR(100)</td><td>e.g. flash_news, main_news, featured_news, most_read, press_release, sidebar_promotional_block</td></tr>
+            <tr><td>section_title_override</td><td>VARCHAR(255)</td><td>Nullable</td></tr>
+            <tr><td>banner_image_url</td><td>VARCHAR(1024)</td><td>Nullable</td></tr>
+            <tr><td>display_order</td><td>INTEGER</td><td>Default 0</td></tr>
+            <tr><td>is_active</td><td>BOOLEAN</td><td>Default true</td></tr>
+            <tr><td>created_at</td><td>TIMESTAMP</td><td>DEFAULT now()</td></tr>
+            <tr><td>updated_at</td><td>TIMESTAMP</td><td>DEFAULT now()</td></tr>
+          </tbody>
+        </table>
+        <p>Unique constraint: <code class="inline">(tenant_id, section_key)</code>. Supported <code class="inline">section_key</code> values: <code class="inline">flash_news</code>, <code class="inline">main_news</code>, <code class="inline">featured_news</code>, <code class="inline">most_read</code>, <code class="inline">press_release</code>, <code class="inline">sidebar_promotional_block</code>. The <code class="inline">sidebar_promotional_block</code> row configures the right sidebar section (e.g. section title override). Rotating banner ads within the sidebar are stored in <code class="inline">news_sidebar_promotion</code> and displayed as a slideshow with timer.</p>
+
+        <h3>news_sidebar_promotion</h3>
+        <p>Rotating banner ads / promotional items for the right sidebar. Stored in the database; front end retrieves by tenant (and optional valid date range), orders by <code class="inline">display_order</code>, and shows as a <strong>slideshow with configurable timer</strong> (<code class="inline">display_duration_seconds</code> per slide).</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>id</td><td>BIGSERIAL</td><td>PK</td></tr>
+            <tr><td>tenant_id</td><td>VARCHAR(255)</td><td>NOT NULL</td></tr>
+            <tr><td>title</td><td>VARCHAR(255)</td><td>Nullable (admin label)</td></tr>
+            <tr><td>image_url</td><td>VARCHAR(1024)</td><td>NOT NULL – banner/promo image</td></tr>
+            <tr><td>link_url</td><td>VARCHAR(1024)</td><td>Nullable – click-through URL</td></tr>
+            <tr><td>display_order</td><td>INTEGER</td><td>Default 0 – order in rotation</td></tr>
+            <tr><td>display_duration_seconds</td><td>INTEGER</td><td>Default 5 – seconds per slide in slideshow (timer)</td></tr>
+            <tr><td>valid_from</td><td>TIMESTAMP</td><td>Nullable</td></tr>
+            <tr><td>valid_to</td><td>TIMESTAMP</td><td>Nullable</td></tr>
+            <tr><td>is_active</td><td>BOOLEAN</td><td>Default true</td></tr>
+            <tr><td>created_at</td><td>TIMESTAMP</td><td>DEFAULT now()</td></tr>
+            <tr><td>updated_at</td><td>TIMESTAMP</td><td>DEFAULT now()</td></tr>
+          </tbody>
+        </table>
+
+        <h3>news_flash</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>id</td><td>BIGSERIAL</td><td>PK</td></tr>
+            <tr><td>tenant_id</td><td>VARCHAR(255)</td><td>NOT NULL</td></tr>
+            <tr><td>headline</td><td>VARCHAR(500)</td><td>NOT NULL</td></tr>
+            <tr><td>link_url</td><td>VARCHAR(1024)</td><td>Nullable (or news_article_id)</td></tr>
+            <tr><td>news_article_id</td><td>BIGINT</td><td>FK news_article(id), nullable</td></tr>
+            <tr><td>display_order</td><td>INTEGER</td><td>Default 0</td></tr>
+            <tr><td>valid_from</td><td>TIMESTAMP</td><td>Nullable</td></tr>
+            <tr><td>valid_to</td><td>TIMESTAMP</td><td>Nullable</td></tr>
+            <tr><td>is_active</td><td>BOOLEAN</td><td>Default true</td></tr>
+            <tr><td>created_at</td><td>TIMESTAMP</td><td>DEFAULT now()</td></tr>
+            <tr><td>updated_at</td><td>TIMESTAMP</td><td>DEFAULT now()</td></tr>
+          </tbody>
+        </table>
+
+        <h3>news_live_stream_config</h3>
+        <p>One active live stream config per tenant for the “LIVE” page (embed e.g. YouTube Live).</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Type</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>id</td><td>BIGSERIAL</td><td>PK</td></tr>
+            <tr><td>tenant_id</td><td>VARCHAR(255)</td><td>NOT NULL</td></tr>
+            <tr><td>embed_url</td><td>VARCHAR(1024)</td><td>e.g. YouTube embed src; nullable when inactive</td></tr>
+            <tr><td>title</td><td>VARCHAR(500)</td><td>Nullable</td></tr>
+            <tr><td>is_active</td><td>BOOLEAN</td><td>Default true</td></tr>
+            <tr><td>created_at</td><td>TIMESTAMP</td><td>DEFAULT now()</td></tr>
+            <tr><td>updated_at</td><td>TIMESTAMP</td><td>DEFAULT now()</td></tr>
+          </tbody>
+        </table>
+        <p>Unique constraint: <code class="inline">(tenant_id)</code> (one row per tenant) or allow multiple rows and treat “current” as the single active one per tenant.</p>
+      </section>
+
+      <section id="rest-api">
+        <div class="divider"></div>
+        <h2>2. REST API Endpoints</h2>
+        <p>Base path suggestion: <code class="inline">/api/news-articles</code>, <code class="inline">/api/news-categories</code>, <code class="inline">/api/news-section-config</code>, <code class="inline">/api/news-sidebar-promotions</code>, <code class="inline">/api/news-flash</code>, <code class="inline">/api/news-live-stream-config</code>. Use JHipster/Spring Data REST style criteria where applicable (e.g. <code class="inline">tenantId.equals=</code>, <code class="inline">slug.equals=</code>, <code class="inline">categoryId.equals=</code>). Align request/response shapes with <code class="inline">api-docs.json</code> and frontend DTOs.</p>
+        <h3>News Articles</h3>
+        <ul>
+          <li>GET <code class="inline">/api/news-articles</code> – List (criteria: tenantId, category slug/id, status, page, size, sort).</li>
+          <li>GET <code class="inline">/api/news-articles/{id}</code> – By ID.</li>
+          <li>GET <code class="inline">/api/news-articles/by-slug/{slug}</code> – By slug (and tenant).</li>
+          <li>POST <code class="inline">/api/news-articles</code> – Create (body includes tenantId).</li>
+          <li>PATCH <code class="inline">/api/news-articles/{id}</code> – Update (merge-patch).</li>
+          <li>DELETE <code class="inline">/api/news-articles/{id}</code> – Delete.</li>
+        </ul>
+        <h3>News Categories</h3>
+        <ul>
+          <li>GET <code class="inline">/api/news-categories</code> – List (tenantId, isActive, sort).</li>
+          <li>GET <code class="inline">/api/news-categories/{id}</code> – By ID.</li>
+          <li>GET <code class="inline">/api/news-categories/by-slug/{slug}</code> – By slug (and tenant).</li>
+          <li>POST <code class="inline">/api/news-categories</code> – Create.</li>
+          <li>PATCH <code class="inline">/api/news-categories/{id}</code> – Update.</li>
+          <li>DELETE <code class="inline">/api/news-categories/{id}</code> – Delete.</li>
+        </ul>
+        <h3>News Section Display Config</h3>
+        <ul>
+          <li>GET <code class="inline">/api/news-section-config</code> – List by tenantId (and optionally sectionKey).</li>
+          <li>GET <code class="inline">/api/news-section-config/{id}</code> – By ID.</li>
+          <li>POST <code class="inline">/api/news-section-config</code> – Create.</li>
+          <li>PATCH <code class="inline">/api/news-section-config/{id}</code> – Update (e.g. banner_image_url, section_title_override).</li>
+        </ul>
+        <h3>News Sidebar Promotions (Rotating Banners / Slideshow)</h3>
+        <ul>
+          <li>GET <code class="inline">/api/news-sidebar-promotions</code> – List by tenantId (criteria: isActive.equals, valid date range). Return ordered by display_order for slideshow. Public read for active promotions.</li>
+          <li>GET <code class="inline">/api/news-sidebar-promotions/{id}</code> – By ID.</li>
+          <li>POST <code class="inline">/api/news-sidebar-promotions</code> – Create (body: tenantId, title, image_url, link_url, display_order, display_duration_seconds, valid_from, valid_to, is_active).</li>
+          <li>PATCH <code class="inline">/api/news-sidebar-promotions/{id}</code> – Update (merge-patch).</li>
+          <li>DELETE <code class="inline">/api/news-sidebar-promotions/{id}</code> – Delete.</li>
+        </ul>
+        <p>Front end uses list response to render a <strong>slideshow with timer</strong>: each slide shown for <code class="inline">display_duration_seconds</code> seconds before advancing to the next.</p>
+        <h3>News Flash</h3>
+        <ul>
+          <li>GET <code class="inline">/api/news-flash</code> – List (tenantId, isActive, valid date range).</li>
+          <li>GET <code class="inline">/api/news-flash/{id}</code> – By ID.</li>
+          <li>POST <code class="inline">/api/news-flash</code> – Create.</li>
+          <li>PATCH <code class="inline">/api/news-flash/{id}</code> – Update.</li>
+          <li>DELETE <code class="inline">/api/news-flash/{id}</code> – Delete.</li>
+        </ul>
+      </section>
+
+      <section id="entities-dtos">
+        <div class="divider"></div>
+        <h2>3. Entities &amp; DTOs</h2>
+        <p>Implement JPA entities for each table; provide REST DTOs (or use OpenAPI-generated) matching the frontend <code class="inline">@/types</code>. Include <code class="inline">tenantId</code> in create/update payloads. PATCH must accept <code class="inline">Content-Type: application/merge-patch+json</code> and require <code class="inline">id</code> in body where applicable.</p>
+      </section>
+
+      <section id="security">
+        <div class="divider"></div>
+        <h2>4. Security &amp; Multi-Tenancy</h2>
+        <ul>
+          <li>All endpoints must enforce tenant scope (tenantId from JWT or context).</li>
+          <li>Public read (list published articles, section config, <strong>active sidebar promotions</strong> for slideshow, active flash, current live stream config) can allow unauthenticated access with tenant resolved from request (e.g. header or default); create/update/delete require authenticated user with appropriate role (e.g. ADMIN or NEWS_EDITOR).</li>
+          <li>Align with existing backend JWT and role checks used by the frontend proxy.</li>
+        </ul>
+      </section>
+
+      <section id="batch-jobs">
+        <div class="divider"></div>
+        <h2>5. Batch Jobs (Optional)</h2>
+        <p>In <code class="inline">event-site-manager-batch-jobs</code>: optional jobs for scheduled publish/unpublish of articles (e.g. set status to PUBLISHED at published_at, or ARCHIVED after valid_to). Not required for MVP; can be added in a later phase.</p>
+      </section>
+
+      <footer>
+        <p>News Portal PRD – Backend · MCEFEE Platform</p>
+      </footer>
+    </main>
+  </body>
+</html>

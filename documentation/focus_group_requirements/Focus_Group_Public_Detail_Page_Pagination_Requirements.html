@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Group Public Detail Page - Pagination & Event Filtering Requirements</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+            font-size: 1.8em;
+        }
+
+        h3 {
+            color: #555;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        h4 {
+            color: #666;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #e74c3c;
+        }
+
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+        }
+
+        pre code {
+            background-color: transparent;
+            color: #ecf0f1;
+            padding: 0;
+        }
+
+        .requirement {
+            background-color: #f8f9fa;
+            border-left: 4px solid #27ae60;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .requirement h3 {
+            margin-top: 0;
+            color: #27ae60;
+        }
+
+        .technical {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .technical h3 {
+            margin-top: 0;
+            color: #3498db;
+        }
+
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .warning strong {
+            color: #856404;
+        }
+
+        .info {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .info strong {
+            color: #0c5460;
+        }
+
+        .file-path {
+            background-color: #e8f4f8;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            display: inline-block;
+            margin: 5px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .checklist {
+            background-color: #f0f8ff;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .checklist h3 {
+            margin-top: 0;
+            color: #3498db;
+        }
+
+        .checklist ul {
+            list-style: none;
+            margin-left: 0;
+        }
+
+        .checklist li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .checklist li:before {
+            content: "☐";
+            position: absolute;
+            left: 0;
+            font-size: 1.2em;
+        }
+
+        .reference {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .reference h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+
+        .url-analysis {
+            background-color: #e7f3ff;
+            border: 2px solid #0066cc;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .url-analysis h3 {
+            margin-top: 0;
+            color: #0066cc;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Focus Group Public Detail Page - Pagination & Event Filtering Requirements</h1>
+
+        <div class="reference">
+            <h4>📋 Document Information</h4>
+            <p><strong>Feature:</strong> Pagination and Event Filtering for Public Focus Group Detail Page</p>
+            <p><strong>Target Page:</strong> <code>http://localhost:3000/focus-groups/[slug]</code></p>
+            <p><strong>Current File:</strong> <code>src/app/focus-groups/[slug]/page.tsx</code></p>
+            <p><strong>Created:</strong> <span id="date"></span></p>
+            <p><strong>Status:</strong> Requirements Definition (No Implementation)</p>
+        </div>
+
+        <div class="url-analysis">
+            <h3>🔍 URL Structure Analysis</h3>
+            <p><strong>Current Implementation:</strong> Uses <strong>slug-based URLs</strong> (<code>/focus-groups/[slug]</code>)</p>
+
+            <h4>URL Pattern Comparison:</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Page Type</th>
+                        <th>URL Pattern</th>
+                        <th>Example</th>
+                        <th>Rationale</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Public Pages</strong></td>
+                        <td><code>/focus-groups/[slug]</code></td>
+                        <td><code>/focus-groups/career-guidance</code></td>
+                        <td>SEO-friendly, user-friendly, readable URLs</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Admin Pages</strong></td>
+                        <td><code>/admin/focus-groups/[id]</code></td>
+                        <td><code>/admin/focus-groups/4002</code></td>
+                        <td>Direct database access, consistent with admin patterns</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>✅ Recommendation: Keep Slug-Based URLs</h4>
+            <p><strong>Rationale:</strong></p>
+            <ul>
+                <li><strong>SEO Benefits:</strong> Search engines prefer readable, keyword-rich URLs</li>
+                <li><strong>User Experience:</strong> URLs like <code>/focus-groups/career-guidance</code> are more meaningful than <code>/focus-groups/4002</code></li>
+                <li><strong>Consistency:</strong> Matches pattern used in other public pages (e.g., <code>/events/[slug]</code>)</li>
+                <li><strong>Shareability:</strong> Slug-based URLs are easier to share and remember</li>
+                <li><strong>Current Implementation:</strong> Already uses slug-based routing and works correctly</li>
+            </ul>
+
+            <div class="info">
+                <strong>📝 Note:</strong> The current implementation correctly:
+                <ul>
+                    <li>Uses <code>[slug]</code> dynamic route parameter</li>
+                    <li>Fetches focus group by slug: <code>slug.equals=${slug}</code></li>
+                    <li>Converts slug to ID internally for event queries</li>
+                    <li>Maintains separation: Public pages use slugs, Admin pages use IDs</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>1. Overview</h2>
+        <p>This document defines the requirements for adding pagination and event filtering (upcoming/past toggle) to the public-facing Focus Group detail page. The page currently displays all events in a grid without pagination. This enhancement will improve performance and user experience for focus groups with many events.</p>
+
+        <div class="warning">
+            <strong>⚠️ Important:</strong> This document contains requirements only. <strong>Do NOT implement</strong> until explicitly requested. Focus on understanding the requirements and creating a comprehensive implementation plan.
+        </div>
+
+        <h2>2. Current State Analysis</h2>
+
+        <div class="requirement">
+            <h3>2.1 Current Implementation</h3>
+            <p><strong>File:</strong> <code>src/app/focus-groups/[slug]/page.tsx</code></p>
+
+            <h4>Current Features:</h4>
+            <ul>
+                <li>✅ Slug-based routing (<code>[slug]</code> parameter)</li>
+                <li>✅ Fetches focus group by slug</li>
+                <li>✅ Fetches events using <code>focusGroupId.equals</code> filter</li>
+                <li>✅ Displays events in grid layout (3 columns)</li>
+                <li>✅ Shows event title, date, time, caption/description</li>
+                <li>✅ Links to event detail page</li>
+            </ul>
+
+            <h4>Current Limitations:</h4>
+            <ul>
+                <li>❌ No pagination - shows all events at once</li>
+                <li>❌ No filtering - shows all events (upcoming and past)</li>
+                <li>❌ No toggle for upcoming/past events</li>
+                <li>❌ No pagination controls</li>
+                <li>❌ Performance issue with many events</li>
+            </ul>
+
+            <h4>Current Event Fetching:</h4>
+            <pre><code>async function fetchEvents(baseUrl: string, groupId: number) {
+  const res = await fetch(
+    `${baseUrl}/api/proxy/event-details?focusGroupId.equals=${groupId}&sort=startDate,asc`,
+    { cache: 'no-store' }
+  );
+  // Returns ALL events - no pagination
+}</code></pre>
+        </div>
+
+        <h2>3. Feature Requirements</h2>
+
+        <div class="requirement">
+            <h3>3.1 Event Filtering Toggle (Upcoming/Past Events)</h3>
+
+            <h4>Location:</h4>
+            <p>Place toggle above the events grid/list, similar to <code>http://localhost:3000/admin/manage-events</code></p>
+
+            <h4>Reference Implementation:</h4>
+            <p>Match the toggle from <code>src/app/admin/manage-events/page.tsx</code> (lines 453-469)</p>
+
+            <h4>Toggle Design:</h4>
+            <pre><code>&lt;div className="flex justify-center items-center gap-4 mt-6"&gt;
+  &lt;span className={`text-lg font-medium ${!showPastEvents ? 'text-blue-600' : 'text-gray-500'}`}&gt;
+    Upcoming Events
+  &lt;/span&gt;
+  &lt;button
+    onClick={() => setShowPastEvents(!showPastEvents)}
+    className="relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+    style={{ backgroundColor: showPastEvents ? '#3b82f6' : '#d1d5db' }}
+  &gt;
+    &lt;span
+      className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+        showPastEvents ? 'translate-x-7' : 'translate-x-1'
+      }`}
+    /&gt;
+  &lt;/button&gt;
+  &lt;span className={`text-lg font-medium ${showPastEvents ? 'text-blue-600' : 'text-gray-500'}`}&gt;
+    Past Events
+  &lt;/span&gt;
+&lt;/div&gt;</code></pre>
+
+            <h4>Filtering Logic:</h4>
+            <ul>
+                <li><strong>Upcoming Events (Default):</strong>
+                    <ul>
+                        <li>Filter: <code>startDate.greaterThanOrEqual={today}</code></li>
+                        <li>Sort: <code>startDate,asc</code> (earliest first)</li>
+                        <li>Show events that start today or in the future</li>
+                    </ul>
+                </li>
+                <li><strong>Past Events:</strong>
+                    <ul>
+                        <li>Filter: <code>endDate.lessThan={today}</code></li>
+                        <li>Sort: <code>startDate,desc</code> (newest first)</li>
+                        <li>Show events that have ended</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>State Management:</h4>
+            <ul>
+                <li>Use client component with <code>useState</code> for <code>showPastEvents</code></li>
+                <li>Default: <code>false</code> (show upcoming events)</li>
+                <li>Toggle updates filter and refreshes event list</li>
+                <li>Reset to page 0 when toggle changes</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h3>3.2 Pagination</h3>
+
+            <h4>Reference Implementation:</h4>
+            <p>Match pagination style from <code>http://localhost:3000/admin/manage-events</code></p>
+            <p>Reference component: <code>src/components/EventList.tsx</code> (lines 569-604)</p>
+
+            <h4>Pagination Requirements:</h4>
+            <ul>
+                <li><strong>Page Size:</strong> 12 events per page (configurable, suitable for grid layout)</li>
+                <li><strong>Pagination Controls:</strong>
+                    <ul>
+                        <li>Previous button (left side) with chevron icon</li>
+                        <li>Page indicator: "Page X of Y" (center)</li>
+                        <li>Next button (right side) with chevron icon</li>
+                    </ul>
+                </li>
+                <li><strong>Pagination Details:</strong> Below controls, centered
+                    <ul>
+                        <li>Format: "Showing <strong>X</strong> to <strong>Y</strong> of <strong>Z</strong> events"</li>
+                        <li>When no events: "No events found" with badge</li>
+                        <li>When filtering: "No upcoming events" or "No past events"</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>Pagination Styling:</h4>
+            <pre><code>/* Pagination Container */
+&lt;div className="mt-8"&gt;
+  &lt;div className="flex justify-between items-center"&gt;
+    {/* Previous Button */}
+    &lt;button
+      onClick={handlePrevPage}
+      disabled={isPrevDisabled}
+      className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+    &gt;
+      &lt;FaChevronLeft className="h-5 w-5" /&gt;
+      Previous
+    &lt;/button&gt;
+
+    {/* Page Indicator */}
+    &lt;div className="text-sm font-semibold text-gray-700"&gt;
+      Page {currentPage} of {totalPages}
+    &lt;/div&gt;
+
+    {/* Next Button */}
+    &lt;button
+      onClick={handleNextPage}
+      disabled={isNextDisabled}
+      className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+    &gt;
+      Next
+      &lt;FaChevronRight className="h-5 w-5" /&gt;
+    &lt;/button&gt;
+  &lt;/div&gt;
+
+  {/* Pagination Details */}
+  &lt;div className="text-center text-sm text-gray-600 mt-2"&gt;
+    {totalCount > 0 ? (
+      &lt;&gt;Showing &lt;span className="font-medium"&gt;{startItem}&lt;/span&gt; to &lt;span className="font-medium"&gt;{endItem}&lt;/span&gt; of &lt;span className="font-medium"&gt;{totalCount}&lt;/span&gt; events&lt;/&gt;
+    ) : (
+      &lt;div className="flex items-center justify-center gap-2"&gt;
+        &lt;span&gt;No events found&lt;/span&gt;
+        &lt;span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-sm font-medium"&gt;
+          [No {showPastEvents ? 'past' : 'upcoming'} events]
+        &lt;/span&gt;
+      &lt;/div&gt;
+    )}
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+            <h4>Pagination Logic:</h4>
+            <ul>
+                <li>Use 0-based page indexing internally</li>
+                <li>Display as 1-based to users ("Page 1", "Page 2", etc.)</li>
+                <li>Calculate:
+                    <ul>
+                        <li><code>totalPages = Math.ceil(totalCount / pageSize)</code></li>
+                        <li><code>startItem = currentPage * pageSize + 1</code></li>
+                        <li><code>endItem = Math.min((currentPage + 1) * pageSize, totalCount)</code></li>
+                    </ul>
+                </li>
+                <li>Disable Previous when on first page</li>
+                <li>Disable Next when on last page</li>
+                <li>Disable both when loading</li>
+                <li>Reset to page 0 when filter toggle changes</li>
+            </ul>
+
+            <h4>Icons:</h4>
+            <ul>
+                <li>Import from <code>react-icons/fa</code>: <code>FaChevronLeft</code>, <code>FaChevronRight</code></li>
+                <li>Size: <code>h-5 w-5</code></li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h3>3.3 Event Data Source</h3>
+
+            <h4>Data Source Requirements:</h4>
+            <ul>
+                <li><strong>Primary Source:</strong> <code>event_focus_groups</code> join table</li>
+                <li><strong>Join Table:</strong> <code>event_details</code> for event information</li>
+                <li><strong>Filter:</strong> Only events associated with current focus group</li>
+                <li><strong>Filter Parameter:</strong> <code>focusGroupId.equals={groupId}</code></li>
+                <li><strong>Tenant Filter:</strong> Auto-injected by proxy (do NOT add manually)</li>
+            </ul>
+
+            <h4>API Query Pattern:</h4>
+            <pre><code>// Upcoming Events
+GET /api/proxy/event-details?
+  focusGroupId.equals={groupId}&
+  startDate.greaterThanOrEqual={today}&
+  isActive.equals=true&
+  sort=startDate,asc&
+  page={page}&
+  size={pageSize}
+
+// Past Events
+GET /api/proxy/event-details?
+  focusGroupId.equals={groupId}&
+  endDate.lessThan={today}&
+  isActive.equals=true&
+  sort=startDate,desc&
+  page={page}&
+  size={pageSize}</code></pre>
+
+            <h4>Response Handling:</h4>
+            <ul>
+                <li>Read <code>X-Total-Count</code> header for total count</li>
+                <li>Parse JSON response as <code>EventDetailsDTO[]</code></li>
+                <li>Handle empty arrays gracefully</li>
+                <li>Handle errors with user-friendly messages</li>
+            </ul>
+        </div>
+
+        <h2>4. Technical Specifications</h2>
+
+        <div class="technical">
+            <h3>4.1 Component Architecture</h3>
+
+            <h4>Current Structure:</h4>
+            <ul>
+                <li><strong>File:</strong> <code>src/app/focus-groups/[slug]/page.tsx</code></li>
+                <li><strong>Type:</strong> Server Component (async)</li>
+                <li><strong>Current:</strong> Renders all events directly</li>
+            </ul>
+
+            <h4>Recommended Structure:</h4>
+            <ul>
+                <li><strong>Server Component:</strong> <code>src/app/focus-groups/[slug]/page.tsx</code>
+                    <ul>
+                        <li>Fetches focus group by slug</li>
+                        <li>Passes group data to client component</li>
+                        <li>Handles initial data loading</li>
+                    </ul>
+                </li>
+                <li><strong>Client Component:</strong> <code>src/app/focus-groups/[slug]/FocusGroupEventsClient.tsx</code>
+                    <ul>
+                        <li>Manages pagination state</li>
+                        <li>Manages filter toggle state</li>
+                        <li>Handles event fetching with pagination</li>
+                        <li>Renders events grid/list</li>
+                        <li>Renders pagination controls</li>
+                        <li>Renders filter toggle</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>Component Props:</h4>
+            <pre><code>interface FocusGroupEventsClientProps {
+  focusGroupId: number;
+  focusGroupName: string;
+  initialEvents?: EventDetailsDTO[];
+  initialTotalCount?: number;
+}</code></pre>
+        </div>
+
+        <div class="technical">
+            <h3>4.2 Server Actions</h3>
+
+            <h4>File:</h4>
+            <p>Create: <code>src/app/focus-groups/[slug]/ApiServerActions.ts</code></p>
+
+            <h4>Required Functions:</h4>
+            <ul>
+                <li><code>fetchFocusGroupEventsServer(focusGroupId: number, page: number, pageSize: number, showPastEvents: boolean)</code>
+                    <ul>
+                        <li>Builds appropriate query based on <code>showPastEvents</code></li>
+                        <li>Uses <code>focusGroupId.equals</code> filter</li>
+                        <li>Adds date filter (upcoming or past)</li>
+                        <li>Adds pagination parameters</li>
+                        <li>Uses <code>fetchWithJwtRetry</code> from <code>@/lib/proxyHandler</code></li>
+                        <li>Returns <code>{ events: EventDetailsDTO[], totalCount: number }</code></li>
+                        <li>Reads <code>X-Total-Count</code> header</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>Implementation Pattern:</h4>
+            <pre><code>import { fetchWithJwtRetry } from '@/lib/proxyHandler';
+import { getAppUrl } from '@/lib/env';
+import type { EventDetailsDTO } from '@/types';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+export async function fetchFocusGroupEventsServer(
+  focusGroupId: number,
+  page: number,
+  pageSize: number,
+  showPastEvents: boolean
+): Promise&lt;{ events: EventDetailsDTO[]; totalCount: number }&gt; {
+  const baseUrl = getAppUrl();
+  const today = new Date().toISOString().split('T')[0];
+
+  const params = new URLSearchParams({
+    'focusGroupId.equals': focusGroupId.toString(),
+    'isActive.equals': 'true',
+    page: page.toString(),
+    size: pageSize.toString(),
+  });
+
+  if (showPastEvents) {
+    params.append('endDate.lessThan', today);
+    params.append('sort', 'startDate,desc');
+  } else {
+    params.append('startDate.greaterThanOrEqual', today);
+    params.append('sort', 'startDate,asc');
+  }
+
+  const url = `${API_BASE_URL}/api/event-details?${params.toString()}`;
+  const res = await fetchWithJwtRetry(url, { cache: 'no-store' });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch events: ${res.statusText}`);
+  }
+
+  const totalCount = Number(res.headers.get('X-Total-Count')) || 0;
+  const events = await res.json();
+
+  return {
+    events: Array.isArray(events) ? events : [],
+    totalCount
+  };
+}</code></pre>
+        </div>
+
+        <div class="technical">
+            <h3>4.3 Client Component State Management</h3>
+
+            <h4>State Variables:</h4>
+            <ul>
+                <li><code>const [events, setEvents] = useState&lt;EventDetailsDTO[]&gt;(initialEvents || []);</code></li>
+                <li><code>const [loading, setLoading] = useState(false);</code></li>
+                <li><code>const [page, setPage] = useState(0);</code></li>
+                <li><code>const [totalCount, setTotalCount] = useState(initialTotalCount || 0);</code></li>
+                <li><code>const [showPastEvents, setShowPastEvents] = useState(false);</code></li>
+                <li><code>const [error, setError] = useState&lt;string | null&gt;(null);</code></li>
+            </ul>
+
+            <h4>Effects:</h4>
+            <ul>
+                <li><code>useEffect</code> to fetch events when:
+                    <ul>
+                        <li>Page changes</li>
+                        <li>Filter toggle changes</li>
+                        <li>Component mounts</li>
+                    </ul>
+                </li>
+                <li>Reset page to 0 when filter toggle changes</li>
+            </ul>
+
+            <h4>Event Handlers:</h4>
+            <ul>
+                <li><code>handlePrevPage()</code> - Decrement page, fetch events</li>
+                <li><code>handleNextPage()</code> - Increment page, fetch events</li>
+                <li><code>handleToggleFilter()</code> - Toggle filter, reset page, fetch events</li>
+            </ul>
+        </div>
+
+        <div class="technical">
+            <h3>4.4 API Routes</h3>
+
+            <h4>Follow Next.js API Routes Rules:</h4>
+            <p>Reference: <code>.cursor/rules/nextjs_api_routes.mdc</code></p>
+
+            <h4>Key Rules:</h4>
+            <ul>
+                <li><strong>No local DTO declarations:</strong> Import DTOs from <code>@/types</code></li>
+                <li><strong>Environment Variables:</strong> Use <code>process.env.NEXT_PUBLIC_API_BASE_URL</code></li>
+                <li><strong>Query String Handling:</strong> Use <code>buildQueryString</code> helper</li>
+                <li><strong>Tenant ID:</strong> Do NOT add <code>tenantId.equals</code> in client/server code - proxy handles it</li>
+                <li><strong>JWT Handling:</strong> Use <code>fetchWithJwtRetry</code> for backend calls</li>
+                <li><strong>Error Handling:</strong> Catch and return meaningful error messages</li>
+            </ul>
+
+            <h4>Existing Proxy Endpoint:</h4>
+            <ul>
+                <li><code>/api/proxy/event-details</code> - Already exists and supports:
+                    <ul>
+                        <li><code>focusGroupId.equals</code> filter</li>
+                        <li><code>startDate.greaterThanOrEqual</code> filter</li>
+                        <li><code>endDate.lessThan</code> filter</li>
+                        <li><code>isActive.equals</code> filter</li>
+                        <li>Pagination: <code>page</code>, <code>size</code></li>
+                        <li>Sorting: <code>sort</code></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <h2>5. UI/UX Requirements</h2>
+
+        <div class="requirement">
+            <h3>5.1 Page Layout</h3>
+            <ul>
+                <li>Keep existing hero section (cover image, title, description)</li>
+                <li>Add filter toggle above events section</li>
+                <li>Keep grid layout for events (3 columns on desktop, responsive)</li>
+                <li>Add pagination controls below events grid</li>
+                <li>Maintain existing styling and spacing</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h3>5.2 Event Grid Layout</h3>
+            <ul>
+                <li>Keep current grid: <code>grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6</code></li>
+                <li>Maintain event card styling</li>
+                <li>Show loading skeleton during fetch</li>
+                <li>Show "No events" message when empty</li>
+                <li>Responsive design (1 column mobile, 2 tablet, 3 desktop)</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h3>5.3 Loading States</h3>
+            <ul>
+                <li>Show loading spinner or skeleton during initial load</li>
+                <li>Disable pagination buttons during loading</li>
+                <li>Show "Loading events..." message</li>
+                <li>Disable filter toggle during loading</li>
+                <li>Maintain grid layout during loading (skeleton cards)</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h3>5.4 Error States</h3>
+            <ul>
+                <li>Display error messages in red alert boxes</li>
+                <li>Show "Failed to load events" message</li>
+                <li>Allow retry functionality</li>
+                <li>Handle network errors gracefully</li>
+                <li>Handle empty state (no events) separately from error state</li>
+            </ul>
+        </div>
+
+        <div class="requirement">
+            <h3>5.5 Empty States</h3>
+            <ul>
+                <li><strong>No Upcoming Events:</strong> "No upcoming events for this focus group."</li>
+                <li><strong>No Past Events:</strong> "No past events for this focus group."</li>
+                <li><strong>No Events at All:</strong> "This focus group has no events yet."</li>
+                <li>Use friendly, helpful messaging</li>
+                <li>Consider adding call-to-action if appropriate</li>
+            </ul>
+        </div>
+
+        <h2>6. Reference Files</h2>
+
+        <div class="reference">
+            <h4>📁 Implementation References</h4>
+            <ul>
+                <li><strong>Current Page:</strong> <code>src/app/focus-groups/[slug]/page.tsx</code></li>
+                <li><strong>Pagination Reference:</strong> <code>src/components/EventList.tsx</code> (lines 569-604)</li>
+                <li><strong>Filter Toggle Reference:</strong> <code>src/app/admin/manage-events/page.tsx</code> (lines 453-469)</li>
+                <li><strong>API Routes Rules:</strong> <code>.cursor/rules/nextjs_api_routes.mdc</code></li>
+                <li><strong>UI Style Guide:</strong> <code>shared-cursor-rules/ui_style_guide.mdc</code></li>
+                <li><strong>API Schema:</strong> <code>documentation/Swagger_API_Docs/api-docs.json</code></li>
+                <li><strong>Database Schema:</strong> <code>code_html_template/SQLS/Latest_Schema_Post__Blob_Claude_11.sql</code></li>
+                <li><strong>Focus Group Analysis:</strong> <code>documentation/focus_group_requirements/Focus_Group_Event_Relationship_Analysis.md</code></li>
+            </ul>
+        </div>
+
+        <h2>7. Implementation Checklist</h2>
+
+        <div class="checklist">
+            <h3>Phase 1: Server Actions</h3>
+            <ul>
+                <li>Create <code>ApiServerActions.ts</code> file</li>
+                <li>Implement <code>fetchFocusGroupEventsServer</code> function</li>
+                <li>Add date filtering logic (upcoming/past)</li>
+                <li>Add pagination parameters</li>
+                <li>Add proper error handling</li>
+                <li>Use <code>fetchWithJwtRetry</code> for all calls</li>
+                <li>Read <code>X-Total-Count</code> header</li>
+            </ul>
+
+            <h3>Phase 2: Client Component</h3>
+            <ul>
+                <li>Create <code>FocusGroupEventsClient.tsx</code> component</li>
+                <li>Add state management (page, filter, events, loading)</li>
+                <li>Implement <code>useEffect</code> for event fetching</li>
+                <li>Add filter toggle component</li>
+                <li>Add pagination controls</li>
+                <li>Add pagination details display</li>
+                <li>Implement event handlers (prev, next, toggle)</li>
+                <li>Add loading states</li>
+                <li>Add error handling</li>
+                <li>Add empty states</li>
+            </ul>
+
+            <h3>Phase 3: Integration</h3>
+            <ul>
+                <li>Update <code>page.tsx</code> to use client component</li>
+                <li>Pass initial data to client component</li>
+                <li>Handle slug parameter correctly</li>
+                <li>Test pagination functionality</li>
+                <li>Test filter toggle functionality</li>
+                <li>Test loading states</li>
+                <li>Test error states</li>
+                <li>Test empty states</li>
+            </ul>
+
+            <h3>Phase 4: Styling & Polish</h3>
+            <ul>
+                <li>Match pagination styling from admin/manage-events</li>
+                <li>Match filter toggle styling from admin/manage-events</li>
+                <li>Ensure responsive design</li>
+                <li>Verify accessibility (keyboard navigation, ARIA labels)</li>
+                <li>Test on mobile devices</li>
+                <li>Verify performance with many events</li>
+            </ul>
+
+            <h3>Phase 5: Testing & Refinement</h3>
+            <ul>
+                <li>Test pagination with various page sizes</li>
+                <li>Test filter toggle (upcoming/past)</li>
+                <li>Test with focus groups that have many events</li>
+                <li>Test with focus groups that have no events</li>
+                <li>Test with focus groups that have only upcoming events</li>
+                <li>Test with focus groups that have only past events</li>
+                <li>Verify URL structure (slug-based)</li>
+                <li>Verify data comes from event_focus_groups join table</li>
+                <li>Verify only events for this focus group are shown</li>
+            </ul>
+        </div>
+
+        <h2>8. Important Notes</h2>
+
+        <div class="warning">
+            <h3>⚠️ Critical Requirements</h3>
+            <ul>
+                <li><strong>URL Structure:</strong> Keep slug-based URLs (<code>/focus-groups/[slug]</code>) - DO NOT change to ID-based</li>
+                <li><strong>DO NOT</strong> add <code>tenantId.equals</code> in client/server code - proxy handles it automatically</li>
+                <li><strong>MUST</strong> use <code>fetchWithJwtRetry</code> from <code>@/lib/proxyHandler</code> for all backend API calls</li>
+                <li><strong>MUST</strong> use absolute URLs (<code>getAppUrl()</code>) for server-side fetches</li>
+                <li><strong>MUST</strong> match pagination styling exactly from admin/manage-events page</li>
+                <li><strong>MUST</strong> match filter toggle styling exactly from admin/manage-events page</li>
+                <li><strong>MUST</strong> follow Next.js API routes rules from <code>nextjs_api_routes.mdc</code></li>
+                <li><strong>MUST</strong> follow UI style guide from <code>ui_style_guide.mdc</code></li>
+                <li><strong>MUST</strong> only show events from <code>event_focus_groups</code> join table</li>
+                <li><strong>MUST</strong> filter by <code>focusGroupId.equals</code> parameter</li>
+                <li><strong>MUST</strong> reset to page 0 when filter toggle changes</li>
+            </ul>
+        </div>
+
+        <div class="info">
+            <h3>📝 URL Structure Confirmation</h3>
+            <p><strong>✅ Confirmed: Slug-Based URLs Are Correct</strong></p>
+            <ul>
+                <li>Current implementation uses <code>/focus-groups/[slug]</code> - this is correct</li>
+                <li>Slug-based URLs are SEO-friendly and user-friendly</li>
+                <li>Admin pages use ID-based URLs (<code>/admin/focus-groups/[id]</code>) - this is correct</li>
+                <li>Public pages should use slugs, admin pages should use IDs</li>
+                <li>No changes needed to URL structure</li>
+            </ul>
+        </div>
+
+        <div class="reference">
+            <h4>📝 Additional Considerations</h4>
+            <ul>
+                <li>Consider adding URL query parameters for page and filter state (future enhancement)</li>
+                <li>Consider adding event search/filter functionality (future enhancement)</li>
+                <li>Consider adding event sorting options (future enhancement)</li>
+                <li>Consider adding event export functionality (future enhancement)</li>
+                <li>Ensure accessibility (keyboard navigation, ARIA labels)</li>
+                <li>Ensure mobile responsiveness</li>
+                <li>Consider performance optimization for large event lists</li>
+                <li>Consider caching strategy for frequently accessed focus groups</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>Focus Group Public Detail Page - Pagination & Event Filtering Requirements</p>
+            <p>Target Page: <code>http://localhost:3000/focus-groups/[slug]</code></p>
+            <p>Status: Requirements Definition - No Implementation</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('date').textContent = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,1635 @@
+/**
+ * Syro-Malabar Design System - Custom CSS Module
+ * 
+ * This file contains complex CSS patterns that cannot be achieved with Tailwind utilities alone,
+ * such as pseudo-elements (::after), vertical text, and complex multi-stop gradients.
+ * 
+ * All classes are prefixed with "syro-" to avoid conflicts with existing MOSC styles.
+ * 
+ * Usage: Import this file in your Syro-Malabar layout/page:
+ * import '@/styles/syro-malabar.css';
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Single scrollbar + layout like syromalabarchurch.in ===== */
+/* Only one scrollbar: make body the sole scroll container; prevent html and inner wrappers from adding a second one */
+html:has(.syro-layout) {
+  height: 100%;
+  overflow: hidden;
+}
+body:has(.syro-layout) {
+  height: 100% !important;
+  min-height: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-gutter: stable;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Syro wrapper: full height of body, no inner scroll (content flows, body scrolls) */
+.syro-layout {
+  flex: 1 0 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+}
+.syro-layout .syro-main {
+  flex: 1 0 auto;
+  width: 100%;
+  max-width: none;
+  overflow: visible;
+  min-height: 0;
+}
+
+/* Sticky header + Quick Links bar on MOSC: keep both at top while scrolling; no shadow below header */
+.syro-layout .syro-sticky-header-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: #fff;
+}
+.syro-layout .syro-sticky-header-wrapper header {
+  background: #fff;
+}
+
+/* Main content: full width, no extra padding (match syromalabarchurch.in #mainContent) */
+#mainContent.syro-main,
+.syro-layout .syro-main {
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 0;
+  margin-top: 0;
+}
+/* Remove space above banner image on MOSC home */
+.syro-layout .syro-main > div:first-child,
+.syro-layout .syro-main > div > section.hero-banner,
+.syro-layout #mainContent.syro-main > div > section.hero-banner,
+.syro-layout .hero-banner,
+.syro-layout .hero-banner .hero-body,
+/* #mainContent > div > section[1] > div > div (main-slider wrapper) */
+#mainContent > div > section:first-of-type > div > div,
+.syro-layout .hero-banner .hero-body > div {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+/* Sections full width like syromalabarchurch.in (no inner scroll, content flows) */
+.syro-layout #mainContent.syro-main section,
+.syro-layout .syro-main > * {
+  max-width: none;
+  box-sizing: border-box;
+}
+
+/* Fix overlap: sections and footer stack one after another (like syromalabarchurch.in) */
+.syro-layout #mainContent.syro-main section,
+.syro-layout .syro-main > div > section {
+  display: block;
+  position: relative;
+  clear: both;
+}
+.syro-layout footer,
+.syro-layout .syro-layout > footer {
+  display: block;
+  clear: both;
+  position: relative;
+}
+
+/* Remove underlines from all text links in Syro subpages */
+.syro-layout a,
+.syro-layout a:hover {
+  text-decoration: none !important;
+}
+
+/* Black text for h2, h3, and paragraphs in main content (all navbar pages) */
+#mainContent h2,
+#mainContent h3,
+#mainContent p {
+  color: #000 !important;
+}
+
+/* Saints & Blesseds cards (home): keep title white over dark image overlay */
+#mainContent .saint-card-title {
+  color: #ffffff !important;
+}
+
+/* Subpage banner (SyroPageBanner): three distinct colors on burgundy/pink gradient */
+.syro-layout #mainContent.syro-main section:first-of-type .syro-banner-content h2,
+.syro-layout #mainContent.syro-main section:first-of-type .syro-banner-content h2.syro-banner-title {
+  color: #fef3c7 !important; /* amber-100 — page title */
+}
+
+.syro-layout #mainContent.syro-main section:first-of-type .syro-banner-content nav a {
+  color: #cffafe !important; /* cyan-100 — breadcrumb links */
+}
+.syro-layout #mainContent.syro-main section:first-of-type .syro-banner-content nav a:hover {
+  color: #ffffff !important;
+}
+.syro-layout #mainContent.syro-main section:first-of-type .syro-banner-content nav li[aria-hidden="true"] {
+  color: rgba(103, 232, 249, 0.6) !important; /* cyan-300 — separators */
+}
+.syro-layout #mainContent.syro-main section:first-of-type .syro-banner-content nav li[aria-current="page"] {
+  color: #ffffff !important; /* current segment */
+}
+
+.syro-layout #mainContent.syro-main section:first-of-type .syro-banner-content p.syro-banner-description,
+.syro-layout #mainContent.syro-main section:first-of-type .syro-banner-content p {
+  color: #fbcfe8 !important; /* pink-200 — distinct from title (amber) + breadcrumb (cyan), readable on burgundy */
+}
+
+/* Locations panel (section 7): white text on blue background – override #mainContent h3/p */
+#mainContent section.syromalabar-locations .syro-locations-panel h3,
+#mainContent section.syromalabar-locations .syro-locations-panel p,
+#mainContent section.syromalabar-locations .syro-locations-panel .syro-locations-text-content {
+  color: #ffffff !important;
+}
+
+/* Selected sidebar item: all text (including p) must be white on red background */
+#mainContent a.bg-syro-red p,
+#mainContent a.bg-syro-red span {
+  color: #fff !important;
+}
+
+/* Apply same font as Catholicos/main titles (Poppins) to all titles in MOSC subpages */
+.syro-layout .font-syro-display {
+  font-family: var(--syro-font-primary, 'Poppins', Arial, Helvetica, sans-serif) !important;
+}
+/* Ensure all main-content headings use the same title font (Poppins) */
+.syro-layout #mainContent h1,
+.syro-layout #mainContent h2,
+.syro-layout #mainContent h3,
+.syro-layout #mainContent h4 {
+  font-family: var(--syro-font-primary, 'Poppins', Arial, Helvetica, sans-serif) !important;
+}
+
+/* Liturgy (section 6): keep image in flow so section gets height and doesn't collapse */
+.syro-layout section.liturgy {
+  overflow: visible;
+}
+.syro-layout section.liturgy .liturgy-image {
+  position: relative;
+  min-height: 1px;
+}
+.syro-layout section.liturgy .liturgy-image img {
+  position: relative !important;
+  left: 0 !important;
+  width: 100% !important;
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Locations (section 7): keep ::after inside section so it doesn't overlap section 6 */
+.syro-layout section.syromalabar-locations::after {
+  top: 0 !important;
+  left: 0 !important;
+  height: 100% !important;
+  max-height: 100%;
+  pointer-events: none;
+}
+
+/* Worldwide Locations panel (below heading): dark blue gradient, text block, map, CTA – match syromalabarchurch.in */
+.syro-locations-panel {
+  position: relative;
+  background: #004e92;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 1.5rem;
+  padding: 2rem 1.5rem 1.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* Subtle dot pattern top-right */
+.syro-locations-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 40%;
+  height: 50%;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.08) 2px, transparent 2px);
+  background-size: 12px 12px;
+  pointer-events: none;
+}
+
+.syro-locations-panel-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.syro-locations-text-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.syro-locations-accent-bar {
+  flex-shrink: 0;
+  width: 6px;
+  min-height: 56px;
+  background: linear-gradient(180deg, #f0a050 0%, #e85c4a 50%, #dc3545 100%);
+  border-radius: 3px;
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.25);
+}
+
+.syro-locations-text-content {
+  flex: 1;
+  color: #ffffff !important;
+}
+
+.syro-locations-panel-title {
+  color: #ffffff !important;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem 0;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+}
+
+.syro-locations-panel-desc {
+  color: #ffffff !important;
+  font-size: 1rem;
+  font-weight: 400;
+  margin: 0;
+  opacity: 0.95;
+  line-height: 1.4;
+}
+
+.syro-locations-map-wrap {
+  width: 100%;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Overlay pins container (same pattern as syro-malabar-church index.html #eparchy_countries) */
+.syro-locations-map-wrap.syro-img-map-container {
+  position: relative;
+  overflow: visible;
+}
+
+.syro-eparchy-countries {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* Pin wrapper: no hover, so tooltip does not trigger on empty space around pin */
+.syro-eparchy-countries > div {
+  pointer-events: none;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+/* Only the circle (pin) triggers tooltip; hit area = pin graphic only */
+.syro-eparchy-countries .syro-country-tooltips,
+.syro-eparchy-countries .country-tooltips {
+  pointer-events: auto;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+/* Pin positions over map: South West America, North East America, UK, Africa, India */
+.syro-eparchy-countries .south-west-america {
+  left: 15.33%;
+  top: 45.33%;
+}
+
+.syro-eparchy-countries .north-east-america {
+  left: 26.33%;
+  top: 21%;
+}
+
+.syro-eparchy-countries .uk {
+  left: 45.67%;
+  top: 10%;
+}
+
+.syro-eparchy-countries .africa {
+  left: 54%;
+  top: 44.67%;
+}
+
+.syro-eparchy-countries .india {
+  left: 67.33%;
+  top: 32%;
+}
+
+.syro-locations-map-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  vertical-align: middle;
+}
+
+/* Bootstrap tooltip custom class for location pins (match syromalabarchurch.in) */
+.location-tooltip {
+  --bs-tooltip-bg: #dc3545;
+  font-size: 18px;
+  opacity: 1 !important;
+}
+
+.syro-locations-cta {
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin: 0;
+  opacity: 0.95;
+}
+
+/* Nav bar: always show nav items and menu icon (Bootstrap collapse is hidden by default) */
+#syro-header-bar .navbar-collapse.collapse {
+  display: flex !important;
+  height: auto !important;
+  overflow: visible !important;
+  visibility: visible !important;
+}
+#syro-header-bar .main-menu .nav-link,
+#syro-header-bar .main-menu .dropdown-item {
+  color: #0b2848;
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+#syro-header-bar .main-menu .btn-link {
+  color: #0b2848;
+  text-decoration: none;
+}
+#syro-header-bar .main-menu .nav-link:hover,
+#syro-header-bar .main-menu .dropdown-item:hover {
+  color: #dc3545;
+}
+/* Selected/active nav item */
+#syro-header-bar .main-menu .nav-link.active,
+#syro-header-bar .main-menu .dropdown-item.active {
+  color: #dc3545;
+  font-weight: 600;
+}
+#syro-header-bar .main-menu .btn-link {
+  color: #0b2848;
+  font-size: 1.25rem;
+}
+#syro-header-bar .main-menu .btn-link:hover {
+  color: #dc3545;
+}
+
+/* Quick Links bar (right after header, same texts as MOSC) */
+.syro-quicklinks-bar {
+  background: #fff;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  overflow-x: auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+.syro-quicklinks-inner {
+  font-size: 0.875rem;
+  column-gap: 0.5rem;
+  row-gap: 0;
+  white-space: nowrap;
+  min-width: min-content;
+}
+.syro-quicklinks-inner ul {
+  column-gap: 0.15rem;
+  row-gap: 0;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+}
+.syro-quicklinks-inner li {
+  white-space: nowrap;
+}
+.syro-quicklinks-label {
+  color: #0b2848;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.syro-quicklinks-sep {
+  width: 1px;
+  height: 1em;
+  background: rgba(0, 0, 0, 0.2);
+  align-self: stretch;
+  min-height: 14px;
+  flex-shrink: 0;
+}
+.syro-quicklinks-bar .syro-quicklink {
+  color: #0b2848;
+  text-decoration: none;
+  padding: 0.3rem 0.5rem;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+.syro-quicklinks-bar .syro-quicklink:hover {
+  color: #dc3545;
+}
+.syro-quicklinks-bar .syro-quicklink.active {
+  color: #dc3545;
+  font-weight: 600;
+}
+.syro-quicklinks-bullet {
+  color: rgba(0, 0, 0, 0.35);
+  font-size: calc(0.75rem * 0.75);
+  user-select: none;
+}
+
+/* Hero banner: swiper-style pagination (vertical, right side) like syromalabarchurch.in */
+.hero-banner .main-slider {
+  position: relative;
+}
+.hero-banner .main-slider-pagination.swiper-pagination-vertical {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.hero-banner .main-slider-pagination .swiper-pagination-bullet {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0.8;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: opacity 0.2s, background 0.2s;
+}
+.hero-banner .main-slider-pagination .swiper-pagination-bullet:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.9);
+}
+.hero-banner .main-slider-pagination .swiper-pagination-bullet-active {
+  background: #fff;
+  opacity: 1;
+}
+/* Only show as many dots as slides (4); hide any extra injected by scripts or duplicates */
+.hero-banner .main-slider-pagination.syro-hero-pagination .swiper-pagination-bullet:nth-child(n+5) {
+  display: none !important;
+}
+
+/* Saints slider: hide prev/next arrows */
+#saints-customize-controls {
+  display: none !important;
+}
+
+@layer components {
+  /* Section Title with Vertical Text and Accent Bar */
+  .syro-section-title {
+    @apply relative mb-10;
+  }
+
+  .syro-section-title h6 {
+    writing-mode: vertical-lr;
+    @apply tracking-[5px] text-syro-section-title font-bold whitespace-nowrap absolute -left-[50px] bottom-0 max-h-0;
+    color: #798daf;
+  }
+
+  .syro-section-title::after {
+    content: '';
+    width: 7px;
+    height: 120%;
+    @apply bg-syro-red absolute -left-[30px] top-0;
+  }
+
+  /* Mobile Section Title - Horizontal Layout */
+  @media (max-width: 991px) {
+    .syro-section-title h6 {
+      writing-mode: horizontal-tb;
+      transform: none;
+      @apply relative left-0 text-[15px] mb-2.5;
+    }
+    
+    .syro-section-title::after {
+      width: 4px;
+      height: 100%;
+      @apply -left-[15px];
+    }
+  }
+
+  /* Stat Card Icon Gradient - Complex Multi-stop Gradient */
+  .syro-stat-icon {
+    background: linear-gradient(#011e94, #011e94d4, #011e94b3, #011e9433);
+  }
+
+  /* User Avatar Gradient */
+  .syro-user-avatar {
+    background: linear-gradient(#011e94, #011e94d4);
+  }
+
+  /* Chart Placeholder Gradient */
+  .syro-chart-placeholder {
+    background: linear-gradient(-90deg, #dc354662, #ff790348);
+  }
+
+  /* Primary Button with Right Border Accent (matches #syro-cardinal-section View Profile button) */
+  .syro-primary-button {
+    text-decoration: none;
+    color: #fff;
+    background: #dc3545;
+    padding: 10px 20px;
+    border-right: 7px solid #be1929;
+    font-weight: 300;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: 1s;
+    width: fit-content;
+  }
+
+  .syro-primary-button:hover {
+    color: #fff;
+    background: #be1929;
+    border-right: 6px solid #dc3545;
+    transition: 1s;
+  }
+
+  /* Read more button look (same style for spans inside card links or standalone links) */
+  .syro-read-more-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: #fff;
+    background: #dc3545;
+    padding: 10px 20px;
+    border-right: 7px solid #be1929;
+    font-weight: 300;
+    transition: 1s;
+    width: fit-content;
+    font-size: 0.875rem;
+  }
+
+  .syro-read-more-btn:hover {
+    color: #fff;
+    background: #be1929;
+    border-right: 6px solid #dc3545;
+    transition: 1s;
+  }
+
+  /* When .syro-read-more-btn is a span (inside a Link), parent Link hover can show button hover look */
+  a:hover .syro-read-more-btn {
+    color: #fff;
+    background: #be1929;
+    border-right: 6px solid #dc3545;
+  }
+
+  /* Highlighted Text Color (for use with .imp-color class) */
+  .syro-imp-color {
+    @apply text-syro-red;
+  }
+
+  /* Dotted Pattern Background */
+  .syro-dotted-background {
+    background-image: radial-gradient(circle, rgba(0, 0, 0, 0.08) 3px, transparent 1px);
+    background-size: 20px 20px;
+    background-position: 0 0;
+  }
+
+  /* Our Saints Slider (matches static index.html section 5 slider) */
+  .syro-saints-section {
+    @apply w-full;
+  }
+
+  .syro-saints-container.our-saints-container {
+    position: relative;
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12;
+  }
+
+  /* Saints block inside About: no extra max-width, align to column (match syromalabarchurch.in).
+   * Extra margin-top moves section down so title and slider are not hidden by the right-column
+   * decorative images (cross/circle) that overlap from the about-images column. */
+  .about-data .our-saints-container.syro-saints-container {
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 48px;
+    margin-bottom: 0;
+    padding: 0;
+    position: relative;
+    z-index: 5;
+  }
+
+  /* Single red line only: keep border-left, remove duplicate from static .section-title::after */
+  .syro-saints-container .section-title.our-saints-section-title::after,
+  .syro-saints-container .our-saints-section-title.section-title::after {
+    display: none !important;
+  }
+
+  .syro-saints-container .our-saints-section-title {
+    position: relative;
+    margin-left: 0;
+    margin-bottom: 0;
+    padding-left: 8px;
+    border-left: 5px solid #dc3545;
+  }
+
+  .syro-saints-container .our-saints-section-title h6 {
+    transform: none;
+    writing-mode: horizontal-tb;
+    margin-left: 0;
+    font-size: 20px;
+    margin-bottom: 0;
+    color: #0b2848;
+    letter-spacing: 1px;
+    font-weight: 500;
+  }
+
+  .syro-saints-slider-container {
+    margin: 32px 0 0 0;
+    position: relative;
+    width: 100%;
+  }
+  .about-data .syro-saints-slider-container {
+    margin-top: 24px;
+  }
+  /* Desktop: saints block and slider spacing so title is visible */
+  @media (min-width: 768px) {
+    .about-data .our-saints-container.syro-saints-container {
+      margin-top: 76px;
+    }
+    .about-data .our-saints-container.syro-saints-container .our-saints-slider-container.syro-saints-slider-container {
+      margin-top: 40px;
+    }
+  }
+
+  /* Viewport: no scrollbar, no page movement (like static tiny-slider) */
+  .syro-saints-viewport {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    contain: layout style;
+  }
+
+  .syro-saints-container .syro-saints-viewport .our-saints-slider.syro-saints-track {
+    display: flex;
+    gap: 10px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: max-content;
+    overflow: visible;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    will-change: transform;
+  }
+
+  .syro-saints-container .syro-saints-viewport .our-saints-slider.syro-saints-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Show prev/next controls to match syromalabarchurch.in slider */
+  .syro-saints-controls {
+    display: flex !important;
+    list-style: none;
+    margin: 0 0 10px 0;
+    padding: 0;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  .syro-saints-controls .prev,
+  .syro-saints-controls .next {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: #0b2848;
+    color: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s;
+  }
+  .syro-saints-controls .prev:hover,
+  .syro-saints-controls .next:hover {
+    background: #dc3545;
+  }
+  .syro-saints-controls .prev i,
+  .syro-saints-controls .next i {
+    font-size: 1.25rem;
+  }
+  .syro-saints-controls .prev button,
+  .syro-saints-controls .next button {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: inherit;
+  }
+
+  /* Track list: flex, no scroll (transform-based sliding) */
+  .syro-saints-container .our-saints-slider li {
+    flex: 0 0 auto;
+    min-width: 110px;
+  }
+
+  @media (min-width: 768px) {
+    .syro-saints-container .syro-saints-viewport .our-saints-slider.syro-saints-track li {
+      min-width: calc((100% - 20px) / 6);
+    }
+  }
+
+  .syro-saints-link.unset-link {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .syro-saints-container .our-saints-card {
+    background: #fff;
+    padding: 10px;
+    margin: 10px auto;
+    border-radius: 5px;
+    box-shadow: rgba(50, 50, 93, 0.25) 0 6px 12px -2px, rgba(0, 0, 0, 0.3) 0 3px 7px -3px;
+    transition: 0.5s;
+    @apply flex items-center;
+  }
+
+  .syro-saints-container .our-saints-card:hover {
+    box-shadow: rgba(50, 50, 93, 0.35) 0 8px 16px -2px, rgba(0, 0, 0, 0.35) 0 6px 10px -3px;
+  }
+
+  .syro-saints-container .our-saints-img {
+    @apply flex-shrink-0 mr-3;
+  }
+
+  .syro-saints-container .our-saints-img figure {
+    width: 65px;
+    height: 65px;
+    overflow: hidden;
+    border-radius: 50%;
+    margin: 0;
+  }
+
+  .syro-saints-container .our-saints-img figure img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .syro-saints-container .our-saints-title h6 {
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #0b2848;
+  }
+
+.syro-saints-container .our-saints-title p {
+  margin-bottom: 0;
+  font-size: 0.8rem;
+  color: #dc3545;
+}
+
+  /* ===== Cardinal / Major Archbishop section – layout like syromalabarchurch.in ===== */
+  .syro-cardinal-section.cardinal-new {
+    background-color: #fff;
+    background-image: radial-gradient(circle, #e8e8e8 1px, transparent 1px);
+    background-size: 20px 20px;
+    padding: 90px 0 80px; /* extra top padding so Catholicos heading is visible below saints slider */
+  }
+  .syro-cardinal-images.cardinal-images {
+    position: relative;
+    max-width: 100%;
+  }
+  /* Wrapper for main + overlay; allow overlay to extend past right edge */
+  .syro-cardinal-main-img-wrap.cardinal-black-white-div {
+    position: relative;
+    max-width: 370px;
+    display: inline-block;
+    overflow: visible;
+  }
+  .syro-cardinal-main-img-wrap .cardinal-black-white {
+    display: block;
+    width: 100%;
+    max-width: 370px;
+    height: auto;
+    vertical-align: bottom;
+  }
+  /* Overlay: center of overlay at bottom-right corner of main image */
+  .syro-cardinal-overlay.cardinal-color-div {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    z-index: 2;
+    border: 2px solid #fff;
+    border-radius: 4px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    line-height: 0;
+    transform: translate(50%, 50%);
+  }
+  .syro-cardinal-overlay.cardinal-color-div::before {
+    display: none !important;
+  }
+  .syro-cardinal-overlay.cardinal-color-div img {
+    display: block !important;
+    position: static !important;
+    width: 160px;
+    height: auto;
+    object-fit: cover;
+  }
+  @media (min-width: 768px) {
+    .syro-cardinal-overlay.cardinal-color-div img {
+      width: 200px;
+    }
+  }
+  @media (min-width: 992px) {
+    .syro-cardinal-overlay.cardinal-color-div img {
+      width: 220px;
+    }
+  }
+  .syro-cardinal-details.cardinal-new-details {
+    position: relative;
+    padding-left: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    width: 100%;
+  }
+  .syro-cardinal-section-title.section-title {
+    position: relative;
+    left: 0;
+    top: 0;
+    height: fit-content;
+    margin: 0;
+    width: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .syro-cardinal-section-title.section-title::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 5px;
+    background-color: #dc3545;
+    border-radius: 0;
+  }
+  .syro-cardinal-container {
+    padding-left: 1rem;
+    flex: 1;
+    min-width: 0;
+  }
+  /* Match section[6] (Liturgy) .section-title h6 text style */
+  .syro-cardinal-section-title.section-title h6 {
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    font-size: 24px;
+    font-weight: 300;
+    letter-spacing: 5px;
+    color: #798daf;
+    margin: 0;
+    white-space: nowrap;
+    position: relative;
+    z-index: 1;
+  }
+  .syro-cardinal-container .syro-cardinal-heading {
+    margin-bottom: 1.25rem;
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+    line-height: 1;
+    font-weight: 700;
+  }
+  .syro-cardinal-heading-red {
+    color: #dc3545;
+    display: block;
+    margin-bottom: 0;
+    line-height: 1;
+  }
+  .syro-cardinal-heading-blue {
+    color: #0b2848;
+    display: block;
+    font-size: 0.9em;
+    margin-top: -0.5em;
+    margin-bottom: 0;
+    line-height: 1;
+  }
+  .syro-cardinal-name-bar {
+    background: linear-gradient(to right, #0b2848 0%, #0b2848 72%, #ffffff 100%);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    display: inline-block;
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .syro-cardinal-about.cardinal-new-container p,
+  .syro-cardinal-section .cardinal-new-container p.syro-cardinal-about {
+    font-size: 20px;
+    line-height: 1.6;
+    color: #506276;
+    margin-bottom: 1.5rem;
+  }
+  .syro-cardinal-profile.cardinal-new-profile {
+    margin-top: 1.5rem;
+  }
+  @media (max-width: 991px) {
+    .syro-cardinal-details.cardinal-new-details {
+      padding-left: 0;
+    }
+    .syro-cardinal-section-title.section-title {
+      position: relative;
+      width: auto;
+      margin-bottom: 1rem;
+    }
+    .syro-cardinal-section-title.section-title::after {
+      height: 100%;
+      top: 0;
+      bottom: auto;
+    }
+    /* Match section[6] horizontal h6 on small screens */
+    .syro-cardinal-section-title.section-title h6 {
+      writing-mode: horizontal-tb;
+      transform: none;
+      padding-left: 12px;
+      border-left: 5px solid #dc3545;
+      font-size: 15px;
+    }
+  }
+
+  /* Offcanvas backdrop when opened via React state (no Bootstrap JS) */
+  .offcanvas-backdrop.fade.show {
+    position: fixed;
+    inset: 0;
+    z-index: 1040;
+  }
+  .offcanvas.offcanvas-start.show {
+    transform: none;
+    visibility: visible;
+    z-index: 1045;
+  }
+  /* Selected item in offcanvas menu */
+  .offcanvas .menu-overlay .nav-link.active {
+    color: #dc3545;
+    font-weight: 600;
+    border-left: 3px solid #dc3545;
+    padding-left: 8px;
+  }
+}
+
+/* Footer quick links: always display in capitals */
+#footer-quicklinks,
+#footer-quicklinks p,
+#footer-quicklinks a {
+  text-transform: uppercase;
+}
+
+/* Footer contact form: remove white/light autofill and selection background */
+#contact-form input.subscribe-email,
+#contact-form textarea.subscribe-email {
+  -webkit-text-fill-color: #fff;
+  background-color: transparent !important;
+}
+
+#contact-form input.subscribe-email:disabled,
+#contact-form textarea.subscribe-email:disabled {
+  background-color: transparent !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.9) !important;
+  color: rgba(255, 255, 255, 0.9);
+  opacity: 1;
+}
+
+#contact-form input.subscribe-email::-webkit-input-placeholder,
+#contact-form textarea.subscribe-email::-webkit-input-placeholder {
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.7);
+}
+
+#contact-form input.subscribe-email::selection,
+#contact-form textarea.subscribe-email::selection {
+  background: rgba(11, 40, 72, 0.7);
+  color: #fff;
+}
+
+#contact-form input.subscribe-email::-moz-selection,
+#contact-form textarea.subscribe-email::-moz-selection {
+  background: rgba(11, 40, 72, 0.7);
+  color: #fff;
+}
+
+/* Override Chrome autofill and any white/light gray background (all states) */
+#contact-form input.subscribe-email:-webkit-autofill,
+#contact-form input.subscribe-email:-webkit-autofill:hover,
+#contact-form input.subscribe-email:-webkit-autofill:focus,
+#contact-form input.subscribe-email:-webkit-autofill:active,
+#contact-form input.subscribe-email:focus,
+#contact-form textarea.subscribe-email:focus {
+  -webkit-box-shadow: 0 0 0 30px rgba(190, 25, 41, 0.85) inset !important;
+  box-shadow: 0 0 0 30px rgba(190, 25, 41, 0.85) inset !important;
+  -webkit-text-fill-color: #fff !important;
+  background-color: transparent !important;
+}
+
+#contact-form input.subscribe-email:-webkit-autofill,
+#contact-form input.subscribe-email:-webkit-autofill:hover,
+#contact-form input.subscribe-email:-webkit-autofill:focus,
+#contact-form input.subscribe-email:-webkit-autofill:active {
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Disabled state during submit: keep dark background, no white/gray */
+#contact-form input.subscribe-email:disabled:-webkit-autofill,
+#contact-form input.subscribe-email:disabled,
+#contact-form textarea.subscribe-email:disabled {
+  -webkit-box-shadow: 0 0 0 30px rgba(190, 25, 41, 0.85) inset !important;
+  box-shadow: 0 0 0 30px rgba(190, 25, 41, 0.85) inset !important;
+  background-color: transparent !important;
+}
+
+/* ===== Banner shortcuts: 3 links in first row, 2 in second row (no text/icon cutoff) ===== */
+.syro-layout #banner-shortcuts-section.quicklink {
+  background-color: #dc354533 !important;
+  background-image: none !important;
+  position: relative !important;
+}
+
+/* Dotted pattern only at the end (bottom) of the section */
+.syro-layout #banner-shortcuts-section.quicklink::after {
+  content: '' !important;
+  display: block !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 40px !important;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.65) 1.5px, transparent 1.5px) !important;
+  background-size: 12px 12px !important;
+  background-position: 0 0 !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+.syro-layout #banner-shortcuts-section.quicklink .container {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.syro-layout #banner-shortcuts-section #banner-shortcuts.row {
+  display: grid !important;
+  grid-template-columns: minmax(8rem, 1fr) repeat(2, 1fr) !important;
+  gap: 0.35rem 0.5rem !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Desktop: all banner shortcut links in a single line */
+@media screen and (min-width: 768px) {
+  .syro-layout #banner-shortcuts-section #banner-shortcuts.row {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+}
+
+.syro-layout #banner-shortcuts-section #banner-shortcuts .col {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+/* Remove vertical line after the last shortcut (CONTACT INFO) */
+.syro-layout #banner-shortcuts-section #banner-shortcuts .col:last-child .quick-link-card.be-1 {
+  border-right: none !important;
+}
+
+.syro-layout #banner-shortcuts-section .quick-link-card {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0.75rem !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  padding: 0.4rem 0.25rem !important;
+}
+
+.syro-layout #banner-shortcuts-section .quick-link-card .quick-icon {
+  flex-shrink: 0 !important;
+  width: 40px !important;
+  min-width: 40px !important;
+}
+
+.syro-layout #banner-shortcuts-section .quick-link-card .quick-icon img {
+  width: 100% !important;
+  height: auto !important;
+  object-fit: contain !important;
+}
+
+.syro-layout #banner-shortcuts-section .quick-link-card .quick-title {
+  min-width: 0 !important;
+  flex: 1 !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+}
+
+.syro-layout #banner-shortcuts-section .quick-link-card .quick-title h6 {
+  margin-bottom: 0 !important;
+  white-space: nowrap !important;
+  line-height: 1.25 !important;
+}
+
+/* CATHOLICATE NEWS: line 1 = CATHOLICATE, line 2 = NEWS; no truncation */
+.syro-layout #banner-shortcuts-section #banner-shortcuts .col:first-child .quick-title {
+  overflow: visible !important;
+  min-width: 0 !important;
+}
+
+.syro-layout #banner-shortcuts-section #banner-shortcuts .col:first-child .quick-title h6 {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  display: block !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+}
+
+@media screen and (max-width: 767px) {
+  .syro-layout #banner-shortcuts-section .quick-link-card .quick-title h6 {
+    font-size: 0.7rem !important;
+  }
+}
+
+/* ===== MOSC mobile view: content alignment (reference: syromalabarchurch.in) ===== */
+@media screen and (max-width: 767px) {
+  /* Breadcrumb / page banner section (first section in mainContent): smaller text on mobile so title and breadcrumb fit */
+  .syro-layout #mainContent.syro-main section:first-of-type {
+    min-height: 120px !important;
+    height: auto !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+    align-items: center !important;
+  }
+  .syro-layout #mainContent.syro-main section:first-of-type h2,
+  .syro-layout #mainContent.syro-main section:first-of-type .font-syro-display {
+    font-size: 0.875rem !important;
+    line-height: 1.3 !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+  .syro-layout #mainContent.syro-main section:first-of-type nav,
+  .syro-layout #mainContent.syro-main section:first-of-type nav ol {
+    font-size: 0.6875rem !important;
+    line-height: 1.35 !important;
+  }
+}
+
+/* Breadcrumb / page banner (first section): vertical alignment of text on all pages and viewports */
+.syro-layout #mainContent.syro-main section:first-of-type {
+  display: flex !important;
+  align-items: center !important;
+}
+.syro-layout #mainContent.syro-main section:first-of-type > div {
+  display: flex !important;
+  align-items: center !important;
+  min-height: 100% !important;
+}
+.syro-layout #mainContent.syro-main section:first-of-type > div > div {
+  display: flex !important;
+  align-items: center !important;
+  min-height: 100% !important;
+}
+.syro-layout #mainContent.syro-main section:first-of-type .syro-banner-content {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+}
+
+@media screen and (max-width: 767px) {
+  .syro-layout .container,
+  .syro-layout main .container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  .syro-layout .row {
+    margin-left: -0.5rem !important;
+    margin-right: -0.5rem !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    box-sizing: border-box !important;
+  }
+
+  .syro-layout .row:not(#banner-shortcuts) > [class*='col'] {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Banner shortcuts: tighter container padding so link text fits on one line */
+  #banner-shortcuts-section.quicklink .container {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+
+  /* About section: single column, no left offset */
+  .syro-layout section.about-us .container {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .syro-layout section.about-us .about-data {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    text-align: center !important;
+  }
+
+  .syro-layout section.about-us .about-data .main-title h1 {
+    text-align: center !important;
+    font-size: clamp(1.5rem, 5vw, 2rem) !important;
+  }
+
+  .syro-layout section.about-us .about-content p {
+    text-align: center !important;
+    font-size: 1rem !important;
+    line-height: 1.6 !important;
+  }
+
+  .syro-layout section.about-us .about-data .primary-button {
+    display: inline-block !important;
+    margin: 0 auto !important;
+  }
+
+  /* About images: mobile layout = 1 large left + 2 stacked smaller right (like screenshot) */
+  .syro-layout section.about-us .about-images .row {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+  }
+
+  .syro-layout section.about-us .about-images .col-6.about-img-1 {
+    flex: 0 0 52% !important;
+    max-width: 52% !important;
+    width: 52% !important;
+    display: flex !important;
+    align-items: stretch !important;
+  }
+
+  .syro-layout section.about-us .about-images .col-6.about-img-1 .img-1-container {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 220px !important;
+    display: flex !important;
+    align-items: stretch !important;
+  }
+
+  .syro-layout section.about-us .about-images .col-6.about-img-1 .img-1-container .img-1 {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100% !important;
+    display: block !important;
+  }
+
+  .syro-layout section.about-us .about-images .col-6.about-img-1 .img-1-container .img-1 img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+
+  .syro-layout section.about-us .about-images .col-6:not(.about-img-1) {
+    flex: 0 0 calc(48% - 0.5rem) !important;
+    max-width: calc(48% - 0.5rem) !important;
+    width: calc(48% - 0.5rem) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    margin-bottom: 0 !important;
+    min-height: 220px !important;
+  }
+
+  .syro-layout section.about-us .about-images .col-6:not(.about-img-1) .img-2,
+  .syro-layout section.about-us .about-images .col-6:not(.about-img-1) .img-3 {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    display: block !important;
+    position: relative !important;
+  }
+
+  .syro-layout section.about-us .about-images .col-6:not(.about-img-1) .img-2 img,
+  .syro-layout section.about-us .about-images .col-6:not(.about-img-1) .img-3 img {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+
+  .syro-layout section.about-us .about-images .col-6:not(.about-img-1) .img-2 {
+    margin-bottom: 0 !important;
+  }
+
+  .syro-layout section.about-us .img-border {
+    border: 4px solid #ffffff !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Section title: prevent overflow from vertical label */
+  .syro-layout .section-title {
+    position: relative !important;
+    left: 0 !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+  }
+
+  .syro-layout .section-title h6 {
+    writing-mode: horizontal-tb !important;
+    transform: none !important;
+    position: relative !important;
+    left: 0 !important;
+    font-size: 0.9375rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .syro-layout .section-title::after {
+    display: none !important;
+  }
+
+  /* Red vertical line for section headings (match Our Saints & Blessed): About Us, Liturgical Calendar, Our Presence */
+  .syro-layout section.about-us .section-title,
+  .syro-layout section.liturgy .section-title,
+  .syro-layout section.syromalabar-locations .section-title {
+    padding-left: 8px !important;
+    border-left: 5px solid #dc3545 !important;
+  }
+
+  /* Our Saints & Blesseds h6: align text left in mobile view */
+  .syro-layout .syro-saints-container .our-saints-section-title h6,
+  .syro-layout section.about-us .our-saints-container .our-saints-section-title h6 {
+    text-align: left !important;
+  }
+
+  /* Circular notification: stack columns */
+  .syro-layout section.Circularnotification .row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+  }
+
+  .syro-layout section.Circularnotification .col,
+  .syro-layout section.Circularnotification .col-lg-2 {
+    flex: 0 0 auto !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Cardinal / Catholicos section: full-width responsive layout, no left gap */
+  .syro-layout .syro-cardinal-section .container {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    max-width: 100% !important;
+  }
+
+  .syro-layout .syro-cardinal-section .row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .syro-layout .syro-cardinal-section .col-lg-6 {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .syro-layout .syro-cardinal-section .syro-cardinal-details {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    text-align: center !important;
+  }
+
+  .syro-layout .syro-cardinal-section .syro-cardinal-section-title.section-title {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex-shrink: 0 !important;
+    margin-bottom: 0.75rem !important;
+    text-align: left !important;
+  }
+
+  .syro-layout .syro-cardinal-section .syro-cardinal-section-title.section-title h6 {
+    width: 100% !important;
+  }
+
+  .syro-layout .syro-cardinal-section .syro-cardinal-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    text-align: center !important;
+    flex: none !important;
+  }
+
+  .syro-layout .syro-cardinal-section .syro-cardinal-heading,
+  .syro-layout .syro-cardinal-section .syro-cardinal-name-bar {
+    text-align: center !important;
+  }
+
+  .syro-layout .syro-cardinal-section .syro-cardinal-heading {
+    text-align: left !important;
+  }
+
+  .syro-layout .syro-cardinal-section .syro-cardinal-name-bar {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .syro-layout .syro-cardinal-section .syro-cardinal-about {
+    text-align: left !important;
+    font-size: 1rem !important;
+    line-height: 1.6 !important;
+  }
+
+  .syro-layout .syro-cardinal-section .syro-cardinal-profile {
+    display: flex !important;
+    justify-content: center !important;
+  }
+
+  .syro-layout .syro-cardinal-section .syro-cardinal-images {
+    display: flex !important;
+    justify-content: center !important;
+  }
+
+  /* Cardinal image block (mobile): main image as card + pink panel behind overlay, like second screenshot */
+  .syro-layout .syro-cardinal-section .syro-cardinal-main-img-wrap.cardinal-black-white-div {
+    max-width: 100% !important;
+    width: 100% !important;
+    background: #e8e8e8 !important;
+    border-radius: 12px !important;
+    border: 3px solid #ffffff !important;
+    padding: 0.5rem !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+
+  .syro-layout .syro-cardinal-section .syro-cardinal-main-img-wrap .cardinal-black-white {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 8px !important;
+    display: block !important;
+  }
+
+  .syro-layout .syro-cardinal-section .syro-cardinal-overlay.cardinal-color-div {
+    position: absolute !important;
+    right: 0.5rem !important;
+    bottom: 0.5rem !important;
+    left: auto !important;
+    top: auto !important;
+    transform: translate(-12%, 35%) !important;
+    border: 3px solid #ffffff !important;
+    border-radius: 10px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+    z-index: 2 !important;
+  }
+
+  .syro-layout .syro-cardinal-section .syro-cardinal-overlay.cardinal-color-div::before {
+    display: block !important;
+    content: '' !important;
+    position: absolute !important;
+    z-index: -1 !important;
+    left: -12px !important;
+    top: -12px !important;
+    right: -12px !important;
+    bottom: -12px !important;
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 50%, #f1aeb5 100%) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.15) !important;
+  }
+
+  .syro-layout .syro-cardinal-section .syro-cardinal-overlay.cardinal-color-div img {
+    width: 140px !important;
+    height: auto !important;
+    border-radius: 8px !important;
+  }
+
+  /* Liturgy section */
+  .syro-layout section.liturgy .container {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .syro-layout section.liturgy .liturgy-container .main-title h2 {
+    text-align: center !important;
+  }
+
+  .syro-layout section.liturgy .liturgy-data .row {
+    flex-direction: column !important;
+  }
+
+  .syro-layout section.liturgy .liturgy-data .col-lg-3,
+  .syro-layout section.liturgy .liturgy-data .col-lg-9 {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .syro-layout section.liturgy .col-12.d-flex {
+    justify-content: center !important;
+  }
+
+  /* Locations section */
+  .syro-layout section.syromalabar-locations .location-container {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    text-align: center !important;
+  }
+
+  .syro-layout section.syromalabar-locations .main-title h2 {
+    text-align: center !important;
+  }
+
+  .syro-layout section.syromalabar-locations .syro-locations-panel {
+    padding: 1.25rem 1rem 1rem !important;
+    margin-top: 1rem !important;
+  }
+
+  .syro-layout section.syromalabar-locations .syro-locations-panel-title {
+    font-size: 1.25rem !important;
+    color: #ffffff !important;
+  }
+
+  .syro-layout section.syromalabar-locations .syro-locations-panel-desc {
+    font-size: 0.95rem !important;
+    color: #ffffff !important;
+  }
+
+  /* Quick links bar (below header): prevent horizontal overflow */
+  .syro-layout .syro-quicklinks-bar .container {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    max-width: 100% !important;
+  }
+
+  .syro-layout .syro-quicklinks-bar .syro-quicklinks-inner {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Header logo: prevent overflow */
+  .syro-layout #syro-header-bar.logo-container {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  .syro-layout #syro-header-bar .logo-box-img .logo-img-div img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Footer: padding-left on second and third sections (Quick Links + third column) */
+  .syro-layout footer .footer-container .row > div:nth-child(2),
+  .syro-layout footer .footer-container .row > div:nth-child(3) {
+    padding-left: 1rem !important;
+  }
+
+  /* Footer: pl-3 on inner div of second and third sections (mobile) */
+  .syro-layout footer .footer-container .row > div:nth-child(2) > div,
+  .syro-layout footer .footer-container .row > div:nth-child(3) > div {
+    padding-left: 0.75rem !important;
+  }
+
+  /* Main content no horizontal scroll */
+  .syro-layout #mainContent.syro-main {
+    overflow-x: hidden !important;
+  }
+}

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liturgical Calendar – Project Requirements</title>
+  <style>
+    :root { --bg: #0f1419; --surface: #1a2332; --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff; --border: #30363d; --green: #3fb950; --warn: #d29922; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; margin: 0; padding: 2rem; }
+    .doc { max-width: 52rem; margin: 0 auto; }
+    h1 { font-size: 1.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-top: 0; }
+    h2 { font-size: 1.25rem; margin-top: 2rem; color: var(--accent); }
+    h3 { font-size: 1.05rem; margin-top: 1.25rem; }
+    p { margin: 0.5rem 0 1rem; color: var(--muted); }
+    code, kbd { background: var(--surface); padding: 0.15em 0.4em; border-radius: 4px; font-size: 0.9em; }
+    pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; font-size: 0.85rem; }
+    pre code { background: none; padding: 0; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; }
+    .note { background: rgba(88, 166, 255, 0.1); border-left: 4px solid var(--accent); padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 0 6px 6px 0; }
+    .warn { background: rgba(210, 153, 34, 0.1); border-left: 4px solid var(--warn); padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 0 6px 6px 0; }
+    ul, ol { margin: 0.5rem 0 1rem; padding-left: 1.5rem; color: var(--muted); }
+    li { margin: 0.25rem 0; }
+    a { color: var(--accent); }
+    .toc { margin: 1.5rem 0; padding: 1rem; background: var(--surface); border-radius: 8px; }
+    .toc ul { list-style: none; padding-left: 0; }
+    .toc li { margin: 0.35rem 0; }
+    .toc a { text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+    .diagram { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 0.85rem; white-space: pre; color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="doc">
+    <h1>Liturgical Calendar &ndash; Project Requirements</h1>
+    <p>Generic product and feature requirements for the liturgical calendar, independent of backend implementation (external SMCIM API or self-hosted Strapi). Covers scope, functional requirements, data model, bilingual support (English and Malayalam), tenant scoping, and non-functional requirements.</p>
+
+    <nav class="toc" aria-label="Contents">
+      <h2 id="toc">Contents</h2>
+      <ul>
+        <li><a href="#scope">1. Scope and Objectives</a></li>
+        <li><a href="#functional">2. Functional Requirements</a></li>
+        <li><a href="#data-model">3. Data Model (Logical)</a></li>
+        <li><a href="#language">4. Bilingual Support (English &amp; Malayalam)</a></li>
+        <li><a href="#tenant">5. Tenant Scoping</a></li>
+        <li><a href="#nfr">6. Non-Functional Requirements</a></li>
+        <li><a href="#flow">7. High-Level Data Flow</a></li>
+        <li><a href="#references">8. Related Documents</a></li>
+      </ul>
+    </nav>
+
+    <!-- 1 -->
+    <h2 id="scope">1. Scope and Objectives</h2>
+    <p>Provide a <strong>Liturgical Calendar</strong> section on the MOSC / Syro-Malabar website that displays <strong>daily liturgical readings</strong> for the current date, in both <strong>English</strong> and <strong>Malayalam</strong>.</p>
+    <ul>
+      <li>Show the day heading (date/day name), the liturgical season, and a list of readings with their scripture references.</li>
+      <li>Allow the user to toggle between English and Malayalam.</li>
+      <li>Support multi-tenant deployments where each tenant (e.g. a parish or diocese site) may have its own set of readings or share a common calendar.</li>
+      <li>Be backend-agnostic: the feature can be served by an external API (SMCIM) or by a self-hosted Strapi CMS.</li>
+    </ul>
+
+    <!-- 2 -->
+    <h2 id="functional">2. Functional Requirements</h2>
+
+    <h3>2.1 Display</h3>
+    <ol>
+      <li><strong>Day heading</strong> &ndash; A human-readable string for the current day (e.g. &ldquo;Thursday, 27 February 2026&rdquo;).</li>
+      <li><strong>Season name</strong> &ndash; The name of the current liturgical season (e.g. &ldquo;Great Lent&rdquo;).</li>
+      <li><strong>Readings list</strong> &ndash; One or more readings, each with:
+        <ul>
+          <li><strong>Liturgy heading</strong> &ndash; Title of the reading (e.g. &ldquo;First Reading&rdquo;, &ldquo;Gospel&rdquo;).</li>
+          <li><strong>Content place</strong> &ndash; Scripture reference (e.g. &ldquo;Genesis 1:1-5&rdquo;).</li>
+        </ul>
+      </li>
+      <li>A decorative image or icon may accompany the section.</li>
+    </ol>
+
+    <h3>2.2 Language Selection</h3>
+    <ol>
+      <li>Two languages: <strong>English (<code>en</code>)</strong> and <strong>Malayalam (<code>ml</code>)</strong>.</li>
+      <li>A toggle (two buttons) allows the user to switch languages without a page reload.</li>
+      <li>The currently selected language is visually highlighted.</li>
+      <li>When the language changes, the readings refresh to show the corresponding language content.</li>
+    </ol>
+
+    <h3>2.3 Data Source</h3>
+    <ol>
+      <li>The readings are fetched from a backend API (external or Strapi).</li>
+      <li>The frontend calls the API with a <code>lng</code> (or <code>lang</code>) parameter set to <code>en</code> or <code>ml</code>.</li>
+      <li>The API returns data for the current date by default (or accepts a date parameter for a specific day).</li>
+    </ol>
+
+    <h3>2.4 Loading &amp; Error States</h3>
+    <ol>
+      <li><strong>Loading</strong>: Show a spinner or skeleton while the API request is in progress.</li>
+      <li><strong>Error / Unavailable</strong>: Show a friendly message (e.g. &ldquo;Daily readings are temporarily unavailable&rdquo;) with a link to the official liturgy site (<a href="https://www.syromalabarliturgy.org/" target="_blank" rel="noopener">Syro-Malabar Commission for Liturgy</a>).</li>
+      <li><strong>Empty</strong>: If the API returns no readings for the day, show &ldquo;No readings available for this day.&rdquo;</li>
+    </ol>
+
+    <!-- 3 -->
+    <h2 id="data-model">3. Data Model (Logical)</h2>
+    <p>Regardless of backend, the data follows this logical structure:</p>
+
+    <h3>3.1 Liturgy Day</h3>
+    <table>
+      <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+      <tr><td><code>date</code></td><td>Date</td><td>Calendar date (YYYY-MM-DD)</td></tr>
+      <tr><td><code>day_heading</code></td><td>String</td><td>Human-readable day heading (language-specific)</td></tr>
+      <tr><td><code>season_name</code></td><td>String</td><td>Liturgical season name (language-specific)</td></tr>
+      <tr><td><code>readings</code></td><td>Array</td><td>One or more readings (see below)</td></tr>
+    </table>
+
+    <h3>3.2 Reading</h3>
+    <table>
+      <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+      <tr><td><code>liturgy_heading</code></td><td>String</td><td>Title of the reading (e.g. &ldquo;First Reading&rdquo;) &ndash; language-specific</td></tr>
+      <tr><td><code>content_place</code></td><td>String</td><td>Scripture reference (e.g. &ldquo;Genesis 1:1-5&rdquo;) &ndash; language-specific</td></tr>
+    </table>
+
+    <h3>3.3 Current API Field Names</h3>
+    <p>The existing integration (external SMCIM API) uses these field names in the JSON response:</p>
+    <table>
+      <tr><th>Field Name</th><th>Maps To</th></tr>
+      <tr><td><code>liturgy_day_heading</code></td><td>Day heading</td></tr>
+      <tr><td><code>season_name</code></td><td>Season name</td></tr>
+      <tr><td><code>liturgy_heading</code></td><td>Reading title</td></tr>
+      <tr><td><code>content_place</code></td><td>Scripture reference</td></tr>
+    </table>
+    <p>The frontend expects a response shaped as <code>{ message: [ { liturgy_day_heading, season_name, liturgy_heading, content_place }, ... ] }</code>. Any new backend (including Strapi) should either return this shape directly or be mapped to it by a proxy layer.</p>
+
+    <!-- 4 -->
+    <h2 id="language">4. Bilingual Support (English &amp; Malayalam)</h2>
+    <ul>
+      <li>Each field (day heading, season name, liturgy heading, content place) has an English and Malayalam variant.</li>
+      <li>The API (or proxy) returns only the requested language&rsquo;s content based on the <code>lng</code> parameter.</li>
+      <li>In a Strapi implementation, both language variants are stored in a single record (e.g. <code>dayHeadingEn</code> / <code>dayHeadingMl</code>), and the proxy or frontend selects the appropriate fields based on the requested language.</li>
+      <li>Language codes: <code>en</code> = English, <code>ml</code> = Malayalam.</li>
+    </ul>
+
+    <!-- 5 -->
+    <h2 id="tenant">5. Tenant Scoping</h2>
+    <ul>
+      <li>In a multi-tenant deployment (e.g. multiple parishes sharing a Strapi instance), each liturgy day record is associated with a <strong>tenant</strong>.</li>
+      <li>The frontend passes the tenant identifier (e.g. <code>NEXT_PUBLIC_TENANT_ID</code>) when fetching readings, so only data for the current tenant is returned.</li>
+      <li>Tenant assignment in Strapi follows the existing pattern: lifecycle hooks auto-assign the editor&rsquo;s tenant on create; the content-manager extension filters the list by tenant so editors only see their own data.</li>
+      <li>Tenants may share a common calendar or maintain separate ones. The data model supports both via the tenant relation.</li>
+    </ul>
+
+    <!-- 6 -->
+    <h2 id="nfr">6. Non-Functional Requirements</h2>
+    <table>
+      <tr><th>Requirement</th><th>Detail</th></tr>
+      <tr><td>Availability</td><td>Graceful degradation: if the API is unavailable, show a friendly message with a link to the official liturgy site. Do not crash the page.</td></tr>
+      <tr><td>Performance</td><td>Cache API responses (e.g. 1-hour revalidation on the server side). Readings change daily, so a short cache is acceptable.</td></tr>
+      <tr><td>Accessibility</td><td>Section has <code>aria-label="Liturgical Calendar"</code>. Language toggle buttons use <code>aria-pressed</code> and <code>aria-label</code>. Loading state uses <code>aria-live="polite"</code>.</td></tr>
+      <tr><td>Security</td><td>API tokens (if any) must not be exposed to the client. Use a server-side proxy (Next.js API route) to inject tokens and tenant IDs.</td></tr>
+      <tr><td>Responsiveness</td><td>The liturgy section and language toggle must work on mobile devices.</td></tr>
+    </table>
+
+    <!-- 7 -->
+    <h2 id="flow">7. High-Level Data Flow</h2>
+    <div class="diagram">User (browser)
+  |
+  |  1. Click EN / ML toggle (or page load)
+  v
+Frontend Component (SyroLiturgySection)
+  |
+  |  2. fetch /api/liturgy?lng=en|ml
+  v
+Next.js API Route (/api/liturgy)
+  |
+  |  3a. Call external SMCIM API   OR   3b. Call Strapi /api/liturgy-days
+  |      with token + lng                    with tenant + date + populate
+  v
+Backend (SMCIM or Strapi)
+  |
+  |  4. Return readings (language-specific)
+  v
+Next.js API Route
+  |
+  |  5. Map to { message: LiturgyReading[] }
+  v
+Frontend Component
+  |
+  |  6. Render day heading, season, list of readings
+  v
+User sees Liturgical Calendar</div>
+
+    <!-- 8 -->
+    <h2 id="references">8. Related Documents</h2>
+    <table>
+      <tr><th>Document</th><th>Description</th></tr>
+      <tr>
+        <td><a href="liturgical-calendar-api-integration.html">Liturgical Calendar API &ndash; Integration Guide</a></td>
+        <td>External SMCIM API reference, current frontend invocation, Next.js implementation guide (legacy/external API).</td>
+      </tr>
+      <tr>
+        <td><a href="liturgical-calendar-strapi-server.html">Liturgical Calendar &ndash; Strapi Server Specification</a></td>
+        <td>Content types, schema, REST API, tenant and language handling for the Strapi implementation.</td>
+      </tr>
+      <tr>
+        <td><a href="liturgical-calendar-frontend-integration.html">Liturgical Calendar &ndash; Frontend Integration (Strapi)</a></td>
+        <td>How the Next.js frontend calls Strapi, maps the response, and displays liturgy data.</td>
+      </tr>
+    </table>
+
+    <hr style="border: 0; border-top: 1px solid var(--border); margin: 2rem 0;">
+    <p style="font-size: 0.875rem; color: var(--muted);">Document version 1.0 &ndash; February 2026. Covers requirements for both external SMCIM API and self-hosted Strapi backend.</p>
+  </div>
+</body>
+</html>

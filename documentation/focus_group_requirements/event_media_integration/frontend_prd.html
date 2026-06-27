@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PRD: Focus Group – Event Media Integration (Frontend)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+      h1, h2, h3, h4 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+      h1 { font-size: 2.3rem; margin-bottom: 0.75rem; }
+      h2 { font-size: 1.7rem; margin-top: 2.5rem; }
+      h3 { font-size: 1.3rem; margin-top: 1.8rem; }
+      h4 { font-size: 1.1rem; margin-top: 1.2rem; }
+      p, li { line-height: 1.75; font-size: 1rem; }
+      ul, ol { margin-left: 1.4rem; }
+      table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+      th, td { border: 1px solid rgba(42, 32, 23, 0.15); padding: 0.75rem; vertical-align: top; }
+      th { background: rgba(213, 201, 182, 0.35); font-weight: 600; }
+      code, pre {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, monospace;
+        background: #f5f1e8;
+        border-radius: 8px;
+      }
+      pre { padding: 1rem; line-height: 1.6; overflow-x: auto; }
+      code.inline { padding: 0.15rem 0.35rem; font-size: 0.95rem; display: inline-block; }
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .divider { height: 1px; background: rgba(42, 32, 23, 0.12); margin: 2rem 0; }
+      .callout {
+        border-left: 4px solid #8b7d6b;
+        background: rgba(213, 201, 182, 0.3);
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
+        margin: 1.8rem 0;
+      }
+      .toc ol { list-style: decimal; }
+      .toc a { color: #1f4c8f; text-decoration: none; }
+      .toc a:hover { text-decoration: underline; }
+      footer { margin-top: 4rem; text-align: center; font-size: 0.9rem; color: #7a7066; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Draft · Frontend</span>
+      <h1>PRD: Focus Group – Event Media Integration (Frontend)</h1>
+      <p>
+        <strong>Project:</strong> mosc-temp (Next.js 15+ App Router)<br />
+        <strong>Document Version:</strong> 1.0<br />
+        <strong>Date:</strong> March 2026<br />
+        <strong>Status:</strong> Draft
+      </p>
+
+      <div class="divider"></div>
+
+      <h2 id="requirement">Requirement</h2>
+      <p>
+        When uploading or editing event media in the admin event media flow, allow optionally associating a focus group
+        for that event. Where relevant (e.g. event detail page or admin event media list), display event focus groups
+        and allow filtering or grouping media by focus group. Implementation is to be done by the frontend team when
+        ready; this PRD is the handoff specification.
+      </p>
+
+      <h2 id="api-proxy">API / Proxy</h2>
+      <ul>
+        <li>Use existing proxy routes: <code class="inline">/api/proxy/event-medias</code> and
+          <code class="inline">/api/proxy/event-focus-groups</code> (or equivalent).</li>
+        <li>Follow <strong>nextjs_api_routes.mdc</strong>: all authenticated backend calls must be made from server
+          components or server actions (e.g. <code class="inline">ApiServerActions.ts</code>); use
+          <code class="inline">fetchWithJwtRetry</code> from <code class="inline">@/lib/proxyHandler</code> for backend
+          calls. Do not call the backend API URL directly from client components.</li>
+        <li>Do not add <code class="inline">tenantId.equals</code> when calling proxy endpoints; the proxy injects it.</li>
+      </ul>
+
+      <h2 id="dtos">DTOs &amp; Types</h2>
+      <p>
+        Extend the event-media type (in <code class="inline">@/types</code> or equivalent) to include optional
+        <code class="inline">eventFocusGroupId</code> (or <code class="inline">event_focus_group_id</code>) once the
+        backend exposes it. Align with the backend API schema and <code class="inline">documentation/Swagger_API_Docs/api-docs.json</code>
+        when the EventMedia schema is updated.
+      </p>
+
+      <h2 id="ui">UI Standards</h2>
+      <ul>
+        <li>Follow <strong>ui_style_guide.mdc</strong>: page container <code class="inline">max-w-5xl mx-auto px-8 py-8</code>,
+          content cards <code class="inline">bg-white rounded-lg shadow-md p-6</code>, and existing form/input patterns.</li>
+        <li>On media upload/edit: add an optional focus group selector (dropdown or multi-select) populated with the
+          event’s focus groups from <code class="inline">event_focus_groups</code> (filter by <code class="inline">eventId.equals</code>).</li>
+        <li>Event detail and admin media list: optionally show focus group label per media and allow filtering by
+          <code class="inline">eventFocusGroupId.equals</code> when querying event-medias.</li>
+      </ul>
+
+      <div class="callout">
+        <strong>Scope:</strong> No new components are built in the initial schema/docs phase. This PRD is for the
+        frontend team to implement when the backend has exposed <code class="inline">eventFocusGroupId</code> on
+        event media.
+      </div>
+
+      <h2 id="references">References</h2>
+      <ul>
+        <li><a href="generic_prd.html">generic_prd.html</a> – Overview and data model</li>
+        <li><code class="inline">.cursor/rules/nextjs_api_routes.mdc</code> – REST/proxy and server actions</li>
+        <li><code class="inline">.cursor/rules/ui_style_guide.mdc</code> – UI layout and components</li>
+        <li><code class="inline">documentation/Swagger_API_Docs/api-docs.json</code> – API schema</li>
+      </ul>
+
+      <footer>
+        <p>Focus Group – Event Media Integration (Frontend) PRD · MCEFEE Platform</p>
+      </footer>
+    </main>
+  </body>
+</html>

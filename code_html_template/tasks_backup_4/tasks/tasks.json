@@ -1,0 +1,245 @@
+{
+  "meta": {
+    "projectName": "nextjs-template",
+    "version": "1.5.0",
+    "source": ".task-master/PRD.txt",
+    "description": "Tasks generated from PRD",
+    "totalTasksGenerated": 18,
+    "tasksIncluded": 18
+  },
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Set up shared data models and types",
+      "description": "Create TypeScript definitions for all DTOs to be used across the application.",
+      "status": "done",
+      "dependencies": [],
+      "priority": "high",
+      "details": "Create the following in src/types/index.ts:\n- EventDetailsDTO\n- EventTicketTypeDTO\n- DiscountCodeDTO\n- EventTicketTransactionDTO\n- Any other supporting interfaces needed for the ticket purchasing flow",
+      "testStrategy": "Verify that all types are properly defined and exported. Ensure they match the backend API specifications."
+    },
+    {
+      "id": 2,
+      "title": "Implement Next.js API proxy routes",
+      "description": "Create API routes in Next.js to proxy requests to the backend Spring Boot API.",
+      "status": "done",
+      "dependencies": [
+        1
+      ],
+      "priority": "high",
+      "details": "Create the following API routes:\n- /api/event-details/[id]\n- /api/event-ticket-types (with query param support)\n- /api/discount-codes (with query param support)\n- /api/event-ticket-transactions\n\nEnsure all routes follow the nextjs_api_routes.mdc pattern.",
+      "testStrategy": "Test each API route to ensure it correctly proxies requests to the backend and returns the expected responses."
+    },
+    {
+      "id": 3,
+      "title": "Create Hero Section with Buy Tickets CTA",
+      "description": "Implement a visually prominent 'Buy Tickets' call-to-action in the event hero section.",
+      "status": "done",
+      "dependencies": [],
+      "priority": "high",
+      "details": "- Design and implement a visually appealing hero section\n- Add a prominent 'Buy Tickets' button\n- Ensure the button links to the ticketing page for the selected event\n- Make the component responsive for all device sizes",
+      "testStrategy": "Verify the CTA is visually prominent, responsive, and correctly routes users to the ticketing page."
+    },
+    {
+      "id": 4,
+      "title": "Build Ticketing Page layout",
+      "description": "Create the main ticketing page that displays event details and available ticket types.",
+      "status": "done",
+      "dependencies": [
+        1,
+        2
+      ],
+      "priority": "high",
+      "details": "- Create page layout with event details section\n- Implement responsive card layout for ticket types\n- Add quantity selectors for each ticket type\n- Include discount code input field\n- Add checkout button\n- Ensure all UI elements follow design guidelines",
+      "testStrategy": "Test the layout on multiple screen sizes. Verify all UI elements are displayed correctly and match the design specifications."
+    },
+    {
+      "id": 5,
+      "title": "Implement ticket selection functionality",
+      "description": "Add functionality to select ticket quantities and update the UI accordingly.",
+      "status": "done",
+      "dependencies": [
+        4
+      ],
+      "priority": "high",
+      "details": "- Implement quantity selectors for each ticket type\n- Add client-side validation for maximum quantities\n- Update subtotal in real-time as quantities change\n- Disable checkout button when no tickets are selected\n- Follow custom-forms-checkbox-grid.mdc for form elements",
+      "testStrategy": "Test quantity selection with various inputs. Verify real-time updates to subtotal. Test validation for maximum quantities."
+    },
+    {
+      "id": 6,
+      "title": "Implement discount code functionality",
+      "description": "Add the ability to enter and validate discount codes with real-time price updates.",
+      "status": "done",
+      "dependencies": [
+        2,
+        5
+      ],
+      "priority": "medium",
+      "details": "- Create discount code input field\n- Implement API call to validate discount codes\n- Update UI to show discount amount when valid code is applied\n- Show appropriate error messages for invalid codes\n- Update total price calculation to include discounts\n- Handle edge cases (expired codes, usage limits, etc.)",
+      "testStrategy": "Test with valid and invalid discount codes. Verify price updates correctly. Test all error cases and edge conditions."
+    },
+    {
+      "id": 7,
+      "title": "Implement real-time price calculation",
+      "description": "Create a system for calculating and displaying subtotal, discounts, and total in real-time.",
+      "status": "done",
+      "dependencies": [
+        5,
+        6
+      ],
+      "priority": "medium",
+      "details": "- Implement price calculation logic\n- Update UI components to display subtotal, discount amount, and total\n- Ensure calculations update in real-time as users change selections\n- Format currency values appropriately",
+      "testStrategy": "Test calculations with various ticket combinations and discount scenarios. Verify all displayed values are accurate and update in real-time."
+    },
+    {
+      "id": 8,
+      "title": "Set up Stripe integration",
+      "description": "Integrate with Stripe Checkout for secure payment processing.",
+      "status": "done",
+      "dependencies": [
+        2
+      ],
+      "priority": "high",
+      "details": "- Set up Stripe client and server libraries\n- Configure environment variables for Stripe API keys\n- Create helper functions for creating Stripe Checkout sessions\n- Implement redirect to Stripe Checkout\n- Handle Stripe callback URLs",
+      "testStrategy": "Test Stripe integration in test mode. Verify successful redirects to Stripe and back to the application."
+    },
+    {
+      "id": 9,
+      "title": "Implement checkout process",
+      "description": "Create the checkout flow to collect user information and initiate payment.",
+      "status": "done",
+      "dependencies": [
+        7,
+        8
+      ],
+      "priority": "high",
+      "details": "- Create checkout form to collect necessary user information\n- Implement client and server-side validation\n- Create transaction record in event_ticket_transaction with pending status\n- Initiate Stripe Checkout session\n- Redirect user to Stripe payment page\n- Follow custom-forms-checkbox-grid.mdc for form elements",
+      "testStrategy": "Test the complete checkout flow. Verify form validation works correctly. Ensure transaction is created with pending status."
+    },
+    {
+      "id": 10,
+      "title": "Implement Stripe webhook handling",
+      "description": "Create webhook endpoint to process Stripe payment events and update transaction status.",
+      "status": "done",
+      "dependencies": [
+        8,
+        9
+      ],
+      "priority": "high",
+      "details": "- Create webhook endpoint for Stripe events\n- Implement signature verification for webhook security\n- Handle payment success events\n- Handle payment failure events\n- Update transaction status based on payment events\n- Decrement ticket inventory on successful payment",
+      "testStrategy": "Test webhook with Stripe test events. Verify transaction status updates correctly. Test inventory decrements correctly."
+    },
+    {
+      "id": 11,
+      "title": "Create confirmation and error pages",
+      "description": "Implement pages to show payment confirmation or errors to users.",
+      "status": "pending",
+      "dependencies": [
+        9
+      ],
+      "priority": "medium",
+      "details": "- Create success confirmation page\n- Create error/cancellation page\n- Implement loading states during payment processing\n- Add clear messaging and next steps for users\n- Include option to retry payment on error/cancel",
+      "testStrategy": "Test both success and error flows. Verify appropriate information is displayed to users."
+    },
+    {
+      "id": 12,
+      "title": "Implement ticket issuance",
+      "description": "Create system to issue tickets after successful payment.",
+      "status": "pending",
+      "dependencies": [
+        10
+      ],
+      "priority": "medium",
+      "details": "- Update event_ticket_transaction status on successful payment\n- Create records in appropriate tables for issued tickets\n- Generate ticket identifiers/barcodes\n- Prepare ticket data for email delivery",
+      "testStrategy": "Verify tickets are correctly issued after payment. Check database records for accuracy."
+    },
+    {
+      "id": 13,
+      "title": "Implement email notification system",
+      "description": "Set up email delivery for ticket confirmations and receipts.",
+      "status": "pending",
+      "dependencies": [
+        12
+      ],
+      "priority": "medium",
+      "details": "- Integrate with email service\n- Design email templates for ticket confirmation\n- Implement email sending logic after successful payment\n- Include ticket details and receipt in email",
+      "testStrategy": "Test email delivery with various ticket scenarios. Verify all information in emails is accurate."
+    },
+    {
+      "id": 14,
+      "title": "Implement inventory management",
+      "description": "Create system to track and update ticket inventory in real-time.",
+      "status": "done",
+      "dependencies": [
+        10
+      ],
+      "priority": "high",
+      "details": "- Implement inventory checking before checkout\n- Update inventory after successful payment\n- Handle edge cases like concurrent purchases\n- Implement UI updates for sold-out tickets",
+      "testStrategy": "Test inventory updates with concurrent transactions. Verify sold-out states display correctly."
+    },
+    {
+      "id": 15,
+      "title": "Create admin reporting views",
+      "description": "Implement reporting interfaces for event organizers to track sales and inventory.",
+      "status": "pending",
+      "dependencies": [
+        12,
+        14
+      ],
+      "priority": "low",
+      "details": "- Create admin dashboard for ticket sales\n- Implement reporting on discount code usage\n- Add inventory tracking and alerts\n- Create transaction history view\n- Add export functionality for reports",
+      "testStrategy": "Verify reports show accurate data. Test with various event scenarios and data volumes."
+    },
+    {
+      "id": 16,
+      "title": "Implement comprehensive error handling",
+      "description": "Add robust error handling throughout the ticket purchasing flow.",
+      "status": "pending",
+      "dependencies": [
+        9,
+        10,
+        11,
+        12
+      ],
+      "priority": "medium",
+      "details": "- Implement client-side error handling\n- Add server-side error handling\n- Create user-friendly error messages\n- Add logging for debugging\n- Handle edge cases like network failures, timeouts, etc.",
+      "testStrategy": "Test various error scenarios. Verify appropriate error messages are displayed. Check logs for debugging information."
+    },
+    {
+      "id": 17,
+      "title": "Perform end-to-end testing",
+      "description": "Test the complete ticket purchasing flow from selection to confirmation.",
+      "status": "pending",
+      "dependencies": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        16
+      ],
+      "priority": "high",
+      "details": "- Test the complete user journey\n- Verify all components work together correctly\n- Test edge cases and error scenarios\n- Verify database state after transactions\n- Test on multiple browsers and devices",
+      "testStrategy": "Perform manual and automated end-to-end testing of the complete flow. Verify all components integrate correctly."
+    },
+    {
+      "id": 18,
+      "title": "Optimize performance",
+      "description": "Optimize the ticket purchasing flow for speed and reliability.",
+      "status": "pending",
+      "dependencies": [
+        17
+      ],
+      "priority": "low",
+      "details": "- Optimize API calls\n- Implement caching where appropriate\n- Optimize client-side rendering\n- Add loading states for better UX\n- Test and optimize for mobile performance",
+      "testStrategy": "Measure performance metrics before and after optimization. Test on various devices and network conditions."
+    }
+  ]
+}

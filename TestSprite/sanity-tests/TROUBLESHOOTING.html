@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TestSprite MCP Troubleshooting Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        h2 {
+            font-size: 2em;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            font-size: 1.5em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #764ba2;
+        }
+
+        h4 {
+            font-size: 1.2em;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        p {
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+            line-height: 1.8;
+        }
+
+        .icon {
+            font-size: 1.2em;
+            margin-right: 8px;
+        }
+
+        .success {
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .warning {
+            color: #f59e0b;
+            font-weight: bold;
+        }
+
+        .info {
+            color: #3b82f6;
+            font-weight: bold;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #e83e8c;
+        }
+
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: #d4d4d4;
+            font-size: 0.9em;
+        }
+
+        .code-block {
+            position: relative;
+        }
+
+        .code-block::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .alert {
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            border-color: #10b981;
+            color: #065f46;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #92400e;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            border-color: #3b82f6;
+            color: #1e40af;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .comparison-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .comparison-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        .comparison-table tr:hover {
+            background: #f3f4f6;
+        }
+
+        .step-box {
+            background: #f9fafb;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .step-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .flow-diagram {
+            background: #f9fafb;
+            padding: 30px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 2px solid #e5e7eb;
+        }
+
+        .flow-item {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .flow-arrow {
+            text-align: center;
+            font-size: 1.5em;
+            color: #667eea;
+            margin: 10px 0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin: 0 5px;
+        }
+
+        .badge-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .badge-error {
+            background: #ef4444;
+            color: white;
+        }
+
+        .badge-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .footer {
+            background: #1f2937;
+            color: white;
+            padding: 30px;
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .footer a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            h2 {
+                font-size: 1.5em;
+            }
+
+            pre {
+                font-size: 0.8em;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 TestSprite MCP Troubleshooting Guide</h1>
+            <p>Complete guide to fixing TestSprite MCP issues and understanding MCP vs Node.js scripts</p>
+        </div>
+
+        <div class="content">
+            <h2>🔴 Why TestSprite MCP Shows Red Dot in Cursor Settings</h2>
+
+            <h3>Understanding MCP Servers</h3>
+
+            <div class="alert alert-info">
+                <strong>📌 Important:</strong> MCP (Model Context Protocol) servers work <strong>ONLY</strong> within Cursor's AI context, <strong>NOT</strong> in Node.js scripts.
+            </div>
+
+            <div class="flow-diagram">
+                <div class="flow-item">
+                    <span class="icon">✅</span>
+                    <span><strong>MCP servers work:</strong> When you chat with AI in Cursor and ask it to run tests</span>
+                </div>
+                <div class="flow-arrow">⬇️</div>
+                <div class="flow-item">
+                    <span class="icon">❌</span>
+                    <span><strong>MCP servers DON'T work:</strong> When you run <code>node script.js</code> or <code>npm run test</code> from terminal</span>
+                </div>
+            </div>
+
+            <h3>Why Your Script Shows "TestSprite MCP not available"</h3>
+
+            <p>When you run:</p>
+
+            <div class="code-block">
+                <pre><code>npm run test:comprehensive
+# OR
+node TestSprite/sanity-tests/run-comprehensive-sanity-tests-with-testsprite.js</code></pre>
+            </div>
+
+            <p>The script runs in <strong>Node.js</strong>, not in Cursor's AI context. MCP servers are not accessible from Node.js scripts.</p>
+
+            <div class="alert alert-success">
+                <strong>✅ Solution: Use Playwright Directly</strong><br>
+                The script now uses <strong>Playwright</strong> directly for browser automation, which works perfectly in Node.js scripts. The TestSprite API key from <code>.env.local</code> can be used for future TestSprite REST API integration.
+            </div>
+
+            <h2>🔧 Fixing the Red Dot in Cursor Settings</h2>
+
+            <p>If TestSprite MCP shows a red dot (error) in Cursor settings:</p>
+
+            <div class="step-box">
+                <h4><span class="step-number">1</span> Check Node.js Version</h4>
+                <p>TestSprite MCP requires <strong>Node.js 22+</strong>:</p>
+                <div class="code-block">
+                    <pre><code>node --version</code></pre>
+                </div>
+                <p>If version is below 22:</p>
+                <div class="code-block">
+                    <pre><code># Using nvm (recommended)
+nvm install 22
+nvm use 22
+
+# Or download from nodejs.org</code></pre>
+                </div>
+            </div>
+
+            <div class="step-box">
+                <h4><span class="step-number">2</span> Verify TestSprite MCP Installation</h4>
+                <div class="code-block">
+                    <pre><code># Check if installed globally
+npm list -g @testsprite/testsprite-mcp
+
+# If not installed, install it
+npm install -g @testsprite/testsprite-mcp@latest
+
+# Test if it runs
+npx @testsprite/testsprite-mcp@latest --version</code></pre>
+                </div>
+            </div>
+
+            <div class="step-box">
+                <h4><span class="step-number">3</span> Verify MCP Configuration</h4>
+                <p>Your <code>mcp.json</code> should look like:</p>
+                <div class="code-block">
+                    <pre><code>{
+  "mcpServers": {
+    "testsprite-mcp": {
+      "command": "npx",
+      "args": [
+        "@testsprite/testsprite-mcp@latest"
+      ],
+      "env": {
+        "API_KEY": "your-testsprite-api-key-here"
+      }
+    }
+  }
+}</code></pre>
+                </div>
+            </div>
+
+            <div class="step-box">
+                <h4><span class="step-number">4</span> Restart Cursor</h4>
+                <p>After making changes:</p>
+                <ol>
+                    <li><strong>Completely close Cursor</strong> (not just reload)</li>
+                    <li><strong>Restart Cursor</strong></li>
+                    <li>Check MCP servers in Settings → MCP</li>
+                </ol>
+            </div>
+
+            <div class="step-box">
+                <h4><span class="step-number">5</span> Check MCP Server Logs</h4>
+                <p>In Cursor:</p>
+                <ol>
+                    <li>Open <strong>Settings → MCP</strong></li>
+                    <li>Click on TestSprite MCP server</li>
+                    <li>Check for error messages</li>
+                    <li>Look for connection issues</li>
+                </ol>
+            </div>
+
+            <div class="step-box">
+                <h4><span class="step-number">6</span> Test MCP Server Manually</h4>
+                <div class="code-block">
+                    <pre><code># Run MCP server directly to see errors
+npx @testsprite/testsprite-mcp@latest
+
+# Should show MCP server starting (not for direct use)</code></pre>
+                </div>
+            </div>
+
+            <h2>📝 Using TestSprite API Key in Node.js Scripts</h2>
+
+            <h3>Current Implementation</h3>
+
+            <div class="flow-diagram">
+                <div class="flow-item">
+                    <span class="icon">1️⃣</span>
+                    <span><span class="badge badge-success">✅</span> Loads <code>TESTSPRITE_KEY</code> from <code>.env.local</code></span>
+                </div>
+                <div class="flow-arrow">⬇️</div>
+                <div class="flow-item">
+                    <span class="icon">2️⃣</span>
+                    <span><span class="badge badge-success">✅</span> Uses Playwright for browser automation (works in Node.js)</span>
+                </div>
+                <div class="flow-arrow">⬇️</div>
+                <div class="flow-item">
+                    <span class="icon">3️⃣</span>
+                    <span><span class="badge badge-success">✅</span> Can be extended to use TestSprite REST API if available</span>
+                </div>
+            </div>
+
+            <h3>Add API Key to .env.local</h3>
+
+            <div class="code-block">
+                <pre><code># Add to .env.local file
+TESTSPRITE_KEY=your-testsprite-api-key-here</code></pre>
+            </div>
+
+            <h3>How It Works</h3>
+
+            <ol>
+                <li><strong>Script loads <code>.env.local</code></strong> using <code>dotenv</code></li>
+                <li><strong>Reads <code>TESTSPRITE_KEY</code></strong> from environment</li>
+                <li><strong>Uses Playwright</strong> for browser testing (always works)</li>
+                <li><strong>Future:</strong> Can call TestSprite REST API with the key</li>
+            </ol>
+
+            <h2>🎯 Summary</h2>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Context</th>
+                        <th>What Works</th>
+                        <th>What Doesn't Work</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>For Node.js Scripts<br>(npm run test)</strong></td>
+                        <td>
+                            <span class="badge badge-success">✅</span> Use Playwright - Works perfectly in Node.js<br>
+                            <span class="badge badge-success">✅</span> Load API key from .env.local - For future TestSprite API integration
+                        </td>
+                        <td>
+                            <span class="badge badge-error">❌</span> Don't use MCP - MCP servers don't work in Node.js scripts
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>For Cursor AI Chat</strong></td>
+                        <td>
+                            <span class="badge badge-success">✅</span> Use MCP servers - When chatting with AI in Cursor<br>
+                            <span class="badge badge-success">✅</span> AI can call TestSprite MCP - For test generation and execution
+                        </td>
+                        <td>
+                            <span class="badge badge-error">❌</span> Don't expect MCP in scripts - Scripts run outside AI context
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>🔍 Verification</h2>
+
+            <h3>Check if API Key is Loaded</h3>
+
+            <p>When you run the test script, you should see:</p>
+
+            <div class="alert alert-success">
+                <pre><code>🧪 Test Engine: Playwright (TestSprite API key found: sk-user-...)</code></pre>
+            </div>
+
+            <p>If you see:</p>
+
+            <div class="alert alert-warning">
+                <pre><code>🧪 Test Engine: Playwright (TestSprite API key not found in .env.local)</code></pre>
+            </div>
+
+            <p>Then add <code>TESTSPRITE_KEY</code> to your <code>.env.local</code> file.</p>
+
+            <h3>Test Playwright Installation</h3>
+
+            <div class="code-block">
+                <pre><code># Check if Playwright is installed
+npm list playwright
+
+# Install if missing
+npm install --save-dev playwright
+
+# Install browsers
+npx playwright install chromium</code></pre>
+            </div>
+
+            <h2>🚀 Running Tests</h2>
+
+            <div class="code-block">
+                <pre><code># This will use Playwright (works in Node.js)
+npm run test:comprehensive
+
+# Script will:
+# 1. Load TESTSPRITE_KEY from .env.local (if available)
+# 2. Use Playwright for browser automation
+# 3. Execute all 45+ test scenarios
+# 4. Generate HTML report</code></pre>
+            </div>
+
+            <h2>📚 Additional Resources</h2>
+
+            <ul>
+                <li><a href="https://docs.testsprite.com" target="_blank">TestSprite Documentation</a></li>
+                <li><a href="https://playwright.dev" target="_blank">Playwright Documentation</a></li>
+                <li><a href="https://modelcontextprotocol.io" target="_blank">MCP Protocol Documentation</a></li>
+            </ul>
+
+            <div class="alert alert-info" style="margin-top: 40px;">
+                <strong>🎉 Key Takeaway:</strong> MCP servers are for Cursor AI, Playwright is for Node.js scripts. Both can work together!
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>TestSprite MCP Troubleshooting Guide</p>
+            <p>Generated from TROUBLESHOOTING.md</p>
+        </div>
+    </div>
+</body>
+</html>
+

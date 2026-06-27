@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Tabular audit of absolute image URL replacements with relative paths for MOSC redesign and Catholicate pages.">
+  <title>Absolute Image URL Remediation — Before / After Tables</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 20px 48px;
+      background: #f5f1e8;
+    }
+    h1 {
+      font-size: 1.75em;
+      border-bottom: 3px solid #0066cc;
+      padding-bottom: 10px;
+      margin-bottom: 16px;
+      color: #2d2a26;
+    }
+    h2 { font-size: 1.2em; color: #0066cc; margin: 20px 0 10px; }
+    p { margin-bottom: 12px; }
+    a { color: #0066cc; }
+    a:focus { outline: 2px solid #0066cc; outline-offset: 2px; }
+    .lead {
+      background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+      border-left: 4px solid #0066cc;
+      padding: 16px 18px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .section-container {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      margin-bottom: 24px;
+      overflow: hidden;
+      border: 1px solid rgba(139, 125, 107, 0.2);
+    }
+    .section-header {
+      background: linear-gradient(135deg, #0066cc 0%, #004d99 100%);
+      color: #fff;
+      padding: 12px 18px;
+      font-weight: 600;
+      font-size: 1.05em;
+    }
+    .section-body { padding: 16px 18px 20px; }
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 0;
+      border-bottom: 2px solid #b8d4e3;
+      padding-bottom: 0;
+    }
+    .tab-btn {
+      border: 1px solid #b8d4e3;
+      border-bottom: none;
+      background: #e8f4f8;
+      color: #0d3b66;
+      padding: 10px 16px;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-size: 0.92em;
+      font-weight: 600;
+      margin-bottom: -2px;
+    }
+    .tab-btn:hover { background: #d1e7f0; }
+    .tab-btn[aria-selected="true"] {
+      background: #fff;
+      border-color: #0066cc;
+      color: #0066cc;
+      border-bottom: 2px solid #fff;
+      z-index: 1;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .table-wrap { overflow-x: auto; margin-top: 12px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88em;
+      background: #fff;
+    }
+    th {
+      background: linear-gradient(135deg, #0066cc 0%, #004d99 100%);
+      color: #fff;
+      text-align: left;
+      padding: 10px 12px;
+      white-space: nowrap;
+    }
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e0e0e0;
+      vertical-align: top;
+    }
+    tr:hover td { background: #f0f8fc; }
+    code, .path {
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 0.92em;
+      background: #e8f4f8;
+      color: #0d3b66;
+      border: 1px solid #b8d4e3;
+      padding: 2px 6px;
+      border-radius: 4px;
+      word-break: break-all;
+    }
+    .url-before { color: #8b4a42; }
+    .url-after { color: #4a6741; }
+    .info {
+      background: #d1ecf1;
+      border-left: 4px solid #0c5460;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin: 12px 0;
+      font-size: 0.95em;
+    }
+    .success {
+      background: #d4edda;
+      border-left: 4px solid #28a745;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin: 12px 0;
+    }
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .stat-card {
+      background: #e8f4f8;
+      border: 1px solid #b8d4e3;
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+    }
+    .stat-card strong { display: block; font-size: 1.6em; color: #0066cc; }
+    ul { margin: 8px 0 12px 22px; }
+    li { margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Absolute Image URL Remediation</h1>
+
+  <div class="lead">
+    <p><strong>Purpose:</strong> Replace hardcoded absolute image URLs with site-relative paths so assets in <code>public/</code> work on localhost, staging, and production without pinning to <code>www.mosc-temp.com</code> or loading portraits from <code>mosc.in/wp-content</code>.</p>
+    <p><strong>Verification:</strong> After remediation, <code>grep</code> on <code>src/</code> finds no <code>www.mosc-temp.com/mosc/assets</code> or <code>mosc.in/wp-content</code> image URLs.</p>
+  </div>
+
+  <div class="summary-stats">
+    <div class="stat-card"><strong>21</strong> image URL fixes</div>
+    <div class="stat-card"><strong>19</strong> source files touched</div>
+    <div class="stat-card"><strong>2</strong> host patterns removed</div>
+  </div>
+
+  <div class="section-container">
+    <div class="tabs" role="tablist" aria-label="Remediation categories">
+      <button class="tab-btn" role="tab" id="tab-overview" aria-selected="true" aria-controls="panel-overview">Overview</button>
+      <button class="tab-btn" role="tab" id="tab-mosc-temp" aria-selected="false" aria-controls="panel-mosc-temp">www.mosc-temp.com</button>
+      <button class="tab-btn" role="tab" id="tab-mosc-in" aria-selected="false" aria-controls="panel-mosc-in">mosc.in Catholicate</button>
+      <button class="tab-btn" role="tab" id="tab-config" aria-selected="false" aria-controls="panel-config">Config &amp; rules</button>
+    </div>
+
+    <div class="section-body">
+      <!-- Overview -->
+      <div class="tab-panel active" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview">
+        <h2>Summary by category</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Host / pattern</th>
+                <th>Replacements</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Homepage hero slider</td>
+                <td><code>www.mosc-temp.com</code> (prior session)</td>
+                <td>2</td>
+                <td>Relative <code>/mosc/assets/images/mosc_images/*.png</code></td>
+              </tr>
+              <tr>
+                <td>Homepage saints carousel</td>
+                <td><code>www.mosc-temp.com</code></td>
+                <td>2</td>
+                <td>Relative <code>/mosc/assets/images/mosc_images/*.jpg</code></td>
+              </tr>
+              <tr>
+                <td>Catholicate detail pages</td>
+                <td><code>mosc.in/wp-content/uploads/...</code></td>
+                <td>16 (8 redesign + 8 legacy)</td>
+                <td>Relative <code>/images/catholicate/...</code></td>
+              </tr>
+              <tr>
+                <td>Catholicate list page</td>
+                <td><code>mosc.in/wp-content/uploads/...</code></td>
+                <td>8 card images</td>
+                <td><code>Catholicos-1.jpg</code> … <code>Catholicos-8.jpg</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info">
+          <p><strong>Left unchanged (not static assets):</strong> <code>www.mosc-temp.com</code> in Clerk satellite config (<code>src/middleware.ts</code>, <code>src/app/layout.tsx</code>, sign-in comments). Third-party demo/stock URLs (Philantrop theme, Pexels, Builder.io, syromalabarchurch.in banner) remain out of scope.</p>
+        </div>
+
+        <h2>Local asset roots</h2>
+        <ul>
+          <li><code>public/mosc/assets/images/mosc_images/</code> — homepage slider and saints portraits</li>
+          <li><code>public/images/catholicate/</code> — Catholicoi portraits (<code>Catholicos-1.jpg</code> … <code>Catholicos-8.jpg</code>, plus named files like <code>bava.jpg</code>, <code>geevar.jpg</code>)</li>
+        </ul>
+      </div>
+
+      <!-- mosc-temp.com -->
+      <div class="tab-panel" id="panel-mosc-temp" role="tabpanel" aria-labelledby="tab-mosc-temp" hidden>
+        <h2>Category 1 — <code>www.mosc-temp.com</code> → relative paths</h2>
+        <p>File: <code>src/app/mosc-redesign/page.tsx</code></p>
+
+        <h2>Hero slider (fixed in prior pass)</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>UI section</th>
+                <th>Absolute URL (before)</th>
+                <th>Relative path (after)</th>
+                <th>Public file</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>Hero slide — Pope visit</td>
+                <td class="url-before"><code>https://www.mosc-temp.com/mosc/assets/images/mosc_images/bava_thirumeni_pope_visit.jpeg</code></td>
+                <td class="url-after"><code>/mosc/assets/images/mosc_images/bava_thirumeni_pope_visit_8k.png</code></td>
+                <td><code>public/mosc/assets/images/mosc_images/bava_thirumeni_pope_visit_8k.png</code></td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>Hero slide — Aramana banner</td>
+                <td class="url-before"><code>https://www.mosc-temp.com/mosc/assets/images/mosc_images/Banner-image-of-Aramana-Slider.jpg</code></td>
+                <td class="url-after"><code>/mosc/assets/images/mosc_images/Banner-image-of-Aramana-Slider_8k.png</code></td>
+                <td><code>public/mosc/assets/images/mosc_images/Banner-image-of-Aramana-Slider_8k.png</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>Saints carousel</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Saint</th>
+                <th>Absolute URL (before)</th>
+                <th>Relative path (after)</th>
+                <th>Public file</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>3</td>
+                <td>St. Gregorios Of Parumala</td>
+                <td class="url-before"><code>https://www.mosc-temp.com/mosc/assets/images/mosc_images/St_Gregorios_Parumala.jpg</code></td>
+                <td class="url-after"><code>/mosc/assets/images/mosc_images/St_Gregorios_Parumala.jpg</code></td>
+                <td><code>public/mosc/assets/images/mosc_images/St_Gregorios_Parumala.jpg</code></td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td>St. Mary Mother of God</td>
+                <td class="url-before"><code>https://www.mosc-temp.com/mosc/assets/images/mosc_images/St_Mother_Mary.jpg</code></td>
+                <td class="url-after"><code>/mosc/assets/images/mosc_images/St_Mother_Mary.jpg</code></td>
+                <td><code>public/mosc/assets/images/mosc_images/St_Mother_Mary.jpg</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="success">
+          <p><strong>Result:</strong> No <code>www.mosc-temp.com</code> static image URLs remain in <code>src/</code>. Auth/domain references are intentional and unchanged.</p>
+        </div>
+      </div>
+
+      <!-- mosc.in -->
+      <div class="tab-panel" id="panel-mosc-in" role="tabpanel" aria-labelledby="tab-mosc-in" hidden>
+        <h2>Category 2 — <code>mosc.in/wp-content</code> → <code>/images/catholicate/</code></h2>
+
+        <h2>URL fragment mapping</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>mosc.in filename</th>
+                <th>Relative path (after)</th>
+                <th>Public file</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>Untitled-11.jpg</code></td>
+                <td class="url-after"><code>/images/catholicate/Catholicos-1.jpg</code></td>
+                <td><code>public/images/catholicate/Catholicos-1.jpg</code></td>
+              </tr>
+              <tr>
+                <td><code>Untitled-12.jpg</code></td>
+                <td class="url-after"><code>/images/catholicate/Catholicos-2.jpg</code></td>
+                <td><code>public/images/catholicate/Catholicos-2.jpg</code></td>
+              </tr>
+              <tr>
+                <td><code>geevar.jpg</code></td>
+                <td class="url-after"><code>/images/catholicate/geevar.jpg</code></td>
+                <td><code>public/images/catholicate/geevar.jpg</code></td>
+              </tr>
+              <tr>
+                <td><code>augen.jpg</code></td>
+                <td class="url-after"><code>/images/catholicate/augen.jpg</code></td>
+                <td><code>public/images/catholicate/augen.jpg</code></td>
+              </tr>
+              <tr>
+                <td><code>mathews-i.jpg</code></td>
+                <td class="url-after"><code>/images/catholicate/mathews-i.jpg</code></td>
+                <td><code>public/images/catholicate/mathews-i.jpg</code></td>
+              </tr>
+              <tr>
+                <td><code>sas.jpg</code></td>
+                <td class="url-after"><code>/images/catholicate/sas.jpg</code></td>
+                <td><code>public/images/catholicate/sas.jpg</code></td>
+              </tr>
+              <tr>
+                <td><code>didymus.jpg</code></td>
+                <td class="url-after"><code>/images/catholicate/didymus.jpg</code></td>
+                <td><code>public/images/catholicate/didymus.jpg</code></td>
+              </tr>
+              <tr>
+                <td><code>bava.jpg</code></td>
+                <td class="url-after"><code>/images/catholicate/bava.jpg</code></td>
+                <td><code>public/images/catholicate/bava.jpg</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>Redesign detail pages — <code>/mosc-redesign/catholicate/*</code></h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Source file</th>
+                <th>Catholicos</th>
+                <th>Absolute URL (before)</th>
+                <th>Relative path (after)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td><code>his-holiness-baselios-paulos-i-1st-catholicos-of-the-east-in-malankara/page.tsx</code></td>
+                <td>Baselios Paulos I</td>
+                <td class="url-before"><code>https://mosc.in/wp-content/uploads/2014/12/Untitled-11.jpg</code></td>
+                <td class="url-after"><code>/images/catholicate/Catholicos-1.jpg</code></td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td><code>his-holiness-baselios-geevarghese-i-second-catholicos-of-the-east-in-malankara/page.tsx</code></td>
+                <td>Baselios Geevarghese I</td>
+                <td class="url-before"><code>https://mosc.in/wp-content/uploads/2014/12/Untitled-12.jpg</code></td>
+                <td class="url-after"><code>/images/catholicate/Catholicos-2.jpg</code></td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td><code>his-holiness-baselios-geevarghese-ii-third-catholicos-of-the-east-in-malankara/page.tsx</code></td>
+                <td>Baselios Geevarghese II</td>
+                <td class="url-before"><code>https://mosc.in/wp-content/uploads/2015/01/geevar.jpg</code></td>
+                <td class="url-after"><code>/images/catholicate/geevar.jpg</code></td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td><code>his-holiness-baselios-oughen-i-the-fourth-catholicos-of-the-east-in-malankara/page.tsx</code></td>
+                <td>Baselios Augen I</td>
+                <td class="url-before"><code>https://mosc.in/wp-content/uploads/2015/01/augen.jpg</code></td>
+                <td class="url-after"><code>/images/catholicate/augen.jpg</code></td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td><code>his-holiness-baselios-marthoma-mathews-i-fifth-catholicos-of-the-east-in-malankara/page.tsx</code></td>
+                <td>Baselios Marthoma Mathews I</td>
+                <td class="url-before"><code>https://mosc.in/wp-content/uploads/2015/01/mathews-i.jpg</code></td>
+                <td class="url-after"><code>/images/catholicate/mathews-i.jpg</code></td>
+              </tr>
+              <tr>
+                <td>6</td>
+                <td><code>his-holiness-baselios-marthoma-mathews-ii-sixth-catholicos-of-the-east-in-malankara/page.tsx</code></td>
+                <td>Baselios Marthoma Mathews II</td>
+                <td class="url-before"><code>https://mosc.in/wp-content/uploads/2015/01/sas.jpg</code></td>
+                <td class="url-after"><code>/images/catholicate/sas.jpg</code></td>
+              </tr>
+              <tr>
+                <td>7</td>
+                <td><code>his-holiness-baselios-marthoma-didymos-i-seventh-catholicos-of-the-east-in-malankara/page.tsx</code></td>
+                <td>Baselios Marthoma Didymos I</td>
+                <td class="url-before"><code>https://mosc.in/wp-content/uploads/2015/01/didymus.jpg</code></td>
+                <td class="url-after"><code>/images/catholicate/didymus.jpg</code></td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td><code>h-h-baselios-marthoma-paulose-ii/page.tsx</code></td>
+                <td>Baselios Marthoma Paulose II</td>
+                <td class="url-before"><code>https://mosc.in/wp-content/uploads/2015/01/bava.jpg</code></td>
+                <td class="url-after"><code>/images/catholicate/bava.jpg</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p><em>Base path:</em> <code>src/app/mosc-redesign/(syro)/catholicate/</code></p>
+
+        <h2>Legacy detail pages — <code>/mosc/catholicate/*</code></h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Source file</th>
+                <th>Absolute URL (before)</th>
+                <th>Relative path (after)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>9</td><td><code>his-holiness-baselios-paulos-i-1st-catholicos-of-the-east-in-malankara/page.tsx</code></td><td class="url-before"><code>…/Untitled-11.jpg</code></td><td class="url-after"><code>/images/catholicate/Catholicos-1.jpg</code></td></tr>
+              <tr><td>10</td><td><code>his-holiness-baselios-geevarghese-i-second-catholicos-of-the-east-in-malankara/page.tsx</code></td><td class="url-before"><code>…/Untitled-12.jpg</code></td><td class="url-after"><code>/images/catholicate/Catholicos-2.jpg</code></td></tr>
+              <tr><td>11</td><td><code>his-holiness-baselios-geevarghese-ii-third-catholicos-of-the-east-in-malankara/page.tsx</code></td><td class="url-before"><code>…/geevar.jpg</code></td><td class="url-after"><code>/images/catholicate/geevar.jpg</code></td></tr>
+              <tr><td>12</td><td><code>his-holiness-baselios-oughen-i-the-fourth-catholicos-of-the-east-in-malankara/page.tsx</code></td><td class="url-before"><code>…/augen.jpg</code></td><td class="url-after"><code>/images/catholicate/augen.jpg</code></td></tr>
+              <tr><td>13</td><td><code>his-holiness-baselios-marthoma-mathews-i-fifth-catholicos-of-the-east-in-malankara/page.tsx</code></td><td class="url-before"><code>…/mathews-i.jpg</code></td><td class="url-after"><code>/images/catholicate/mathews-i.jpg</code></td></tr>
+              <tr><td>14</td><td><code>his-holiness-baselios-marthoma-mathews-ii-sixth-catholicos-of-the-east-in-malankara/page.tsx</code></td><td class="url-before"><code>…/sas.jpg</code></td><td class="url-after"><code>/images/catholicate/sas.jpg</code></td></tr>
+              <tr><td>15</td><td><code>his-holiness-baselios-marthoma-didymos-i-seventh-catholicos-of-the-east-in-malankara/page.tsx</code></td><td class="url-before"><code>…/didymus.jpg</code></td><td class="url-after"><code>/images/catholicate/didymus.jpg</code></td></tr>
+              <tr><td>16</td><td><code>h-h-baselios-marthoma-paulose-ii/page.tsx</code></td><td class="url-before"><code>…/bava.jpg</code></td><td class="url-after"><code>/images/catholicate/bava.jpg</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><em>Base path:</em> <code>src/app/mosc/catholicate/</code> — full before URLs match the redesign table above.</p>
+
+        <h2>Legacy list page — card images</h2>
+        <p>File: <code>src/app/mosc/catholicate/page.tsx</code> (aligned with redesign hub <code>Catholicos-N.jpg</code> numbering)</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Card</th>
+                <th>Absolute URL (before)</th>
+                <th>Relative path (after)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>17</td><td>Catholicos 1 — Paulos I</td><td class="url-before"><code>https://mosc.in/wp-content/uploads/2014/12/Untitled-11.jpg</code></td><td class="url-after"><code>/images/catholicate/Catholicos-1.jpg</code></td></tr>
+              <tr><td>18</td><td>Catholicos 2 — Geevarghese I</td><td class="url-before"><code>https://mosc.in/wp-content/uploads/2014/12/Untitled-12.jpg</code></td><td class="url-after"><code>/images/catholicate/Catholicos-2.jpg</code></td></tr>
+              <tr><td>19</td><td>Catholicos 3 — Geevarghese II</td><td class="url-before"><code>https://mosc.in/wp-content/uploads/2015/01/geevar.jpg</code></td><td class="url-after"><code>/images/catholicate/Catholicos-3.jpg</code></td></tr>
+              <tr><td>20</td><td>Catholicos 4 — Augen I</td><td class="url-before"><code>https://mosc.in/wp-content/uploads/2015/01/augen.jpg</code></td><td class="url-after"><code>/images/catholicate/Catholicos-4.jpg</code></td></tr>
+              <tr><td>21</td><td>Catholicos 5 — Mathews I</td><td class="url-before"><code>https://mosc.in/wp-content/uploads/2015/01/mathews-i.jpg</code></td><td class="url-after"><code>/images/catholicate/Catholicos-5.jpg</code></td></tr>
+              <tr><td>22</td><td>Catholicos 6 — Mathews II</td><td class="url-before"><code>https://mosc.in/wp-content/uploads/2015/01/sas.jpg</code></td><td class="url-after"><code>/images/catholicate/Catholicos-6.jpg</code></td></tr>
+              <tr><td>23</td><td>Catholicos 7 — Didymos I</td><td class="url-before"><code>https://mosc.in/wp-content/uploads/2015/01/didymus.jpg</code></td><td class="url-after"><code>/images/catholicate/Catholicos-7.jpg</code></td></tr>
+              <tr><td>24</td><td>Catholicos 8 — Paulose II</td><td class="url-before"><code>https://mosc.in/wp-content/uploads/2015/01/bava.jpg</code></td><td class="url-after"><code>/images/catholicate/Catholicos-8.jpg</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info">
+          <p><strong>Already correct:</strong> <code>src/app/mosc-redesign/(syro)/catholicate/page.tsx</code> hub list used local <code>/images/catholicate/Catholicos-N.jpg</code> before this pass; no change required there.</p>
+        </div>
+      </div>
+
+      <!-- Config -->
+      <div class="tab-panel" id="panel-config" role="tabpanel" aria-labelledby="tab-config" hidden>
+        <h2>Related project updates</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Change</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>next.config.mjs</code></td>
+                <td>Removed <code>remotePatterns</code> entry for <code>www.mosc-temp.com</code></td>
+                <td>No remaining Next <code>Image</code> calls to that host in <code>src/</code></td>
+              </tr>
+              <tr>
+                <td><code>.cursor/rules/image_mosc_redesign_hub_card_rounded_containment.mdc</code></td>
+                <td>Added <strong>Static asset paths</strong> section</td>
+                <td>Document rule: use <code>/mosc/assets/...</code> or <code>/images/...</code>; never hardcode production host for <code>public/</code> files</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>Manual verification (localhost)</h2>
+        <ul>
+          <li><code>/mosc-redesign</code> — hero slider + saints carousel</li>
+          <li><code>/mosc-redesign/catholicate/h-h-baselios-marthoma-paulose-ii</code> — detail portrait</li>
+          <li><code>/mosc/catholicate</code> — list card images</li>
+          <li>Static assets return HTTP 200, e.g. <code>/mosc/assets/images/mosc_images/St_Mother_Mary.jpg</code>, <code>/images/catholicate/bava.jpg</code></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var tabs = document.querySelectorAll('.tab-btn');
+      var panels = document.querySelectorAll('.tab-panel');
+      function activate(id) {
+        tabs.forEach(function (t) {
+          var on = t.id === id;
+          t.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        panels.forEach(function (p) {
+          var show = p.id === 'panel-' + id.replace('tab-', '');
+          p.classList.toggle('active', show);
+          p.hidden = !show;
+        });
+      }
+      tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () { activate(tab.id); });
+      });
+    })();
+  </script>
+</body>
+</html>

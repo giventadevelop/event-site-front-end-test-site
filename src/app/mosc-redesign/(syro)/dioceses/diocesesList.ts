@@ -1,0 +1,38 @@
+/**
+ * Single source of truth for diocese names and hrefs.
+ * Used by the main /mosc/dioceses page and by DiocesesSidebar on subpages.
+ */
+export const DIOCESES_LIST: { name: string; href: string }[] = [
+  { name: 'Diocese of Thiruvananthapuram', href: '/mosc-redesign/dioceses/diocese-of-thiruvananthapuram-diocese' },
+  { name: 'Diocese of Kollam', href: '/mosc-redesign/dioceses/diocese-of-kollam' },
+  { name: 'Diocese of Kottarakara – Punalur', href: '/mosc-redesign/dioceses/diocese-of-kottarakara-punalur' },
+  { name: 'Diocese of Adoor – Kadampanadu', href: '/mosc-redesign/dioceses/diocese-of-adoor-kadampanadu' },
+  { name: 'Diocese of Thumpamon', href: '/mosc-redesign/dioceses/diocese-of-thumpamon' },
+  { name: 'Diocese of Mavelikara', href: '/mosc-redesign/dioceses/diocese-of-mavelikara' },
+  { name: 'Diocese of Chengannur', href: '/mosc-redesign/dioceses/diocese-of-chengannur' },
+  { name: 'Diocese of Niranam', href: '/mosc-redesign/dioceses/diocese-of-niranam' },
+  { name: 'Diocese of Nilackal', href: '/mosc-redesign/dioceses/diocese-of-nilackal' },
+  { name: 'Diocese of Kottayam', href: '/mosc-redesign/dioceses/diocese-of-kottayam' },
+  { name: 'Diocese of Kottayam Central', href: '/mosc-redesign/dioceses/diocese-of-kottayam-central' },
+  { name: 'Diocese of Idukki', href: '/mosc-redesign/dioceses/diocese-of-idukki' },
+  { name: 'Diocese of Kandanad East', href: '/mosc-redesign/dioceses/diocese-of-kandanad-east' },
+  { name: 'Diocese of Kandanad West', href: '/mosc-redesign/dioceses/diocese-of-kandanad-west' },
+  { name: 'Diocese of Ankamaly', href: '/mosc-redesign/dioceses/diocese-of-ankamaly' },
+  { name: 'Diocese of Kochi', href: '/mosc-redesign/dioceses/diocese-of-kochi' },
+  { name: 'Diocese of Thrissur', href: '/mosc-redesign/dioceses/diocese-of-thrissur' },
+  { name: 'Diocese of Kunnamkulam', href: '/mosc-redesign/dioceses/diocese-of-kunnamkulam' },
+  { name: 'Diocese of Malabar', href: '/mosc-redesign/dioceses/diocese-of-malabar' },
+  { name: 'Diocese of Sulthan Bathery', href: '/mosc-redesign/dioceses/diocese-of-sulthan-bathery-diocese' },
+  { name: 'Diocese of Brahamavar', href: '/mosc-redesign/dioceses/diocese-of-brahamavar' },
+  { name: 'Diocese of Madras', href: '/mosc-redesign/dioceses/diocese-of-chennai-diocese' },
+  { name: 'Diocese of Bangalore', href: '/mosc-redesign/dioceses/diocese-of-bangalore' },
+  { name: 'Diocese of Bombay', href: '/mosc-redesign/dioceses/diocese-of-mumbai' },
+  { name: 'Diocese of Calcutta', href: '/mosc-redesign/dioceses/diocese-of-calcutta' },
+  { name: 'Diocese of Delhi', href: '/mosc-redesign/dioceses/diocese-of-delhi' },
+  { name: 'Diocese of Ahmedabad', href: '/mosc-redesign/dioceses/diocese-of-ahmedabad' },
+  { name: 'Diocese of Northeast America', href: '/mosc-redesign/dioceses/northeast-america' },
+  { name: 'Diocese of South West America', href: '/mosc-redesign/dioceses/diocese-of-south-west-america' },
+  { name: 'Diocese of UK Europe and Africa', href: '/mosc-redesign/dioceses/diocese-of-uk-europe-and-africa' },
+  { name: 'Diocese of Asia Pacific', href: '/mosc-redesign/dioceses/asia-pacific' },
+  { name: 'Diocese of Canada', href: '/mosc-redesign/dioceses/canada' },
+];

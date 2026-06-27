@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiveButter Widget – Hiding Donation Options (Tickets-Only Checkout) Analysis</title>
+    <style>
+        body { font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; background: #f4f2ed; color: #2b241e; margin: 0; padding: 2.5rem 0; }
+        main { max-width: 900px; margin: 0 auto; background: #ffffff; border-radius: 18px; box-shadow: 0 22px 48px -20px rgba(43, 34, 28, 0.25); padding: 3rem; }
+        h1, h2, h3 { font-family: "Crimson Text", Georgia, serif; color: #2b241e; }
+        h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+        h2 { font-size: 1.4rem; margin-top: 2rem; border-left: 4px solid #8b7d6b; padding-left: 12px; }
+        h3 { font-size: 1.1rem; margin-top: 1.2rem; }
+        p, li { font-size: 1rem; line-height: 1.7; }
+        ul, ol { margin-left: 1.2rem; }
+        code { font-family: "JetBrains Mono", Consolas, monospace; background: #f6f1e6; padding: 0.1rem 0.35rem; border-radius: 4px; }
+        .tag { display: inline-block; background: #8b7d6b; color: #fff; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 8px; }
+        .success { border-left: 4px solid #4A6741; background: rgba(240,249,240,0.5); padding: 1rem 1.2rem; border-radius: 12px; margin: 1.2rem 0; }
+        .warning { border-left: 4px solid #A67C52; background: rgba(255,244,230,0.5); padding: 1rem 1.2rem; border-radius: 12px; margin: 1.2rem 0; }
+        .info { border-left: 4px solid #3b82f6; background: rgba(239,246,255,0.6); padding: 1rem 1.2rem; border-radius: 12px; margin: 1.2rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+        th, td { border: 1px solid rgba(42,32,23,0.15); padding: 0.6rem; text-align: left; }
+        th { background: rgba(213,201,182,0.35); font-weight: 600; }
+        pre { background: #2D2A26; color: #F5F1E8; padding: 12px; border-radius: 8px; overflow-x: auto; margin: 12px 0; font-size: 0.85em; }
+        .meta { background: #EDE7D3; padding: 12px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid #8b7d6b; }
+    </style>
+</head>
+<body>
+<main>
+    <div class="meta">
+        <p><strong>Document:</strong> GiveButter Widget – Hiding Donation Options (Tickets-Only Checkout) Analysis</p>
+        <p><strong>Context:</strong> Embedded widget on <code>/events/[id]/givebutter-checkout</code> shows donation buttons/upsell and &quot;I'd just like to donate&quot; alongside ticket purchase.</p>
+        <p><strong>Date:</strong> January 2025</p>
+    </div>
+
+    <h1>Analysis: Removing or Hiding Donation Options in the GiveButter Embed</h1>
+
+    <h2>1. What You’re Seeing</h2>
+    <p>On <code>/events/4202/givebutter-checkout</code> the embedded <code>&lt;givebutter-widget id="..."&gt;</code> shows:</p>
+    <ul>
+        <li><strong>Ticket selection</strong> (e.g. General Admission, VIP Admission) – desired.</li>
+        <li><strong>Donation step</strong> – preset amounts ($25, $55, $100, etc.) and &quot;Would you like to add a donation?&quot; – often unwanted for ticket-only flows.</li>
+        <li><strong>&quot;I'd just like to donate&quot;</strong> button – alternative path to donate instead of/in addition to buying tickets – often unwanted.</li>
+    </ul>
+    <p>Goal: optionally remove or hide these donation-related elements so the checkout is tickets-only.</p>
+
+    <h2>2. Widget ID vs Campaign ID (Form)</h2>
+    <table>
+        <thead>
+            <tr><th>Embed type</th><th>Element</th><th>Typical use</th><th>Tickets-only?</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Widget ID</strong></td>
+                <td><code>&lt;givebutter-widget id="j1ek6j"&gt;</code></td>
+                <td>Event/Page campaign: embeds the <strong>full checkout flow</strong> (tickets → optional donation step → payment).</td>
+                <td>No – flow is fixed by GiveButter; donation step is part of the flow.</td>
+            </tr>
+            <tr>
+                <td><strong>Campaign ID (form)</strong></td>
+                <td><code>&lt;givebutter-form campaign="FwSx70"&gt;</code></td>
+                <td>Donation <strong>form</strong> (suggested amounts, custom amount, etc.). Used for Form campaigns or donation-only embeds.</td>
+                <td>No – form is donation-focused; no ticket selection. Not a substitute for ticket checkout.</td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="info">
+        <strong>Conclusion:</strong> Using &quot;form with campaign id&quot; (<code>givebutter-form</code>) does <strong>not</strong> give more flexibility for tickets-only. It shows a donation form, not ticket purchase. For event ticket checkout you need the widget (or full campaign page). The only way to get tickets-only today is to change what the <strong>Event campaign</strong> shows in its checkout (see below).
+    </div>
+
+    <h2>3. What GiveButter Exposes Today</h2>
+    <h3>3.1 Documented widget/URL parameters</h3>
+    <p>From GiveButter’s docs (<a href="https://help.givebutter.com/en/articles/4868782-how-to-leverage-url-and-html-parameters">URL and HTML parameters</a>, <a href="https://help.givebutter.com/en/articles/6464859-how-to-use-givebutter-widgets-on-your-website">Widgets</a>):</p>
+    <ul>
+        <li><strong>Widget HTML attributes:</strong> <code>amount</code>, <code>frequency</code>, <code>fund</code>, <code>promo</code> – e.g. <code>&lt;givebutter-widget id="xLWmpB" amount="25"&gt;</code>. These prefill the <strong>donation</strong> step; they do not remove it.</li>
+        <li><strong>For campaigns with tickets:</strong> &quot;URL parameters do not apply to the ticket selection step – they apply to the <strong>donation amount step after ticket selection</strong>.&quot; So there is no documented parameter to skip or hide the donation step.</li>
+        <li>No documented attribute such as <code>data-hide-donations</code>, <code>data-tickets-only</code>, or similar.</li>
+    </ul>
+    <h3>3.2 Campaign dashboard (Event)</h3>
+    <p>Under Event campaign <strong>Tools → Donation settings</strong> you can configure suggested amounts, &quot;Other&quot;, minimum donation, etc. There is <strong>no</strong> documented setting to &quot;disable donation step&quot; or &quot;hide optional donation slide&quot; in checkout.</p>
+    <p>Under <strong>Settings → General</strong>, GiveButter does allow hiding <strong>other</strong> steps (e.g. &quot;Public messages&quot; – the &quot;Show your support&quot; page). So the product supports per-step toggles in some cases, but not (yet) for the donation upsell.</p>
+
+    <h2>4. GiveButter Roadmap: Donation Button / Slide Customization</h2>
+    <p>On the GiveButter community roadmap there is a high-vote request:</p>
+    <p><strong>&quot;Ability to customize 'No thanks, I'd just like to donate' button (Enable/Disable + Ability to edit text)&quot;</strong> – status <strong>in progress</strong> (as of late 2025). Merged requests include &quot;Disable Donation Slide&quot; and similar. GiveButter has stated they are working on this feature.</p>
+    <div class="success">
+        <strong>Implication:</strong> Once this ships, the fix will likely be a <strong>campaign-level setting in the GiveButter dashboard</strong> (e.g. disable optional donation step or hide &quot;I'd just like to donate&quot;). No change to our embed code may be required – the same <code>&lt;givebutter-widget id="..."&gt;</code> would then respect the campaign’s new settings.
+    </div>
+
+    <h2>5. Recommendations</h2>
+    <ol>
+        <li><strong>Contact GiveButter support</strong> – Ask whether:
+            <ul>
+                <li>There is any current workaround (e.g. account/campaign setting or beta) to hide the donation step or &quot;I'd just like to donate&quot; for an Event campaign.</li>
+                <li>When the &quot;customize / disable donation button &amp; optional donation slide&quot; feature will be generally available.</li>
+            </ul>
+        </li>
+        <li><strong>Watch the roadmap</strong> – When the feature is released, configure the relevant Event campaign(s) in the GiveButter dashboard to disable the donation step or button as desired.</li>
+        <li><strong>Keep using the widget ID</strong> – For event ticket checkout, the widget embed is correct. Do not switch to <code>givebutter-form</code> + campaign ID expecting tickets-only; that path is donation-only.</li>
+        <li><strong>Optional: pass extra attributes later</strong> – If GiveButter later adds widget attributes (e.g. <code>data-hide-donations="true"</code>), we can pass them from <code>donation_metadata</code> through <code>GivebutterWidget</code> (see section 6).</li>
+    </ol>
+
+    <h2>6. Code: Optional attribute passthrough</h2>
+    <p>So that future GiveButter widget attributes can be used without another code change, <code>GivebutterWidget</code> can accept optional <code>data-*</code> (or other) props and forward them to <code>&lt;givebutter-widget&gt;</code>. If GiveButter documents something like <code>data-hide-donations</code> or <code>data-tickets-only</code>, we can then:</p>
+    <ul>
+        <li>Store a flag in <code>donation_metadata</code> (e.g. <code>givebutterHideDonationStep: true</code>), and</li>
+        <li>Pass it through as the corresponding attribute on the widget.</li>
+    </ul>
+    <p>TypeScript declarations for <code>givebutter-widget</code> can be extended to include any new attributes once they are documented.</p>
+
+    <h2>7. Summary</h2>
+    <table>
+        <thead>
+            <tr><th>Question</th><th>Answer</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Can we hide donation options via widget attributes today?</td><td>No – not documented; no known attribute.</td></tr>
+            <tr><td>Would switching to form + campaign ID help?</td><td>No – that shows a donation form, not ticket checkout.</td></tr>
+            <tr><td>Where will the fix come from?</td><td>GiveButter dashboard (planned feature) and/or support workaround.</td></tr>
+            <tr><td>What should we do now?</td><td>Contact GiveButter; prepare optional attribute passthrough for future use.</td></tr>
+        </tbody>
+    </table>
+
+    <p><strong>References:</strong></p>
+    <ul>
+        <li><a href="https://help.givebutter.com/en/articles/4868782-how-to-leverage-url-and-html-parameters">GiveButter – URL and HTML parameters</a></li>
+        <li><a href="https://help.givebutter.com/en/articles/6464859-how-to-use-givebutter-widgets-on-your-website">GiveButter – How to use Widgets on your website</a></li>
+        <li><a href="https://community.givebutter.com/raise/p/hide-optional-donation-slide-on-events-campaign">GiveButter Community – Customize/hide &quot;I'd just like to donate&quot; (in progress)</a></li>
+    </ul>
+</main>
+</body>
+</html>

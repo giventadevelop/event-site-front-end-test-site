@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Givebutter Frontend Integration PRD - Next.js</title>
+    <style>
+        body {
+            font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+            background: #f4f2ed;
+            color: #2b241e;
+            margin: 0;
+            padding: 2.5rem 0;
+        }
+        main {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 22px 48px -20px rgba(43, 34, 28, 0.25);
+            padding: 3rem;
+        }
+        h1, h2, h3, h4 {
+            font-family: "Crimson Text", Georgia, serif;
+            color: #2b241e;
+        }
+        h1 { font-size: 2.2rem; margin-bottom: 0.6rem; }
+        h2 { font-size: 1.6rem; margin-top: 2.2rem; border-left: 4px solid #8b7d6b; padding-left: 15px; }
+        h3 { font-size: 1.25rem; margin-top: 1.5rem; }
+        h4 { font-size: 1.05rem; margin-top: 1rem; }
+        p, li { font-size: 1rem; line-height: 1.75; }
+        ul, ol { margin-left: 1.3rem; }
+        code { font-family: "JetBrains Mono", Consolas, monospace; background: #f6f1e6; padding: 0.12rem 0.4rem; border-radius: 6px; }
+        .tag { display: inline-block; background: #8b7d6b; color: #fff; padding: 0.25rem 0.7rem; border-radius: 999px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 10px; }
+        .divider { height: 1px; background: rgba(42,32,23,0.12); margin: 1.9rem 0; }
+        .callout { border-left: 4px solid #8b7d6b; background: rgba(213,201,182,0.3); padding: 1rem 1.2rem; border-radius: 12px; margin: 1.6rem 0; }
+        .warning { border-left: 4px solid #A67C52; background: rgba(255,244,230,0.5); padding: 1rem 1.2rem; border-radius: 12px; margin: 1.6rem 0; }
+        .success { border-left: 4px solid #4A6741; background: rgba(240,249,240,0.5); padding: 1rem 1.2rem; border-radius: 12px; margin: 1.6rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+        th, td { border: 1px solid rgba(42,32,23,0.15); padding: 0.75rem; text-align: left; vertical-align: top; }
+        th { background: rgba(213,201,182,0.35); font-weight: 600; }
+        pre { background: #2D2A26; color: #F5F1E8; padding: 15px; border-radius: 5px; overflow-x: auto; margin: 15px 0; font-family: "JetBrains Mono", Consolas, monospace; font-size: 0.9em; }
+        .meta { background: #EDE7D3; padding: 15px; border-radius: 5px; margin-bottom: 30px; border-left: 4px solid #8b7d6b; }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="meta">
+            <p><strong>Document Type:</strong> Frontend Product Requirements Document (PRD)</p>
+            <p><strong>Project:</strong> Givebutter Frontend Integration</p>
+            <p><strong>Repository:</strong> <code>E:\project_workspace\mosc-temp</code></p>
+            <p><strong>Version:</strong> 1.0</p>
+            <p><strong>Date:</strong> January 2025</p>
+            <p><strong>Status:</strong> <span class="tag">Enhancement</span></p>
+        </div>
+
+        <h1>Givebutter Frontend Integration PRD<br><small style="font-size: 0.5em; color: #7b7067;">Next.js Implementation</small></h1>
+
+        <div class="divider"></div>
+
+        <h2>1. Overview</h2>
+        <p>This PRD details the frontend implementation of Givebutter integration for zero-fee fundraising and Mass offerings. The implementation follows the existing Stripe payment component patterns, ensuring consistent UX and maintainability.</p>
+
+        <div class="success">
+            <strong>✅ Architecture Pattern:</strong> Domain-agnostic frontend. All payment processing happens in backend. Frontend only calls proxy endpoints, never directly calls Givebutter API. No API keys exposed to client.
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ Critical Rule:</strong> Client components must NEVER make direct API calls. All API calls must be made from server components or server actions. See <code>shared-cursor-rules/nextjs_api_routes.mdc</code> for details.
+        </div>
+
+        <h2>2. Component Architecture</h2>
+
+        <h3>2.1 Component Hierarchy</h3>
+        <pre><code>EventPage (Server Component)
+  └─ ZeroFeeFundraiserWidget (Client Component)
+      └─ DonationForm
+          └─ Calls: POST /api/proxy/payments/initialize
+              └─ Backend routes to Givebutter
+                  └─ Returns: sessionUrl
+                      └─ Redirect to Givebutter checkout
+
+MassOfferingPage (Server Component)
+  └─ MassOfferingWidget (Client Component)
+      └─ OfferingForm
+          ├─ Prayer Intention Input
+          ├─ Recurring Option
+          └─ Calls: POST /api/proxy/payments/initialize
+              └─ Backend routes to Givebutter
+                  └─ Returns: sessionUrl
+                      └─ Redirect to Givebutter checkout</code></pre>
+
+        <h3>2.2 Key Components</h3>
+
+        <h4>MassOfferingWidget</h4>
+        <p><strong>Purpose:</strong> Widget for Mass offerings with prayer intentions and recurring options.</p>
+        <p><strong>Location:</strong> <code>src/components/MassOfferingWidget.tsx</code></p>
+        <p><strong>Features:</strong></p>
+        <ul>
+            <li>Preset amount buttons ($5, $10, $25, $50, custom)</li>
+            <li>Prayer intention text input</li>
+            <li>Anonymous offering checkbox</li>
+            <li>Recurring offering option (weekly/monthly)</li>
+            <li>QR code display for in-person giving</li>
+            <li>Mobile-optimized layout</li>
+        </ul>
+
+        <h4>ZeroFeeFundraiserWidget</h4>
+        <p><strong>Purpose:</strong> Widget for zero-fee fundraising events.</p>
+        <p><strong>Location:</strong> <code>src/components/ZeroFeeFundraiserWidget.tsx</code></p>
+        <p><strong>Features:</strong></p>
+        <ul>
+            <li>Preset amount buttons ($10, $25, $50, $100, custom)</li>
+            <li>Anonymous donation option</li>
+            <li>Recurring donation option</li>
+            <li>Event-specific messaging</li>
+            <li>Progress indicator (if available from backend)</li>
+        </ul>
+
+        <h4>QRCodeComponent</h4>
+        <p><strong>Purpose:</strong> Generate and display QR codes for in-person giving.</p>
+        <p><strong>Location:</strong> <code>src/components/QRCodeComponent.tsx</code></p>
+        <p><strong>Features:</strong></p>
+        <ul>
+            <li>QR code generation using <code>qrcode.react</code> or similar library</li>
+            <li>QR code contains Givebutter checkout URL</li>
+            <li>Download/print functionality</li>
+            <li>Responsive sizing</li>
+        </ul>
+
+        <h2>3. API Integration</h2>
+
+        <h3>3.1 Payment Initialization Flow</h3>
+        <pre><code>// Frontend: Mass Offering Widget
+// src/components/MassOfferingWidget.tsx
+'use client';
+
+import { initializePayment } from '@/lib/payments/paymentApi';
+import type { PaymentInitializeRequest, PaymentUseCase } from '@/types';
+
+export function MassOfferingWidget({ eventId, massDate }) {
+    const handleSubmit = async () => {
+        // Build payment initialization request
+        const request: PaymentInitializeRequest = {
+            paymentUseCase: PaymentUseCase.OFFERING,
+            amount: offeringAmount,
+            currency: 'USD',
+            items: [{
+                itemType: 'OFFERING',
+                description: 'Mass Offering',
+                quantity: 1,
+                unitPrice: offeringAmount
+            }],
+            customerEmail: email,
+            customerName: name,
+            eventId: eventId,
+            metadata: {
+                prayerIntention: prayerIntention,
+                isAnonymous: isAnonymous,
+                isRecurring: isRecurring,
+                recurringFrequency: recurringFrequency, // 'weekly' or 'monthly'
+                massDate: massDate,
+                offeringType: 'MASS_COLLECTION'
+            }
+        };
+
+        // Call backend proxy endpoint (NOT Givebutter directly)
+        const session = await initializePayment(request);
+
+        // Backend returns checkout URL - redirect user
+        if (session.sessionUrl) {
+            window.location.href = session.sessionUrl;
+        }
+    };
+}</code></pre>
+
+        <h3>3.2 Proxy API Route</h3>
+        <p><strong>Location:</strong> <code>src/pages/api/proxy/payments/initialize.ts</code></p>
+        <p><strong>Purpose:</strong> Proxy endpoint that forwards payment initialization requests to backend.</p>
+        <pre><code>import type { NextApiRequest, NextApiResponse } from 'next';
+import { createProxyHandler } from '@/lib/proxyHandler';
+
+/**
+ * Proxy handler for payment initialization endpoint
+ * POST /api/proxy/payments/initialize
+ *
+ * Creates a payment session and returns provider-neutral session details.
+ * Backend endpoint: /api/payments/initialize
+ */
+export default createProxyHandler({
+    backendPath: '/api/payments/initialize',
+    allowedMethods: ['POST'],
+    injectTenantId: true,
+});</code></pre>
+
+        <div class="warning">
+            <strong>⚠️ Important:</strong> Frontend NEVER calls Givebutter API directly. All calls go through backend proxy endpoints. This ensures security, tenant isolation, and domain-agnostic architecture.
+        </div>
+
+        <h2>4. Type Definitions</h2>
+
+        <h3>4.1 Payment Types</h3>
+        <p><strong>Location:</strong> <code>src/types/index.ts</code></p>
+        <pre><code>export enum PaymentProviderType {
+    STRIPE = 'STRIPE',
+    PAYPAL = 'PAYPAL',
+    // ... other providers
+    GIVEBUTTER = 'GIVEBUTTER', // Already exists
+}
+
+export enum PaymentUseCase {
+    TICKET_SALE = 'TICKET_SALE',
+    DONATION = 'DONATION',
+    DONATION_ZERO_FEE = 'DONATION_ZERO_FEE', // Already exists
+    OFFERING = 'OFFERING', // Already exists
+    MEMBERSHIP_SUBSCRIPTION = 'MEMBERSHIP_SUBSCRIPTION',
+}</code></pre>
+
+        <h3>4.2 Payment Request Interface</h3>
+        <pre><code>export interface PaymentInitializeRequest {
+    paymentUseCase: PaymentUseCase;
+    amount: number;
+    currency: string;
+    items: PaymentItem[];
+    customerEmail: string;
+    customerName?: string;
+    customerPhone?: string;
+    returnUrl?: string;
+    cancelUrl?: string;
+    metadata?: Record&lt;string, any&gt;;
+    eventId?: number;
+    membershipPlanId?: number;
+}</code></pre>
+
+        <h3>4.3 Payment Session Response</h3>
+        <pre><code>export interface PaymentSessionResponse {
+    transactionId: string;
+    providerType?: PaymentProviderType;
+    status?: string;
+    clientSecret?: string; // Not used for Givebutter
+    sessionUrl?: string; // Givebutter checkout URL
+    publishableKey?: string; // Not used for Givebutter
+    supportedMethods?: string[];
+    amount?: number;
+    currency?: string;
+    providerMetadata?: Record&lt;string, any&gt;;
+    metadata?: Record&lt;string, any&gt;;
+}</code></pre>
+
+        <h2>5. UI Components</h2>
+
+        <h3>5.1 Mass Offering Widget</h3>
+        <p><strong>Design Requirements:</strong></p>
+        <ul>
+            <li>Follow MOSC styling standards (sacred, reverent design)</li>
+            <li>Use warm earth tones (#8B7D6B, #F5F1E8)</li>
+            <li>Serif font for headings (Crimson Text)</li>
+            <li>Sans-serif for body (Source Sans Pro)</li>
+            <li>Responsive design (mobile-first)</li>
+        </ul>
+
+        <h4>Component Structure:</h4>
+        <pre><code>export function MassOfferingWidget({ eventId, massDate }: Props) {
+    return (
+        &lt;div className="max-w-5xl mx-auto px-8 py-8"&gt;
+            &lt;div className="bg-white rounded-lg shadow-md p-6"&gt;
+                &lt;h2 className="font-heading text-2xl text-foreground mb-4"&gt;
+                    Mass Offering
+                &lt;/h2&gt;
+
+                &lt;!-- Preset Amount Buttons --&gt;
+                &lt;div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6"&gt;
+                    {[5, 10, 25, 50].map(amount =&gt; (
+                        &lt;button
+                            onClick={() =&gt; setAmount(amount)}
+                            className="bg-primary hover:bg-primary/80 text-white px-4 py-2 rounded-md"
+                        &gt;
+                            ${amount}
+                        &lt;/button&gt;
+                    ))}
+                    &lt;button
+                        onClick={() =&gt; setCustomAmount(true)}
+                        className="bg-secondary hover:bg-secondary/80 text-white px-4 py-2 rounded-md"
+                    &gt;
+                        Custom
+                    &lt;/button&gt;
+                &lt;/div&gt;
+
+                &lt;!-- Custom Amount Input --&gt;
+                {customAmount && (
+                    &lt;input
+                        type="number"
+                        placeholder="Enter amount"
+                        className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base"
+                        onChange={(e) =&gt; setAmount(parseFloat(e.target.value))}
+                    /&gt;
+                )}
+
+                &lt;!-- Prayer Intention Input --&gt;
+                &lt;label className="block text-sm font-medium text-gray-700 mt-4"&gt;
+                    Prayer Intention (Optional)
+                &lt;/label&gt;
+                &lt;textarea
+                    placeholder="Enter your prayer intention..."
+                    className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base"
+                    rows={3}
+                    value={prayerIntention}
+                    onChange={(e) =&gt; setPrayerIntention(e.target.value)}
+                /&gt;
+
+                &lt;!-- Anonymous & Recurring Options --&gt;
+                &lt;div className="mt-4 space-y-2"&gt;
+                    &lt;label className="flex items-center"&gt;
+                        &lt;input
+                            type="checkbox"
+                            checked={isAnonymous}
+                            onChange={(e) =&gt; setIsAnonymous(e.target.checked)}
+                            className="custom-checkbox"
+                        /&gt;
+                        &lt;span className="ml-2"&gt;Make this offering anonymous&lt;/span&gt;
+                    &lt;/label&gt;
+                    &lt;label className="flex items-center"&gt;
+                        &lt;input
+                            type="checkbox"
+                            checked={isRecurring}
+                            onChange={(e) =&gt; setIsRecurring(e.target.checked)}
+                            className="custom-checkbox"
+                        /&gt;
+                        &lt;span className="ml-2"&gt;Make this a recurring offering&lt;/span&gt;
+                    &lt;/label&gt;
+                &lt;/div&gt;
+
+                &lt;!-- Submit Button --&gt;
+                &lt;button
+                    onClick={handleSubmit}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-md mt-6 w-full"
+                &gt;
+                    Continue to Payment
+                &lt;/button&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    );
+}</code></pre>
+
+        <h3>5.2 QR Code Component</h3>
+        <pre><code>import { QRCodeSVG } from 'qrcode.react';
+
+export function QRCodeComponent({ checkoutUrl }: { checkoutUrl: string }) {
+    return (
+        &lt;div className="flex flex-col items-center p-6 bg-white rounded-lg shadow-md"&gt;
+            &lt;h3 className="font-heading text-xl mb-4"&gt;Scan to Give&lt;/h3&gt;
+            &lt;QRCodeSVG
+                value={checkoutUrl}
+                size={256}
+                level="H"
+                includeMargin={true}
+            /&gt;
+            &lt;p className="mt-4 text-sm text-gray-600"&gt;
+                Scan this QR code with your phone to make an offering
+            &lt;/p&gt;
+        &lt;/div&gt;
+    );
+}</code></pre>
+
+        <h2>6. Page Integration</h2>
+
+        <h3>6.1 Event Page Integration</h3>
+        <p><strong>Location:</strong> <code>src/app/events/[id]/page.tsx</code></p>
+        <p><strong>Pattern:</strong> Server component fetches event data, passes to client component</p>
+        <pre><code>// Server Component
+export default async function EventPage({ params }: { params: { id: string } }) {
+    const event = await fetchEventServer(params.id);
+
+    // Parse metadata JSON string (backend stores as TEXT, not JSONB)
+    // Backend should parse and return as object, or frontend parses if string
+    const metadata = typeof event.metadata === 'string'
+        ? JSON.parse(event.metadata || '{}')
+        : event.metadata || {};
+
+    // Check if event is configured for zero-fee fundraising
+    const isZeroFeeFundraiser = metadata?.donationConfig?.useZeroFeeProvider === true
+        && metadata?.donationConfig?.zeroFeeProvider === 'GIVEBUTTER';
+
+    // Check if event is marked as fundraiser/charity event
+    const isFundraiserEvent = metadata?.isFundraiserEvent === true
+        || metadata?.isCharityEvent === true;
+
+    return (
+        &lt;&gt;
+            &lt;EventDetails event={event} /&gt;
+            {/* Show donation widget for donation-based fundraisers */}
+            {isZeroFeeFundraiser && event.admissionType === 'DONATION_BASED' && (
+                &lt;ZeroFeeFundraiserWidget eventId={event.id} /&gt;
+            )}
+            {/* For ticketed fundraiser events, UniversalPaymentCheckout will route to Givebutter */}
+            {/* The backend PaymentOrchestrationService handles the routing based on event metadata */}
+        &lt;/&gt;
+    );
+}</code></pre>
+
+        <div class="callout">
+            <strong>✅ Ticketed Fundraiser Events:</strong> For events marked as fundraisers (<code>isFundraiserEvent: true</code> or <code>isCharityEvent: true</code>) with <code>donationConfig.useZeroFeeProvider: true</code> and <code>zeroFeeProvider: "GIVEBUTTER"</code>, the existing <code>UniversalPaymentCheckout</code> component will automatically route ticket sales to Givebutter. No frontend changes needed - the backend handles routing based on event metadata.
+        </div>
+
+        <h3>6.2 Mass Offering Page</h3>
+        <p><strong>Location:</strong> <code>src/app/mass/offering/page.tsx</code></p>
+        <pre><code>// Server Component
+export default async function MassOfferingPage() {
+    const today = new Date();
+    const massDate = format(today, 'yyyy-MM-dd');
+
+    return (
+        &lt;div className="max-w-5xl mx-auto px-8 py-8"&gt;
+            &lt;h1 className="font-heading text-3xl text-foreground mb-6"&gt;
+                Mass Offering
+            &lt;/h1&gt;
+            &lt;MassOfferingWidget massDate={massDate} /&gt;
+        &lt;/div&gt;
+    );
+}</code></pre>
+
+        <h2>7. Styling Guidelines</h2>
+
+        <h3>7.1 MOSC Design System</h3>
+        <p>Follow the MOSC styling standards from <code>shared-cursor-rules/ui_style_guide.mdc</code>:</p>
+        <ul>
+            <li><strong>Colors:</strong> Warm earth tones (#8B7D6B, #F5F1E8, #2D2A26)</li>
+            <li><strong>Typography:</strong> Crimson Text for headings, Source Sans Pro for body</li>
+            <li><strong>Spacing:</strong> Consistent padding and margins</li>
+            <li><strong>Components:</strong> Use existing Button, Input, Card components</li>
+        </ul>
+
+        <h3>7.2 Responsive Design</h3>
+        <ul>
+            <li>Mobile-first approach</li>
+            <li>Breakpoints: sm (640px), md (768px), lg (1024px)</li>
+            <li>Grid layouts adapt to screen size</li>
+            <li>Touch-friendly button sizes (min 44x44px)</li>
+        </ul>
+
+        <h2>8. Error Handling</h2>
+
+        <h3>8.1 Error Scenarios</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>User Experience</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Payment initialization fails</td>
+                    <td>Show error message, allow retry</td>
+                </tr>
+                <tr>
+                    <td>Givebutter not configured</td>
+                    <td>Show message: "Payment processing unavailable"</td>
+                </tr>
+                <tr>
+                    <td>Network error</td>
+                    <td>Show retry button, log error</td>
+                </tr>
+                <tr>
+                    <td>Invalid form data</td>
+                    <td>Show validation errors inline</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>8.2 Error Component</h3>
+        <pre><code>export function PaymentError({ error, onRetry }: { error: string, onRetry: () => void }) {
+    return (
+        &lt;div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4"&gt;
+            &lt;p className="text-red-800"&gt;{error}&lt;/p&gt;
+            &lt;button
+                onClick={onRetry}
+                className="mt-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md"
+            &gt;
+                Try Again
+            &lt;/button&gt;
+        &lt;/div&gt;
+    );
+}</code></pre>
+
+        <h2>9. Testing Requirements</h2>
+
+        <h3>9.1 Component Tests</h3>
+        <ul>
+            <li>MassOfferingWidget renders correctly</li>
+            <li>ZeroFeeFundraiserWidget renders correctly</li>
+            <li>Form validation works</li>
+            <li>Amount selection works</li>
+            <li>Prayer intention input works</li>
+            <li>Recurring option works</li>
+        </ul>
+
+        <h3>9.2 Integration Tests</h3>
+        <ul>
+            <li>Payment initialization flow</li>
+            <li>Redirect to Givebutter checkout</li>
+            <li>Error handling</li>
+            <li>QR code generation</li>
+        </ul>
+
+        <h3>9.3 E2E Tests</h3>
+        <ul>
+            <li>Complete donation flow</li>
+            <li>Complete offering flow</li>
+            <li>Recurring donation setup</li>
+            <li>QR code scanning</li>
+        </ul>
+
+        <h2>10. Implementation Checklist</h2>
+
+        <h3>Phase 1: Components</h3>
+        <ul>
+            <li>✅ Create MassOfferingWidget component</li>
+            <li>✅ Create ZeroFeeFundraiserWidget component</li>
+            <li>✅ Create QRCodeComponent</li>
+            <li>✅ Add form validation</li>
+            <li>✅ Add error handling</li>
+        </ul>
+
+        <h3>Phase 2: Integration</h3>
+        <ul>
+            <li>✅ Integrate with payment API client</li>
+            <li>✅ Add proxy API route (if not exists)</li>
+            <li>✅ Update UniversalPaymentCheckout (if needed)</li>
+            <li>✅ Add to event pages</li>
+            <li>✅ Create Mass offering page</li>
+        </ul>
+
+        <h3>Phase 3: Styling</h3>
+        <ul>
+            <li>✅ Apply MOSC design system</li>
+            <li>✅ Make responsive</li>
+            <li>✅ Add loading states</li>
+            <li>✅ Add success/error states</li>
+        </ul>
+
+        <h3>Phase 4: Testing</h3>
+        <ul>
+            <li>✅ Write component tests</li>
+            <li>✅ Write integration tests</li>
+            <li>✅ Test with backend</li>
+            <li>✅ Test with Givebutter sandbox</li>
+        </ul>
+
+        <h2>11. Dependencies</h2>
+        <ul>
+            <li><strong>React:</strong> Existing</li>
+            <li><strong>Next.js:</strong> Existing</li>
+            <li><strong>qrcode.react:</strong> For QR code generation</li>
+            <li><strong>@/lib/payments/paymentApi:</strong> Existing payment API client</li>
+            <li><strong>@/types:</strong> Existing type definitions</li>
+        </ul>
+
+        <h2>12. Ticketed Fundraiser Events</h2>
+
+        <h3>12.1 Event Configuration</h3>
+        <p>Events can be marked as fundraiser/charity events in the admin panel or via API. The <code>metadata</code> column is stored as <code>TEXT</code> (not JSONB) and contains JSON as a string.</p>
+        <pre><code>// Event metadata structure for fundraiser events (stored as JSON string)
+{
+    "isFundraiserEvent": true,  // or "isCharityEvent": true
+    "donationConfig": {
+        "useZeroFeeProvider": true,
+        "zeroFeeProvider": "GIVEBUTTER",
+        "givebutterCampaignId": "campaign_fundraiser_123"
+    }
+}
+
+// Backend parses JSON string using Jackson ObjectMapper
+// Frontend receives parsed object or parses string if needed:
+const metadata = typeof event.metadata === 'string'
+    ? JSON.parse(event.metadata || '{}')
+    : event.metadata || {};</code></pre>
+
+        <h3>12.2 Payment Flow for Ticketed Fundraisers</h3>
+        <ol>
+            <li>User selects tickets on event page</li>
+            <li>User clicks "Buy Tickets" button</li>
+            <li><code>UniversalPaymentCheckout</code> component calls <code>POST /api/proxy/payments/initialize</code> with <code>paymentUseCase: TICKET_SALE</code></li>
+            <li>Backend <code>PaymentOrchestrationService</code> checks event metadata</li>
+            <li>If event is marked as fundraiser with Givebutter configured, backend routes to <code>GivebutterPaymentAdapter</code></li>
+            <li>Backend returns Givebutter checkout URL</li>
+            <li>Frontend redirects user to Givebutter checkout page</li>
+            <li>User completes payment on Givebutter</li>
+            <li>Givebutter sends webhook to backend</li>
+            <li>Backend updates payment transaction status</li>
+        </ol>
+
+        <div class="success">
+            <strong>✅ No Frontend Changes Required:</strong> The existing <code>UniversalPaymentCheckout</code> component works for ticketed fundraiser events. The backend automatically routes to Givebutter based on event metadata. Frontend only needs to ensure event metadata is properly set when creating/editing fundraiser events.
+        </div>
+
+        <h3>12.3 Admin UI Requirements</h3>
+        <p>Admin interface should allow marking events as fundraisers:</p>
+        <ul>
+            <li>Checkbox: "This is a fundraiser/charity event"</li>
+            <li>Checkbox: "Use zero-fee payment provider"</li>
+            <li>Dropdown: "Zero-fee provider" (Givebutter, Zeffy, etc.)</li>
+            <li>Input: "Givebutter Campaign ID" (if Givebutter selected)</li>
+        </ul>
+
+        <h2>13. References</h2>
+        <ul>
+            <li><strong>Generic PRD:</strong> <code>GIVEBUTTER_INTEGRATION_PRD.html</code></li>
+            <li><strong>Backend PRD:</strong> <code>GIVEBUTTER_BACKEND_PRD.html</code></li>
+            <li><strong>Setup Guide:</strong> <code>GIVEBUTTER_DEVELOPER_SETUP_GUIDE.html</code></li>
+            <li><strong>API Routes Rules:</strong> <code>shared-cursor-rules/nextjs_api_routes.mdc</code></li>
+            <li><strong>UI Style Guide:</strong> <code>shared-cursor-rules/ui_style_guide.mdc</code></li>
+            <li><strong>Payment API:</strong> <code>src/lib/payments/paymentApi.ts</code></li>
+            <li><strong>Universal Payment Checkout:</strong> <code>src/components/UniversalPaymentCheckout.tsx</code></li>
+        </ul>
+
+        <footer style="margin-top: 3rem; text-align: center; font-size: 0.9rem; color: #7b7067;">
+            <p>Document owner: Frontend Lead · Updated January 2025</p>
+        </footer>
+    </main>
+</body>
+</html>
+

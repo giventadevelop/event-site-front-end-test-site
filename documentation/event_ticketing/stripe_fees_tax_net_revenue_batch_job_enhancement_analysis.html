@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Fees, Tax, and Net Revenue Batch Job Enhancement Analysis</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+        }
+        .summary-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .recommendation {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .code-block {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 15px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .field-name {
+            font-family: 'Courier New', monospace;
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .calculation-box {
+            background-color: #f8f9fa;
+            border: 2px solid #6c757d;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .calculation-step {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: white;
+            border-left: 3px solid #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Stripe Fees, Tax, and Net Revenue Batch Job Enhancement Analysis</h1>
+        <p><strong>Document Date:</strong> January 11, 2026</p>
+        <p><strong>Purpose:</strong> Comprehensive analysis of current batch job implementation, database schema verification, and recommendations for enhancing the Stripe fees and tax batch job to capture net revenue (payout to bank) and implement proper timing/filtering logic.</p>
+        <p><strong>Related Documents:</strong></p>
+        <ul>
+            <li><a href="stripe_fees_taxes_revenue_calculation_analysis.html">Stripe Fees, Taxes, and Revenue Calculation Analysis</a></li>
+            <li><a href="batch_job_stripe_fees_tax_implementation_prompt.html">Batch Job Implementation Prompt</a></li>
+            <li><a href="frontend_stripe_fees_tax_batch_job_integration_guide.html">Frontend Integration Guide</a></li>
+        </ul>
+
+        <div class="summary-box">
+            <h2>Executive Summary</h2>
+            <p>This document analyzes the current state of Stripe fee and tax capture, identifies gaps in revenue calculations during ticket purchase, and provides comprehensive recommendations for enhancing the batch job to:</p>
+            <ol>
+                <li>Capture Stripe fees and taxes that are not being captured during the purchase flow</li>
+                <li>Calculate and track net revenue (actual payout to bank account)</li>
+                <li>Implement proper timing logic (14-day delay for normal batch runs)</li>
+                <li>Add eventId filtering capability</li>
+                <li>Ensure all required database fields exist and are properly utilized</li>
+            </ol>
+        </div>
+
+        <h2>1. Current Problem Analysis</h2>
+
+        <h3>1.1 Issue: Total Amount and Final Amount Are Identical</h3>
+        <div class="warning-box">
+            <p><strong>Problem:</strong> During ticket purchase, <span class="field-name">total_amount</span> and <span class="field-name">final_amount</span> are being set to the same value because calculations (discounts, fees, taxes) are not being properly applied.</p>
+            <p><strong>Root Cause:</strong> The checkout flow is not calculating intermediate values correctly. The system should:</p>
+            <ol>
+                <li>Calculate <span class="field-name">total_amount</span> (base ticket prices)</li>
+                <li>Apply <span class="field-name">discount_amount</span> (if discount code used)</li>
+                <li>Calculate <span class="field-name">platform_fee_amount</span> (from tenant settings)</li>
+                <li>Calculate <span class="field-name">tax_amount</span> (if tax is applicable)</li>
+                <li>Set <span class="field-name">final_amount</span> = total_amount - discount_amount + platform_fee_amount + tax_amount</li>
+            </ol>
+            <p><strong>Current State:</strong> Both fields are set to the same value, indicating calculations are skipped or incorrect.</p>
+        </div>
+
+        <h3>1.2 Issue: Stripe Fee and Tax Not Captured During Purchase</h3>
+        <div class="warning-box">
+            <p><strong>Problem:</strong> <span class="field-name">stripe_fee_amount</span> and <span class="field-name">stripe_amount_tax</span> are consistently NULL or 0.00 for all transactions.</p>
+            <p><strong>Why This Happens:</strong></p>
+            <ul>
+                <li><strong>Stripe Fee:</strong> Not available immediately at purchase time. Stripe calculates the fee after the charge is processed and it appears in the balance transaction, which may take a few minutes to hours.</li>
+                <li><strong>Stripe Tax:</strong> If Stripe Tax is enabled, tax is included in the PaymentIntent amount but needs to be extracted from CheckoutSession or PaymentIntent metadata.</li>
+                <li><strong>Webhook Timing:</strong> The webhook handler exists but may not be triggering reliably or may be processing before the balance transaction is available.</li>
+            </ul>
+            <p><strong>Solution:</strong> Batch job must retrieve these values from Stripe API after sufficient time has passed (recommended: 14 days) to ensure Stripe payout and calculations are complete.</p>
+        </div>
+
+        <h3>1.3 Issue: Net Revenue (Payout to Bank) Not Calculated</h3>
+        <div class="info-box">
+            <p><strong>Problem:</strong> There is no field or calculation for the actual amount received in the bank account after Stripe deducts fees.</p>
+            <p><strong>Financial Flow Understanding:</strong></p>
+            <div class="calculation-box">
+                <div class="calculation-step">
+                    <strong>Step 1: Customer Payment</strong><br>
+                    Customer pays: <span class="field-name">final_amount</span> = $1.00
+                </div>
+                <div class="calculation-step">
+                    <strong>Step 2: Stripe Processing</strong><br>
+                    Stripe fee deducted: <span class="field-name">stripe_fee_amount</span> = $0.30<br>
+                    Stripe tax (if applicable): <span class="field-name">stripe_amount_tax</span> = $0.10<br>
+                    <strong>Amount Stripe receives:</strong> $1.00
+                </div>
+                <div class="calculation-step">
+                    <strong>Step 3: Stripe Payout to Bank</strong><br>
+                    <strong>Net Payout = final_amount - stripe_fee_amount - stripe_amount_tax</strong><br>
+                    Net Payout = $1.00 - $0.30 - $0.10 = <strong>$0.60</strong>
+                </div>
+                <div class="calculation-step">
+                    <strong>Step 4: Platform Fee Deduction (if applicable)</strong><br>
+                    Platform fee: <span class="field-name">platform_fee_amount</span> = $0.05<br>
+                    <strong>Event Organizer Receives:</strong> Net Payout - platform_fee_amount = $0.60 - $0.05 = <strong>$0.55</strong>
+                </div>
+            </div>
+            <p><strong>Key Insight:</strong> The "net revenue" that matters for accounting is the actual payout to the bank, which is: <code>final_amount - stripe_fee_amount - stripe_amount_tax</code></p>
+        </div>
+
+        <h2>2. Database Schema Verification</h2>
+
+        <h3>2.1 Required Fields Analysis</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Field Name</th>
+                    <th>Database Column</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Purpose</th>
+                    <th>Populated By</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="field-name">totalAmount</span></td>
+                    <td><code>total_amount</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>✅ Exists</td>
+                    <td>Base ticket prices before discounts/fees/taxes</td>
+                    <td>Purchase flow (needs fix)</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">discountAmount</span></td>
+                    <td><code>discount_amount</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>✅ Exists</td>
+                    <td>Discount applied to transaction</td>
+                    <td>Purchase flow</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">platformFeeAmount</span></td>
+                    <td><code>platform_fee_amount</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>✅ Exists</td>
+                    <td>Platform fee (calculated from tenant settings)</td>
+                    <td>Purchase flow</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">taxAmount</span></td>
+                    <td><code>tax_amount</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>✅ Exists</td>
+                    <td>Tax amount (if calculated by system)</td>
+                    <td>Purchase flow (often 0)</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">finalAmount</span></td>
+                    <td><code>final_amount</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>✅ Exists</td>
+                    <td>Final amount customer paid (from Stripe)</td>
+                    <td>Purchase flow (needs fix)</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">stripeFeeAmount</span></td>
+                    <td><code>stripe_fee_amount</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>✅ Exists</td>
+                    <td>Stripe processing fee (from Stripe balance transaction)</td>
+                    <td>Batch job / Webhook</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">stripeAmountTax</span></td>
+                    <td><code>stripe_amount_tax</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>✅ Exists</td>
+                    <td>Tax collected by Stripe (if Stripe Tax enabled)</td>
+                    <td>Batch job / Webhook</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">refundAmount</span></td>
+                    <td><code>refund_amount</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>✅ Exists</td>
+                    <td>Amount refunded to customer</td>
+                    <td>Refund flow</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">eventId</span></td>
+                    <td><code>event_id</code></td>
+                    <td>bigint</td>
+                    <td>✅ Exists</td>
+                    <td>Foreign key to event_details table</td>
+                    <td>Purchase flow</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">tenantId</span></td>
+                    <td><code>tenant_id</code></td>
+                    <td>varchar(255)</td>
+                    <td>✅ Exists</td>
+                    <td>Multi-tenant identifier</td>
+                    <td>Purchase flow</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">purchaseDate</span></td>
+                    <td><code>purchase_date</code></td>
+                    <td>timestamp</td>
+                    <td>✅ Exists</td>
+                    <td>Date/time of purchase</td>
+                    <td>Purchase flow</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">status</span></td>
+                    <td><code>status</code></td>
+                    <td>varchar(255)</td>
+                    <td>✅ Exists</td>
+                    <td>Transaction status (PENDING, COMPLETED, FAILED, REFUNDED, CANCELLED)</td>
+                    <td>Purchase flow / Webhook</td>
+                </tr>
+                <tr>
+                    <td><span class="field-name">netPayoutAmount</span></td>
+                    <td><code>net_payout_amount</code></td>
+                    <td>numeric(21,2)</td>
+                    <td>✅ Exists</td>
+                    <td>Net payout amount to bank (final_amount - stripe_fee_amount - stripe_amount_tax)</td>
+                    <td>Batch job (populated after Stripe fees/tax are retrieved)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="recommendation">
+            <h3>✅ Database Schema Assessment</h3>
+            <p><strong>Conclusion:</strong> All required fields exist in the database schema, including <span class="field-name">net_payout_amount</span>.</p>
+            <p><strong>Net Payout Field:</strong> The <span class="field-name">net_payout_amount</span> field has been added to the database schema and will be populated by the batch job.</p>
+            <ul>
+                <li><strong>Net Payout = final_amount - stripe_fee_amount - stripe_amount_tax</strong></li>
+                <li><strong>Event Organizer Net Revenue = Net Payout - platform_fee_amount</strong></li>
+            </ul>
+            <p><strong>Batch Job Responsibility:</strong> The batch job will calculate and populate <span class="field-name">net_payout_amount</span> after retrieving Stripe fees and tax from the Stripe API. This eliminates the need to calculate it on-the-fly in analytics queries.</p>
+        </div>
+
+        <h2>3. Current Batch Job Implementation Analysis</h2>
+
+        <h3>3.1 Existing Implementation Review</h3>
+        <p><strong>Location:</strong> <code>E:\project_workspace\event-site-manager-batch-jobs</code></p>
+
+        <div class="info-box">
+            <h4>Current Implementation Status:</h4>
+            <ul>
+                <li>✅ <strong>Service Class:</strong> <code>StripeFeesTaxUpdateService.java</code> - Handles batch processing</li>
+                <li>✅ <strong>Stripe API Service:</strong> <code>StripeFeesTaxService.java</code> - Retrieves fees and tax from Stripe</li>
+                <li>✅ <strong>Repository Method:</strong> <code>findTransactionsNeedingUpdate()</code> - Queries transactions needing updates</li>
+                <li>✅ <strong>Multi-Tenant Support:</strong> Already implemented - loops through all tenants if tenantId not provided</li>
+                <li>✅ <strong>Date Range Filtering:</strong> Already implemented - supports startDate and endDate</li>
+                <li>✅ <strong>Force Update:</strong> Already implemented - can reprocess already-populated transactions</li>
+                <li>✅ <strong>API Endpoint:</strong> <code>POST /api/cron/stripe-fees-tax-update</code> - On-demand triggering</li>
+                <li>⏳ <strong>Event ID Filtering:</strong> <strong>NOT IMPLEMENTED</strong> - Needs to be added</li>
+                <li>⏳ <strong>14-Day Delay Logic:</strong> <strong>NOT IMPLEMENTED</strong> - Needs to be added for normal batch runs</li>
+                <li>⏳ <strong>Net Revenue Calculation:</strong> <strong>NOT IMPLEMENTED</strong> - Can be added as optional enhancement</li>
+            </ul>
+        </div>
+
+        <h3>3.2 Current Query Logic</h3>
+        <div class="code-block">
+// Current Repository Query (EventTicketTransactionRepository.java)
+@Query("SELECT t FROM EventTicketTransaction t " +
+       "WHERE t.tenantId = :tenantId " +
+       "AND (t.stripeFeeAmount IS NULL OR t.stripeFeeAmount = 0 OR :forceUpdate = true) " +
+       "AND t.stripePaymentIntentId IS NOT NULL " +
+       "AND t.status = 'COMPLETED' " +
+       "AND (:startDate IS NULL OR t.createdAt >= :startDate) " +
+       "AND (:endDate IS NULL OR t.createdAt <= :endDate)")
+Page&lt;EventTicketTransaction&gt; findTransactionsNeedingUpdate(
+    @Param("tenantId") String tenantId,
+    @Param("forceUpdate") boolean forceUpdate,
+    @Param("startDate") ZonedDateTime startDate,
+    @Param("endDate") ZonedDateTime endDate,
+    Pageable pageable
+);
+        </div>
+
+        <h3>3.3 Current Processing Flow</h3>
+        <ol>
+            <li>Service receives request with optional tenantId, startDate, endDate, forceUpdate</li>
+            <li>If tenantId provided: Process only that tenant</li>
+            <li>If tenantId NOT provided: Query all distinct tenantIds and process each separately</li>
+            <li>For each tenant: Query transactions using <code>findTransactionsNeedingUpdate()</code></li>
+            <li>For each transaction: Retrieve Stripe fee and tax via <code>StripeFeesTaxService</code></li>
+            <li>Update transaction via backend API PATCH endpoint</li>
+            <li>Return statistics (processed, updated, failed, skipped)</li>
+        </ol>
+
+        <h2>4. Required Enhancements</h2>
+
+        <h3>4.1 Enhancement 1: Add Event ID Filtering</h3>
+        <div class="requirement">
+            <h4>Requirement:</h4>
+            <p>Add ability to filter transactions by <span class="field-name">eventId</span> when triggering the batch job.</p>
+
+            <h4>Implementation Steps:</h4>
+            <ol>
+                <li><strong>Update DTO:</strong> Add <code>eventId</code> field to <code>StripeFeesTaxUpdateRequest.java</code></li>
+                <li><strong>Update Repository Query:</strong> Add <code>eventId</code> parameter to <code>findTransactionsNeedingUpdate()</code> method</li>
+                <li><strong>Update Service:</strong> Pass <code>eventId</code> to repository query in <code>StripeFeesTaxUpdateService.java</code></li>
+                <li><strong>Update Controller:</strong> Accept <code>eventId</code> in request body (already handled by DTO)</li>
+            </ol>
+
+            <h4>Modified Repository Query:</h4>
+            <div class="code-block">
+@Query("SELECT t FROM EventTicketTransaction t " +
+       "WHERE t.tenantId = :tenantId " +
+       "AND (:eventId IS NULL OR t.eventId = :eventId) " +  // NEW: Event ID filter
+       "AND (t.stripeFeeAmount IS NULL OR t.stripeFeeAmount = 0 OR :forceUpdate = true) " +
+       "AND t.stripePaymentIntentId IS NOT NULL " +
+       "AND t.status = 'COMPLETED' " +
+       "AND (:startDate IS NULL OR t.createdAt >= :startDate) " +
+       "AND (:endDate IS NULL OR t.createdAt <= :endDate)")
+Page&lt;EventTicketTransaction&gt; findTransactionsNeedingUpdate(
+    @Param("tenantId") String tenantId,
+    @Param("eventId") Long eventId,  // NEW: Event ID parameter
+    @Param("forceUpdate") boolean forceUpdate,
+    @Param("startDate") ZonedDateTime startDate,
+    @Param("endDate") ZonedDateTime endDate,
+    Pageable pageable
+);
+            </div>
+        </div>
+
+        <h3>4.2 Enhancement 2: Implement 14-Day Delay Logic for Normal Batch Runs</h3>
+        <div class="requirement">
+            <h4>Requirement:</h4>
+            <p>For normal scheduled batch job runs (not on-demand), only process transactions where:</p>
+            <ul>
+                <li>Purchase date is at least 14 days ago (to ensure Stripe payout is complete)</li>
+                <li>Purchase date is within the current month (to limit scope)</li>
+            </ul>
+
+            <h4>Implementation Approach:</h4>
+            <p><strong>Option A: Automatic Date Range Calculation (Recommended)</strong></p>
+            <ul>
+                <li>When batch job is triggered via scheduler (not API), automatically calculate date range</li>
+                <li>Start Date: First day of current month</li>
+                <li>End Date: Today minus 14 days</li>
+                <li>This ensures only transactions from this month that are at least 14 days old are processed</li>
+            </ul>
+
+            <p><strong>Option B: Add Parameter to Request</strong></p>
+            <ul>
+                <li>Add <code>useDefaultDateRange</code> boolean flag to request</li>
+                <li>If true, ignore provided startDate/endDate and use calculated range</li>
+                <li>If false, use provided dates (for on-demand/manual runs)</li>
+            </ul>
+
+            <h4>Recommended Implementation (Option A):</h4>
+            <div class="code-block">
+// In StripeFeesTaxUpdateService.java
+public CompletableFuture&lt;ProcessingStats&gt; processStripeFeesAndTax(
+    String tenantId,
+    Long eventId,  // NEW: Event ID parameter
+    ZonedDateTime startDate,
+    ZonedDateTime endDate,
+    boolean forceUpdate,
+    boolean useDefaultDateRange  // NEW: Flag for automatic date calculation
+) {
+    // If useDefaultDateRange is true, calculate dates automatically
+    if (useDefaultDateRange) {
+        ZonedDateTime now = ZonedDateTime.now();
+        // Start: First day of current month
+        startDate = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        // End: Today minus 14 days
+        endDate = now.minusDays(14).withHour(23).withMinute(59).withSecond(59).withNano(999999999);
+
+        log.info("Using default date range for normal batch run: {} to {}", startDate, endDate);
+    }
+
+    // Continue with existing processing logic...
+}
+            </div>
+
+            <h4>Modified Repository Query with Purchase Date Filter:</h4>
+            <div class="code-block">
+@Query("SELECT t FROM EventTicketTransaction t " +
+       "WHERE t.tenantId = :tenantId " +
+       "AND (:eventId IS NULL OR t.eventId = :eventId) " +
+       "AND (t.stripeFeeAmount IS NULL OR t.stripeFeeAmount = 0 OR :forceUpdate = true) " +
+       "AND t.stripePaymentIntentId IS NOT NULL " +
+       "AND t.status = 'COMPLETED' " +
+       "AND (:startDate IS NULL OR t.purchaseDate >= :startDate) " +  // CHANGED: Use purchaseDate instead of createdAt
+       "AND (:endDate IS NULL OR t.purchaseDate <= :endDate)")        // CHANGED: Use purchaseDate instead of createdAt
+Page&lt;EventTicketTransaction&gt; findTransactionsNeedingUpdate(
+    @Param("tenantId") String tenantId,
+    @Param("eventId") Long eventId,
+    @Param("forceUpdate") boolean forceUpdate,
+    @Param("startDate") ZonedDateTime startDate,
+    @Param("endDate") ZonedDateTime endDate,
+    Pageable pageable
+);
+            </div>
+
+            <div class="warning-box">
+                <p><strong>⚠️ Important Note:</strong> The current query uses <code>t.createdAt</code> for date filtering, but for the 14-day delay logic, we should use <code>t.purchaseDate</code> because:</p>
+                <ul>
+                    <li><code>purchaseDate</code> represents when the customer actually made the purchase</li>
+                    <li><code>createdAt</code> represents when the database record was created (may be slightly different)</li>
+                    <li>For Stripe payout timing, we care about when the purchase was made, not when the record was created</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>4.3 Enhancement 3: Calculate and Store Net Revenue (IMPLEMENTED)</h3>
+        <div class="recommendation">
+            <h4>Requirement:</h4>
+            <p>Calculate and store the net payout amount (amount received in bank after Stripe fees and tax) in the database.</p>
+
+            <h4>Database Field:</h4>
+            <div class="calculation-box">
+                <p><strong>Field Name:</strong> <span class="field-name">net_payout_amount</span></p>
+                <p><strong>Database Column:</strong> <code>net_payout_amount</code></p>
+                <p><strong>Type:</strong> <code>numeric(21,2) NULL</code></p>
+                <p><strong>Status:</strong> ✅ Field exists in database schema</p>
+            </div>
+
+            <h4>Calculation Formula:</h4>
+            <div class="calculation-box">
+                <p><strong>Net Payout to Bank = final_amount - stripe_fee_amount - stripe_amount_tax</strong></p>
+                <p><strong>Event Organizer Net Revenue = Net Payout - platform_fee_amount</strong></p>
+            </div>
+
+            <h4>Implementation: Option C Selected</h4>
+            <p><strong>✅ Selected Approach:</strong> Calculate and Store in Batch Job</p>
+            <ul>
+                <li>✅ Database field <code>net_payout_amount</code> has been added to the schema</li>
+                <li>✅ Batch job will calculate net payout after retrieving Stripe fees/tax from Stripe API</li>
+                <li>✅ Batch job will update transaction with calculated <code>net_payout_amount</code> value</li>
+                <li>✅ Value will be stored in database for fast retrieval in analytics/reporting queries</li>
+            </ul>
+
+            <h4>Batch Job Implementation Steps:</h4>
+            <ol>
+                <li>Retrieve <code>stripe_fee_amount</code> and <code>stripe_amount_tax</code> from Stripe API</li>
+                <li>Calculate <code>net_payout_amount = final_amount - stripe_fee_amount - stripe_amount_tax</code></li>
+                <li>Update transaction via backend API PATCH endpoint with all three values:
+                    <ul>
+                        <li><code>stripe_fee_amount</code></li>
+                        <li><code>stripe_amount_tax</code></li>
+                        <li><code>net_payout_amount</code> (NEW - calculated value)</li>
+                    </ul>
+                </li>
+            </ol>
+
+            <div class="info-box">
+                <p><strong>Benefits of Storing net_payout_amount:</strong></p>
+                <ul>
+                    <li>✅ Pre-calculated for fast reporting and analytics queries</li>
+                    <li>✅ Can track historical net payout values</li>
+                    <li>✅ No need to calculate on-the-fly in every query</li>
+                    <li>✅ Consistent value across all reports</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>5. Stripe API Data Retrieval Analysis</h2>
+
+        <h3>5.1 Current Stripe API Retrieval Flow</h3>
+        <p>The existing <code>StripeFeesTaxService.java</code> already implements the correct flow:</p>
+        <ol>
+            <li><strong>Retrieve PaymentIntent:</strong> <code>PaymentIntent.retrieve(paymentIntentId)</code></li>
+            <li><strong>Get Charges:</strong> <code>Charge.list({ payment_intent: paymentIntentId })</code></li>
+            <li><strong>Get Balance Transaction:</strong> <code>BalanceTransaction.retrieve(charge.balance_transaction)</code></li>
+            <li><strong>Extract Fee:</strong> <code>balanceTx.fee / 100</code> (convert cents to dollars)</li>
+            <li><strong>Extract Tax:</strong> From CheckoutSession or PaymentIntent metadata</li>
+        </ol>
+
+        <h3>5.2 Stripe Payout Timing</h3>
+        <div class="info-box">
+            <p><strong>Stripe Payout Schedule:</strong></p>
+            <ul>
+                <li><strong>Standard Payout:</strong> 2-7 business days after charge</li>
+                <li><strong>Instant Payout:</strong> Available immediately (if enabled, additional fee applies)</li>
+                <li><strong>Balance Transaction Available:</strong> Usually available within minutes to hours after charge</li>
+                <li><strong>Fee Calculation:</strong> Final fee amount is available when balance transaction is created</li>
+            </ul>
+            <p><strong>14-Day Delay Rationale:</strong></p>
+            <ul>
+                <li>Ensures all Stripe payouts are complete (standard payouts take 2-7 business days)</li>
+                <li>Allows time for any refunds or disputes to be processed</li>
+                <li>Ensures balance transactions are finalized</li>
+                <li>Provides buffer for any Stripe processing delays</li>
+                <li>Accounts for weekends and holidays (14 days = ~10 business days)</li>
+            </ul>
+        </div>
+
+        <h3>5.3 Additional Stripe Data Available</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Stripe Object</th>
+                    <th>Field</th>
+                    <th>Available Data</th>
+                    <th>Current Usage</th>
+                    <th>Recommendation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>BalanceTransaction</td>
+                    <td><code>fee</code></td>
+                    <td>Stripe processing fee in cents</td>
+                    <td>✅ Retrieved</td>
+                    <td>Continue using</td>
+                </tr>
+                <tr>
+                    <td>BalanceTransaction</td>
+                    <td><code>net</code></td>
+                    <td>Net amount after fees (in cents)</td>
+                    <td>❌ Not retrieved</td>
+                    <td>✅ <strong>RECOMMENDED:</strong> Retrieve and use for net payout calculation</td>
+                </tr>
+                <tr>
+                    <td>BalanceTransaction</td>
+                    <td><code>amount</code></td>
+                    <td>Gross amount before fees (in cents)</td>
+                    <td>❌ Not retrieved</td>
+                    <td>Optional: Can verify against final_amount</td>
+                </tr>
+                <tr>
+                    <td>CheckoutSession</td>
+                    <td><code>total_details.amount_tax</code></td>
+                    <td>Tax amount if Stripe Tax enabled</td>
+                    <td>✅ Retrieved</td>
+                    <td>Continue using</td>
+                </tr>
+                <tr>
+                    <td>PaymentIntent</td>
+                    <td><code>amount</code></td>
+                    <td>Total amount charged (in cents)</td>
+                    <td>❌ Not retrieved</td>
+                    <td>Optional: Can verify against final_amount</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="recommendation">
+            <h4>✅ Recommended Enhancement: Retrieve Balance Transaction Net Amount</h4>
+            <p>The <code>BalanceTransaction.net</code> field contains the exact amount that will be deposited to your bank account after Stripe fees. This is the most accurate source for net payout calculation.</p>
+            <div class="code-block">
+// Enhanced StripeFeesTaxService.getStripeFee() method
+public StripeFeeTaxResult getStripeFeeAndNet(String tenantId, String paymentIntentId) {
+    // ... existing code to retrieve BalanceTransaction ...
+
+    BalanceTransaction balanceTx = BalanceTransaction.retrieve(balanceTransactionId);
+
+    // Extract fee (existing)
+    Long feeInCents = balanceTx.getFee();
+    BigDecimal feeAmount = BigDecimal.valueOf(feeInCents).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+    // NEW: Extract net amount (payout to bank)
+    Long netInCents = balanceTx.getNet();
+    BigDecimal netAmount = BigDecimal.valueOf(netInCents).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+    return new StripeFeeTaxResult(feeAmount, netAmount);
+}
+            </div>
+        </div>
+
+        <h2>6. Recommended Implementation Changes</h2>
+
+        <h3>6.1 Summary of Required Changes</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Change</th>
+                    <th>Priority</th>
+                    <th>Complexity</th>
+                    <th>Files to Modify</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Add eventId filtering</td>
+                    <td>HIGH</td>
+                    <td>LOW</td>
+                    <td>DTO, Repository, Service, Controller</td>
+                </tr>
+                <tr>
+                    <td>Implement 10-day delay logic for normal runs</td>
+                    <td>HIGH</td>
+                    <td>MEDIUM</td>
+                    <td>Service, Scheduler</td>
+                </tr>
+                <tr>
+                    <td>Change date filter to use purchaseDate instead of createdAt</td>
+                    <td>HIGH</td>
+                    <td>LOW</td>
+                    <td>Repository</td>
+                </tr>
+                <tr>
+                    <td>Retrieve BalanceTransaction.net for net payout</td>
+                    <td>MEDIUM</td>
+                    <td>LOW</td>
+                    <td>StripeFeesTaxService</td>
+                </tr>
+                <tr>
+                    <td>Calculate and optionally store net payout</td>
+                    <td>MEDIUM</td>
+                    <td>MEDIUM</td>
+                    <td>Service, Backend API (if storing)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>6.2 Modified Files Checklist</h3>
+        <div class="info-box">
+            <h4>Files to Modify in Batch Job Project:</h4>
+            <ol>
+                <li><strong>DTO:</strong> <code>StripeFeesTaxUpdateRequest.java</code>
+                    <ul>
+                        <li>Add <code>eventId</code> field (Long, nullable)</li>
+                        <li>Add <code>useDefaultDateRange</code> field (Boolean, default false)</li>
+                    </ul>
+                </li>
+                <li><strong>Repository:</strong> <code>EventTicketTransactionRepository.java</code>
+                    <ul>
+                        <li>Add <code>eventId</code> parameter to query</li>
+                        <li>Change date filter from <code>createdAt</code> to <code>purchaseDate</code></li>
+                    </ul>
+                </li>
+                <li><strong>Service:</strong> <code>StripeFeesTaxUpdateService.java</code>
+                    <ul>
+                        <li>Add <code>eventId</code> parameter to methods</li>
+                        <li>Implement automatic date range calculation when <code>useDefaultDateRange = true</code></li>
+                        <li>Pass <code>eventId</code> to repository query</li>
+                    </ul>
+                </li>
+                <li><strong>Stripe Service:</strong> <code>StripeFeesTaxService.java</code>
+                    <ul>
+                        <li>Enhance <code>getStripeFee()</code> to also return <code>net</code> amount from BalanceTransaction</li>
+                        <li>Or create new method <code>getStripeFeeAndNet()</code></li>
+                    </ul>
+                </li>
+                <li><strong>Controller:</strong> <code>BatchJobController.java</code>
+                    <ul>
+                        <li>No changes needed (DTO handles new fields automatically)</li>
+                    </ul>
+                </li>
+                <li><strong>Scheduler:</strong> <code>BatchJobScheduler.java</code> (if exists)
+                    <ul>
+                        <li>Set <code>useDefaultDateRange = true</code> when triggering scheduled runs</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <h2>7. Normal Batch Job Run Logic</h2>
+
+        <h3>7.1 Scheduled Batch Job Behavior</h3>
+        <div class="recommendation">
+            <h4>Recommended Scheduled Batch Job Configuration:</h4>
+            <ul>
+                <li><strong>Frequency:</strong> Daily (runs once per day)</li>
+                <li><strong>Time:</strong> Early morning (e.g., 2:00 AM) to avoid peak usage</li>
+                <li><strong>Date Range:</strong> Automatically calculated</li>
+                    <ul>
+                        <li>Start Date: First day of current month</li>
+                        <li>End Date: Today minus 14 days</li>
+                    </ul>
+                <li><strong>Filters:</strong></li>
+                    <ul>
+                        <li>Status: COMPLETED only</li>
+                        <li>stripe_fee_amount: NULL or 0 (unless forceUpdate=true)</li>
+                        <li>stripe_payment_intent_id: NOT NULL</li>
+                        <li>purchase_date: Within calculated date range (14+ days old)</li>
+                    </ul>
+                <li><strong>Multi-Tenant:</strong> Process all tenants (tenantId = null)</li>
+                <li><strong>Force Update:</strong> false (only update missing values)</li>
+            </ul>
+        </div>
+
+        <h3>7.2 Example Scheduled Batch Job Invocation</h3>
+        <div class="code-block">
+// In BatchJobScheduler.java (scheduled method)
+@Scheduled(cron = "0 0 2 * * ?") // Daily at 2:00 AM
+public void runStripeFeesTaxUpdateJob() {
+    log.info("Starting scheduled Stripe fees and tax update job");
+
+    StripeFeesTaxUpdateRequest request = new StripeFeesTaxUpdateRequest();
+    request.setTenantId(null); // Process all tenants
+    request.setEventId(null);  // Process all events
+    request.setStartDate(null); // Will be calculated automatically
+    request.setEndDate(null);   // Will be calculated automatically
+    request.setUseDefaultDateRange(true); // Enable automatic date calculation (14-day delay)
+    request.setForceUpdate(false); // Only update missing values
+
+    stripeFeesTaxUpdateService.processStripeFeesAndTax(
+        request.getTenantId(),
+        request.getEventId(),
+        request.getStartDate(),
+        request.getEndDate(),
+        request.getForceUpdate(),
+        request.getUseDefaultDateRange()
+    );
+}
+        </div>
+
+        <h2>8. On-Demand Batch Job Run Logic</h2>
+
+        <h3>8.1 API Endpoint Behavior</h3>
+        <p>When triggered via API endpoint (<code>POST /api/cron/stripe-fees-tax-update</code>):</p>
+        <ul>
+            <li><strong>useDefaultDateRange:</strong> false (use provided dates or process all if not provided)</li>
+            <li><strong>tenantId:</strong> Optional - if provided, process only that tenant; if null, process all</li>
+            <li><strong>eventId:</strong> Optional - if provided, process only that event; if null, process all events</li>
+            <li><strong>startDate/endDate:</strong> Optional - if provided, filter by purchase date range</li>
+            <li><strong>forceUpdate:</strong> Optional - if true, reprocess already-populated transactions</li>
+        </ul>
+
+        <h3>8.2 Example API Requests</h3>
+        <div class="code-block">
+// Example 1: Process all transactions for a specific event
+POST /api/cron/stripe-fees-tax-update
+{
+  "tenantId": "tenant_demo_002",
+  "eventId": 6901,
+  "useDefaultDateRange": false,
+  "forceUpdate": false
+}
+
+// Example 2: Process all transactions for current month (14+ days old)
+POST /api/cron/stripe-fees-tax-update
+{
+  "tenantId": null,
+  "eventId": null,
+  "useDefaultDateRange": true,  // Automatically calculates: first of month to 14 days ago
+  "forceUpdate": false
+}
+
+// Example 3: Process specific date range for a tenant
+POST /api/cron/stripe-fees-tax-update
+{
+  "tenantId": "tenant_demo_002",
+  "eventId": null,
+  "startDate": "2025-01-01T00:00:00.000Z",
+  "endDate": "2025-01-31T23:59:59.999Z",
+  "useDefaultDateRange": false,
+  "forceUpdate": false
+}
+
+// Example 4: Force update all transactions for an event (reprocess)
+POST /api/cron/stripe-fees-tax-update
+{
+  "tenantId": "tenant_demo_002",
+  "eventId": 6901,
+  "useDefaultDateRange": false,
+  "forceUpdate": true  // Reprocess even if fees already populated
+}
+        </div>
+
+        <h2>9. Net Revenue Calculation Implementation</h2>
+
+        <h3>9.1 Calculation Formulas</h3>
+        <div class="calculation-box">
+            <h4>Financial Flow Breakdown:</h4>
+            <div class="calculation-step">
+                <strong>1. Customer Payment (final_amount):</strong> $1.00<br>
+                <em>This is what the customer paid to Stripe</em>
+            </div>
+            <div class="calculation-step">
+                <strong>2. Stripe Processing:</strong><br>
+                - Stripe Fee (stripe_fee_amount): $0.30<br>
+                - Stripe Tax (stripe_amount_tax): $0.10<br>
+                <em>Stripe deducts these before payout</em>
+            </div>
+            <div class="calculation-step">
+                <strong>3. Net Payout to Bank Account:</strong><br>
+                <code>net_payout = final_amount - stripe_fee_amount - stripe_amount_tax</code><br>
+                <code>net_payout = $1.00 - $0.30 - $0.10 = $0.60</code><br>
+                <em>This is the amount actually deposited to your Stripe account (then to bank)</em>
+            </div>
+            <div class="calculation-step">
+                <strong>4. Platform Fee Deduction:</strong><br>
+                - Platform Fee (platform_fee_amount): $0.05<br>
+                <em>This is deducted by your platform (not by Stripe)</em>
+            </div>
+            <div class="calculation-step">
+                <strong>5. Event Organizer Net Revenue:</strong><br>
+                <code>organizer_net_revenue = net_payout - platform_fee_amount</code><br>
+                <code>organizer_net_revenue = $0.60 - $0.05 = $0.55</code><br>
+                <em>This is what the event organizer receives after all deductions</em>
+            </div>
+        </div>
+
+        <h3>9.2 Implementation: Store in Database (SELECTED)</h3>
+        <div class="recommendation">
+            <h4>✅ Selected Approach: Store net_payout_amount in Database</h4>
+            <p>The <code>net_payout_amount</code> field has been added to the database schema and will be populated by the batch job.</p>
+
+            <h4>Batch Job Implementation:</h4>
+            <div class="code-block">
+// In StripeFeesTaxUpdateService.java (batch job processing)
+// After retrieving Stripe fee and tax from Stripe API:
+BigDecimal stripeFee = result.getFee();
+BigDecimal stripeTax = result.getTax();
+
+// Calculate net payout amount
+BigDecimal finalAmount = transaction.getFinalAmount();
+BigDecimal netPayoutAmount = finalAmount
+    .subtract(stripeFee != null ? stripeFee : BigDecimal.ZERO)
+    .subtract(stripeTax != null ? stripeTax : BigDecimal.ZERO);
+
+// Update transaction via backend API PATCH
+Map&lt;String, Object&gt; updatePayload = new HashMap&lt;&gt;();
+updatePayload.put("id", transaction.getId());
+updatePayload.put("stripeFeeAmount", stripeFee);
+updatePayload.put("stripeAmountTax", stripeTax);
+updatePayload.put("netPayoutAmount", netPayoutAmount);  // NEW: Store calculated value
+
+backendApiService.updateTransaction(transaction.getId(), updatePayload);
+            </div>
+
+            <h4>Analytics Usage:</h4>
+            <p>In analytics/reporting queries, use the stored <code>net_payout_amount</code> field directly:</p>
+            <div class="code-block">
+// In Sales Analytics calculation (using stored value)
+BigDecimal netPayout = transaction.getNetPayoutAmount(); // Direct field access
+BigDecimal organizerNetRevenue = netPayout
+    .subtract(platformFeeAmount != null ? platformFeeAmount : BigDecimal.ZERO);
+            </div>
+
+            <p><strong>Benefits:</strong></p>
+            <ul>
+                <li>✅ Pre-calculated for fast reporting and analytics queries</li>
+                <li>✅ No need to calculate on-the-fly in every query</li>
+                <li>✅ Consistent value across all reports</li>
+                <li>✅ Can track historical net payout values</li>
+            </ul>
+        </div>
+
+        <h2>10. Verification Checklist</h2>
+
+        <h3>10.1 Database Schema Verification</h3>
+        <div class="info-box">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Required</th>
+                        <th>Exists</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>total_amount</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Verified</td>
+                    </tr>
+                    <tr>
+                        <td>final_amount</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Verified</td>
+                    </tr>
+                    <tr>
+                        <td>stripe_fee_amount</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Verified</td>
+                    </tr>
+                    <tr>
+                        <td>stripe_amount_tax</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Verified</td>
+                    </tr>
+                    <tr>
+                        <td>platform_fee_amount</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Verified</td>
+                    </tr>
+                    <tr>
+                        <td>discount_amount</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Verified</td>
+                    </tr>
+                    <tr>
+                        <td>refund_amount</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Verified</td>
+                    </tr>
+                    <tr>
+                        <td>event_id</td>
+                        <td>✅ Yes (for filtering)</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Verified</td>
+                    </tr>
+                    <tr>
+                        <td>tenant_id</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Verified</td>
+                    </tr>
+                    <tr>
+                        <td>purchase_date</td>
+                        <td>✅ Yes (for 10-day delay)</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Verified</td>
+                    </tr>
+                    <tr>
+                        <td>status</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Verified</td>
+                    </tr>
+                    <tr>
+                        <td>net_payout_amount</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Verified - Populated by batch job</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p><strong>Conclusion:</strong> All required fields exist. No schema modifications needed for core functionality.</p>
+        </div>
+
+        <h3>10.2 Batch Job Implementation Verification</h3>
+        <div class="info-box">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Required</th>
+                        <th>Current Status</th>
+                        <th>Action Needed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Multi-tenant processing</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Implemented</td>
+                        <td>✅ None</td>
+                    </tr>
+                    <tr>
+                        <td>Date range filtering</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Implemented</td>
+                        <td>⚠️ Change to use purchaseDate</td>
+                    </tr>
+                    <tr>
+                        <td>Event ID filtering</td>
+                        <td>✅ Yes</td>
+                        <td>❌ Not implemented</td>
+                        <td>🔧 Add eventId parameter</td>
+                    </tr>
+                    <tr>
+                        <td>14-day delay logic</td>
+                        <td>✅ Yes</td>
+                        <td>❌ Not implemented</td>
+                        <td>🔧 Add useDefaultDateRange logic (14 days)</td>
+                    </tr>
+                    <tr>
+                        <td>Stripe fee retrieval</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Implemented</td>
+                        <td>✅ None</td>
+                    </tr>
+                    <tr>
+                        <td>Stripe tax retrieval</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Implemented</td>
+                        <td>✅ None</td>
+                    </tr>
+                    <tr>
+                        <td>BalanceTransaction.net retrieval</td>
+                        <td>⏳ Recommended</td>
+                        <td>❌ Not implemented</td>
+                        <td>🔧 Add net amount retrieval</td>
+                    </tr>
+                    <tr>
+                        <td>Net payout calculation and storage</td>
+                        <td>✅ Yes</td>
+                        <td>❌ Not implemented</td>
+                        <td>🔧 Add calculation logic and populate net_payout_amount field</td>
+                    </tr>
+                    <tr>
+                        <td>On-demand API endpoint</td>
+                        <td>✅ Yes</td>
+                        <td>✅ Implemented</td>
+                        <td>✅ None</td>
+                    </tr>
+                    <tr>
+                        <td>Scheduled batch job</td>
+                        <td>✅ Yes</td>
+                        <td>⏳ Partial</td>
+                        <td>🔧 Add 10-day delay logic</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>11. Implementation Priority and Timeline</h2>
+
+        <h3>11.1 Phase 1: Critical Enhancements (Immediate)</h3>
+        <div class="requirement">
+            <ol>
+                <li><strong>Add Event ID Filtering</strong>
+                    <ul>
+                        <li>Update DTO, Repository, Service</li>
+                        <li>Estimated time: 2-3 hours</li>
+                        <li>Testing: Verify filtering works for specific events</li>
+                    </ul>
+                </li>
+                <li><strong>Change Date Filter to Use purchaseDate</strong>
+                    <ul>
+                        <li>Update Repository query</li>
+                        <li>Estimated time: 1 hour</li>
+                        <li>Testing: Verify transactions are filtered by purchase date correctly</li>
+                    </ul>
+                </li>
+                <li><strong>Implement 14-Day Delay Logic</strong>
+                    <ul>
+                        <li>Add useDefaultDateRange flag and automatic date calculation</li>
+                        <li>Update Scheduler to use default date range (14 days)</li>
+                        <li>Estimated time: 3-4 hours</li>
+                        <li>Testing: Verify scheduled runs only process transactions 14+ days old from current month</li>
+                    </ul>
+                </li>
+                <li><strong>Calculate and Store net_payout_amount</strong>
+                    <ul>
+                        <li>Calculate net payout in batch job after retrieving Stripe fees/tax</li>
+                        <li>Update transaction via backend API with net_payout_amount</li>
+                        <li>Estimated time: 2-3 hours</li>
+                        <li>Testing: Verify net_payout_amount is calculated correctly and stored in database</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <h3>11.2 Phase 2: Recommended Enhancements (Next Sprint)</h3>
+        <div class="info-box">
+            <ol>
+                <li><strong>Retrieve BalanceTransaction.net</strong>
+                    <ul>
+                        <li>Enhance StripeFeesTaxService to retrieve net amount</li>
+                        <li>Estimated time: 2 hours</li>
+                        <li>Testing: Verify net amount matches expected calculation</li>
+                    </ul>
+                </li>
+                <li><strong>Use Stored net_payout_amount in Analytics</strong>
+                    <ul>
+                        <li>Update sales analytics to use stored net_payout_amount field</li>
+                        <li>Estimated time: 1-2 hours</li>
+                        <li>Testing: Verify analytics display net payout from stored field</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <h3>11.3 Phase 3: Optional Enhancements (Future)</h3>
+        <div class="info-box">
+            <ol>
+                <li><strong>Backend API Update for net_payout_amount (If Needed)</strong>
+                    <ul>
+                        <li>Verify backend API accepts net_payout_amount in PATCH requests</li>
+                        <li>Update DTOs if needed to include net_payout_amount field</li>
+                        <li>Estimated time: 1-2 hours</li>
+                    </ul>
+                </li>
+                <li><strong>Fix Purchase Flow Calculations</strong>
+                    <ul>
+                        <li>Fix total_amount vs final_amount calculation in checkout flow</li>
+                        <li>This is a separate frontend/backend issue, not batch job related</li>
+                        <li>Estimated time: 4-8 hours (frontend + backend)</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <h2>12. Testing Recommendations</h2>
+
+        <h3>12.1 Unit Testing</h3>
+        <ul>
+            <li>Test eventId filtering with various combinations (null, specific ID, non-existent ID)</li>
+            <li>Test date range calculation for useDefaultDateRange=true</li>
+            <li>Test purchaseDate filtering vs createdAt filtering</li>
+            <li>Test net payout calculation with various fee/tax combinations</li>
+        </ul>
+
+        <h3>12.2 Integration Testing</h3>
+        <ul>
+            <li>Test batch job with real Stripe test transactions</li>
+            <li>Verify Stripe API rate limiting is respected</li>
+            <li>Test multi-tenant processing with multiple tenants</li>
+            <li>Test scheduled batch job execution</li>
+            <li>Test on-demand API endpoint with various parameters</li>
+        </ul>
+
+        <h3>12.3 Data Verification</h3>
+        <ul>
+            <li>Verify stripe_fee_amount matches Stripe Dashboard</li>
+            <li>Verify stripe_amount_tax matches Stripe Dashboard (if Stripe Tax enabled)</li>
+            <li>Verify net payout calculation matches Stripe balance transaction net amount</li>
+            <li>Verify net_payout_amount is correctly calculated and stored in database</li>
+            <li>Verify 14-day delay logic only processes transactions 14+ days old</li>
+            <li>Verify eventId filtering only processes transactions for specified event</li>
+        </ul>
+
+        <h2>13. Summary and Next Steps</h2>
+
+        <div class="summary-box">
+            <h3>Key Findings:</h3>
+            <ol>
+                <li>✅ <strong>Database Schema:</strong> All required fields exist. No schema modifications needed for core functionality.</li>
+                <li>✅ <strong>Batch Job Infrastructure:</strong> Already implemented with multi-tenant support, date filtering, and Stripe API integration.</li>
+                <li>🔧 <strong>Required Enhancements:</strong> Add eventId filtering, implement 14-day delay logic, change date filter to use purchaseDate, calculate and store net_payout_amount.</li>
+                <li>🔧 <strong>Recommended Enhancements:</strong> Retrieve BalanceTransaction.net for accurate net payout calculation.</li>
+                <li>⏳ <strong>Optional Enhancements:</strong> Fix purchase flow calculations (separate frontend/backend issue).</li>
+            </ol>
+
+            <h3>Immediate Action Items:</h3>
+            <ol>
+                <li>Update <code>StripeFeesTaxUpdateRequest.java</code> to add <code>eventId</code> and <code>useDefaultDateRange</code> fields</li>
+                <li>Update <code>EventTicketTransactionRepository.java</code> query to add eventId filter and use purchaseDate</li>
+                <li>Update <code>StripeFeesTaxUpdateService.java</code> to implement 14-day delay logic and pass eventId</li>
+                <li>Update <code>StripeFeesTaxService.java</code> to retrieve BalanceTransaction.net for accurate net payout</li>
+                <li>Update <code>StripeFeesTaxUpdateService.java</code> to calculate and store net_payout_amount in database</li>
+                <li>Update <code>BackendApiService.java</code> to include net_payout_amount in PATCH payload</li>
+                <li>Update <code>BatchJobScheduler.java</code> to set useDefaultDateRange=true for scheduled runs (14-day delay)</li>
+                <li>Test all changes with real data</li>
+            </ol>
+
+            <h3>Financial Calculation Clarification:</h3>
+            <div class="calculation-box">
+                <p><strong>Net Payout to Bank = final_amount - stripe_fee_amount - stripe_amount_tax</strong></p>
+                <p><strong>Event Organizer Net Revenue = Net Payout - platform_fee_amount</strong></p>
+                <p><em>Note: Stripe fees and tax are already deducted by Stripe before payout, so net payout is what you actually receive in your bank account.</em></p>
+                <p><strong>✅ Implementation:</strong> The <code>net_payout_amount</code> field is stored in the database and populated by the batch job after retrieving Stripe fees and tax. This eliminates the need to calculate it on-the-fly in analytics queries.</p>
+            </div>
+        </div>
+
+        <h2>14. References</h2>
+        <ul>
+            <li><strong>Database Schema:</strong> <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></li>
+            <li><strong>Batch Job Project:</strong> <code>E:\project_workspace\event-site-manager-batch-jobs</code></li>
+            <li><strong>Backend Project:</strong> <code>E:\project_workspace\malayalees-us-site-boot</code></li>
+            <li><strong>Frontend Project:</strong> Current workspace (mosc-temp)</li>
+            <li><strong>Related Analysis:</strong> <a href="stripe_fees_taxes_revenue_calculation_analysis.html">Stripe Fees, Taxes, and Revenue Calculation Analysis</a></li>
+            <li><strong>Stripe API Documentation:</strong> <a href="https://stripe.com/docs/api/balance_transactions" target="_blank">Balance Transactions API</a></li>
+            <li><strong>Stripe Payouts:</strong> <a href="https://stripe.com/docs/payouts" target="_blank">Stripe Payouts Documentation</a></li>
+        </ul>
+
+        <hr>
+        <p><em>Document generated: January 11, 2026</em></p>
+        <p><em>Last updated: January 11, 2026</em></p>
+    </div>
+</body>
+</html>

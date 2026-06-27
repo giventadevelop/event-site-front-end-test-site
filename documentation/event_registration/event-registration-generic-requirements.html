@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Event Registration Enhancements - Generic Requirements</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; line-height: 1.5; color: #1f2937; }
+    h1, h2 { color: #0f172a; }
+    code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; }
+    .section { margin-bottom: 24px; }
+    .owner { background: #eff6ff; padding: 10px 12px; border-left: 4px solid #2563eb; }
+  </style>
+</head>
+<body>
+  <h1>Event Registration Enhancements - Generic Requirements</h1>
+  <p>This document defines the cross-team functional requirements for event registration notes and attendee attachment uploads.</p>
+
+  <div class="section">
+    <h2>Scope</h2>
+    <ul>
+      <li>Add attendee <strong>notes</strong> with a max length of <strong>1500</strong> characters.</li>
+      <li>Allow uploading up to <strong>2</strong> attachments during event registration.</li>
+      <li>Render notes and attachments on the registration success page.</li>
+      <li>Use a dedicated DB table for attachments: <code>event_attendee_attachment</code>.</li>
+      <li>Store files in S3 using attendee-specific paths.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Business Rules</h2>
+    <ul>
+      <li>Registration remains valid even when no attachments are provided.</li>
+      <li>Attachments allowed: PDF, DOC/DOCX, XLS/XLSX, CSV, TXT, JPG/JPEG/PNG.</li>
+      <li>Maximum file count: 2 per registration request.</li>
+      <li>Notes must be validated client-side and server-side at 1500 chars.</li>
+      <li>Upload sequence: attendee record first, then attachment uploads tied to attendee ID.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>High-Level Flow</h2>
+    <ol>
+      <li>User submits registration form.</li>
+      <li>System creates attendee record.</li>
+      <li>System uploads up to two files and persists attachment metadata rows.</li>
+      <li>Success page displays attendee details, notes, and attachment links.</li>
+    </ol>
+  </div>
+
+  <div class="section">
+    <h2>S3 Path Convention</h2>
+    <p>Required generic path format:</p>
+    <p><code>{profile}/events/tenantId/{tenantId}/event-id/{eventId}/attendees/attendee-id/{attendeeId}/attachments/{base}_{timestamp}_{uuid}.{ext}</code></p>
+  </div>
+
+  <div class="section">
+    <h2>Acceptance Criteria</h2>
+    <ul>
+      <li>Attendee notes accept up to 1500 characters and persist correctly.</li>
+      <li>More than two files is rejected by validation.</li>
+      <li>Unsupported file types are rejected by validation.</li>
+      <li>Upload errors return clear UI feedback; registration error states are visible.</li>
+      <li>Success page shows notes and uploaded attachments when present.</li>
+    </ul>
+  </div>
+
+  <div class="section owner">
+    <h2>Ownership</h2>
+    <p><strong>Product/PM:</strong> Confirm business rules and limits.</p>
+    <p><strong>QA:</strong> Validate all acceptance criteria and negative upload scenarios.</p>
+  </div>
+</body>
+</html>

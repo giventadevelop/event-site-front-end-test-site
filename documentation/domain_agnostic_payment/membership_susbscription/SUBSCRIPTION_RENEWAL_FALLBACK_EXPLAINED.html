@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscription Renewal Fallback Mode Explained</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 15px;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+
+        h3 {
+            color: #555;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        h4 {
+            color: #666;
+            margin-top: 25px;
+            margin-bottom: 12px;
+            font-size: 1.2em;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        .highlight-box {
+            background: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+
+        .danger-box {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+
+        .code-block {
+            background: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .code-block-title {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background: #3498db;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .comparison-table {
+            width: 100%;
+        }
+
+        .comparison-table th {
+            background: #34495e;
+        }
+
+        .scenario-box {
+            background: #f9f9f9;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+
+        .scenario-title {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before, .after {
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .before {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+
+        .after {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+
+        .before-title, .after-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1.05em;
+        }
+
+        .before-title {
+            color: #856404;
+        }
+
+        .after-title {
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Subscription Renewal Fallback Mode Explained</h1>
+
+        <div class="highlight-box">
+            <strong>Configuration:</strong> <code>subscription.renewal.use-database-fallback</code><br>
+            <strong>Default Value:</strong> <code>false</code> (production-safe)<br>
+            <strong>Purpose:</strong> Controls what happens when database dates and Stripe dates don't match
+        </div>
+
+        <h2>1. What Is "Fallback Mode"?</h2>
+
+        <p>
+            The batch job checks subscriptions by comparing dates from two sources:
+        </p>
+        <ul>
+            <li><strong>Database:</strong> Your local database's <code>current_period_end</code> date</li>
+            <li><strong>Stripe:</strong> Stripe's <code>current_period_end</code> date (fetched via API)</li>
+        </ul>
+
+        <p>
+            <strong>Fallback mode</strong> determines what happens when these two dates <em>don't match</em>.
+        </p>
+
+        <div class="warning-box">
+            <strong>When Do Dates Mismatch?</strong>
+            <ul>
+                <li>Webhook from Stripe failed to update your database</li>
+                <li>Someone manually changed dates in Stripe dashboard</li>
+                <li>Testing scripts advanced Stripe dates (expedite renewal)</li>
+                <li>System downtime prevented webhook processing</li>
+                <li>Time zone or synchronization issues</li>
+            </ul>
+        </div>
+
+        <h2>2. The Two Modes Explained</h2>
+
+        <h3>2.1 Production Mode (use-database-fallback = false)</h3>
+
+        <div class="success-box">
+            <h4>✅ Production Mode: Stripe is Always Right</h4>
+            <p>
+                When <code>use-database-fallback = false</code> (default):
+            </p>
+            <ul>
+                <li><strong>Stripe is the source of truth</strong> - Stripe's dates are always correct</li>
+                <li>If database date says "renewal in 3 days" but Stripe says "renewal in 20 days" → <strong>Skip the subscription</strong></li>
+                <li>If database date says "renewal in 20 days" but Stripe says "renewal in 3 days" → <strong>Process the subscription</strong> (update database from Stripe)</li>
+                <li>The batch job will <strong>update your database</strong> to match Stripe (self-healing)</li>
+            </ul>
+        </div>
+
+        <h3>2.2 Testing Mode (use-database-fallback = true)</h3>
+
+        <div class="danger-box">
+            <h4>⚠️ Testing Mode: Database Can Override Stripe</h4>
+            <p>
+                When <code>use-database-fallback = true</code>:
+            </p>
+            <ul>
+                <li><strong>Database dates can be used</strong> even when Stripe dates differ</li>
+                <li>If database date says "renewal in 3 days" but Stripe says "renewal in 20 days" → <strong>Process anyway</strong> (use database date)</li>
+                <li>This is useful for testing when you've manually advanced Stripe dates</li>
+                <li><strong>DANGEROUS in production</strong> - can cause incorrect renewal processing</li>
+            </ul>
+        </div>
+
+        <h2>3. Real-World Scenarios</h2>
+
+        <h3>Scenario 1: Webhook Failed (Production Mode)</h3>
+
+        <div class="scenario-box">
+            <div class="scenario-title">Situation: Subscription renewed in Stripe, but webhook failed</div>
+
+            <div class="before-after">
+                <div class="before">
+                    <div class="before-title">Before Batch Job Runs:</div>
+                    <ul>
+                        <li><strong>Database:</strong> <code>current_period_end = 2025-01-15</code> (expired yesterday!)</li>
+                        <li><strong>Stripe:</strong> <code>current_period_end = 2025-02-15</code> (renewed for another month)</li>
+                        <li><strong>Difference:</strong> 31 days</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <div class="after-title">Batch Job Decision (fallback = false):</div>
+                    <ul>
+                        <li>Stripe date (2025-02-15) is <strong>outside</strong> 7-day window</li>
+                        <li>Database date (2025-01-15) is <strong>within</strong> 7-day window</li>
+                        <li><strong>Result:</strong> Skip subscription (Stripe is source of truth)</li>
+                        <li><strong>Action:</strong> Logs warning, waits for next run or manual sync</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>Why Skip?</strong> Because Stripe says the subscription doesn't need renewal for another 30 days.
+                The batch job trusts Stripe over the database. However, the batch job will still update the database
+                dates from Stripe during processing (self-healing), so on the next run, the dates will match.
+            </div>
+        </div>
+
+        <h3>Scenario 2: Testing with Expedited Renewal (Testing Mode)</h3>
+
+        <div class="scenario-box">
+            <div class="scenario-title">Situation: Testing renewal flow, manually advanced Stripe dates</div>
+
+            <div class="before-after">
+                <div class="before">
+                    <div class="before-title">Before Batch Job Runs:</div>
+                    <ul>
+                        <li><strong>Database:</strong> <code>current_period_end = 2025-12-31</code> (within 7 days)</li>
+                        <li><strong>Stripe:</strong> <code>current_period_end = 2026-01-25</code> (manually advanced for testing)</li>
+                        <li><strong>Difference:</strong> 25 days</li>
+                        <li><strong>Fallback Mode:</strong> <code>true</code> (testing environment)</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <div class="after-title">Batch Job Decision (fallback = true):</div>
+                    <ul>
+                        <li>Database date (2025-12-31) is <strong>within</strong> 7-day window</li>
+                        <li>Stripe date (2026-01-25) is <strong>outside</strong> 7-day window</li>
+                        <li><strong>Result:</strong> Process subscription anyway (use database date)</li>
+                        <li><strong>Action:</strong> Processes renewal based on database date, updates database from Stripe</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>Why Process?</strong> In testing mode, you want to test the renewal flow even when Stripe dates
+                are artificially advanced. The batch job will process the subscription based on the database date,
+                allowing you to test renewal logic without waiting for real Stripe renewals.
+            </div>
+        </div>
+
+        <h3>Scenario 3: Normal Operation (Both Modes)</h3>
+
+        <div class="scenario-box">
+            <div class="scenario-title">Situation: Dates match (normal case)</div>
+
+            <div class="before-after">
+                <div class="before">
+                    <div class="before-title">Before Batch Job Runs:</div>
+                    <ul>
+                        <li><strong>Database:</strong> <code>current_period_end = 2025-01-05</code> (3 days away)</li>
+                        <li><strong>Stripe:</strong> <code>current_period_end = 2025-01-05</code> (matches database)</li>
+                        <li><strong>Difference:</strong> 0 days (perfect sync!)</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <div class="after-title">Batch Job Decision (any mode):</div>
+                    <ul>
+                        <li>Both dates are <strong>within</strong> 7-day window</li>
+                        <li><strong>Result:</strong> Process subscription ✅</li>
+                        <li><strong>Action:</strong> Updates reconciliation status, syncs dates</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="success-box">
+                <strong>Note:</strong> When dates match, fallback mode doesn't matter - the batch job processes normally.
+            </div>
+        </div>
+
+        <h2>4. Decision Logic Flow</h2>
+
+        <div class="code-block">
+            <div class="code-block-title">Batch Job Decision Tree</div>
+            <pre>1. Fetch subscription from database
+2. Check if subscription has Stripe ID
+   ├─ NO → Use database dates only (process if within 7 days)
+   └─ YES → Fetch from Stripe
+       ├─ Compare Stripe date with renewal window (7 days)
+       │   ├─ Stripe date WITHIN window → Process ✅
+       │   └─ Stripe date OUTSIDE window → Check database date
+       │       ├─ Database date WITHIN window → Check fallback mode
+       │       │   ├─ fallback = false → Skip ❌ (Stripe is source of truth)
+       │       │   └─ fallback = true → Process ✅ (Use database date)
+       │       └─ Database date OUTSIDE window → Skip ❌
+       └─ Update database dates from Stripe (self-healing)</pre>
+        </div>
+
+        <h2>5. Why Is Fallback Mode Dangerous in Production?</h2>
+
+        <div class="danger-box">
+            <h3>⚠️ Production Risk: Incorrect Renewal Processing</h3>
+
+            <p><strong>Problem Scenario:</strong></p>
+            <ol>
+                <li>Customer's subscription actually renewed in Stripe (new period: Jan 15 - Feb 15)</li>
+                <li>Webhook failed, so database still shows old date (Jan 15)</li>
+                <li>Database says "renewal in 3 days" (based on old date)</li>
+                <li>Stripe says "renewal in 30 days" (based on actual renewal)</li>
+                <li><strong>With fallback = true:</strong> Batch job processes based on database date</li>
+                <li><strong>Result:</strong> System thinks subscription needs renewal when it's already renewed!</li>
+            </ol>
+
+            <p><strong>Consequences:</strong></p>
+            <ul>
+                <li>❌ Incorrect renewal notifications sent to customers</li>
+                <li>❌ System may try to process renewal that already happened</li>
+                <li>❌ Data inconsistency between your system and Stripe</li>
+                <li>❌ Customer confusion ("I already paid, why am I getting renewal notices?")</li>
+                <li>❌ Potential double-billing attempts</li>
+            </ul>
+        </div>
+
+        <h2>6. When Should You Use Fallback Mode?</h2>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Environment</th>
+                    <th>Fallback Setting</th>
+                    <th>Why</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Production</strong></td>
+                    <td><code>false</code> ✅</td>
+                    <td>Stripe is the source of truth. Always trust Stripe dates to prevent incorrect processing.</td>
+                </tr>
+                <tr>
+                    <td><strong>Staging</strong></td>
+                    <td><code>false</code> ✅</td>
+                    <td>Should mirror production behavior. Test with real Stripe dates.</td>
+                </tr>
+                <tr>
+                    <td><strong>Development</strong></td>
+                    <td><code>true</code> ⚠️</td>
+                    <td>Useful when testing renewal flows with expedited Stripe dates. Allows testing without waiting for real renewals.</td>
+                </tr>
+                <tr>
+                    <td><strong>Local Testing</strong></td>
+                    <td><code>true</code> ⚠️</td>
+                    <td>When manually advancing Stripe dates for testing, fallback mode allows processing based on database dates.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>7. Configuration Examples</h2>
+
+        <h3>7.1 Production Configuration</h3>
+        <div class="code-block">
+            <div class="code-block-title">application-prod.yml</div>
+            <pre>subscription:
+  renewal:
+    use-database-fallback: false  # ✅ Production: Always trust Stripe</pre>
+        </div>
+
+        <h3>7.2 Development Configuration</h3>
+        <div class="code-block">
+            <div class="code-block-title">application-dev.yml</div>
+            <pre>subscription:
+  renewal:
+    use-database-fallback: true  # ⚠️ Dev: Allow database fallback for testing</pre>
+        </div>
+
+        <h3>7.3 Environment Variable</h3>
+        <div class="code-block">
+            <div class="code-block-title">Environment Variable</div>
+            <pre># Set in environment or .env file
+USE_DATABASE_FALLBACK=false  # Production
+USE_DATABASE_FALLBACK=true   # Development/Testing</pre>
+        </div>
+
+        <h2>8. What Happens in Each Mode (Code Logic)</h2>
+
+        <h3>8.1 Production Mode (fallback = false)</h3>
+        <div class="code-block">
+            <div class="code-block-title">SubscriptionRenewalProcessor.java - Production Logic</div>
+            <pre>if (database date within window BUT Stripe date outside window) {
+    log.warn("⚠️ DATE MISMATCH DETECTED (Production Mode)");
+    log.warn("Skipping subscription (Stripe is source of truth)");
+    return false; // Skip subscription
+}</pre>
+        </div>
+
+        <h3>8.2 Testing Mode (fallback = true)</h3>
+        <div class="code-block">
+            <div class="code-block-title">SubscriptionRenewalProcessor.java - Testing Logic</div>
+            <pre>if (database date within window BUT Stripe date outside window) {
+    log.warn("⚠️ DATE MISMATCH DETECTED (Testing Mode)");
+    log.warn("Using database date for processing");
+    return true; // Process subscription using database date
+}</pre>
+        </div>
+
+        <h2>9. Self-Healing Behavior</h2>
+
+        <div class="highlight-box">
+            <h3>Important: Self-Healing Still Happens</h3>
+            <p>
+                Regardless of fallback mode, the batch job will <strong>always update database dates from Stripe</strong>
+                during processing. This is the "self-healing" feature:
+            </p>
+            <ul>
+                <li>Even if fallback mode processes a subscription based on database dates, it will still update the database to match Stripe</li>
+                <li>On the next batch job run, dates will match and fallback mode won't matter</li>
+                <li>This ensures your database eventually syncs with Stripe</li>
+            </ul>
+        </div>
+
+        <h2>10. Summary</h2>
+
+        <div class="success-box">
+            <h3>Key Points:</h3>
+            <ul>
+                <li><strong>Fallback mode</strong> controls what happens when database and Stripe dates don't match</li>
+                <li><strong>Production (false):</strong> Always trust Stripe dates - skip if Stripe says not ready</li>
+                <li><strong>Testing (true):</strong> Can use database dates even when Stripe dates differ</li>
+                <li><strong>Danger:</strong> Using fallback mode in production can cause incorrect renewal processing</li>
+                <li><strong>Self-healing:</strong> Database dates are always updated from Stripe during processing</li>
+            </ul>
+        </div>
+
+        <div class="warning-box">
+            <h3>⚠️ Remember:</h3>
+            <p>
+                <strong>In production, always set <code>use-database-fallback = false</code></strong>.
+                Stripe is the payment processor and source of truth. Trusting database dates over Stripe
+                can lead to incorrect renewal processing, customer confusion, and potential billing issues.
+            </p>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #ddd;">
+
+        <p style="text-align: center; color: #666; margin-top: 40px;">
+            <em>This documentation explains the fallback mode behavior based on code analysis from the event-site-manager-batch-jobs project.</em>
+        </p>
+    </div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>From Email Dropdown Implementation Guide</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1a237e;
+            border-bottom: 3px solid #1a237e;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #283593;
+            margin-top: 30px;
+            border-left: 4px solid #283593;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #3949ab;
+            margin-top: 20px;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border-left: 4px solid #1a237e;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: inherit;
+        }
+        .note {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .warning {
+            background-color: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .success {
+            background-color: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        ul, ol {
+            margin-left: 20px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .file-path {
+            color: #1976d2;
+            font-weight: bold;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background-color: #fafafa;
+            border-radius: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #1a237e;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>From Email Dropdown Implementation Guide</h1>
+
+        <div class="note">
+            <strong>Purpose:</strong> This guide provides a standardized, reusable implementation pattern for adding a "From Email" dropdown field to any admin form page. The dropdown is populated from tenant email addresses configured in the system.
+        </div>
+
+        <h2>Overview</h2>
+        <p>
+            This implementation creates a searchable dropdown component that fetches tenant email addresses from the backend API and allows users to select a verified "From Email" address. The component follows the same pattern as the <code>EventSearchSelect</code> component used in promotion email templates.
+        </p>
+
+        <h2>Prerequisites</h2>
+        <ul>
+            <li>Tenant email addresses must be configured in <code>/admin/tenant-email-addresses</code></li>
+            <li>Backend API endpoint: <code>GET /api/tenant-email-addresses?tenantId.equals={tenantId}&sort=emailType,asc</code></li>
+            <li>Server action: <code>fetchTenantEmailAddressesServer()</code> from <code>src/app/admin/tenant-email-addresses/ApiServerActions.ts</code></li>
+        </ul>
+
+        <h2>Implementation Steps</h2>
+
+        <h3>Step 1: Create the FromEmailSelect Component</h3>
+        <p>Create a new component file: <span class="file-path">src/components/FromEmailSelect.tsx</span></p>
+
+        <pre><code>'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
+import type { TenantEmailAddressDTO } from '@/types';
+import { fetchTenantEmailAddressesServer } from '@/app/admin/tenant-email-addresses/ApiServerActions';
+// Note: Using inline SVG icons instead of react-icons to follow icon standards
+
+interface FromEmailSelectProps {
+  value?: string;
+  onChange: (email: string | undefined) => void;
+  required?: boolean;
+  filterByType?: TenantEmailAddressDTO['emailType']; // Optional: filter by email type
+  showDisplayName?: boolean; // Show display name in dropdown
+}
+
+export default function FromEmailSelect({
+  value,
+  onChange,
+  required = false,
+  filterByType,
+  showDisplayName = true,
+}: FromEmailSelectProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [emailAddresses, setEmailAddresses] = useState&lt;TenantEmailAddressDTO[]&gt;([]);
+  const [filteredEmails, setFilteredEmails] = useState&lt;TenantEmailAddressDTO[]&gt;([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [selectedEmail, setSelectedEmail] = useState&lt;TenantEmailAddressDTO | null&gt;(null);
+  const containerRef = useRef&lt;HTMLDivElement&gt;(null);
+
+  useEffect(() => {
+    // Load tenant email addresses on mount
+    loadEmailAddresses();
+  }, []);
+
+  useEffect(() => {
+    // Filter emails based on search term and optional type filter
+    let filtered = emailAddresses;
+
+    // Filter by type if specified
+    if (filterByType) {
+      filtered = filtered.filter(email => email.emailType === filterByType);
+    }
+
+    // Filter by active status (only show active emails)
+    filtered = filtered.filter(email => email.isActive === true);
+
+    // Filter by search term
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(email =>
+        email.emailAddress.toLowerCase().includes(term) ||
+        (email.displayName?.toLowerCase().includes(term) ?? false) ||
+        email.emailType.toLowerCase().includes(term)
+      );
+    }
+
+    // Sort: default emails first, then by email type, then by email address
+    filtered.sort((a, b) => {
+      if (a.isDefault && !b.isDefault) return -1;
+      if (!a.isDefault && b.isDefault) return 1;
+      if (a.emailType !== b.emailType) {
+        return a.emailType.localeCompare(b.emailType);
+      }
+      return a.emailAddress.localeCompare(b.emailAddress);
+    });
+
+    setFilteredEmails(filtered.slice(0, 10)); // Max 10 items in dropdown
+  }, [searchTerm, emailAddresses, filterByType]);
+
+  useEffect(() => {
+    // Find selected email when value changes
+    if (value) {
+      const email = emailAddresses.find(e => e.emailAddress === value);
+      setSelectedEmail(email || null);
+      if (email) {
+        setSearchTerm(email.emailAddress);
+      }
+    } else {
+      setSelectedEmail(null);
+      setSearchTerm('');
+    }
+  }, [value, emailAddresses]);
+
+  useEffect(() => {
+    // Close dropdown when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const loadEmailAddresses = async () => {
+    setLoading(true);
+    try {
+      const addresses = await fetchTenantEmailAddressesServer();
+      setEmailAddresses(addresses);
+    } catch (err: any) {
+      console.error('Failed to load tenant email addresses:', err);
+      setEmailAddresses([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent&lt;HTMLInputElement&gt;) => {
+    const term = e.target.value;
+    setSearchTerm(term);
+    setIsOpen(true);
+  };
+
+  const handleSelectEmail = (email: TenantEmailAddressDTO) => {
+    setSelectedEmail(email);
+    setSearchTerm(email.emailAddress);
+    onChange(email.emailAddress);
+    setIsOpen(false);
+  };
+
+  const handleClear = () => {
+    setSelectedEmail(null);
+    setSearchTerm('');
+    onChange(undefined);
+    setIsOpen(false);
+  };
+
+  return (
+    &lt;div ref={containerRef} className="relative" style={{ isolation: 'isolate' }}&gt;
+      &lt;label className="block text-sm font-medium text-gray-700 mb-1"&gt;
+        From Email {required && &lt;span className="text-red-500"&gt;*&lt;/span&gt;}
+      &lt;/label&gt;
+
+      {/* Search Input */}
+      &lt;div className="relative"&gt;
+        &lt;svg
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        &gt;
+          &lt;path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /&gt;
+        &lt;/svg&gt;
+        &lt;input
+          type="text"
+          value={searchTerm}
+          onChange={handleSearchChange}
+          onFocus={() => setIsOpen(true)}
+          placeholder="Search email addresses..."
+          className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 pl-10 pr-10 px-4 py-2 text-base"
+          required={required}
+          autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck="false"
+          data-form-type="other"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          name="fromEmailSearch"
+          id="fromEmailSearch"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+        /&gt;
+        {selectedEmail && (
+          &lt;button
+            type="button"
+            onClick={handleClear}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          &gt;
+            ×
+          &lt;/button&gt;
+        )}
+      &lt;/div&gt;
+
+      {/* Dropdown Results */}
+      {isOpen && (filteredEmails.length &gt; 0 || loading) && (
+        &lt;div 
+          className="absolute w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg" 
+          style={{ 
+            maxHeight: 'calc(10 * 3.5rem)', 
+            overflowY: 'auto',
+            zIndex: 9999
+          }}
+        &gt;
+          {loading ? (
+            &lt;div className="p-4 text-center text-gray-500"&gt;Loading email addresses...&lt;/div&gt;
+          ) : filteredEmails.length === 0 ? (
+            &lt;div className="p-4 text-center text-gray-500"&gt;No email addresses found&lt;/div&gt;
+          ) : (
+            &lt;ul className="py-1"&gt;
+              {filteredEmails.map((email) => (
+                &lt;li
+                  key={email.id}
+                  onClick={() => handleSelectEmail(email)}
+                  className={`px-4 py-2 cursor-pointer hover:bg-blue-50 ${
+                    selectedEmail?.id === email.id ? 'bg-blue-100' : ''
+                  }`}
+                &gt;
+                  &lt;div className="flex items-center gap-2"&gt;
+                    &lt;svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"&gt;
+                      &lt;path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /&gt;
+                    &lt;/svg&gt;
+                    &lt;div className="flex-1"&gt;
+                      &lt;div className="font-medium text-gray-900"&gt;
+                        {email.emailAddress}
+                        {email.isDefault && (
+                          &lt;span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded"&gt;Default&lt;/span&gt;
+                        )}
+                      &lt;/div&gt;
+                      {showDisplayName && email.displayName && (
+                        &lt;div className="text-sm text-gray-500"&gt;{email.displayName}&lt;/div&gt;
+                      )}
+                      &lt;div className="text-xs text-gray-400"&gt;
+                        Type: {email.emailType}
+                      &lt;/div&gt;
+                    &lt;/div&gt;
+                  &lt;/div&gt;
+                &lt;/li&gt;
+              ))}
+            &lt;/ul&gt;
+          )}
+        &lt;/div&gt;
+      )}
+
+      {/* Selected Email Display */}
+      {selectedEmail && !isOpen && (
+        &lt;div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg"&gt;
+          &lt;div className="text-sm font-medium text-blue-900"&gt;
+            Selected: {selectedEmail.emailAddress}
+          &lt;/div&gt;
+          {showDisplayName && selectedEmail.displayName && (
+            &lt;div className="text-xs text-blue-700"&gt;{selectedEmail.displayName}&lt;/div&gt;
+          )}
+          &lt;div className="text-xs text-blue-700"&gt;
+            Type: {selectedEmail.emailType}
+          &lt;/div&gt;
+        &lt;/div&gt;
+      )}
+
+      {/* Help Text */}
+      &lt;p className="mt-1 text-sm text-gray-500"&gt;
+        Select a verified email address from your tenant configuration. Only active addresses are shown.
+      &lt;/p&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+
+        <h3>Step 2: Use the Component in Your Form</h3>
+        <p>Replace the existing text input field with the <code>FromEmailSelect</code> component.</p>
+
+        <div class="section">
+            <h4>Example: Event Edit Form</h4>
+            <p>In <span class="file-path">src/components/EventForm.tsx</span>, replace the "From Email" input field:</p>
+
+            <pre><code>// BEFORE (text input):
+&lt;input
+  type="email"
+  id="fromEmail"
+  name="fromEmail"
+  value={form.fromEmail || ''}
+  onChange={(e) => {
+    const value = e.target.value;
+    setForm(prev => ({ ...prev, fromEmail: value }));
+  }}
+  required
+  className="mt-1 block w-full border rounded-md px-3 py-2 text-base"
+  placeholder="e.g., events@example.com"
+/&gt;
+
+// AFTER (dropdown component):
+import FromEmailSelect from '@/components/FromEmailSelect';
+
+&lt;FromEmailSelect
+  value={form.fromEmail}
+  onChange={(email) => {
+    setForm(prev => ({ ...prev, fromEmail: email || '' }));
+    // Clear error when user selects an email
+    if (errors.fromEmail) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.fromEmail;
+        return newErrors;
+      });
+    }
+  }}
+  required
+/&gt;</code></pre>
+        </div>
+
+        <div class="section">
+            <h4>Example: Promotion Email Template Form</h4>
+            <p>In <span class="file-path">src/app/admin/promotion-emails/[id]/PromotionEmailTemplateEditClient.tsx</span>:</p>
+
+            <pre><code>// Replace the fromEmail input field:
+import FromEmailSelect from '@/components/FromEmailSelect';
+
+&lt;FromEmailSelect
+  value={formData.fromEmail}
+  onChange={(email) => {
+    setFormData(prev => ({ ...prev, fromEmail: email || '' }));
+  }}
+  required
+  filterByType="MARKETING" // Optional: only show MARKETING type emails
+/&gt;</code></pre>
+        </div>
+
+        <h3>Step 3: Component Props Reference</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Prop</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>value</code></td>
+                    <td><code>string | undefined</code></td>
+                    <td>No</td>
+                    <td>The currently selected email address (controlled component)</td>
+                </tr>
+                <tr>
+                    <td><code>onChange</code></td>
+                    <td><code>(email: string | undefined) => void</code></td>
+                    <td>Yes</td>
+                    <td>Callback function called when an email is selected or cleared</td>
+                </tr>
+                <tr>
+                    <td><code>required</code></td>
+                    <td><code>boolean</code></td>
+                    <td>No</td>
+                    <td>Whether the field is required (default: <code>false</code>)</td>
+                </tr>
+                <tr>
+                    <td><code>filterByType</code></td>
+                    <td><code>'INFO' | 'SALES' | 'TICKETS' | 'CONTACT' | 'SUPPORT' | 'MARKETING' | 'NOREPLY' | 'ADMIN' | undefined</code></td>
+                    <td>No</td>
+                    <td>Optional filter to show only emails of a specific type</td>
+                </tr>
+                <tr>
+                    <td><code>showDisplayName</code></td>
+                    <td><code>boolean</code></td>
+                    <td>No</td>
+                    <td>Whether to show display name in dropdown (default: <code>true</code>)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Features</h2>
+        <ul>
+            <li><strong>Searchable:</strong> Users can type to filter email addresses by email, display name, or type</li>
+            <li><strong>Active Only:</strong> Only shows email addresses where <code>isActive === true</code></li>
+            <li><strong>Smart Sorting:</strong> Default emails appear first, then sorted by type and email address</li>
+            <li><strong>Type Filtering:</strong> Optional prop to filter by email type (e.g., only show MARKETING emails)</li>
+            <li><strong>Visual Feedback:</strong> Shows selected email with type and display name</li>
+            <li><strong>Click Outside:</strong> Dropdown closes when clicking outside the component</li>
+            <li><strong>Clear Button:</strong> Users can clear the selection with an × button</li>
+        </ul>
+
+        <h2>API Reference</h2>
+        <div class="section">
+            <h3>Server Action: <code>fetchTenantEmailAddressesServer()</code></h3>
+            <p><strong>Location:</strong> <span class="file-path">src/app/admin/tenant-email-addresses/ApiServerActions.ts</span></p>
+            <p><strong>Function Signature:</strong></p>
+            <pre><code>export async function fetchTenantEmailAddressesServer(): Promise&lt;TenantEmailAddressDTO[]&gt;</code></pre>
+            <p><strong>Description:</strong> Fetches all active tenant email addresses for the current tenant, sorted by email type.</p>
+            <p><strong>Backend Endpoint:</strong> <code>GET /api/tenant-email-addresses?tenantId.equals={tenantId}&sort=emailType,asc</code></p>
+        </div>
+
+        <div class="section">
+            <h3>DTO Type: <code>TenantEmailAddressDTO</code></h3>
+            <p><strong>Location:</strong> <span class="file-path">src/types/index.ts</span></p>
+            <pre><code>export interface TenantEmailAddressDTO {
+  id?: number;
+  tenantId: string;
+  emailAddress: string;
+  copyToEmailAddress?: string;
+  emailType: 'INFO' | 'SALES' | 'TICKETS' | 'CONTACT' | 'SUPPORT' | 'MARKETING' | 'NOREPLY' | 'ADMIN';
+  displayName?: string;
+  isActive: boolean;
+  isDefault: boolean;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}</code></pre>
+        </div>
+
+        <h2>Usage Examples</h2>
+
+        <div class="section">
+            <h3>Example 1: Basic Usage (Event Form)</h3>
+            <pre><code>import FromEmailSelect from '@/components/FromEmailSelect';
+
+&lt;FromEmailSelect
+  value={form.fromEmail}
+  onChange={(email) => setForm(prev => ({ ...prev, fromEmail: email || '' }))}
+  required
+/&gt;</code></pre>
+        </div>
+
+        <div class="section">
+            <h3>Example 2: Filtered by Type (Marketing Emails Only)</h3>
+            <pre><code>import FromEmailSelect from '@/components/FromEmailSelect';
+
+&lt;FromEmailSelect
+  value={formData.fromEmail}
+  onChange={(email) => setFormData(prev => ({ ...prev, fromEmail: email || '' }))}
+  required
+  filterByType="MARKETING"
+/&gt;</code></pre>
+        </div>
+
+        <div class="section">
+            <h3>Example 3: Without Display Name</h3>
+            <pre><code>import FromEmailSelect from '@/components/FromEmailSelect';
+
+&lt;FromEmailSelect
+  value={form.fromEmail}
+  onChange={(email) => setForm(prev => ({ ...prev, fromEmail: email || '' }))}
+  required
+  showDisplayName={false}
+/&gt;</code></pre>
+        </div>
+
+        <h2>Styling</h2>
+        <p>The component uses Tailwind CSS classes consistent with the existing design system:</p>
+        <ul>
+            <li>Input: <code>border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500</code></li>
+            <li>Dropdown: <code>bg-white border-gray-300 rounded-lg shadow-lg</code></li>
+            <li>Selected Item: <code>bg-blue-100</code></li>
+            <li>Hover: <code>hover:bg-blue-50</code></li>
+        </ul>
+
+        <h2>Browser Autocomplete Prevention</h2>
+        <div class="warning">
+            <strong>Important:</strong> Browsers may show their own autocomplete dropdown (with saved email addresses) which can hide the custom tenant email dropdown. The component includes several techniques to prevent this:
+        </div>
+        <ul>
+            <li><strong>Input Type:</strong> Uses <code>type="text"</code> instead of <code>type="email"</code> to prevent browser email autocomplete</li>
+            <li><strong>Autocomplete Attributes:</strong> Uses <code>autoComplete="off"</code>, <code>autoCapitalize="off"</code>, <code>autoCorrect="off"</code>, and <code>spellCheck="false"</code></li>
+            <li><strong>Non-Standard Field Name:</strong> Uses <code>name="fromEmailSearch"</code> and <code>id="fromEmailSearch"</code> instead of standard email field names</li>
+            <li><strong>Password Manager Attributes:</strong> Includes <code>data-lpignore="true"</code> (LastPass), <code>data-1p-ignore="true"</code> (1Password), and <code>data-form-type="other"</code></li>
+            <li><strong>High Z-Index:</strong> Dropdown uses <code>z-index: 9999</code> to ensure it appears above browser autocomplete</li>
+            <li><strong>CSS Isolation:</strong> Container uses <code>isolation: 'isolate'</code> to create a new stacking context</li>
+            <li><strong>ARIA Attributes:</strong> Includes <code>role="combobox"</code>, <code>aria-autocomplete="list"</code>, <code>aria-expanded</code>, and <code>aria-haspopup="listbox"</code> for proper accessibility</li>
+        </ul>
+        <div class="note">
+            <strong>Note:</strong> If browser autocomplete still appears, it may be necessary to add a hidden fake email input that the browser can autocomplete instead, keeping the search input free from interference. However, the current implementation should work for most browsers.
+        </div>
+
+        <h2>Error Handling</h2>
+        <div class="warning">
+            <strong>Important:</strong> The component handles API errors gracefully by:
+            <ul>
+                <li>Logging errors to the console</li>
+                <li>Displaying an empty dropdown if the API call fails</li>
+                <li>Allowing users to still type email addresses manually if needed</li>
+            </ul>
+        </div>
+
+        <h2>Testing Checklist</h2>
+        <ol>
+            <li>✅ Component loads and fetches email addresses on mount</li>
+            <li>✅ Search functionality filters emails correctly</li>
+            <li>✅ Selecting an email updates the form state</li>
+            <li>✅ Clear button resets the selection</li>
+            <li>✅ Dropdown closes when clicking outside</li>
+            <li>✅ Only active emails are shown</li>
+            <li>✅ Default emails appear first in the list</li>
+            <li>✅ Type filtering works when <code>filterByType</code> is provided</li>
+            <li>✅ Component works in both create and edit forms</li>
+            <li>✅ Required validation works correctly</li>
+            <li>✅ Browser autocomplete dropdown does not appear or hide the custom dropdown</li>
+            <li>✅ Custom dropdown is visible above any browser autocomplete suggestions</li>
+        </ol>
+
+        <h2>Migration Guide</h2>
+        <p>To migrate an existing "From Email" text input to use this dropdown:</p>
+        <ol>
+            <li>Import the component: <code>import FromEmailSelect from '@/components/FromEmailSelect';</code></li>
+            <li>Replace the <code>&lt;input type="email"&gt;</code> with <code>&lt;FromEmailSelect&gt;</code></li>
+            <li>Update the <code>onChange</code> handler to use the component's callback signature</li>
+            <li>Remove any manual email validation (the component handles this)</li>
+            <li>Test that the selected email is properly saved to the form state</li>
+        </ol>
+
+        <div class="success">
+            <strong>Success Criteria:</strong> After implementation, users should be able to:
+            <ul>
+                <li>See a searchable dropdown of all active tenant email addresses</li>
+                <li>Select an email address from the list</li>
+                <li>See the selected email address displayed with its type and display name</li>
+                <li>Clear the selection if needed</li>
+                <li>Have the selected email automatically populate the form's <code>fromEmail</code> field</li>
+            </ul>
+        </div>
+
+        <h2>Related Files</h2>
+        <ul>
+            <li><span class="file-path">src/app/admin/tenant-email-addresses/ApiServerActions.ts</span> - Server action for fetching emails</li>
+            <li><span class="file-path">src/app/admin/tenant-email-addresses/page.tsx</span> - Admin page for managing email addresses</li>
+            <li><span class="file-path">src/types/index.ts</span> - TypeScript DTO definitions</li>
+            <li><span class="file-path">src/app/admin/promotion-emails/components/EventSearchSelect.tsx</span> - Reference implementation for searchable dropdown</li>
+            <li><span class="file-path">src/components/EventForm.tsx</span> - Example form that needs the dropdown</li>
+        </ul>
+
+        <h2>Notes</h2>
+        <div class="note">
+            <ul>
+                <li>The component is a <strong>client component</strong> (<code>'use client'</code>) because it uses React hooks and browser APIs</li>
+                <li>The server action <code>fetchTenantEmailAddressesServer</code> must be called from a client component or server component</li>
+                <li>Email addresses are filtered to only show <code>isActive === true</code> addresses</li>
+                <li>The component supports both controlled and uncontrolled usage patterns</li>
+                <li>If no email addresses are configured, the dropdown will be empty (users can still type manually)</li>
+            </ul>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #ddd;">
+        <p style="text-align: center; color: #666; font-size: 0.9em;">
+            Last Updated: 2025-01-XX | Implementation Guide for From Email Dropdown Component
+        </p>
+    </div>
+</body>
+</html>
+

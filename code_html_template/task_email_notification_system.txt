@@ -1,0 +1,69 @@
+# Title: Implement Multi-Tenant Email Notification & Broadcast System (Amazon SES)
+# Status: pending
+# Dependencies: [Stripe integration, Ticket purchase flow, User profile management]
+# Priority: high
+# Description:
+Set up a robust, reusable email delivery system for ticket confirmations, event notifications, and bulk/broadcast messages, supporting multi-tenant customization and Amazon SES integration.
+
+# Details:
+
+## 1. AWS SES Setup
+- [ ] Log in to AWS Console and open SES (Simple Email Service).
+- [ ] Verify sender email addresses and/or domains for all tenants.
+- [ ] Request production access for SES (move out of sandbox mode).
+- [ ] Create and store AWS SES credentials (Access Key ID, Secret Access Key) securely.
+- [ ] Set up IAM policy for SES send permissions.
+- [ ] (Optional) Set up dedicated IPs or configuration sets for deliverability if needed.
+
+## 2. Email Template Design (Reusable, Multi-Tenant)
+- [ ] Design HTML email templates for:
+    - Ticket confirmation (with event, ticket, and user details)
+    - Receipt/invoice
+    - Event broadcast/notification
+- [ ] Use placeholders for dynamic content (e.g., {{eventName}}, {{userName}}, {{ticketCode}}, {{tenantLogoUrl}})
+- [ ] Store templates in a central location (e.g., S3, database, or as static resources in the backend)
+- [ ] Allow per-tenant branding: logo, accent color, footer, etc.
+- [ ] Support customizable subject lines (with variables, e.g., "Your Ticket for {{eventName}}")
+
+## 3. Backend: Spring Boot Integration
+- [ ] Add AWS SDK and SES dependencies to the backend project.
+- [ ] Configure SES credentials and region in application properties (use environment variables for multi-tenant support).
+- [ ] Implement a service for sending emails via SES:
+    - Support both transactional (single) and bulk (batch) sends.
+    - Accepts template name, dynamic data, recipient(s), and tenant context.
+    - Handles attachments (e.g., PDF tickets) and embedded images (use S3 or inline base64).
+- [ ] Implement logic to select the correct template and branding based on tenant.
+- [ ] Add error handling, logging, and retry logic for failed sends.
+- [ ] Expose REST endpoints for:
+    - Sending ticket confirmation after purchase (triggered by payment success)
+    - Sending event notifications/broadcasts (admin-triggered)
+- [ ] (Optional) Implement batch/bulk email sending using SES bulk APIs or a queue (e.g., SQS, SNS, or Spring Batch).
+
+## 4. Frontend: Next.js Integration
+- [ ] Update ticket purchase flow to trigger backend email send after successful payment (if not already done via webhook).
+- [ ] Add admin UI for sending event notifications/broadcasts:
+    - Select event, compose message, preview template, select recipients (all, filtered, or custom list)
+    - Trigger backend bulk email endpoint
+- [ ] Display email delivery status/feedback to admins (success, queued, failed, etc.)
+
+## 5. Multi-Tenant & Generalization Considerations
+- [ ] Ensure all email operations are tenant-aware (tenantId in payloads, templates, branding).
+- [ ] Store tenant-specific settings (sender email, logo, etc.) in a central config (DB or config service).
+- [ ] Make template system extensible for future email types.
+
+## 6. Testing & Verification
+- [ ] Test with various ticket scenarios (single, group, different tenants).
+- [ ] Test bulk/broadcast sends with large recipient lists.
+- [ ] Verify email rendering in major clients (Gmail, Outlook, mobile).
+- [ ] Monitor SES dashboard for bounces, complaints, and delivery rates.
+
+# Test Strategy:
+- Send test emails to verified addresses for each tenant.
+- Simulate ticket purchases and event broadcasts.
+- Check for correct branding, content, and delivery.
+- Review SES logs and application logs for errors or delivery issues.
+
+# References:
+- AWS SES Docs: https://docs.aws.amazon.com/ses/latest/dg/send-email.html
+- Spring Boot SES Example: https://github.com/aws-samples/aws-ses-spring-boot-sample
+- SES Template API: https://docs.aws.amazon.com/ses/latest/dg/send-personalized-email-api.html

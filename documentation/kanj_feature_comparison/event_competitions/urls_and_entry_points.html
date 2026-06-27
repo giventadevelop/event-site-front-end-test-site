@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Competitions — URLs &amp; Entry Points</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        a { color: #0066cc; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .section-container.usage { background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%); border-left-color: #7b1fa2; }
+        .section-container.usage .section-header { background: linear-gradient(135deg, #7b1fa2 0%, #6a1b9a 100%); }
+        .section-container.parameters { background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%); border-left-color: #ff9800; }
+        .section-container.parameters .section-header { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); }
+        .section-intro { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 16px 18px; margin: 16px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        tbody tr:nth-child(even) { background-color: #f8f9fa; }
+        tbody tr:hover { background-color: #e3f2fd; }
+        tbody td code, code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, 'Courier New', monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; overflow-x: auto; font-family: Consolas, monospace; font-size: 0.82em; line-height: 1.45; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .flow-step { margin: 8px 0; padding: 10px 14px; background: #fff; border: 1px solid #b8d4e3; border-radius: 6px; }
+        .flow-step strong { color: #0052a3; }
+        .command-block { border: 2px solid; border-radius: 8px; margin: 18px 0; overflow: hidden; }
+        .command-block.setup { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-color: #2196f3; }
+        .command-block.verify { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-color: #4caf50; }
+        .command-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.6); border-bottom: 1px solid rgba(0,0,0,0.08); flex-wrap: wrap; gap: 8px; }
+        .command-type { font-weight: bold; font-size: 0.9em; color: #333; }
+        .command-header-buttons { display: flex; gap: 8px; }
+        .copy-button, .copy-button-template { border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold; transition: all 0.3s ease; }
+        .copy-button { background-color: #0066cc; color: white; }
+        .copy-button:hover { background-color: #0052a3; }
+        .copy-button-template { background-color: #6c757d; color: white; }
+        .copy-button-template:hover { background-color: #5a6268; }
+        .copy-button.copied, .copy-button-template.copied { background-color: #28a745; }
+        .command-parameters { padding: 14px; background: rgba(255,255,255,0.5); border-bottom: 1px solid rgba(0,0,0,0.08); }
+        .command-parameters h5 { margin: 0 0 10px 0; font-size: 0.9em; }
+        .parameter-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        @media (max-width: 768px) { .parameter-group { grid-template-columns: 1fr; } }
+        .parameter-input label { font-size: 0.8em; font-weight: 600; color: #555; }
+        .parameter-input input { padding: 8px 12px; border: 2px solid #ddd; border-radius: 4px; font-family: Consolas, monospace; font-size: 0.9em; width: 100%; margin-top: 4px; }
+        .parameter-input input:focus { outline: none; border-color: #0066cc; box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1); }
+        .command-content { padding: 12px 14px; font-family: Consolas, monospace; font-size: 0.88em; word-break: break-all; background: rgba(255,255,255,0.4); }
+        .command-single-line { padding: 10px 14px 14px; }
+        .command-single-line-label { font-size: 0.75em; color: #666; margin-bottom: 6px; font-weight: 600; }
+        .command-single-line code { display: block; padding: 10px 12px; word-break: break-all; }
+        .toc { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 24px 0; }
+        .toc h2 { margin-top: 0; border: none; padding: 0; font-size: 1.25em; }
+    </style>
+</head>
+<body>
+
+    <h1>Event Competitions — URLs &amp; Entry Points</h1>
+    <p class="doc-meta">
+        <strong>Project:</strong> <code>mosc-temp</code> (Next.js 15 App Router)<br>
+        <strong>Date:</strong> May 27, 2026 &nbsp;|&nbsp; <strong>Status:</strong> Implementation reference<br>
+        <strong>Related:</strong>
+        <a href="frontend_prd.html">frontend_prd.html</a> &nbsp;|&nbsp;
+        <a href="generic_prd.html">generic_prd.html</a> &nbsp;|&nbsp;
+        <a href="../Event_Competitions_PRD.html">Event_Competitions_PRD.html</a>
+    </p>
+
+    <div class="lead">
+        <p>Use this guide to open the <strong>event competitions</strong> pages after implementation. Replace <code>{eventId}</code> with the numeric event ID from the database or admin URL, and <code>{compId}</code> with a competition ID when editing a catalog item.</p>
+        <p><strong>Local dev base URL:</strong> <code>http://localhost:3000</code> (or your dev server port). <strong>Production:</strong> use your deployed host (e.g. <code>https://www.mosc-temp.com</code>).</p>
+    </div>
+
+    <nav class="toc" aria-label="Table of contents">
+        <h2>Contents</h2>
+        <ol>
+            <li><a href="#prerequisites">Prerequisites</a></li>
+            <li><a href="#url-builder">Quick URL builder (copy)</a></li>
+            <li><a href="#public-routes">Public routes</a></li>
+            <li><a href="#admin-routes">Admin routes</a></li>
+            <li><a href="#entry-flows">Entry points &amp; navigation flow</a></li>
+            <li><a href="#example">Worked example (event ID 123)</a></li>
+            <li><a href="#auth">Authentication</a></li>
+            <li><a href="#api">Supporting API (not browser pages)</a></li>
+        </ol>
+    </nav>
+
+    <h2 id="prerequisites">1. Prerequisites</h2>
+    <div class="warning-box">
+        <p><strong>Competition mode must be enabled</strong> on the event. In admin, edit the event and turn on <strong>Competition Event</strong> (<code>isCompetitionEvent</code>). Until that flag is true:</p>
+        <ul>
+            <li>The public event page does <strong>not</strong> show the rose <strong>Competitions</strong> button.</li>
+            <li>The admin event dashboard does <strong>not</strong> show the <strong>Competitions</strong> tile.</li>
+        </ul>
+    </div>
+    <div class="section-container parameters">
+        <div class="section-header">Typical admin setup order</div>
+        <ol>
+            <li><code>/admin/events/{eventId}/competitions/settings</code> — audience mode, registration mode</li>
+            <li><code>.../competitions/days</code> — schedule days</li>
+            <li><code>.../competitions/list</code> — competition catalog (+ <code>list/new</code> to add)</li>
+            <li><code>.../competitions/registrations</code> — review registrations</li>
+            <li><code>.../competitions/results</code> — scores, winner photos, publish</li>
+        </ol>
+        <p>Public hub, register, winners, and rules pages show content once settings and catalog data exist.</p>
+    </div>
+
+    <h2 id="url-builder">2. Quick URL builder (copy)</h2>
+    <div class="section-intro">
+        <p>Customize <strong>host</strong> and <strong>event ID</strong>, then copy the full URL. Template copies the sample values; Copy uses your inputs.</p>
+    </div>
+
+    <div class="command-block setup"
+         data-command-type="setup"
+         data-command-base="http://localhost:3000/events"
+         data-template-command="http://localhost:3000/events/123/competitions">
+        <div class="command-header">
+            <span class="command-type">Public — Competitions hub (main entry)</span>
+            <div class="command-header-buttons">
+                <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'url-public-hub')" title="Copy template URL">📄 Template</button>
+                <button type="button" class="copy-button" onclick="copyCommand(this, 'url-public-hub')" title="Copy customized URL">📋 Copy</button>
+            </div>
+        </div>
+        <div class="command-parameters">
+            <h5>🔧 Customize:</h5>
+            <div class="parameter-group">
+                <div class="parameter-input">
+                    <label for="url-public-hub-host">Host (no trailing slash):</label>
+                    <input type="text" id="url-public-hub-host" value="http://localhost:3000" placeholder="http://localhost:3000" oninput="updateUrl('url-public-hub', 'host', this.value)">
+                </div>
+                <div class="parameter-input">
+                    <label for="url-public-hub-event-id">Event ID:</label>
+                    <input type="text" id="url-public-hub-event-id" value="123" placeholder="123" oninput="updateUrl('url-public-hub', 'event-id', this.value)">
+                </div>
+            </div>
+        </div>
+        <div class="command-content" id="url-public-hub">http://localhost:3000/events/123/competitions</div>
+        <div class="command-single-line">
+            <div class="command-single-line-label">Single line (Windows-friendly):</div>
+            <code id="url-public-hub-single-code">http://localhost:3000/events/123/competitions</code>
+        </div>
+    </div>
+
+    <div class="command-block setup"
+         data-command-type="setup"
+         data-command-base="http://localhost:3000/events"
+         data-template-command="http://localhost:3000/events/123/competitions/register">
+        <div class="command-header">
+            <span class="command-type">Public — Register (Clerk sign-in required)</span>
+            <div class="command-header-buttons">
+                <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'url-public-register')" title="Copy template URL">📄 Template</button>
+                <button type="button" class="copy-button" onclick="copyCommand(this, 'url-public-register')" title="Copy customized URL">📋 Copy</button>
+            </div>
+        </div>
+        <div class="command-parameters">
+            <h5>🔧 Customize:</h5>
+            <div class="parameter-group">
+                <div class="parameter-input">
+                    <label for="url-public-register-host">Host:</label>
+                    <input type="text" id="url-public-register-host" value="http://localhost:3000" oninput="updateUrl('url-public-register', 'host', this.value)">
+                </div>
+                <div class="parameter-input">
+                    <label for="url-public-register-event-id">Event ID:</label>
+                    <input type="text" id="url-public-register-event-id" value="123" oninput="updateUrl('url-public-register', 'event-id', this.value)">
+                </div>
+            </div>
+        </div>
+        <div class="command-content" id="url-public-register">http://localhost:3000/events/123/competitions/register</div>
+        <div class="command-single-line">
+            <div class="command-single-line-label">Single line:</div>
+            <code id="url-public-register-single-code">http://localhost:3000/events/123/competitions/register</code>
+        </div>
+    </div>
+
+    <div class="command-block verify"
+         data-command-type="verify"
+         data-command-base="http://localhost:3000/admin/events"
+         data-template-command="http://localhost:3000/admin/events/123/competitions/settings">
+        <div class="command-header">
+            <span class="command-type">Admin — Competition settings (admin entry)</span>
+            <div class="command-header-buttons">
+                <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'url-admin-settings')" title="Copy template URL">📄 Template</button>
+                <button type="button" class="copy-button" onclick="copyCommand(this, 'url-admin-settings')" title="Copy customized URL">📋 Copy</button>
+            </div>
+        </div>
+        <div class="command-parameters">
+            <h5>🔧 Customize:</h5>
+            <div class="parameter-group">
+                <div class="parameter-input">
+                    <label for="url-admin-settings-host">Host:</label>
+                    <input type="text" id="url-admin-settings-host" value="http://localhost:3000" oninput="updateUrl('url-admin-settings', 'host', this.value)">
+                </div>
+                <div class="parameter-input">
+                    <label for="url-admin-settings-event-id">Event ID:</label>
+                    <input type="text" id="url-admin-settings-event-id" value="123" oninput="updateUrl('url-admin-settings', 'event-id', this.value)">
+                </div>
+            </div>
+        </div>
+        <div class="command-content" id="url-admin-settings">http://localhost:3000/admin/events/123/competitions/settings</div>
+        <div class="command-single-line">
+            <div class="command-single-line-label">Single line:</div>
+            <code id="url-admin-settings-single-code">http://localhost:3000/admin/events/123/competitions/settings</code>
+        </div>
+    </div>
+
+    <h2 id="public-routes">3. Public routes</h2>
+    <p>Implemented under <code>src/app/events/[id]/competitions/</code>. Primary hub: <code>CompetitionHub.tsx</code>.</p>
+    <table>
+        <thead>
+            <tr><th>Route pattern</th><th>Auth</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>/events/{eventId}</code></td>
+                <td>Public</td>
+                <td>Event detail; shows <strong>Competitions</strong> button (rose) when <code>isCompetitionEvent</code> → links to hub</td>
+            </tr>
+            <tr>
+                <td><code>/events/{eventId}/competitions</code></td>
+                <td>Public</td>
+                <td><strong>Main hub</strong> — schedule, catalog, links to sub-pages</td>
+            </tr>
+            <tr>
+                <td><code>/events/{eventId}/competitions/register</code></td>
+                <td>Clerk</td>
+                <td>Registration wizard + Stripe checkout</td>
+            </tr>
+            <tr>
+                <td><code>/events/{eventId}/competitions/my-registrations</code></td>
+                <td>Clerk</td>
+                <td>User / family registrations dashboard</td>
+            </tr>
+            <tr>
+                <td><code>/events/{eventId}/competitions/winners</code></td>
+                <td>Public</td>
+                <td>Published winners board</td>
+            </tr>
+            <tr>
+                <td><code>/events/{eventId}/competitions/rules</code></td>
+                <td>Public</td>
+                <td>Rules &amp; content blocks</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 id="admin-routes">4. Admin routes</h2>
+    <p>Implemented under <code>src/app/admin/events/[id]/competitions/</code>. In-page nav: <code>CompetitionAdminNav.tsx</code> (Settings → Days → List → Registrations → Results).</p>
+    <table>
+        <thead>
+            <tr><th>Route pattern</th><th>Auth</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>/admin/events/{eventId}</code></td>
+                <td>Admin</td>
+                <td>Event admin dashboard; <strong>Competitions</strong> tile when competition event → settings</td>
+            </tr>
+            <tr>
+                <td><code>/admin/events/{eventId}/competitions/settings</code></td>
+                <td>Admin</td>
+                <td>Competition settings (audience mode, registration mode, etc.)</td>
+            </tr>
+            <tr>
+                <td><code>/admin/events/{eventId}/competitions/days</code></td>
+                <td>Admin</td>
+                <td>Schedule days</td>
+            </tr>
+            <tr>
+                <td><code>/admin/events/{eventId}/competitions/list</code></td>
+                <td>Admin</td>
+                <td>Competition catalog</td>
+            </tr>
+            <tr>
+                <td><code>/admin/events/{eventId}/competitions/list/new</code></td>
+                <td>Admin</td>
+                <td>Create competition</td>
+            </tr>
+            <tr>
+                <td><code>/admin/events/{eventId}/competitions/{compId}/edit</code></td>
+                <td>Admin</td>
+                <td>Edit competition</td>
+            </tr>
+            <tr>
+                <td><code>/admin/events/{eventId}/competitions/registrations</code></td>
+                <td>Admin</td>
+                <td>Registrations list / export</td>
+            </tr>
+            <tr>
+                <td><code>/admin/events/{eventId}/competitions/results</code></td>
+                <td>Admin</td>
+                <td>Results, winner photos, publish</td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="info-box">
+        <p>From <strong>Edit event</strong> (<code>EventForm.tsx</code>): when <code>isCompetitionEvent</code> is enabled, use <strong>Open competition admin →</strong> to jump to <code>.../competitions/settings</code>.</p>
+    </div>
+
+    <h2 id="entry-flows">5. Entry points &amp; navigation flow</h2>
+
+    <div class="section-container usage">
+        <div class="section-header">Public visitor flow</div>
+        <div class="flow-step"><strong>1.</strong> Browse events → open <code>/events/{eventId}</code></div>
+        <div class="flow-step"><strong>2.</strong> Click <strong>Competitions</strong> (visible only if competition event)</div>
+        <div class="flow-step"><strong>3.</strong> Land on <code>/events/{eventId}/competitions</code> (hub)</div>
+        <div class="flow-step"><strong>4.</strong> From hub: <strong>Register</strong> (sign in) · <strong>My registrations</strong> · <strong>Winners</strong> · <strong>Rules</strong></div>
+    </div>
+
+    <div class="section-container">
+        <div class="section-header">Admin flow</div>
+        <div class="flow-step"><strong>A.</strong> <code>/admin/manage-events</code> → select event → <code>/admin/events/{eventId}</code></div>
+        <div class="flow-step"><strong>B.</strong> Click <strong>Competitions</strong> tile → <code>.../competitions/settings</code></div>
+        <div class="flow-step"><strong>C.</strong> Use top nav: Settings · Schedule Days · Competitions · Registrations · Results</div>
+        <div class="flow-step"><strong>Alt.</strong> Enable competition on event form → <strong>Open competition admin →</strong></div>
+    </div>
+
+    <h2 id="example">6. Worked example (event ID 123)</h2>
+    <div class="success-box">
+        <p>Assuming local dev and <code>isCompetitionEvent = true</code> for event <strong>123</strong>:</p>
+    </div>
+    <table>
+        <thead><tr><th>Page</th><th>Full URL</th></tr></thead>
+        <tbody>
+            <tr><td>Event (with Competitions CTA)</td><td><code>http://localhost:3000/events/123</code></td></tr>
+            <tr><td>Competitions hub</td><td><code>http://localhost:3000/events/123/competitions</code></td></tr>
+            <tr><td>Register</td><td><code>http://localhost:3000/events/123/competitions/register</code></td></tr>
+            <tr><td>My registrations</td><td><code>http://localhost:3000/events/123/competitions/my-registrations</code></td></tr>
+            <tr><td>Winners</td><td><code>http://localhost:3000/events/123/competitions/winners</code></td></tr>
+            <tr><td>Rules</td><td><code>http://localhost:3000/events/123/competitions/rules</code></td></tr>
+            <tr><td>Admin event</td><td><code>http://localhost:3000/admin/events/123</code></td></tr>
+            <tr><td>Admin competition settings</td><td><code>http://localhost:3000/admin/events/123/competitions/settings</code></td></tr>
+            <tr><td>Edit competition 456</td><td><code>http://localhost:3000/admin/events/123/competitions/456/edit</code></td></tr>
+        </tbody>
+    </table>
+
+    <h2 id="auth">7. Authentication</h2>
+    <table>
+        <thead><tr><th>Area</th><th>Behavior</th></tr></thead>
+        <tbody>
+            <tr>
+                <td>Public hub, winners, rules</td>
+                <td>No sign-in; routes under <code>/events(.*)</code> public routes</td>
+            </tr>
+            <tr>
+                <td><code>register</code>, <code>my-registrations</code></td>
+                <td><code>src/middleware.ts</code> calls <code>auth.protect()</code> for these paths; unsigned users → Clerk sign-in</td>
+            </tr>
+            <tr>
+                <td>All <code>/admin/events/.../competitions/*</code></td>
+                <td>Clerk session + <code>user_role</code> ADMIN / SUPER_ADMIN in <code>user_profile</code> for tenant</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 id="api">8. Supporting API (not browser pages)</h2>
+    <p>Do not open these in the browser as end-user pages; the UI calls them via server actions / proxy.</p>
+    <ul>
+        <li>Proxy: <code>/api/proxy/event-competition-settings</code>, <code>event-competition-days</code>, <code>event-competitions</code>, <code>event-competition-registrations</code>, <code>event-competition-results</code>, etc.</li>
+        <li>Server actions: <code>src/app/events/[id]/competitions/ApiServerActions.ts</code>, <code>src/app/admin/events/[id]/competitions/ApiServerActions.ts</code></li>
+        <li>Stripe: <code>/api/stripe/competition-payment-intent</code></li>
+    </ul>
+    <p>See <a href="frontend_prd.html">frontend_prd.html</a> §1–2 for the full proxy and server-action list.</p>
+
+    <script>
+        const urlParams = {};
+        const urlSuffix = {
+            'url-public-hub': '/competitions',
+            'url-public-register': '/competitions/register',
+            'url-admin-settings': '/competitions/settings'
+        };
+        const urlPathPrefix = {
+            'url-public-hub': '/events',
+            'url-public-register': '/events',
+            'url-admin-settings': '/admin/events'
+        };
+
+        function buildUrl(commandId) {
+            const host = (urlParams[commandId] && urlParams[commandId].host) || 'http://localhost:3000';
+            const eventId = (urlParams[commandId] && urlParams[commandId]['event-id']) || '123';
+            const h = host.replace(/\/$/, '');
+            const prefix = urlPathPrefix[commandId] || '/events';
+            const suffix = urlSuffix[commandId] || '/competitions';
+            return h + prefix + '/' + eventId.trim() + suffix;
+        }
+
+        function updateUrl(commandId, paramName, paramValue) {
+            if (!urlParams[commandId]) urlParams[commandId] = {};
+            urlParams[commandId][paramName] = paramValue;
+            const url = buildUrl(commandId);
+            const el = document.getElementById(commandId);
+            const single = document.getElementById(commandId + '-single-code');
+            if (el) el.textContent = url;
+            if (single) single.textContent = url;
+        }
+
+        function updateUrlFromParams(commandId) {
+            const url = buildUrl(commandId);
+            const el = document.getElementById(commandId);
+            const single = document.getElementById(commandId + '-single-code');
+            if (el) el.textContent = url;
+            if (single) single.textContent = url;
+        }
+
+        function fallbackCopy(text, button) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                button.classList.add('copied');
+                const orig = button.textContent;
+                button.textContent = '✓ Copied!';
+                setTimeout(function () {
+                    button.classList.remove('copied');
+                    button.textContent = orig;
+                }, 2000);
+            } catch (e) {
+                console.error('Copy failed', e);
+            }
+            document.body.removeChild(ta);
+        }
+
+        function copyCommand(button, commandId) {
+            const el = document.getElementById(commandId);
+            if (!el) return;
+            const text = el.textContent.trim();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function () {
+                    button.classList.add('copied');
+                    const orig = button.textContent;
+                    button.textContent = '✓ Copied!';
+                    setTimeout(function () {
+                        button.classList.remove('copied');
+                        button.textContent = orig;
+                    }, 2000);
+                }).catch(function () { fallbackCopy(text, button); });
+            } else {
+                fallbackCopy(text, button);
+            }
+        }
+
+        function copyTemplateCommand(button, commandId) {
+            const block = button.closest('.command-block');
+            if (!block) return;
+            let text = block.getAttribute('data-template-command') || '';
+            text = text.replace(/&quot;/g, '"');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function () {
+                    button.classList.add('copied');
+                    const orig = button.textContent;
+                    button.textContent = '✓ Copied!';
+                    setTimeout(function () {
+                        button.classList.remove('copied');
+                        button.textContent = orig;
+                    }, 2000);
+                }).catch(function () { fallbackCopy(text, button); });
+            } else {
+                fallbackCopy(text, button);
+            }
+        }
+
+        function initializeUrls() {
+            ['url-public-hub', 'url-public-register', 'url-admin-settings'].forEach(function (commandId) {
+                const hostInput = document.getElementById(commandId + '-host');
+                const eventInput = document.getElementById(commandId + '-event-id');
+                if (!urlParams[commandId]) urlParams[commandId] = {};
+                if (hostInput) urlParams[commandId].host = hostInput.value;
+                if (eventInput) urlParams[commandId]['event-id'] = eventInput.value;
+                updateUrlFromParams(commandId);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeUrls);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zoho SalesIQ Zobot — MOSC Redesign Knowledge Base Guide</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.65;
+            color: #333;
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 24px 20px 48px;
+            background: #f5f7fa;
+        }
+        h1 {
+            color: #0066cc;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 12px;
+            font-size: 2em;
+        }
+        h2 {
+            color: #0052a3;
+            margin-top: 36px;
+            border-left: 4px solid #0066cc;
+            padding-left: 12px;
+        }
+        h3 { color: #333; margin-top: 24px; }
+        a { color: #0066cc; }
+        a:hover { text-decoration: underline; }
+
+        .section-intro {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-left: 4px solid #2196f3;
+            padding: 16px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .section-container {
+            border-radius: 8px;
+            margin: 24px 0;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .section-header {
+            padding: 14px 20px;
+            font-weight: bold;
+            font-size: 1.05em;
+            color: #fff;
+        }
+        .section-header.overview { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); }
+        .section-header.prerequisites { background: linear-gradient(135deg, #7b1fa2 0%, #6a1b9a 100%); }
+        .section-header.website { background: linear-gradient(135deg, #00897b 0%, #00695c 100%); }
+        .section-header.extract { background: linear-gradient(135deg, #ef6c00 0%, #e65100 100%); }
+        .section-header.salesiq { background: linear-gradient(135deg, #3949ab 0%, #283593 100%); }
+        .section-header.zobot { background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%); }
+        .section-header.verify { background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%); }
+        .section-header.alternatives { background: linear-gradient(135deg, #5e35b1 0%, #4527a0 100%); }
+        .section-body {
+            background: #fff;
+            padding: 20px 24px;
+            border: 1px solid #ddd;
+            border-top: none;
+        }
+
+        .toc {
+            background: #fff;
+            border: 2px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin: 24px 0;
+        }
+        .toc h2 { margin-top: 0; border: none; padding: 0; }
+        .toc ul { columns: 2; column-gap: 32px; }
+        .toc li { margin-bottom: 6px; break-inside: avoid; }
+        @media (max-width: 640px) { .toc ul { columns: 1; } }
+
+        .info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 16px 20px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 16px 20px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 16px 20px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+
+        .script-name {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+        pre, .code-block {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #b8d4e3;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.92em;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            font-weight: bold;
+            font-size: 0.88em;
+        }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        tr:hover { background-color: #e3f2fd; }
+
+        ol.steps { counter-reset: step; list-style: none; padding-left: 0; }
+        ol.steps > li {
+            counter-increment: step;
+            margin-bottom: 16px;
+            padding-left: 36px;
+            position: relative;
+        }
+        ol.steps > li::before {
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: #0066cc;
+            color: #fff;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 26px;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+
+        .command-block {
+            border: 2px solid #2196f3;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        }
+        .command-block.advance {
+            border-color: #ff9800;
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        }
+        .command-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.6);
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+        }
+        .command-type { font-weight: bold; color: #1565c0; }
+        .command-block.advance .command-type { color: #e65100; }
+        .copy-button, .copy-button-template, .prompt-copy-btn {
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        .copy-button, .prompt-copy-btn { background-color: #0066cc; }
+        .copy-button:hover, .prompt-copy-btn:hover { background-color: #0052a3; }
+        .copy-button.copied, .prompt-copy-btn.copied { background-color: #28a745; }
+        .copy-button-template { background-color: #6c757d; }
+        .copy-button-template:hover { background-color: #5a6268; }
+        .command-content {
+            padding: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #0d3b66;
+            background: #fff;
+            word-break: break-all;
+        }
+        .command-single-line {
+            padding: 12px 15px;
+            background: #e8f4f8;
+            border-top: 1px solid #b8d4e3;
+        }
+        .command-single-line-label {
+            font-size: 0.75em;
+            color: #666;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .command-single-line code {
+            display: block;
+            background: transparent;
+            border: none;
+            padding: 0;
+        }
+
+        .prompt-block {
+            border: 2px solid #9c27b0;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+        }
+        .prompt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.65);
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            font-weight: bold;
+            color: #6a1b9a;
+        }
+        .prompt-body {
+            padding: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.88em;
+            color: #0d3b66;
+            background: #fff;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.5;
+        }
+
+        .flow-diagram {
+            background: #fff;
+            border: 2px solid #0066cc;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            line-height: 1.4;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Zoho SalesIQ Zobot — MOSC Redesign Knowledge Base Guide</h1>
+
+    <div class="section-intro">
+        <p><strong>Purpose.</strong> This guide explains how to feed the homepage chat widget (Zoho SalesIQ <strong>Zobot</strong>, registered under Giventa Inc.) with content from every public page under:</p>
+        <p><code class="code-highlight">https://www.mosc-temp.com/mosc-redesign</code> and all sub-paths.</p>
+        <p><strong>Important.</strong> Zoho SalesIQ does <em>not</em> provide a “enter URL and crawl my whole site” feature like some third-party chatbot builders. You must <strong>extract page content</strong>, import it into SalesIQ <strong>Resources</strong> (Articles / FAQs), connect <strong>Answer Bot</strong>, and optionally plug Answer Bot into your existing <strong>Zobot</strong> flow. This document gives the full pipeline.</p>
+        <p><strong>Related repo files:</strong> <code class="script-name">src/app/mosc-redesign/(syro)/sitemap/sitemapData.ts</code> (curated link list), <code class="script-name">src/middleware.ts</code> (public access), live sitemap page at <a href="https://www.mosc-temp.com/mosc-redesign/sitemap" rel="noopener noreferrer">/mosc-redesign/sitemap</a>.</p>
+        <p><strong>Alternatives:</strong> See <a href="#alternatives">section 12</a> for chatbot platforms that support <strong>paste URL → auto-crawl</strong> (SiteGPT, Chatbase, DocsBot, Tidio Lyro) and when they may be a better fit than SalesIQ alone.</p>
+        <p><strong>Operations (OAuth, bulk delete, FAQ CSV, re-import):</strong> See the dedicated
+        <a href="ZOHO_SALESIQ_OPERATIONS_RUNBOOK.html"><strong>SalesIQ Operations Runbook</strong></a>
+        for step-by-step instructions including obtaining <code>ZOHO_REFRESH_TOKEN</code> from the event-site-manager project, bulk deleting articles, and adding curated FAQ rows to <code>salesiq-faq-supplement.csv</code>.</p>
+    </div>
+
+    <nav class="toc" aria-label="Table of contents">
+        <h2>Table of Contents</h2>
+        <ul>
+            <li><a href="ZOHO_SALESIQ_OPERATIONS_RUNBOOK.html">Operations Runbook</a> — OAuth, bulk delete, FAQ CSV, re-import</li>
+            <li><a href="#architecture">1. Architecture overview</a></li>
+            <li><a href="#prerequisites">2. Prerequisites</a></li>
+            <li><a href="#scope">3. Define scope (domain + path)</a></li>
+            <li><a href="#scrapable">4. Make pages scrapable / readable</a></li>
+            <li><a href="#discover">5. Discover all URLs</a></li>
+            <li><a href="#extract">6. Extract content for import</a> — <a href="SALESIQ_ARTICLES_EXPORT_NODE_SCRIPT_GUIDE.html">Node CSV exporter</a></li>
+            <li><a href="#import">7. Import into SalesIQ Articles</a></li>
+            <li><a href="#answer-bot">8. Configure Answer Bot</a></li>
+            <li><a href="#zobot">9. Connect Zobot on the homepage</a> — <a href="#zobot-first-time">9a. First-time create</a> · <a href="#zobot-canvas">9c.1 Canvas / incomplete flow</a> · <a href="#zobot-flow">9c. Build flow</a></li>
+            <li><a href="#verify">10. Test and maintain</a></li>
+            <li><a href="#url-inventory">11. URL inventory (curated sitemap)</a></li>
+            <li><a href="#alternatives">12. Alternatives: auto-scrape chatbot platforms</a></li>
+            <li><a href="#references">13. Official references</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <h2 id="architecture">1. Architecture overview</h2>
+
+        <div class="flow-diagram" aria-label="Data flow diagram">
+Visitor on homepage (www.mosc-temp.com)
+    │
+    ▼
+SalesIQ chat widget ──► Zobot (flow / triggers) ──► Answer Bot
+    │                                              │
+    │                                              ▼
+    │                                    Resources (Articles + FAQs)
+    │                                              ▲
+    │                                              │
+    └── NOT a live crawl ──────────────────────────┘
+         Content pipeline:
+         mosc-redesign pages → extract text → bulk XLS/CSV import
+         (or Articles REST API / Zoho Desk sync)
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Role</th>
+                    <th>Where in SalesIQ</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Resources → Articles</strong></td>
+                    <td>Knowledge base storage (title, body, categories, source URL)</td>
+                    <td>Settings → Articles (sidebar) → Add — portal: <a href="https://salesiq.zoho.com/giventainc/onboard" rel="noopener noreferrer">salesiq.zoho.com/giventainc/onboard</a></td>
+                </tr>
+                <tr>
+                    <td><strong>Answer Bot</strong></td>
+                    <td>AI assistant that answers from Articles/FAQs (optional OpenAI “fetch answer from resource”)</td>
+                    <td>Settings → Bots → Answer Bot</td>
+                </tr>
+                <tr>
+                    <td><strong>Zobot</strong></td>
+                    <td>Conversation flow, triggers, handoff to agents; can embed Answer Bot as hybrid bot</td>
+                    <td>Settings → Bots → Zobot (<a href="https://salesiq.zoho.com/giventainc/settings/bot/zobot/" rel="noopener noreferrer">Giventa portal</a>)</td>
+                </tr>
+                <tr>
+                    <td><strong>Website embed</strong></td>
+                    <td>Loads widget on homepage / mosc-redesign pages</td>
+                    <td>Settings → Brands → Website → Embed code</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="warning">
+            <strong>Limitation:</strong> SalesIQ ingests knowledge via Articles, FAQs, bulk import, Zoho Desk sync, or <a href="https://www.zoho.com/salesiq/whats-new.html" rel="noopener noreferrer">Articles REST API</a> — not by crawling <code>https://www.mosc-temp.com</code> automatically. Plan for a repeatable export/import or API sync whenever pages change.
+        </div>
+
+        <h2 id="prerequisites">2. Prerequisites</h2>
+
+        <div class="section-container">
+            <div class="section-header prerequisites">Checklist before you start</div>
+            <div class="section-body">
+                <ol class="steps">
+                    <li><strong>Zoho SalesIQ account</strong> for Giventa Inc. — sign in at <a href="https://salesiq.zoho.com/giventainc/onboard" rel="noopener noreferrer">salesiq.zoho.com/giventainc/onboard</a> (admin access to Settings, Articles, Zobot).</li>
+                    <li><strong>Brand language</strong> — <strong>Settings → Brands → Giventa Inc. → General configurations → Languages</strong>: <strong>English</strong> selected and set as <strong>default language</strong> (see <a href="#import-brand-language">section 7 — brand language</a>).</li>
+                    <li><strong>Department</strong> — same General configurations page: assign <strong>MOSC Connect</strong> to the brand.</li>
+                    <li><strong>Brand / website</strong> in SalesIQ mapped to <code class="code-highlight">www.mosc-temp.com</code> (or the exact hostname visitors use).</li>
+                    <li><strong>Production site live</strong> at <a href="https://www.mosc-temp.com/mosc-redesign" rel="noopener noreferrer">https://www.mosc-temp.com/mosc-redesign</a> with public pages (no login required).</li>
+                    <li><strong>Content owner</strong> who can review imported articles for accuracy (liturgical / doctrinal content should be verified).</li>
+                    <li><strong>Optional:</strong> Zoho Desk knowledge base if you prefer Desk → SalesIQ article sync instead of manual import.</li>
+                </ol>
+            </div>
+        </div>
+
+        <h2 id="scope">3. Define scope (domain + path)</h2>
+
+        <div class="section-container">
+            <div class="section-header overview">In scope vs out of scope</div>
+            <div class="section-body">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Include</th>
+                            <th>Exclude (unless you explicitly add them)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>https://www.mosc-temp.com/mosc-redesign</code></td>
+                            <td><code>/</code> (main event homepage — different layout)</td>
+                        </tr>
+                        <tr>
+                            <td>All paths under <code>/mosc-redesign/*</code> (~272 App Router pages in repo)</td>
+                            <td><code>/admin/*</code>, <code>/sign-in</code>, authenticated areas</td>
+                        </tr>
+                        <tr>
+                            <td>Human sitemap: <code>/mosc-redesign/sitemap</code></td>
+                            <td>External links (e.g. <code>mosc.in</code>, <code>calendar.mosc.in</code>) — tag separately if imported</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info">
+                    <strong>Repo fact:</strong> Middleware lists <code>/mosc-redesign(.*)</code> as a public route — crawlers and fetch scripts can read these pages without Clerk login. See <code class="script-name">src/middleware.ts</code> lines 61–62.
+                </div>
+            </div>
+        </div>
+
+        <h2 id="scrapable">4. Make pages scrapable / readable</h2>
+
+        <div class="section-container">
+            <div class="section-header website">Website-side requirements</div>
+            <div class="section-body">
+                <p>For extractors (Playwright, curl, custom Node script) to build a useful knowledge base, each page should expose <strong>visible text in the initial HTML</strong> (Next.js server components help). Follow these practices:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Requirement</th>
+                            <th>Status in mosc-temp</th>
+                            <th>Action if needed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Public access (no auth wall)</td>
+                            <td>✅ <code>/mosc-redesign(.*)</code> in public routes</td>
+                            <td>Keep route public when adding new mosc-redesign pages</td>
+                        </tr>
+                        <tr>
+                            <td>Meaningful <code>&lt;title&gt;</code> and headings</td>
+                            <td>✅ Per-page metadata in App Router</td>
+                            <td>Use page title as SalesIQ article title</td>
+                        </tr>
+                        <tr>
+                            <td>Main content in DOM (not image-only)</td>
+                            <td>✅ Text sections on redesign pages</td>
+                            <td>Ensure new pages include searchable body copy</td>
+                        </tr>
+                        <tr>
+                            <td>Machine-readable URL list</td>
+                            <td>⚠️ Human sitemap only; no root <code>sitemap.xml</code> yet</td>
+                            <td>Add <code>app/sitemap.ts</code> or generate list from <code>page.tsx</code> files (step 5)</td>
+                        </tr>
+                        <tr>
+                            <td><code>robots.txt</code> allows crawlers</td>
+                            <td>⚠️ Verify in production</td>
+                            <td>Do not block <code>/mosc-redesign</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Recommended robots.txt (production)</h3>
+                <p>Allow bots to fetch mosc-redesign content. Adjust if you add a sitemap URL later.</p>
+                <pre>User-agent: *
+Allow: /mosc-redesign/
+# Optional when you add Next.js sitemap:
+# Sitemap: https://www.mosc-temp.com/sitemap.xml</pre>
+
+                <h3>Optional: publish XML sitemap (future enhancement)</h3>
+                <p>Add a Next.js <code>src/app/sitemap.ts</code> that emits all <code>/mosc-redesign/**</code> URLs. That helps search engines and your own export scripts discover pages. The curated list in <code class="script-name">sitemapData.ts</code> covers major sections but not all ~272 routes.</p>
+            </div>
+        </div>
+
+        <h2 id="discover">5. Discover all URLs</h2>
+
+        <p>Use <strong>three sources</strong> together: repo file tree (complete), curated sitemap (human-friendly), live site (verification).</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Source</th>
+                    <th>Count / coverage</th>
+                    <th>URL</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>App Router <code>page.tsx</code> files</td>
+                    <td><strong>272</strong> routes under <code>src/app/mosc-redesign/</code></td>
+                    <td>Generate with command below</td>
+                </tr>
+                <tr>
+                    <td><code>MOSC_REDESIGN_SITEMAP</code></td>
+                    <td>~80 curated links (sections in UI sitemap)</td>
+                    <td><code class="script-name">sitemapData.ts</code></td>
+                </tr>
+                <tr>
+                    <td>Live HTML sitemap</td>
+                    <td>Same curated list, rendered</td>
+                    <td><a href="https://www.mosc-temp.com/mosc-redesign/sitemap">/mosc-redesign/sitemap</a></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="section-container">
+            <div class="section-header parameters">Where to run this command</div>
+            <div class="section-body section-intro">
+                <p>Run these commands from the <strong>repository root</strong> — the folder that contains <code class="code-highlight">package.json</code> (for this clone: <code class="code-highlight">f:\project_workspace\mosc-temp</code>). Do <em>not</em> run them from <code class="code-highlight">src\app\mosc-redesign</code> or other subfolders unless you adjust paths yourself.</p>
+                <div class="warning">
+                    <strong>PowerShell only — not Command Prompt (CMD).</strong> Both copy buttons below paste <strong>PowerShell</strong> syntax (<code class="code-highlight">$RepoRoot</code>, <code class="code-highlight">Get-ChildItem</code>, etc.). If you run them in <strong>cmd.exe</strong>, you will see: <code class="code-highlight">'$RepoRoot' is not recognized as an internal or external command</code>.
+                </div>
+                <p><strong>How to tell which shell you have:</strong></p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Shell</th>
+                            <th>Prompt looks like</th>
+                            <th>Use this guide?</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>PowerShell</strong></td>
+                            <td><code>PS F:\project_workspace\mosc-temp&gt;</code></td>
+                            <td>Yes — paste the copied command here</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Command Prompt (CMD)</strong></td>
+                            <td><code>F:\project_workspace\mosc-temp&gt;</code> (no <code>PS</code> prefix)</td>
+                            <td>No — type <code class="code-highlight">powershell</code> first (see below)</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p><strong>From CMD, switch to PowerShell:</strong></p>
+                <pre style="background:#e8f4f8;color:#0d3b66;border:1px solid #b8d4e3;border-radius:6px;padding:12px;margin:10px 0;">cd /d f:\project_workspace\mosc-temp
+powershell</pre>
+                <p>Or open <strong>Windows Terminal</strong> and choose a <strong>PowerShell</strong> profile (not “Command Prompt”).</p>
+                <ol class="steps">
+                    <li>Open <strong>Windows Terminal</strong> (or PowerShell 7 / Windows PowerShell).</li>
+                    <li>Change to the repo root, for example:
+                        <pre style="background:#e8f4f8;color:#0d3b66;border:1px solid #b8d4e3;border-radius:6px;padding:12px;margin:10px 0;">cd f:\project_workspace\mosc-temp</pre>
+                    </li>
+                    <li>Paste and run either the <strong>multi-line PowerShell</strong> script or the <strong>single-line PowerShell</strong> command below (both require PowerShell, not CMD).</li>
+                    <li>Find output file <code class="script-name">documentation/zoh_zobot_settings/mosc-redesign-urls.txt</code> (one URL per line, e.g. <code class="code-highlight">https://www.mosc-temp.com/mosc-redesign/saints/...</code> — not filesystem paths).</li>
+                </ol>
+                <div class="info">
+                    <strong>After you have the URL list — next steps (not Zobot import):</strong>
+                    <ol class="steps">
+                        <li><strong>Section 6:</strong> Fetch each URL and build an Articles spreadsheet (title, body, category, source URL).</li>
+                        <li><strong>Section 7:</strong> SalesIQ → <strong>Settings → Articles</strong> (sidebar) → <strong>Add</strong> → upload XLS/CSV (see mapping table in section 7).</li>
+                        <li><strong>Section 8:</strong> Configure <strong>Answer Bot</strong> to use those Articles.</li>
+                        <li><strong>Section 9:</strong> Your Zobot <strong>Answer bot Card</strong> reads from Answer Bot — no separate “URL file import” in Zobot.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <div class="command-block">
+            <div class="command-header">
+                <span class="command-type">List all mosc-redesign routes from repo (PowerShell)</span>
+                <div>
+                    <button type="button" class="copy-button" onclick="copyPowerShellScript('cb-list-routes-powershell')" title="Copy PowerShell script" aria-label="Copy PowerShell script">📋 Copy PowerShell</button>
+                    <button type="button" class="copy-button copy-button-template" onclick="copyWindowsCommand('cb-list-routes')" title="Copy PowerShell single-line command" aria-label="Copy PowerShell single-line command">📋 Copy single-line</button>
+                </div>
+            </div>
+            <div class="command-single-line-label" style="padding: 12px 15px 0; background: #fff;">PowerShell (multi-line — paste into PowerShell at repo root)</div>
+            <div class="command-content" style="white-space: pre-wrap; word-break: normal;" id="cb-list-routes-powershell"># Repository root (change if your clone path differs)
+$RepoRoot = (Resolve-Path "f:\project_workspace\mosc-temp").Path
+Set-Location $RepoRoot
+
+$AppRoot = (Resolve-Path (Join-Path $RepoRoot "src\app")).Path
+$OutDir = Join-Path $RepoRoot "documentation\zoh_zobot_settings"
+$OutFile = Join-Path $OutDir "mosc-redesign-urls.txt"
+New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
+
+Get-ChildItem -Path (Join-Path $AppRoot "mosc-redesign") -Recurse -Filter "page.tsx" |
+  ForEach-Object {
+    $dir = $_.DirectoryName
+    if ($dir.StartsWith($AppRoot, [StringComparison]::OrdinalIgnoreCase)) {
+      $rel = $dir.Substring($AppRoot.Length).Replace("\", "/")
+    } else {
+      $rel = $dir.Replace("\", "/")
+    }
+    if ($rel -match "\(syro\)") { $rel = $rel -replace "/\(syro\)", "" }
+    if ($rel -match "\[[^\]]+\]") { return }
+    $path = if ($rel -eq "/mosc-redesign") { "/mosc-redesign" } else { $rel }
+    "https://www.mosc-temp.com$path"
+  } |
+  Sort-Object |
+  Out-File -FilePath $OutFile -Encoding utf8
+
+Write-Host "Wrote $OutFile"</div>
+            <div class="command-single-line">
+                <div class="command-single-line-label">PowerShell single-line (same script, one line — still requires PowerShell, not CMD)</div>
+                <code id="cb-list-routes-single-code">$RepoRoot = (Resolve-Path "f:\project_workspace\mosc-temp").Path; Set-Location $RepoRoot; $AppRoot = (Resolve-Path (Join-Path $RepoRoot "src\app")).Path; $OutFile = Join-Path (Join-Path $RepoRoot "documentation\zoh_zobot_settings") "mosc-redesign-urls.txt"; New-Item -ItemType Directory -Force -Path (Split-Path $OutFile) | Out-Null; Get-ChildItem -Path (Join-Path $AppRoot "mosc-redesign") -Recurse -Filter "page.tsx" | ForEach-Object { $dir = $_.DirectoryName; if ($dir.StartsWith($AppRoot, [StringComparison]::OrdinalIgnoreCase)) { $rel = $dir.Substring($AppRoot.Length).Replace("\", "/") } else { $rel = $dir.Replace("\", "/") }; if ($rel -match "\(syro\)") { $rel = $rel -replace "/\(syro\)", "" }; if ($rel -match "\[[^\]]+\]") { return }; $path = if ($rel -eq "/mosc-redesign") { "/mosc-redesign" } else { $rel }; "https://www.mosc-temp.com$path" } | Sort-Object | Out-File -FilePath $OutFile -Encoding utf8; Write-Host "Wrote $OutFile"</code>
+            </div>
+        </div>
+
+        <div class="success">
+            <strong>Output:</strong> <code class="script-name">documentation/zoh_zobot_settings/mosc-redesign-urls.txt</code> — one absolute URL per line (~265 routes; dynamic folders like <code>[documentId]</code> are excluded). Verify lines look like <code class="code-highlight">https://www.mosc-temp.com/mosc-redesign/...</code> (not <code class="code-highlight">...comF:/project_...</code>). Re-run the script if paths are wrong.
+        </div>
+
+        <h2 id="extract">6. Extract content for import</h2>
+
+        <div class="section-intro">
+            <strong>Automated option (recommended):</strong> Run the Node exporter
+            <code class="script-name">scripts/zoh-zobot-settings/export-salesiq-articles.mjs</code>
+            — full guide:
+            <a href="SALESIQ_ARTICLES_EXPORT_NODE_SCRIPT_GUIDE.html">SalesIQ Articles Export — Node Script</a>.
+            It reads <code class="script-name">documentation/zoh_zobot_settings/mosc-redesign-urls.txt</code>,
+            fetches each live page, and writes
+            <code class="script-name">documentation/zoh_zobot_settings/salesiq-articles-import.csv</code>
+            for SalesIQ <strong>Settings → Articles → Add</strong> (section 7).
+        </div>
+
+        <div class="command-block setup">
+            <div class="command-header">
+                <span class="command-type">Quick start — export Articles CSV (Node 18+)</span>
+                <div>
+                    <button type="button" class="copy-button" onclick="copyWindowsCommand('cb-zobot-export-test')" title="Copy test command">📋 Copy test (10 URLs)</button>
+                    <button type="button" class="copy-button copy-button-template" onclick="copyWindowsCommand('cb-zobot-export-full')" title="Copy full export">📋 Copy full export</button>
+                </div>
+            </div>
+            <div class="command-single-line-label" style="padding: 12px 15px 0; background: #fff;">Run at repository root in PowerShell or Windows Terminal (not CMD)</div>
+            <div class="command-single-line">
+                <div class="command-single-line-label">Test batch (10 pages)</div>
+                <code id="cb-zobot-export-test-single-code">cd f:\project_workspace\mosc-temp; npm run zobot:export-articles:test</code>
+            </div>
+            <div class="command-single-line">
+                <div class="command-single-line-label">Full export (~272 pages, several minutes)</div>
+                <code id="cb-zobot-export-full-single-code">cd f:\project_workspace\mosc-temp; npm run zobot:export-articles</code>
+            </div>
+        </div>
+
+        <div class="section-container">
+            <div class="section-header extract">Content extraction pipeline</div>
+            <div class="section-body">
+                <ol class="steps">
+                    <li><strong>Fetch each URL</strong> from <code>mosc-redesign-urls.txt</code> (HTTP GET with realistic User-Agent, or headless browser if pages need JS).</li>
+                    <li><strong>Parse main content:</strong> prefer <code>&lt;main&gt;</code>, or article body selectors used on mosc-redesign layout. Strip nav, footer, scripts.</li>
+                    <li><strong>Build one row per page</strong> with at least:
+                        <ul>
+                            <li><strong>Title</strong> — from <code>&lt;title&gt;</code> or first <code>&lt;h1&gt;</code></li>
+                            <li><strong>Body</strong> — plain text or HTML (SalesIQ editor accepts rich text)</li>
+                            <li><strong>Category</strong> — e.g. “MOSC Redesign / Saints”, “Directory”, “Faith &amp; Teaching” (match sitemap sections)</li>
+                            <li><strong>Tags</strong> — optional keywords (saint names, diocese, liturgy)</li>
+                            <li><strong>Source URL</strong> — canonical page URL (store in article or custom field for attribution)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Deduplicate:</strong> some paths appear in multiple sitemap sections; one article per canonical URL.</li>
+                    <li><strong>Review:</strong> have a content reviewer spot-check high-traffic pages before bulk publish.</li>
+                </ol>
+
+                <h3>Suggested article shape (for bulk import spreadsheet)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Column</th>
+                            <th>Example</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Title</td>
+                            <td>St. Gregorios of Parumala</td>
+                            <td>Max length per SalesIQ import template</td>
+                        </tr>
+                        <tr>
+                            <td>Description / Summary</td>
+                            <td>Biography and feast information…</td>
+                            <td>First paragraph or meta description</td>
+                        </tr>
+                        <tr>
+                            <td>Content</td>
+                            <td>Full page text</td>
+                            <td>Main import body</td>
+                        </tr>
+                        <tr>
+                            <td>Category</td>
+                            <td>MOSC Redesign &gt; Saints</td>
+                            <td>Multi-level categories supported in SalesIQ</td>
+                        </tr>
+                        <tr>
+                            <td>Language</td>
+                            <td>en</td>
+                            <td>Add <code>ml</code> articles separately if you localize</td>
+                        </tr>
+                        <tr>
+                            <td>Source URL</td>
+                            <td><code>https://www.mosc-temp.com/mosc-redesign/saints/st-gregorios-of-parumala-metropolitan-geevarghese-mar-gregorios</code></td>
+                            <td>Map to custom field if available in import wizard</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="warning">
+                    <strong>Import template columns vary by portal version.</strong> In SalesIQ, open <strong>Settings → Articles → Add</strong> and download Zoho’s <strong>sample spreadsheet</strong> for your org. Match your export columns to that file exactly.
+                </div>
+
+                <h3>Automation options (choose one)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Approach</th>
+                            <th>Best for</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Manual + bulk XLS</strong></td>
+                            <td>First launch; curated subset from sitemap</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Custom Node script</strong> (fetch + cheerio + CSV)</td>
+                            <td>All 272 pages; rerun on deploy</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Articles REST API</strong></td>
+                            <td>CI/CD publishing from repo (<a href="https://www.zoho.com/salesiq/whats-new.html" rel="noopener noreferrer">SalesIQ Articles API</a>)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Zoho Desk sync</strong></td>
+                            <td>If articles already live in Desk KB</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h2 id="import">7. Import into SalesIQ Articles</h2>
+
+        <div class="success" style="margin-bottom: 1.25rem;">
+            <strong>Recommended (API):</strong> After export + FAQ merge, use the <a href="ZOHO_SALESIQ_OPERATIONS_RUNBOOK.html#bulk-upload">Operations Runbook — §9 Bulk upload via REST API</a>:
+            <code>npm run zobot:bulk-upload-articles -- --confirm</code> from <code>mosc-temp</code> (OAuth with <code>SalesIQ.articles.CREATE</code> required). Portal CSV steps below are the <strong>alternative</strong> if API scopes are unavailable.
+        </div>
+
+        <div class="section-container">
+            <div class="section-header salesiq">Open the Giventa SalesIQ portal</div>
+            <div class="section-body">
+                <p>Use this URL to sign in and reach Settings (gear) and the <strong>Articles</strong> menu in the left sidebar:</p>
+                <div class="command-block">
+                    <pre><code class="script-name">https://salesiq.zoho.com/giventainc/onboard</code></pre>
+                </div>
+                <p>After sign-in: <strong>Settings</strong> (gear, top) → <strong>Articles</strong> (Settings sidebar) → <strong>Add</strong> → upload CSV. Do not use <em>Controls → Import</em> on the Settings home page — that wizard is for other data.</p>
+            </div>
+        </div>
+
+        <div class="section-container">
+            <div class="section-header salesiq" id="import-brand-language">Brand language &amp; department (fix “Invalid article language”)</div>
+            <div class="section-body">
+                <p>Article import uses the <strong>language labels configured on your brand</strong>, not ISO codes like <code>en</code> in the CSV alone. Confirm this <em>before</em> Validate:</p>
+                <ol class="steps">
+                    <li>From <a href="https://salesiq.zoho.com/giventainc/onboard" rel="noopener noreferrer">salesiq.zoho.com/giventainc/onboard</a>, open <strong>Settings</strong> → <strong>Brands</strong> → <strong>Giventa Inc.</strong> → <strong>General configurations</strong>.</li>
+                    <li><strong>Departments:</strong> under <em>Assign departments to your brand</em>, ensure <strong>MOSC Connect</strong> is selected (matches CSV <code>Department</code> column).</li>
+                    <li><strong>Languages:</strong> under <em>Choose language(s) for your live chat</em>, select <strong>English</strong>.</li>
+                    <li><strong>Set default language:</strong> choose <strong>English</strong> (not “Website language” unless every site locale is configured).</li>
+                    <li>Save. Re-export or patch CSV so <code>Language</code> column = <code>English</code> (not <code>en</code>).</li>
+                </ol>
+                <div class="command-block" style="margin-top: 1rem;">
+                    <pre><code class="script-name">node scripts/zoh-zobot-settings/patch-salesiq-import-csv.mjs --department "MOSC Connect" --language English</code></pre>
+                </div>
+                <p>Chat widget language API codes (<code>en</code>, <code>fr</code>, …) are documented in <a href="https://www.zoho.com/salesiq/help/developer-section/js-api-chat-language.html" rel="noopener noreferrer">.salesiq.language()</a> — article <strong>import</strong> expects the portal display name <strong>English</strong>.</p>
+            </div>
+        </div>
+
+        <div class="section-container">
+            <div class="section-header salesiq" id="import-categories">Create article categories before bulk import</div>
+            <div class="section-body">
+                <p>If Validate fails or the <strong>Edit info</strong> popup shows <em>Select a Category</em> with no match, SalesIQ does not recognize the category strings in your CSV. Categories must exist in the portal <strong>before</strong> bulk Validate (or be picked manually per row in Edit info).</p>
+                <p><strong>Where categories live (Giventa portal):</strong> Articles is under the <strong>left sidebar</strong> (Resources) — <em>not</em> under Settings. On the Articles screen (your screenshot with <strong>Articles(0)</strong>), use one of these:</p>
+                <ol class="steps">
+                    <li><strong>Manage Categories icon</strong> — In the Articles page header (near <strong>Add</strong> and the <strong>English</strong> language dropdown), look for a <strong>folder / categories</strong> icon labeled <em>Manage categories</em> or similar. Click it → <strong>Add category</strong> → type the name exactly as in the CSV (e.g. <code>General</code>, <code>Administration</code>).</li>
+                    <li><strong>While adding one article</strong> — Click <strong>Add</strong> → <strong>Add article</strong> (not Import). In the article form, open the <strong>Category</strong> field → choose <strong>Add new category</strong> / type a new name → save. Repeat for each name you need (or use the shortcut below).</li>
+                    <li><strong>Search</strong> — On the Settings home screen, use the top <strong>Search</strong> bar and type <code>category</code> or <code>article category</code> if you cannot see the icon on Articles.</li>
+                </ol>
+                <div class="info" style="margin-top: 1rem;">
+                    <strong>Shortcut (recommended for first import):</strong> Create <strong>one</strong> category named <code>General</code>, then patch the CSV so every row uses that category: <code>npm run zobot:patch-import-csv -- --department "MOSC Connect" --language English --channels Web --category "General"</code>. You can split articles into more categories later in SalesIQ.
+                </div>
+                <p style="margin-top: 1rem;">Full export uses ~31 flattened names (<code>Administration</code>, <code>Saints</code>, <code>Directory</code>, …). To keep those in the CSV, create each name via Manage categories before upload. Flattened names come from:</p>
+                <div class="command-block">
+                    <pre><code class="script-name">node scripts/zoh-zobot-settings/patch-salesiq-import-csv.mjs --department "MOSC Connect" --language English --flatten-categories</code></pre>
+                </div>
+                <p>That keeps only the part after <code>MOSC Redesign &gt; </code> (e.g. <code>Administration</code>) — create those shorter names in SalesIQ instead.</p>
+            </div>
+        </div>
+
+        <div class="section-container">
+            <div class="section-header salesiq">SalesIQ dashboard steps (Giventa portal)</div>
+            <div class="section-body">
+                <ol class="steps">
+                    <li>Sign in at <a href="https://salesiq.zoho.com/giventainc/onboard" rel="noopener noreferrer">salesiq.zoho.com/giventainc/onboard</a>.</li>
+                    <li>Complete <a href="#import-brand-language">brand language &amp; department</a> and <a href="#import-categories">category setup</a> above.</li>
+                    <li>Open <strong>Articles</strong> from the <strong>left sidebar</strong> (Resources) — or use <strong>Settings → Controls → Import</strong> for bulk upload (both reach the same <strong>Add Articles</strong> mapping wizard).</li>
+                    <li>Click <strong>Add</strong> → <strong>Import</strong> (on the Articles page) or start from Settings Import; upload <code class="script-name">salesiq-articles-import.csv</code>.</li>
+                    <li>After upload, SalesIQ shows <strong>Settings → Import → Add Articles</strong> with <strong>Article status</strong> and <strong>Attribute mapping</strong> — use the table below.</li>
+                    <li>Click <strong>Validate</strong>, fix any errors, then complete the import.</li>
+                    <li>Run a <strong>small test batch</strong> first (<code>npm run zobot:export-articles:test</code>) before importing all ~265 URLs.</li>
+                    <li>Publish articles and assign them to the <strong>website / brand</strong> for <code>www.mosc-temp.com</code>.</li>
+                    <li>Repeat for <strong>FAQs</strong> if you want short Q&amp;A pairs (e.g. “Who is the Catholicos?” → link to catholicate page).</li>
+                </ol>
+
+                <h3 id="import-mapping" style="margin-top: 1.5rem;">Add Articles — attribute mapping (Validate requires every field)</h3>
+                <p>Giventa/SalesIQ will <strong>not enable Validate</strong> until every row in the mapping table has a sheet column selected. The dropdown only lists <strong>CSV headers</strong> — so you must add matching columns to the file first, then map each SalesIQ field to the column with the <strong>same name</strong>.</p>
+
+                <div class="warning" style="margin-top: 1rem;">
+                    <strong>Fix your current CSV (fast — no re-fetch):</strong> In SalesIQ, open <strong>Settings → Departments</strong> and copy the exact department name. From the repo root run (replace the department name):
+                    <div class="command-block" style="margin-top: 0.75rem;">
+                        <pre><code class="script-name">node scripts/zoh-zobot-settings/patch-salesiq-import-csv.mjs --department "MOSC Connect" --channels Web --language English --flatten-categories</code></pre>
+                    </div>
+                    Or: <code>npm run zobot:patch-import-csv -- --department "YOUR_DEPT_NAME"</code>. Re-upload the patched CSV via <strong>Settings → Articles → Add</strong>.
+                </div>
+
+                <p style="margin-top: 1rem;">After patching (or re-export with <code>--department</code>), CSV columns include:</p>
+                <p><code>Resource ID</code>, <code>Group ID</code>, <code>Title</code>, <code>Content</code>, <code>Department</code>, <code>Category</code>, <code>Channels</code>, <code>Is Public</code>, <code>Status</code>, <code>Language</code>, <code>Description</code>, <code>Source URL</code>, <code>Tags</code></p>
+
+                <table>
+                    <thead>
+                        <tr><th>Section / field</th><th>What to select</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Article status</strong></td>
+                            <td>Select <strong>Status in sheet</strong>, then map <strong>Status → Status</strong> (every row = <code>Published</code> from the patch script). Or select <strong>Publish</strong> and still map <strong>Status → Status</strong> if Validate requires it.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Resource ID</strong></td>
+                            <td>Map to <strong>Resource ID</strong> with <strong>empty</strong> cells for new articles (<code>Action</code> = Create). Do <em>not</em> enter numeric IDs in the CSV or in the post-Validate <strong>Edit info</strong> popup — numeric Resource IDs are for <strong>updating</strong> existing articles only. Leave the popup Resource ID field blank, set <strong>Language variant</strong> = English, <strong>Department</strong> = MOSC Connect, and pick a valid <strong>Category</strong>, then Validate again.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Group ID</strong></td>
+                            <td>Map to <strong>Group ID</strong> (empty cells for new articles)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Title</strong></td>
+                            <td>Map to <strong>Title</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Content</strong></td>
+                            <td>Map to <strong>Content</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Department</strong></td>
+                            <td>Map to <strong>Department</strong> (must match Settings → Departments exactly)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Category</strong></td>
+                            <td>Map to <strong>Category</strong>. Values must match categories already created under <strong>Settings → Articles → Categories</strong> (see <a href="#import-categories">category setup</a>). If Edit info shows <em>Select a Category</em>, choose an existing category or create it first, then re-Validate.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Channels</strong></td>
+                            <td>Map to <strong>Channels</strong>. Use <code>Web</code> (globe icon in Edit info) — <strong>not</strong> <code>Website</code>. Patch default: <code>--channels Web</code>. If Validate still opens Edit info with channels blank, click the globe or re-patch the CSV.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Is Public</strong></td>
+                            <td>Map to <strong>Is Public</strong> (default <code>true</code> from patch)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Status</strong></td>
+                            <td>Map to <strong>Status</strong> (default <code>Published</code> from patch)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Language</strong></td>
+                            <td>Map to <strong>Language</strong>. Value must be <strong>English</strong> (display name), not <code>en</code> — ISO codes cause <em>Invalid article language</em> on Validate.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="warning" style="margin-top: 1rem;">
+                    <strong>Validate error: &quot;Invalid article language&quot;</strong> — Fix CSV (<code>English</code> not <code>en</code>) and confirm brand language at <strong>Settings → Brands → Giventa Inc. → General configurations → Languages</strong> (see <a href="#import-brand-language">above</a>).
+                </div>
+
+                <div class="warning" style="margin-top: 1rem;">
+                    <strong>Edit info — Channels blank (globe not selected):</strong> CSV must use <code>Web</code>, not <code>Website</code>. Re-patch with <code>--channels Web</code>. In Edit info the globe icon is the Web channel; without it Validate fails even when Department and Language are correct.
+                </div>
+
+                <div class="warning" style="margin-top: 1rem;">
+                    <strong>Validate / Edit info — Category blank:</strong> Create matching categories in SalesIQ before import (<a href="#import-categories">category setup</a>), or select a category in Edit info. Category names must match the CSV exactly.
+                </div>
+
+                <div class="warning" style="margin-top: 1rem;">
+                    <strong>Edit info — Resource ID:</strong> For rows with <code>Action = Create</code>, leave <strong>Resource ID</strong> empty. Do not type a number unless you are updating an existing article that already has an ID in SalesIQ.
+                </div>
+
+                <div class="info" style="margin-top: 1rem;">
+                    <strong>Never map unrelated columns:</strong> Do not set Department → Language, Channels → Source URL, or Is Public → Tags. Each SalesIQ field must map to the column with the same name after you run the patch script.
+                </div>
+
+                <div class="info" style="margin-top: 1rem;">
+                    <strong>Columns not on the mapping screen:</strong> <code>Description</code>, <code>Source URL</code>, and <code>Tags</code> from our export are not always shown in SalesIQ’s importer. The main Answer Bot signal is <strong>Title + Content + Category</strong>. Keep <code>Source URL</code> in the CSV for your records; you can paste URLs into articles manually later if needed.
+                </div>
+
+                <div class="success" style="margin-top: 1rem;">
+                    <strong>When Validate passes:</strong> finish the wizard, open a few imported articles under <strong>Settings → Articles</strong>, confirm content looks correct, then proceed to section 8 (Answer Bot).
+                </div>
+
+                <div class="info">
+                    <strong>Categorization tip:</strong> Mirror the eight sections from <code class="script-name">sitemapData.ts</code> (Main Navigation, Community &amp; Resources, Faith &amp; Teaching, Saints, Directory, Administration, Organisations &amp; Education, Contact). Visitors find answers faster when categories match the site IA.
+                </div>
+            </div>
+        </div>
+
+        <h2 id="answer-bot">8. Configure Answer Bot</h2>
+
+        <div class="section-container">
+            <div class="section-header salesiq">Answer Bot (knowledge-driven replies)</div>
+            <div class="section-body">
+                <ol class="steps">
+                    <li><strong>Settings → Bots → Answer Bot</strong> — select the brand for <code>www.mosc-temp.com</code>.</li>
+                    <li><strong>Connect knowledge base</strong> — link to Resources (Articles + FAQs) you imported.</li>
+                    <li>Enable <strong>“Fetch answer from resource (powered by OpenAI)”</strong> if you want concise answers instead of full article dumps (<a href="https://www.zoho.com/salesiq/knowledge-base-chatbot.html" rel="noopener noreferrer">SalesIQ KB chatbot guide</a>).</li>
+                    <li>Enable <strong>Self-service</strong> in the visitor chat window so users can browse articles by category.</li>
+                    <li>Map article categories to your website in SalesIQ brand settings.</li>
+                    <li>Monitor <strong>unanswered questions</strong> in Resources — add missing pages or FAQs when users ask something not covered.</li>
+                </ol>
+
+                <div class="success">
+                    <strong>Hybrid pattern (recommended):</strong> SalesIQ supports plugging <strong>Answer Bot</strong> into a <strong>rule-based Zobot</strong> so greetings and handoff stay in your flow while factual questions hit the knowledge base. See <a href="https://www.zoho.com/salesiq/chatbot/" rel="noopener noreferrer">Zobot hybrid chatbot</a>.
+                </div>
+            </div>
+        </div>
+
+        <h2 id="zobot">9. Connect Zobot on the homepage</h2>
+
+        <p>This section covers <strong>creating your first Zobot</strong> at Giventa Inc. (when the portal shows <em>“No bots found”</em>), wiring it to <strong>Answer Bot</strong> + MOSC Resources, and embedding the widget on <code>www.mosc-temp.com</code>.</p>
+
+        <div class="warning">
+            <strong>Do this after section 8 (Answer Bot) and section 7 (Resources import).</strong> The Zobot greets visitors and routes questions; Answer Bot needs Articles/FAQs loaded first or the bot will have nothing to search.
+        </div>
+
+        <h3 id="zobot-first-time">9a. First-time setup — “No bots found” (Giventa Inc.)</h3>
+
+        <p>If you open <a href="https://salesiq.zoho.com/giventainc/settings/bot/zobot/" rel="noopener noreferrer">Settings → Bots → Zobot</a> and see:</p>
+        <pre>No bots found
+Create a new bot from scratch or import a bot</pre>
+        <p>you have not created a Zobot yet. Follow the steps below. Use <strong>Create a new bot from scratch</strong> unless you already have a bot export file from another SalesIQ portal.</p>
+
+        <div class="section-container">
+            <div class="section-header zobot">Step 0 — Confirm brand &amp; website exist</div>
+            <div class="section-body">
+                <ol class="steps">
+                    <li>Sign in to <a href="https://salesiq.zoho.com/giventainc/" rel="noopener noreferrer">SalesIQ — Giventa Inc.</a> with an admin account.</li>
+                    <li>Go to <strong>Settings</strong> (gear icon, top right) → <strong>Brands</strong>.</li>
+                    <li>Verify a brand exists for <strong>www.mosc-temp.com</strong> (or the hostname visitors use). If missing, click <strong>Add brand</strong>, enter the site name and URL, and save.</li>
+                    <li>Open that brand → <strong>Installation</strong> tab — note the <strong>widget embed code</strong> for section 9e (you will paste this into the Next.js site later).</li>
+                    <li>Under the brand, confirm at least one <strong>Department</strong> exists (e.g. “Support” or “General”) — you will assign the bot to it.</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="section-container">
+            <div class="section-header zobot">Step 1 — Start new Zobot (Bot builder)</div>
+            <div class="section-body">
+                <ol class="steps">
+                    <li>Navigate to <strong>Settings → Bot → Zobot</strong> (<a href="https://salesiq.zoho.com/giventainc/settings/bot/zobot/" rel="noopener noreferrer">direct link</a>).</li>
+                    <li>Click <strong>Create a new bot from scratch</strong> (not Import unless you have a SalesIQ bot export).</li>
+                    <li><strong>Name:</strong> e.g. <code class="code-highlight">MOSC Homepage Assistant</code> or <code class="code-highlight">Giventa MOSC Redesign Bot</code>.</li>
+                    <li><strong>Platform:</strong> choose <strong>Codeless Bot Builder</strong> (recommended — visual flow + Answer Bot card; no Deluge required).</li>
+                    <li>Click <strong>Next</strong>.</li>
+                </ol>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Platform option</th>
+                            <th>When to use</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Codeless Bot Builder</strong></td>
+                            <td>Default for MOSC — drag-and-drop flow, Answer Bot card, operator handoff</td>
+                        </tr>
+                        <tr>
+                            <td>SalesIQ Scripts (Deluge)</td>
+                            <td>Custom logic, CRM pushes, complex integrations</td>
+                        </tr>
+                        <tr>
+                            <td>Webhooks</td>
+                            <td>Call your own API (e.g. live directory lookup)</td>
+                        </tr>
+                        <tr>
+                            <td>Watson / Azure</td>
+                            <td>External NLP platforms (rare for this project)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section-container">
+            <div class="section-header zobot">Step 2 — Bot profile</div>
+            <div class="section-body">
+                <ol class="steps">
+                    <li><strong>Description:</strong> Short text shown to visitors, e.g. “Ask about the Malankara Orthodox Syrian Church, saints, directory, and events.”</li>
+                    <li><strong>Choose brand:</strong> Select the <strong>www.mosc-temp.com</strong> brand (must match embed code domain).</li>
+                    <li><strong>Associate department:</strong> Pick the department that should receive handoff chats (e.g. Support).</li>
+                    <li><strong>Channels — Where bot is active:</strong> Enable <strong>Website</strong>. Leave social channels (WhatsApp, etc.) off unless configured separately.</li>
+                    <li><strong>Languages:</strong> Select <strong>English</strong>. Add Malayalam only if you will build a separate flow for that language (Codeless requires per-language flows).</li>
+                    <li><strong>Default language:</strong> English.</li>
+                    <li>Click <strong>Next</strong>.</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="section-container">
+            <div class="section-header zobot">Step 3 — Working hours</div>
+            <div class="section-body">
+                <ol class="steps">
+                    <li>Choose working hours aligned with your brand’s business hours, or <strong>24/7</strong> if the public site should always offer the bot.</li>
+                    <li>If operators are not staffed overnight, still allow the bot 24/7 but enable <strong>Hide handoff outside business hours</strong> in the next step.</li>
+                    <li>Click <strong>Next</strong>.</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="section-container">
+            <div class="section-header zobot">Step 4 — Zobot configuration (audience &amp; triggers)</div>
+            <div class="section-body">
+                <ol class="steps">
+                    <li><strong>Bot audience:</strong>
+                        <ul>
+                            <li><strong>All visitors</strong> — simplest for homepage + mosc-redesign.</li>
+                            <li><strong>Custom visitors</strong> — e.g. rule: Current page URL <em>contains</em> <code>mosc-temp.com</code> or path contains <code>/mosc-redesign</code> (use if you run multiple brands in one portal).</li>
+                        </ul>
+                    </li>
+                    <li><strong>When should the bot initiate chat?</strong> Recommended for homepage:
+                        <ul>
+                            <li><strong>When the visitor clicks the chat widget</strong> — least intrusive; or</li>
+                            <li><strong>When the visitor lands on your site</strong> — proactive popup after a delay (optional).</li>
+                        </ul>
+                    </li>
+                    <li><strong>Response interval:</strong> <strong>Instant</strong> (or 1–2 seconds for a more human feel).</li>
+                    <li><strong>Chat inactivity rules:</strong> Optional reminder before auto-close (e.g. warn at 5 min, end at 8 min).</li>
+                    <li><strong>Handoff to operator:</strong> Enable if live agents monitor SalesIQ. Set label e.g. “Connect with a person?” → <strong>Yes</strong>. Check <strong>Hide outside business hours</strong> if no overnight staff.</li>
+                    <li><strong>Forward message:</strong> Optional text while connecting to an operator.</li>
+                    <li><strong>Actions:</strong> Enable <strong>Go back</strong> / <strong>Restart chat</strong> if you want visitors to recover from wrong paths.</li>
+                    <li>Click <strong>Create</strong>. You enter the <strong>Codeless Bot Builder</strong> canvas (section 9c).</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="info">
+            <strong>Import bot instead?</strong> Choose <strong>Import a bot</strong> only if you have a bot package exported from another SalesIQ portal. After import, re-select the <strong>www.mosc-temp.com</strong> brand and re-publish.
+        </div>
+
+        <h3 id="zobot-answer-bot-prereq">9b. Configure Answer Bot for the same brand (prerequisite)</h3>
+
+        <p>Before publishing the Zobot flow, ensure Answer Bot is active for the same brand (full detail in <a href="#answer-bot">section 8</a>):</p>
+        <ol class="steps">
+            <li><strong>Settings → Bots → Answer Bot</strong> — select the <strong>www.mosc-temp.com</strong> brand.</li>
+            <li>If prompted, click <strong>Configure</strong> (Answer Bot is created per brand but inactive until configured).</li>
+            <li>Under <strong>Resources</strong>, connect <strong>Articles</strong> and <strong>FAQs</strong> imported from <code>/mosc-redesign</code>.</li>
+            <li>Enable <strong>Fetch answer from resource (powered by OpenAI)</strong> for concise replies if your plan includes it.</li>
+            <li>Set <strong>Answer found</strong> / <strong>Answer not found</strong> messages and optional related-article suggestions.</li>
+            <li>Save and <strong>enable</strong> Answer Bot for the brand.</li>
+        </ol>
+
+        <h3 id="zobot-flow">9c. Build the Codeless flow (Answer Bot + fallbacks)</h3>
+
+        <div class="warning">
+            <strong>You are on the right page.</strong> After the create wizard (name, brand, triggers), SalesIQ opens the <strong>Codeless Bot Builder</strong> canvas — a visual flowchart editor. You must finish this before <strong>Publish</strong> works. Your bot (e.g. <code>MOSC-BOT-TMP</code>) stays in <strong>DRAFT</strong> until you complete the flow and publish.
+        </div>
+
+        <h4 id="zobot-canvas">9c.1 What this screen is (and the “Incomplete bot flow” error)</h4>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>UI area</th>
+                    <th>What it does</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Canvas</strong> (center)</td>
+                    <td>Flowchart: <strong>Start</strong> → cards (Welcome, Answer Bot, etc.) connected by arrows</td>
+                </tr>
+                <tr>
+                    <td><strong>Blue +</strong> (dashed line after Welcome)</td>
+                    <td>Open slot — you must add the <em>next</em> card here. Leaving it empty triggers <strong>Incomplete bot flow</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>Card library</strong> (right)</td>
+                    <td>Drag cards onto the canvas or click <strong>+</strong> to pick the next step (Input, Action, Response, Integration, Info, End)</td>
+                </tr>
+                <tr>
+                    <td><strong>Errors</strong> (left sidebar)</td>
+                    <td>Validation — fix before publish. “Complete the bot flow or associate it to a card” = connect every open connector</td>
+                </tr>
+                <tr>
+                    <td><strong>Test your bot</strong></td>
+                    <td>Preview chat in a popup — use after the error clears</td>
+                </tr>
+                <tr>
+                    <td><strong>Publish</strong> (top right)</td>
+                    <td>Makes the bot live on the brand’s website channel — only after flow is valid and saved</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="section-container">
+            <div class="section-header zobot">9c.2 Minimum steps from your current state (Welcome only → working bot)</div>
+            <div class="section-body">
+                <p>You already have <strong>Start</strong> and a <strong>Welcome card</strong> (“Welcome to MOSC! How can I help you today?”). Complete the flow as follows:</p>
+                <ol class="steps">
+                    <li><strong>Fix the open connector:</strong> Click the <strong>blue +</strong> on the dashed line after the Welcome card <em>or</em> drag a card from the right panel onto that connector.</li>
+                    <li><strong>Add Answer Bot:</strong> In the card gallery, find the <strong>Answer Bot</strong> card (under <strong>Integration</strong> or search the gallery — Zoho renamed “blocks” to <strong>cards</strong>). Add it as the next step after Welcome.</li>
+                    <li><strong>Configure Answer Bot card:</strong> Open the card settings. It uses the brand’s Answer Bot + Resources (Articles/FAQs). Ensure section <a href="#zobot-answer-bot-prereq">9b</a> / section <a href="#answer-bot">8</a> is done first, or answers will be empty.</li>
+                    <li><strong>Handle “no answer” (optional but recommended):</strong> From the Answer Bot card’s branches, add:
+                        <ul>
+                            <li>An <strong>Info</strong> or <strong>Response</strong> card with text: try <code>/mosc-redesign/sitemap</code> or contact page.</li>
+                            <li>Or <strong>Forward</strong> (Action card) to hand off to an operator if you have live chat staff.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Close open paths:</strong> Any remaining blue <strong>+</strong> connectors must lead to another card or an <strong>End</strong> card. The left <strong>Errors</strong> count should drop to <strong>0</strong>.</li>
+                    <li><strong>Save</strong> (Ctrl+S or save icon if shown) — confirm status still shows draft until publish.</li>
+                    <li><strong>Test your bot</strong> (bottom right): open chat, ask e.g. “Who is the Catholicos?” — verify a Resources-based reply.</li>
+                    <li><strong>Publish</strong> (top right): deploy to the website channel for your brand.</li>
+                </ol>
+
+                <div class="flow-diagram" aria-label="Minimum MOSC bot flow">
+Start
+  │
+  ▼
+Welcome card  ("Welcome to MOSC! How can I help you today?")
+  │
+  ▼
+Answer Bot card  (free-form questions → Articles/FAQs)
+  │
+  ├─ Answer found ──► (Answer Bot continues / optional End)
+  │
+  └─ Answer not found ──► Info card (sitemap / contact) or Forward to operator
+                </div>
+
+                <div class="info">
+                    <strong>Do you need every card in the gallery?</strong> No. For MOSC, a <strong>Welcome + Answer Bot</strong> hybrid is enough for launch. Add Button / Single Choice cards later for shortcuts (“Saints”, “Directory”, “Contact”).
+                </div>
+            </div>
+        </div>
+
+        <div class="section-container">
+            <div class="section-header zobot">9c.3 Connect the Answer Bot “Failure” branch (your current screen)</div>
+            <div class="section-body">
+                <p>After you add an <strong>Answer bot Card</strong>, the canvas shows a purple <strong>Failure</strong> pill on the right side of that card, with a dashed line to an open <strong>+</strong>. That path runs when Answer Bot <em>cannot</em> find a match in Resources (or the lookup fails). SalesIQ still treats it as an incomplete flow until you connect it.</p>
+
+                <p><strong>Yes — you need one more card on the Failure branch.</strong> Click the <strong>+</strong> after <strong>Failure</strong> and add one of these (simplest first):</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Option</th>
+                            <th>Card to add</th>
+                            <th>What the visitor sees</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>A — Recommended for MOSC</strong></td>
+                            <td><strong>Info card</strong> (Response / Info category)</td>
+                            <td>Friendly fallback message, e.g.: “I couldn’t find that in our site content. Browse our sitemap at mosc-temp.com/mosc-redesign/sitemap or contact us at mosc-temp.com/mosc-redesign/contact-form-email.” Then add an <strong>End</strong> card after it, or loop back to Answer Bot with a <strong>Go To</strong> card if you want another question.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>B — Live support</strong></td>
+                            <td><strong>Forward</strong> (Action card)</td>
+                            <td>Transfers chat to a SalesIQ operator when someone is online.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>C — Minimal (publish only)</strong></td>
+                            <td><strong>End</strong> card</td>
+                            <td>Closes the bot chat after a short “Sorry, I don’t have an answer” Info line. Fastest way to clear the error.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <ol class="steps">
+                    <li>Click the <strong>+</strong> on the dashed line after the purple <strong>Failure</strong> label.</li>
+                    <li>Choose <strong>Info card</strong> (or drag from the right gallery).</li>
+                    <li>Edit the message with sitemap + contact links (see option A above).</li>
+                    <li>Add an <strong>End</strong> card after the Info card <em>or</em> use <strong>Go To</strong> → Answer bot Card so the visitor can ask another question.</li>
+                    <li>Confirm left sidebar <strong>Errors</strong> shows <strong>0</strong>.</li>
+                    <li><strong>Test your bot</strong> — ask something obscure to trigger Failure, then a real MOSC question to test success.</li>
+                    <li><strong>Publish</strong>.</li>
+                </ol>
+
+                <div class="flow-diagram" aria-label="Answer Bot with Failure branch">
+Start → Welcome card → Answer bot Card
+                              │
+                              ├─ (success path — Answer Bot handles Q&amp;A)
+                              │
+                              └─ Failure ──► Info card (fallback text + links)
+                                              │
+                                              └─ End  (or Go To → Answer bot Card)
+                </div>
+
+                <div class="warning">
+                    <strong>Failure vs empty Resources:</strong> If <em>every</em> question hits Failure, Articles may not be imported yet (sections <a href="#import">7</a> and <a href="#answer-bot">8</a>). Fixing the branch clears the builder error; importing content fixes empty answers.
+                </div>
+            </div>
+        </div>
+
+        <div class="section-container">
+            <div class="section-header zobot">Recommended flow for MOSC homepage (full version)</div>
+            <div class="section-body">
+                <ol class="steps">
+                    <li>On the Codeless canvas, add a <strong>Welcome</strong> / text block: greet the visitor and invite questions about the church, saints, directory, liturgy, etc.</li>
+                    <li>Add an <strong>Answer Bot</strong> card (from the block gallery — merges Answer Bot engine into Zobot per <a href="https://www.zoho.com/salesiq/zobot-change-logs.html" rel="noopener noreferrer">SalesIQ changelog</a>). This lets visitors ask free-form questions answered from Resources.</li>
+                    <li>Configure the Answer Bot card to use the brand’s connected Articles/FAQs.</li>
+                    <li>On <strong>Answer not found</strong> branch:
+                        <ul>
+                            <li>Suggest browsing <code>/mosc-redesign/sitemap</code> or top sections (Saints, Directory, Catholicate).</li>
+                            <li>Offer <strong>Handoff to operator</strong> if enabled.</li>
+                            <li>Or link to <code>/mosc-redesign/contact-form-email</code>.</li>
+                        </ul>
+                    </li>
+                    <li>Optional: add <strong>Quick replies</strong> (buttons): “Saints”, “Find a parish”, “Catholicate”, “Contact” — each can route to Answer Bot or a URL block.</li>
+                    <li>Click <strong>Save</strong>, then <strong>Test</strong> — ask “Who is the Catholicos?” and confirm Resources-backed answers.</li>
+                    <li>Click <strong>Publish</strong> to deploy on the selected brand’s website channel.</li>
+                </ol>
+
+                <div class="flow-diagram" aria-label="Zobot conversation flow">
+Visitor opens chat on homepage
+    │
+    ▼
+Welcome message (Codeless)
+    │
+    ▼
+Answer Bot card ──► search Resources (mosc-redesign Articles)
+    │
+    ├─ Answer found ──► show AI summary + optional source link
+    │
+    └─ Answer not found ──► sitemap hint / contact / handoff to operator
+                </div>
+            </div>
+        </div>
+
+        <h3 id="zobot-existing">9d. If you already have a Zobot (edit instead of create)</h3>
+        <ol class="steps">
+            <li>Open <a href="https://salesiq.zoho.com/giventainc/settings/bot/zobot/" rel="noopener noreferrer">Settings → Bots → Zobot</a>.</li>
+            <li>Click the bot name in the list (you will not see “No bots found”).</li>
+            <li>Edit the Codeless flow: add or verify the <strong>Answer Bot</strong> card and fallbacks (section 9c).</li>
+            <li>Confirm <strong>triggers</strong> and <strong>brand</strong> still point to <code>www.mosc-temp.com</code>.</li>
+            <li><strong>Save → Test → Publish</strong>.</li>
+        </ol>
+
+        <h3 id="zobot-embed">9e. Embed SalesIQ widget (Next.js — not yet in repo)</h3>
+                <p>There is currently <strong>no</strong> SalesIQ snippet in this codebase. Add the embed code from <strong>Settings → Brands → [your brand] → Installation</strong> to the root layout or homepage.</p>
+
+                <div class="prompt-block" aria-label="SalesIQ embed pattern">
+                    <div class="prompt-header">
+                        <span>Example: load SalesIQ on mosc-redesign routes only</span>
+                        <button type="button" class="prompt-copy-btn" onclick="copyPrompt('prompt-embed')" title="Copy snippet" aria-label="Copy embed snippet">📋 Copy</button>
+                    </div>
+                    <div class="prompt-body" id="prompt-embed">// src/app/layout.tsx or a dedicated SalesIQWidget.tsx client component
+// Replace WIDGET_CODE with value from SalesIQ Installation tab
+
+'use client';
+import Script from 'next/script';
+import { usePathname } from 'next/navigation';
+
+export function SalesIQWidget() {
+  const pathname = usePathname();
+  const show = pathname === '/' || pathname?.startsWith('/mosc-redesign');
+  if (!show) return null;
+
+  return (
+    &lt;Script
+      id="zoho-salesiq"
+      strategy="afterInteractive"
+      dangerouslySetInnerHTML={{
+        __html: `
+          window.$zoho=window.$zoho || {};
+          $zoho.salesiq = $zoho.salesiq || { ready: function(){} };
+        `,
+      }}
+    /&gt;
+  );
+}
+// Also add the &lt;script src="https://salesiq.zoho.com/widget?wc=YOUR_WIDGET_CODE"&gt; from SalesIQ dashboard</div>
+                </div>
+
+                <div class="warning">
+                    <strong>Homepage vs mosc-redesign:</strong> Knowledge comes from Resources (mosc-redesign Articles), not live URL crawling. Keep article <strong>Source URL</strong> fields pointing at mosc-redesign pages. The widget can show on <code>/</code> and <code>/mosc-redesign/*</code> via embed + brand settings.
+                </div>
+
+                <h3 id="zobot-troubleshoot">9f. Troubleshooting “No bots found” / bot not on site</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Symptom</th>
+                            <th>Likely cause</th>
+                            <th>Fix</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>“No bots found” on Zobot page</td>
+                            <td>No Zobot created yet</td>
+                            <td>Follow section <a href="#zobot-first-time">9a</a> — Create a new bot from scratch</td>
+                        </tr>
+                        <tr>
+                            <td>Bot created but widget missing on site</td>
+                            <td>Embed code not added to Next.js</td>
+                            <td>Section <a href="#zobot-embed">9e</a> — paste Installation script from brand settings</td>
+                        </tr>
+                        <tr>
+                            <td>Widget shows but bot never replies</td>
+                            <td>Bot not published or wrong brand</td>
+                            <td>Codeless builder → <strong>Publish</strong>; confirm brand = mosc-temp.com</td>
+                        </tr>
+                        <tr>
+                            <td>Generic replies / no MOSC content</td>
+                            <td>Resources empty or Answer Bot not connected</td>
+                            <td>Complete sections <a href="#import">7</a> and <a href="#zobot-answer-bot-prereq">9b</a></td>
+                        </tr>
+                        <tr>
+                            <td>Answer Bot card errors in flow</td>
+                            <td>Answer Bot not configured for brand</td>
+                            <td>Settings → Answer Bot → Configure → enable Resources</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Incomplete bot flow</strong> (Errors: 1)</td>
+                            <td>Open <strong>+</strong> after Welcome <em>or</em> after Answer Bot <strong>Failure</strong></td>
+                            <td>Section <a href="#zobot-canvas">9c.1–9c.3</a> — connect Welcome → Answer Bot; connect <strong>Failure</strong> → Info + End (or Forward)</td>
+                        </tr>
+                        <tr>
+                            <td>Bot in DRAFT, never answers on site</td>
+                            <td>Flow not published</td>
+                            <td>Fix errors → <strong>Test your bot</strong> → <strong>Publish</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h2 id="verify">10. Test and maintain</h2>
+
+        <div class="section-container">
+            <div class="section-header verify">Verification checklist</div>
+            <div class="section-body">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Test</th>
+                            <th>Expected result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Widget loads on homepage</td>
+                            <td>Chat bubble visible; no console errors</td>
+                        </tr>
+                        <tr>
+                            <td>“Who is the Catholicos?”</td>
+                            <td>Answer cites catholicate / H.H. Mathews III content</td>
+                        </tr>
+                        <tr>
+                            <td>“St. Gregorios of Parumala”</td>
+                            <td>Returns saint biography article</td>
+                        </tr>
+                        <tr>
+                            <td>“Find a parish in Dallas”</td>
+                            <td>Directory / parishes content or honest “no match” + handoff</td>
+                        </tr>
+                        <tr>
+                            <td>Question outside mosc-redesign scope</td>
+                            <td>Bot does not hallucinate; offers agent or contact</td>
+                        </tr>
+                        <tr>
+                            <td>After site deploy</td>
+                            <td>Re-run URL export + re-import changed pages</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Ongoing maintenance</h3>
+                <ul>
+                    <li>When new <code>page.tsx</code> files ship under <code>mosc-redesign</code>, add URLs to export list and import new articles.</li>
+                    <li>Review SalesIQ <strong>unanswered queries</strong> weekly for the first month.</li>
+                    <li>Keep <code class="script-name">sitemapData.ts</code> aligned with new sections (helps humans and docs stay in sync).</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2 id="url-inventory">11. URL inventory (curated sitemap)</h2>
+        <p>The table below lists paths from <code class="script-name">MOSC_REDESIGN_SITEMAP</code> (curated). For the <strong>full</strong> set (~272 pages), use the PowerShell command in section 5.</p>
+
+        <div class="section-container">
+            <div class="section-header overview">Main Navigation</div>
+            <div class="section-body">
+                <table>
+                    <thead><tr><th>Page</th><th>Full URL</th></tr></thead>
+                    <tbody>
+                        <tr><td>Home</td><td><code>https://www.mosc-temp.com/mosc-redesign</code></td></tr>
+                        <tr><td>The Catholicate</td><td><code>https://www.mosc-temp.com/mosc-redesign/catholicate</code></td></tr>
+                        <tr><td>Administration</td><td><code>https://www.mosc-temp.com/mosc-redesign/administration</code></td></tr>
+                        <tr><td>The Church</td><td><code>https://www.mosc-temp.com/mosc-redesign/the-church</code></td></tr>
+                        <tr><td>Holy Synod</td><td><code>https://www.mosc-temp.com/mosc-redesign/holy-synod</code></td></tr>
+                        <tr><td>Ecumenical</td><td><code>https://www.mosc-temp.com/mosc-redesign/ecumenical</code></td></tr>
+                        <tr><td>Dioceses</td><td><code>https://www.mosc-temp.com/mosc-redesign/dioceses</code></td></tr>
+                        <tr><td>Saints</td><td><code>https://www.mosc-temp.com/mosc-redesign/saints</code></td></tr>
+                        <tr><td>Search Directory</td><td><code>https://www.mosc-temp.com/mosc-redesign/directory</code></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section-container">
+            <div class="section-header overview">Community &amp; Resources (sample)</div>
+            <div class="section-body">
+                <table>
+                    <thead><tr><th>Page</th><th>Full URL</th></tr></thead>
+                    <tbody>
+                        <tr><td>Catholicate News</td><td><code>https://www.mosc-temp.com/mosc-redesign/news</code></td></tr>
+                        <tr><td>Gallery</td><td><code>https://www.mosc-temp.com/mosc-redesign/gallery</code></td></tr>
+                        <tr><td>Downloads</td><td><code>https://www.mosc-temp.com/mosc-redesign/downloads</code></td></tr>
+                        <tr><td>Lectionary</td><td><code>https://www.mosc-temp.com/mosc-redesign/lectionary</code></td></tr>
+                        <tr><td>Liturgical Calendar</td><td><code>https://www.mosc-temp.com/mosc-redesign/liturgical-calendar</code></td></tr>
+                        <tr><td>MOSC Calendar</td><td><code>https://www.mosc-temp.com/mosc-redesign/mosc-calendar</code></td></tr>
+                        <tr><td>Sitemap (human)</td><td><code>https://www.mosc-temp.com/mosc-redesign/sitemap</code></td></tr>
+                    </tbody>
+                </table>
+                <p>See <code class="script-name">src/app/mosc-redesign/(syro)/sitemap/sitemapData.ts</code> for Faith &amp; Teaching, Saints, Directory, Administration, Organisations, and Contact sections.</p>
+            </div>
+        </div>
+
+        <h2 id="alternatives">12. Alternatives: auto-scrape chatbot platforms</h2>
+
+        <p>Several products support <strong>“paste a URL or sitemap → auto-crawl → train → embed widget”</strong> more directly than Zoho SalesIQ. SalesIQ excels at <strong>live chat, agent inbox, and Zobot flows</strong>; its gap is <strong>automatic website ingestion</strong>, not chat UX.</p>
+
+        <div class="section-container">
+            <div class="section-header alternatives">Quick decision matrix</div>
+            <div class="section-body">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>If you need…</th>
+                            <th>Better fit than SalesIQ alone</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Paste domain → auto-crawl → chat widget</td>
+                            <td><strong>SiteGPT</strong>, <strong>Chatbase</strong>, <strong>DocsBot</strong>, <strong>Tidio Lyro</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Full support platform (tickets, agents, AI)</td>
+                            <td><strong>Intercom Fin</strong>, <strong>Zendesk AI</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Keep SalesIQ but fix the crawl gap</td>
+                            <td>Crawl tool + <strong>SalesIQ Articles import</strong> or <strong>Articles REST API</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h3>12a. Services that auto-scrape websites</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Auto-crawl features</th>
+                    <th>Refresh / sync</th>
+                    <th>Widget + handoff</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong><a href="https://sitegpt.ai/" rel="noopener noreferrer">SiteGPT</a></strong></td>
+                    <td>Website recursive crawl, <code>sitemap.xml</code>, URL list; depth + max pages; <strong>include/exclude path filters</strong> (e.g. <code>/mosc-redesign</code>)</td>
+                    <td>Scheduled auto-sync (hourly / daily / weekly / monthly) — <a href="https://sitegpt.ai/docs/features/auto-sync" rel="noopener noreferrer">Auto sync docs</a></td>
+                    <td>Embed widget; no native Zoho agent desk</td>
+                </tr>
+                <tr>
+                    <td><strong><a href="https://www.chatbase.co/" rel="noopener noreferrer">Chatbase</a></strong></td>
+                    <td>Crawl full site, sitemap, or individual URLs; review discovered links; path include/exclude — <a href="https://chatbase.mintlify.dev/docs/user-guides/chatbot/data-sources" rel="noopener noreferrer">Data sources docs</a></td>
+                    <td>Website sources re-crawl about every <strong>24 hours</strong></td>
+                    <td>Embed, API, Slack; configurable email fallback</td>
+                </tr>
+                <tr>
+                    <td><strong><a href="https://docsbot.ai/" rel="noopener noreferrer">DocsBot AI</a></strong></td>
+                    <td>Single URL, <strong>URL list</strong> (CSV/TXT), sitemap, RSS, WordPress, many cloud sources — <a href="https://docsbot.ai/documentation/doc/training-docsbot-with-url-list" rel="noopener noreferrer">URL list training</a></td>
+                    <td><strong>Daily / weekly / monthly</strong> scheduled refresh on sources</td>
+                    <td>Widget, API, Slack, Teams; strong support-tool integrations</td>
+                </tr>
+                <tr>
+                    <td><strong><a href="https://www.tidio.com/ai-agent/" rel="noopener noreferrer">Tidio Lyro</a></strong></td>
+                    <td>Scrape single page or <strong>entire site</strong> from top-level URL — <a href="https://help.tidio.com/hc/en-us/articles/14543666652316-Data-sources-Lyro-s-knowledge-base" rel="noopener noreferrer">Lyro data sources</a>; API: <code>POST /lyro/data-sources/website/scrape</code></td>
+                    <td>Manual re-sync + auto-sync fields on website sources</td>
+                    <td><strong>Live chat + AI + human handoff</strong> (closest to SalesIQ model)</td>
+                </tr>
+                <tr>
+                    <td><strong>Crawl APIs</strong> (Firecrawl, <a href="https://knowledgesdk.com/" rel="noopener noreferrer">KnowledgeSDK</a>, <a href="https://github.com/unclecode/crawl4ai" rel="noopener noreferrer">Crawl4AI</a>)</td>
+                    <td>Full-site or API-driven extract; you own chunking + storage</td>
+                    <td>Webhooks / scheduled jobs (DIY)</td>
+                    <td>No widget — pipe into SalesIQ Articles API or any bot</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info">
+            <strong>Recommended seed for MOSC:</strong> Start crawl from <code class="code-highlight">https://www.mosc-temp.com/mosc-redesign</code> and restrict paths to <code>/mosc-redesign</code> so event homepage and admin routes are excluded. With ~272 App Router pages, set max pages ≥ 300 and verify coverage after first crawl.
+        </div>
+
+        <h3>12b. Enterprise support suites (different category)</h3>
+
+        <p>These are strong for <strong>support automation and ticketing</strong>, but they are not simple “paste marketing site URL and crawl everything” tools:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Knowledge source</th>
+                    <th>Typical pricing model</th>
+                    <th>Best when…</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong><a href="https://fin.ai/" rel="noopener noreferrer">Intercom Fin</a></strong></td>
+                    <td>Help center articles, saved replies, conversation history (RAG)</td>
+                    <td>Often ~$0.99 per AI resolution + Intercom seat fees</td>
+                    <td>Already on Intercom; SaaS/e-commerce support at scale</td>
+                </tr>
+                <tr>
+                    <td><strong><a href="https://www.zendesk.com/" rel="noopener noreferrer">Zendesk AI</a></strong></td>
+                    <td>Zendesk Guide KB + ticket context</td>
+                    <td>Suite per agent + Advanced AI add-ons</td>
+                    <td>Already on Zendesk Suite; enterprise helpdesk workflow</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>12c. When SalesIQ is still the right choice</h3>
+
+        <div class="section-container">
+            <div class="section-header salesiq">Stay on SalesIQ if you need…</div>
+            <div class="section-body">
+                <ul>
+                    <li><strong>Giventa SalesIQ portal</strong> with permission to create a <strong>Zobot</strong> (section <a href="#zobot-first-time">9a</a> — first-time setup at <a href="https://salesiq.zoho.com/giventainc/settings/bot/zobot/" rel="noopener noreferrer">Zobot settings</a>)</li>
+                    <li><strong>Live operators</strong>, queues, and operator chat window</li>
+                    <li><strong>Zoho stack</strong> (CRM, Desk, campaigns) integration</li>
+                    <li><strong>Answer Bot + hybrid Zobot</strong> with human-reviewed Articles/FAQs</li>
+                </ul>
+                <p>SalesIQ’s limitation is <strong>ingestion</strong>, not chat. Use sections 5–7 of this guide, or combine with a crawl-first tool (below).</p>
+            </div>
+        </div>
+
+        <h3>12d. Practical paths for this project</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Option</th>
+                    <th>Approach</th>
+                    <th>Pros</th>
+                    <th>Cons</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>A — Stay on SalesIQ</strong></td>
+                    <td>Use SiteGPT / Chatbase / DocsBot / Crawl4AI as <strong>crawler only</strong>; export or API-push into SalesIQ <strong>Resources</strong>; keep Zobot + Answer Bot on homepage</td>
+                    <td>No platform change; keeps Giventa agent desk</td>
+                    <td>Two-step pipeline; manual review recommended</td>
+                </tr>
+                <tr>
+                    <td><strong>B — Crawl-first widget</strong></td>
+                    <td>Replace KB layer with <strong>Chatbase</strong> or <strong>SiteGPT</strong> embed on homepage for mosc-redesign Q&amp;A</td>
+                    <td>Fastest auto-crawl setup; scheduled refresh</td>
+                    <td>Two widgets if SalesIQ kept for sales chat; duplicate UX risk</td>
+                </tr>
+                <tr>
+                    <td><strong>C — Switch to Tidio Lyro</strong></td>
+                    <td>Website scrape + live chat + handoff in one product</td>
+                    <td>Closest all-in-one to SalesIQ with native scrape</td>
+                    <td>Leave SalesIQ; retrain team on Tidio panel</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="success">
+            <strong>Suggested default for Giventa + mosc-redesign:</strong> <strong>Option A</strong> — keep SalesIQ Zobot, use <strong>Chatbase or SiteGPT</strong> to crawl <code>/mosc-redesign</code> with path filters, then bulk-import or API-sync into SalesIQ Articles. Lowest disruption with the best auto-scrape experience.
+        </div>
+
+        <h3>12e. Caveats for www.mosc-temp.com/mosc-redesign</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Risk</th>
+                    <th>Detail</th>
+                    <th>Mitigation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>No XML sitemap yet</td>
+                    <td>Crawlers can recurse from seed URL but may miss deep pages</td>
+                    <td>Add <code>sitemap.ts</code> later; use URL list from section 5 as crawl seed</td>
+                </tr>
+                <tr>
+                    <td>JavaScript-rendered content</td>
+                    <td>Some scrapers fail on client-only pages</td>
+                    <td>mosc-redesign uses SSR for most content — test sample saint/directory pages after training</td>
+                </tr>
+                <tr>
+                    <td>AI hallucinations</td>
+                    <td>Bots may invent links or facts not on your site</td>
+                    <td>Test with real questions; constrain to retrieved content; human review for theology</td>
+                </tr>
+                <tr>
+                    <td>Sacred / doctrinal accuracy</td>
+                    <td>Auto-scrape ≠ official church approval</td>
+                    <td>Content reviewer sign-off before publish; link to canonical page URLs in answers</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="warning">
+            <strong>Do not run two chat widgets</strong> on the same page without a clear split (e.g. SalesIQ for “talk to a person”, Chatbase for “search the site”). Overlapping bubbles confuse visitors and waste API quota.
+        </div>
+
+        <h2 id="references">13. Official references</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Topic</th>
+                    <th>Link</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Giventa SalesIQ portal (sign-in)</td>
+                    <td><a href="https://salesiq.zoho.com/giventainc/onboard" rel="noopener noreferrer">salesiq.zoho.com/giventainc/onboard</a></td>
+                </tr>
+                <tr>
+                    <td>Chat language API codes</td>
+                    <td><a href="https://www.zoho.com/salesiq/help/developer-section/js-api-chat-language.html" rel="noopener noreferrer">.salesiq.language() — supported codes</a></td>
+                </tr>
+                <tr>
+                    <td>Zobot builder (Giventa)</td>
+                    <td><a href="https://salesiq.zoho.com/giventainc/settings/bot/zobot/" rel="noopener noreferrer">salesiq.zoho.com/giventainc/settings/bot/zobot/</a></td>
+                </tr>
+                <tr>
+                    <td>Knowledge base chatbot (Answer Bot)</td>
+                    <td><a href="https://www.zoho.com/salesiq/knowledge-base-chatbot.html" rel="noopener noreferrer">zoho.com/salesiq/knowledge-base-chatbot.html</a></td>
+                </tr>
+                <tr>
+                    <td>Resources &amp; bulk import</td>
+                    <td><a href="https://www.zoho.com/blog/salesiq/introducing-resources-in-salesiq.html" rel="noopener noreferrer">Introducing Resources in SalesIQ</a></td>
+                </tr>
+                <tr>
+                    <td>Answer Bot overview</td>
+                    <td><a href="https://www.zoho.com/blog/salesiq/answer-bot.html" rel="noopener noreferrer">Presenting Answer Bot</a></td>
+                </tr>
+                <tr>
+                    <td>Create Zobot 2.0</td>
+                    <td><a href="https://www.zoho.com/salesiq/help/developer-guides/create-bot-2.0.html" rel="noopener noreferrer">Developer guide — Create bot</a></td>
+                </tr>
+                <tr>
+                    <td>Articles &amp; FAQs video</td>
+                    <td><a href="https://www.zoho.com/salesiq/videos/articles.html" rel="noopener noreferrer">Enrich knowledge base with Articles</a></td>
+                </tr>
+                <tr>
+                    <td>Live MOSC redesign site</td>
+                    <td><a href="https://www.mosc-temp.com/mosc-redesign" rel="noopener noreferrer">www.mosc-temp.com/mosc-redesign</a></td>
+                </tr>
+                <tr>
+                    <td>SiteGPT (auto-crawl alternative)</td>
+                    <td><a href="https://sitegpt.ai/docs/setup/training-your-chatbot" rel="noopener noreferrer">sitegpt.ai/docs — Training your chatbot</a></td>
+                </tr>
+                <tr>
+                    <td>Chatbase (website crawling)</td>
+                    <td><a href="https://chatbase.mintlify.dev/docs/user-guides/chatbot/data-sources" rel="noopener noreferrer">Chatbase data sources</a></td>
+                </tr>
+                <tr>
+                    <td>DocsBot (URL list training)</td>
+                    <td><a href="https://docsbot.ai/documentation/doc/training-docsbot-with-url-list" rel="noopener noreferrer">docsbot.ai — URL list training</a></td>
+                </tr>
+                <tr>
+                    <td>Tidio Lyro (website scrape)</td>
+                    <td><a href="https://help.tidio.com/hc/en-us/articles/14543666652316-Data-sources-Lyro-s-knowledge-base" rel="noopener noreferrer">Tidio Lyro data sources</a></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="section-container">
+            <div class="section-header verify">Quick summary</div>
+            <div class="section-body">
+                <ol>
+                    <li><strong>SalesIQ does not crawl your site</strong> — export content from <code>/mosc-redesign/**</code> or use a crawl-first tool (section 12).</li>
+                    <li><strong>Generate URL list</strong> from repo (272 pages) or use curated sitemap (~80 links).</li>
+                    <li><strong>Import Articles</strong> via bulk XLS into Resources, categorized like the site IA.</li>
+                    <li><strong>Create Zobot</strong> at Giventa Inc. (section <a href="#zobot-first-time">9a</a> if “No bots found”) — Codeless flow + Answer Bot card.</li>
+                    <li><strong>Connect Answer Bot</strong> to Resources; plug into your <strong>Zobot</strong> flow (sections 8, 9b, 9c).</li>
+                    <li><strong>Embed widget</strong> on homepage (and optionally mosc-redesign pages).</li>
+                    <li><strong>Alternatives:</strong> SiteGPT, Chatbase, DocsBot, Tidio Lyro auto-scrape; recommended hybrid is crawl tool → SalesIQ Articles (Option A).</li>
+                    <li><strong>Test</strong> with real visitor questions; refresh articles after deploys.</li>
+                </ol>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function copyPrompt(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            navigator.clipboard.writeText(el.textContent.trim()).then(function () {
+                alert('Copied to clipboard.');
+            });
+        }
+
+        function copyPowerShellScript(elementId) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            navigator.clipboard.writeText(el.textContent.trim()).then(function () {
+                alert('PowerShell script copied.');
+            });
+        }
+
+        function copyWindowsCommand(commandId) {
+            const el = document.getElementById(commandId + '-single-code');
+            if (!el) return;
+            navigator.clipboard.writeText(el.textContent.trim()).then(function () {
+                alert('PowerShell single-line command copied.');
+            });
+        }
+
+        function copyCommand(commandId) {
+            copyWindowsCommand(commandId);
+        }
+
+        function copyTemplateCommand(commandId) {
+            const el = document.getElementById(commandId);
+            if (!el) return;
+            const base = el.getAttribute('data-command-base') || el.textContent.trim();
+            navigator.clipboard.writeText(base.trim()).then(function () {
+                alert('Template copied.');
+            });
+        }
+    </script>
+</body>
+</html>

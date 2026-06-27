@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Album Event Date &amp; Location — Database Schema (v1.0)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .section-container.schema { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left-color: #0066cc; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; overflow-x: auto; font-family: Consolas, monospace; font-size: 0.82em; line-height: 1.45; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Gallery Album Event Date &amp; Location — Database Schema Enhancements (v1.0)</h1>
+    <p class="doc-meta">
+        <strong>Layer:</strong> PostgreSQL / Liquibase &nbsp;|&nbsp; <strong>Date:</strong> June 19, 2026<br>
+        <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a> &nbsp;|&nbsp;
+        <strong>SQL templates:</strong> <code>migrations/001_gallery_album_event_date_location_schema.sql</code>
+    </p>
+
+    <div class="lead">
+        <p>Incremental DDL on existing <code>gallery_album</code> table. All new columns are <strong>nullable</strong>. Requires category/year schema (prior pack) already applied.</p>
+    </div>
+
+    <h2>1. Summary of deltas</h2>
+    <table>
+        <thead><tr><th>Object</th><th>Change type</th><th>Purpose</th></tr></thead>
+        <tbody>
+            <tr><td><code>gallery_album</code></td><td>ALTER ADD × 3</td><td>Structured event timing and place for card display</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. New columns — naming convention</h2>
+    <table>
+        <thead><tr><th>Java / JSON (camelCase)</th><th>PostgreSQL (snake_case)</th><th>Type</th><th>Nullable</th></tr></thead>
+        <tbody>
+            <tr><td><code>eventDateStart</code></td><td><code>event_date_start</code></td><td><code>DATE</code></td><td>Yes</td></tr>
+            <tr><td><code>eventDateEnd</code></td><td><code>event_date_end</code></td><td><code>DATE</code></td><td>Yes</td></tr>
+            <tr><td><code>eventLocation</code></td><td><code>event_location</code></td><td><code>VARCHAR(256)</code></td><td>Yes</td></tr>
+        </tbody>
+    </table>
+
+    <h2>3. ALTER TABLE gallery_album</h2>
+    <div class="section-container schema">
+        <div class="section-header">DDL — see migrations/001_*.sql</div>
+<pre>ALTER TABLE public.gallery_album
+    ADD COLUMN IF NOT EXISTS event_date_start date NULL,
+    ADD COLUMN IF NOT EXISTS event_date_end date NULL,
+    ADD COLUMN IF NOT EXISTS event_location varchar(256) NULL;
+
+ALTER TABLE public.gallery_album
+    ADD CONSTRAINT chk_gallery_album_event_date_order
+        CHECK (
+            event_date_start IS NULL
+            OR event_date_end IS NULL
+            OR event_date_end &gt;= event_date_start
+        );
+
+COMMENT ON COLUMN public.gallery_album.event_date_start IS
+    'Calendar start date of the visit/event shown on album cards (date portion only).';
+COMMENT ON COLUMN public.gallery_album.event_date_end IS
+    'Optional end date for multi-day events; must be &gt;= event_date_start when both set.';
+COMMENT ON COLUMN public.gallery_album.event_location IS
+    'Human-readable place (city/venue) appended after formatted date on cards, e.g. Indore, Beirut.';
+
+CREATE INDEX idx_gallery_album_event_date_start
+    ON public.gallery_album (tenant_id, event_date_start)
+    WHERE event_date_start IS NOT NULL;</pre>
+    </div>
+
+    <h2>4. Relationship to album_year</h2>
+    <ul>
+        <li><code>album_year</code> remains the primary <strong>filter/sort</strong> field (1900–2100 integer).</li>
+        <li>When event dates are set, <code>album_year</code> should equal <code>EXTRACT(YEAR FROM event_date_start)</code> (enforced in application layer on save/backfill).</li>
+        <li>Year-only legacy albums may keep <code>album_year</code> with null event dates — valid state.</li>
+    </ul>
+
+    <h2>5. Example row after backfill</h2>
+    <table>
+        <thead><tr><th>title</th><th>album_year</th><th>event_date_start</th><th>event_date_end</th><th>event_location</th></tr></thead>
+        <tbody>
+            <tr><td>3rd International Dharma-Dhamma Conference</td><td>2015</td><td>2015-10-24</td><td>2015-10-26</td><td>Indore</td></tr>
+            <tr><td>Official Website Inauguration…</td><td>2015</td><td>2015-11-25</td><td>null</td><td>null</td></tr>
+            <tr><td>Russia visit of H.H …</td><td>2019</td><td>null</td><td>null</td><td>null</td></tr>
+            <tr><td>Blessing of Holy Myron</td><td>2015</td><td>2015-07-19</td><td>null</td><td>Beirut</td></tr>
+        </tbody>
+    </table>
+
+    <h2>6. Liquibase checklist</h2>
+    <ul>
+        <li>Changelog: <code>config/liquibase/changelog/YYYYMMDD_gallery_album_event_date_v1.xml</code></li>
+        <li>Apply after category/year changelog</li>
+        <li>Sync canonical SQL in mosc-temp (<code>Latest_Schema_Post__Blob_Claude_12.sql</code>)</li>
+        <li>Regenerate JHipster entity + OpenAPI</li>
+    </ul>
+
+    <div class="warning-box">
+        <strong>Out of scope v1.0:</strong> Separate <code>event_time</code>, timezone, or geocoded coordinates. Time-of-day is not in legacy static data.
+    </div>
+
+    <div class="info-box">
+        <strong>Next:</strong> <a href="backend_enhancements_prd.html">Backend enhancements</a> ·
+        <a href="data_migration_enhancements_prd.html">Data migration</a>
+    </div>
+
+</body>
+</html>

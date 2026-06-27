@@ -1,0 +1,279 @@
+{
+  "meta": {
+    "projectName": "nextjs-template",
+    "version": "1.5.0",
+    "source": ".task-master/PRD.txt",
+    "description": "Tasks generated from PRD",
+    "totalTasksGenerated": 20,
+    "tasksIncluded": 20
+  },
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Set up project infrastructure",
+      "description": "Initialize the project structure with Spring Boot backend, React/Next.js frontend, and PostgreSQL database configuration",
+      "status": "done",
+      "dependencies": [],
+      "priority": "high",
+      "details": "Create the initial project structure including:\n- Initialize Spring Boot project with JHipster\n- Set up PostgreSQL database with tenant isolation\n- Configure React/Next.js frontend\n- Set up Clerk authentication integration\n- Configure AWS S3 for media storage\n- Set up development environment",
+      "testStrategy": "Verify that the development environment can be started without errors and all components (frontend, backend, database) are properly connected."
+    },
+    {
+      "id": 2,
+      "title": "Create database schema for user registration",
+      "description": "Implement database tables and entities for user registration workflow",
+      "status": "done",
+      "dependencies": [
+        1
+      ],
+      "priority": "high",
+      "details": "Create the following database tables and entities:\n- user_registration_request\n- tenant_organization\n- user_profile\n- event_admin_audit_log\n\nImplement proper relationships and constraints between tables.",
+      "testStrategy": "Verify database schema with test data. Ensure proper tenant isolation and referential integrity."
+    },
+    {
+      "id": 3,
+      "title": "Implement backend for user registration requests",
+      "description": "Create Spring Boot controllers, services, and repositories for user registration workflow",
+      "status": "done",
+      "dependencies": [
+        2
+      ],
+      "priority": "high",
+      "details": "Implement the following components:\n- UserRegistrationController.java with endpoints for submitting, retrieving, approving, and rejecting registration requests\n- UserRegistrationRequestEntity.java\n- UserRegistrationRepository.java\n- UserRegistrationService.java with business logic for processing registrations",
+      "testStrategy": "Create unit tests for service layer and integration tests for API endpoints. Test all registration states (PENDING, UNDER_REVIEW, APPROVED, REJECTED)."
+    },
+    {
+      "id": 4,
+      "title": "Create user registration request form",
+      "description": "Implement the frontend form for users to request registration to an organization",
+      "status": "pending",
+      "dependencies": [
+        3
+      ],
+      "priority": "high",
+      "details": "Create UserRegistrationRequestForm.tsx with:\n- Form fields for personal information (name, email, phone)\n- Address information fields\n- Optional fields for Indian-specific information\n- Profile image upload with AWS S3 integration\n- Request reason text area\n- Form validation\n- Submission handling",
+      "testStrategy": "Test form validation, submission, and error handling. Verify image upload functionality."
+    },
+    {
+      "id": 5,
+      "title": "Implement admin review interface",
+      "description": "Create admin dashboard for reviewing and processing user registration requests",
+      "status": "pending",
+      "dependencies": [
+        3,
+        4
+      ],
+      "priority": "high",
+      "details": "Create the following components:\n- AdminReviewPanel.tsx for reviewing individual requests\n- BulkApprovalComponent.tsx for processing multiple requests\n- AdminReviewService.ts for API integration\n- Implement filtering and sorting of pending requests\n- Add approval/rejection functionality with comments",
+      "testStrategy": "Test approval and rejection workflows, bulk operations, and filtering functionality."
+    },
+    {
+      "id": 6,
+      "title": "Implement notification system",
+      "description": "Create notification service for user registration status updates",
+      "status": "pending",
+      "dependencies": [
+        3,
+        5
+      ],
+      "priority": "medium",
+      "details": "Implement NotificationService.ts for:\n- Email notifications for registration submission confirmation\n- Status update notifications (approval/rejection)\n- Admin notifications for new registration requests\n- Integration with email service provider",
+      "testStrategy": "Test email delivery, template rendering, and notification triggers for different scenarios."
+    },
+    {
+      "id": 7,
+      "title": "Create database schema for event management",
+      "description": "Implement database tables and entities for event registration and attendance",
+      "status": "pending",
+      "dependencies": [
+        2
+      ],
+      "priority": "high",
+      "details": "Create the following database tables and entities:\n- event_details\n- event_attendee\n- event_attendee_guest\n- event_guest_pricing\n- event_organizer\n- event_admin\n- qr_code_usage\n- bulk_operation_log\n\nImplement proper relationships and constraints between tables.",
+      "testStrategy": "Verify database schema with test data. Test relationships between events, attendees, and guests."
+    },
+    {
+      "id": 8,
+      "title": "Implement backend for event management",
+      "description": "Create Spring Boot controllers, services, and repositories for event registration and attendance",
+      "status": "pending",
+      "dependencies": [
+        7
+      ],
+      "priority": "high",
+      "details": "Implement the following components:\n- Event registration endpoints (GET /api/events/public, POST /api/event-attendee/register, etc.)\n- Event management endpoints (GET /api/events/{id}/attendees, POST /api/events/{id}/check-in, etc.)\n- Services for event registration, attendee management, and check-in\n- Repositories for event-related entities",
+      "testStrategy": "Create unit tests for service layer and integration tests for API endpoints. Test all event registration states."
+    },
+    {
+      "id": 9,
+      "title": "Create event discovery page",
+      "description": "Implement frontend page for browsing available events",
+      "status": "pending",
+      "dependencies": [
+        8
+      ],
+      "priority": "high",
+      "details": "Create EventDiscoveryPage.tsx with:\n- Event listing with filtering and sorting\n- Event details view\n- Calendar view integration\n- Search functionality\n- Responsive design for mobile and desktop",
+      "testStrategy": "Test filtering, sorting, and search functionality. Verify responsive design on different screen sizes."
+    },
+    {
+      "id": 10,
+      "title": "Implement event registration form",
+      "description": "Create frontend form for registering to events",
+      "status": "pending",
+      "dependencies": [
+        8,
+        9
+      ],
+      "priority": "high",
+      "details": "Create EventRegistrationForm.tsx with:\n- Attendee type selection (MEMBER, GUEST, FAMILY)\n- Guest details form for adding guests\n- Special requirements fields\n- Emergency contact information\n- Event-specific fields (transportation, volunteer opportunities)\n- Form validation and submission",
+      "testStrategy": "Test form validation, guest addition functionality, and submission process."
+    },
+    {
+      "id": 11,
+      "title": "Create event organizer dashboard",
+      "description": "Implement dashboard for event organizers to manage events and attendees",
+      "status": "pending",
+      "dependencies": [
+        8
+      ],
+      "priority": "medium",
+      "details": "Create EventOrganizerDashboard.tsx with:\n- Event overview statistics\n- Attendee management panel\n- Check-in functionality\n- QR code generation\n- Bulk operations for attendees\n- Export functionality",
+      "testStrategy": "Test dashboard functionality, attendee management features, and export capabilities."
+    },
+    {
+      "id": 12,
+      "title": "Implement QR code system for check-in",
+      "description": "Create QR code generation and scanning system for event check-in",
+      "status": "pending",
+      "dependencies": [
+        8,
+        11
+      ],
+      "priority": "medium",
+      "details": "Implement:\n- QRCodeGenerator.tsx for creating attendee QR codes\n- QR code scanning interface for organizers\n- Backend API for validating and processing check-ins\n- Real-time check-in status updates\n- Offline check-in capability",
+      "testStrategy": "Test QR code generation, scanning functionality, and check-in process in both online and offline modes."
+    },
+    {
+      "id": 13,
+      "title": "Create mobile-friendly check-in interface",
+      "description": "Implement responsive check-in interface for mobile devices",
+      "status": "pending",
+      "dependencies": [
+        12
+      ],
+      "priority": "medium",
+      "details": "Create CheckInInterface.tsx with:\n- Mobile-optimized UI for check-in process\n- Camera integration for QR scanning\n- Quick search for manual check-in\n- Offline mode with sync capability\n- Real-time attendee count updates",
+      "testStrategy": "Test on various mobile devices, verify offline functionality, and test synchronization when coming back online."
+    },
+    {
+      "id": 14,
+      "title": "Implement analytics and reporting",
+      "description": "Create analytics dashboard and reporting tools for events",
+      "status": "pending",
+      "dependencies": [
+        8,
+        11
+      ],
+      "priority": "medium",
+      "details": "Create:\n- AnalyticsDashboard.tsx with event statistics and charts\n- AttendeeReportsPage.tsx for detailed attendee reports\n- ExportUtilities.ts for exporting data in various formats (CSV, Excel)\n- EventPollComponent.tsx for post-event surveys\n- Implement filtering and date range selection for reports",
+      "testStrategy": "Test report generation, data export functionality, and chart rendering with various data sets."
+    },
+    {
+      "id": 15,
+      "title": "Create database schema for analytics and audit logs",
+      "description": "Implement database tables for tracking user activities and event analytics",
+      "status": "pending",
+      "dependencies": [
+        7
+      ],
+      "priority": "medium",
+      "details": "Create the following database tables:\n- user_payment_transaction (for future paid events)\n- event_poll\n- event_poll_option\n- event_poll_response\n- Ensure proper audit logging across the system",
+      "testStrategy": "Verify database schema with test data. Ensure comprehensive audit logging for all operations."
+    },
+    {
+      "id": 16,
+      "title": "Implement event feedback and survey system",
+      "description": "Create system for collecting post-event feedback from attendees",
+      "status": "pending",
+      "dependencies": [
+        8,
+        15
+      ],
+      "priority": "low",
+      "details": "Implement:\n- Event poll creation interface for organizers\n- Survey distribution system (email, in-app)\n- Survey response collection and storage\n- Survey results analysis and reporting\n- Integration with analytics dashboard",
+      "testStrategy": "Test survey creation, distribution, response collection, and reporting functionality."
+    },
+    {
+      "id": 17,
+      "title": "Optimize for mobile devices",
+      "description": "Ensure responsive design and mobile optimization across all interfaces",
+      "status": "pending",
+      "dependencies": [
+        4,
+        9,
+        10,
+        13
+      ],
+      "priority": "medium",
+      "details": "Implement:\n- Responsive design for all forms and pages\n- Mobile-specific UI optimizations\n- Touch-friendly controls\n- Progressive Web App features\n- Offline functionality where appropriate",
+      "testStrategy": "Test on various mobile devices and screen sizes. Verify offline capabilities and touch interactions."
+    },
+    {
+      "id": 18,
+      "title": "Implement waitlist functionality",
+      "description": "Create waitlist system for events that reach capacity",
+      "status": "pending",
+      "dependencies": [
+        8,
+        10
+      ],
+      "priority": "medium",
+      "details": "Implement:\n- Capacity management for events\n- Waitlist registration process\n- Automatic promotion from waitlist when spots open\n- Notification system for waitlist status changes\n- Admin interface for managing waitlists",
+      "testStrategy": "Test capacity limits, waitlist registration, promotion process, and notifications."
+    },
+    {
+      "id": 19,
+      "title": "Create bulk operations for attendee management",
+      "description": "Implement functionality for bulk actions on attendees",
+      "status": "pending",
+      "dependencies": [
+        8,
+        11
+      ],
+      "priority": "low",
+      "details": "Create BulkOperationsPanel.tsx with:\n- Bulk check-in functionality\n- Bulk email to attendees\n- Bulk status changes\n- Bulk export of attendee data\n- Logging of bulk operations",
+      "testStrategy": "Test bulk operations with various data sets, verify logging, and ensure performance with large attendee lists."
+    },
+    {
+      "id": 20,
+      "title": "Implement comprehensive testing",
+      "description": "Create unit, integration, and end-to-end tests for the entire system",
+      "status": "pending",
+      "dependencies": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "priority": "high",
+      "details": "Implement:\n- Unit tests for all services and components\n- Integration tests for API endpoints\n- End-to-end tests for critical user flows\n- Performance testing for high-load scenarios\n- Security testing for authentication and authorization",
+      "testStrategy": "Achieve minimum 80% test coverage. Focus on critical paths for user registration, event registration, and check-in processes."
+    }
+  ]
+}

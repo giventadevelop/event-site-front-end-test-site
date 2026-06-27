@@ -1,0 +1,216 @@
+---
+description: Strapi category/article slug contract, URL-vs-Stored slug fallbacks, and parent/child relation lookup for Next.js CMS consumers
+globs: src/lib/strapi/**/*.ts, src/app/**/news/**/*.ts, src/app/mosc-redesign/**/kalpana-cms/**/*.ts, src/app/mosc-redesign/**/**/*Data.ts, documentation/strapi/strapi_frontend_slug_contract.md
+alwaysApply: false
+---
+
+# Strapi Frontend Slug Contract
+
+## **Overview**
+
+Strapi normalizes UID `slug` fields to **lowercase kebab-case** on save. The Next.js app must use **canonical slug strings** in API filters and **unchanged** `article.slug` values in routes. Full reference: [strapi_frontend_slug_contract.md](mdc:documentation/strapi/strapi_frontend_slug_contract.md).
+
+For populate, `publishedAt`, tenant scoping, and media extraction, see [strapi_5_api_patterns.mdc](mdc:.cursor/rules/strapi_5_api_patterns.mdc).
+
+## **Canonical category slugs**
+
+Import from [`src/lib/strapi/newsCategorySlugs.ts`](mdc:src/lib/strapi/newsCategorySlugs.ts) — do not hardcode slug strings in fetchers.
+
+| Section | Constant | API value |
+|---------|----------|-----------|
+| Main News | `STRAPI_NEWS_CATEGORY_SLUGS.mainNews` | `main-news` |
+| Featured News | `STRAPI_NEWS_CATEGORY_SLUGS.featuredNews` | `featured-news` |
+| Press Release | `STRAPI_NEWS_CATEGORY_SLUGS.pressRelease` | `press-release` |
+| Most Read | `STRAPI_NEWS_CATEGORY_SLUGS.mostRead` | `most-read` |
+
+Admin display names (`Main News`) are **not** API slugs.
+
+## **Category filter in article queries**
+
+### **DO: Use shared helper with `$eq` (production)**
+
+```typescript
+import {
+  STRAPI_NEWS_CATEGORY_SLUGS,
+  buildCategorySlugFilter,
+} from '@/lib/strapi/newsCategorySlugs';
+
+buildArticleQuery(
+  buildCategorySlugFilter(STRAPI_NEWS_CATEGORY_SLUGS.mainNews),
+  'publishedAt:desc',
+  10,
+  tenantFilter
+);
+```
+
+### **DO: Use `$eqi` only for legacy mixed-case data**
+
+```typescript
+buildCategorySlugFilter(STRAPI_NEWS_CATEGORY_SLUGS.mainNews, { caseInsensitive: true });
+```
+
+### **DON'T**
+
+```typescript
+// ❌ DON'T: Invent casing or match display names
+'filters[category][slug][$eq]=Main-News'
+
+// ❌ DON'T: Duplicate slug literals across files
+'filters[category][slug][$eqi]=main-news'
+
+// ❌ DON'T: Re-slug article URLs on read
+`/news/${article.slug.toLowerCase().replace(/ /g, '-')}`
+```
+
+## **Article routes and links**
+
+- **DO:** Use `article.slug` from the API as returned in hrefs (e.g. `/mosc-redesign/news/${slug}`).
+- **DON'T:** Uppercase, trim-case, or kebab-normalize slugs when **reading** API data.
+- **Optional:** Use `toKebabSlug()` from `newsCategorySlugs.ts` only when **POSTing** content to Strapi.
+
+## **Required query parts (news lists)**
+
+Always combine category filters with:
+
+- `filters[tenant][tenantId][$eq]=<NEXT_PUBLIC_TENANT_ID>` (and optional `documentId` OR — see news fetcher)
+- `filters[publishedAt][$notNull]=true`
+- Array-style populate — see [strapi_5_api_patterns.mdc](mdc:.cursor/rules/strapi_5_api_patterns.mdc)
+
+## **Directory and other content types**
+
+Bishops, parishes, dioceses, etc. use the same kebab-case rule: `filters[slug][$eq]=...` with slug values from API responses.
+
+For **single-entry lookup by URL slug**, use the shared helper [`fetchStrapiEntryBySlug`](mdc:src/lib/strapi/fetchBySlug.ts) (direct `$eqi` filter → in-memory list fallback via [`findByStrapiSlug`](mdc:src/lib/strapi/unwrapRecord.ts)).
+
+---
+
+## **URL slug vs Strapi stored slug (tenant suffix)**
+
+### **Problem**
+
+Frontend routes often use **canonical URL slugs** (e.g. `/mosc-redesign/kalpana-cms/kalpana-2025` → slug `kalpana-2025`). Strapi UID fields may store a **tenant-scoped suffix** after import (e.g. `kalpana-2025-mo2`, `devalokam-perunnal-kalpana-no-71-2021-mo2`) while `externalLink` still points at the unsuffixed URL.
+
+Filtering child records by `filters[parent][slug][$eqi]=kalpana-2025` returns **200 with `data: []`** even when hundreds of rows exist under `kalpana-2025-mo2`. This is **not** missing or corrupted content — it is a slug mismatch.
+
+### **DO: Multi-tier lookup for parent entries**
+
+When resolving a **parent** collection entry from a URL slug (editions, categories, directory entries):
+
+1. **Direct API** — `filters[slug][$eqi]=<urlSlug>` + tenant filter
+2. **Semantic fallback** — derive a stable key from the URL (e.g. year from `kalpana-2025` → `filters[year][$eq]=2025`)
+3. **In-memory list** — fetch tenant list, match with [`findByStrapiSlug`](mdc:src/lib/strapi/unwrapRecord.ts) or compare `kalpana-${year}` to `edition.year`
+4. **Defaults / synthesize** — static defaults or minimal object from URL pattern so the page does not 404 when Strapi metadata is incomplete
+
+```typescript
+// ✅ DO: Edition lookup — slug first, then year (Kalpana pattern)
+const bySlug = await tryFetch({ 'filters[slug][$eqi]': editionSlug });
+if (bySlug) return bySlug;
+
+const yearMatch = /^kalpana-(\d{4})$/i.exec(editionSlug.trim());
+if (yearMatch) {
+  return tryFetch({ 'filters[year][$eq]': yearMatch[1] });
+}
+```
+
+Reference: [`fetchKalpanaEditionBySlugDirect`](mdc:src/app/mosc-redesign/(syro)/kalpana-cms/getKalpanaData.ts), [`findEditionBySlug`](mdc:src/app/mosc-redesign/(syro)/kalpana-cms/getKalpanaData.ts).
+
+### **DO: Multi-tier lookup for child records via parent relation**
+
+When fetching **child** rows filtered by a parent slug (e.g. `kalpana-documents` → `edition`):
+
+1. **Primary** — `filters[edition][slug][$eqi]=<urlSlug>` + tenant filter
+2. **If 200 and empty** — retry with parent **semantic key**, not tenant-stripped slug guess:
+   - Kalpana: `filters[edition][year][$eq]=<YYYY>` when URL matches `kalpana-YYYY`
+3. **Parse** — unwrap v4/v5 with [`unwrapStrapiRecord`](mdc:src/lib/strapi/unwrapRecord.ts); require display fields (`title`) and media URL before rendering
+
+```typescript
+// ✅ DO: Documents — slug filter, then edition year fallback
+let documents = await fetchDocuments({ editionSlug: urlSlug });
+
+if (documents.length === 0) {
+  const yearMatch = /^kalpana-(\d{4})$/i.exec(urlSlug.trim());
+  if (yearMatch) {
+    documents = await fetchDocuments({ editionYear: yearMatch[1] });
+  }
+}
+```
+
+Reference: [`getKalpanaDocumentsByEditionSlug`](mdc:src/app/mosc-redesign/(syro)/kalpana-cms/getKalpanaDocumentsData.ts).
+
+### **DON'T**
+
+```typescript
+// ❌ DON'T: Treat 200 + empty data as "no content in Strapi" without trying year/semantic fallback
+if (list.length === 0) return []; // may hide 42 documents under kalpana-2025-mo2
+
+// ❌ DON'T: Retry without tenant filter when response is 200 with 0 items (see strapi_5_api_patterns.mdc)
+
+// ❌ DON'T: Assume sample document from another year proves 2025 is empty
+// (e.g. 2021 PDF linked to kalpana-2021-mo2 is valid; check filters for the target year)
+```
+
+### **Detail page 404 rule (Kalpana)**
+
+Do not call `notFound()` when only the parent edition metadata is missing if **documents exist** for the URL slug/year fallback chain. Edition title can come from Strapi, defaults, or synthesis.
+
+Reference: [`src/app/mosc-redesign/(syro)/kalpana-cms/[slug]/page.tsx`](mdc:src/app/mosc-redesign/(syro)/kalpana-cms/[slug]/page.tsx).
+
+---
+
+## **Diagnosing empty CMS pages (checklist)**
+
+When a Strapi-backed page shows no items but Strapi admin has content:
+
+| Step | Action |
+|------|--------|
+| 1 | Confirm `NEXT_PUBLIC_TENANT_ID` matches entries' `tenant.tenantId` in Strapi |
+| 2 | Query API with **URL slug** — note if `data: []` with **200** |
+| 3 | Query with **stored Strapi slug** (e.g. `kalpana-2025-mo2`) or **parent year** |
+| 4 | Compare counts — if year/parent filter returns rows, implement slug → semantic fallback |
+| 5 | Verify **Published** / `publishedAt` where applicable (Kalpana documents use `draftAndPublish: false`) |
+| 6 | Verify PDF/media populate — use [`getMediaUrl`](mdc:src/app/mosc-redesign/(syro)/directory/lib/strapiMedia.ts) for Strapi 4/5 shapes |
+
+**Re-upload is rarely needed** when media URLs resolve in Strapi (`/uploads/...pdf`) and relations point to the correct parent year.
+
+---
+
+## **Shared Strapi slug utilities (app-wide)**
+
+| Utility | Purpose |
+|---------|---------|
+| [`unwrapStrapiRecord`](mdc:src/lib/strapi/unwrapRecord.ts) | Flatten v4 `attributes` / v5 flattened records |
+| [`unwrapStrapiRelation`](mdc:src/lib/strapi/unwrapRecord.ts) | Unwrap `data`-nested relations |
+| [`normalizeStrapiSlug`](mdc:src/lib/strapi/unwrapRecord.ts) / [`findByStrapiSlug`](mdc:src/lib/strapi/unwrapRecord.ts) | Case-insensitive in-memory slug match |
+| [`fetchStrapiEntryBySlug`](mdc:src/lib/strapi/fetchBySlug.ts) | Direct `$eqi` fetch + list fallback for collection types |
+
+Re-exported from [`src/lib/strapi.ts`](mdc:src/lib/strapi.ts). Use these in **mosc-redesign** CMS modules (saints, publications, kalpana, directory, etc.) instead of one-off slug logic.
+
+Optional Strapi-side cleanup: normalize edition slugs to match URLs (`kalpana-2025` not `kalpana-2025-mo2`). **Frontend fallbacks remain required** for legacy/imported suffixes.
+
+---
+
+## **Checklist (news integration)**
+
+- [ ] Category fetches use `STRAPI_NEWS_CATEGORY_SLUGS` + `buildCategorySlugFilter`
+- [ ] Default operator is `$eq` after Strapi slug backfill on Cloud
+- [ ] Article detail links use API `slug` unchanged
+- [ ] Tenant + published filters on every article list
+- [ ] Section anchor IDs (`#main-news`) are UI-only; they are not Strapi filter values
+
+## **Checklist (parent/child CMS pages — Kalpana and similar)**
+
+- [ ] Parent lookup: slug `$eqi` → semantic key (year, etc.) → list match → defaults/synthesize
+- [ ] Child lookup: `filters[parent][slug][$eqi]` → if empty, `filters[parent][year][$eq]` (or equivalent)
+- [ ] Tenant filter on every request; never drop tenant on 200 + empty
+- [ ] Unwrap records with `unwrapStrapiRecord` before reading fields
+- [ ] Detail route: avoid 404 when child data exists but parent slug differs in Strapi
+- [ ] Verify empty state against API with **year/parent key**, not URL slug alone
+
+## **References**
+
+- Contract doc: [documentation/strapi/strapi_frontend_slug_contract.md](mdc:documentation/strapi/strapi_frontend_slug_contract.md)
+- Constants: [`src/lib/strapi/newsCategorySlugs.ts`](mdc:src/lib/strapi/newsCategorySlugs.ts)
+- News data: [`src/app/mosc-redesign/(syro)/news/getNewsHomePageData.ts`](mdc:src/app/mosc-redesign/(syro)/news/getNewsHomePageData.ts)
+- Kalpana edition + documents: [`getKalpanaData.ts`](mdc:src/app/mosc-redesign/(syro)/kalpana-cms/getKalpanaData.ts), [`getKalpanaDocumentsData.ts`](mdc:src/app/mosc-redesign/(syro)/kalpana-cms/getKalpanaDocumentsData.ts)
+- Slug helpers: [`src/lib/strapi/unwrapRecord.ts`](mdc:src/lib/strapi/unwrapRecord.ts), [`src/lib/strapi/fetchBySlug.ts`](mdc:src/lib/strapi/fetchBySlug.ts)
+- Strapi API mechanics: [strapi_5_api_patterns.mdc](mdc:.cursor/rules/strapi_5_api_patterns.mdc)

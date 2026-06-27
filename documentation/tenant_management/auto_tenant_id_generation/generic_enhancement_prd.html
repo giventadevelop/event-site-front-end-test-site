@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Tenant ID Generation — Enhancement Index</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Auto Tenant ID Generation — Enhancement PRD Index</h1>
+    <p class="doc-meta">
+        <strong>Project:</strong> <code>event-site-manager</code> &nbsp;|&nbsp; <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 19, 2026
+    </p>
+
+    <div class="lead">
+        <p>When creating a new tenant organization, admins supply a <strong>name prefix</strong> (e.g. <code>ford_motors</code>). The system assigns the next global sequence number from existing <code>tenant_organization.tenant_id</code> values and produces IDs like <code>ford_motors_10000</code>. If no sequenced IDs exist yet, numbering starts at <code>00001</code>.</p>
+    </div>
+
+    <h2>Documents</h2>
+    <table>
+        <thead><tr><th>Document</th><th>Scope</th></tr></thead>
+        <tbody>
+            <tr><td><a href="frontend_enhancements_prd.html">frontend_enhancements_prd.html</a></td><td>Admin UI workflow, server actions, validation (implemented in Next.js)</td></tr>
+            <tr><td><a href="backend_enhancements_prd.html">backend_enhancements_prd.html</a></td><td>Optional Rust/JHipster API for authoritative next-ID (recommended for production concurrency)</td></tr>
+            <tr><td><a href="database_schema_enhancements_prd.html">database_schema_enhancements_prd.html</a></td><td>Schema impact — no change required; optional sequence table</td></tr>
+        </tbody>
+    </table>
+
+    <h2>ID format rules</h2>
+    <ul>
+        <li><strong>Pattern:</strong> <code>{prefix}_{sequence}</code> — prefix lowercase slug; sequence is numeric suffix after the last underscore.</li>
+        <li><strong>Padding:</strong> minimum 5 digits (<code>00001</code>, <code>10000</code>).</li>
+        <li><strong>Sequence scope:</strong> global max of trailing numbers across all tenant IDs (not per-prefix).</li>
+        <li><strong>First tenant:</strong> <code>{prefix}_00001</code> when no existing ID matches <code>*_NNNNN</code>.</li>
+    </ul>
+
+    <div class="info-box">
+        <p><strong>Workflow note:</strong> Tenant IDs are created on <strong>Organizations → New Organization</strong>. Tenant Settings creation selects an existing organization; it does not mint a new tenant ID.</p>
+    </div>
+
+</body>
+</html>

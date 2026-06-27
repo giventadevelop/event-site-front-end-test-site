@@ -1,0 +1,344 @@
+{
+  "meta": {
+    "projectName": "nextjs-template",
+    "version": "1.5.0",
+    "source": ".task-master/FRONTEND_IMPLEMENTATION_TASKS.md",
+    "description": "Tasks generated from PRD",
+    "totalTasksGenerated": 27,
+    "tasksIncluded": 27
+  },
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Update EventMediaDTO Type",
+      "description": "Add new fields to EventMediaDTO interface to support sponsor and event-sponsor media files.",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "details": "Add the following fields to the EventMediaDTO interface in src/types/index.ts:\n- sponsorId?: number; // Reference to sponsor for sponsor-specific media\n- eventSponsorsJoinId?: number; // Reference to event-sponsor join for custom posters\n- priorityRanking?: number; // Priority ranking (0 = highest priority, default: 0)\n\nEnsure all fields are optional (nullable) to maintain backward compatibility and add JSDoc comments explaining each field's purpose.",
+      "testStrategy": "Verify that the EventMediaDTO includes all required fields with proper typing (number | undefined) and JSDoc comments."
+    },
+    {
+      "id": 2,
+      "title": "Update EventSponsorsJoinDTO Type",
+      "description": "Add customPosterUrl field to EventSponsorsJoinDTO interface.",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "details": "Add the customPosterUrl field to the existing EventSponsorsJoinDTO interface in src/types/index.ts. The field should be optional (nullable) to support existing records and include a JSDoc comment explaining its purpose.",
+      "testStrategy": "Verify that the EventSponsorsJoinDTO includes the customPosterUrl field with proper typing (string | undefined) and JSDoc comment."
+    },
+    {
+      "id": 3,
+      "title": "Create Upload Sponsor Image Server Action",
+      "description": "Create server action to upload sponsor logo, hero, or banner image.",
+      "status": "pending",
+      "dependencies": [
+        1
+      ],
+      "priority": "high",
+      "details": "Implement the uploadSponsorImageServer function in src/app/admin/event-sponsors/ApiServerActions.ts that handles uploading sponsor images (logo, hero, banner). Use FormData to send multipart/form-data to the /api/proxy/event-medias/upload/sponsor-image endpoint with appropriate query parameters.",
+      "testStrategy": "Test the function by uploading different image types and verifying the correct response structure and error handling."
+    },
+    {
+      "id": 4,
+      "title": "Create Upload Event-Sponsor Poster Server Action",
+      "description": "Create server action to upload custom poster for event-sponsor combination.",
+      "status": "pending",
+      "dependencies": [
+        2
+      ],
+      "priority": "high",
+      "details": "Implement the uploadEventSponsorPosterServer function in src/app/admin/event-sponsors/ApiServerActions.ts that handles uploading custom posters for event-sponsor combinations. Use FormData to send multipart/form-data to the /api/proxy/event-medias/upload/event-sponsor-poster endpoint with appropriate query parameters.",
+      "testStrategy": "Test the function by uploading posters for different event-sponsor combinations and verifying the correct response structure and error handling."
+    },
+    {
+      "id": 5,
+      "title": "Create Upload Sponsor Media Server Action",
+      "description": "Create server action to upload multiple media files for a sponsor.",
+      "status": "pending",
+      "dependencies": [
+        1
+      ],
+      "priority": "high",
+      "details": "Implement the uploadSponsorMediaServer function in src/app/admin/event-sponsors/ApiServerActions.ts that handles uploading media files for sponsors. Use FormData to send multipart/form-data to the /api/proxy/event-medias/upload/sponsor-media endpoint with appropriate query parameters, including optional title, description, and priorityRanking.",
+      "testStrategy": "Test the function by uploading media files with different parameters and verifying the correct response structure and error handling."
+    },
+    {
+      "id": 6,
+      "title": "Create Upload Event-Sponsor Media Server Action",
+      "description": "Create server action to upload multiple media files for an event-sponsor combination.",
+      "status": "pending",
+      "dependencies": [
+        1,
+        2
+      ],
+      "priority": "high",
+      "details": "Implement the uploadEventSponsorMediaServer function in src/app/admin/event-sponsors/ApiServerActions.ts that handles uploading media files for event-sponsor combinations. Use FormData to send multipart/form-data to the /api/proxy/event-medias/upload/event-sponsor-media endpoint with appropriate query parameters.",
+      "testStrategy": "Test the function by uploading media files for different event-sponsor combinations and verifying the correct response structure and error handling."
+    },
+    {
+      "id": 7,
+      "title": "Create Fetch Sponsor Media Server Action",
+      "description": "Create server action to fetch all media files for a sponsor, sorted by priority ranking.",
+      "status": "pending",
+      "dependencies": [
+        1
+      ],
+      "priority": "high",
+      "details": "Implement the fetchSponsorMediaServer function in src/app/admin/event-sponsors/ApiServerActions.ts that retrieves all media files for a specific sponsor. Call the /api/proxy/event-medias/sponsor/{sponsorId} endpoint and handle the response as an array of EventMediaDTO objects sorted by priorityRanking.",
+      "testStrategy": "Test the function by fetching media for different sponsors and verifying the correct array structure, sorting, and error handling."
+    },
+    {
+      "id": 8,
+      "title": "Create Fetch Event-Sponsor Media Server Action",
+      "description": "Create server action to fetch all media files for an event-sponsor combination, sorted by priority ranking.",
+      "status": "pending",
+      "dependencies": [
+        1,
+        2
+      ],
+      "priority": "high",
+      "details": "Implement the fetchEventSponsorMediaServer function in src/app/admin/event-sponsors/ApiServerActions.ts that retrieves all media files for a specific event-sponsor combination. Call the /api/proxy/event-medias/event-sponsor/{eventId}/{sponsorId} endpoint and handle the response as an array of EventMediaDTO objects.",
+      "testStrategy": "Test the function by fetching media for different event-sponsor combinations and verifying the correct array structure, sorting, and error handling."
+    },
+    {
+      "id": 9,
+      "title": "Create Update Media Priority Ranking Server Action",
+      "description": "Create server action to update the priority ranking of a media file.",
+      "status": "pending",
+      "dependencies": [
+        1
+      ],
+      "priority": "medium",
+      "details": "Implement the updateMediaPriorityRankingServer function in src/app/admin/event-sponsors/ApiServerActions.ts that updates the priority ranking of a specific media file. Use the PATCH method with Content-Type: application/merge-patch+json to call the /api/proxy/event-medias/{id}/priority-ranking endpoint.",
+      "testStrategy": "Test the function by updating priority rankings for different media files and verifying the correct response structure and error handling."
+    },
+    {
+      "id": 10,
+      "title": "Create Proxy Handler for Sponsor Image Upload",
+      "description": "Create Next.js API route proxy handler for sponsor image upload endpoint.",
+      "status": "pending",
+      "dependencies": [
+        3
+      ],
+      "priority": "high",
+      "details": "Create a Next.js API route proxy handler in src/pages/api/proxy/event-medias/upload/sponsor-image.ts that forwards multipart/form-data requests to the backend endpoint for sponsor image uploads. Set bodyParser: false in config to handle multipart/form-data correctly.",
+      "testStrategy": "Test the proxy handler by sending multipart/form-data requests and verifying that they are correctly forwarded to the backend with all query parameters and authentication headers."
+    },
+    {
+      "id": 11,
+      "title": "Create Proxy Handler for Event-Sponsor Poster Upload",
+      "description": "Create Next.js API route proxy handler for event-sponsor poster upload endpoint.",
+      "status": "pending",
+      "dependencies": [
+        4
+      ],
+      "priority": "high",
+      "details": "Create a Next.js API route proxy handler in src/pages/api/proxy/event-medias/upload/event-sponsor-poster.ts that forwards multipart/form-data requests to the backend endpoint for event-sponsor poster uploads. Set bodyParser: false in config to handle multipart/form-data correctly.",
+      "testStrategy": "Test the proxy handler by sending multipart/form-data requests and verifying that they are correctly forwarded to the backend with all query parameters and authentication headers."
+    },
+    {
+      "id": 12,
+      "title": "Create Proxy Handler for Sponsor Media Upload",
+      "description": "Create Next.js API route proxy handler for sponsor media upload endpoint.",
+      "status": "pending",
+      "dependencies": [
+        5
+      ],
+      "priority": "high",
+      "details": "Create a Next.js API route proxy handler in src/pages/api/proxy/event-medias/upload/sponsor-media.ts that forwards multipart/form-data requests to the backend endpoint for sponsor media uploads. Set bodyParser: false in config to handle multipart/form-data correctly.",
+      "testStrategy": "Test the proxy handler by sending multipart/form-data requests and verifying that they are correctly forwarded to the backend with all query parameters and authentication headers."
+    },
+    {
+      "id": 13,
+      "title": "Create Proxy Handler for Event-Sponsor Media Upload",
+      "description": "Create Next.js API route proxy handler for event-sponsor media upload endpoint.",
+      "status": "pending",
+      "dependencies": [
+        6
+      ],
+      "priority": "high",
+      "details": "Create a Next.js API route proxy handler in src/pages/api/proxy/event-medias/upload/event-sponsor-media.ts that forwards multipart/form-data requests to the backend endpoint for event-sponsor media uploads. Set bodyParser: false in config to handle multipart/form-data correctly.",
+      "testStrategy": "Test the proxy handler by sending multipart/form-data requests and verifying that they are correctly forwarded to the backend with all query parameters and authentication headers."
+    },
+    {
+      "id": 14,
+      "title": "Create Proxy Handler for Sponsor Media Retrieval",
+      "description": "Create Next.js API route proxy handler for fetching sponsor media.",
+      "status": "pending",
+      "dependencies": [
+        7
+      ],
+      "priority": "high",
+      "details": "Create a Next.js API route proxy handler in src/pages/api/proxy/event-medias/sponsor/[...slug].ts using createProxyHandler with backendPath: '/api/event-medias/sponsor' that handles GET requests for sponsor media retrieval.",
+      "testStrategy": "Test the proxy handler by sending GET requests with different parameters and verifying that they are correctly forwarded to the backend with authentication headers."
+    },
+    {
+      "id": 15,
+      "title": "Create Proxy Handler for Event-Sponsor Media Retrieval",
+      "description": "Create Next.js API route proxy handler for fetching event-sponsor media.",
+      "status": "pending",
+      "dependencies": [
+        8
+      ],
+      "priority": "high",
+      "details": "Create a Next.js API route proxy handler in src/pages/api/proxy/event-medias/event-sponsor/[...slug].ts using createProxyHandler with backendPath: '/api/event-medias/event-sponsor' that handles GET requests for event-sponsor media retrieval.",
+      "testStrategy": "Test the proxy handler by sending GET requests with different parameters and verifying that they are correctly forwarded to the backend with authentication headers."
+    },
+    {
+      "id": 16,
+      "title": "Create Proxy Handler for Priority Ranking Update",
+      "description": "Create or update Next.js API route proxy handler for updating media priority ranking.",
+      "status": "pending",
+      "dependencies": [
+        9
+      ],
+      "priority": "medium",
+      "details": "Create or update the Next.js API route proxy handler in src/pages/api/proxy/event-medias/[...slug].ts to handle PATCH requests for updating media priority ranking. Ensure it handles the Content-Type: application/merge-patch+json header correctly.",
+      "testStrategy": "Test the proxy handler by sending PATCH requests with different priority ranking values and verifying that they are correctly forwarded to the backend with authentication headers."
+    },
+    {
+      "id": 17,
+      "title": "Create Sponsor Image Upload Dialog Component",
+      "description": "Create a drag-and-drop upload dialog component for sponsor images (logo, hero, banner).",
+      "status": "pending",
+      "dependencies": [
+        3,
+        10
+      ],
+      "priority": "high",
+      "details": "Create a reusable SponsorImageUploadDialog component in src/components/sponsors/SponsorImageUploadDialog.tsx with drag-and-drop functionality, file preview, progress indicator, and validation for sponsor image uploads (logo, hero, banner).",
+      "testStrategy": "Test the component by attempting to upload various file types, sizes, and formats, and verifying the correct preview, validation, progress indication, and success/error handling."
+    },
+    {
+      "id": 18,
+      "title": "Create Event-Sponsor Poster Upload Dialog Component",
+      "description": "Create a drag-and-drop upload dialog component for event-sponsor custom posters.",
+      "status": "pending",
+      "dependencies": [
+        4,
+        11
+      ],
+      "priority": "high",
+      "details": "Create a reusable EventSponsorPosterUploadDialog component in src/components/sponsors/EventSponsorPosterUploadDialog.tsx with drag-and-drop functionality, file preview, current poster preview, title and description fields, progress indicator, and validation for event-sponsor custom poster uploads.",
+      "testStrategy": "Test the component by attempting to upload various file types, sizes, and formats, and verifying the correct preview, form field handling, validation, progress indication, and success/error handling."
+    },
+    {
+      "id": 19,
+      "title": "Create Sponsor Media Gallery Component",
+      "description": "Create a gallery component to display and manage multiple media files for a sponsor.",
+      "status": "pending",
+      "dependencies": [
+        7,
+        9
+      ],
+      "priority": "high",
+      "details": "Create a reusable SponsorMediaGallery component in src/components/sponsors/SponsorMediaGallery.tsx that displays media files in a grid layout, allows viewing full-size images, shows priority ranking, and provides controls for editing priority ranking and deleting media items.",
+      "testStrategy": "Test the component by loading it with various media collections, testing the grid layout responsiveness, priority ranking display and editing, deletion functionality, and full-size viewing."
+    },
+    {
+      "id": 20,
+      "title": "Create Event-Sponsor Media Gallery Component",
+      "description": "Create a gallery component to display and manage multiple media files for an event-sponsor combination.",
+      "status": "pending",
+      "dependencies": [
+        8,
+        9
+      ],
+      "priority": "high",
+      "details": "Create a reusable EventSponsorMediaGallery component in src/components/sponsors/EventSponsorMediaGallery.tsx that displays media files in a grid layout, allows viewing full-size images, shows priority ranking, and provides controls for editing priority ranking and deleting media items for event-sponsor combinations.",
+      "testStrategy": "Test the component by loading it with various media collections for different event-sponsor combinations, testing the grid layout responsiveness, priority ranking display and editing, deletion functionality, and full-size viewing."
+    },
+    {
+      "id": 21,
+      "title": "Create Priority Ranking Editor Component",
+      "description": "Create a reusable component for editing priority ranking of media files.",
+      "status": "pending",
+      "dependencies": [
+        9
+      ],
+      "priority": "medium",
+      "details": "Create a reusable PriorityRankingEditor component in src/components/sponsors/PriorityRankingEditor.tsx that provides a number input for priority ranking with validation, save and cancel buttons, and loading state handling.",
+      "testStrategy": "Test the component by attempting to enter various valid and invalid priority ranking values and verifying the validation, saving functionality, loading state, and error handling."
+    },
+    {
+      "id": 22,
+      "title": "Update Sponsor Management Page - Add Image Uploads",
+      "description": "Update the sponsor management page to replace URL input fields with image upload dialogs and add media gallery.",
+      "status": "pending",
+      "dependencies": [
+        17,
+        19
+      ],
+      "priority": "high",
+      "details": "Update the sponsor management page in src/app/admin/event-sponsors/page.tsx to replace URL input fields with image upload buttons and previews, and add a media gallery section for managing multiple media files.",
+      "testStrategy": "Test the updated page by using all upload features, verifying image previews, media gallery functionality, and data refresh after uploads."
+    },
+    {
+      "id": 23,
+      "title": "Update Event-Specific Sponsors Page - Add Custom Poster Upload",
+      "description": "Update the event-specific sponsors page to add custom poster upload for each event-sponsor combination and media gallery.",
+      "status": "pending",
+      "dependencies": [
+        18,
+        20
+      ],
+      "priority": "high",
+      "details": "Update the event-specific sponsors page in src/app/admin/events/[id]/sponsors/page.tsx to add custom poster upload buttons for each event-sponsor combination, display custom poster previews, and add media gallery sections.",
+      "testStrategy": "Test the updated page by using all upload features for different event-sponsor combinations, verifying custom poster previews, media gallery functionality, and data refresh after uploads."
+    },
+    {
+      "id": 24,
+      "title": "Component Testing - Upload Dialogs",
+      "description": "Test upload dialog components for all scenarios.",
+      "status": "pending",
+      "dependencies": [
+        17,
+        18
+      ],
+      "priority": "medium",
+      "details": "Test the upload dialog components (SponsorImageUploadDialog and EventSponsorPosterUploadDialog) for all scenarios including drag-and-drop, file selection, upload flow, and form validation.",
+      "testStrategy": "Execute all test cases for drag-and-drop, file selection, upload flow, and form validation, and verify that error messages are clear, upload progress is visible, success notifications work, and forms reset on close."
+    },
+    {
+      "id": 25,
+      "title": "Component Testing - Media Galleries",
+      "description": "Test media gallery components for all scenarios.",
+      "status": "pending",
+      "dependencies": [
+        19,
+        20
+      ],
+      "priority": "medium",
+      "details": "Test the media gallery components (SponsorMediaGallery and EventSponsorMediaGallery) for all scenarios including media display, priority ranking, and media operations.",
+      "testStrategy": "Execute all test cases for media display, priority ranking, and media operations, and verify that media is sorted correctly, priority updates work, delete confirmation works, and lightbox/modal works."
+    },
+    {
+      "id": 26,
+      "title": "Integration Testing - Full Upload Flow",
+      "description": "Test complete upload flow from UI to backend.",
+      "status": "pending",
+      "dependencies": [
+        22,
+        23
+      ],
+      "priority": "high",
+      "details": "Test the complete upload flow from UI to backend for sponsor image upload, event-sponsor poster upload, and multiple media upload scenarios.",
+      "testStrategy": "Execute all test cases for sponsor image upload, event-sponsor poster upload, and multiple media upload, and verify database updates, S3 paths, media file accessibility, and priority ranking functionality."
+    },
+    {
+      "id": 27,
+      "title": "Error Handling Testing",
+      "description": "Test error handling for all failure scenarios.",
+      "status": "pending",
+      "dependencies": [
+        22,
+        23
+      ],
+      "priority": "medium",
+      "details": "Test error handling for all failure scenarios including network errors, backend errors, and validation errors.",
+      "testStrategy": "Execute all test cases for network errors, backend errors, and validation errors, and verify that all error scenarios are handled, error messages are clear and helpful, users can recover from errors, and there are no crashes or unhandled errors."
+    }
+  ]
+}

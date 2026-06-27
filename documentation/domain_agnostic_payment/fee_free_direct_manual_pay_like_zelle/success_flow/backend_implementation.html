@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Backend Implementation: Manual Payment Success Flow</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        background: #f3f1ec;
+        color: #2d2a26;
+        margin: 0;
+        padding: 2.5rem 0;
+      }
+
+      main {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -20px rgba(43, 34, 28, 0.25);
+        padding: 3rem;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-family: "Crimson Text", Georgia, serif;
+        color: #2d2a26;
+      }
+
+      h1 {
+        font-size: 2.3rem;
+        margin-bottom: 0.75rem;
+      }
+
+      h2 {
+        font-size: 1.7rem;
+        margin-top: 2.5rem;
+        border-bottom: 2px solid #8b7d6b;
+        padding-bottom: 0.5rem;
+      }
+
+      h3 {
+        font-size: 1.3rem;
+        margin-top: 1.8rem;
+        color: #1f4c8f;
+      }
+
+      h4 {
+        font-size: 1.1rem;
+        margin-top: 1.2rem;
+        color: #0066cc;
+      }
+
+      p,
+      li {
+        line-height: 1.75;
+        font-size: 1rem;
+      }
+
+      ul,
+      ol {
+        margin-left: 1.4rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5rem 0;
+        font-size: 0.95rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+      }
+
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 0.75rem;
+        vertical-align: top;
+      }
+
+      th {
+        background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+        color: #ffffff;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        font-size: 0.85rem;
+      }
+
+      tr:nth-child(even) {
+        background-color: #f8f9fa;
+      }
+
+      tr:hover {
+        background-color: #e3f2fd;
+        transition: background-color 0.2s ease;
+      }
+
+      code,
+      pre {
+        font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        background: #1a1a1a;
+        color: #ffffff;
+        border-radius: 8px;
+      }
+
+      pre {
+        padding: 1rem;
+        line-height: 1.6;
+        overflow-x: auto;
+        margin: 1rem 0;
+      }
+
+      code.inline {
+        background: #f5f1e8;
+        color: #2d2a26;
+        padding: 0.15rem 0.35rem;
+        font-size: 0.95rem;
+        display: inline-block;
+        border-radius: 4px;
+      }
+
+      .tag {
+        display: inline-block;
+        background: #8b7d6b;
+        color: #ffffff;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .divider {
+        height: 1px;
+        background: rgba(42, 32, 23, 0.12);
+        margin: 2rem 0;
+      }
+
+      .callout {
+        border-left: 4px solid #8b7d6b;
+        background: rgba(213, 201, 182, 0.3);
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
+        margin: 1.8rem 0;
+      }
+
+      .warning {
+        border-left: 4px solid #d97706;
+        background: rgba(217, 119, 6, 0.1);
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
+        margin: 1.8rem 0;
+      }
+
+      .success {
+        border-left: 4px solid #059669;
+        background: rgba(5, 150, 105, 0.1);
+        padding: 1.2rem 1.4rem;
+        border-radius: 12px;
+        margin: 1.8rem 0;
+      }
+
+      .code-wrapper {
+        border: 2px solid #1a1a1a;
+        border-radius: 8px;
+        margin: 16px 0 24px;
+        overflow: hidden;
+        background: #ffffff;
+      }
+
+      .code-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px;
+        background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+        border-bottom: 1px solid #d7e6f5;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1f4c8f;
+      }
+
+      .code-block {
+        background-color: #1a1a1a;
+        color: #ffffff;
+        padding: 16px;
+        border-radius: 0 0 6px 6px;
+        font-family: "Courier New", monospace;
+        font-size: 0.95rem;
+        overflow-x: auto;
+        margin: 0;
+        white-space: pre;
+      }
+
+      .toc ol {
+        list-style: decimal;
+      }
+
+      .toc a {
+        color: #1f4c8f;
+        text-decoration: none;
+      }
+
+      .toc a:hover {
+        text-decoration: underline;
+      }
+
+      footer {
+        margin-top: 4rem;
+        text-align: center;
+        font-size: 0.9rem;
+        color: #7a7066;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tag">Backend Implementation · January 14, 2026</span>
+      <h1>Backend Implementation Guide: Manual Payment Success Flow</h1>
+      <p>
+        <strong>Project:</strong> MCEFEE Multi-Tenant Event Management Platform<br />
+        <strong>Document Version:</strong> 1.0<br />
+        <strong>Date:</strong> January 14, 2026<br />
+        <strong>Status:</strong> Implementation Ready<br />
+        <strong>Backend Project:</strong> E:\project_workspace\malayalees-us-site-boot
+      </p>
+
+      <div class="divider"></div>
+
+      <h2 id="executive-summary">Executive Summary</h2>
+      <p>
+        This document provides detailed implementation instructions for the backend changes required to support
+        the manual payment success flow. The implementation must create ticket transactions automatically when
+        manual payment requests are created, manage ticket status transitions, generate QR codes when payments
+        are confirmed, and trigger email sending via batch jobs.
+      </p>
+
+      <div class="callout">
+        <strong>Key Requirement:</strong> All manual payment ticket transactions must start in <code class="inline">PENDING</code> status
+        and only transition to <code class="inline">CONFIRMED</code> when an admin marks the payment as <code class="inline">RECEIVED</code>.
+        QR codes and ticket emails are generated ONLY after confirmation.
+      </div>
+
+      <h2 id="table-of-contents">Table of Contents</h2>
+      <nav class="toc">
+        <ol>
+          <li><a href="#database-tables">Database Tables Involved</a></li>
+          <li><a href="#api-endpoints">API Endpoints to Create/Modify</a></li>
+          <li><a href="#service-layer">Service Layer Changes</a></li>
+          <li><a href="#ticket-creation">Ticket Transaction Creation Logic</a></li>
+          <li><a href="#status-management">Status Management & QR Code Generation</a></li>
+          <li><a href="#email-integration">Email Integration with Batch Jobs</a></li>
+          <li><a href="#error-handling">Error Handling & Validation</a></li>
+          <li><a href="#testing">Testing Requirements</a></li>
+        </ol>
+      </nav>
+
+      <div class="divider"></div>
+
+      <section id="database-tables">
+        <h2>1. Database Tables Involved</h2>
+
+        <h3>1.1 Primary Tables</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Table Name</th>
+              <th>Purpose</th>
+              <th>Key Fields</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="inline">manual_payment_request</code></td>
+              <td>Stores manual payment requests from users</td>
+              <td>
+                <code class="inline">id</code>, <code class="inline">event_id</code>, <code class="inline">ticket_transaction_id</code>,
+                <code class="inline">amount</code>, <code class="inline">manual_payment_method_type</code>, <code class="inline">status</code>,
+                <code class="inline">requester_email</code>, <code class="inline">requester_name</code>, <code class="inline">requester_phone</code>,
+                <code class="inline">received_at</code>, <code class="inline">received_by</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code class="inline">event_ticket_transaction</code></td>
+              <td>Stores ticket purchase transactions</td>
+              <td>
+                <code class="inline">id</code>, <code class="inline">event_id</code>, <code class="inline">email</code>,
+                <code class="inline">first_name</code>, <code class="inline">last_name</code>, <code class="inline">phone</code>,
+                <code class="inline">total_amount</code>, <code class="inline">status</code>, <code class="inline">qr_code_image_url</code>,
+                <code class="inline">transaction_reference</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code class="inline">event_ticket_transaction_item</code></td>
+              <td>Stores individual ticket line items</td>
+              <td>
+                <code class="inline">id</code>, <code class="inline">transaction_id</code>, <code class="inline">ticket_type_id</code>,
+                <code class="inline">quantity</code>, <code class="inline">price_per_unit</code>, <code class="inline">total_amount</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code class="inline">event_details</code></td>
+              <td>Event information</td>
+              <td>
+                <code class="inline">id</code>, <code class="inline">title</code>, <code class="inline">start_date</code>,
+                <code class="inline">end_date</code>, <code class="inline">location</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code class="inline">event_ticket_type</code></td>
+              <td>Ticket type definitions</td>
+              <td>
+                <code class="inline">id</code>, <code class="inline">event_id</code>, <code class="inline">name</code>,
+                <code class="inline">price</code>, <code class="inline">quantity_available</code>, <code class="inline">quantity_sold</code>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>1.2 Status Field Values</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Table</th>
+              <th>Field</th>
+              <th>Allowed Values</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="inline">manual_payment_request</code></td>
+              <td><code class="inline">status</code></td>
+              <td><code class="inline">REQUESTED</code>, <code class="inline">RECEIVED</code>, <code class="inline">VOIDED</code>, <code class="inline">CANCELLED</code></td>
+              <td>Enum type: <code class="inline">manual_payment_status</code></td>
+            </tr>
+            <tr>
+              <td><code class="inline">event_ticket_transaction</code></td>
+              <td><code class="inline">status</code></td>
+              <td><code class="inline">PENDING</code>, <code class="inline">CONFIRMED</code>, <code class="inline">CANCELLED</code>, <code class="inline">REFUNDED</code></td>
+              <td><strong>CRITICAL:</strong> Manual payments start as <code class="inline">PENDING</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>1.3 Foreign Key Relationships</h3>
+        <ul>
+          <li><code class="inline">manual_payment_request.ticket_transaction_id</code> → <code class="inline">event_ticket_transaction.id</code> (nullable, set after creation)</li>
+          <li><code class="inline">manual_payment_request.event_id</code> → <code class="inline">event_details.id</code> (required)</li>
+          <li><code class="inline">event_ticket_transaction.event_id</code> → <code class="inline">event_details.id</code> (required)</li>
+          <li><code class="inline">event_ticket_transaction_item.transaction_id</code> → <code class="inline">event_ticket_transaction.id</code> (required)</li>
+          <li><code class="inline">event_ticket_transaction_item.ticket_type_id</code> → <code class="inline">event_ticket_type.id</code> (required)</li>
+        </ul>
+
+        <div class="warning">
+          <strong>Multi-Tenant Requirement:</strong> All tables must include <code class="inline">tenant_id</code> field and all queries
+          must filter by <code class="inline">tenant_id.equals</code> using Spring Data REST criteria syntax.
+        </div>
+      </section>
+
+      <section id="api-endpoints">
+        <div class="divider"></div>
+        <h2>2. API Endpoints to Create/Modify</h2>
+
+        <h3>2.1 POST /api/manual-payments (Enhance Existing)</h3>
+        <p>
+          <strong>Current Behavior:</strong> Creates a <code class="inline">ManualPaymentRequest</code> record only.<br />
+          <strong>Required Enhancement:</strong> Also create <code class="inline">EventTicketTransaction</code> and <code class="inline">EventTicketTransactionItem</code> records.
+        </p>
+
+        <h4>Request Body Schema</h4>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span>Request Body (JSON)</span>
+          </div>
+          <pre class="code-block">{
+  "eventId": 52,
+  "manualPaymentMethodType": "ZELLE_MANUAL",
+  "amount": 150.00,
+  "status": "REQUESTED",
+  "requesterEmail": "user@example.com",
+  "requesterName": "John Doe",
+  "requesterPhone": "+1234567890",
+  "paymentHandle": "zelle@example.com",
+  "paymentInstructions": "Send payment to zelle@example.com with memo: Event 52",
+  "proofOfPaymentFileKey": "events/52/manual-payments/proof-123.jpg",
+  "proofOfPaymentUrl": "https://s3.amazonaws.com/bucket/events/52/manual-payments/proof-123.jpg",
+  "cart": [
+    {
+      "ticketTypeId": 101,
+      "quantity": 2
+    },
+    {
+      "ticketTypeId": 102,
+      "quantity": 1
+    }
+  ],
+  "tenantId": "tenant_demo_001"
+}</pre>
+        </div>
+
+        <h4>Implementation Steps</h4>
+        <ol>
+          <li>
+            <strong>Validate Request:</strong>
+            <ul>
+              <li>Verify <code class="inline">eventId</code> exists and is active</li>
+              <li>Validate <code class="inline">cart</code> array is not empty</li>
+              <li>Validate each ticket type exists and has sufficient inventory</li>
+              <li>Calculate total amount from cart and verify it matches <code class="inline">amount</code> field</li>
+              <li>Verify <code class="inline">tenantId</code> matches authenticated tenant</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Create ManualPaymentRequest:</strong>
+            <ul>
+              <li>Create record with status <code class="inline">REQUESTED</code></li>
+              <li>Set <code class="inline">ticket_transaction_id</code> to <code class="inline">null</code> initially</li>
+              <li>Store all requester information</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Create EventTicketTransaction:</strong>
+            <ul>
+              <li>Status: <code class="inline">PENDING</code> (NOT <code class="inline">CONFIRMED</code>)</li>
+              <li>Set <code class="inline">email</code>, <code class="inline">first_name</code>, <code class="inline">last_name</code>, <code class="inline">phone</code> from requester info</li>
+              <li>Set <code class="inline">total_amount</code> from request amount</li>
+              <li>Set <code class="inline">final_amount</code> equal to <code class="inline">total_amount</code></li>
+              <li>Set <code class="inline">quantity</code> to sum of all cart item quantities</li>
+              <li>Set <code class="inline">transaction_reference</code> to format: <code class="inline">"MANUAL-{manualPaymentRequestId}"</code></li>
+              <li>Set <code class="inline">purchase_date</code> to current timestamp</li>
+              <li><strong>DO NOT</strong> set <code class="inline">qr_code_image_url</code> (only set after RECEIVED status)</li>
+              <li><strong>DO NOT</strong> set <code class="inline">stripe_payment_intent_id</code> (manual payments don't use Stripe)</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Create EventTicketTransactionItem Records:</strong>
+            <ul>
+              <li>For each item in <code class="inline">cart</code> array:</li>
+              <li>Fetch <code class="inline">EventTicketType</code> by <code class="inline">ticketTypeId</code></li>
+              <li>Create <code class="inline">EventTicketTransactionItem</code> with:</li>
+              <li>
+                <ul>
+                  <li><code class="inline">transaction_id</code> = created ticket transaction ID</li>
+                  <li><code class="inline">ticket_type_id</code> = from cart item</li>
+                  <li><code class="inline">quantity</code> = from cart item</li>
+                  <li><code class="inline">price_per_unit</code> = from ticket type price</li>
+                  <li><code class="inline">total_amount</code> = <code class="inline">price_per_unit * quantity</code></li>
+                </ul>
+              </li>
+              <li><strong>CRITICAL:</strong> Do NOT update ticket type <code class="inline">quantity_sold</code> yet (only update when status changes to RECEIVED)</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Link Records:</strong>
+            <ul>
+              <li>Update <code class="inline">ManualPaymentRequest.ticket_transaction_id</code> with created transaction ID</li>
+              <li>Save updated payment request</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Return Response:</strong>
+            <ul>
+              <li>Return created <code class="inline">ManualPaymentRequest</code> with <code class="inline">ticketTransactionId</code> populated</li>
+              <li>Include related ticket transaction in response (optional, for frontend convenience)</li>
+            </ul>
+          </li>
+        </ol>
+
+        <h4>Example Java Implementation Structure</h4>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span>ManualPaymentService.createManualPaymentRequest()</span>
+          </div>
+          <pre class="code-block">@Transactional
+public ManualPaymentRequestDTO createManualPaymentRequest(
+    ManualPaymentRequestDTO requestDTO
+) {
+    // 1. Validate event exists and is active
+    EventDetails event = eventDetailsRepository.findById(requestDTO.getEventId())
+        .orElseThrow(() -> new EntityNotFoundException("Event not found"));
+
+    if (!event.getIsActive()) {
+        throw new BadRequestException("Event is not active");
+    }
+
+    // 2. Validate cart and calculate total
+    List&lt;CartItemDTO&gt; cart = requestDTO.getCart();
+    if (cart == null || cart.isEmpty()) {
+        throw new BadRequestException("Cart cannot be empty");
+    }
+
+    BigDecimal calculatedTotal = BigDecimal.ZERO;
+    for (CartItemDTO item : cart) {
+        EventTicketType ticketType = ticketTypeRepository.findById(item.getTicketTypeId())
+            .orElseThrow(() -> new EntityNotFoundException("Ticket type not found"));
+
+        // Validate inventory
+        int remaining = ticketType.getQuantityAvailable() - ticketType.getQuantitySold();
+        if (item.getQuantity() > remaining) {
+            throw new BadRequestException("Insufficient tickets available for type: " + ticketType.getName());
+        }
+
+        calculatedTotal = calculatedTotal.add(
+            ticketType.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()))
+        );
+    }
+
+    // Verify amount matches
+    if (calculatedTotal.compareTo(requestDTO.getAmount()) != 0) {
+        throw new BadRequestException("Amount mismatch. Calculated: " + calculatedTotal + ", Provided: " + requestDTO.getAmount());
+    }
+
+    // 3. Create ManualPaymentRequest
+    ManualPaymentRequest paymentRequest = new ManualPaymentRequest();
+    paymentRequest.setEventId(requestDTO.getEventId());
+    paymentRequest.setManualPaymentMethodType(requestDTO.getManualPaymentMethodType());
+    paymentRequest.setAmount(requestDTO.getAmount());
+    paymentRequest.setStatus(ManualPaymentStatus.REQUESTED);
+    paymentRequest.setRequesterEmail(requestDTO.getRequesterEmail());
+    paymentRequest.setRequesterName(requestDTO.getRequesterName());
+    paymentRequest.setRequesterPhone(requestDTO.getRequesterPhone());
+    paymentRequest.setPaymentHandle(requestDTO.getPaymentHandle());
+    paymentRequest.setPaymentInstructions(requestDTO.getPaymentInstructions());
+    paymentRequest.setProofOfPaymentFileKey(requestDTO.getProofOfPaymentFileKey());
+    paymentRequest.setProofOfPaymentUrl(requestDTO.getProofOfPaymentUrl());
+    paymentRequest.setTenantId(requestDTO.getTenantId());
+    paymentRequest.setCreatedAt(ZonedDateTime.now());
+    paymentRequest.setUpdatedAt(ZonedDateTime.now());
+
+    // Save payment request (without ticket_transaction_id yet)
+    paymentRequest = manualPaymentRequestRepository.save(paymentRequest);
+
+    // 4. Create EventTicketTransaction (PENDING status)
+    EventTicketTransaction ticketTransaction = new EventTicketTransaction();
+    ticketTransaction.setEventId(requestDTO.getEventId());
+    ticketTransaction.setEmail(requestDTO.getRequesterEmail());
+    ticketTransaction.setFirstName(extractFirstName(requestDTO.getRequesterName()));
+    ticketTransaction.setLastName(extractLastName(requestDTO.getRequesterName()));
+    ticketTransaction.setPhone(requestDTO.getRequesterPhone());
+    ticketTransaction.setTotalAmount(requestDTO.getAmount());
+    ticketTransaction.setFinalAmount(requestDTO.getAmount());
+    ticketTransaction.setQuantity(cart.stream().mapToInt(CartItemDTO::getQuantity).sum());
+    ticketTransaction.setStatus("PENDING"); // CRITICAL: PENDING, not CONFIRMED
+    ticketTransaction.setTransactionReference("MANUAL-" + paymentRequest.getId());
+    ticketTransaction.setPurchaseDate(ZonedDateTime.now());
+    ticketTransaction.setTenantId(requestDTO.getTenantId());
+    ticketTransaction.setCreatedAt(ZonedDateTime.now());
+    ticketTransaction.setUpdatedAt(ZonedDateTime.now());
+    // DO NOT set qrCodeImageUrl - only set after RECEIVED status
+
+    ticketTransaction = eventTicketTransactionRepository.save(ticketTransaction);
+
+    // 5. Create EventTicketTransactionItem records
+    List&lt;EventTicketTransactionItem&gt; transactionItems = new ArrayList&lt;&gt;();
+    for (CartItemDTO item : cart) {
+        EventTicketType ticketType = ticketTypeRepository.findById(item.getTicketTypeId())
+            .orElseThrow(() -> new EntityNotFoundException("Ticket type not found"));
+
+        EventTicketTransactionItem transactionItem = new EventTicketTransactionItem();
+        transactionItem.setTransactionId(ticketTransaction.getId());
+        transactionItem.setTicketTypeId(item.getTicketTypeId());
+        transactionItem.setQuantity(item.getQuantity());
+        transactionItem.setPricePerUnit(ticketType.getPrice());
+        transactionItem.setTotalAmount(ticketType.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+        transactionItem.setTenantId(requestDTO.getTenantId());
+        transactionItem.setCreatedAt(ZonedDateTime.now());
+        transactionItem.setUpdatedAt(ZonedDateTime.now());
+
+        transactionItems.add(transactionItem);
+    }
+
+    eventTicketTransactionItemRepository.saveAll(transactionItems);
+
+    // 6. Link payment request to ticket transaction
+    paymentRequest.setTicketTransactionId(ticketTransaction.getId());
+    paymentRequest = manualPaymentRequestRepository.save(paymentRequest);
+
+    // 7. Trigger confirmation email via batch job (async, non-blocking)
+    triggerConfirmationEmailJob(paymentRequest.getId());
+
+    // 8. Return DTO with ticket transaction ID
+    ManualPaymentRequestDTO responseDTO = convertToDTO(paymentRequest);
+    responseDTO.setTicketTransactionId(ticketTransaction.getId());
+    return responseDTO;
+}</pre>
+        </div>
+
+        <h3>2.2 GET /api/manual-payments/{id} (New Endpoint)</h3>
+        <p>
+          <strong>Purpose:</strong> Fetch manual payment request with related ticket transaction and items for success page display.
+        </p>
+
+        <h4>Response Schema</h4>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span>Response Body (JSON)</span>
+          </div>
+          <pre class="code-block">{
+  "id": 123,
+  "eventId": 52,
+  "ticketTransactionId": 456,
+  "manualPaymentMethodType": "ZELLE_MANUAL",
+  "amount": 150.00,
+  "status": "REQUESTED",
+  "requesterEmail": "user@example.com",
+  "requesterName": "John Doe",
+  "requesterPhone": "+1234567890",
+  "paymentHandle": "zelle@example.com",
+  "paymentInstructions": "Send payment to zelle@example.com",
+  "createdAt": "2026-01-14T10:30:00Z",
+  "updatedAt": "2026-01-14T10:30:00Z",
+  "ticketTransaction": {
+    "id": 456,
+    "eventId": 52,
+    "email": "user@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "phone": "+1234567890",
+    "totalAmount": 150.00,
+    "status": "PENDING",
+    "quantity": 3,
+    "transactionReference": "MANUAL-123",
+    "purchaseDate": "2026-01-14T10:30:00Z",
+    "qrCodeImageUrl": null,
+    "transactionItems": [
+      {
+        "id": 789,
+        "ticketTypeId": 101,
+        "quantity": 2,
+        "pricePerUnit": 50.00,
+        "totalAmount": 100.00,
+        "ticketType": {
+          "id": 101,
+          "name": "General Admission",
+          "price": 50.00
+        }
+      },
+      {
+        "id": 790,
+        "ticketTypeId": 102,
+        "quantity": 1,
+        "pricePerUnit": 50.00,
+        "totalAmount": 50.00,
+        "ticketType": {
+          "id": 102,
+          "name": "VIP",
+          "price": 50.00
+        }
+      }
+    ]
+  },
+  "event": {
+    "id": 52,
+    "title": "Annual Gala",
+    "startDate": "2026-02-15",
+    "endDate": "2026-02-15",
+    "location": "Convention Center"
+  }
+}</pre>
+        </div>
+
+        <h4>Implementation Steps</h4>
+        <ol>
+          <li>Fetch <code class="inline">ManualPaymentRequest</code> by ID with tenant filtering</li>
+          <li>If <code class="inline">ticketTransactionId</code> is not null, fetch <code class="inline">EventTicketTransaction</code></li>
+          <li>Fetch all <code class="inline">EventTicketTransactionItem</code> records for the transaction</li>
+          <li>Fetch <code class="inline">EventTicketType</code> details for each item</li>
+          <li>Fetch <code class="inline">EventDetails</code> for event information</li>
+          <li>Combine all data into response DTO</li>
+        </ol>
+
+        <h3>2.3 POST /api/manual-payments/{id}/send-confirmation-email (New Endpoint)</h3>
+        <p>
+          <strong>Purpose:</strong> Trigger confirmation email sending via batch job. Must be idempotent (safe to call multiple times).
+        </p>
+
+        <h4>Request</h4>
+        <ul>
+          <li>Method: <code class="inline">POST</code></li>
+          <li>Path: <code class="inline">/api/manual-payments/{id}/send-confirmation-email</code></li>
+          <li>Path Parameter: <code class="inline">id</code> (manual payment request ID)</li>
+          <li>Body: Empty (or optional metadata)</li>
+        </ul>
+
+        <h4>Implementation Steps</h4>
+        <ol>
+          <li>Fetch <code class="inline">ManualPaymentRequest</code> by ID</li>
+          <li>Validate request exists and belongs to tenant</li>
+          <li>Check if email has already been sent (optional: add <code class="inline">confirmation_email_sent</code> flag to table)</li>
+          <li>If not sent, trigger batch job asynchronously:</li>
+          <li>
+            <ul>
+              <li>Create batch job task/record with type <code class="inline">MANUAL_PAYMENT_CONFIRMATION_EMAIL</code></li>
+              <li>Include payment request ID, requester email, event ID, ticket transaction ID</li>
+              <li>Set job status to <code class="inline">PENDING</code></li>
+            </ul>
+          </li>
+          <li>Mark email as sent (update flag or create log record)</li>
+          <li>Return success response: <code class="inline">{"success": true, "message": "Confirmation email queued"}</code></li>
+        </ol>
+
+        <div class="callout">
+          <strong>Idempotency:</strong> This endpoint should be safe to call multiple times. If email was already sent,
+          return success without creating duplicate job records.
+        </div>
+
+        <h3>2.4 PATCH /api/manual-payments/{id} (Enhance Existing)</h3>
+        <p>
+          <strong>Current Behavior:</strong> Updates manual payment request status only.<br />
+          <strong>Required Enhancement:</strong> When status changes to <code class="inline">RECEIVED</code>, also update ticket transaction,
+          generate QR code, and trigger ticket email.
+        </p>
+
+        <h4>Request Body Schema</h4>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span>Request Body (JSON Merge Patch)</span>
+          </div>
+          <pre class="code-block">{
+  "id": 123,
+  "status": "RECEIVED",
+  "receivedBy": "admin@example.com",
+  "receivedAt": "2026-01-14T15:30:00Z",
+  "notes": "Payment confirmed via Zelle"
+}</pre>
+        </div>
+
+        <h4>Implementation Steps</h4>
+        <ol>
+          <li>
+            <strong>Fetch and Validate:</strong>
+            <ul>
+              <li>Fetch <code class="inline">ManualPaymentRequest</code> by ID</li>
+              <li>Verify current status is <code class="inline">REQUESTED</code> (cannot change from RECEIVED/VOIDED)</li>
+              <li>Verify <code class="inline">ticketTransactionId</code> is not null</li>
+            </ul>
+          </li>
+          <li>
+            <strong>If Status Changed to RECEIVED:</strong>
+            <ul>
+              <li>Update <code class="inline">ManualPaymentRequest</code>:</li>
+              <li>
+                <ul>
+                  <li>Set <code class="inline">status</code> = <code class="inline">RECEIVED</code></li>
+                  <li>Set <code class="inline">received_at</code> = current timestamp (or from request)</li>
+                  <li>Set <code class="inline">received_by</code> = admin user identifier</li>
+                  <li>Update <code class="inline">updated_at</code></li>
+                </ul>
+              </li>
+              <li>Fetch <code class="inline">EventTicketTransaction</code> by <code class="inline">ticketTransactionId</code></li>
+              <li>Update ticket transaction:</li>
+              <li>
+                <ul>
+                  <li>Set <code class="inline">status</code> = <code class="inline">CONFIRMED</code></li>
+                  <li>Update <code class="inline">updated_at</code></li>
+                </ul>
+              </li>
+              <li>Update ticket inventory:</li>
+              <li>
+                <ul>
+                  <li>For each <code class="inline">EventTicketTransactionItem</code>:</li>
+                  <li>Fetch corresponding <code class="inline">EventTicketType</code></li>
+                  <li>Increment <code class="inline">quantity_sold</code> by item quantity</li>
+                  <li>Save ticket type</li>
+                </ul>
+              </li>
+              <li>Generate QR code:</li>
+              <li>
+                <ul>
+                  <li>Call existing QR code generation service/endpoint</li>
+                  <li>Endpoint: <code class="inline">POST /api/events/{eventId}/transactions/{transactionId}/qrcode</code></li>
+                  <li>Or use internal service method: <code class="inline">qrCodeService.generateQrCode(eventId, transactionId, emailHostUrlPrefix)</code></li>
+                  <li>Update <code class="inline">EventTicketTransaction.qr_code_image_url</code> with generated URL</li>
+                </ul>
+              </li>
+              <li>Trigger ticket email batch job:</li>
+              <li>
+                <ul>
+                  <li>Create batch job task with type <code class="inline">MANUAL_PAYMENT_TICKET_EMAIL</code></li>
+                  <li>Include event ID, ticket transaction ID, requester email</li>
+                  <li>Set job status to <code class="inline">PENDING</code></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <strong>If Status Changed to VOIDED/CANCELLED:</strong>
+            <ul>
+              <li>Update <code class="inline">ManualPaymentRequest</code> status</li>
+              <li>Update <code class="inline">EventTicketTransaction.status</code> to <code class="inline">CANCELLED</code></li>
+              <li><strong>DO NOT</strong> update ticket inventory (tickets were never confirmed)</li>
+              <li><strong>DO NOT</strong> generate QR code</li>
+              <li><strong>DO NOT</strong> send ticket email</li>
+            </ul>
+          </li>
+          <li>Return updated <code class="inline">ManualPaymentRequestDTO</code></li>
+        </ol>
+
+        <h4>Example Java Implementation Structure</h4>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span>ManualPaymentService.updateManualPaymentStatus()</span>
+          </div>
+          <pre class="code-block">@Transactional
+public ManualPaymentRequestDTO updateManualPaymentStatus(
+    Long paymentRequestId,
+    ManualPaymentStatus newStatus,
+    String receivedBy,
+    String voidReason
+) {
+    ManualPaymentRequest paymentRequest = manualPaymentRequestRepository
+        .findById(paymentRequestId)
+        .orElseThrow(() -> new EntityNotFoundException("Manual payment request not found"));
+
+    // Validate status transition
+    if (paymentRequest.getStatus() != ManualPaymentStatus.REQUESTED &&
+        newStatus == ManualPaymentStatus.RECEIVED) {
+        throw new BadRequestException("Cannot change status to RECEIVED from " + paymentRequest.getStatus());
+    }
+
+    ManualPaymentStatus oldStatus = paymentRequest.getStatus();
+    paymentRequest.setStatus(newStatus);
+    paymentRequest.setUpdatedAt(ZonedDateTime.now());
+
+    if (newStatus == ManualPaymentStatus.RECEIVED) {
+        // Update payment request
+        paymentRequest.setReceivedAt(ZonedDateTime.now());
+        paymentRequest.setReceivedBy(receivedBy);
+
+        // Update ticket transaction to CONFIRMED
+        if (paymentRequest.getTicketTransactionId() != null) {
+            EventTicketTransaction ticketTransaction = eventTicketTransactionRepository
+                .findById(paymentRequest.getTicketTransactionId())
+                .orElseThrow(() -> new EntityNotFoundException("Ticket transaction not found"));
+
+            ticketTransaction.setStatus("CONFIRMED");
+            ticketTransaction.setUpdatedAt(ZonedDateTime.now());
+            ticketTransaction = eventTicketTransactionRepository.save(ticketTransaction);
+
+            // Update ticket inventory
+            List&lt;EventTicketTransactionItem&gt; items = eventTicketTransactionItemRepository
+                .findByTransactionId(ticketTransaction.getId());
+
+            for (EventTicketTransactionItem item : items) {
+                EventTicketType ticketType = ticketTypeRepository.findById(item.getTicketTypeId())
+                    .orElseThrow(() -> new EntityNotFoundException("Ticket type not found"));
+
+                ticketType.setQuantitySold(ticketType.getQuantitySold() + item.getQuantity());
+                ticketTypeRepository.save(ticketType);
+            }
+
+            // Generate QR code
+            String emailHostUrlPrefix = getEmailHostUrlPrefix(); // From config
+            String qrCodeUrl = qrCodeService.generateQrCode(
+                paymentRequest.getEventId(),
+                ticketTransaction.getId(),
+                emailHostUrlPrefix
+            );
+
+            ticketTransaction.setQrCodeImageUrl(qrCodeUrl);
+            ticketTransaction = eventTicketTransactionRepository.save(ticketTransaction);
+
+            // Trigger ticket email batch job
+            triggerTicketEmailJob(
+                paymentRequest.getEventId(),
+                ticketTransaction.getId(),
+                paymentRequest.getRequesterEmail()
+            );
+        }
+    } else if (newStatus == ManualPaymentStatus.VOIDED ||
+               newStatus == ManualPaymentStatus.CANCELLED) {
+        paymentRequest.setVoidReason(voidReason);
+
+        // Update ticket transaction to CANCELLED (but don't update inventory)
+        if (paymentRequest.getTicketTransactionId() != null) {
+            EventTicketTransaction ticketTransaction = eventTicketTransactionRepository
+                .findById(paymentRequest.getTicketTransactionId())
+                .orElseThrow(() -> new EntityNotFoundException("Ticket transaction not found"));
+
+            ticketTransaction.setStatus("CANCELLED");
+            ticketTransaction.setUpdatedAt(ZonedDateTime.now());
+            eventTicketTransactionRepository.save(ticketTransaction);
+        }
+    }
+
+    paymentRequest = manualPaymentRequestRepository.save(paymentRequest);
+    return convertToDTO(paymentRequest);
+}</pre>
+        </div>
+      </section>
+
+      <section id="service-layer">
+        <div class="divider"></div>
+        <h2>3. Service Layer Changes</h2>
+
+        <h3>3.1 ManualPaymentService Enhancements</h3>
+        <p>
+          <strong>File:</strong> <code class="inline">com.yourcompany.service.ManualPaymentService</code> (or equivalent)
+        </p>
+
+        <h4>New Methods Required</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Purpose</th>
+              <th>Returns</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="inline">createManualPaymentRequestWithTickets(ManualPaymentRequestDTO, List&lt;CartItemDTO&gt;)</code></td>
+              <td>Create payment request and ticket transaction atomically</td>
+              <td><code class="inline">ManualPaymentRequestDTO</code></td>
+            </tr>
+            <tr>
+              <td><code class="inline">findManualPaymentRequestWithDetails(Long id)</code></td>
+              <td>Fetch payment request with ticket transaction and items</td>
+              <td><code class="inline">ManualPaymentRequestDTO</code> with nested data</td>
+            </tr>
+            <tr>
+              <td><code class="inline">updateStatusToReceived(Long id, String receivedBy)</code></td>
+              <td>Update status and handle ticket confirmation logic</td>
+              <td><code class="inline">ManualPaymentRequestDTO</code></td>
+            </tr>
+            <tr>
+              <td><code class="inline">triggerConfirmationEmailJob(Long paymentRequestId)</code></td>
+              <td>Queue confirmation email batch job</td>
+              <td><code class="inline">void</code></td>
+            </tr>
+            <tr>
+              <td><code class="inline">triggerTicketEmailJob(Long eventId, Long transactionId, String email)</code></td>
+              <td>Queue ticket email batch job</td>
+              <td><code class="inline">void</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>3.2 TicketTransactionService Integration</h3>
+        <p>
+          <strong>File:</strong> <code class="inline">com.yourcompany.service.TicketTransactionService</code> (or equivalent)
+        </p>
+
+        <h4>Methods to Use/Create</h4>
+        <ul>
+          <li>
+            <code class="inline">createTicketTransactionForManualPayment(ManualPaymentRequestDTO, List&lt;CartItemDTO&gt;)</code>:
+            <ul>
+              <li>Creates <code class="inline">EventTicketTransaction</code> with <code class="inline">PENDING</code> status</li>
+              <li>Creates all <code class="inline">EventTicketTransactionItem</code> records</li>
+              <li>Returns created transaction ID</li>
+            </ul>
+          </li>
+          <li>
+            <code class="inline">confirmTicketTransaction(Long transactionId)</code>:
+            <ul>
+              <li>Updates status to <code class="inline">CONFIRMED</code></li>
+              <li>Updates ticket inventory</li>
+              <li>Generates QR code</li>
+              <li>Returns updated transaction</li>
+            </ul>
+          </li>
+        </ul>
+
+        <h3>3.3 QRCodeService Integration</h3>
+        <p>
+          <strong>File:</strong> <code class="inline">com.yourcompany.service.QRCodeService</code> (or equivalent)
+        </p>
+
+        <h4>Method Signature</h4>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span>QRCodeService.generateQrCode()</span>
+          </div>
+          <pre class="code-block">public String generateQrCode(
+    Long eventId,
+    Long transactionId,
+    String emailHostUrlPrefix
+) {
+    // Use existing QR code generation logic
+    // Return S3 URL or CDN URL of generated QR code image
+    // This method should already exist for Stripe flow
+}</pre>
+        </div>
+
+        <div class="callout">
+          <strong>Reuse Existing Logic:</strong> The QR code generation service should already exist for Stripe payments.
+          Reuse the same method for manual payments - it should work identically.
+        </div>
+      </section>
+
+      <section id="ticket-creation">
+        <div class="divider"></div>
+        <h2>4. Ticket Transaction Creation Logic</h2>
+
+        <h3>4.1 Transaction Reference Format</h3>
+        <p>
+          Manual payment ticket transactions must use a distinct reference format to differentiate from Stripe transactions:
+        </p>
+        <ul>
+          <li><strong>Format:</strong> <code class="inline">"MANUAL-{manualPaymentRequestId}"</code></li>
+          <li><strong>Example:</strong> <code class="inline">"MANUAL-123"</code> for payment request ID 123</li>
+          <li><strong>Purpose:</strong> Allows filtering and identification of manual payment transactions</li>
+        </ul>
+
+        <h3>4.2 Status Flow</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Stage</th>
+              <th>ManualPaymentRequest Status</th>
+              <th>EventTicketTransaction Status</th>
+              <th>QR Code</th>
+              <th>Ticket Inventory</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Request Created</td>
+              <td><code class="inline">REQUESTED</code></td>
+              <td><code class="inline">PENDING</code></td>
+              <td>Not Generated</td>
+              <td>Not Updated</td>
+            </tr>
+            <tr>
+              <td>Admin Confirms Payment</td>
+              <td><code class="inline">RECEIVED</code></td>
+              <td><code class="inline">CONFIRMED</code></td>
+              <td>Generated</td>
+              <td>Updated (quantity_sold incremented)</td>
+            </tr>
+            <tr>
+              <td>Admin Voids Request</td>
+              <td><code class="inline">VOIDED</code></td>
+              <td><code class="inline">CANCELLED</code></td>
+              <td>Not Generated</td>
+              <td>Not Updated</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>4.3 Inventory Management</h3>
+        <div class="warning">
+          <strong>CRITICAL:</strong> Ticket inventory (<code class="inline">quantity_sold</code>) must ONLY be updated when
+          payment status changes to <code class="inline">RECEIVED</code>, NOT when the request is created. This prevents
+          inventory from being held by unconfirmed payment requests.
+        </div>
+
+        <h4>Inventory Update Logic</h4>
+        <ol>
+          <li>When payment request is created: <strong>DO NOT</strong> update <code class="inline">quantity_sold</code></li>
+          <li>When payment status changes to <code class="inline">RECEIVED</code>:
+            <ul>
+              <li>For each <code class="inline">EventTicketTransactionItem</code>:</li>
+              <li>Fetch corresponding <code class="inline">EventTicketType</code></li>
+              <li>Increment <code class="inline">quantity_sold</code> by item quantity</li>
+              <li>Save ticket type</li>
+            </ul>
+          </li>
+          <li>When payment status changes to <code class="inline">VOIDED</code>/<code class="inline">CANCELLED</code>:
+            <ul>
+              <li><strong>DO NOT</strong> decrement <code class="inline">quantity_sold</code> (was never incremented)</li>
+            </ul>
+          </li>
+        </ol>
+      </section>
+
+      <section id="status-management">
+        <div class="divider"></div>
+        <h2>5. Status Management & QR Code Generation</h2>
+
+        <h3>5.1 QR Code Generation Trigger</h3>
+        <p>
+          QR codes are generated ONLY when payment status changes from <code class="inline">REQUESTED</code> to <code class="inline">RECEIVED</code>.
+        </p>
+
+        <h4>QR Code Generation Steps</h4>
+        <ol>
+          <li>Verify ticket transaction status is <code class="inline">CONFIRMED</code></li>
+          <li>Call QR code generation service with:</li>
+          <li>
+            <ul>
+              <li><code class="inline">eventId</code>: From payment request</li>
+              <li><code class="inline">transactionId</code>: Ticket transaction ID</li>
+              <li><code class="inline">emailHostUrlPrefix</code>: From application configuration</li>
+            </ul>
+          </li>
+          <li>Store generated QR code URL in <code class="inline">EventTicketTransaction.qr_code_image_url</code></li>
+          <li>Save updated ticket transaction</li>
+        </ol>
+
+        <h3>5.2 Status Transition Validation</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>From Status</th>
+              <th>To Status</th>
+              <th>Allowed?</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="inline">REQUESTED</code></td>
+              <td><code class="inline">RECEIVED</code></td>
+              <td>Yes</td>
+              <td>Update ticket to CONFIRMED, generate QR, update inventory, send ticket email</td>
+            </tr>
+            <tr>
+              <td><code class="inline">REQUESTED</code></td>
+              <td><code class="inline">VOIDED</code></td>
+              <td>Yes</td>
+              <td>Update ticket to CANCELLED, no QR, no inventory update, no email</td>
+            </tr>
+            <tr>
+              <td><code class="inline">REQUESTED</code></td>
+              <td><code class="inline">CANCELLED</code></td>
+              <td>Yes</td>
+              <td>Update ticket to CANCELLED, no QR, no inventory update, no email</td>
+            </tr>
+            <tr>
+              <td><code class="inline">RECEIVED</code></td>
+              <td><code class="inline">VOIDED</code></td>
+              <td>No</td>
+              <td>Not allowed (payment already confirmed)</td>
+            </tr>
+            <tr>
+              <td><code class="inline">RECEIVED</code></td>
+              <td><code class="inline">CANCELLED</code></td>
+              <td>No</td>
+              <td>Not allowed (payment already confirmed)</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="email-integration">
+        <div class="divider"></div>
+        <h2>6. Email Integration with Batch Jobs</h2>
+
+        <h3>6.1 Batch Job Triggering Mechanism</h3>
+        <p>
+          All email sending must be done via batch jobs, not directly from the backend service. The backend creates
+          batch job records/tasks that are processed asynchronously by the batch job project.
+        </p>
+
+        <h4>Batch Job Table Structure</h4>
+        <p>
+          If using Spring Batch, create job instances with the following metadata:
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="inline">job_type</code></td>
+              <td>String</td>
+              <td><code class="inline">MANUAL_PAYMENT_CONFIRMATION_EMAIL</code> or <code class="inline">MANUAL_PAYMENT_TICKET_EMAIL</code></td>
+            </tr>
+            <tr>
+              <td><code class="inline">payment_request_id</code></td>
+              <td>Long</td>
+              <td>Manual payment request ID</td>
+            </tr>
+            <tr>
+              <td><code class="inline">event_id</code></td>
+              <td>Long</td>
+              <td>Event ID</td>
+            </tr>
+            <tr>
+              <td><code class="inline">ticket_transaction_id</code></td>
+              <td>Long</td>
+              <td>Ticket transaction ID (for ticket email only)</td>
+            </tr>
+            <tr>
+              <td><code class="inline">recipient_email</code></td>
+              <td>String</td>
+              <td>Email address to send to</td>
+            </tr>
+            <tr>
+              <td><code class="inline">status</code></td>
+              <td>String</td>
+              <td><code class="inline">PENDING</code>, <code class="inline">PROCESSING</code>, <code class="inline">COMPLETED</code>, <code class="inline">FAILED</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>6.2 Confirmation Email Trigger</h3>
+        <p>
+          <strong>When:</strong> Immediately after manual payment request is created<br />
+          <strong>Endpoint:</strong> <code class="inline">POST /api/manual-payments/{id}/send-confirmation-email</code><br />
+          <strong>Batch Job Type:</strong> <code class="inline">MANUAL_PAYMENT_CONFIRMATION_EMAIL</code>
+        </p>
+
+        <h4>Job Parameters</h4>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span>Batch Job Parameters (JSON)</span>
+          </div>
+          <pre class="code-block">{
+  "paymentRequestId": 123,
+  "eventId": 52,
+  "recipientEmail": "user@example.com",
+  "recipientName": "John Doe",
+  "paymentMethod": "Zelle",
+  "amount": 150.00,
+  "paymentInstructions": "Send payment to zelle@example.com",
+  "eventTitle": "Annual Gala",
+  "eventDate": "2026-02-15",
+  "eventLocation": "Convention Center"
+}</pre>
+        </div>
+
+        <h3>6.3 Ticket Email Trigger</h3>
+        <p>
+          <strong>When:</strong> When admin marks payment as <code class="inline">RECEIVED</code><br />
+          <strong>Batch Job Type:</strong> <code class="inline">MANUAL_PAYMENT_TICKET_EMAIL</code>
+        </p>
+
+        <h4>Job Parameters</h4>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span>Batch Job Parameters (JSON)</span>
+          </div>
+          <pre class="code-block">{
+  "paymentRequestId": 123,
+  "eventId": 52,
+  "ticketTransactionId": 456,
+  "recipientEmail": "user@example.com",
+  "recipientName": "John Doe",
+  "eventTitle": "Annual Gala",
+  "eventDate": "2026-02-15",
+  "eventLocation": "Convention Center",
+  "qrCodeImageUrl": "https://s3.amazonaws.com/bucket/qr-codes/event-52-transaction-456.png",
+  "ticketItems": [
+    {
+      "ticketTypeName": "General Admission",
+      "quantity": 2,
+      "pricePerUnit": 50.00,
+      "totalAmount": 100.00
+    },
+    {
+      "ticketTypeName": "VIP",
+      "quantity": 1,
+      "pricePerUnit": 50.00,
+      "totalAmount": 50.00
+    }
+  ],
+  "totalAmount": 150.00,
+  "transactionReference": "MANUAL-123"
+}</pre>
+        </div>
+
+        <h3>6.4 Email Host URL Prefix</h3>
+        <p>
+          The <code class="inline">emailHostUrlPrefix</code> is required for QR code generation and email links.
+          This should be retrieved from application configuration (environment variable or config file).
+        </p>
+        <ul>
+          <li><strong>Development:</strong> <code class="inline">http://localhost:3000</code></li>
+          <li><strong>Production:</strong> <code class="inline">https://www.yourdomain.com</code></li>
+        </ul>
+
+        <div class="callout">
+          <strong>Configuration:</strong> Store <code class="inline">emailHostUrlPrefix</code> in application properties:
+          <code class="inline">app.email.host-url-prefix</code> or environment variable <code class="inline">EMAIL_HOST_URL_PREFIX</code>.
+        </div>
+      </section>
+
+      <section id="error-handling">
+        <div class="divider"></div>
+        <h2>7. Error Handling & Validation</h2>
+
+        <h3>7.1 Validation Rules</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Validation</th>
+              <th>Error Code</th>
+              <th>HTTP Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Event not found or inactive</td>
+              <td><code class="inline">EVENT_NOT_FOUND</code></td>
+              <td>404</td>
+            </tr>
+            <tr>
+              <td>Cart is empty</td>
+              <td><code class="inline">CART_EMPTY</code></td>
+              <td>400</td>
+            </tr>
+            <tr>
+              <td>Ticket type not found</td>
+              <td><code class="inline">TICKET_TYPE_NOT_FOUND</code></td>
+              <td>404</td>
+            </tr>
+            <tr>
+              <td>Insufficient ticket inventory</td>
+              <td><code class="inline">INSUFFICIENT_INVENTORY</code></td>
+              <td>400</td>
+            </tr>
+            <tr>
+              <td>Amount mismatch (calculated vs provided)</td>
+              <td><code class="inline">AMOUNT_MISMATCH</code></td>
+              <td>400</td>
+            </tr>
+            <tr>
+              <td>Invalid status transition</td>
+              <td><code class="inline">INVALID_STATUS_TRANSITION</code></td>
+              <td>400</td>
+            </tr>
+            <tr>
+              <td>Tenant ID mismatch</td>
+              <td><code class="inline">TENANT_MISMATCH</code></td>
+              <td>403</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>7.2 Transaction Rollback</h3>
+        <p>
+          All operations must be wrapped in database transactions. If any step fails, roll back all changes:
+        </p>
+        <ul>
+          <li>Payment request creation</li>
+          <li>Ticket transaction creation</li>
+          <li>Transaction item creation</li>
+          <li>Status updates</li>
+          <li>Inventory updates</li>
+        </ul>
+
+        <h3>7.3 Idempotency</h3>
+        <p>
+          The following operations must be idempotent (safe to retry):
+        </p>
+        <ul>
+          <li>Confirmation email sending endpoint</li>
+          <li>Ticket email sending (batch job should check if email already sent)</li>
+          <li>QR code generation (should return existing URL if already generated)</li>
+        </ul>
+      </section>
+
+      <section id="testing">
+        <div class="divider"></div>
+        <h2>8. Testing Requirements</h2>
+
+        <h3>8.1 Unit Tests</h3>
+        <ul>
+          <li>Test payment request creation with valid cart</li>
+          <li>Test payment request creation with invalid cart (empty, invalid ticket types)</li>
+          <li>Test ticket transaction creation with PENDING status</li>
+          <li>Test transaction item creation for each cart item</li>
+          <li>Test status transition from REQUESTED to RECEIVED</li>
+          <li>Test status transition from REQUESTED to VOIDED</li>
+          <li>Test invalid status transitions (RECEIVED to VOIDED)</li>
+          <li>Test QR code generation trigger</li>
+          <li>Test inventory update on RECEIVED status</li>
+          <li>Test inventory NOT updated on VOIDED status</li>
+        </ul>
+
+        <h3>8.2 Integration Tests</h3>
+        <ul>
+          <li>Test complete flow: Create request → Create tickets → Update to RECEIVED → Generate QR → Send email</li>
+          <li>Test batch job creation for confirmation email</li>
+          <li>Test batch job creation for ticket email</li>
+          <li>Test multi-tenant isolation (requests from different tenants)</li>
+          <li>Test concurrent payment requests for same ticket type</li>
+        </ul>
+
+        <h3>8.3 API Endpoint Tests</h3>
+        <ul>
+          <li>Test POST /api/manual-payments with valid request</li>
+          <li>Test POST /api/manual-payments with invalid data</li>
+          <li>Test GET /api/manual-payments/{id} returns complete data</li>
+          <li>Test POST /api/manual-payments/{id}/send-confirmation-email (idempotent)</li>
+          <li>Test PATCH /api/manual-payments/{id} status update</li>
+          <li>Test error responses and status codes</li>
+        </ul>
+      </section>
+
+      <div class="divider"></div>
+
+      <section id="summary">
+        <h2>9. Implementation Summary</h2>
+        <ol>
+          <li>
+            <strong>Enhance POST /api/manual-payments:</strong>
+            <ul>
+              <li>Accept <code class="inline">cart</code> array in request body</li>
+              <li>Create <code class="inline">EventTicketTransaction</code> with <code class="inline">PENDING</code> status</li>
+              <li>Create <code class="inline">EventTicketTransactionItem</code> records</li>
+              <li>Link payment request to ticket transaction</li>
+              <li>Trigger confirmation email batch job</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Create GET /api/manual-payments/{id}:</strong>
+            <ul>
+              <li>Return payment request with nested ticket transaction and items</li>
+              <li>Include event details</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Create POST /api/manual-payments/{id}/send-confirmation-email:</strong>
+            <ul>
+              <li>Trigger confirmation email batch job</li>
+              <li>Make idempotent</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Enhance PATCH /api/manual-payments/{id}:</strong>
+            <ul>
+              <li>When status changes to <code class="inline">RECEIVED</code>:</li>
+              <li>Update ticket transaction to <code class="inline">CONFIRMED</code></li>
+              <li>Update ticket inventory</li>
+              <li>Generate QR code</li>
+              <li>Trigger ticket email batch job</li>
+            </ul>
+          </li>
+        </ol>
+      </section>
+
+      <footer>
+        <p>
+          Generated for <code class="inline">documentation/domain_agnostic_payment/fee_free_direct_manual_pay_like_zelle/success_flow/backend_implementation.html</code>
+        </p>
+        <p>
+          <strong>Backend Project:</strong> E:\project_workspace\malayalees-us-site-boot<br />
+          <strong>Reference:</strong> See batch job implementation guide for email job details
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>

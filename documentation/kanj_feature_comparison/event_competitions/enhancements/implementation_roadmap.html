@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Competitions — Implementation Roadmap (v2.1)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-header { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; padding: 12px 20px; margin: -20px -20px 18px -20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .section-container.usage { background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%); border-left-color: #7b1fa2; }
+        .section-container.usage .section-header { background: linear-gradient(135deg, #7b1fa2 0%, #6a1b9a 100%); }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .checklist { list-style: none; margin-left: 0; padding-left: 0; }
+        .checklist li { padding: 6px 0 6px 28px; position: relative; }
+        .checklist li::before { content: "☐"; position: absolute; left: 0; color: #0066cc; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>Event Competitions — Implementation Roadmap (v2.1)</h1>
+    <p class="doc-meta">
+        <strong>Date:</strong> June 6, 2026 &nbsp;|&nbsp; <strong>Index:</strong> <a href="generic_enhancement_prd.html">generic_enhancement_prd.html</a><br>
+        <strong>Repos:</strong> <code>mosc-temp</code> · <code>malayalees-us-site-boot</code> · <code>event-site-manager-batch-jobs</code> · canonical SQL in mosc-temp
+    </p>
+
+    <div class="lead">
+        <p>Cross-repo sprint order for phases <strong>E0–E5</strong>. Assumes v2.0 baseline (P0–P3) is deployed. Each phase should be shippable independently where noted.</p>
+    </div>
+
+    <h2>1. Phase overview</h2>
+    <table>
+        <thead><tr><th>Phase</th><th>Sprint focus</th><th>Repos</th><th>Shippable?</th></tr></thead>
+        <tbody>
+            <tr><td><strong>E0</strong></td><td>Documentation pack</td><td>mosc-temp</td><td>Yes — docs only</td></tr>
+            <tr><td><strong>E1</strong></td><td>Schema + group member API + validation</td><td>boot + SQL</td><td>Yes — backward compatible API</td></tr>
+            <tr><td><strong>E2</strong></td><td>Detail page, hub links, eligibility UX</td><td>mosc-temp</td><td>Yes — needs E1 DTO fields</td></tr>
+            <tr><td><strong>E3</strong></td><td>Multi-child, MIXED actor, team roster</td><td>mosc-temp + boot</td><td>Yes — feature-flag optional</td></tr>
+            <tr><td><strong>E4</strong></td><td>Extended podium, winners UI, champion</td><td>All</td><td>Yes</td></tr>
+            <tr><td><strong>E5</strong></td><td>Batch emails, CSV, polish</td><td>batch + mosc-temp</td><td>Optional</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. E0 — Documentation (complete)</h2>
+    <ul>
+        <li>8 enhancement PRD HTML files under <code>enhancements/</code></li>
+        <li>Companion banner on <code>generic_prd.html</code></li>
+        <li>Stakeholder defaults documented in <a href="generic_enhancement_prd.html#open-questions">generic enhancement index</a></li>
+    </ul>
+
+    <h2>3. E1 — Schema + API foundation</h2>
+    <div class="section-container">
+        <div class="section-header">Order of work</div>
+        <ol>
+            <li>Liquibase changelog v2.1 in <code>malayalees-us-site-boot</code></li>
+            <li>Sync <code>Latest_Schema_Post__Blob_Claude_12.sql</code></li>
+            <li>Extend existing entity/DTO/mapper for new columns</li>
+            <li>Generate <code>EventCompetitionGroupMember*</code> stack</li>
+            <li>Enhance <code>EventCompetitionRegistrationServiceImpl</code> validation</li>
+            <li>Implement <code>POST .../team</code>, <code>POST .../bulk</code>, eligibility GET</li>
+            <li>Integration tests + OpenAPI sync to mosc-temp</li>
+            <li>Deploy backend before frontend E2+</li>
+        </ol>
+    </div>
+
+    <h2>4. E2 — Per-competition UX</h2>
+    <div class="section-container usage">
+        <div class="section-header">Frontend (mosc-temp)</div>
+        <ol>
+            <li>Update DTOs in <code>src/types/index.ts</code></li>
+            <li>Add proxy <code>event-competition-group-members</code></li>
+            <li>Create <code>[compId]/page.tsx</code> + <code>CompetitionDetailPage.tsx</code></li>
+            <li>Update <code>CompetitionHub.tsx</code> / <code>CompetitionCatalog.tsx</code></li>
+            <li>Add <code>CompetitionEligibilityBadge.tsx</code> + server action pre-check</li>
+            <li>Register page: read <code>?competitionId=</code></li>
+            <li>Extend admin <code>EventCompetitionForm</code> with v2.1 fields</li>
+        </ol>
+    </div>
+
+    <h2>5. E3 — Registration flows</h2>
+    <ol>
+        <li>Refactor <code>RegistrationWizard.tsx</code> — actor step (MIXED)</li>
+        <li>Implement <code>ChildParticipantManager.tsx</code></li>
+        <li>Implement <code>TeamRosterForm.tsx</code> + wire to <code>POST /team</code></li>
+        <li>Extend Stripe metadata + webhook for TEAM/BULK</li>
+        <li>Admin registration table — roster expand</li>
+        <li>Manual QA: parent 2 children × 2 competitions; soccer team 5–11 roster</li>
+    </ol>
+
+    <h2>6. E4 — Results &amp; podium</h2>
+    <ol>
+        <li>Settings form: <code>pointsFourth</code>, <code>defaultMaxPlacements</code></li>
+        <li>Results grid: placement presets, auto points, max placement guard</li>
+        <li>Backend: publish validation + optional bulk publish endpoint</li>
+        <li><code>PublishedWinnersView</code> → <code>CompetitionPodiumView</code></li>
+        <li>Champion rollup (if <code>champion_enabled</code>) — optional sub-task</li>
+    </ol>
+
+    <h2>7. E5 — Batch &amp; polish</h2>
+    <ol>
+        <li>Team confirmation email job</li>
+        <li>Winners-by-competition email</li>
+        <li>CSV export job + admin trigger</li>
+        <li>Optional: <code>/admin/.../competitions/[compId]/registrations</code> page</li>
+    </ol>
+
+    <h2>8. Dependency graph</h2>
+    <pre>E0 (docs)
+  └── E1 (schema + API)
+        ├── E2 (detail UX) ──► E3 (registration flows)
+        │                         └── E4 (results)
+        │                               └── E5 (batch)
+        └── Frontend DTO/proxy updates parallel with E2</pre>
+
+    <h2>9. Test checklist</h2>
+
+    <h3>Database &amp; API (E1)</h3>
+    <ul class="checklist">
+        <li>Liquibase applies cleanly on empty and populated DB</li>
+        <li>Group member CRUD + unique (registration, participant) constraint</li>
+        <li>Eligibility rejects age/grade out of bounds</li>
+        <li>Team POST creates leader + members atomically</li>
+        <li>Team POST fails when roster &lt; min_group_size</li>
+        <li>Bulk POST creates N registrations for one participant</li>
+    </ul>
+
+    <h3>Public UX (E2–E3)</h3>
+    <ul class="checklist">
+        <li>Hub cards navigate to competition detail</li>
+        <li>Detail shows rules_markdown and discipline badge</li>
+        <li>Register deep-link skips catalog when competitionId valid</li>
+        <li>MIXED event shows actor selection step</li>
+        <li>Parent can switch between two child profiles and register each</li>
+        <li>Team captain completes roster within min/max; team name required when flag set</li>
+        <li>Stripe checkout confirms all registrations in metadata</li>
+        <li>My registrations lists per-competition entries with team name</li>
+    </ul>
+
+    <h3>Admin &amp; results (E4)</h3>
+    <ul class="checklist">
+        <li>Admin form saves all v2.1 competition fields</li>
+        <li>Results grid blocks placement &gt; max_placements</li>
+        <li>4th place receives points_fourth when configured</li>
+        <li>Duplicate placement rejected on publish</li>
+        <li>Public winners show podium grouped by competition</li>
+        <li>PRIVACY_SAFE display mode masks youth names</li>
+    </ul>
+
+    <h3>Batch (E5)</h3>
+    <ul class="checklist">
+        <li>Team confirmation email includes full roster</li>
+        <li>Winners digest sent for single competition publish</li>
+        <li>CSV export includes group members column</li>
+    </ul>
+
+    <h3>Regression</h3>
+    <ul class="checklist">
+        <li><code>is_competition_event=false</code> events unchanged (ticket flow)</li>
+        <li>Existing individual registration wizard still works</li>
+        <li>Mobile browser proxy calls succeed (middleware ignoredRoutes)</li>
+    </ul>
+
+    <h2>10. Key files by repo</h2>
+    <table>
+        <thead><tr><th>Repo</th><th>Primary files</th></tr></thead>
+        <tbody>
+            <tr><td><code>mosc-temp</code></td><td><code>RegistrationWizard.tsx</code>, <code>CompetitionHub.tsx</code>, <code>EventCompetitionForm.tsx</code>, <code>CompetitionResultsEntryGrid.tsx</code>, <code>src/types/index.ts</code>, <code>competitions/[compId]/page.tsx</code></td></tr>
+            <tr><td><code>malayalees-us-site-boot</code></td><td><code>EventCompetitionRegistrationServiceImpl.java</code>, new <code>EventCompetitionGroupMember*</code>, Liquibase v2.1</td></tr>
+            <tr><td><code>event-site-manager-batch-jobs</code></td><td><code>EventCompetition*EmailJobService</code>, export job</td></tr>
+            <tr><td>Canonical SQL</td><td><code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></td></tr>
+        </tbody>
+    </table>
+
+    <div class="info-box">
+        <strong>Deploy order:</strong> Backend E1 → Frontend E2/E3 → Backend E4 validation tweaks → Frontend E4 → Batch E5 (optional).
+    </div>
+
+</body>
+</html>
