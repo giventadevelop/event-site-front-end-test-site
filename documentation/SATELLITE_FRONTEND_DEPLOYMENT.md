@@ -6,7 +6,8 @@ This repository is deployed as a **Clerk satellite** frontend at:
 |------|--------|
 | Production URL | `https://www.event-site-front-end-test-site.com` |
 | Amplify app | `d1502cffqchuun` (us-east-2, Web Compute) |
-| Branch | `main` |
+| Production branch | `release/v1.0.0` (Amplify **PRODUCTION**; `www` custom domain) |
+| Development branch | `main` (Amplify **DEVELOPMENT** — not wired to custom domain) |
 | Primary auth | `https://www.event-site-manager.com` |
 | Backend API | `https://event-site-manager-prod.com` |
 | Tenant | `tenant_demo_002` |
@@ -28,10 +29,10 @@ Key sections:
 
 ```powershell
 # Bulk push .env.production to Amplify (from repo root)
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/set-amplify-env-vars.ps1 -EnvFile .env.production -BranchName main -AppId d1502cffqchuun -Region us-east-2
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/set-amplify-env-vars.ps1 -EnvFile .env.production -BranchName release/v1.0.0 -AppId d1502cffqchuun -Region us-east-2
 
 # Trigger production redeploy
-aws amplify start-job --app-id d1502cffqchuun --branch-name main --job-type RELEASE --region us-east-2
+aws amplify start-job --app-id d1502cffqchuun --branch-name release/v1.0.0 --job-type RELEASE --region us-east-2
 ```
 
 ## Code conventions
