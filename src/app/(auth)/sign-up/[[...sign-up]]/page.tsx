@@ -104,9 +104,8 @@ export default function SignUpPage() {
         return;
       }
 
-      // If on satellite domain, redirect to primary domain with return URL
-      const satelliteDomain = process.env.NEXT_PUBLIC_CLERK_DOMAIN || 'mosc-temp.com';
-      if (hostname.includes('mosc-temp.com') || hostname.includes(satelliteDomain.replace('www.', ''))) {
+      const isSatellite = process.env.NEXT_PUBLIC_CLERK_IS_SATELLITE === 'true' && !isPrimary;
+      if (isSatellite) {
         setShouldRedirect(true);
         // Use Clerk's redirectToSignUp — it reads isSatellite/domain/signUpUrl from
         // the ClerkProvider and adds __clerk_satellite_url so the primary returns

@@ -38,7 +38,7 @@ export default async function RootLayout({
   debugLog('[LAYOUT] Root layout executing');
   let isTenantAdmin = false;
   const primaryDomain = process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || process.env.AMPLIFY_NEXT_PUBLIC_PRIMARY_DOMAIN || 'www.event-site-manager.com';
-  const satelliteDomain = process.env.NEXT_PUBLIC_CLERK_DOMAIN || process.env.AMPLIFY_NEXT_PUBLIC_CLERK_DOMAIN || 'www.mosc-temp.com';
+  const satelliteDomain = process.env.NEXT_PUBLIC_CLERK_DOMAIN || process.env.AMPLIFY_NEXT_PUBLIC_CLERK_DOMAIN || '';
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.AMPLIFY_NEXT_PUBLIC_APP_URL || '';
   let clerkProps: { isSatellite?: boolean; domain?: string; signInUrl?: string; signUpUrl?: string; allowedRedirectOrigins?: string[] } = appUrl ? { allowedRedirectOrigins: [appUrl] } : {};
 
@@ -85,8 +85,10 @@ export default async function RootLayout({
   const isPublicRoute = !pathname || publicRoutePatterns.some(pattern => pattern.test(pathname));
 
   // Detect if this is a satellite domain (check if hostname matches satellite domain or APP_URL)
-  const isSatellite = hostname.includes('mosc-temp.com') ||
-    (satelliteDomain && hostname.includes(satelliteDomain.replace('www.', '')));
+  const isSatellite =
+    process.env.NEXT_PUBLIC_CLERK_IS_SATELLITE === 'true' &&
+    Boolean(satelliteDomain) &&
+    hostname.includes(satelliteDomain.replace('www.', ''));
 
   // Satellite domains must redirect to primary domain for authentication
   // Clerk v7: proxyUrl removed — frontendApiProxy in clerkMiddleware handles it.

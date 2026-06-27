@@ -907,9 +907,7 @@ export default function Header({ hideMenuItems = false, variant = 'charity', isT
       return;
     }
 
-    // Only redirect to primary sign-out when we're on a known satellite domain (mosc-temp.com).
-    // Do not use NEXT_PUBLIC_CLERK_DOMAIN for this check - it can be set to primary by mistake.
-    const isSatellite = hostname.includes('mosc-temp.com');
+    const isSatellite = process.env.NEXT_PUBLIC_CLERK_IS_SATELLITE === 'true' && !isPrimary;
     if (isSatellite) {
       console.log('[Header] Satellite domain detected, redirecting to primary domain sign-out...');
       const primarySignOutUrl = `https://${primaryHost}/auth/signout-redirect`;
