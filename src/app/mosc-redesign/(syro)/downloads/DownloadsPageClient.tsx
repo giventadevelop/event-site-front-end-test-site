@@ -18,6 +18,7 @@ import {
   AlertDialogFooter,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { formatDownloadCardTitle, getDownloadCardSubtitle } from '@/lib/downloads/formatDownloadCardTitle';
 
 const BANNER_DESCRIPTION =
   'Official documents available for download. Browse, filter, and download.';
@@ -43,40 +44,13 @@ function getFolderPath(item: TreeItem) {
   return item.pathSegments.slice(0, -1).join(' / ');
 }
 
-const OFFICIAL_DOCUMENT_DISPLAY_EXTENSIONS = new Set([
-  'pdf',
-  'doc',
-  'docx',
-  'xls',
-  'xlsx',
-  'csv',
-  'ppt',
-  'pptx',
-  'txt',
-  'rtf',
-  'png',
-  'jpg',
-  'jpeg',
-  'gif',
-  'webp',
-  'svg',
-  'zip',
-  'rar',
-  '7z',
-]);
-
-/** Card title: drop known file extension (e.g. `.pdf`) for display only. */
-function stripFileExtensionForDisplay(fileName: string): string {
-  const trimmed = fileName.trim();
-  const lastDot = trimmed.lastIndexOf('.');
-  if (lastDot <= 0 || lastDot === trimmed.length - 1) {
-    return trimmed;
-  }
-  const ext = trimmed.slice(lastDot + 1).toLowerCase();
-  if (OFFICIAL_DOCUMENT_DISPLAY_EXTENSIONS.has(ext)) {
-    return trimmed.slice(0, lastDot);
-  }
-  return trimmed;
+function getCardSubtitle(item: TreeItem) {
+  return getDownloadCardSubtitle({
+    pathSegments: item.pathSegments,
+    fileName: item.fileName,
+    title: item.title,
+    categoryLabel: item.categoryLabel,
+  });
 }
 
 const DIALOG_FOOTER_BUTTON_BASE =
@@ -216,8 +190,8 @@ function DownloadCard({
     setThumbFailed(false);
   }, [displayThumb]);
 
-  const displayTitle = stripFileExtensionForDisplay(file.fileName);
-  const folderPath = getFolderPath(file);
+  const displayTitle = formatDownloadCardTitle(file.title?.trim() || file.fileName);
+  const cardSubtitle = getCardSubtitle(file);
   const displayIndex = String(index + 1).padStart(2, '0');
   const metaLine = [file.categoryLabel, file.officialDocumentYear ? `Year ${file.officialDocumentYear}` : null]
     .filter(Boolean)
@@ -236,7 +210,7 @@ function DownloadCard({
           <h3 className="institution-entry-card__title font-syro-display text-base font-semibold leading-snug break-words lg:text-lg">
             {displayTitle}
           </h3>
-          <p className="institution-entry-card__location mt-1 font-syro-primary text-sm leading-snug break-words">{folderPath}</p>
+          <p className="institution-entry-card__location mt-1 font-syro-primary text-sm leading-snug break-words">{cardSubtitle}</p>
         </div>
       </header>
 
@@ -265,9 +239,11 @@ function DownloadCard({
         </div>
       </div>
 
-      <div className="download-entry-card__details flex h-[4.75rem] shrink-0 flex-col justify-center px-4 py-2">
+      <div className="download-entry-card__details flex min-h-[4.75rem] flex-col justify-start px-4 py-2.5">
         {metaLine ? (
-          <p className="font-syro-primary text-xs font-semibold uppercase tracking-wide leading-tight text-syro-blue line-clamp-1">{metaLine}</p>
+          <p className="font-syro-primary text-xs font-semibold uppercase tracking-wide leading-snug text-syro-blue line-clamp-2 break-words">
+            {metaLine}
+          </p>
         ) : null}
         {file.description ? (
           <p className={`font-syro-primary text-sm leading-snug text-syro-dark-gray lg:text-base ${metaLine ? 'mt-1' : ''} line-clamp-2`}>

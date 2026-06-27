@@ -1,4 +1,5 @@
-import type { EventMediaDTO } from '@/types';
+import type { EventDetailsDTO, EventMediaDTO } from '@/types';
+import { isRecurringEvent, getNextOccurrenceDate } from '@/lib/eventUtils';
 import { isAwsPresignedQueryUrl, isPresignedUrlExpired } from '@/lib/officialDocumentDownload';
 
 /** Event media row as returned by the API (camelCase and snake_case). */
@@ -107,11 +108,65 @@ export function getHeroMediaDurationMs(media: HeroMediaRow): number {
   return sec != null && sec > 0 ? Math.max(1000, Math.min(600000, sec * 1000)) : 8000;
 }
 
+/** True when the linked event is active and still upcoming (start today or later; recurring uses next occurrence). */
+export function isUpcomingEventForHero(event: EventDetailsDTO): boolean {
+  if (event.isActive === false) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (isRecurringEvent(event)) {
+    const next = getNextOccurrenceDate(event, today);
+    if (!next) return false;
+    next.setHours(0, 0, 0, 0);
+    return next.getTime() >= today.getTime();
+  }
+
+  if (!event.startDate) return false;
+  const [year, month, day] = event.startDate.split('-').map(Number);
+  if (!year || !month || !day) return false;
+  const start = new Date(year, month - 1, day);
+  start.setHours(0, 0, 0, 0);
+  return start.getTime() >= today.getTime();
+}
+
+async function fetchEventDetailsById(eventId: number): Promise<EventDetailsDTO | null> {
+  try {
+    const res = await fetch(`/api/proxy/event-details/${eventId}`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    return (await res.json()) as EventDetailsDTO;
+  } catch {
+    return null;
+  }
+}
+
+/** Resolve which event IDs from hero media rows are upcoming (parallel lookup, deduped). */
+async function resolveUpcomingEventIdsForHeroMedia(mediaList: HeroMediaRow[]): Promise<Set<number>> {
+  const eventIds = [
+    ...new Set(
+      mediaList
+        .map((m) => m.eventId ?? m.event_id)
+        .filter((id): id is number => id != null && typeof id === 'number')
+    ),
+  ];
+
+  const upcomingIds = new Set<number>();
+  await Promise.all(
+    eventIds.map(async (eventId) => {
+      const event = await fetchEventDetailsById(eventId);
+      if (event && isUpcomingEventForHero(event)) {
+        upcomingIds.add(eventId);
+      }
+    })
+  );
+  return upcomingIds;
+}
+
 const HERO_FETCH_PAGE_SIZE = 100;
 
 /**
- * Load all homepage hero candidates (isHeroImage OR isHomePageHeroImage), sorted by displayOrder ascending.
- * Includes event-linked and standalone media — matches Admin → Media “Hero images only” expectations.
+ * Load homepage hero candidates: hero-flagged media for upcoming events only,
+ * sorted by displayOrder ascending. Excludes past events and standalone media.
  */
 export async function fetchHomepageHeroMediaList(tenantId: string): Promise<HeroMediaRow[]> {
   const seenIds = new Set<number>();
@@ -143,5 +198,11 @@ export async function fetchHomepageHeroMediaList(tenantId: string): Promise<Hero
   }
 
   merged.sort(compareHeroMediaByDisplayOrder);
-  return merged;
+
+  const upcomingEventIds = await resolveUpcomingEventIdsForHeroMedia(merged);
+  return merged.filter((item) => {
+    const eventId = item.eventId ?? item.event_id;
+    if (eventId == null) return false;
+    return upcomingEventIds.has(eventId);
+  });
 }

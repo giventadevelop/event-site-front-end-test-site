@@ -10,6 +10,7 @@ import {
   fetchHomepageHeroMediaList,
   getHeroMediaDurationMs,
   getHeroSliderImageUrl,
+  isUpcomingEventForHero,
   type HeroMediaRow,
 } from '@/lib/hero/heroSliderMedia';
 import { useDeferredFetch } from '@/hooks/usePageReady';
@@ -271,6 +272,9 @@ const DynamicHeroImage: React.FC<{
             continue;
           }
           const linkedEvent = await resolveEventForMedia(media, eventById);
+          if (!linkedEvent || !isUpcomingEventForHero(linkedEvent)) {
+            continue;
+          }
           imageUrls.push(url);
           durations.push(getHeroMediaDurationMs(media));
           slideEvents.push(linkedEvent);
