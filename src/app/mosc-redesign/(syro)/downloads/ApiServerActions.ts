@@ -6,6 +6,7 @@ import type { EventMediaDTO } from '@/types';
 import { parseHierarchyDescription } from '@/lib/officialDocumentHierarchy';
 import { resolveOfficialDocumentDownloadUrl } from '@/lib/officialDocumentDownload';
 import { matchesDownloadSearchQuery } from '@/lib/downloads/downloadSearch';
+import { deduplicateOfficialDocumentTreeItems } from '@/lib/downloads/deduplicateOfficialDocuments';
 import {
   buildOfficialDocumentThumbnailCacheKey,
   getEventMediaDisplayThumbnailUrl,
@@ -168,6 +169,37 @@ function extractYearOptionsFromDocs(docs: EventMediaDTO[], categoryId?: number):
   return [...years].sort((a, b) => b - a);
 }
 
+async function fetchOfficialDocumentCategoryOptionsServer(): Promise<
+  Array<{ id: number; slug: string; displayName: string }>
+> {
+  try {
+    const catParams = new globalThis.URLSearchParams();
+    catParams.append('tenantId.equals', getTenantId());
+    catParams.append('isActive.equals', 'true');
+    catParams.append('sort', 'sortOrder,asc');
+    catParams.append('size', '200');
+    const catsUrl = `${getApiBaseUrl()}/api/official-document-categories?${catParams.toString()}`;
+    const catsRes = await fetchWithJwtRetry(catsUrl, { cache: 'no-store' });
+    const catJson = catsRes.ok ? await catsRes.json() : [];
+    const catRaw = Array.isArray(catJson) ? catJson : Array.isArray(catJson?.content) ? catJson.content : [];
+    return (catRaw as Array<Record<string, unknown>>)
+      .map((row) => ({
+        id: Number(row.id),
+        slug: String(row.slug ?? ''),
+        displayName: String(row.displayName ?? row.display_name ?? row.slug ?? ''),
+      }))
+      .filter((x) => Number.isFinite(x.id) && x.id > 0);
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchPublicOfficialDocumentCategoriesServer(): Promise<
+  Array<{ id: number; slug: string; displayName: string }>
+> {
+  return fetchOfficialDocumentCategoryOptionsServer();
+}
+
 async function fetchPublicOfficialDocumentYearOptionsServer(input?: {
   categoryId?: number;
   docs?: EventMediaDTO[];
@@ -224,33 +256,17 @@ export async function fetchPublicOfficialDocumentsTreeServer(input?: {
         return String(a.title || '').localeCompare(String(b.title || ''));
       });
 
-      const totalElements = filteredDocs.length;
+      const dedupedDocs = deduplicateOfficialDocumentTreeItems(filteredDocs.map(mapEventMediaToTreeItem));
+      const totalElements = dedupedDocs.length;
       const totalPages = Math.max(1, Math.ceil(totalElements / size));
       const currentPage = Math.min(page, totalPages - 1);
-      const slice = filteredDocs.slice(currentPage * size, currentPage * size + size);
-      const content = slice.map(mapEventMediaToTreeItem);
+      const content = dedupedDocs.slice(currentPage * size, currentPage * size + size);
 
-      const [yearOptions, allYearOptions] = await Promise.all([
+      const [yearOptions, allYearOptions, categoryOptions] = await Promise.all([
         fetchPublicOfficialDocumentYearOptionsServer({ categoryId: input?.categoryId }),
         fetchPublicOfficialDocumentYearOptionsServer(),
+        fetchOfficialDocumentCategoryOptionsServer(),
       ]);
-
-      const catParams = new globalThis.URLSearchParams();
-      catParams.append('tenantId.equals', getTenantId());
-      catParams.append('isActive.equals', 'true');
-      catParams.append('sort', 'sortOrder,asc');
-      catParams.append('size', '200');
-      const catsUrl = `${getApiBaseUrl()}/api/official-document-categories?${catParams.toString()}`;
-      const catsRes = await fetchWithJwtRetry(catsUrl, { cache: 'no-store' });
-      const catJson = catsRes.ok ? await catsRes.json() : [];
-      const catRaw = Array.isArray(catJson) ? catJson : Array.isArray(catJson?.content) ? catJson.content : [];
-      const categoryOptions = (catRaw as Array<Record<string, unknown>>)
-        .map((row) => ({
-          id: Number(row.id),
-          slug: String(row.slug ?? ''),
-          displayName: String(row.displayName ?? row.display_name ?? row.slug ?? ''),
-        }))
-        .filter((x) => Number.isFinite(x.id) && x.id > 0);
 
       return {
         content,
@@ -264,67 +280,42 @@ export async function fetchPublicOfficialDocumentsTreeServer(input?: {
       };
     }
 
-    const baseParams = new globalThis.URLSearchParams();
-    baseParams.set('tenantId', tenantId);
-    if (input?.categoryId) {
-      baseParams.set('officialDocumentCategoryId', String(input.categoryId));
-    }
-    if (input?.year) {
-      baseParams.set('officialDocumentYear', String(input.year));
-    }
-    baseParams.set('page', String(page));
-    baseParams.set('size', String(size));
+    const allDocs = await fetchAllPublicOfficialDocumentsRaw({
+      categoryId: input?.categoryId,
+    });
+    const filteredDocs = allDocs.filter((doc) => {
+      if (input?.year) {
+        const item = mapEventMediaToTreeItem(doc);
+        if (item.officialDocumentYear !== input.year) {
+          return false;
+        }
+      }
+      return true;
+    });
 
-    const docsUrl = buildPublicOfficialDocumentsUrl(baseParams);
+    filteredDocs.sort((a, b) => {
+      const pa = a.displayPriority ?? a.priorityRanking ?? 999999;
+      const pb = b.displayPriority ?? b.priorityRanking ?? 999999;
+      if (pa !== pb) return pa - pb;
+      return String(a.title || '').localeCompare(String(b.title || ''));
+    });
 
-    const [docsRes, yearOptions, allYearOptions] = await Promise.all([
-      fetchWithJwtRetry(docsUrl, { cache: 'no-store' }),
+    const dedupedDocs = deduplicateOfficialDocumentTreeItems(filteredDocs.map(mapEventMediaToTreeItem));
+    const totalElements = dedupedDocs.length;
+    const totalPages = Math.max(1, Math.ceil(totalElements / size));
+    const currentPage = Math.min(page, totalPages - 1);
+    const content = dedupedDocs.slice(currentPage * size, currentPage * size + size);
+
+    const [yearOptions, allYearOptions, categoryOptions] = await Promise.all([
       fetchPublicOfficialDocumentYearOptionsServer({ categoryId: input?.categoryId }),
       fetchPublicOfficialDocumentYearOptionsServer(),
+      fetchOfficialDocumentCategoryOptionsServer(),
     ]);
-
-    if (!docsRes.ok) {
-      return {
-        content: [],
-        totalElements: 0,
-        totalPages: 0,
-        page,
-        size,
-        categoryOptions: [],
-        yearOptions,
-        allYearOptions,
-      };
-    }
-
-    const docsRaw = (await docsRes.json()) as EventMediaDTO[];
-    const docsList = Array.isArray(docsRaw) ? docsRaw : [];
-    const totalElements = parseSpringTotalCountHeader(docsRes, docsList.length);
-    const totalPages = Math.max(1, Math.ceil(totalElements / size));
-    const currentPage = page;
-
-    const content = docsList.map(mapEventMediaToTreeItem);
-
-    const catParams = new globalThis.URLSearchParams();
-    catParams.append('tenantId.equals', getTenantId());
-    catParams.append('isActive.equals', 'true');
-    catParams.append('sort', 'sortOrder,asc');
-    catParams.append('size', '200');
-    const catsUrl = `${getApiBaseUrl()}/api/official-document-categories?${catParams.toString()}`;
-    const catsRes = await fetchWithJwtRetry(catsUrl, { cache: 'no-store' });
-    const catJson = catsRes.ok ? await catsRes.json() : [];
-    const catRaw = Array.isArray(catJson) ? catJson : Array.isArray(catJson?.content) ? catJson.content : [];
-    const categoryOptions = (catRaw as Array<Record<string, unknown>>)
-      .map((row) => ({
-        id: Number(row.id),
-        slug: String(row.slug ?? ''),
-        displayName: String(row.displayName ?? row.display_name ?? row.slug ?? ''),
-      }))
-      .filter((x) => Number.isFinite(x.id) && x.id > 0);
 
     return {
       content,
       totalElements,
-      totalPages: Math.max(totalPages, 1),
+      totalPages,
       page: currentPage,
       size,
       categoryOptions,

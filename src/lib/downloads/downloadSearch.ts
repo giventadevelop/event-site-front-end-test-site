@@ -13,6 +13,20 @@ export type DownloadSearchItem = {
   officialDocumentYear?: number | null;
 };
 
+function buildDownloadCardMetaLine(item: DownloadSearchItem): string {
+  return [item.categoryLabel, item.officialDocumentYear ? `Year ${item.officialDocumentYear}` : null]
+    .filter(Boolean)
+    .join(' · ');
+}
+
+export function normalizeDownloadSearchText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[·•|/\\_,\-–—]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function buildDownloadSearchHaystack(item: DownloadSearchItem): string {
   const formattedTitle = formatDownloadCardTitle(item.title?.trim() || item.fileName);
   const subtitle = getDownloadCardSubtitle({
@@ -21,26 +35,38 @@ export function buildDownloadSearchHaystack(item: DownloadSearchItem): string {
     title: item.title,
     categoryLabel: item.categoryLabel,
   });
+  const displayTitle = resolveDownloadCardDisplayTitle(item);
+  const metaLine = buildDownloadCardMetaLine(item);
 
-  return [
-    item.title,
-    formattedTitle,
-    item.fileName,
-    item.treePath,
-    ...item.pathSegments,
-    subtitle,
-    item.description ?? '',
-    item.categoryLabel ?? '',
-    item.officialDocumentYear ? String(item.officialDocumentYear) : '',
-  ]
-    .join(' ')
-    .toLowerCase();
+  return normalizeDownloadSearchText(
+    [
+      item.title,
+      formattedTitle,
+      displayTitle,
+      item.fileName,
+      item.treePath,
+      ...item.pathSegments,
+      subtitle,
+      item.description ?? '',
+      item.categoryLabel ?? '',
+      metaLine,
+      item.officialDocumentYear ? String(item.officialDocumentYear) : '',
+      item.officialDocumentYear ? `year ${item.officialDocumentYear}` : '',
+    ].join(' ')
+  );
 }
 
 export function matchesDownloadSearchQuery(item: DownloadSearchItem, query: string): boolean {
-  const q = query.trim().toLowerCase();
+  const haystack = buildDownloadSearchHaystack(item);
+  const q = normalizeDownloadSearchText(query);
   if (!q) return true;
-  return buildDownloadSearchHaystack(item).includes(q);
+  if (haystack.includes(q)) return true;
+
+  const tokens = q.split(' ').filter((token) => token.length >= 2 || /^\d{4}$/.test(token));
+  if (tokens.length === 0) {
+    return haystack.includes(q);
+  }
+  return tokens.every((token) => haystack.includes(token));
 }
 
 /**

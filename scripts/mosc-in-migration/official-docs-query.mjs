@@ -72,6 +72,7 @@ export async function fetchAllOfficialDocuments() {
 export function findExistingMediaRowsInCache(cache, categoryId, year, treePath, filename) {
   const treeKey = treePath.toLowerCase();
   const fileKey = filename.toLowerCase();
+  const logicalFileKey = fileKey.replace(/_\d{10,}_[a-f0-9]{6,}(?=\.[^.]+$)/i, '');
   const fileStem = fileKey.replace(/\.[^.]+$/, '');
 
   return cache.filter((row) => {
@@ -81,9 +82,11 @@ export function findExistingMediaRowsInCache(cache, categoryId, year, treePath, 
     const rowFile = String(row?.fileName || row?.title || '').trim();
     const pathKey = (rawPath || markerPath || '').toLowerCase();
     const rowFileLower = rowFile.toLowerCase();
+    const rowLogicalFile = rowFileLower.replace(/_\d{10,}_[a-f0-9]{6,}(?=\.[^.]+$)/i, '');
     return (
       (pathKey && pathKey === treeKey) ||
       (rowFileLower && rowFileLower === fileKey) ||
+      (logicalFileKey && rowLogicalFile && rowLogicalFile === logicalFileKey) ||
       (pathKey && fileStem && pathKey === fileStem)
     );
   });
@@ -105,8 +108,6 @@ export function buildHierarchyKeySet(cache, categoryId, year) {
 export function computeMissingManifestItems(manifestItems, allOfficialDocs, slugById) {
   const dbKeys = new Set();
   for (const row of allOfficialDocs) {
-    const slug = slugById.get(row.officialDocumentCategoryId) || '';
-    if (!slug.includes('malankara')) continue;
     dbKeys.add(dbRowKey(row, slugById));
   }
   const seen = new Set();

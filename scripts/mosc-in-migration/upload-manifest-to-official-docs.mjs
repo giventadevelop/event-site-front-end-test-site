@@ -3,7 +3,8 @@
  * Upload official documents from a flat manifest layout:
  *   {MOSC_DOWNLOAD_ROOT}/{categorySlug}/{year}/{filename}
  *
- * Dedupes by (categoryId, electionYear, hierarchyPath) before upload.
+ * Dedupes by (categoryId, year, hierarchyPath, filename) and normalized fileUrl before upload.
+ * Dedupe runs for all modes except --force (including --missing-only).
  * Uses client-side filtering on TENANT_OFFICIAL_DOCUMENT rows (backend category/year criteria are unreliable).
  *
  * Usage:
@@ -18,14 +19,18 @@ import { DEFAULT_DOWNLOAD_ROOT } from './config.mjs';
 import { API_BASE_URL, TENANT_ID, apiFetch, assertEnv } from './migration-api-lib.mjs';
 import {
   TREE_PATH_MARKER,
-  buildHierarchyKeySet,
   computeMissingManifestItems,
   fetchAllOfficialDocuments,
   findExistingMediaRowsInCache,
-  manifestItemKey,
   parseTreePathFromDescription,
   rowMatchesBucket,
 } from './official-docs-query.mjs';
+import {
+  buildUploadDedupeState,
+  deduplicateManifestItems,
+  isManifestItemAlreadyUploaded,
+  registerUploadedManifestItem,
+} from './official-doc-dedupe.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -511,10 +516,12 @@ async function ensureYearBundleCovers(officialDocsCache, maps) {
 }
 
 async function uploadItems(selected, coverUrlBySlug, officialDocsCache, maps) {
-  const dedupeCache = new Map();
+  const uploadDedupeState = buildUploadDedupeState(officialDocsCache);
+  const manifestSeen = new Set();
   let ok = 0;
   let failed = 0;
   let skipped = 0;
+  let skippedManifestDup = 0;
   let missingFile = 0;
 
   for (let idx = 0; idx < selected.length; idx += 1) {
@@ -527,6 +534,14 @@ async function uploadItems(selected, coverUrlBySlug, officialDocsCache, maps) {
     const categoryLabel = String(item.displayName || categorySlug).trim();
     const fileTitle = toS3SafeTitle(treePath, filename.replace(/\.[^.]+$/, '') || 'document');
     const priority = Math.max(0, idx);
+    const manifestKey = `${categorySlug}|${year}|${treePath.toLowerCase()}|${filename.toLowerCase()}`;
+
+    if (manifestSeen.has(manifestKey)) {
+      skippedManifestDup += 1;
+      console.log(`[skip-manifest-dup] ${idx + 1}/${selected.length}: ${categorySlug}/${year}/${filename}`);
+      continue;
+    }
+    manifestSeen.add(manifestKey);
 
     if (!(await fileExists(filePath))) {
       missingFile += 1;
@@ -538,16 +553,25 @@ async function uploadItems(selected, coverUrlBySlug, officialDocsCache, maps) {
       const category = await ensureCategoryBySlug(categorySlug, categoryLabel, maps);
       const categoryId = Number(category?.id || 0) || null;
       const description = buildDescription({ categoryLabel, treePath, priority });
-      const dedupeBucketKey = `${categoryId || 0}:${year}`;
 
-      if (categoryId && !FORCE_UPLOAD && !MISSING_ONLY) {
-        if (!dedupeCache.has(dedupeBucketKey)) {
-          dedupeCache.set(dedupeBucketKey, buildHierarchyKeySet(officialDocsCache, categoryId, year));
-        }
-        const existing = dedupeCache.get(dedupeBucketKey);
-        if (existing.has(treePath.toLowerCase()) || existing.has(filename.toLowerCase())) {
+      if (categoryId && !FORCE_UPLOAD) {
+        const existingRows = findExistingMediaRowsInCache(
+          officialDocsCache,
+          categoryId,
+          year,
+          treePath,
+          filename
+        );
+        if (existingRows.length > 0) {
           skipped += 1;
-          console.log(`[skip-duplicate] ${idx + 1}/${selected.length}: ${categorySlug}/${year}/${treePath}`);
+          console.log(
+            `[skip-duplicate] ${idx + 1}/${selected.length}: ${categorySlug}/${year}/${treePath} (db id=${existingRows[0].id})`
+          );
+          continue;
+        }
+        if (isManifestItemAlreadyUploaded(uploadDedupeState, categoryId, year, treePath, filename)) {
+          skipped += 1;
+          console.log(`[skip-duplicate] ${idx + 1}/${selected.length}: ${categorySlug}/${year}/${treePath} (dedupe state)`);
           continue;
         }
       }
@@ -597,10 +621,8 @@ async function uploadItems(selected, coverUrlBySlug, officialDocsCache, maps) {
       });
 
       officialDocsCache.push(uploaded);
-
-      if (categoryId && dedupeCache.has(dedupeBucketKey)) {
-        dedupeCache.get(dedupeBucketKey).add(treePath.toLowerCase());
-        dedupeCache.get(dedupeBucketKey).add(filename.toLowerCase());
+      if (categoryId) {
+        registerUploadedManifestItem(uploadDedupeState, categoryId, year, treePath, filename, uploaded);
       }
       ok += 1;
       console.log(`[ok] ${idx + 1}/${selected.length}: ${categorySlug}/${year}/${filename}`);
@@ -614,7 +636,7 @@ async function uploadItems(selected, coverUrlBySlug, officialDocsCache, maps) {
   }
 
   console.log(
-    `Done. success=${ok}, failed=${failed}, skipped=${skipped}, missingFile=${missingFile}, total=${selected.length}`
+    `Done. success=${ok}, failed=${failed}, skipped=${skipped}, skippedManifestDup=${skippedManifestDup}, missingFile=${missingFile}, total=${selected.length}`
   );
   return { ok, failed, skipped, missingFile };
 }
@@ -657,10 +679,15 @@ async function main() {
     }
   }
 
-  let selected = BATCH_LIMIT > 0 ? items.slice(0, BATCH_LIMIT) : items;
+  const { unique: dedupedItems, dropped: manifestDupDropped } = deduplicateManifestItems(items);
+  if (manifestDupDropped > 0) {
+    console.log(`Manifest dedupe: dropped ${manifestDupDropped} duplicate item(s) in manifest JSON`);
+  }
+
+  let selected = BATCH_LIMIT > 0 ? dedupedItems.slice(0, BATCH_LIMIT) : dedupedItems;
 
   if (MISSING_ONLY) {
-    const missing = computeMissingManifestItems(items, officialDocsCache, maps.idToSlug);
+    const missing = computeMissingManifestItems(dedupedItems, officialDocsCache, maps.idToSlug);
     selected = missing;
     console.log(`Missing unique manifest items: ${missing.length}`);
     if (missing.length === 0) {

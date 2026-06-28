@@ -414,16 +414,46 @@ function categoryFilterChipClass(active: boolean) {
   }`;
 }
 
-const filterDropdownClass = (active: boolean, tone: 'year' | 'category') =>
-  `min-w-[11rem] max-w-[22rem] rounded-md border-2 px-3 py-1.5 text-xs font-semibold text-syro-blue bg-white focus:outline-none focus:ring-2 focus:ring-syro-blue/30 ${
-    active
-      ? tone === 'year'
-        ? 'border-syro-red bg-red-50'
-        : 'border-syro-blue bg-blue-50'
-      : 'border-syro-gold/40'
-  }`;
-
 const MAX_DROPDOWN_YEARS = 20;
+const MAX_DROPDOWN_CATEGORIES = 20;
+
+function SearchLensIcon() {
+  return (
+    <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-syro-blue/50">
+      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M21 21l-4.35-4.35m1.35-5.4a6.75 6.75 0 11-13.5 0 6.75 6.75 0 0113.5 0z"
+        />
+      </svg>
+    </span>
+  );
+}
+
+function ClearFiltersButton({
+  onClick,
+  disabled,
+  className = '',
+}: {
+  onClick: () => void;
+  disabled: boolean;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`shrink-0 rounded-md border-2 border-syro-gold/40 bg-white px-3 py-1.5 text-xs font-semibold text-syro-blue transition-colors hover:border-syro-red hover:bg-red-50 hover:text-syro-red disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-syro-gold/40 disabled:hover:bg-white disabled:hover:text-syro-blue ${className}`}
+      title="Clear search and reset to all years and categories"
+      aria-label="Clear search and reset filters"
+    >
+      Clear filters
+    </button>
+  );
+}
 
 function buildOlderYearDropdownOptions(
   allYearOptions: number[],
@@ -447,11 +477,13 @@ function YearCombobox({
   selectedYear,
   categoryId,
   buildFilterHref,
+  clearRevision,
 }: {
   years: number[];
   selectedYear: number | null;
   categoryId: number | null;
   buildFilterHref: (categoryId: number | null, year: number | null) => string;
+  clearRevision: number;
 }) {
   const router = useRouter();
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -473,6 +505,7 @@ function YearCombobox({
   const [inputValue, setInputValue] = React.useState(
     isOlderYearSelected && selectedYear != null ? String(selectedYear) : ''
   );
+  const skippedInitialClear = React.useRef(false);
 
   React.useEffect(() => {
     if (isOlderYearSelected && selectedYear != null) {
@@ -481,6 +514,15 @@ function YearCombobox({
       setInputValue('');
     }
   }, [isOlderYearSelected, selectedYear, open]);
+
+  React.useEffect(() => {
+    if (!skippedInitialClear.current) {
+      skippedInitialClear.current = true;
+      return;
+    }
+    setInputValue('');
+    setOpen(false);
+  }, [clearRevision]);
 
   React.useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
@@ -534,27 +576,28 @@ function YearCombobox({
 
   return (
     <div ref={containerRef} className="relative inline-flex min-w-[11rem] max-w-[14rem]">
-      <label className="sr-only" htmlFor={listId}>
-        Filter by other years (type to search)
+      <label className="relative block w-full" htmlFor={listId}>
+        <span className="sr-only">Filter by other years (type to search)</span>
+        <SearchLensIcon />
+        <input
+          id={listId}
+          type="text"
+          inputMode="numeric"
+          role="combobox"
+          aria-expanded={open}
+          aria-controls={`${listId}-listbox`}
+          aria-autocomplete="list"
+          aria-label="Filter by other years (type to search)"
+          placeholder="More years…"
+          value={inputValue}
+          onChange={(e) => handleInputChange(e.target.value)}
+          onFocus={() => setOpen(true)}
+          onKeyDown={handleKeyDown}
+          className={`w-full rounded-md border-2 py-1.5 pl-9 pr-3 text-xs font-semibold text-syro-blue bg-white focus:outline-none focus:ring-2 focus:ring-syro-blue/30 ${
+            comboboxActive ? 'border-syro-red bg-red-50' : 'border-syro-gold/40'
+          }`}
+        />
       </label>
-      <input
-        id={listId}
-        type="text"
-        inputMode="numeric"
-        role="combobox"
-        aria-expanded={open}
-        aria-controls={`${listId}-listbox`}
-        aria-autocomplete="list"
-        aria-label="Filter by other years (type to search)"
-        placeholder="More years…"
-        value={inputValue}
-        onChange={(e) => handleInputChange(e.target.value)}
-        onFocus={() => setOpen(true)}
-        onKeyDown={handleKeyDown}
-        className={`w-full rounded-md border-2 px-3 py-1.5 text-xs font-semibold text-syro-blue bg-white focus:outline-none focus:ring-2 focus:ring-syro-blue/30 ${
-          comboboxActive ? 'border-syro-red bg-red-50' : 'border-syro-gold/40'
-        }`}
-      />
       {open ? (
         <ul
           id={`${listId}-listbox`}
@@ -586,6 +629,158 @@ function YearCombobox({
   );
 }
 
+function CategoryCombobox({
+  categories,
+  selectedCategoryId,
+  year,
+  buildFilterHref,
+  clearRevision,
+}: {
+  categories: CategoryFilterOption[];
+  selectedCategoryId: number | null;
+  year: number | null;
+  buildFilterHref: (categoryId: number | null, year: number | null) => string;
+  clearRevision: number;
+}) {
+  const router = useRouter();
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const listId = React.useId();
+
+  const selectedCategory = categories.find((cat) => cat.id === selectedCategoryId);
+  const isOtherCategorySelected = selectedCategoryId != null && Boolean(selectedCategory);
+
+  const [open, setOpen] = React.useState(false);
+  const [inputValue, setInputValue] = React.useState(
+    isOtherCategorySelected && selectedCategory ? selectedCategory.displayName : ''
+  );
+  const skippedInitialClear = React.useRef(false);
+
+  React.useEffect(() => {
+    if (isOtherCategorySelected && selectedCategory) {
+      setInputValue(selectedCategory.displayName);
+    } else if (!open) {
+      setInputValue('');
+    }
+  }, [isOtherCategorySelected, selectedCategory, open]);
+
+  React.useEffect(() => {
+    if (!skippedInitialClear.current) {
+      skippedInitialClear.current = true;
+      return;
+    }
+    setInputValue('');
+    setOpen(false);
+  }, [clearRevision]);
+
+  React.useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, []);
+
+  const sortedCategories = React.useMemo(
+    () =>
+      [...categories].sort((a, b) =>
+        a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' })
+      ),
+    [categories]
+  );
+
+  const filteredCategories = React.useMemo(() => {
+    const query = normalizeCategoryLabel(inputValue);
+    if (!query) return sortedCategories.slice(0, MAX_DROPDOWN_CATEGORIES);
+    return sortedCategories.filter((cat) => normalizeCategoryLabel(cat.displayName).includes(query));
+  }, [sortedCategories, inputValue]);
+
+  const applyCategory = (categoryId: number | null) => {
+    setOpen(false);
+    if (categoryId != null && selectedCategoryId === categoryId) {
+      router.push(buildFilterHref(null, year));
+      setInputValue('');
+      return;
+    }
+    router.push(buildFilterHref(categoryId, year));
+    if (categoryId != null) {
+      const cat = categories.find((c) => c.id === categoryId);
+      setInputValue(cat?.displayName ?? '');
+    }
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      if (filteredCategories.length === 1) {
+        applyCategory(filteredCategories[0].id);
+      }
+    } else if (event.key === 'Escape') {
+      setOpen(false);
+    }
+  };
+
+  const comboboxActive = isOtherCategorySelected || inputValue.trim().length > 0;
+
+  return (
+    <div ref={containerRef} className="relative inline-flex min-w-[14rem] max-w-[24rem] sm:min-w-[20rem]">
+      <label className="relative block w-full" htmlFor={listId}>
+        <span className="sr-only">Filter by other categories (type to search)</span>
+        <SearchLensIcon />
+        <input
+          id={listId}
+          type="text"
+          role="combobox"
+          aria-expanded={open}
+          aria-controls={`${listId}-listbox`}
+          aria-autocomplete="list"
+          aria-label="Filter by other categories (type to search)"
+          placeholder="More categories…"
+          value={inputValue}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={handleKeyDown}
+          className={`w-full rounded-md border-2 py-1.5 pl-9 pr-3 text-xs font-semibold text-syro-blue bg-white focus:outline-none focus:ring-2 focus:ring-syro-blue/30 ${
+            comboboxActive ? 'border-syro-blue bg-blue-50' : 'border-syro-gold/40'
+          }`}
+        />
+      </label>
+      {open ? (
+        <ul
+          id={`${listId}-listbox`}
+          role="listbox"
+          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-52 overflow-y-auto rounded-md border-2 border-syro-gold/40 bg-white py-1 shadow-lg"
+        >
+          {filteredCategories.length > 0 ? (
+            filteredCategories.map((cat) => (
+              <li key={cat.id} role="option" aria-selected={selectedCategoryId === cat.id}>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => applyCategory(cat.id)}
+                  className={`block w-full px-3 py-1.5 text-left text-xs font-semibold hover:bg-blue-50 ${
+                    selectedCategoryId === cat.id ? 'bg-blue-50 text-syro-blue' : 'text-syro-blue'
+                  }`}
+                  title={cat.displayName}
+                >
+                  <span className="line-clamp-2">{cat.displayName}</span>
+                  {selectedCategoryId === cat.id ? ' (click to clear)' : ''}
+                </button>
+              </li>
+            ))
+          ) : (
+            <li className="px-3 py-2 text-xs text-gray-500">No matching categories</li>
+          )}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 function YearFilterBar({
   allYearOptions,
   currentFilters,
@@ -594,6 +789,7 @@ function YearFilterBar({
   onSearchChange,
   onClearFilters,
   hasActiveFiltersOrSearch,
+  clearRevision,
 }: {
   allYearOptions: number[];
   currentFilters: { categoryId: number | null; year: number | null };
@@ -602,6 +798,7 @@ function YearFilterBar({
   onSearchChange: (value: string) => void;
   onClearFilters: () => void;
   hasActiveFiltersOrSearch: boolean;
+  clearRevision: number;
 }) {
   const currentCalendarYear = new Date().getFullYear();
   const priorCalendarYear = currentCalendarYear - 1;
@@ -633,22 +830,22 @@ function YearFilterBar({
         >
           {priorCalendarYear}
         </Link>
-        <YearCombobox
-          years={allYearOptions}
-          selectedYear={currentFilters.year}
-          categoryId={currentFilters.categoryId}
-          buildFilterHref={buildFilterHref}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <YearCombobox
+            years={allYearOptions}
+            selectedYear={currentFilters.year}
+            categoryId={currentFilters.categoryId}
+            buildFilterHref={buildFilterHref}
+            clearRevision={clearRevision}
+          />
+          <ClearFiltersButton onClick={onClearFilters} disabled={!hasActiveFiltersOrSearch} />
+        </div>
 
         {/* Search documents — pushed to the right-most end of the filter row */}
         <div className="ml-auto flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
-          <label className="relative block min-w-0 flex-1 sm:flex-initial">
+          <label className="relative block min-w-0 flex-1 sm:flex-initial sm:min-w-[14rem]">
             <span className="sr-only">Search downloads</span>
-            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-syro-blue/50">
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35m1.35-5.4a6.75 6.75 0 11-13.5 0 6.75 6.75 0 0113.5 0z" />
-              </svg>
-            </span>
+            <SearchLensIcon />
             <input
               type="search"
               value={searchQuery}
@@ -658,16 +855,7 @@ function YearFilterBar({
               aria-label="Search documents across the library"
             />
           </label>
-          <button
-            type="button"
-            onClick={onClearFilters}
-            disabled={!hasActiveFiltersOrSearch}
-            className="shrink-0 rounded-md border-2 border-syro-gold/40 bg-white px-3 py-1.5 text-xs font-semibold text-syro-blue transition-colors hover:border-syro-red hover:bg-red-50 hover:text-syro-red disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-syro-gold/40 disabled:hover:bg-white disabled:hover:text-syro-blue"
-            title="Clear search and reset to all years and categories"
-            aria-label="Clear search and reset filters"
-          >
-            Clear filters
-          </button>
+          <ClearFiltersButton onClick={onClearFilters} disabled={!hasActiveFiltersOrSearch} />
         </div>
       </div>
     </div>
@@ -678,12 +866,17 @@ function CategoryFilterBar({
   categoryOptions,
   currentFilters,
   buildFilterHref,
+  onClearFilters,
+  hasActiveFiltersOrSearch,
+  clearRevision,
 }: {
   categoryOptions: CategoryFilterOption[];
   currentFilters: { categoryId: number | null; year: number | null };
   buildFilterHref: (categoryId: number | null, year: number | null) => string;
+  onClearFilters: () => void;
+  hasActiveFiltersOrSearch: boolean;
+  clearRevision: number;
 }) {
-  const router = useRouter();
   if (categoryOptions.length === 0) {
     return null;
   }
@@ -695,15 +888,23 @@ function CategoryFilterBar({
 
   const featuredIds = React.useMemo(() => new Set(featured.map((c) => c.id)), [featured]);
 
-  const dropdownValue =
-    currentFilters.categoryId != null && !featuredIds.has(currentFilters.categoryId)
-      ? String(currentFilters.categoryId)
-      : '';
-  const dropdownActive = dropdownValue !== '';
+  const dropdownActive =
+    currentFilters.categoryId != null && !featuredIds.has(currentFilters.categoryId);
 
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-syro-blue mb-2">Filter by category</p>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-syro-blue">Filter by category</p>
+        {dropdownOptions.length > 0 ? (
+          <Link
+            href="/mosc-redesign/downloads/categories"
+            className="text-xs font-semibold text-syro-blue underline hover:text-syro-red"
+            title="Browse the full category index"
+          >
+            Browse all categories ({categoryOptions.length})
+          </Link>
+        ) : null}
+      </div>
       <div className="flex flex-wrap items-center gap-2">
         <Link
           href={buildFilterHref(null, currentFilters.year)}
@@ -726,31 +927,18 @@ function CategoryFilterBar({
           );
         })}
         {dropdownOptions.length > 0 ? (
-          <label className="inline-flex shrink-0 items-center gap-2">
-            <span className="sr-only">Select another document category</span>
-            <select
-              value={dropdownValue}
-              onChange={(e) => {
-                const next = e.target.value;
-                const nextId = next ? Number(next) : null;
-                router.push(
-                  buildFilterHref(
-                    nextId != null && nextId === currentFilters.categoryId ? null : nextId,
-                    currentFilters.year
-                  )
-                );
-              }}
-              className={filterDropdownClass(dropdownActive, 'category')}
-              aria-label="Filter by other categories"
-            >
-              <option value="">More categories…</option>
-              {dropdownOptions.map((cat) => (
-                <option key={cat.id} value={String(cat.id)}>
-                  {cat.displayName}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <CategoryCombobox
+              categories={dropdownOptions}
+              selectedCategoryId={
+                dropdownActive && currentFilters.categoryId != null ? currentFilters.categoryId : null
+              }
+              year={currentFilters.year}
+              buildFilterHref={buildFilterHref}
+              clearRevision={clearRevision}
+            />
+            <ClearFiltersButton onClick={onClearFilters} disabled={!hasActiveFiltersOrSearch} />
+          </div>
         ) : null}
       </div>
     </div>
@@ -769,6 +957,7 @@ export default function DownloadsPageClient({
   const [downloadingId, setDownloadingId] = React.useState<number | null>(null);
   const [downloadError, setDownloadError] = React.useState<DownloadErrorState | null>(null);
   const [searchQuery, setSearchQuery] = React.useState(currentFilters.search ?? '');
+  const [clearRevision, setClearRevision] = React.useState(0);
 
   React.useEffect(() => {
     setSearchQuery(currentFilters.search ?? '');
@@ -799,8 +988,12 @@ export default function DownloadsPageClient({
   const hasActiveFilters = currentFilters.categoryId != null || currentFilters.year != null;
   const hasActiveFiltersOrSearch = hasActiveFilters || isSearching;
 
+  const searchDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleClearFilters = React.useCallback(() => {
     setSearchQuery('');
+    setClearRevision((revision) => revision + 1);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     router.replace('/mosc-redesign/downloads');
     router.refresh();
   }, [router]);
@@ -819,7 +1012,6 @@ export default function DownloadsPageClient({
     [router, currentFilters.categoryId, currentFilters.year]
   );
 
-  const searchDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleSearchChange = React.useCallback(
     (value: string) => {
       setSearchQuery(value);
@@ -960,12 +1152,16 @@ export default function DownloadsPageClient({
                 onSearchChange={handleSearchChange}
                 onClearFilters={handleClearFilters}
                 hasActiveFiltersOrSearch={hasActiveFiltersOrSearch}
+                clearRevision={clearRevision}
               />
 
               <CategoryFilterBar
                 categoryOptions={officialTreePage.categoryOptions}
                 currentFilters={currentFilters}
                 buildFilterHref={queryWithFilter}
+                onClearFilters={handleClearFilters}
+                hasActiveFiltersOrSearch={hasActiveFiltersOrSearch}
+                clearRevision={clearRevision}
               />
             </div>
 

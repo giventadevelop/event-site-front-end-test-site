@@ -405,7 +405,18 @@ npm run mosc:migration:malankara:upload:dry
 npm run mosc:migration:malankara:upload
 ```
 
-Dedupe skips existing rows by `(categoryId, electionYear, hierarchyPath)` and filename.
+Dedupe skips existing rows by `(categoryId, year, hierarchyPath, filename)` and normalized `fileUrl`. Dedupe runs for **all** upload modes except `--force` (including `--missing-only`). See [`documentation/mosc_document_downloads_page/DUPLICATE_OFFICIAL_DOCUMENTS.md`](../../documentation/mosc_document_downloads_page/DUPLICATE_OFFICIAL_DOCUMENTS.md).
+
+### Purge duplicate DB rows
+
+If migration was run multiple times, the public page may show duplicate cards until rows are removed from the database. UI dedupe hides them; **permanent** cleanup:
+
+```bash
+npm run mosc:migration:purge-duplicates:dry
+npm run mosc:migration:purge-duplicates
+```
+
+Optional filter: `npm run mosc:migration:purge-duplicates:fcra` (or `--category-slug <slug>`).
 
 ### npm shortcuts
 
@@ -415,6 +426,8 @@ Dedupe skips existing rows by `(categoryId, electionYear, hierarchyPath)` and fi
 | `npm run mosc:migration:malankara:fetch` | Download Malankara PDFs with `--insecure-tls --skip-existing` |
 | `npm run mosc:migration:malankara:upload:dry` | Dry-run manifest upload |
 | `npm run mosc:migration:malankara:upload` | Upload + PATCH hierarchy metadata |
+| `npm run mosc:migration:purge-duplicates:dry` | Report duplicate official-document rows (no delete) |
+| `npm run mosc:migration:purge-duplicates` | Permanently delete duplicate official-document rows |
 
 ---
 
@@ -423,4 +436,4 @@ Dedupe skips existing rows by `(categoryId, electionYear, hierarchyPath)` and fi
 - **2026-03** — Initial migration kit: manifest downloader, default `C:\E_Drive\code_backup\mosc_downloads`, bulk-upload documentation.
 - **2026-03** — Added `url-list.mosc-in.generated.json`, deep scrape script, README options A/B, Step 3 commands, and `mosc:migration:fetch:mosc-in` npm script.
 - **2026-03** — Added hierarchy mirror script (`mirror-downloads-tree.mjs`) and npm shortcuts for title-based nested folder downloads.
-- **2026-03** — Added `upload-mirror-to-official-docs.mjs` and npm shortcuts for automated mirror-tree upload into official documents with hierarchy + priority metadata.
+- **2026-06** — Duplicate official documents: `purge-duplicate-official-docs.mjs`, shared `official-doc-dedupe.mjs`, stronger upload dedupe (all categories, `--missing-only` included). See `documentation/mosc_document_downloads_page/DUPLICATE_OFFICIAL_DOCUMENTS.md`.
