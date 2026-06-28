@@ -62,7 +62,9 @@ export default function SignInPage() {
         return; // Primary domain: do not set shouldRedirect; fall through to render <SignIn />
       }
 
-      const isSatellite = process.env.NEXT_PUBLIC_CLERK_IS_SATELLITE === 'true' && !isPrimary;
+      // Only redirect when we're on a known satellite domain (mosc-temp.com).
+      // Do not use NEXT_PUBLIC_CLERK_DOMAIN for this check on primary - it can be set to primary by mistake.
+      const isSatellite = hostname.includes('mosc-temp.com');
       if (isSatellite) {
         setShouldRedirect(true);
         // Use Clerk's redirectToSignIn — it reads isSatellite/domain/signInUrl from

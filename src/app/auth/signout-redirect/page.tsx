@@ -31,12 +31,10 @@ export default function SignOutRedirectPage() {
         // leave decoded as-is
       }
 
-      const satelliteDomain = process.env.NEXT_PUBLIC_CLERK_DOMAIN || '';
-      const satelliteHost = satelliteDomain.replace(/^www\./, '');
+      // Only allow redirect to known satellite or localhost; otherwise send to /
       const allowedHost =
         decoded.startsWith('http') &&
-        (decoded.includes('localhost') ||
-          (satelliteHost.length > 0 && decoded.includes(satelliteHost)));
+        (decoded.includes('mosc-temp.com') || decoded.includes('localhost'));
       const baseUrl = allowedHost ? decoded.replace(/\/$/, '') : '';
       const finalUrl = baseUrl
         ? `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}clerk_signout=true`

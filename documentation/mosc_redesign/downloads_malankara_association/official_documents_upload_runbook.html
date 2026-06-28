@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Official Documents — Migration Upload Runbook (Direct Backend API)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        tbody tr:hover { background: #f0f7ff; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        code.script-name { background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); color: #4a148c; border-color: #ce93d8; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; overflow-x: auto; font-family: Consolas, monospace; font-size: 0.82em; line-height: 1.45; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-intro { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 16px 18px; margin: 16px 0; }
+        .command-block { border: 2px solid #2196f3; border-radius: 8px; margin: 16px 0; overflow: hidden; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); }
+        .command-block.verify { border-color: #4caf50; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); }
+        .command-block.advance { border-color: #ff9800; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); }
+        .command-block.danger { border-color: #f44336; background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); }
+        .command-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.5); border-bottom: 1px solid rgba(0,0,0,0.08); }
+        .command-type { font-weight: 700; font-size: 0.9em; }
+        .command-header-buttons { display: flex; gap: 8px; }
+        .copy-button, .copy-button-template { padding: 6px 12px; border: 1px solid #0066cc; background: #fff; border-radius: 6px; cursor: pointer; font-size: 0.85em; }
+        .copy-button:hover, .copy-button-template:hover { background: #e8f4f8; }
+        .copy-button.copied, .copy-button-template.copied { background: #d4edda; border-color: #28a745; }
+        .command-content { padding: 12px 14px; font-family: Consolas, monospace; font-size: 0.85em; color: #0d3b66; word-break: break-all; }
+        .command-single-line { padding: 10px 14px 14px; border-top: 1px dashed rgba(0,0,0,0.12); }
+        .command-single-line-label { font-size: 0.75em; font-weight: 700; color: #555; margin-bottom: 6px; text-transform: uppercase; }
+        .command-single-line code { display: block; padding: 8px 10px; word-break: break-all; }
+        .parameters-list { background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%); border-left: 4px solid #ff9800; border-radius: 8px; padding: 16px 18px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Official Documents — Migration Upload Runbook</h1>
+    <p class="doc-meta">
+        <strong>Layer:</strong> Data migration (Node scripts → Spring Boot API) &nbsp;|&nbsp; <strong>Version:</strong> 1.1 &nbsp;|&nbsp; <strong>Date:</strong> June 27, 2026<br>
+        <strong>Related:</strong> <a href="downloads_malankara_association_prd.html">Malankara PRD</a> &nbsp;|&nbsp;
+        <a href="gap_analysis_prd.html">Gap analysis</a> &nbsp;|&nbsp;
+        <a href="full_downloads_migration_session_june_2026.html">Full migration session (June 2026)</a> &nbsp;|&nbsp;
+        <code>scripts/mosc-in-migration/README.md</code> &nbsp;|&nbsp;
+        <code>scripts/README.md</code> (doc folder wrappers)
+    </p>
+
+    <div class="lead">
+        <p>This runbook documents how <strong>bulk official document uploads</strong> are performed for the Malankara Association migration (and how the same pattern can be reused elsewhere). Scripts call the <strong>Rust/Spring backend directly</strong> at <code>http://localhost:8080</code> using a <strong>service JWT</strong> — not the Next.js app at <code>:3000</code> and not the <code>/api/proxy/...</code> layer.</p>
+    </div>
+
+    <div class="success-box">
+        <strong>June 2026 outcome (Malankara):</strong> 58 missing 2021/2022 files re-uploaded; 76 card thumbnails backfilled; 5 year-bundle covers set; public API <code>X-Total-Count</code> increased from <strong>91 → 149</strong> documents on <code>/mosc-redesign/downloads</code>.
+    </div>
+
+    <!-- §1 Architecture -->
+    <h2>1. Upload architecture</h2>
+    <div class="section-container">
+        <pre>Legacy mosc.in PDF URLs
+    → build-malankara-manifest.mjs  (categorySlug + year remap)
+    → fetch-urls.mjs                (download to MOSC_DOWNLOAD_ROOT)
+    → upload-manifest-to-official-docs.mjs
+         │
+         ├─ migration-api-lib.mjs
+         │     POST http://localhost:8080/api/authenticate  (service JWT)
+         │     All calls: Authorization: Bearer &lt;token&gt;
+         │                X-Tenant-ID: &lt;NEXT_PUBLIC_TENANT_ID&gt;
+         │
+         ├─ POST /api/event-medias/upload/tenant-official-document  (multipart: file + metadata)
+         ├─ PATCH /api/event-medias/{id}                            (hierarchy fields)
+         ├─ POST /api/event-medias/{id}/upload-official-document-thumbnail  (optional cover JPG)
+         └─ POST/PATCH /api/official-document-year-bundles            (year section cover)
+
+PostgreSQL event_media + official_document_category
+    → S3 (eventapp-media-bucket, us-east-2)
+    → GET /api/event-medias/public-official-documents?tenantId=...
+    → Next.js downloads hub (/mosc-redesign/downloads)</pre>
+    </div>
+
+    <div class="info-box">
+        <p><strong>Why direct backend (:8080)?</strong> Migration runs outside the browser. Service JWT credentials (<code>API_JWT_USER</code> / <code>API_JWT_PASS</code>) live in <code>.env.local</code> and authenticate against the Spring Boot API. The Next.js proxy at <code>:3000/api/proxy/...</code> is for the web app; older mirror upload used it, but Malankara manifest upload uses <code class="script-name">migration-api-lib.mjs</code> for reliability and fewer hops.</p>
+    </div>
+
+    <!-- §2 Backend API base URL -->
+    <h2>2. Backend API URL (<code>localhost:8080</code>)</h2>
+    <p>The shared library resolves the API base URL in this order:</p>
+    <ol>
+        <li><code>MOSC_API_BASE_URL</code> (optional override for scripts)</li>
+        <li><code>NEXT_PUBLIC_API_BASE_URL</code> from <code>.env.local</code> (same value the Next.js app uses)</li>
+        <li>Default fallback: <code>http://localhost:8080</code></li>
+    </ol>
+
+    <table>
+        <thead><tr><th>Setting</th><th>Typical local value</th><th>Used by</th></tr></thead>
+        <tbody>
+            <tr><td><code>NEXT_PUBLIC_API_BASE_URL</code></td><td><code>http://localhost:8080</code></td><td>Next.js server actions, migration scripts</td></tr>
+            <tr><td><code>MOSC_API_BASE_URL</code></td><td><em>(optional)</em> same as above</td><td>Scripts only — overrides without changing Next env</td></tr>
+            <tr><td><code>NEXT_PUBLIC_TENANT_ID</code></td><td><code>mosc_malankara_orthodox_2</code></td><td>Tenant scope on every API call</td></tr>
+            <tr><td><code>API_JWT_USER</code> / <code>API_JWT_PASS</code></td><td>Service account (e.g. <code>jwtadmin</code>)</td><td><code>POST /api/authenticate</code> → Bearer token</td></tr>
+        </tbody>
+    </table>
+
+    <p>Every authenticated request from <code class="script-name">migration-api-lib.mjs</code> sends:</p>
+    <pre>Authorization: Bearer &lt;service JWT from /api/authenticate&gt;
+X-Tenant-ID: &lt;NEXT_PUBLIC_TENANT_ID&gt;
+Content-Type: application/json   (or multipart for uploads)</pre>
+
+    <p><strong>Production / staging:</strong> Set <code>NEXT_PUBLIC_API_BASE_URL</code> to the deployed backend URL (e.g. Amplify/API Gateway). Scripts read the same variable — no code change required.</p>
+
+    <!-- §3 Prerequisites -->
+    <h2>3. Prerequisites</h2>
+    <div class="section-intro">
+        <ul>
+            <li>Spring Boot backend running and reachable at <code>NEXT_PUBLIC_API_BASE_URL</code> (local: <code>http://localhost:8080</code>).</li>
+            <li>AWS credentials on the <strong>backend process</strong> (<code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>, <code>AWS_REGION=us-east-2</code>, bucket <code>eventapp-media-bucket</code>).</li>
+            <li>Service JWT user has admin authority (upload endpoint calls <code>requireAdmin()</code>).</li>
+            <li>Official document categories seeded for the tenant (Malankara slugs in DB).</li>
+            <li>Node.js 20+; repo root <code>.env.local</code> with JWT and tenant vars.</li>
+        </ul>
+    </div>
+
+    <div class="parameters-list">
+        <strong>Environment variables (Malankara upload)</strong>
+        <ul>
+            <li><code>MOSC_DOWNLOAD_ROOT</code> — local PDF folder (e.g. <code>f:\project_workspace\mosc-temp\.mosc-downloads</code>). <strong>No trailing space</strong> after <code>set VAR=value</code> on Windows.</li>
+            <li><code>MOSC_UPLOAD_LIMIT=0</code> — required for full runs (unset or <code>0</code>; a limit of <code>3</code> only processes three items).</li>
+            <li><code>MOSC_UPLOAD_DELAY_MS</code> — pause between uploads (default <code>400</code>).</li>
+            <li><code>MOSC_UPLOAD_MAX_RETRIES</code> — retry on S3/backend 500 (default <code>3</code>).</li>
+            <li><code>MOSC_AUTO_CREATE_CATEGORIES=true</code> — only if a category slug is missing.</li>
+        </ul>
+    </div>
+
+    <!-- §4 Scripts -->
+    <h2>4. Scripts and npm commands (Malankara pipeline)</h2>
+    <table>
+        <thead><tr><th>Step</th><th>Script / npm command</th><th>Purpose</th></tr></thead>
+        <tbody>
+            <tr><td>1. Manifest</td><td><code class="script-name">build-malankara-manifest.mjs</code><br><code>npm run mosc:migration:malankara:manifest</code></td><td>Build <code>url-list.malankara-remapped.json</code> (165 items, correct category slugs/years)</td></tr>
+            <tr><td>2. Fetch PDFs</td><td><code class="script-name">fetch-urls.mjs</code><br><code>npm run mosc:migration:malankara:fetch</code></td><td>Download to <code>{MOSC_DOWNLOAD_ROOT}/{categorySlug}/{year}/{filename}</code></td></tr>
+            <tr><td>3. Upload (dry)</td><td><code class="script-name">upload-manifest-to-official-docs.mjs</code><br><code>npm run mosc:migration:malankara:upload:dry</code></td><td>Validate paths and dedupe without writing</td></tr>
+            <tr><td>4. Upload (full)</td><td><code>npm run mosc:migration:malankara:upload</code></td><td>Upload missing items only (dedupe by category + year + hierarchyPath)</td></tr>
+            <tr><td>5. Re-upload gaps</td><td><code>npm run mosc:migration:malankara:upload:missing</code></td><td><code>--missing-only</code> + thumbnails + year bundles (recommended repair)</td></tr>
+            <tr><td>6. Thumbnails only</td><td><code>npm run mosc:migration:malankara:backfill-thumbnails</code></td><td>Attach category cover JPGs to rows without <code>thumbnailUrl</code></td></tr>
+        </tbody>
+    </table>
+
+    <h3>4.1 Supporting modules</h3>
+    <table>
+        <thead><tr><th>File</th><th>Role</th></tr></thead>
+        <tbody>
+            <tr><td><code class="script-name">migration-api-lib.mjs</code></td><td>JWT cache, <code>apiFetch()</code>, <code>assertEnv()</code> — single entry point for backend HTTP</td></tr>
+            <tr><td><code class="script-name">official-docs-query.mjs</code></td><td>Paginate <code>TENANT_OFFICIAL_DOCUMENT</code> rows; client-side filter by category/year; compute missing manifest keys</td></tr>
+            <tr><td><code>malankara-category-covers.json</code></td><td>Legacy mosc.in hero JPG URLs per category slug (card thumbnails + bundle covers)</td></tr>
+            <tr><td><code>url-list.malankara-remapped.json</code></td><td>165-item manifest (134 unique hierarchy keys after dedupe)</td></tr>
+        </tbody>
+    </table>
+
+    <!-- §5 Step-by-step -->
+    <h2>5. Step-by-step: Malankara upload (Windows)</h2>
+
+    <h3>5.1 Set environment and verify backend</h3>
+    <div class="command-block verify" data-template-command="curl -s http://localhost:8080/management/health">
+        <div class="command-header">
+            <span class="command-type">Health check — backend on :8080</span>
+            <div class="command-header-buttons">
+                <button type="button" class="copy-button" onclick="copyCommand(this, 'health')" title="Copy command">📋 Copy</button>
+            </div>
+        </div>
+        <div class="command-content" id="health">curl -s http://localhost:8080/management/health</div>
+        <div class="command-single-line">
+            <div class="command-single-line-label">Windows single-line:</div>
+            <code id="health-single-code">curl -s http://localhost:8080/management/health</code>
+        </div>
+    </div>
+
+    <h3>5.2 Fetch PDFs (if not already on disk)</h3>
+    <div class="command-block setup" data-template-command="npm run mosc:migration:malankara:fetch">
+        <div class="command-header">
+            <span class="command-type">Download manifest PDFs to MOSC_DOWNLOAD_ROOT</span>
+            <div class="command-header-buttons">
+                <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'fetch')" title="Copy template">📄 Template</button>
+                <button type="button" class="copy-button" onclick="copyCommand(this, 'fetch')" title="Copy command">📋 Copy</button>
+            </div>
+        </div>
+        <div class="command-content" id="fetch">set MOSC_DOWNLOAD_ROOT=f:\project_workspace\mosc-temp\.mosc-downloads &amp;&amp; cd F:\project_workspace\mosc-temp &amp;&amp; npm run mosc:migration:malankara:fetch</div>
+        <div class="command-single-line">
+            <div class="command-single-line-label">Windows single-line:</div>
+            <code id="fetch-single-code">set MOSC_DOWNLOAD_ROOT=f:\project_workspace\mosc-temp\.mosc-downloads &amp;&amp; cd F:\project_workspace\mosc-temp &amp;&amp; npm run mosc:migration:malankara:fetch</code>
+        </div>
+    </div>
+    <p>Uses <code>--insecure-tls --skip-existing</code> for mosc.in TLS quirks on Windows.</p>
+
+    <h3>5.3 Dry-run upload</h3>
+    <div class="command-block setup" data-template-command="npm run mosc:migration:malankara:upload:dry">
+        <div class="command-header">
+            <span class="command-type">Dry-run — no API writes</span>
+            <div class="command-header-buttons">
+                <button type="button" class="copy-button" onclick="copyCommand(this, 'upload-dry')" title="Copy command">📋 Copy</button>
+            </div>
+        </div>
+        <div class="command-content" id="upload-dry">set MOSC_DOWNLOAD_ROOT=f:\project_workspace\mosc-temp\.mosc-downloads &amp;&amp; set MOSC_UPLOAD_LIMIT=0 &amp;&amp; cd F:\project_workspace\mosc-temp &amp;&amp; npm run mosc:migration:malankara:upload:dry</div>
+        <div class="command-single-line">
+            <div class="command-single-line-label">Windows single-line:</div>
+            <code id="upload-dry-single-code">set MOSC_DOWNLOAD_ROOT=f:\project_workspace\mosc-temp\.mosc-downloads &amp;&amp; set MOSC_UPLOAD_LIMIT=0 &amp;&amp; cd F:\project_workspace\mosc-temp &amp;&amp; npm run mosc:migration:malankara:upload:dry</code>
+        </div>
+    </div>
+
+    <h3>5.4 Upload missing files + thumbnails (recommended repair)</h3>
+    <div class="command-block advance" data-template-command="npm run mosc:migration:malankara:upload:missing">
+        <div class="command-header">
+            <span class="command-type">Missing-only upload + thumbnail backfill + year bundles</span>
+            <div class="command-header-buttons">
+                <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'upload-missing')" title="Copy template">📄 Template</button>
+                <button type="button" class="copy-button" onclick="copyCommand(this, 'upload-missing')" title="Copy command">📋 Copy</button>
+            </div>
+        </div>
+        <div class="command-content" id="upload-missing">set MOSC_DOWNLOAD_ROOT=f:\project_workspace\mosc-temp\.mosc-downloads &amp;&amp; set MOSC_UPLOAD_LIMIT=0 &amp;&amp; cd F:\project_workspace\mosc-temp &amp;&amp; npm run mosc:migration:malankara:upload:missing</div>
+        <div class="command-single-line">
+            <div class="command-single-line-label">Windows single-line:</div>
+            <code id="upload-missing-single-code">set MOSC_DOWNLOAD_ROOT=f:\project_workspace\mosc-temp\.mosc-downloads &amp;&amp; set MOSC_UPLOAD_LIMIT=0 &amp;&amp; cd F:\project_workspace\mosc-temp &amp;&amp; npm run mosc:migration:malankara:upload:missing</code>
+        </div>
+    </div>
+    <p>Equivalent flags: <code>--missing-only --backfill-thumbnails --ensure-year-bundles --insecure-tls</code>. Log: <code>.mosc-downloads/upload-run-missing.log</code>.</p>
+
+    <div class="command-block danger">
+        <div class="command-header">
+            <span class="command-type">⚠ Avoid blind --force on full manifest</span>
+        </div>
+        <div class="command-content" style="font-family: inherit; color: #721c24;">
+            <code>npm run mosc:migration:malankara:upload:force</code> deletes existing rows before re-upload. An earlier bug in delete/dedupe logic (unfiltered API query) caused collateral deletion of 2021/2022 rows. The script is fixed, but prefer <strong><code>--missing-only</code></strong> for repairs unless you intentionally overwrite every file.
+        </div>
+    </div>
+
+    <!-- §6 Backend endpoints -->
+    <h2>6. Backend API endpoints used by upload scripts</h2>
+    <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+        <tbody>
+            <tr><td>POST</td><td><code>/api/authenticate</code></td><td>Service login → JWT (<code>id_token</code>)</td></tr>
+            <tr><td>GET</td><td><code>/api/official-document-categories?tenantId.equals=...</code></td><td>Resolve category slug → id</td></tr>
+            <tr><td>GET</td><td><code>/api/event-medias?eventMediaType.equals=TENANT_OFFICIAL_DOCUMENT&amp;...</code></td><td>List existing official docs (paginated)</td></tr>
+            <tr><td>POST</td><td><code>/api/event-medias/upload/tenant-official-document</code></td><td>Multipart upload: <code>file</code>, optional <code>thumbnailFile</code>, metadata fields</td></tr>
+            <tr><td>PATCH</td><td><code>/api/event-medias/{id}</code></td><td>Merge-patch hierarchy, priority, public flag</td></tr>
+            <tr><td>POST</td><td><code>/api/event-medias/{id}/upload-official-document-thumbnail</code></td><td>Attach/replace card thumbnail (JPG/PNG)</td></tr>
+            <tr><td>DELETE</td><td><code>/api/event-medias/{id}</code></td><td>Only when <code>--force</code> overwrite</td></tr>
+            <tr><td>GET/POST/PATCH</td><td><code>/api/official-document-year-bundles</code></td><td>Year section cover (<code>coverEventMediaId</code>)</td></tr>
+            <tr><td>GET</td><td><code>/api/event-medias/public-official-documents?tenantId=...</code></td><td>Public downloads page (verification)</td></tr>
+        </tbody>
+    </table>
+
+    <h3>6.1 Multipart upload fields (<code>upload/tenant-official-document</code>)</h3>
+    <table>
+        <thead><tr><th>Form field</th><th>Example</th></tr></thead>
+        <tbody>
+            <tr><td><code>tenantId</code></td><td><code>mosc_malankara_orthodox_2</code></td></tr>
+            <tr><td><code>categorySlug</code></td><td><code>malankara-association-2022</code></td></tr>
+            <tr><td><code>officialDocumentYear</code></td><td><code>2022</code></td></tr>
+            <tr><td><code>isPublic</code></td><td><code>true</code></td></tr>
+            <tr><td><code>title</code></td><td>US-ASCII safe (S3 metadata); script sanitizes en-dashes</td></tr>
+            <tr><td><code>description</code></td><td>Contains <code>[[MOSC_TREE_PATH]]</code>, <code>[[MOSC_CATEGORY_LABEL]]</code>, <code>[[MOSC_PRIORITY]]</code></td></tr>
+            <tr><td><code>hierarchyPath</code></td><td>Tree path for downloads UI</td></tr>
+            <tr><td><code>file</code></td><td>PDF or PPTX binary</td></tr>
+            <tr><td><code>thumbnailFile</code></td><td>Optional category cover JPG (16:10 card preview)</td></tr>
+        </tbody>
+    </table>
+
+    <!-- §7 Thumbnails -->
+    <h2>7. Cover images and thumbnails</h2>
+    <p>Two related features on the downloads hub:</p>
+    <table>
+        <thead><tr><th>Feature</th><th>Storage</th><th>Migration approach</th></tr></thead>
+        <tbody>
+            <tr><td><strong>Per-document card thumbnail</strong></td><td><code>event_media.thumbnail_url</code></td><td>Category hero JPG from <code>malankara-category-covers.json</code> sent as <code>thumbnailFile</code> on upload, or via <code>--backfill-thumbnails</code></td></tr>
+            <tr><td><strong>Year bundle cover</strong></td><td><code>official_document_year_bundle.cover_event_media_id</code></td><td><code>--ensure-year-bundles</code> sets cover to first doc in bucket with thumbnail</td></tr>
+        </tbody>
+    </table>
+    <p>Frontend display logic: <code>src/lib/officialDocumentThumbnail.ts</code>. Admin upload UI: <code>src/app/admin/official-documents/</code>.</p>
+
+    <!-- §8 Dedupe -->
+    <h2>8. Dedupe, missing detection, and the force-upload bug (fixed)</h2>
+    <div class="section-container">
+        <p><strong>Unique key:</strong> <code>categorySlug | officialDocumentYear | hierarchyPath</code> (case-insensitive).</p>
+        <p><strong>Manifest:</strong> 165 entries → <strong>134 unique</strong> keys (31 duplicate diocese list paths in manifest).</p>
+        <p><strong>Fixed behavior:</strong> <code class="script-name">official-docs-query.mjs</code> loads all rows with <code>eventMediaType.equals=TENANT_OFFICIAL_DOCUMENT</code>, then filters by <code>officialDocumentCategoryId</code> + <code>officialDocumentYear</code> in Node. Backend criteria alone were unreliable and caused <code>--force</code> to delete unrelated tenant media.</p>
+        <p><strong><code>--missing-only</code>:</strong> Diffs manifest unique keys against DB Malankara rows; uploads only gaps (e.g. 58 files in 2021/2022 categories).</p>
+    </div>
+
+    <!-- §9 Verification -->
+    <h2>9. Verification</h2>
+    <div class="command-block verify" data-template-command="curl -s -D - &quot;http://localhost:8080/api/event-medias/public-official-documents?tenantId=mosc_malankara_orthodox_2&amp;page=0&amp;size=1&quot; -H &quot;Authorization: Bearer YOUR_JWT&quot; -H &quot;X-Tenant-ID: mosc_malankara_orthodox_2&quot;">
+        <div class="command-header">
+            <span class="command-type">Public document count (X-Total-Count header)</span>
+            <div class="command-header-buttons">
+                <button type="button" class="copy-button" onclick="copyCommand(this, 'verify-count')" title="Copy command">📋 Copy</button>
+            </div>
+        </div>
+        <div class="command-content" id="verify-count">Use migration script or admin UI; after June 2026 repair expect X-Total-Count: 149</div>
+        <div class="command-single-line">
+            <div class="command-single-line-label">UI check:</div>
+            <code id="verify-count-single-code">Open http://localhost:3000/mosc-redesign/downloads — footer should show ~149 public files with card thumbnails on Malankara rows</code>
+        </div>
+    </div>
+
+    <table>
+        <thead><tr><th>Check</th><th>Expected (post-repair)</th></tr></thead>
+        <tbody>
+            <tr><td>DB <code>TENANT_OFFICIAL_DOCUMENT</code> rows</td><td>~151 total</td></tr>
+            <tr><td>Public (<code>isPublic=true</code>)</td><td>~149</td></tr>
+            <tr><td>Rows with <code>thumbnailUrl</code></td><td>Malankara rows should have category cover JPG</td></tr>
+            <tr><td>Filter <em>Malankara Association 2021</em></td><td>~35 documents (was 5 before repair)</td></tr>
+            <tr><td>Filter <em>Malankara Association 2022</em></td><td>Agenda, Notification, diocese PDFs visible</td></tr>
+        </tbody>
+    </table>
+
+    <!-- §10 Reuse -->
+    <h2>10. Reusing this pattern for other migrations</h2>
+    <div class="section-intro">
+        <p>The same stack works for any bulk ingest of tenant official documents (synod minutes, circulars, another legacy folder tree). Copy the pattern — not necessarily the Malankara-specific manifest.</p>
+    </div>
+
+    <h3>10.1 Checklist for a new document set</h3>
+    <ol>
+        <li><strong>Manifest JSON</strong> — array of <code>{ url, categorySlug, year, filename, hierarchyPath, displayName }</code> (see <code>url-list.example.json</code>).</li>
+        <li><strong>Categories</strong> — create slugs in admin or SQL seed before upload (<code>/admin/official-document-categories</code>).</li>
+        <li><strong>Fetch</strong> — <code class="script-name">fetch-urls.mjs --manifest your-list.json</code> → flat layout under <code>MOSC_DOWNLOAD_ROOT</code>.</li>
+        <li><strong>Upload</strong> — <code class="script-name">upload-manifest-to-official-docs.mjs --manifest your-list.json</code> (direct :8080).</li>
+        <li><strong>Optional covers</strong> — add a <code>*-category-covers.json</code> map slug → image URL; use <code>--backfill-thumbnails</code>.</li>
+        <li><strong>Verify</strong> — public API count + downloads hub filters.</li>
+    </ol>
+
+    <h3>10.2 When to use which upload script</h3>
+    <table>
+        <thead><tr><th>Scenario</th><th>Script</th><th>API target</th></tr></thead>
+        <tbody>
+            <tr><td>Flat manifest (<code>categorySlug/year/file.pdf</code> on disk)</td><td><code class="script-name">upload-manifest-to-official-docs.mjs</code></td><td>Direct <code>:8080</code> ✅</td></tr>
+            <tr><td>Windows Explorer tree (<code>Downloads\Category\Section\file.pdf</code>)</td><td><code class="script-name">upload-mirror-to-official-docs.mjs</code></td><td>Historically Next proxy; consider migrating to <code>migration-api-lib</code></td></tr>
+            <tr><td>Admin one-off / QA</td><td>Admin UI bulk upload</td><td>Next.js server actions → <code>:8080</code></td></tr>
+        </tbody>
+    </table>
+
+    <h3>10.3 Extending <code class="script-name">migration-api-lib.mjs</code></h3>
+    <p>For new automation (e.g. bulk PATCH, category import, year bundle seeding):</p>
+    <pre>import { assertEnv, apiFetch, TENANT_ID, API_BASE_URL } from './migration-api-lib.mjs';
+
+assertEnv();
+const { res, json, text } = await apiFetch('/api/your-endpoint', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ tenantId: TENANT_ID, ...payload }),
+});</pre>
+    <p>Do <strong>not</strong> hardcode <code>http://localhost:8080</code> in new scripts — always use <code>apiFetch</code> so production env vars apply.</p>
+
+    <h3>10.4 Next.js app vs migration scripts</h3>
+    <table>
+        <thead><tr><th>Context</th><th>Base URL</th><th>Auth</th></tr></thead>
+        <tbody>
+            <tr><td>Browser / public downloads page</td><td>N/A (server action calls backend)</td><td>Service JWT via <code>fetchWithJwtRetry</code></td></tr>
+            <tr><td>Client on public pages</td><td>Relative <code>/api/proxy/...</code> only for public data</td><td>No Clerk required for listed public routes</td></tr>
+            <tr><td>Node migration scripts</td><td><code>NEXT_PUBLIC_API_BASE_URL</code> → <code>:8080</code></td><td><code>API_JWT_*</code> + <code>X-Tenant-ID</code></td></tr>
+        </tbody>
+    </table>
+
+    <!-- §11 Logs -->
+    <h2>11. Log files and artifacts</h2>
+    <table>
+        <thead><tr><th>Artifact</th><th>Location</th></tr></thead>
+        <tbody>
+            <tr><td>Missing upload run log</td><td><code>.mosc-downloads/upload-run-missing.log</code></td></tr>
+            <tr><td>Earlier force upload log</td><td><code>.mosc-downloads/upload-run-force.log</code></td></tr>
+            <tr><td>Downloaded PDFs</td><td><code>{MOSC_DOWNLOAD_ROOT}/{categorySlug}/{year}/</code></td></tr>
+            <tr><td>Category cover map</td><td><code>scripts/mosc-in-migration/malankara-category-covers.json</code></td></tr>
+        </tbody>
+    </table>
+
+    <p class="doc-meta" style="margin-top: 40px;">
+        <strong>Related:</strong> <a href="downloads_malankara_association_prd.html">downloads_malankara_association_prd.html</a> &nbsp;|&nbsp;
+        <code>documentation/mosc_document_downloads_page/thumbnail/README.md</code> &nbsp;|&nbsp;
+        <code>documentation/mosc_document_downloads_page/cover_image/</code>
+    </p>
+
+    <script>
+    function fallbackCopy(text, button) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+            document.execCommand('copy');
+            if (button) {
+                var orig = button.textContent;
+                button.classList.add('copied');
+                button.textContent = 'Copied!';
+                setTimeout(function () {
+                    button.classList.remove('copied');
+                    button.textContent = orig;
+                }, 2000);
+            }
+        } catch (e) { /* ignore */ }
+        document.body.removeChild(ta);
+    }
+
+    function copyText(text, button) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () {
+                if (!button) return;
+                var orig = button.textContent;
+                button.classList.add('copied');
+                button.textContent = 'Copied!';
+                setTimeout(function () {
+                    button.classList.remove('copied');
+                    button.textContent = orig;
+                }, 2000);
+            }).catch(function () { fallbackCopy(text, button); });
+        } else {
+            fallbackCopy(text, button);
+        }
+    }
+
+    function copyCommand(button, commandId) {
+        var single = document.getElementById(commandId + '-single-code');
+        var block = document.getElementById(commandId);
+        var text = single ? single.textContent : (block ? block.textContent : '');
+        copyText(text.trim(), button);
+    }
+
+    function copyTemplateCommand(button, commandId) {
+        var block = button.closest('.command-block');
+        var template = block ? block.getAttribute('data-template-command') : '';
+        if (template) {
+            template = template.replace(/&amp;/g, '&').replace(/&quot;/g, '"');
+        }
+        copyText(template.trim(), button);
+    }
+    </script>
+</body>
+</html>

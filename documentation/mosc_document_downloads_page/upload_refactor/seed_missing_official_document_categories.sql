@@ -27,6 +27,7 @@ WITH seed(display_name, slug, sort_order) AS (
     ('Malankara Association 2022', 'malankara-association-2022', 210),
     ('Application Forms', 'application-forms', 220),
     ('Malankara Association 2021', 'malankara-association-2021', 230),
+    ('Malankara Association 2026', 'malankara-association-2026', 155),
     ('prayer', 'prayer', 240),
     ('Advertisement', 'advertisement', 250),
     ('FCRA Statements', 'fcra-statements', 260),

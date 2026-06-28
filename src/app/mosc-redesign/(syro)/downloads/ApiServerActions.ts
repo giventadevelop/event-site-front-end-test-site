@@ -5,6 +5,7 @@ import { getTenantId, getApiBaseUrl } from '@/lib/env';
 import type { EventMediaDTO } from '@/types';
 import { parseHierarchyDescription } from '@/lib/officialDocumentHierarchy';
 import { resolveOfficialDocumentDownloadUrl } from '@/lib/officialDocumentDownload';
+import { matchesDownloadSearchQuery } from '@/lib/downloads/downloadSearch';
 import {
   buildOfficialDocumentThumbnailCacheKey,
   getEventMediaDisplayThumbnailUrl,
@@ -184,12 +185,85 @@ export async function fetchPublicOfficialDocumentsTreeServer(input?: {
   size?: number;
   categoryId?: number;
   year?: number;
+  search?: string;
 }): Promise<PublicOfficialDocumentTreePage> {
   const page = Math.max(0, input?.page ?? 0);
   const size = Math.min(Math.max(1, input?.size ?? 24), 100);
+  const searchQuery = input?.search?.trim() ?? '';
 
   try {
     const tenantId = getTenantId();
+
+    if (searchQuery) {
+      const allDocs = await fetchAllPublicOfficialDocumentsRaw({
+        categoryId: input?.categoryId,
+      });
+      const filteredDocs = allDocs.filter((doc) => {
+        const item = mapEventMediaToTreeItem(doc);
+        if (input?.year && item.officialDocumentYear !== input.year) {
+          return false;
+        }
+        return matchesDownloadSearchQuery(
+          {
+            title: item.title,
+            fileName: item.fileName,
+            treePath: item.treePath,
+            pathSegments: item.pathSegments,
+            categoryLabel: item.categoryLabel,
+            description: item.description,
+            officialDocumentYear: item.officialDocumentYear,
+          },
+          searchQuery
+        );
+      });
+
+      filteredDocs.sort((a, b) => {
+        const pa = a.displayPriority ?? a.priorityRanking ?? 999999;
+        const pb = b.displayPriority ?? b.priorityRanking ?? 999999;
+        if (pa !== pb) return pa - pb;
+        return String(a.title || '').localeCompare(String(b.title || ''));
+      });
+
+      const totalElements = filteredDocs.length;
+      const totalPages = Math.max(1, Math.ceil(totalElements / size));
+      const currentPage = Math.min(page, totalPages - 1);
+      const slice = filteredDocs.slice(currentPage * size, currentPage * size + size);
+      const content = slice.map(mapEventMediaToTreeItem);
+
+      const [yearOptions, allYearOptions] = await Promise.all([
+        fetchPublicOfficialDocumentYearOptionsServer({ categoryId: input?.categoryId }),
+        fetchPublicOfficialDocumentYearOptionsServer(),
+      ]);
+
+      const catParams = new globalThis.URLSearchParams();
+      catParams.append('tenantId.equals', getTenantId());
+      catParams.append('isActive.equals', 'true');
+      catParams.append('sort', 'sortOrder,asc');
+      catParams.append('size', '200');
+      const catsUrl = `${getApiBaseUrl()}/api/official-document-categories?${catParams.toString()}`;
+      const catsRes = await fetchWithJwtRetry(catsUrl, { cache: 'no-store' });
+      const catJson = catsRes.ok ? await catsRes.json() : [];
+      const catRaw = Array.isArray(catJson) ? catJson : Array.isArray(catJson?.content) ? catJson.content : [];
+      const categoryOptions = (catRaw as Array<Record<string, unknown>>)
+        .map((row) => ({
+          id: Number(row.id),
+          slug: String(row.slug ?? ''),
+          displayName: String(row.displayName ?? row.display_name ?? row.slug ?? ''),
+        }))
+        .filter((x) => Number.isFinite(x.id) && x.id > 0);
+
+      return {
+        content,
+        totalElements,
+        totalPages,
+        page: currentPage,
+        size,
+        categoryOptions,
+        yearOptions,
+        allYearOptions,
+      };
+    }
+
     const baseParams = new globalThis.URLSearchParams();
     baseParams.set('tenantId', tenantId);
     if (input?.categoryId) {

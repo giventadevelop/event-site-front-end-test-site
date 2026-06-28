@@ -19,6 +19,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { formatDownloadCardTitle, getDownloadCardSubtitle } from '@/lib/downloads/formatDownloadCardTitle';
+import {
+  matchesDownloadSearchQuery,
+  resolveDownloadCardDisplayTitle,
+} from '@/lib/downloads/downloadSearch';
 
 const BANNER_DESCRIPTION =
   'Official documents available for download. Browse, filter, and download.';
@@ -29,6 +33,7 @@ type Props = {
     page: number;
     categoryId: number | null;
     year: number | null;
+    search: string;
   };
 };
 
@@ -190,7 +195,13 @@ function DownloadCard({
     setThumbFailed(false);
   }, [displayThumb]);
 
-  const displayTitle = formatDownloadCardTitle(file.title?.trim() || file.fileName);
+  const displayTitle = resolveDownloadCardDisplayTitle({
+    title: file.title,
+    fileName: file.fileName,
+    pathSegments: file.pathSegments,
+    categoryLabel: file.categoryLabel,
+    treePath: file.treePath,
+  });
   const cardSubtitle = getCardSubtitle(file);
   const displayIndex = String(index + 1).padStart(2, '0');
   const metaLine = [file.categoryLabel, file.officialDocumentYear ? `Year ${file.officialDocumentYear}` : null]
@@ -265,21 +276,34 @@ function DownloadCard({
             type="button"
             onClick={() => onDownload(file)}
             disabled={isDownloading}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-burgundy/15 bg-white px-3 py-2.5 font-syro-primary text-sm font-semibold text-syro-red transition-colors hover:border-burgundy/30 hover:bg-burgundy/5 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+            className="download-entry-card__action inline-flex w-full items-center justify-center gap-2 rounded-lg border border-syro-blue-secondary/20 bg-syro-blue-secondary px-4 py-2.5 font-syro-primary text-sm font-semibold text-white shadow-[0_4px_12px_rgba(1,30,148,0.18)] transition-all duration-300 hover:border-syro-blue hover:bg-syro-blue hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(11,40,72,0.28)] focus:outline-none focus:ring-2 focus:ring-syro-blue-secondary/35 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-[0_4px_12px_rgba(1,30,148,0.18)]"
+            title={isDownloading ? 'Preparing download' : 'Download file'}
+            aria-label={isDownloading ? 'Preparing download' : 'Download file'}
             aria-busy={isDownloading}
           >
-            {isDownloading ? 'Preparing…' : 'Download file'}
-            <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-              />
-            </svg>
+            {isDownloading ? 'Preparing…' : 'Download'}
+            {isDownloading ? (
+              <svg className="h-4 w-4 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+            ) : (
+              <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                />
+              </svg>
+            )}
           </button>
         ) : (
-          <span className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-400">
+          <span className="inline-flex w-full items-center justify-center rounded-lg border border-burgundy/15 bg-white px-3 py-2.5 font-syro-primary text-xs font-semibold text-gray-400">
             No download link
           </span>
         )}
@@ -631,7 +655,7 @@ function YearFilterBar({
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Search documents…"
               className="w-full sm:w-56 rounded-md border-2 border-syro-gold/40 bg-white py-1.5 pl-9 pr-3 text-xs font-semibold text-syro-blue placeholder:font-normal placeholder:text-gray-400 focus:border-syro-blue focus:outline-none focus:ring-2 focus:ring-syro-blue/30"
-              aria-label="Search documents on this page"
+              aria-label="Search documents across the library"
             />
           </label>
           <button
@@ -744,26 +768,34 @@ export default function DownloadsPageClient({
 
   const [downloadingId, setDownloadingId] = React.useState<number | null>(null);
   const [downloadError, setDownloadError] = React.useState<DownloadErrorState | null>(null);
-  const [searchQuery, setSearchQuery] = React.useState('');
+  const [searchQuery, setSearchQuery] = React.useState(currentFilters.search ?? '');
 
+  React.useEffect(() => {
+    setSearchQuery(currentFilters.search ?? '');
+  }, [currentFilters.search]);
+
+  const isServerSearch = Boolean(currentFilters.search?.trim());
   const filteredDownloads = React.useMemo(() => {
+    if (isServerSearch) return officialTreePage.content;
     const q = searchQuery.trim().toLowerCase();
     if (!q) return officialTreePage.content;
-    return officialTreePage.content.filter((file) => {
-      const haystack = [
-        file.fileName,
-        file.description ?? '',
-        file.categoryLabel ?? '',
-        getFolderPath(file),
-        file.officialDocumentYear ? String(file.officialDocumentYear) : '',
-      ]
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(q);
-    });
-  }, [officialTreePage.content, searchQuery]);
+    return officialTreePage.content.filter((file) =>
+      matchesDownloadSearchQuery(
+        {
+          title: file.title,
+          fileName: file.fileName,
+          treePath: file.treePath,
+          pathSegments: file.pathSegments,
+          categoryLabel: file.categoryLabel,
+          description: file.description,
+          officialDocumentYear: file.officialDocumentYear,
+        },
+        q
+      )
+    );
+  }, [officialTreePage.content, searchQuery, isServerSearch]);
 
-  const isSearching = searchQuery.trim().length > 0;
+  const isSearching = Boolean(currentFilters.search?.trim() || searchQuery.trim());
   const hasActiveFilters = currentFilters.categoryId != null || currentFilters.year != null;
   const hasActiveFiltersOrSearch = hasActiveFilters || isSearching;
 
@@ -772,6 +804,38 @@ export default function DownloadsPageClient({
     router.replace('/mosc-redesign/downloads');
     router.refresh();
   }, [router]);
+
+  const pushSearchToUrl = React.useCallback(
+    (value: string) => {
+      const params = new globalThis.URLSearchParams();
+      params.set('page', '1');
+      if (currentFilters.categoryId) params.set('categoryId', String(currentFilters.categoryId));
+      if (currentFilters.year) params.set('year', String(currentFilters.year));
+      const trimmed = value.trim();
+      if (trimmed) params.set('q', trimmed);
+      router.replace(`/mosc-redesign/downloads?${params.toString()}`);
+      router.refresh();
+    },
+    [router, currentFilters.categoryId, currentFilters.year]
+  );
+
+  const searchDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleSearchChange = React.useCallback(
+    (value: string) => {
+      setSearchQuery(value);
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      searchDebounceRef.current = setTimeout(() => {
+        pushSearchToUrl(value);
+      }, 400);
+    },
+    [pushSearchToUrl]
+  );
+
+  React.useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, []);
 
   const handleDownload = React.useCallback(async (file: TreeItem) => {
     if (!file.downloadUrl) {
@@ -816,6 +880,7 @@ export default function DownloadsPageClient({
     params.set('page', String(page));
     if (currentFilters.categoryId) params.set('categoryId', String(currentFilters.categoryId));
     if (currentFilters.year) params.set('year', String(currentFilters.year));
+    if (currentFilters.search?.trim()) params.set('q', currentFilters.search.trim());
     return `/mosc-redesign/downloads?${params.toString()}`;
   };
 
@@ -824,6 +889,7 @@ export default function DownloadsPageClient({
     params.set('page', '1');
     if (categoryId) params.set('categoryId', String(categoryId));
     if (year) params.set('year', String(year));
+    if (currentFilters.search?.trim()) params.set('q', currentFilters.search.trim());
     return `/mosc-redesign/downloads?${params.toString()}`;
   };
 
@@ -871,8 +937,10 @@ export default function DownloadsPageClient({
                     {isSearching ? (
                       <>
                         {' '}
-                        — search on this page:{' '}
-                        <span className="font-semibold">&ldquo;{searchQuery.trim()}&rdquo;</span>
+                        — search across library:{' '}
+                        <span className="font-semibold">
+                          &ldquo;{(currentFilters.search || searchQuery).trim()}&rdquo;
+                        </span>
                       </>
                     ) : null}
                     . Lower priority values are shown first.
@@ -889,7 +957,7 @@ export default function DownloadsPageClient({
                 currentFilters={currentFilters}
                 buildFilterHref={queryWithFilter}
                 searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
+                onSearchChange={handleSearchChange}
                 onClearFilters={handleClearFilters}
                 hasActiveFiltersOrSearch={hasActiveFiltersOrSearch}
               />
@@ -904,8 +972,8 @@ export default function DownloadsPageClient({
             {isSearching ? (
               <div className="mb-4 text-sm text-gray-600">
                 Showing <span className="font-semibold">{filteredDownloads.length}</span> of{' '}
-                <span className="font-semibold">{officialTreePage.content.length}</span> files on this page matching{' '}
-                <span className="font-semibold">&ldquo;{searchQuery.trim()}&rdquo;</span>.
+                <span className="font-semibold">{officialTreePage.totalElements}</span> files matching{' '}
+                <span className="font-semibold">&ldquo;{(currentFilters.search || searchQuery).trim()}&rdquo;</span>.
               </div>
             ) : null}
 
@@ -913,7 +981,7 @@ export default function DownloadsPageClient({
               <div className="rounded-lg border border-syro-gold/25 bg-syro-bg-gray/50 px-5 py-6 text-sm text-gray-600 space-y-3">
                 {isSearching ? (
                   <p>
-                    No files on this page match &ldquo;{searchQuery.trim()}&rdquo;. Try a different search term, or
+                    No files match &ldquo;{(currentFilters.search || searchQuery).trim()}&rdquo;. Try a different search term, or
                     click the{' '}
                     <button
                       type="button"

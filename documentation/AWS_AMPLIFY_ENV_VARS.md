@@ -4,9 +4,15 @@ This guide shows how to manage environment variables for your AWS Amplify app in
 
 ## App Information
 
-- **App ID**: `d1508w3f27cyps`
-- **Branch**: `feature_Common_Clerk`
-- **Region**: `us-east-1`
+**Production satellite (mosc-temp.com)**
+
+- **App ID**: `d1jo61890p2myt`
+- **Branch**: `release/v1.0.0` (Amplify PRODUCTION)
+- **Region**: `us-east-2` (Web Compute — not us-east-1)
+
+> **Full satellite workflow** (Clerk DNS verification, Route 53, dev vs prod paths, new sites): see [SATELLITE_FRONTEND_DEPLOYMENT.md](./SATELLITE_FRONTEND_DEPLOYMENT.md) and the canonical HTML guide in `application-deployments` → `documentation/aws-infrastructure/satellite-frontend-deployment-guide.html` (`#inventory`, `#clerk-dns-verification`).
+
+**Legacy / alternate app** (if you still use feature branch deploys): App ID `d1508w3f27cyps`, region `us-east-1`, branch `feature_Common_Clerk` — verify with `aws amplify list-apps --region us-east-2` before using defaults in scripts.
 
 ## Quick Start
 

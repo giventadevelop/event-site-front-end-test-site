@@ -7,9 +7,9 @@
 
 param(
     [string]$EnvFile = ".env.amplify",
-    [string]$BranchName = "main",
-    [string]$AppId = "d1502cffqchuun",
-    [string]$Region = "us-east-2"
+    [string]$BranchName = "feature_Common_Clerk",
+    [string]$AppId = "d1508w3f27cyps",
+    [string]$Region = "us-east-1"
 )
 
 # Check if AWS CLI is installed

@@ -203,9 +203,35 @@ What it does:
 5. Patches uploaded rows with hierarchy metadata and `priorityRanking` so public listing can render tree + priority-first order.
 6. Performs safe dedupe before upload: skips files that already exist by `(tenant, category, year, hierarchy_path)`.
 
+### Malankara manifest upload (direct backend API)
+
+Uploads from `url-list.malankara-remapped.json` using **direct Spring Boot** calls (not Next.js proxy):
+
+```bash
+# Requires backend on :8080, API_JWT_* in .env.local, PDFs under MOSC_DOWNLOAD_ROOT
+set "MOSC_DOWNLOAD_ROOT=f:\project_workspace\mosc-temp\.mosc-downloads"
+npm run mosc:migration:malankara:upload:dry
+npm run mosc:migration:malankara:upload
+```
+
+Script: `scripts/mosc-in-migration/upload-manifest-to-official-docs.mjs`  
+Shared auth: `scripts/mosc-in-migration/migration-api-lib.mjs` → `POST http://localhost:8080/api/authenticate`, then `POST /api/event-medias/upload/tenant-official-document` with `Authorization` + `X-Tenant-ID`.
+
 Environment overrides:
 
-- `MOSC_APP_BASE_URL` (default `http://localhost:3000`)
+- `NEXT_PUBLIC_API_BASE_URL` or `MOSC_API_BASE_URL` (default `http://localhost:8080`)
+- `MOSC_DOWNLOAD_ROOT` — **no trailing space** (Windows `set VAR=value &&` can append a space)
+- `MOSC_UPLOAD_LIMIT` — set to `0` for full run
+- `MOSC_UPLOAD_DELAY_MS` — pause between uploads (default `400`; reduces S3 rate errors)
+- `MOSC_UPLOAD_MAX_RETRIES` — retry count for 500 / SignatureDoesNotMatch (default `3`)
+- `MOSC_UPLOAD_FORCE=true` or `--force` — delete existing `(category, year, hierarchyPath)` matches, then re-upload
+- `API_JWT_USER` / `API_JWT_PASS` — service JWT (from `.env.local`)
+
+**S3 note:** Upload `title` (S3 user metadata) must be US-ASCII. Manifest `hierarchyPath` values with Unicode en-dashes (`–`) are sanitized for `title` automatically; full Unicode remains in `hierarchyPath` / description for the UI.
+
+**AWS credentials:** Backend reads `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_REGION` (not `AWS_DEPLOY_REGION`). Ensure the running Spring Boot process uses the same values as `event-site-manager-service/src/main/docker/Docker_Local/.env` (bucket is in `us-east-2`).
+
+---
 - `MOSC_MIRROR_REPORT`
 - `MOSC_MIRROR_DOWNLOADS_ROOT`
 - `MOSC_UPLOAD_LIMIT` (limit number of files for staged runs)
@@ -332,6 +358,63 @@ This repo ships **Node** scripts only. If you prefer Python:
 | `_scrape-downloads-page-once.mjs` | Optional: shallow href dump from the main downloads page only. |
 | `mirror-downloads-tree.mjs` | Traversal downloader that mirrors title/subtitle hierarchy into nested folders. |
 | `upload-mirror-to-official-docs.mjs` | Auto-uploads mirrored files to official-documents API and patches hierarchy metadata + priority. |
+| `malankara-category-map.json` | Legacy page folder → official-document category slug + election year. |
+| `build-malankara-manifest.mjs` | Builds `url-list.malankara-remapped.json` from `code_clone_ref/mosc_in/downloads/malankara-association-*`. |
+| `url-list.malankara-remapped.json` | Committed Malankara-only manifest (165 URLs, correct category slugs). |
+| `upload-manifest-to-official-docs.mjs` | Upload from flat `{MOSC_DOWNLOAD_ROOT}/{categorySlug}/{year}/{filename}` with dedupe. |
+
+---
+
+## Malankara Association migration (Phase 1)
+
+Per [`documentation/mosc_redesign/downloads_malankara_association/downloads_malankara_association_prd.html`](../../documentation/mosc_redesign/downloads_malankara_association/downloads_malankara_association_prd.html).
+
+### 1. Regenerate manifest (optional)
+
+```bash
+npm run mosc:migration:malankara:manifest
+```
+
+Parses local legacy HTML mirrors and writes `url-list.malankara-remapped.json` with correct slugs (`malankara-association-2022`, etc.) and **election year** (2022 for 2022 cycle, not upload-path year 2021).
+
+### 2. Download PDFs
+
+Default download root is `C:\E_Drive\code_backup\mosc_downloads`. Override with `MOSC_DOWNLOAD_ROOT`.
+
+On Windows, if TLS fetch fails with `fetch failed`, add `--insecure-tls` (certificate revocation check):
+
+```bash
+set MOSC_DOWNLOAD_ROOT=f:\project_workspace\mosc-temp\.mosc-downloads
+npm run mosc:migration:malankara:fetch
+```
+
+Or dry-run:
+
+```bash
+npm run mosc:migration:malankara:fetch:dry
+```
+
+### 3. Upload to official documents (dedupe enabled)
+
+Requires Next.js on `MOSC_APP_BASE_URL` (default `http://localhost:3000`), working backend JWT, **valid S3 credentials on the backend**, and tenant categories seeded (`mosc_malankara_orthodox_2`).
+
+```bash
+set MOSC_DOWNLOAD_ROOT=f:\project_workspace\mosc-temp\.mosc-downloads
+set NEXT_PUBLIC_TENANT_ID=mosc_malankara_orthodox_2
+npm run mosc:migration:malankara:upload:dry
+npm run mosc:migration:malankara:upload
+```
+
+Dedupe skips existing rows by `(categoryId, electionYear, hierarchyPath)` and filename.
+
+### npm shortcuts
+
+| Script | What it runs |
+|--------|----------------|
+| `npm run mosc:migration:malankara:manifest` | Rebuild `url-list.malankara-remapped.json` from legacy HTML |
+| `npm run mosc:migration:malankara:fetch` | Download Malankara PDFs with `--insecure-tls --skip-existing` |
+| `npm run mosc:migration:malankara:upload:dry` | Dry-run manifest upload |
+| `npm run mosc:migration:malankara:upload` | Upload + PATCH hierarchy metadata |
 
 ---
 

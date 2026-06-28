@@ -13,7 +13,6 @@ REM   /PROD          Import corrected_event_media_inserts.ordered_PROD.sql
 REM   /SKIP-EXPORT   Skip pg_dump and steps 2-4; reuse export.sql and
 REM                  corrected_event_media_inserts.ordered.sql unchanged
 REM   /REMOTE        Steps 5-7 target remote Postgres (mosc-temp\.env.local first)
-REM   /TARGET-ENV    Override remote DB env file (next arg; beats .env.local)
 REM   /SCHEMA-ONLY   Apply schema (step 5) only; skip export 1-4 and import/sync 6-7
 REM   /IMPORT-FILE   Override default import SQL (next arg or /IMPORT-FILE=path)
 REM   /REGEN-MOSC    Regenerate mosc_malankara_orthodox_2 SQL from ordered source
@@ -33,7 +32,6 @@ set "REGEN_MOSC=0"
 set "PRE_CLEAN_MOSC=0"
 set "DATA_ONLY=0"
 set "IMPORT_DUP_ONLY=0"
-set "TARGET_ENV_OVERRIDE="
 set "FINAL_EXIT=0"
 set "RUN_MODE=FULL"
 set "PSQL_MODE="
@@ -82,7 +80,6 @@ if /i "!ARG!"=="/REMOTE" (
   shift
   goto :parse_loop
 )
-if /i "!ARG!"=="/TARGET-ENV" goto :parse_target_env_path
 if /i "!ARG!"=="/SCHEMA-ONLY" (
   set "SCHEMA_ONLY=1"
   shift
@@ -139,16 +136,6 @@ if "%~1"=="" (
   exit /b 1
 )
 set "CUSTOM_IMPORT_FILE=%~1"
-shift
-goto :parse_loop
-
-:parse_target_env_path
-shift
-if "%~1"=="" (
-  call :log_err "/TARGET-ENV requires a file path argument."
-  exit /b 1
-)
-set "TARGET_ENV_OVERRIDE=%~1"
 shift
 goto :parse_loop
 
@@ -493,7 +480,6 @@ if "%USE_REMOTE%"=="1" (
 echo(
 
 if "%USE_REMOTE%"=="1" (
-  if "%FORCE%"=="1" goto :confirm_ok
   set /p "CONFIRM=Type PRODUCTION to continue with REMOTE schema rebuild and import: "
   if /i not "!CONFIRM!"=="PRODUCTION" goto :confirm_abort
   goto :confirm_ok
@@ -767,7 +753,6 @@ echo(   /FORCE          Skip confirmation before schema rebuild
 echo(   /PROD           Import corrected_event_media_inserts.ordered_PROD.sql
 echo(   /SKIP-EXPORT    Skip export/reorder/PROD/patch; import existing ordered SQL as-is
 echo(   /REMOTE         Apply steps 5-7 to remote Postgres (reads mosc-temp\.env.local)
-echo(   /TARGET-ENV     Override remote env file (next arg; use database_target.prod.env for prod RDS)
 echo(   /SCHEMA-ONLY    Apply schema only (step 5); skip export 1-4 and import/sync 6-7
 echo(   /IMPORT-FILE    Override import SQL file (next arg or /IMPORT-FILE=path)
 echo(   /REGEN-MOSC     Regenerate mosc_malankara_orthodox_2 SQL before import
@@ -780,9 +765,8 @@ echo(   %~nx0 F:\project_workspace /REGEN-MOSC /SKIP-EXPORT /IMPORT-FILE "...\mo
 echo(   %~nx0 F:\project_workspace /REGEN-MOSC /SKIP-EXPORT /DATA-ONLY /IMPORT-DUP-ONLY /FORCE
 echo(
 echo( Remote config (first match wins):
-echo(   1. /TARGET-ENV path                         - explicit override (recommended for prod vs dev)
-echo(   2. WORKSPACE_ROOT\mosc-temp\.env.local      - RDS_ENDPOINT, DB_NAME, DB_USERNAME, DB_PASSWORD
-echo(   3. %~dp0database_target.local.env          - fallback (DB_HOST, DB_USER, ...)
+echo(   1. WORKSPACE_ROOT\mosc-temp\.env.local  - RDS_ENDPOINT, DB_NAME, DB_USERNAME, DB_PASSWORD
+echo(   2. %~dp0database_target.local.env       - fallback (DB_HOST, DB_USER, ...)
 echo(
 echo( Example:
 echo(   %~nx0 F:\project_workspace
@@ -791,18 +775,11 @@ echo(   %~nx0 F:\project_workspace /SCHEMA-ONLY /FORCE
 echo(   %~nx0 F:\project_workspace /IMPORT-FILE "F:\path\to\custom_import.sql" /FORCE
 exit /b 1
 
-REM --- Load remote DB config: /TARGET-ENV, then mosc-temp\.env.local, then database_target.local.env ---
+REM --- Load remote DB config: mosc-temp\.env.local first, then database_target.local.env ---
 :load_remote_config
 set "ENV_FILE="
 set "ENV_SOURCE="
-if defined TARGET_ENV_OVERRIDE (
-  if not exist "!TARGET_ENV_OVERRIDE!" (
-    call :log_err "TARGET-ENV file not found: !TARGET_ENV_OVERRIDE!"
-    exit /b 1
-  )
-  set "ENV_FILE=!TARGET_ENV_OVERRIDE!"
-  for %%F in ("!TARGET_ENV_OVERRIDE!") do set "ENV_SOURCE=%%~nxF"
-) else if exist "%MOSC_TEMP%\.env.local" (
+if exist "%MOSC_TEMP%\.env.local" (
   set "ENV_FILE=%MOSC_TEMP%\.env.local"
   set "ENV_SOURCE=mosc-temp\.env.local"
 ) else if exist "%TARGET_ENV%" (

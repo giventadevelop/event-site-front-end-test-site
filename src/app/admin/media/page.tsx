@@ -6,17 +6,15 @@ import type { EventMediaDTO } from "@/types";
 import { FaUsers, FaPhotoVideo, FaCalendarAlt, FaTimes, FaChevronLeft, FaChevronRight, FaTicketAlt, FaUpload, FaTags, FaHome, FaFolderOpen } from 'react-icons/fa';
 import AdminNavigation from '@/components/AdminNavigation';
 import { Modal } from "@/components/Modal";
+import SaveStatusDialog, { type SaveStatus } from '@/components/SaveStatusDialog';
 import { formatInTimeZone } from 'date-fns-tz';
 import EventFormHelpTooltip from '@/components/EventFormHelpTooltip';
 import MediaImageSpecHelpContent from '@/components/MediaImageSpecHelpContent';
 import { getClientTenantId } from '@/lib/env';
 import { normalizeEventMediasList } from '@/lib/homepage/homepageApiNormalize';
 import {
-  buildOfficialDocumentThumbnailCacheKey,
   getEventMediaDisplayThumbnailUrl,
-  getOfficialDocumentCardThumbnailSrc,
   getOfficialDocumentPlaceholderKind,
-  hasStoredOfficialDocumentThumbnail,
   placeholderGradient,
   placeholderLabel,
 } from '@/lib/officialDocumentThumbnail';
@@ -39,6 +37,19 @@ function formatDateInTimezone(dateString: string, timezone: string = 'America/Ne
 }
 
 const MAX_MEDIA_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB per file (matches other admin upload UIs)
+const EXCLUDE_OFFICIAL_DOCS_QUERY = 'isEventManagementOfficialDocument.equals=false';
+const OFFICIAL_DOCUMENT_MEDIA_TYPE = 'TENANT_OFFICIAL_DOCUMENT';
+
+function isOfficialDocumentMedia(item: EventMediaDTO): boolean {
+  return (
+    Boolean(item.isEventManagementOfficialDocument) ||
+    (item.eventMediaType || '').toUpperCase() === OFFICIAL_DOCUMENT_MEDIA_TYPE
+  );
+}
+
+function filterNonOfficialMedia(items: EventMediaDTO[]): EventMediaDTO[] {
+  return items.filter((item) => !isOfficialDocumentMedia(item));
+}
 
 async function parseMediaUploadError(res: Response): Promise<string> {
   const text = await res.text();
@@ -65,7 +76,7 @@ interface EditMediaModalProps {
   loading: boolean;
 }
 
-type MediaCheckboxName = 'isPublic' | 'eventFlyer' | 'isEventManagementOfficialDocument' | 'isHeroImage' | 'isActiveHeroImage' | 'isFeaturedVideo' | 'isHomePageHeroImage' | 'isFeaturedEventImage' | 'isLiveEventImage';
+type MediaCheckboxName = 'isPublic' | 'eventFlyer' | 'isHeroImage' | 'isActiveHeroImage' | 'isFeaturedVideo' | 'isHomePageHeroImage' | 'isFeaturedEventImage' | 'isLiveEventImage';
 
 function EditMediaModal({ media, onClose, onSave, loading }: EditMediaModalProps) {
   console.log('EditMediaModal - media object:', media);
@@ -94,7 +105,6 @@ function EditMediaModal({ media, onClose, onSave, loading }: EditMediaModalProps
     fileSize: media.fileSize,
     isPublic: Boolean(media.isPublic),
     eventFlyer: Boolean(media.eventFlyer),
-    isEventManagementOfficialDocument: Boolean(media.isEventManagementOfficialDocument),
     preSignedUrl: media.preSignedUrl || '',
     preSignedUrlExpiresAt: media.preSignedUrlExpiresAt,
     altText: media.altText || '',
@@ -169,12 +179,6 @@ function EditMediaModal({ media, onClose, onSave, loading }: EditMediaModalProps
       }
       if (name === 'isActiveHeroImage' && newValue) {
         updates.isHeroImage = true;
-      }
-      if (name === 'isEventManagementOfficialDocument' && newValue) {
-        updates.eventFlyer = false;
-      }
-      if (name === 'eventFlyer' && newValue) {
-        updates.isEventManagementOfficialDocument = false;
       }
       if (name === 'isFeaturedVideo' && !newValue) {
         updates.featuredVideoUrl = '';
@@ -360,7 +364,6 @@ function EditMediaModal({ media, onClose, onSave, loading }: EditMediaModalProps
               {[
                 { name: 'isPublic' as const, label: 'Public' },
                 { name: 'eventFlyer' as const, label: 'Event Flyer' },
-                { name: 'isEventManagementOfficialDocument' as const, label: 'Official Doc' },
                 { name: 'isHeroImage' as const, label: 'Hero Image' },
                 { name: 'isActiveHeroImage' as const, label: 'Active Hero' },
                 { name: 'isFeaturedVideo' as const, label: 'Featured Video' },
@@ -456,6 +459,7 @@ function UploadMediaModal({
   isOpen,
   onClose,
   onSuccess,
+  onUploadError,
   onUploadStart,
   onUploadEnd,
   loading: externalLoading,
@@ -465,6 +469,7 @@ function UploadMediaModal({
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  onUploadError?: (message: string) => void;
   onUploadStart: () => void;
   onUploadEnd: () => void;
   loading: boolean;
@@ -475,7 +480,6 @@ function UploadMediaModal({
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState<FileList | null>(null);
   const [eventFlyer, setEventFlyer] = useState(false);
-  const [isEventManagementOfficialDocument, setIsEventManagementOfficialDocument] = useState(false);
   const [isHeroImage, setIsHeroImage] = useState(false);
   const [isActiveHeroImage, setIsActiveHeroImage] = useState(false);
   const [isFeaturedEventImage, setIsFeaturedEventImage] = useState(false);
@@ -705,7 +709,7 @@ function UploadMediaModal({
       const fd = new FormData();
       fd.append("files", file);
       fd.append("eventFlyer", String(eventFlyer));
-      fd.append("isEventManagementOfficialDocument", String(isEventManagementOfficialDocument));
+      fd.append("isEventManagementOfficialDocument", "false");
       fd.append("isHeroImage", String(isHeroImage));
       fd.append("isActiveHeroImage", String(isActiveHeroImage));
       fd.append("isFeaturedEventImage", String(isFeaturedEventImage));
@@ -741,7 +745,6 @@ function UploadMediaModal({
       setDescription("");
       setFiles(null);
       setEventFlyer(false);
-      setIsEventManagementOfficialDocument(false);
       setIsHeroImage(false);
       setIsActiveHeroImage(false);
       setIsFeaturedEventImage(false);
@@ -752,7 +755,9 @@ function UploadMediaModal({
       setHeroDisplayDurationSeconds("");
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err: unknown) {
-      setExternalMessage(err instanceof Error ? err.message : "Upload failed");
+      const message = err instanceof Error ? err.message : "Upload failed";
+      setExternalMessage(message);
+      onUploadError?.(message);
     } finally {
       setUploadProgress(null);
       onUploadEnd();
@@ -926,7 +931,6 @@ function UploadMediaModal({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
             { state: eventFlyer, set: setEventFlyer, label: "Event Flyer" },
-            { state: isEventManagementOfficialDocument, set: setIsEventManagementOfficialDocument, label: "Official Doc" },
             { state: isHeroImage, set: setIsHeroImage, label: "Hero Image" },
             { state: isActiveHeroImage, set: setIsActiveHeroImage, label: "Active Hero" },
             { state: isFeaturedEventImage, set: setIsFeaturedEventImage, label: "Featured Event" },
@@ -1063,6 +1067,8 @@ export default function AdminMediaPage() {
 
   // Message popup (replaces window.alert)
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -1076,8 +1082,8 @@ export default function AdminMediaPage() {
           if (filtersEnabled && heroImagesOnly) {
             // Match homepage hero slider: merge isHeroImage + isHomePageHeroImage, sort by displayOrder.
             const [resHero, resHome] = await Promise.all([
-              fetch(`/api/proxy/event-medias?size=100&sort=displayOrder,asc&isHeroImage.equals=true${tenantQuery}`),
-              fetch(`/api/proxy/event-medias?size=100&sort=displayOrder,asc&isHomePageHeroImage.equals=true${tenantQuery}`),
+              fetch(`/api/proxy/event-medias?size=100&sort=displayOrder,asc&isHeroImage.equals=true&${EXCLUDE_OFFICIAL_DOCS_QUERY}${tenantQuery}`),
+              fetch(`/api/proxy/event-medias?size=100&sort=displayOrder,asc&isHomePageHeroImage.equals=true&${EXCLUDE_OFFICIAL_DOCS_QUERY}${tenantQuery}`),
             ]);
             if (!resHero.ok && !resHome.ok) {
               throw new Error(await parseMediaUploadError(resHero.ok ? resHome : resHero));
@@ -1101,14 +1107,15 @@ export default function AdminMediaPage() {
               }
             }
             merged.sort(compareHeroMediaByDisplayOrder);
+            const nonOfficial = filterNonOfficialMedia(merged);
             const filtered = searchTerm
-              ? merged.filter((m) => m.title?.toLowerCase().includes(searchTerm.toLowerCase()))
-              : merged;
+              ? nonOfficial.filter((m) => m.title?.toLowerCase().includes(searchTerm.toLowerCase()))
+              : nonOfficial;
             const start = page * pageSize;
             setMediaList(filtered.slice(start, start + pageSize));
             setTotalCount(filtered.length);
           } else {
-          let url = `/api/proxy/event-medias?page=${page}&size=${pageSize}&sort=updatedAt,desc`;
+          let url = `/api/proxy/event-medias?page=${page}&size=${pageSize}&sort=updatedAt,desc&${EXCLUDE_OFFICIAL_DOCS_QUERY}`;
           if (tenantId) {
             url += `&tenantId.equals=${encodeURIComponent(tenantId)}`;
           }
@@ -1127,7 +1134,7 @@ export default function AdminMediaPage() {
           }
 
           const data = await res.json();
-          const list = normalizeEventMediasList(data);
+          const list = filterNonOfficialMedia(normalizeEventMediasList(data));
           setMediaList(list);
 
           // Get total count from header or response (camelCase or snake_case); required for pagination
@@ -1248,22 +1255,56 @@ export default function AdminMediaPage() {
   const handleSave = async (updated: Partial<EventMediaDTO>) => {
     if (!editMedia || !editMedia.id) return;
     setEditLoading(true);
+    setSaveStatus('saving');
+    setSaveMessage('Please wait while we save your media changes.');
+
     try {
       const res = await fetch(`/api/proxy/event-medias/${editMedia.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/merge-patch+json' },
         body: JSON.stringify(updated),
       });
-      if (!res.ok) throw new Error('Failed to update media');
+
+      if (!res.ok) {
+        let errorMessage = 'Failed to update media';
+        try {
+          const errorText = await res.text();
+          try {
+            const errorJson = JSON.parse(errorText) as { detail?: string; message?: string; title?: string };
+            if (errorJson.detail) {
+              errorMessage = errorJson.detail.length > 150 ? `${errorJson.detail.substring(0, 150)}...` : errorJson.detail;
+            } else if (errorJson.message) {
+              errorMessage = errorJson.message;
+            } else if (errorJson.title) {
+              errorMessage = errorJson.title;
+            }
+          } catch {
+            errorMessage = errorText.length > 200 ? `${errorText.substring(0, 200)}...` : errorText || errorMessage;
+          }
+        } catch {
+          errorMessage = 'Failed to update media. Please try again.';
+        }
+        throw new Error(errorMessage);
+      }
+
       const result = await res.json();
       setMediaList(prev => prev.map(m => m.id === editMedia.id ? { ...m, ...result } : m));
       if (typeof BroadcastChannel !== 'undefined') {
         new BroadcastChannel(HOMEPAGE_CACHE_INVALIDATE_CHANNEL).postMessage('invalidate');
       }
-      handleCloseModal();
-    } catch (error: any) {
+
+      setSaveStatus('success');
+      setSaveMessage('Your media has been saved successfully.');
+
+      setTimeout(() => {
+        handleCloseModal();
+        setSaveStatus('idle');
+        setSaveMessage('');
+      }, 1500);
+    } catch (error: unknown) {
       console.error('Failed to save media:', error);
-      setAlertMessage(`Error: ${error.message}`);
+      setSaveStatus('error');
+      setSaveMessage(error instanceof Error ? error.message : 'Failed to save media. Please try again.');
     } finally {
       setEditLoading(false);
     }
@@ -1392,6 +1433,27 @@ export default function AdminMediaPage() {
             <span className="font-semibold text-blue-700 hidden sm:inline">Upload New Media</span>
           </button>
         </div>
+      </div>
+
+      {/* Info: official documents are managed on a separate admin page */}
+      <div className="mb-4 px-4 py-3 rounded-lg border-2 border-indigo-300 bg-indigo-50 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-indigo-900">
+            Images, videos, and audio only
+          </p>
+          <p className="text-xs text-indigo-800 mt-1">
+            This page lists photos, videos, flyers, and hero images for events and the site. Official documents (PDFs and published downloads) are not shown here — use the Official Documents page to view and manage them.
+          </p>
+        </div>
+        <Link
+          href="/admin/official-documents"
+          className="flex-shrink-0 inline-flex items-center justify-center gap-2 h-12 px-5 rounded-xl bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-semibold transition-all duration-300 hover:scale-105 border-2 border-indigo-300"
+          title="Manage Official Documents"
+          aria-label="Manage Official Documents"
+        >
+          <FaFolderOpen className="w-5 h-5 text-indigo-600" />
+          <span>Official Documents</span>
+        </Link>
       </div>
 
       {/* Info tip: point to ? button for image specification */}
@@ -1590,29 +1652,10 @@ export default function AdminMediaPage() {
           {sortedMedia.map((item, index) => {
             const serialNumber = page * pageSize + index + 1;
             const isSelected = item.id != null && selectedMediaIds.has(item.id);
-            const displayThumbnailUrl =
-              item.isEventManagementOfficialDocument && item.id != null
-                ? getOfficialDocumentCardThumbnailSrc(
-                    item.id,
-                    {
-                      fileUrl: item.fileUrl,
-                      thumbnailUrl: item.thumbnailUrl,
-                      thumbnailPreSignedUrl: item.thumbnailPreSignedUrl,
-                      fileDataContentType: item.fileDataContentType || item.contentType,
-                      title: item.title,
-                      fileName: item.fileUrl?.split('/').pop(),
-                    },
-                    {
-                      cacheKey: buildOfficialDocumentThumbnailCacheKey(item),
-                      hasStoredThumbnail: hasStoredOfficialDocumentThumbnail(item),
-                      thumbnailExpiresAtIso: item.thumbnailPreSignedUrlExpiresAt,
-                      fileExpiresAtIso: item.preSignedUrlExpiresAt,
-                    }
-                  )
-                : getEventMediaDisplayThumbnailUrl(item, {
-                    thumbnailExpiresAtIso: item.thumbnailPreSignedUrlExpiresAt,
-                    fileExpiresAtIso: item.preSignedUrlExpiresAt,
-                  });
+            const displayThumbnailUrl = getEventMediaDisplayThumbnailUrl(item, {
+              thumbnailExpiresAtIso: item.thumbnailPreSignedUrlExpiresAt,
+              fileExpiresAtIso: item.preSignedUrlExpiresAt,
+            });
             const placeholderKind = getOfficialDocumentPlaceholderKind(item);
             return (
               <div
@@ -1908,8 +1951,24 @@ export default function AdminMediaPage() {
         <UploadMediaModal
           isOpen={isUploadModalOpen}
           onClose={() => { setIsUploadModalOpen(false); setUploadMessage(null); }}
-          onSuccess={() => setRefreshKey(k => k + 1)}
-          onUploadStart={() => setUploadLoading(true)}
+          onSuccess={() => {
+            setRefreshKey(k => k + 1);
+            setSaveStatus('success');
+            setSaveMessage('Your media has been uploaded successfully.');
+            setTimeout(() => {
+              setSaveStatus('idle');
+              setSaveMessage('');
+            }, 1500);
+          }}
+          onUploadError={(message) => {
+            setSaveStatus('error');
+            setSaveMessage(message);
+          }}
+          onUploadStart={() => {
+            setUploadLoading(true);
+            setSaveStatus('saving');
+            setSaveMessage('Please wait while your media files are uploaded.');
+          }}
           onUploadEnd={() => setUploadLoading(false)}
           loading={uploadLoading}
           message={uploadMessage}
@@ -1945,6 +2004,18 @@ export default function AdminMediaPage() {
           </div>
         </Modal>
       )}
+
+      <SaveStatusDialog
+        isOpen={saveStatus !== 'idle'}
+        status={saveStatus}
+        message={saveMessage}
+        onClose={() => {
+          if (saveStatus === 'error') {
+            setSaveStatus('idle');
+            setSaveMessage('');
+          }
+        }}
+      />
     </div>
   );
 }

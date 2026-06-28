@@ -26,7 +26,7 @@ function sleep(ms) {
 }
 
 function parseArgs(argv) {
-  const out = { manifest: null, dryRun: false, skipExisting: false, forceRobots: false };
+  const out = { manifest: null, dryRun: false, skipExisting: false, forceRobots: false, insecureTls: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--manifest' && argv[i + 1]) {
       out.manifest = argv[++i];
@@ -36,6 +36,8 @@ function parseArgs(argv) {
       out.skipExisting = true;
     } else if (argv[i] === '--ignore-robots') {
       out.forceRobots = true;
+    } else if (argv[i] === '--insecure-tls') {
+      out.insecureTls = true;
     }
   }
   return out;
@@ -53,8 +55,13 @@ async function fileExists(p) {
 async function main() {
   const args = parseArgs(process.argv);
   if (!args.manifest) {
-    console.error('Usage: node fetch-urls.mjs --manifest <path-to-url-list.json> [--dry-run] [--skip-existing] [--ignore-robots]');
+    console.error('Usage: node fetch-urls.mjs --manifest <path-to-url-list.json> [--dry-run] [--skip-existing] [--ignore-robots] [--insecure-tls]');
     process.exit(1);
+  }
+
+  if (args.insecureTls) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    console.warn('WARNING: TLS certificate verification disabled (--insecure-tls). Use only for local migration.');
   }
 
   const manifestPath = path.isAbsolute(args.manifest) ? args.manifest : path.resolve(process.cwd(), args.manifest);

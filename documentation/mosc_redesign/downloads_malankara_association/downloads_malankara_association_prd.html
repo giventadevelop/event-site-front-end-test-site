@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Malankara Association Downloads — Design &amp; Migration PRD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        tbody tr:hover { background: #f0f7ff; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        code.script-name { background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); color: #4a148c; border-color: #ce93d8; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; overflow-x: auto; font-family: Consolas, monospace; font-size: 0.82em; line-height: 1.45; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+        .section-intro { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 16px 18px; margin: 16px 0; }
+        .decision-adopt { color: #155724; font-weight: 700; }
+        .decision-reject { color: #721c24; font-weight: 700; }
+        .decision-defer { color: #856404; font-weight: 700; }
+        .command-block { border: 2px solid #2196f3; border-radius: 8px; margin: 16px 0; overflow: hidden; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); }
+        .command-block.verify { border-color: #4caf50; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); }
+        .command-block.advance { border-color: #ff9800; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); }
+        .command-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.5); border-bottom: 1px solid rgba(0,0,0,0.08); }
+        .command-type { font-weight: 700; font-size: 0.9em; }
+        .command-header-buttons { display: flex; gap: 8px; }
+        .copy-button, .copy-button-template { padding: 6px 12px; border: 1px solid #0066cc; background: #fff; border-radius: 6px; cursor: pointer; font-size: 0.85em; }
+        .copy-button:hover, .copy-button-template:hover { background: #e8f4f8; }
+        .copy-button.copied, .copy-button-template.copied { background: #d4edda; border-color: #28a745; }
+        .command-content { padding: 12px 14px; font-family: Consolas, monospace; font-size: 0.85em; color: #0d3b66; word-break: break-all; }
+        .command-single-line { padding: 10px 14px 14px; border-top: 1px dashed rgba(0,0,0,0.12); }
+        .command-single-line-label { font-size: 0.75em; font-weight: 700; color: #555; margin-bottom: 6px; text-transform: uppercase; }
+        .command-single-line code { display: block; padding: 8px 10px; word-break: break-all; }
+        .command-parameters { padding: 12px 14px; background: rgba(255,255,255,0.4); border-top: 1px solid rgba(0,0,0,0.06); }
+        .command-parameters h5 { margin-bottom: 10px; }
+        .parameter-input { margin-bottom: 8px; }
+        .parameter-input label { display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 4px; }
+        .parameter-input input { width: 100%; max-width: 480px; padding: 8px 10px; border: 1px solid #b8d4e3; border-radius: 4px; font-family: Consolas, monospace; font-size: 0.85em; }
+        .parameters-list { background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%); border-left: 4px solid #ff9800; border-radius: 8px; padding: 16px 18px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Malankara Association Downloads — Design &amp; Migration PRD</h1>
+    <p class="doc-meta">
+        <strong>Layer:</strong> Data migration + public downloads hub &nbsp;|&nbsp; <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 27, 2026<br>
+        <strong>Gap analysis:</strong> <a href="gap_analysis_prd.html">gap_analysis_prd.html</a> &nbsp;|&nbsp;
+        <strong>Upload runbook:</strong> <a href="official_documents_upload_runbook.html">official_documents_upload_runbook.html</a> &nbsp;|&nbsp;
+        <strong>Public route:</strong> <code>/mosc-redesign/downloads</code> &nbsp;|&nbsp;
+        <strong>Legacy reference:</strong> <a href="https://mosc.in/downloads/malankara-association-preliminary-list/" target="_blank" rel="noopener">mosc.in Malankara preliminary list</a>
+    </p>
+
+    <div class="lead">
+        <p><strong>Recommendation:</strong> Upload Malankara Association PDFs (including the preliminary candidate list) into the existing <strong>PostgreSQL official documents</strong> system (<code>event_media</code> + <code>official_document_category</code>). Use the unified downloads hub with <strong>category and year filters</strong> — not Strapi, not a dual-source merge. Legacy “different attributes” are HTML presentation (section headers, link colors), not a separate data model.</p>
+    </div>
+
+    <div class="success-box">
+        <strong>Product decision (confirmed):</strong> Primary UX is the unified <code>/mosc-redesign/downloads</code> hub filtered by category (e.g. <em>Malankara Association 2022</em>) and year — not separate legacy-style landing pages.
+    </div>
+
+    <!-- §1 Problem -->
+    <h2>1. Problem statement</h2>
+    <p>The downloads page at <code>http://localhost:3000/mosc-redesign/downloads</code> is populated from PostgreSQL via the Rust backend (<code>GET /api/event-medias/public-official-documents</code>). Some content was migrated from <a href="https://mosc.in/downloads/" target="_blank" rel="noopener">mosc.in/downloads/</a> using migration scripts under <code>scripts/mosc-in-migration/</code>.</p>
+    <p>Malankara Association content — including the <a href="https://mosc.in/downloads/malankara-association-preliminary-list/" target="_blank" rel="noopener">preliminary list page</a> and the richer <strong>Malankara Association 2022</strong> landing page — appears missing or mis-categorized because:</p>
+    <ul>
+        <li>The scrape manifest assigns all 288 files to generic <code>mosc-in-downloads</code>, not Malankara-specific categories.</li>
+        <li>PDF rows for key files (e.g. <code>List-of-Candidates.pdf</code>) are not present in checked SQL seed files.</li>
+        <li>Static download cards still use <code>#</code> placeholders for Malankara links (<code>downloadsStaticItems.ts</code>).</li>
+    </ul>
+
+    <!-- §2 Legacy inventory -->
+    <h2>2. Legacy inventory</h2>
+    <h3>2.1 Mirrored WordPress pages (local)</h3>
+    <table>
+        <thead><tr><th>Local mirror path</th><th>Legacy title</th><th>Approx. file links</th></tr></thead>
+        <tbody>
+            <tr><td><code>code_clone_ref/mosc_in/downloads/malankara-association-2022/</code></td><td>Malankara Association 2022</td><td>~51 PDF/PPTX links</td></tr>
+            <tr><td><code>.../malankara-association-2021/</code></td><td>Malankara Association 2021</td><td>Multiple PDFs</td></tr>
+            <tr><td><code>.../malankara-association-2022-2027/</code></td><td>Malankara Association (2022 – 2027)</td><td>Multiple PDFs</td></tr>
+            <tr><td><code>.../malankara-association-2017-agenda-nominated-members-list/</code></td><td>2017 Agenda &amp; Nominated Members</td><td>Multiple PDFs</td></tr>
+            <tr><td><code>.../malankara-association-association-secretary-election-final-list/</code></td><td>Secretary Election Final list 2017</td><td>Multiple PDFs</td></tr>
+            <tr><td><code>.../malankara-association-candidate-list/</code></td><td>Candidates Final List 2017</td><td>Multiple PDFs</td></tr>
+        </tbody>
+    </table>
+
+    <h3>2.2 Key files on Malankara Association 2022 page</h3>
+    <table>
+        <thead><tr><th>Legacy link label</th><th>PDF filename</th><th>Manifest status</th></tr></thead>
+        <tbody>
+            <tr><td>Notification</td><td><code>Notification.pdf</code></td><td>In <code>url-list.mosc-in.generated.json</code></td></tr>
+            <tr><td>Agenda</td><td><code>Agenda.pdf</code></td><td>In manifest</td></tr>
+            <tr><td>Final List of Candidates</td><td><code>List-of-Candidates-Final-.pdf</code></td><td>In manifest</td></tr>
+            <tr><td><strong>preliminary List of Candidates</strong></td><td><code>List-of-Candidates.pdf</code></td><td>In manifest</td></tr>
+            <tr><td>VOTER'S LIST FINAL (per diocese)</td><td><code>Adoor-Kadampanad-1.pdf</code>, etc.</td><td>In manifest (~30 diocese PDFs)</td></tr>
+        </tbody>
+    </table>
+
+    <div class="info-box">
+        <p>The URL <code>malankara-association-preliminary-list</code> is not mirrored as its own folder in <code>code_clone_ref</code>. The preliminary list link appears on the <strong>Malankara Association 2022</strong> page. Treat preliminary/final lists as documents under category <code>malankara-association-2022</code>.</p>
+    </div>
+
+    <!-- §3 Architecture -->
+    <h2>3. Current architecture</h2>
+    <div class="section-container">
+        <pre>Legacy mosc.in PDFs
+    → scripts/mosc-in-migration/ (scrape, fetch, upload)
+    → PostgreSQL: event_media (isEventManagementOfficialDocument=true)
+                  + official_document_category
+    → S3 tenant library
+    → Rust API: /api/event-medias/public-official-documents
+    → Next.js: ApiServerActions.fetchPublicOfficialDocumentsTreeServer()
+    → DownloadsPageClient (category + year filters, pagination)</pre>
+    </div>
+
+    <h3>3.1 Key source files</h3>
+    <table>
+        <thead><tr><th>Role</th><th>Path</th></tr></thead>
+        <tbody>
+            <tr><td>Server page</td><td><code>src/app/mosc-redesign/(syro)/downloads/page.tsx</code></td></tr>
+            <tr><td>Client UI</td><td><code>src/app/mosc-redesign/(syro)/downloads/DownloadsPageClient.tsx</code></td></tr>
+            <tr><td>Server actions</td><td><code>src/app/mosc-redesign/(syro)/downloads/ApiServerActions.ts</code></td></tr>
+            <tr><td>DTOs</td><td><code>src/types/index.ts</code> — <code>EventMediaDTO</code>, <code>OfficialDocumentCategoryDTO</code></td></tr>
+            <tr><td>Hierarchy parsing</td><td><code>src/lib/officialDocumentHierarchy.ts</code></td></tr>
+            <tr><td>Scrape manifest</td><td><code>scripts/mosc-in-migration/url-list.mosc-in.generated.json</code> (288 items)</td></tr>
+            <tr><td>Manifest upload (Malankara)</td><td><code>scripts/mosc-in-migration/upload-manifest-to-official-docs.mjs</code> — direct <code>:8080</code> API</td></tr>
+            <tr><td>Upload runbook (HTML)</td><td><a href="official_documents_upload_runbook.html">official_documents_upload_runbook.html</a></td></tr>
+            <tr><td>Mirror-tree upload (legacy)</td><td><code>scripts/mosc-in-migration/upload-mirror-to-official-docs.mjs</code></td></tr>
+        </tbody>
+    </table>
+
+    <p><strong>Strapi is not in this path.</strong> The downloads hub calls only the Rust backend. Strapi serves separate routes (news, directory, <code>kalpana-cms</code>, etc.). There is no page today that merges PostgreSQL and Strapi in one view.</p>
+
+    <!-- §4 Scrape audit -->
+    <h2>4. Scrape &amp; local asset audit</h2>
+    <table>
+        <thead><tr><th>Asset</th><th>Location</th><th>Status</th></tr></thead>
+        <tbody>
+            <tr><td>Generated URL manifest</td><td><code>scripts/mosc-in-migration/url-list.mosc-in.generated.json</code></td><td>288 URLs; all <code>categorySlug: "mosc-in-downloads"</code></td></tr>
+            <tr><td>Deep scrape script</td><td><code>scripts/mosc-in-migration/_scrape-downloads-deep.mjs</code></td><td>Uses <code>DEFAULT_CATEGORY_SLUG = 'mosc-in-downloads'</code></td></tr>
+            <tr><td>Fetch script</td><td><code>scripts/mosc-in-migration/fetch-urls.mjs</code></td><td>Downloads to <code>MOSC_DOWNLOAD_ROOT/{categorySlug}/{year}/</code></td></tr>
+            <tr><td>Legacy HTML</td><td><code>code_clone_ref/mosc_in/downloads/</code></td><td>7 Malankara subfolders present</td></tr>
+            <tr><td>Category seeds</td><td><code>code_html_template/SQLS/export.sql</code></td><td>Malankara slugs for <code>tenant_demo_002</code> and <code>mosc_malankara_orthodox_2</code></td></tr>
+            <tr><td><code>event_media</code> for List-of-Candidates</td><td>SQL inserts</td><td><strong>Not found</strong> — upload not completed</td></tr>
+            <tr><td>PDF binaries on disk</td><td><code>MOSC_DOWNLOAD_ROOT</code> (default <code>C:\E_Drive\code_backup\mosc_downloads</code>)</td><td>Outside repo; operator must verify</td></tr>
+        </tbody>
+    </table>
+
+    <div class="warning-box">
+        <strong>Category gap:</strong> Even after fetch/upload, files tagged <code>mosc-in-downloads</code> will not show when users filter by <strong>Malankara Association 2022</strong>. Remap <code>categorySlug</code> before ingest (see §7–§8).
+    </div>
+
+    <!-- §5 Decision record -->
+    <h2>5. Architecture decision record</h2>
+    <table>
+        <thead><tr><th>Option</th><th>Verdict</th><th>Rationale</th></tr></thead>
+        <tbody>
+            <tr><td>PostgreSQL official documents for Malankara PDFs</td><td class="decision-adopt">Adopt</td><td>Categories seeded; S3 + admin API exist; downloads hub already built</td></tr>
+            <tr><td>Strapi for Malankara PDF storage</td><td class="decision-reject">Reject</td><td>Duplicates files; Kalpana Strapi pattern is for periodicals, not election libraries</td></tr>
+            <tr><td>Merge PostgreSQL + Strapi on one downloads grid</td><td class="decision-reject">Reject (now)</td><td>No merge layer; adds complexity; product chose hub-only UX</td></tr>
+            <tr><td>Unified hub + category/year filters</td><td class="decision-adopt">Adopt</td><td>Matches <code>DownloadsPageClient</code> today</td></tr>
+            <tr><td>Strapi “hub page” for section copy/layout only</td><td class="decision-defer">Defer</td><td>Only if non-devs must edit grouped section text; files stay in PostgreSQL</td></tr>
+        </tbody>
+    </table>
+
+    <!-- §6 Data model mapping -->
+    <h2>6. Data model mapping (legacy → PostgreSQL)</h2>
+    <p>Each legacy PDF link becomes one <code>event_media</code> row with <code>isEventManagementOfficialDocument = true</code>.</p>
+    <table>
+        <thead><tr><th>Legacy concept</th><th><code>EventMediaDTO</code> / DB field</th><th>Example (preliminary list)</th></tr></thead>
+        <tbody>
+            <tr><td>PDF file</td><td><code>fileUrl</code> (S3), <code>title</code></td><td>Title: “preliminary List of Candidates”</td></tr>
+            <tr><td>WordPress page / cycle</td><td><code>officialDocumentCategoryId</code> → slug <code>malankara-association-2022</code></td><td>Category filter in hub</td></tr>
+            <tr><td>Election cycle year</td><td><code>officialDocumentYear</code></td><td><strong>2022</strong> (use cycle year, not upload path year 2021)</td></tr>
+            <tr><td>Section (“VOTER'S LIST FINAL”)</td><td><code>hierarchyPath</code> in description / field</td><td><code>Malankara Association 2022\Voter List Final\Adoor-Kadampanad-1.pdf</code></td></tr>
+            <tr><td>Link order on page</td><td><code>displayPriority</code> / <code>[[MOSC_PRIORITY]]</code></td><td>Lower number = higher in list</td></tr>
+            <tr><td>Section label</td><td><code>hierarchyCategoryLabel</code> / <code>[[MOSC_CATEGORY_LABEL]]</code></td><td>“Candidates”, “Voter List Final”</td></tr>
+            <tr><td>Colored link / HTML</td><td>Not stored</td><td>Replaced by card UI + optional hierarchy subtitle</td></tr>
+        </tbody>
+    </table>
+
+    <pre>[[MOSC_CATEGORY_LABEL]] Malankara Association 2022
+[[MOSC_TREE_PATH]] Malankara Association 2022\Candidates\List-of-Candidates.pdf
+[[MOSC_PRIORITY]] 12</pre>
+    <p>Parsed by <code>parseHierarchyDescription()</code> in <code>src/lib/officialDocumentHierarchy.ts</code> and mapped in <code>ApiServerActions.mapEventMediaToTreeItem()</code>.</p>
+
+    <!-- §7 Category slugs -->
+    <h2>7. Pre-seeded category slugs (reference)</h2>
+    <p>From <code>code_html_template/SQLS/export.sql</code> (both <code>tenant_demo_002</code> and <code>mosc_malankara_orthodox_2</code>):</p>
+    <table>
+        <thead><tr><th>slug</th><th>display_name</th><th>sort_order</th></tr></thead>
+        <tbody>
+            <tr><td><code>malankara-association-2022-2027</code></td><td>Malankara Association (2022 - 2027)</td><td>160</td></tr>
+            <tr><td><code>malankara-association-2022</code></td><td>Malankara Association 2022</td><td>210</td></tr>
+            <tr><td><code>malankara-association-2021</code></td><td>Malankara Association 2021</td><td>230</td></tr>
+            <tr><td><code>malankara-association-association-secretary-election-final-list-2017</code></td><td>Association Secretary Election Final list 2017</td><td>310</td></tr>
+            <tr><td><code>malankara-association-2017-agenda-nominated-members-list</code></td><td>Malankara Association 2017 - Agenda &amp; Nominated Members List</td><td>320</td></tr>
+        </tbody>
+    </table>
+
+    <h3>7.1 Legacy page → categorySlug mapping</h3>
+    <table>
+        <thead><tr><th>Legacy subpage folder</th><th>Target <code>categorySlug</code></th><th><code>officialDocumentYear</code> hint</th></tr></thead>
+        <tbody>
+            <tr><td><code>malankara-association-2022</code></td><td><code>malankara-association-2022</code></td><td>2022</td></tr>
+            <tr><td><code>malankara-association-2021</code></td><td><code>malankara-association-2021</code></td><td>2021</td></tr>
+            <tr><td><code>malankara-association-2022-2027</code></td><td><code>malankara-association-2022-2027</code></td><td>2022</td></tr>
+            <tr><td><code>malankara-association-association-secretary-election-final-list</code></td><td><code>malankara-association-association-secretary-election-final-list-2017</code></td><td>2017</td></tr>
+            <tr><td><code>malankara-association-2017-agenda-nominated-members-list</code></td><td><code>malankara-association-2017-agenda-nominated-members-list</code></td><td>2017</td></tr>
+            <tr><td><code>malankara-association-preliminary-list</code> (live URL)</td><td><code>malankara-association-2022</code></td><td>2022</td></tr>
+        </tbody>
+    </table>
+
+    <!-- §8 Migration runbook -->
+    <h2>8. Migration runbook (Windows)</h2>
+    <div class="section-intro">
+        <p>Prerequisites: Next.js app + Rust API running locally; <code>NEXT_PUBLIC_TENANT_ID</code> matches target tenant; categories seeded in DB; respect MOSC copyright and terms when re-fetching from mosc.in.</p>
+    </div>
+
+    <div class="parameters-list">
+        <strong>Environment variables</strong>
+        <ul>
+            <li><code>MOSC_DOWNLOAD_ROOT</code> — local folder for fetched PDFs (default <code>C:\E_Drive\code_backup\mosc_downloads</code>)</li>
+            <li><code>NEXT_PUBLIC_TENANT_ID</code> / <code>MOSC_TENANT_ID</code> — e.g. <code>mosc_malankara_orthodox_2</code></li>
+            <li><code>MOSC_APP_BASE_URL</code> — e.g. <code>http://localhost:3000</code> (for upload proxy calls)</li>
+            <li><code>MOSC_AUTO_CREATE_CATEGORIES=true</code> — if any category slug is missing</li>
+            <li><code>MOSC_MIRROR_REPORT</code> — path to mirror report JSON for <code class="script-name">upload-mirror-to-official-docs.mjs</code></li>
+        </ul>
+    </div>
+
+    <h3>8.1 Regenerate URL manifest (optional refresh)</h3>
+    <div class="command-block setup" data-command-base="node scripts/mosc-in-migration/_scrape-downloads-deep.mjs --write-url-list" data-template-command="node scripts/mosc-in-migration/_scrape-downloads-deep.mjs --write-url-list">
+        <div class="command-header">
+            <span class="command-type">Deep scrape → url-list.mosc-in.generated.json</span>
+            <div class="command-header-buttons">
+                <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'scrape-deep')" title="Copy template">📄 Template</button>
+                <button type="button" class="copy-button" onclick="copyCommand(this, 'scrape-deep')" title="Copy command">📋 Copy</button>
+            </div>
+        </div>
+        <div class="command-content" id="scrape-deep">cd F:\project_workspace\mosc-temp &amp;&amp; node scripts/mosc-in-migration/_scrape-downloads-deep.mjs --write-url-list</div>
+        <div class="command-single-line">
+            <div class="command-single-line-label">Windows single-line:</div>
+            <code id="scrape-deep-single-code">cd F:\project_workspace\mosc-temp &amp;&amp; node scripts/mosc-in-migration/_scrape-downloads-deep.mjs --write-url-list</code>
+        </div>
+    </div>
+    <div class="warning-box">
+        After regenerate, <strong>patch <code>categorySlug</code></strong> on Malankara-related items before fetch (see §7.1). The scrape script alone will reset all items to <code>mosc-in-downloads</code>.
+    </div>
+
+    <h3>8.2 Fetch PDFs to disk (manifest-driven)</h3>
+    <div class="command-block setup" data-command-base="node scripts/mosc-in-migration/fetch-urls.mjs --manifest scripts/mosc-in-migration/url-list.mosc-in.generated.json" data-template-command="set MOSC_DOWNLOAD_ROOT=C:\E_Drive\code_backup\mosc_downloads &amp;&amp; node scripts/mosc-in-migration/fetch-urls.mjs --manifest scripts/mosc-in-migration/url-list.mosc-in.generated.json --skip-existing">
+        <div class="command-header">
+            <span class="command-type">Fetch URLs from manifest</span>
+            <div class="command-header-buttons">
+                <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'fetch-urls')" title="Copy template">📄 Template</button>
+                <button type="button" class="copy-button" onclick="copyCommand(this, 'fetch-urls')" title="Copy command">📋 Copy</button>
+            </div>
+        </div>
+        <div class="command-parameters">
+            <div class="parameter-input">
+                <label for="fetch-root">MOSC_DOWNLOAD_ROOT:</label>
+                <input type="text" id="fetch-root" value="C:\E_Drive\code_backup\mosc_downloads" oninput="updateFetchUrls()">
+            </div>
+        </div>
+        <div class="command-content" id="fetch-urls">set MOSC_DOWNLOAD_ROOT=C:\E_Drive\code_backup\mosc_downloads &amp;&amp; cd F:\project_workspace\mosc-temp &amp;&amp; node scripts/mosc-in-migration/fetch-urls.mjs --manifest scripts/mosc-in-migration/url-list.mosc-in.generated.json --skip-existing</div>
+        <div class="command-single-line">
+            <div class="command-single-line-label">Windows single-line:</div>
+            <code id="fetch-urls-single-code">set MOSC_DOWNLOAD_ROOT=C:\E_Drive\code_backup\mosc_downloads &amp;&amp; cd F:\project_workspace\mosc-temp &amp;&amp; node scripts/mosc-in-migration/fetch-urls.mjs --manifest scripts/mosc-in-migration/url-list.mosc-in.generated.json --skip-existing</code>
+        </div>
+    </div>
+    <p>Files land under <code>{MOSC_DOWNLOAD_ROOT}/{categorySlug}/{year}/{filename}</code>. For Malankara 2022 items, use <code>categorySlug: malankara-association-2022</code> and <code>year: 2022</code> in the manifest entry.</p>
+
+    <h3>8.3 Upload Malankara manifest (direct backend API — recommended)</h3>
+    <div class="info-box">
+        <p><strong>Full procedure:</strong> See <a href="official_documents_upload_runbook.html"><strong>official_documents_upload_runbook.html</strong></a> for architecture, <code>localhost:8080</code> JWT auth, thumbnail backfill, and reuse for other document sets.</p>
+    </div>
+    <div class="command-block advance" data-template-command="npm run mosc:migration:malankara:upload:missing">
+        <div class="command-header">
+            <span class="command-type">Upload missing + thumbnails (Malankara repair)</span>
+            <div class="command-header-buttons">
+                <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'upload-malankara')" title="Copy template">📄 Template</button>
+                <button type="button" class="copy-button" onclick="copyCommand(this, 'upload-malankara')" title="Copy command">📋 Copy</button>
+            </div>
+        </div>
+        <div class="command-content" id="upload-malankara">set MOSC_DOWNLOAD_ROOT=f:\project_workspace\mosc-temp\.mosc-downloads &amp;&amp; set MOSC_UPLOAD_LIMIT=0 &amp;&amp; cd F:\project_workspace\mosc-temp &amp;&amp; npm run mosc:migration:malankara:upload:missing</div>
+        <div class="command-single-line">
+            <div class="command-single-line-label">Windows single-line:</div>
+            <code id="upload-malankara-single-code">set MOSC_DOWNLOAD_ROOT=f:\project_workspace\mosc-temp\.mosc-downloads &amp;&amp; set MOSC_UPLOAD_LIMIT=0 &amp;&amp; cd F:\project_workspace\mosc-temp &amp;&amp; npm run mosc:migration:malankara:upload:missing</code>
+        </div>
+    </div>
+    <p>Scripts call <code>NEXT_PUBLIC_API_BASE_URL</code> (default <code>http://localhost:8080</code>) via <code class="script-name">migration-api-lib.mjs</code> — not <code>:3000/api/proxy</code>. Dry run: <code>npm run mosc:migration:malankara:upload:dry</code>. Avoid blind <code>--force</code> on the full 165-item manifest; use <code>--missing-only</code> for repairs.</p>
+
+    <h3>8.4 Upload from Explorer mirror tree (alternate)</h3>
+    <p>For folder layouts like <code>Downloads\Malankara Association 2022\Section\file.pdf</code>, use <code class="script-name">upload-mirror-to-official-docs.mjs</code> (see runbook §10.2). Requires <code>MOSC_MIRROR_REPORT</code> and historically used Next.js proxy URL.</p>
+
+    <h3>8.5 Recommended folder layout for manifest upload</h3>
+    <pre>.mosc-downloads\
+  malankara-association-2022\
+    2022\
+      Agenda.pdf
+      List-of-Candidates.pdf
+      Adoor-Kadampanad-1.pdf
+      ...
+  malankara-association-2021\
+    2021\
+      Adoor-Kadampanad.pdf
+      ...</pre>
+    <p>Layout is <code>{MOSC_DOWNLOAD_ROOT}/{categorySlug}/{year}/{filename}</code> as defined in <code>url-list.malankara-remapped.json</code>. Hierarchy labels come from manifest <code>hierarchyPath</code>, not folder depth.</p>
+
+    <!-- §9 Verification -->
+    <h2>9. Verification checklist</h2>
+    <div class="command-block verify" data-command-base="curl" data-template-command="curl -s &quot;http://localhost:3000/api/proxy/official-document-categories?size=50&amp;sort=sortOrder,asc&quot; -H &quot;X-Tenant-ID: mosc_malankara_orthodox_2&quot;">
+        <div class="command-header">
+            <span class="command-type">List categories (proxy)</span>
+            <div class="command-header-buttons">
+                <button type="button" class="copy-button" onclick="copyCommand(this, 'verify-cats')" title="Copy command">📋 Copy</button>
+            </div>
+        </div>
+        <div class="command-content" id="verify-cats">curl -s "http://localhost:3000/api/proxy/official-document-categories?size=50&amp;sort=sortOrder,asc" -H "X-Tenant-ID: mosc_malankara_orthodox_2"</div>
+        <div class="command-single-line">
+            <div class="command-single-line-label">Windows single-line:</div>
+            <code id="verify-cats-single-code">curl -s "http://localhost:3000/api/proxy/official-document-categories?size=50&amp;sort=sortOrder,asc" -H "X-Tenant-ID: mosc_malankara_orthodox_2"</code>
+        </div>
+    </div>
+
+    <table>
+        <thead><tr><th>Step</th><th>Action</th><th>Expected</th></tr></thead>
+        <tbody>
+            <tr><td>1</td><td>Open <code>/mosc-redesign/downloads</code></td><td>Page loads with category dropdown</td></tr>
+            <tr><td>2</td><td>Filter category <strong>Malankara Association 2022</strong></td><td>Cards include preliminary + final candidate PDFs</td></tr>
+            <tr><td>3</td><td>Filter year <strong>2022</strong></td><td>Documents for 2022 cycle visible</td></tr>
+            <tr><td>4</td><td>Download <code>List-of-Candidates.pdf</code></td><td>Presigned URL returns PDF</td></tr>
+            <tr><td>5</td><td>Search “preliminary”</td><td>Matching card title in client search</td></tr>
+            <tr><td>6</td><td>Footer pagination (no filters)</td><td>~149 public files (post June 2026 repair; was 91)</td></tr>
+            <tr><td>7</td><td>Re-run <code>upload:missing</code></td><td><code>Missing unique manifest items: 0</code></td></tr>
+            <tr><td>8</td><td>Card thumbnails on Malankara rows</td><td>Category cover JPG visible (not PDF placeholder)</td></tr>
+        </tbody>
+    </table>
+
+    <!-- §10 Strapi appendix -->
+    <h2>10. Strapi appendix — when to use / not use</h2>
+    <div class="section-container">
+        <h3>Use Strapi for</h3>
+        <ul>
+            <li><strong>Kalpana CMS</strong> — <code>kalpana-editions</code>, <code>kalpana-documents</code> via <code>src/app/mosc-redesign/(syro)/kalpana-cms/</code></li>
+            <li>Editorial content: news, saints, institutions, publications, ecumenical articles</li>
+            <li>Structured entries with images, ordering, tenant-scoped slugs</li>
+        </ul>
+        <h3>Do not use Strapi for</h3>
+        <ul>
+            <li>Malankara Association official PDFs (use PostgreSQL official documents)</li>
+            <li>Duplicating the downloads hub file library</li>
+            <li>Merging with PostgreSQL in one paginated grid (not implemented)</li>
+        </ul>
+    </div>
+
+    <h3>10.1 Strapi API rules (reference)</h3>
+    <table>
+        <thead><tr><th>Rule</th><th>Reference</th></tr></thead>
+        <tbody>
+            <tr><td>Published filter: <code>filters[publishedAt][$notNull]=true</code></td><td><code>.cursor/rules/strapi_5_api_patterns.mdc</code></td></tr>
+            <tr><td>Tenant filter mandatory: <code>filters[tenant][tenantId][$eq]=...</code></td><td><code>strapi_5_api_patterns.mdc</code></td></tr>
+            <tr><td>Array-style populate: <code>populate[0]=image</code></td><td><code>strapi_5_api_patterns.mdc</code></td></tr>
+            <tr><td>Canonical URL slugs vs stored tenant-suffixed slugs</td><td><code>.cursor/rules/strapi_frontend_slug_contract.mdc</code></td></tr>
+            <tr><td>Do not fall back to unscoped tenant query on empty 200</td><td><code>strapi_5_api_patterns.mdc</code></td></tr>
+        </tbody>
+    </table>
+
+    <!-- §11 Future -->
+    <h2>11. Future enhancements (deferred)</h2>
+    <ul>
+        <li><strong>Phase 2 UX:</strong> Update <code>downloadsStaticItems.ts</code> Malankara cards from <code>#</code> to <code>/mosc-redesign/downloads?categoryId=&lt;id&gt;</code> (resolve category id server-side or by slug).</li>
+        <li><strong>Scrape improvement:</strong> Derive <code>categorySlug</code> from subpage URL in <code>_scrape-downloads-deep.mjs</code> instead of <code>DEFAULT_CATEGORY_SLUG</code>.</li>
+        <li><strong>Optional Strapi hub page:</strong> Content type for section headings linking to official doc IDs — presentation only, files remain in PostgreSQL.</li>
+        <li><strong>Dedicated routes:</strong> Only if product reverses hub-only decision; not required now.</li>
+    </ul>
+
+    <!-- §12 Risks -->
+    <h2>12. Open questions &amp; risks</h2>
+    <table>
+        <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+        <tbody>
+            <tr><td>PDF binaries not on disk at <code>MOSC_DOWNLOAD_ROOT</code></td><td>Run <code>fetch-urls.mjs</code> with corrected manifest; verify file count</td></tr>
+            <tr><td>Wrong tenant in upload</td><td>Set <code>NEXT_PUBLIC_TENANT_ID</code> explicitly; verify categories exist for that tenant</td></tr>
+            <tr><td>Year mismatch (upload path 2021/12 vs cycle 2022)</td><td>Set manifest <code>year: 2022</code> for 2022 election documents</td></tr>
+            <tr><td>Duplicate uploads</td><td>Dedupe by category + year + hierarchyPath; use <code>--missing-only</code> for repairs</td></tr>
+            <tr><td>Blind <code>--force</code> on full manifest</td><td>Fixed dedupe bug; still prefer <code>--missing-only</code> — see runbook</td></tr>
+            <tr><td>Production env vars</td><td>Declare in <code>next.config.mjs</code> per Amplify rules</td></tr>
+            <tr><td>Copyright / terms</td><td>Manifest comment warns to respect MOSC terms; use for authorized migration only</td></tr>
+        </tbody>
+    </table>
+
+    <p class="doc-meta" style="margin-top: 40px;">
+        <strong>Related:</strong> <a href="gap_analysis_prd.html">gap_analysis_prd.html</a> &nbsp;|&nbsp;
+        <a href="official_documents_upload_runbook.html">official_documents_upload_runbook.html</a> &nbsp;|&nbsp;
+        <code>scripts/mosc-in-migration/</code>
+    </p>
+
+    <script>
+    function fallbackCopy(text, button) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+            document.execCommand('copy');
+            if (button) {
+                var orig = button.textContent;
+                button.classList.add('copied');
+                button.textContent = 'Copied!';
+                setTimeout(function () {
+                    button.classList.remove('copied');
+                    button.textContent = orig;
+                }, 2000);
+            }
+        } catch (e) { /* ignore */ }
+        document.body.removeChild(ta);
+    }
+
+    function copyText(text, button) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () {
+                if (!button) return;
+                var orig = button.textContent;
+                button.classList.add('copied');
+                button.textContent = 'Copied!';
+                setTimeout(function () {
+                    button.classList.remove('copied');
+                    button.textContent = orig;
+                }, 2000);
+            }).catch(function () { fallbackCopy(text, button); });
+        } else {
+            fallbackCopy(text, button);
+        }
+    }
+
+    function copyCommand(button, commandId) {
+        var single = document.getElementById(commandId + '-single-code');
+        var block = document.getElementById(commandId);
+        var text = single ? single.textContent : (block ? block.textContent : '');
+        copyText(text.trim(), button);
+    }
+
+    function copyTemplateCommand(button, commandId) {
+        var block = button.closest('.command-block');
+        var template = block ? block.getAttribute('data-template-command') : '';
+        if (template) {
+            template = template.replace(/&amp;/g, '&').replace(/&quot;/g, '"');
+        }
+        copyText(template.trim(), button);
+    }
+
+    function updateFetchUrls() {
+        var root = (document.getElementById('fetch-root') || {}).value || 'C:\\E_Drive\\code_backup\\mosc_downloads';
+        var cmd = 'set MOSC_DOWNLOAD_ROOT=' + root + ' && cd F:\\project_workspace\\mosc-temp && node scripts/mosc-in-migration/fetch-urls.mjs --manifest scripts/mosc-in-migration/url-list.mosc-in.generated.json --skip-existing';
+        var el = document.getElementById('fetch-urls');
+        var single = document.getElementById('fetch-urls-single-code');
+        if (el) el.textContent = cmd;
+        if (single) single.textContent = cmd;
+    }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Malankara Association Downloads — Gap Analysis</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; margin-top: 18px; margin-bottom: 10px; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        tbody tr:hover { background: #f0f7ff; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; overflow-x: auto; font-family: Consolas, monospace; font-size: 0.82em; line-height: 1.45; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .ok { color: #155724; font-weight: 600; }
+        .gap { color: #856404; font-weight: 600; }
+        .missing { color: #721c24; font-weight: 600; }
+        .section-container { background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 20px; margin: 22px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Malankara Association Downloads — Gap Analysis</h1>
+    <p class="doc-meta">
+        <strong>Index:</strong> <a href="downloads_malankara_association_prd.html">downloads_malankara_association_prd.html</a> &nbsp;|&nbsp;
+        <a href="official_documents_upload_runbook.html">Upload runbook</a> &nbsp;|&nbsp;
+        <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> June 27, 2026
+    </p>
+
+    <div class="lead">
+        <p>Compares legacy <strong>mosc.in</strong> Malankara Association download pages with the current <strong>/mosc-redesign/downloads</strong> hub (PostgreSQL official documents). Status: <span class="ok">Present</span> · <span class="gap">Partial</span> · <span class="missing">Missing</span>.</p>
+    </div>
+
+    <h2>1. Executive gap summary</h2>
+    <table>
+        <thead>
+            <tr><th>Area</th><th>Legacy (mosc.in)</th><th>Current app</th><th>Status</th><th>Remediation</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>PDF file inventory</td>
+                <td>~51 links on Malankara 2022 page alone</td>
+                <td>288 URLs in local manifest; not all uploaded to DB</td>
+                <td class="gap">Partial</td>
+                <td>Run category-corrected fetch + upload (see main PRD §8)</td>
+            </tr>
+            <tr>
+                <td>Category taxonomy</td>
+                <td>Separate WordPress pages per cycle</td>
+                <td><code>official_document_category</code> slugs seeded in SQL</td>
+                <td class="ok">Present</td>
+                <td>Map manifest entries to correct slugs</td>
+            </tr>
+            <tr>
+                <td>Scrape category assignment</td>
+                <td>N/A (pages imply category)</td>
+                <td>All items use <code>mosc-in-downloads</code></td>
+                <td class="missing">Missing</td>
+                <td>Remap or enhance <code class="code-highlight">_scrape-downloads-deep.mjs</code></td>
+            </tr>
+            <tr>
+                <td>Preliminary candidate list</td>
+                <td><code>List-of-Candidates.pdf</code> on 2022 page</td>
+                <td>In manifest; no <code>event_media</code> SQL insert found</td>
+                <td class="gap">Partial</td>
+                <td>Upload under <code>malankara-association-2022</code>, year 2022</td>
+            </tr>
+            <tr>
+                <td>Legacy landing page UX</td>
+                <td>Grouped sections, colored links</td>
+                <td>Unified hub + category/year filters (chosen UX)</td>
+                <td class="gap">Partial</td>
+                <td>Accept hub UX; optional deep links in Phase 2</td>
+            </tr>
+            <tr>
+                <td>Strapi document storage</td>
+                <td>N/A (WordPress + direct PDF URLs)</td>
+                <td>Strapi used for Kalpana CMS, news, directory — not official docs</td>
+                <td class="ok">Present (by design)</td>
+                <td>Do not duplicate PDFs in Strapi</td>
+            </tr>
+            <tr>
+                <td>Dual-source downloads grid</td>
+                <td>N/A</td>
+                <td>No PG + Strapi merge on downloads page</td>
+                <td class="missing">Missing (intentional)</td>
+                <td>Not required for this requirement</td>
+            </tr>
+            <tr>
+                <td>Static card links</td>
+                <td>Sidebar links to Malankara pages</td>
+                <td><code>downloadsStaticItems.ts</code> uses <code>#</code> placeholders</td>
+                <td class="gap">Partial</td>
+                <td>Phase 2: link to <code>?categoryId=</code> filter</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>2. Legacy page → category slug mapping</h2>
+    <div class="info-box">
+        <p>Legacy WordPress used <strong>HTML landing pages</strong>, not a separate database schema. Each page maps to an existing <code>official_document_category.slug</code> (tenant-scoped).</p>
+    </div>
+    <table>
+        <thead>
+            <tr><th>Legacy path (code_clone_ref)</th><th>Target category slug</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>downloads/malankara-association-2022/</code></td><td><code>malankara-association-2022</code></td><td>Includes preliminary + final candidate lists, voter lists by diocese</td></tr>
+            <tr><td><code>downloads/malankara-association-2021/</code></td><td><code>malankara-association-2021</code></td><td>2021 cycle documents</td></tr>
+            <tr><td><code>downloads/malankara-association-2022-2027/</code></td><td><code>malankara-association-2022-2027</code></td><td>Long-cycle association documents</td></tr>
+            <tr><td><code>downloads/malankara-association-association-secretary-election-final-list/</code></td><td><code>malankara-association-association-secretary-election-final-list-2017</code></td><td>2017 secretary election</td></tr>
+            <tr><td><code>downloads/malankara-association-2017-agenda-nominated-members-list/</code></td><td><code>malankara-association-2017-agenda-nominated-members-list</code></td><td>2017 agenda</td></tr>
+            <tr><td><code>downloads/malankara-association-candidate-list/</code></td><td><code>malankara-association-2017-agenda-nominated-members-list</code> or new slug</td><td class="gap">Verify PDF overlap; may share 2017 category</td></tr>
+            <tr><td><code>mosc.in/.../malankara-association-preliminary-list/</code></td><td><code>malankara-association-2022</code></td><td>Likely alias; content lives on 2022 page locally</td></tr>
+        </tbody>
+    </table>
+
+    <h2>3. Local asset audit</h2>
+    <table>
+        <thead><tr><th>Asset</th><th>Path</th><th>Status</th></tr></thead>
+        <tbody>
+            <tr><td>URL manifest (288 items)</td><td><code>scripts/mosc-in-migration/url-list.mosc-in.generated.json</code></td><td class="ok">Present</td></tr>
+            <tr><td>Legacy HTML mirror (7 Malankara pages)</td><td><code>code_clone_ref/mosc_in/downloads/malankara-association-*/</code></td><td class="ok">Present</td></tr>
+            <tr><td>Category SQL seeds</td><td><code>code_html_template/SQLS/export.sql</code></td><td class="ok">Present</td></tr>
+            <tr><td><code>event_media</code> rows for List-of-Candidates</td><td>SQL grep</td><td class="missing">Not found — upload pending</td></tr>
+            <tr><td>Downloaded PDF binaries</td><td><code>MOSC_DOWNLOAD_ROOT</code> (default <code>C:\E_Drive\code_backup\mosc_downloads</code>)</td><td class="gap">External to repo; verify on operator machine</td></tr>
+        </tbody>
+    </table>
+
+    <h2>4. Root cause: wrong categorySlug in manifest</h2>
+    <div class="warning-box">
+        <p><code class="code-highlight">_scrape-downloads-deep.mjs</code> assigns <strong>every</strong> scraped file to <code>categorySlug: "mosc-in-downloads"</code>. Upload scripts use this slug (or mirror folder name), so Malankara PDFs never appear when filtering by <strong>Malankara Association 2022</strong>.</p>
+    </div>
+    <pre>// scripts/mosc-in-migration/_scrape-downloads-deep.mjs (line 22)
+const DEFAULT_CATEGORY_SLUG = 'mosc-in-downloads';
+
+// Every manifest item gets:
+categorySlug: DEFAULT_CATEGORY_SLUG</pre>
+
+    <h2>5. Strapi vs PostgreSQL (gap decision)</h2>
+    <table>
+        <thead><tr><th>Need</th><th>PostgreSQL official docs</th><th>Strapi</th></tr></thead>
+        <tbody>
+            <tr><td>Store PDF binaries (S3)</td><td class="ok">Supported</td><td class="gap">Kalpana pattern only; duplicates storage</td></tr>
+            <tr><td>Tenant-scoped categories</td><td class="ok"><code>official_document_category</code></td><td class="gap">Different content types</td></tr>
+            <tr><td>Admin upload API</td><td class="ok">Rust + proxy</td><td class="gap">Not wired to downloads hub</td></tr>
+            <tr><td>Editorial periodicals (Kalpana)</td><td class="gap">Not ideal</td><td class="ok"><code>kalpana-cms</code> route</td></tr>
+            <tr><td>Merge both on one downloads grid</td><td class="missing">Not implemented</td><td class="missing">Not implemented</td></tr>
+        </tbody>
+    </table>
+
+    <h2>6. Recommended closure (Phase 1)</h2>
+    <ol>
+        <li>Build or patch manifest with correct <code>categorySlug</code> per legacy page mapping (§2).</li>
+        <li>Fetch PDFs to folder structure: <code>{MOSC_DOWNLOAD_ROOT}/{categorySlug}/{year}/</code> or mirror tree with category as top folder.</li>
+        <li>Run <code class="code-highlight">upload-mirror-to-official-docs.mjs</code> with correct tenant and <code>MOSC_AUTO_CREATE_CATEGORIES=true</code> if needed.</li>
+        <li>Verify on <code>http://localhost:3000/mosc-redesign/downloads</code> with category filter <strong>Malankara Association 2022</strong>.</li>
+    </ol>
+
+    <p class="doc-meta" style="margin-top: 32px;">
+        <strong>Full design &amp; runbook:</strong> <a href="downloads_malankara_association_prd.html">downloads_malankara_association_prd.html</a> &nbsp;|&nbsp;
+        <a href="official_documents_upload_runbook.html">official_documents_upload_runbook.html</a> (direct :8080 upload)
+    </p>
+
+</body>
+</html>
