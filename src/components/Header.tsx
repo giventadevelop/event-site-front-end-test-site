@@ -7,6 +7,7 @@ import { Search, ChevronDown, X, LogOut, User } from 'lucide-react';
 import { useAuth, useClerk, useUser } from '@clerk/nextjs';
 import { useTenantSettings } from '@/components/TenantSettingsProvider';
 import { isAdminRole } from '@/lib/utils';
+import { isPrimaryHostname, isSatelliteHostname } from '@/lib/clerkSatellite';
 import Image from 'next/image';
 
 const navItems = [
@@ -888,15 +889,7 @@ export default function Header({ hideMenuItems = false, variant = 'charity', isT
     const primaryDomain = process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || 'www.event-site-manager.com';
     const primaryHost = primaryDomain.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
-    // CRITICAL: If we're on the primary domain, always do normal sign out (never redirect).
-    // This prevents sign-out errors when NEXT_PUBLIC_CLERK_DOMAIN is mis-set on primary app.
-    const isPrimary =
-      hostname === primaryHost ||
-      hostname === primaryDomain ||
-      hostname.includes(primaryHost.replace('www.', '')) ||
-      hostname.includes(primaryDomain.replace('www.', ''));
-
-    if (isPrimary) {
+    if (isPrimaryHostname(hostname)) {
       try {
         await signOut();
         window.location.href = '/';
@@ -907,10 +900,7 @@ export default function Header({ hideMenuItems = false, variant = 'charity', isT
       return;
     }
 
-    // Only redirect to primary sign-out when we're on a known satellite domain (mosc-temp.com).
-    // Do not use NEXT_PUBLIC_CLERK_DOMAIN for this check - it can be set to primary by mistake.
-    const isSatellite = hostname.includes('mosc-temp.com');
-    if (isSatellite) {
+    if (isSatelliteHostname(hostname)) {
       console.log('[Header] Satellite domain detected, redirecting to primary domain sign-out...');
       const primarySignOutUrl = `https://${primaryHost}/auth/signout-redirect`;
       const returnUrl = encodeURIComponent(window.location.origin);

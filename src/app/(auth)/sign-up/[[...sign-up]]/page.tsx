@@ -7,12 +7,19 @@ import { useRouter, usePathname } from 'next/navigation';
 import { SignUp } from '@clerk/nextjs';
 import { useAuth, useClerk, useUser } from '@clerk/nextjs';
 import { bootstrapUserProfile } from '@/components/ProfileBootstrapperApiServerActions';
+import { isPrimaryHostname, isSatelliteHostname } from '@/lib/clerkSatellite';
 
 export default function SignUpPage() {
   const router = useRouter();
   const pathname = usePathname();
   const clerk = useClerk();
-  const [shouldRedirect, setShouldRedirect] = useState(false);
+  const [shouldRedirect, setShouldRedirect] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') return false;
+    if (isPrimaryHostname(hostname)) return false;
+    return isSatelliteHostname(hostname);
+  });
   const [isLocalhost, setIsLocalhost] = useState(false);
   const [isPrimaryDomain, setIsPrimaryDomain] = useState(false);
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
@@ -89,11 +96,7 @@ export default function SignUpPage() {
       }
 
       // Get primary domain from environment variable
-      const primaryDomain = process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || 'www.event-site-manager.com';
-      const isPrimary = hostname === primaryDomain || hostname.includes(primaryDomain.replace('www.', ''));
-
-      // If on primary domain, handle redirect_url parameter
-      if (isPrimary) {
+      if (isPrimaryHostname(hostname)) {
         setIsPrimaryDomain(true);
         // Get redirect_url from query params if present
         const params = new URLSearchParams(window.location.search);
@@ -104,9 +107,7 @@ export default function SignUpPage() {
         return;
       }
 
-      // If on satellite domain, redirect to primary domain with return URL
-      const satelliteDomain = process.env.NEXT_PUBLIC_CLERK_DOMAIN || 'mosc-temp.com';
-      if (hostname.includes('mosc-temp.com') || hostname.includes(satelliteDomain.replace('www.', ''))) {
+      if (isSatelliteHostname(hostname)) {
         setShouldRedirect(true);
         // Use Clerk's redirectToSignUp — it reads isSatellite/domain/signUpUrl from
         // the ClerkProvider and adds __clerk_satellite_url so the primary returns

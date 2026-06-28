@@ -2,6 +2,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createLogger } from "@/lib/logger";
+import { getClerkSatelliteHost, getPrimaryHost, isClerkSatelliteEnv, usesPrimaryClerkSignInUrl } from "@/lib/clerkSatellite";
 
 const logger = createLogger('MIDDLEWARE');
 const DEBUG_MIDDLEWARE = process.env.NEXT_PUBLIC_DEBUG_MIDDLEWARE === 'true';
@@ -28,10 +29,10 @@ const isLocalhost = process.env.NEXT_PUBLIC_APP_URL?.includes('localhost') ||
                     process.env.NEXT_PUBLIC_APP_URL?.includes('127.0.0.1') ||
                     !process.env.NEXT_PUBLIC_APP_URL;
 const isSatEnv = !isLocalhost && (
-  process.env.NEXT_PUBLIC_CLERK_IS_SATELLITE === 'true' ||
+  isClerkSatelliteEnv() ||
   process.env.NEXT_PUBLIC_APP_URL?.includes('mosc-temp.com')
 );
-const satDomain = process.env.NEXT_PUBLIC_CLERK_DOMAIN || (process.env.NEXT_PUBLIC_APP_URL?.includes('mosc-temp.com') ? 'www.mosc-temp.com' : undefined);
+const satDomain = getClerkSatelliteHost() || (process.env.NEXT_PUBLIC_APP_URL?.includes('mosc-temp.com') ? 'www.mosc-temp.com' : undefined);
 const satConfig: Record<string, unknown> = {};
 if (isSatEnv && !isLocalhost) {
   if (satDomain) {
@@ -165,8 +166,8 @@ export default clerkMiddleware(
     // user in and redirects back with __clerk_handshake=<token> in the URL. The
     // satellite SDK reads that token and establishes a first-party session cookie
     // — no proxy or Dashboard registration required.
-    signInUrl: process.env.NEXT_PUBLIC_APP_URL?.includes('amplifyapp.com') || process.env.NEXT_PUBLIC_APP_URL?.includes('mosc-temp.com')
-      ? `https://${process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || 'www.event-site-manager.com'}/sign-in`
+    signInUrl: usesPrimaryClerkSignInUrl()
+      ? `https://${getPrimaryHost()}/sign-in`
       : '/sign-in',
   }
 );

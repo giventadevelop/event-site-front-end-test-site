@@ -13,6 +13,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useClerk } from '@clerk/nextjs';
+import { isAllowedSatelliteRedirectUrl } from '@/lib/clerkSatellite';
 
 export default function SignOutRedirectPage() {
   const searchParams = useSearchParams();
@@ -31,10 +32,7 @@ export default function SignOutRedirectPage() {
         // leave decoded as-is
       }
 
-      // Only allow redirect to known satellite or localhost; otherwise send to /
-      const allowedHost =
-        decoded.startsWith('http') &&
-        (decoded.includes('mosc-temp.com') || decoded.includes('localhost'));
+      const allowedHost = isAllowedSatelliteRedirectUrl(decoded);
       const baseUrl = allowedHost ? decoded.replace(/\/$/, '') : '';
       const finalUrl = baseUrl
         ? `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}clerk_signout=true`

@@ -8,11 +8,18 @@ import { useSearchParams } from 'next/navigation';
 import { SignIn } from '@clerk/nextjs';
 import { useAuth, useClerk, useUser } from '@clerk/nextjs';
 import { bootstrapUserProfile } from '@/components/ProfileBootstrapperApiServerActions';
+import { isPrimaryHostname, isSatelliteHostname } from '@/lib/clerkSatellite';
 
 export default function SignInPage() {
   const searchParams = useSearchParams();
   const clerk = useClerk();
-  const [shouldRedirect, setShouldRedirect] = useState(false);
+  const [shouldRedirect, setShouldRedirect] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') return false;
+    if (isPrimaryHostname(hostname)) return false;
+    return isSatelliteHostname(hostname);
+  });
   const [isLocalhost, setIsLocalhost] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { isSignedIn, userId, isLoaded } = useAuth();
@@ -49,23 +56,11 @@ export default function SignInPage() {
         return;
       }
 
-      // CRITICAL: If we're on the primary domain, never redirect - always show SignIn.
-      // This prevents blank sign-in page when NEXT_PUBLIC_CLERK_DOMAIN is mis-set on primary app.
-      const primaryDomain = process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || 'www.event-site-manager.com';
-      const primaryHost = primaryDomain.replace(/^https?:\/\//, '').replace(/\/$/, '');
-      const isPrimary =
-        hostname === primaryHost ||
-        hostname === primaryDomain ||
-        hostname.includes(primaryHost.replace('www.', '')) ||
-        hostname.includes(primaryDomain.replace('www.', ''));
-      if (isPrimary) {
+      if (isPrimaryHostname(hostname)) {
         return; // Primary domain: do not set shouldRedirect; fall through to render <SignIn />
       }
 
-      // Only redirect when we're on a known satellite domain (mosc-temp.com).
-      // Do not use NEXT_PUBLIC_CLERK_DOMAIN for this check on primary - it can be set to primary by mistake.
-      const isSatellite = hostname.includes('mosc-temp.com');
-      if (isSatellite) {
+      if (isSatelliteHostname(hostname)) {
         setShouldRedirect(true);
         // Use Clerk's redirectToSignIn — it reads isSatellite/domain/signInUrl from
         // the ClerkProvider and adds __clerk_satellite_url so the primary returns
