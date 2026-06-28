@@ -170,6 +170,9 @@ const nextConfig = {
             },
           ]
         : []),
+      // AdSense: no global CSP is set (would break Clerk/Stripe). If you add CSP at CDN/proxy,
+      // allow script-src https://pagead2.googlesyndication.com https://www.googletagservices.com
+      // and frame-src https://googleads.g.doubleclick.net — see documentation/tenant_management/google_adsense_integration/
     ];
   },
 

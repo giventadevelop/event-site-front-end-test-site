@@ -63,9 +63,47 @@ Remove-Item Env:GIT_SSL_NO_VERIFY
 
 ---
 
+## **Unstaged (` M`) and untracked (`??`) files — include in every commit**
+
+When the user asks to **commit and push** a project and `git status` shows **any** unstaged or untracked paths, stage **all safe changes** — not only the paths they named (e.g. not only `.cursor/rules/*` while app code stays dirty).
+
+```powershell
+git status -sb
+git status --porcelain
+git add -A
+git diff --cached --name-only
+```
+
+**Required workflow:**
+
+1. **List pending work** with `git status --porcelain` before staging.
+2. **`git add -A`** — includes modified tracked files **and** new untracked files.
+3. **Unstage excluded paths** (build artifacts + secret blocklist):
+   ```powershell
+   git restore --staged tsconfig.tsbuildinfo 2>$null
+   git restore --staged code_html_template/SQLS/corrected_event_media_inserts.ordered_PROD.sql 2>$null
+   git diff --cached --name-only | Select-String -Pattern `
+     'prod\.env$|\.env\.local|\.env\.production|auth\.json|\.auth-state|secrets|\.pem$|\.key$|credentials|ordered_PROD\.sql' `
+     -CaseSensitive:$false | ForEach-Object { git restore --staged $_.Line }
+   ```
+4. **Secret filename check** (below) — empty output required before commit.
+5. **Content spot-check** on new untracked env-like or credential-shaped files (below).
+6. **`git commit`** with a message reflecting the **full** staged diff.
+7. **Verify clean tree** after push:
+   ```powershell
+   git status -sb
+   ```
+   If commit-eligible paths remain dirty, repeat from step 1. Only `tsconfig.tsbuildinfo`, gitignored env files, and other blocklisted paths may stay unstaged.
+
+**DO:** Include new feature folders (`?? src/**`), docs, SQL refresh artifacts, tenant settings, and modified tracked files in the same commit when they pass the secret filter.
+
+**DON'T:** Commit only `.cursor/rules/*` while leaving other unstaged/untracked app changes behind — unless the user **explicitly** scoped the request to rules only.
+
+---
+
 ## **Include untracked (unversioned) files — with categorization**
 
-When the user asks to **add unversioned files**, stage everything **after** secret filtering — not only modified tracked files.
+When the user asks to **add unversioned files**, stage everything **after** secret filtering — not only modified tracked files (same as the unstaged/untracked workflow above).
 
 ```powershell
 git status -sb

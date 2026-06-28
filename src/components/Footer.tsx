@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Facebook, Linkedin, Youtube, ArrowUp, Mail, Phone, MapPin } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useTenantSettings } from "@/components/TenantSettingsProvider";
+import GoogleAdSenseRegion from "@/components/ads/GoogleAdSenseRegion";
 import { InstagramIcon } from "@/components/icons/InstagramIcon";
 import { formatAddressBlock } from "@/lib/formatAddress";
 
@@ -296,6 +297,13 @@ const Footer = () => {
           </div>
         </div>
       </div>
+
+      <GoogleAdSenseRegion
+        region="footer_strip"
+        className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-4 bg-gray-900"
+        format="horizontal"
+        minHeight={90}
+      />
 
       {/* Copyright Section */}
       <div className="bg-gray-900 border-t border-gray-800 w-full">

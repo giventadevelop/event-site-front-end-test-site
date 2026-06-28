@@ -72,6 +72,9 @@ export default function TenantSettingsForm({
       requireAdminApproval: initialData?.requireAdminApproval ?? false,
       enableWhatsappIntegration: initialData?.enableWhatsappIntegration ?? false,
       enableEmailMarketing: initialData?.enableEmailMarketing ?? false,
+      enableGoogleAdsense: initialData?.enableGoogleAdsense ?? false,
+      googleAdsensePublisherId: initialData?.googleAdsensePublisherId || '',
+      googleAdsensePlacementsJson: initialData?.googleAdsensePlacementsJson || '',
       whatsappApiKey: initialData?.whatsappApiKey || '',
       emailProviderConfig: initialData?.emailProviderConfig || '',
       maxEventsPerMonth: initialData?.maxEventsPerMonth || undefined,
@@ -1165,6 +1168,98 @@ export default function TenantSettingsForm({
                   {errors.emailProviderConfig && (
                     <p className="mt-1 text-sm text-red-600">{errors.emailProviderConfig.message}</p>
                   )}
+                </div>
+              )}
+            </div>
+
+            {/* Google AdSense Integration */}
+            <div className="space-y-4 border-t border-gray-200 pt-6">
+              <div>
+                <h4 className="text-md font-medium text-gray-900 flex items-center">
+                  <span className="mr-2">📢</span>
+                  Google AdSense
+                </h4>
+                <p className="text-sm text-gray-600 mt-1">
+                  Enable programmatic ad regions on this tenant&apos;s satellite site. Each region maps to an AdSense ad unit slot ID.
+                </p>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <ToggleSwitch
+                  name="enableGoogleAdsense"
+                  label="Enable Google AdSense"
+                  description="Show configured ad regions on public pages for this tenant"
+                  checked={watchedValues.enableGoogleAdsense || false}
+                  onChange={(checked) => setValue('enableGoogleAdsense', checked)}
+                />
+              </div>
+
+              {watchedValues.enableGoogleAdsense && (
+                <div className="space-y-4 bg-white border border-gray-200 rounded-lg p-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Publisher ID *
+                    </label>
+                    <input
+                      type="text"
+                      {...register('googleAdsensePublisherId', {
+                        required: watchedValues.enableGoogleAdsense ? 'Publisher ID is required when AdSense is enabled' : false,
+                        pattern: {
+                          value: /^ca-pub-[0-9]+$/,
+                          message: 'Publisher ID must start with ca-pub- followed by digits',
+                        },
+                        maxLength: {
+                          value: 32,
+                          message: 'Publisher ID must not exceed 32 characters',
+                        },
+                      })}
+                      className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base font-mono text-sm"
+                      placeholder="ca-pub-1234567890123456"
+                    />
+                    {errors.googleAdsensePublisherId && (
+                      <p className="mt-1 text-sm text-red-600">{errors.googleAdsensePublisherId.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Placements JSON (region → ad slot ID)
+                    </label>
+                    <p className="text-xs text-gray-500 mb-2">
+                      Regions: <code className="text-xs">sidebar</code>,{' '}
+                      <code className="text-xs">between_sections</code>,{' '}
+                      <code className="text-xs">footer_strip</code>,{' '}
+                      <code className="text-xs">article_inline</code>
+                    </p>
+                    <textarea
+                      {...register('googleAdsensePlacementsJson', {
+                        maxLength: {
+                          value: 8192,
+                          message: 'Placements JSON must be less than 8192 characters',
+                        },
+                        validate: (value) => {
+                          if (!value?.trim()) {
+                            return true;
+                          }
+                          try {
+                            const parsed = JSON.parse(value);
+                            if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+                              return 'Placements must be a JSON object mapping region ids to slot ids';
+                            }
+                            return true;
+                          } catch {
+                            return 'Placements must be valid JSON';
+                          }
+                        },
+                      })}
+                      rows={8}
+                      className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base font-mono text-sm"
+                      placeholder={'{\n  "sidebar": "1234567890",\n  "between_sections": "0987654321",\n  "footer_strip": "1122334455"\n}'}
+                    />
+                    {errors.googleAdsensePlacementsJson && (
+                      <p className="mt-1 text-sm text-red-600">{errors.googleAdsensePlacementsJson.message}</p>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

@@ -43,13 +43,21 @@ Also check unpushed commits:
 git log origin/<branch>..HEAD --oneline
 ```
 
-### **Step 2 — Stage and commit (per repo with changes)**
+### **Step 2 — Stage ALL safe changes (unstaged + untracked), then commit**
 
 Only repos with changes get a commit. Use focused messages from the diff (not generic "update files").
 
+When `git status --porcelain` shows **` M` (unstaged modified)** or **`??` (untracked)**, use **`git add -A`** — not only paths the user named. Follow the unstaged/untracked workflow in [git_local_push.mdc](mdc:.cursor/rules/git_local_push.mdc): unstage `tsconfig.tsbuildinfo`, `ordered_PROD.sql`, and blocklisted paths; run secret scan; then commit **all** remaining staged files.
+
 ```powershell
 cd "F:\project_workspace\<repo-name>"
+git status --porcelain
 git add -A
+git restore --staged tsconfig.tsbuildinfo 2>$null
+git restore --staged code_html_template/SQLS/corrected_event_media_inserts.ordered_PROD.sql 2>$null
+git diff --cached --name-only | Select-String -Pattern `
+  'prod\.env$|\.env\.local|\.env\.production|auth\.json|\.auth-state|secrets|\.pem$|\.key$|credentials|ordered_PROD\.sql' `
+  -CaseSensitive:$false | ForEach-Object { git restore --staged $_.Line }
 git diff --cached --name-only | Select-String -Pattern 'prod\.env|\.env\.local|auth\.json|secrets' -CaseSensitive:$false
 git commit -m "<short summary sentence>" -m "<optional body with scope>"
 ```
@@ -88,9 +96,10 @@ Replace branch names if `git branch --show-current` differs.
 
 ```powershell
 git status -sb
+git status --porcelain
 ```
 
-Each repo should show `## <branch>...origin/<branch>` with **no** ahead/behind and no unstaged changes.
+Each repo should show `## <branch>...origin/<branch>` with **no** ahead/behind and **no** unstaged/untracked commit-eligible changes. If dirty paths remain (excluding `tsconfig.tsbuildinfo` and gitignored secrets), re-run Steps 2–3 for that repo before reporting done.
 
 ## **SSL certificate errors on push (Windows)**
 

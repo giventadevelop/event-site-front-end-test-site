@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google AdSense — Tenant Settings Integration PRD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.15em; margin-top: 20px; margin-bottom: 10px; color: #0052a3; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; margin: 12px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #856404; padding: 14px; border-radius: 6px; margin: 16px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Google AdSense — Tenant Settings Integration</h1>
+    <p class="doc-meta">
+        <strong>Frontend repo:</strong> mosc-temp &nbsp;|&nbsp;
+        <strong>Backend repo:</strong> event-site-manager-service &nbsp;|&nbsp;
+        <strong>Schema baseline:</strong> <code>Latest_Schema_Post__Blob_Claude_12.sql</code>
+    </p>
+
+    <div class="lead">
+        <p>Per-tenant Google AdSense is controlled by <code>tenant_settings</code>. Admin enables ads, sets <code>ca-pub-...</code>, and maps layout regions to AdSense ad unit slot IDs. Public satellite pages render ad regions only when enabled for that tenant.</p>
+    </div>
+
+    <h2>1. Database (PostgreSQL)</h2>
+    <p>Per <code>database_schema_guidelines</code>: add columns in the canonical <code>CREATE TABLE public.tenant_settings</code> block in <code>Latest_Schema_Post__Blob_Claude_12.sql</code> — do not use standalone <code>ALTER TABLE</code> scripts in the schema repo.</p>
+    <pre>-- Inside CREATE TABLE public.tenant_settings ( ... )
+  enable_google_adsense boolean DEFAULT false NOT NULL,
+  google_adsense_publisher_id character varying(32),
+  google_adsense_placements_json text,</pre>
+    <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Purpose</th></tr></thead>
+        <tbody>
+            <tr><td><code>enable_google_adsense</code></td><td>boolean DEFAULT false NOT NULL</td><td>Master on/off per tenant</td></tr>
+            <tr><td><code>google_adsense_publisher_id</code></td><td>varchar(32)</td><td>e.g. <code>ca-pub-XXXXXXXX</code> (required when enabled)</td></tr>
+            <tr><td><code>google_adsense_placements_json</code></td><td>text</td><td>JSON map region → slot id</td></tr>
+        </tbody>
+    </table>
+    <p><strong>Existing deployments:</strong> Liquibase in <code>event-site-manager-service</code> (<code>20260628120000_add_google_adsense_tenant_settings.xml</code>) applies incremental <code>addColumn</code> changesets on startup — not duplicated as raw SQL ALTER files in mosc-temp or batch-jobs.</p>
+
+    <h2>2. Backend API fields (OpenAPI / DTO)</h2>
+    <table>
+        <thead><tr><th>JSON field</th><th>Validation</th></tr></thead>
+        <tbody>
+            <tr><td><code>enableGoogleAdsense</code></td><td>Default <code>false</code> on create</td></tr>
+            <tr><td><code>googleAdsensePublisherId</code></td><td>Required when enabled; must start with <code>ca-pub-</code></td></tr>
+            <tr><td><code>googleAdsensePlacementsJson</code></td><td>Optional JSON object; values are non-empty slot id strings</td></tr>
+        </tbody>
+    </table>
+    <p>Endpoints unchanged: <code>GET/PATCH /api/tenant-settings</code> via existing Next.js proxy.</p>
+
+    <h2>3. Admin workflow</h2>
+    <ol>
+        <li>Sign in as tenant admin → <code>/admin/tenant-management/settings/{id}/edit</code></li>
+        <li>Open <strong>Integrations</strong> tab</li>
+        <li>Enable <strong>Google AdSense</strong></li>
+        <li>Enter Publisher ID (<code>ca-pub-...</code>)</li>
+        <li>Paste placements JSON (see region map below)</li>
+        <li>Save → optional homepage cache refresh (<code>homepageCacheVersion</code>)</li>
+    </ol>
+    <p>To <strong>turn off ads for one satellite</strong>: uncheck Enable Google AdSense and save. Other tenants are unaffected.</p>
+
+    <h2>4. Ad region map</h2>
+    <table>
+        <thead><tr><th>Region ID</th><th>Pages</th><th>Frontend component</th></tr></thead>
+        <tbody>
+            <tr><td><code>between_sections</code></td><td>Homepage (after hero)</td><td><code>HomePageClient.tsx</code></td></tr>
+            <tr><td><code>sidebar</code></td><td>Homepage (lg+ narrow strip)</td><td><code>HomePageClient.tsx</code></td></tr>
+            <tr><td><code>footer_strip</code></td><td>Global footer (above copyright)</td><td><code>Footer.tsx</code></td></tr>
+            <tr><td><code>article_inline</code></td><td>Phase 2 (event/news detail)</td><td>Reserved in JSON schema</td></tr>
+        </tbody>
+    </table>
+    <pre>{
+  "sidebar": "1234567890",
+  "between_sections": "0987654321",
+  "footer_strip": "1122334455"
+}</pre>
+
+    <h2>5. Public frontend</h2>
+    <ul>
+        <li><code>TenantSettingsProvider</code> — exposes <code>showGoogleAdsense</code>, <code>adsensePublisherId</code>, <code>adsensePlacements</code></li>
+        <li><code>GoogleAdSenseSlot.tsx</code> — loads <code>adsbygoogle.js</code>, renders <code>&lt;ins class="adsbygoogle"&gt;</code></li>
+        <li><code>GoogleAdSenseRegion.tsx</code> — gates by tenant settings + region slot mapping</li>
+    </ul>
+
+    <h2>6. ads.txt</h2>
+    <p>Static template: <code>public/ads.txt</code>. Replace <code>pub-0000000000000000</code> with your numeric publisher id before production.</p>
+    <pre>google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0</pre>
+    <p>Must be served at <code>https://YOUR-SATELLITE-DOMAIN/ads.txt</code> for each AdSense-approved domain.</p>
+
+    <h2>7. Content Security Policy (when enforced)</h2>
+    <div class="warning-box">
+        <p>This app does not set a global CSP header today. If you add CSP at CDN, reverse proxy, or <code>next.config.mjs</code>, allow at minimum:</p>
+    </div>
+    <ul>
+        <li><code>script-src</code>: <code>https://pagead2.googlesyndication.com</code>, <code>https://www.googletagservices.com</code></li>
+        <li><code>frame-src</code> / <code>child-src</code>: <code>https://googleads.g.doubleclick.net</code>, <code>https://tpc.googlesyndication.com</code></li>
+        <li><code>img-src</code>: <code>https://pagead2.googlesyndication.com</code>, <code>https://googleads.g.doubleclick.net</code></li>
+        <li><code>connect-src</code>: Google ad / analytics endpoints as required by AdSense diagnostics</li>
+    </ul>
+
+    <h2>8. Per-satellite rollout checklist</h2>
+    <ol>
+        <li>Register satellite domain in Google AdSense; wait for approval</li>
+        <li>Create ad units for each region; note slot IDs</li>
+        <li>Update <code>public/ads.txt</code> (or domain-specific deploy) with correct <code>pub-...</code> line</li>
+        <li>Admin: enable AdSense for tenant, set publisher ID + placements JSON</li>
+        <li>Bump <code>homepageCacheVersion</code> if homepage settings are CDN-cached</li>
+        <li>Verify homepage/footer regions render; toggle off and confirm regions disappear</li>
+        <li>Review EU/UK consent requirements before enabling in regulated regions</li>
+    </ol>
+
+    <h2>9. Related patterns</h2>
+    <ul>
+        <li>Strapi news <code>AdSlots</code> (editor-managed embed HTML) remains separate; can be gated by the same tenant flag in a follow-up</li>
+        <li>WhatsApp integration toggle pattern in <code>TenantSettingsForm.tsx</code> Integrations tab</li>
+    </ul>
+
+    <h2>10. Batch jobs repo (<code>event-site-manager-batch-jobs</code>)</h2>
+    <div class="info-box">
+        <p><strong>Canonical schema:</strong> Mirror the three columns in <code>database/Latest_Schema_Post__Blob_Claude_12.sql</code> (CREATE TABLE block + COMMENT ON COLUMN). No standalone ALTER migration SQL in batch-jobs.</p>
+        <p><strong>Runtime migration:</strong> Liquibase in <code>event-site-manager-service</code> only (shared PostgreSQL database).</p>
+        <p><strong>Entity sync required:</strong> <code>com.eventmanager.batch.domain.TenantSettings</code> must map the three JPA fields so production <code>ddl-auto: validate</code> stays aligned.</p>
+        <p><strong>No batch logic changes</strong> for AdSense MVP — jobs only read tenant settings for email branding.</p>
+    </div>
+    <table>
+        <thead><tr><th>Repo / file</th><th>Action</th></tr></thead>
+        <tbody>
+            <tr><td><code>mosc-temp/.../Latest_Schema_Post__Blob_Claude_12.sql</code></td><td>Source of truth — columns in CREATE TABLE</td></tr>
+            <tr><td><code>event-site-manager-service/.../TenantSettings.java</code></td><td>JPA entity + DTO + validator</td></tr>
+            <tr><td><code>event-site-manager-batch-jobs/.../TenantSettings.java</code></td><td>JPA entity fields only (schema parity)</td></tr>
+            <tr><td><code>event-site-manager-batch-jobs/database/Latest_Schema_Post__Blob_Claude_12.sql</code></td><td>Keep in sync with mosc-temp canonical schema</td></tr>
+        </tbody>
+    </table>
+
+</body>
+</html>

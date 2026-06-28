@@ -728,6 +728,12 @@ export interface TenantSettingsDTO {
   defaultHeroDisplayMode?: 'slideshow' | 'random' | 'single';
   defaultHeroIncludeWithEvents?: boolean;
   defaultHeroMaxDisplayCount?: number;
+  /** When true, render Google AdSense regions on public satellite pages */
+  enableGoogleAdsense?: boolean;
+  /** AdSense publisher ID (ca-pub-...) */
+  googleAdsensePublisherId?: string;
+  /** JSON map of layout region id → ad slot id */
+  googleAdsensePlacementsJson?: string;
   // Deprecated identity fields (read fallback only — use tenant_organization)
   /** @deprecated v2.0 — use tenant_organization.addressLine1 */
   addressLine1?: string;

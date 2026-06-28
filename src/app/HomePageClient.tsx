@@ -17,6 +17,7 @@ import OurSponsorsSection from '../components/OurSponsorsSection';
 import ProjectsSection from '../components/ProjectsSection';
 import TestimonialsSection from '../components/TestimonialsSection';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import GoogleAdSenseRegion from '@/components/ads/GoogleAdSenseRegion';
 import { useTenantSettings } from '@/components/TenantSettingsProvider';
 import { bootstrapUserProfile } from '@/components/ProfileBootstrapperApiServerActions';
 import Link from 'next/link';
@@ -272,6 +273,18 @@ function HomePageContent({ initialFeaturedEvents }: { initialFeaturedEvents: Fea
       <div className="home-hero-viewport-filler">
         <HeroSection />
       </div>
+      <GoogleAdSenseRegion
+        region="between_sections"
+        className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-2"
+        format="horizontal"
+        minHeight={90}
+      />
+      <GoogleAdSenseRegion
+        region="sidebar"
+        className="hidden lg:block mx-auto w-full max-w-xs px-4 py-2"
+        format="vertical"
+        minHeight={250}
+      />
       <div>
         <ErrorBoundary fallback={<EventsFallback />}>
           <LiveEventsSection />

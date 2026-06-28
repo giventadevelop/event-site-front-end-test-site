@@ -3006,6 +3006,9 @@ CREATE TABLE public.tenant_settings (
                                         linkedin_url varchar(1024) NULL,
                                         youtube_url varchar(1024) NULL,
                                         tiktok_url varchar(1024) NULL,
+                                        enable_google_adsense boolean DEFAULT false NOT NULL,
+                                        google_adsense_publisher_id character varying(32),
+                                        google_adsense_placements_json text,
                                         created_at timestamp without time zone DEFAULT now() NOT NULL,
                                         updated_at timestamp without time zone DEFAULT now() NOT NULL,
                                         CONSTRAINT check_default_capacity_positive CHECK (((default_event_capacity IS NULL) OR (default_event_capacity > 0))),
@@ -3053,6 +3056,10 @@ COMMENT ON COLUMN public.tenant_settings.default_hero_image_urls_json IS 'JSON a
 COMMENT ON COLUMN public.tenant_settings.default_hero_display_mode IS 'How tenant default hero URLs are used when no event heroes or as trailing slides: slideshow | random | single.';
 
 COMMENT ON COLUMN public.tenant_settings.default_hero_include_with_events IS 'When TRUE, frontend may append tenant default slides after upcoming event hero images.';
+
+COMMENT ON COLUMN public.tenant_settings.enable_google_adsense IS 'Master on/off for Google AdSense ad regions on this tenant satellite site.';
+COMMENT ON COLUMN public.tenant_settings.google_adsense_publisher_id IS 'AdSense publisher ID (ca-pub-...) required when enable_google_adsense is true.';
+COMMENT ON COLUMN public.tenant_settings.google_adsense_placements_json IS 'JSON map of layout region id to AdSense ad slot id, e.g. {"sidebar":"123","between_sections":"456","footer_strip":"789"}.';
 
 --
 -- TOC entry (class 1259 OID)

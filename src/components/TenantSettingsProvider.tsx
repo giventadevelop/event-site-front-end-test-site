@@ -12,6 +12,10 @@ import {
   resolveTenantOrganizationIdentity,
   type TenantOrganizationIdentity,
 } from '@/lib/resolveTenantOrganizationIdentity';
+import {
+  parseAdsensePlacements,
+  type AdsensePlacementsMap,
+} from '@/lib/adsense/parseAdsensePlacements';
 
 interface TenantSettingsContextType {
   settings: TenantSettingsDTO | null;
@@ -26,6 +30,10 @@ interface TenantSettingsContextType {
   /** @deprecated Use showExecutiveCommitteeSection — kept for callers not yet migrated */
   showTeamSection: boolean;
   showSponsorsSection: boolean;
+  /** When true and publisher ID is set, public pages may render AdSense regions */
+  showGoogleAdsense: boolean;
+  adsensePublisherId: string | null;
+  adsensePlacements: AdsensePlacementsMap;
 }
 
 const TenantSettingsContext = React.createContext<TenantSettingsContextType>({
@@ -47,6 +55,9 @@ const TenantSettingsContext = React.createContext<TenantSettingsContextType>({
   showExecutiveCommitteeSection: true,
   showTeamSection: true,
   showSponsorsSection: true,
+  showGoogleAdsense: false,
+  adsensePublisherId: null,
+  adsensePlacements: {},
 });
 
 export const useTenantSettings = () => React.useContext(TenantSettingsContext);
@@ -271,6 +282,10 @@ export const TenantSettingsProvider: React.FC<TenantSettingsProviderProps> = ({ 
     true;
   const showTeamSection = showExecutiveCommitteeSection;
   const showSponsorsSection = settings?.showSponsorsSectionInHomePage ?? true;
+  const showGoogleAdsense =
+    settings?.enableGoogleAdsense === true && Boolean(settings?.googleAdsensePublisherId?.trim());
+  const adsensePublisherId = settings?.googleAdsensePublisherId?.trim() || null;
+  const adsensePlacements = parseAdsensePlacements(settings?.googleAdsensePlacementsJson);
 
   const organizationIdentity = resolveTenantOrganizationIdentity(organization, settings);
 
@@ -284,6 +299,9 @@ export const TenantSettingsProvider: React.FC<TenantSettingsProviderProps> = ({ 
     showExecutiveCommitteeSection,
     showTeamSection,
     showSponsorsSection,
+    showGoogleAdsense,
+    adsensePublisherId,
+    adsensePlacements,
   };
 
   return (

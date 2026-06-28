@@ -78,6 +78,12 @@ export interface TenantSettingsDTO {
   defaultHeroIncludeWithEvents?: boolean;
   /** Max active slides shown on homepage rotation (1–6, default 6) */
   defaultHeroMaxDisplayCount?: number;
+  /** When true, render Google AdSense regions on public satellite pages */
+  enableGoogleAdsense?: boolean;
+  /** AdSense publisher ID (ca-pub-...) */
+  googleAdsensePublisherId?: string;
+  /** JSON map of layout region id → ad slot id */
+  googleAdsensePlacementsJson?: string;
   // Homepage edge cache version (cache-busting; bump to refresh CDN cache)
   homepageCacheVersion?: number;
   /** @deprecated v2.0 — canonical source is tenant_organization.description */
