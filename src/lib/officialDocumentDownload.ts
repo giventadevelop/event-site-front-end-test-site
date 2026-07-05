@@ -147,3 +147,49 @@ export function resolveOfficialDocumentDownloadUrl(doc: EventMediaDTO): string |
   }
   return fileUrl;
 }
+
+/**
+ * Download via same-origin proxy (server streams S3). Repeat-safe: each click opens
+ * a fresh `/api/public/official-documents/{id}/download` request — no blob fetch, so
+ * popup blockers do not fire on the second click.
+ *
+ * Must stay synchronous (no await before window.open) so the browser treats navigation
+ * as a direct user gesture.
+ */
+export function triggerOfficialDocumentProxyDownload(
+  mediaId: number,
+  fileName: string
+): void {
+  const proxyPath = getOfficialDocumentProxyDownloadPath(mediaId);
+  if (!proxyPath) {
+    throw new Error('Invalid document id');
+  }
+
+  const safeName = fileName?.trim() || 'download';
+  const url = `${proxyPath}?_=${Date.now()}`;
+  const deliveryMode = getOfficialDocumentDeliveryMode(safeName);
+
+  if (deliveryMode === 'new-tab') {
+    const tab = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!tab) {
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.target = '_blank';
+      anchor.rel = 'noopener noreferrer';
+      anchor.style.display = 'none';
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+    }
+    return;
+  }
+
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = safeName;
+  anchor.rel = 'noopener noreferrer';
+  anchor.style.display = 'none';
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+}

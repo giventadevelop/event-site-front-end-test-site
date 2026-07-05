@@ -1,0 +1,170 @@
+---
+description: Local Docker PostgreSQL import only — schema rebuild, pre-built SQL import, sequence sync (no export, no VPC/RDS)
+globs: documentation/database_export_import/**/*, code_html_template/batch_files/database_export_import_refresh.bat, code_html_template/SQLS/**/*
+alwaysApply: false
+---
+
+# Local Database Import (Docker Only)
+
+## **Overview**
+
+Use **`database_export_import_refresh.bat`** with **`/SKIP-EXPORT`** to import **pre-built SQL** into **local Docker Postgres** (`event_site_manager_db`). This rule covers **import only** — no `pg_dump`, no reorder/PROD pipeline, and **no VPC/RDS** (`/REMOTE`).
+
+**Typical use:** Refresh a dev machine from committed SQL under `code_html_template/SQLS/` after someone else exported and prepared the files (or you already ran export once).
+
+**Not in scope here:** Export/reorder (see [sequence_id_alignment_and_import.mdc](mdc:.cursor/rules/sequence_id_alignment_and_import.mdc)), VPC dev/prod RDS (`/REMOTE`), or liturgical **readings** (Strapi, not Postgres).
+
+---
+
+## **Prerequisites**
+
+- **Docker Desktop** running with local Postgres (e.g. `event_site_manager_db-postgresql-1`)
+- **DB user/database:** `event_site_admin` / `event_site_manager_db` (batch defaults)
+- **Pre-built import SQL** already in repo:
+  - **Default (local):** `code_html_template/SQLS/sequence_fix_inserts/corrected_event_media_inserts.renumbered.sql`
+  - **Fallback:** `code_html_template/SQLS/corrected_event_media_inserts.ordered.sql` (if renumbered file missing)
+- **`WORKSPACE_ROOT`** = parent folder that contains **`mosc-temp`** (e.g. `F:\project_workspace` or `C:\project_workspace`)
+- **Node.js** not required for import-only (`/SKIP-EXPORT` skips reorder scripts)
+
+---
+
+## **⚠️ Destructive operation**
+
+Without **`/DATA-ONLY`**, steps **5–7** **drop and recreate schema**, import all data, and reset sequences on **local Docker**. Confirm the container ID before running.
+
+| Prompt | When |
+|--------|------|
+| Type **`Y`** or **`YES`** | Default confirmation (skipped with `/FORCE`) |
+| **`/DATA-ONLY`** | Skips schema rebuild; import + sequences only |
+
+---
+
+## **Standard local import (skip export)**
+
+Replace `CONTAINER_ID` with output of `docker ps` (Postgres container), or omit it for auto-detect.
+
+### **Full schema rebuild + import + sequence sync**
+
+```powershell
+F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace CONTAINER_ID /SKIP-EXPORT /FORCE
+```
+
+**What runs:** Step 0 (container) → skip 1–4 → **5** schema → **6** import renumbered SQL → **7** + **7b** sequence sync.
+
+### **Auto-detect container**
+
+```powershell
+F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace /SKIP-EXPORT /FORCE
+```
+
+---
+
+## **Import file selection**
+
+| Flag / condition | Import file |
+|------------------|-------------|
+| Default (local, no `/PROD`) | `sequence_fix_inserts/corrected_event_media_inserts.renumbered.sql` |
+| Renumbered missing | `corrected_event_media_inserts.ordered.sql` (warns: may include 600k+ IDs) |
+| `/PROD` | `corrected_event_media_inserts.ordered_PROD.sql` (production Clerk user IDs — usually **not** for local dev) |
+| `/IMPORT-FILE "path"` | Custom SQL (strict `ON_ERROR_STOP=1`) |
+
+**Custom file example:**
+
+```powershell
+F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace CONTAINER_ID /SKIP-EXPORT /IMPORT-FILE "F:\project_workspace\mosc-temp\code_html_template\SQLS\sequence_fix_inserts\corrected_event_media_inserts.renumbered.sql" /FORCE
+```
+
+---
+
+## **Other local-only flags**
+
+| Flag | Purpose |
+|------|---------|
+| `/SKIP-EXPORT` | **Required** for import-only — reuse existing ordered/renumbered SQL |
+| `/FORCE` | Skip local `Y/YES` confirmation |
+| `/SCHEMA-ONLY` | Apply schema only (no import/sync) |
+| `/DATA-ONLY` | Skip schema rebuild; import + sequences only |
+| `/IMPORT-FILE "path"` | Override default import SQL |
+| `/REGEN-MOSC` | Regenerate `mosc_malankara_orthodox_2` tenant SQL before import |
+| `/IMPORT-DUP-ONLY` | Fast MOSC tenant refresh via `mosc_dup_only.sql` (use with `/DATA-ONLY`) |
+
+Help: `database_export_import_refresh.bat --help`
+
+**Do not use for this rule:** `/REMOTE` (VPC RDS), export without `/SKIP-EXPORT` when you only want import.
+
+---
+
+## **Pipeline steps (import-only path)**
+
+| Step | Action | Skipped with `/SKIP-EXPORT`? |
+|------|--------|------------------------------|
+| 0 | Resolve Docker Postgres container | No |
+| 1 | `pg_dump` export | **Yes** |
+| 2 | Reorder INSERTs | **Yes** |
+| 3 | PROD user ID copy | **Yes** |
+| 4 | Comment `pg_dump` header lines | **Yes** |
+| 5 | Apply `Latest_Schema_Post__Blob_Claude_12.sql` | No (unless `/DATA-ONLY`) |
+| 6 | Import ordered / renumbered / custom SQL | No |
+| 7 | `sync_all_table_sequences.sql` + Spring Batch sync | No |
+
+---
+
+## **MOSC tenant-only (local)**
+
+```powershell
+# Full MOSC tenant block
+F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace CONTAINER_ID /REGEN-MOSC /SKIP-EXPORT /IMPORT-FILE "F:\project_workspace\mosc-temp\code_html_template\SQLS\corrected_event_media_inserts.ordered.mosc_malankara_orthodox_2.sql" /FORCE
+
+# Fast dup-only refresh (no schema rebuild)
+F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace CONTAINER_ID /REGEN-MOSC /SKIP-EXPORT /DATA-ONLY /IMPORT-DUP-ONLY /FORCE
+```
+
+See §1c in [DATABASE_EXPORT_IMPORT_GUIDE.html](mdc:documentation/database_export_import/DATABASE_EXPORT_IMPORT_GUIDE.html).
+
+---
+
+## **Verification**
+
+```powershell
+docker exec CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -c "SELECT COUNT(*) FROM event_calendar_entry;"
+docker exec CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -c "SELECT MAX(id) FROM executive_committee_team_members; SELECT last_value FROM executive_committee_team_members_id_seq;"
+```
+
+After import, each `{table}_id_seq.last_value` should be ≥ `MAX(id)` for that table. Details: [sequence_id_alignment_and_import.mdc](mdc:.cursor/rules/sequence_id_alignment_and_import.mdc).
+
+---
+
+## **Logging**
+
+```powershell
+cmd /c "F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace CONTAINER_ID /SKIP-EXPORT /FORCE" 2>&1 | Tee-Object -FilePath "F:\project_workspace\mosc-temp\logs\db-import-local-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
+```
+
+---
+
+## **DO / DON'T**
+
+### **DO:**
+- ✅ Use **`/SKIP-EXPORT`** when SQL files already exist in `code_html_template/SQLS/`
+- ✅ Prefer **renumbered** import for local dev (compact IDs, no 600k user_profile block)
+- ✅ Run **`/FORCE`** in scripts; type **`Y`/`YES`** when running interactively
+- ✅ Verify container ID with `docker ps` before destructive steps
+- ✅ Run sequence sync is automatic in step 7 — do not skip the batch after import
+
+### **DON'T:**
+- ❌ Use **`/REMOTE`** for local Docker (that targets VPC RDS — out of scope)
+- ❌ Commit logs or env files with passwords
+- ❌ Assume liturgical **readings** are in Postgres — they live in **Strapi**
+- ❌ Use **`/PROD`** for local dev unless you intentionally need production Clerk IDs
+
+---
+
+## **References**
+
+- Batch script: [code_html_template/batch_files/database_export_import_refresh.bat](mdc:code_html_template/batch_files/database_export_import_refresh.bat)
+- HTML runbook: [documentation/database_export_import/DATABASE_EXPORT_IMPORT_GUIDE.html](mdc:documentation/database_export_import/DATABASE_EXPORT_IMPORT_GUIDE.html)
+- Sequences / renumber pipeline: [sequence_id_alignment_and_import.mdc](mdc:.cursor/rules/sequence_id_alignment_and_import.mdc)
+- Schema DDL: [database_schema_guidelines.mdc](mdc:.cursor/rules/database_schema_guidelines.mdc)
+- Sequence HTML: [documentation/database_export_import/SEQUENCE_ID_ALIGNMENT_GUIDE.html](mdc:documentation/database_export_import/SEQUENCE_ID_ALIGNMENT_GUIDE.html)
+
+**VPC/RDS export and import:** Documented in `common_project_work` mirror at `documentation/database_export_import/` — not duplicated here.

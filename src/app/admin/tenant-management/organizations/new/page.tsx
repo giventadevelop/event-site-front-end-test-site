@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createTenantOrganization } from '@/app/admin/tenant-management/organizations/ApiServerActions';
+import { applySiteTypePresetsForTenant } from '@/app/admin/profile-site/ApiServerActions';
 import TenantOrganizationFormClient from '@/app/admin/tenant-management/components/TenantOrganizationFormClient';
 import Link from 'next/link';
 import { FaArrowLeft } from 'react-icons/fa';
@@ -11,6 +12,10 @@ export default function NewTenantOrganizationPage() {
 
     try {
       await createTenantOrganization(data);
+      if (data.siteType && data.siteType !== 'EVENT_ORG') {
+        // Best-effort: settings row may not exist yet for a brand-new tenant
+        await applySiteTypePresetsForTenant(data.tenantId, data.siteType);
+      }
       redirect('/admin/tenant-management/organizations');
     } catch (error) {
       console.error('Error creating organization:', error);
@@ -19,7 +24,7 @@ export default function NewTenantOrganizationPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style={{ paddingTop: '120px' }}>
       <nav className="flex mb-8" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
           <li className="inline-flex items-center">

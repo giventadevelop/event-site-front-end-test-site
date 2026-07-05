@@ -16,6 +16,7 @@ import SquadRosterSection from '../components/squad/SquadRosterSection';
 import OurSponsorsSection from '../components/OurSponsorsSection';
 import ProjectsSection from '../components/ProjectsSection';
 import TestimonialsSection from '../components/TestimonialsSection';
+import ProfileHomeSections from '@/components/profile/ProfileHomeSections';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import GoogleAdSenseRegion from '@/components/ads/GoogleAdSenseRegion';
 import { useTenantSettings } from '@/components/TenantSettingsProvider';
@@ -336,6 +337,10 @@ function HomePageContent({ initialFeaturedEvents }: { initialFeaturedEvents: Fea
               <TeamSection />
             </ErrorBoundary>
           )}
+          {/* Personal profile sections (PERSONAL_PROFILE / HYBRID site types) — renders nothing when all profile flags are off */}
+          <ErrorBoundary fallback={<div className="py-8 text-center text-gray-500">Profile sections unavailable</div>}>
+            <ProfileHomeSections />
+          </ErrorBoundary>
         </>
       )}
       {/* Causes section - Always shown (outside loading condition) */}

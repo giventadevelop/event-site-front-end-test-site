@@ -1,10 +1,11 @@
 import { Suspense } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { fetchTenantOrganization, updateTenantOrganization } from '@/app/admin/tenant-management/organizations/ApiServerActions';
+import { applySiteTypePresetsForTenant } from '@/app/admin/profile-site/ApiServerActions';
 import TenantOrganizationFormClient from '@/app/admin/tenant-management/components/TenantOrganizationFormClient';
 import Link from 'next/link';
 import { FaArrowLeft } from 'react-icons/fa';
-import { TenantOrganizationFormDTO } from '@/app/admin/tenant-management/types';
+import { TenantOrganizationDTO, TenantOrganizationFormDTO } from '@/app/admin/tenant-management/types';
 
 interface PageProps {
   params: { id: string };
@@ -21,7 +22,7 @@ export default async function EditTenantOrganizationPage({ params }: PageProps) 
   }
 
   // Fetch organization data
-  let organization = null;
+  let organization: TenantOrganizationDTO | null = null;
   let error = null;
 
   try {
@@ -39,6 +40,9 @@ export default async function EditTenantOrganizationPage({ params }: PageProps) 
 
     try {
       await updateTenantOrganization(organizationId, data);
+      if (data.siteType && data.siteType !== organization?.siteType) {
+        await applySiteTypePresetsForTenant(data.tenantId, data.siteType);
+      }
       redirect(`/admin/tenant-management/organizations/${organizationId}`);
     } catch (error) {
       console.error('Error updating organization:', error);
@@ -48,7 +52,7 @@ export default async function EditTenantOrganizationPage({ params }: PageProps) 
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style={{ paddingTop: '120px' }}>
         <div className="mb-8">
           <Link
             href="/admin/tenant-management/organizations"
@@ -89,7 +93,7 @@ export default async function EditTenantOrganizationPage({ params }: PageProps) 
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style={{ paddingTop: '120px' }}>
       {/* Breadcrumb Navigation */}
       <nav className="flex mb-8" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">

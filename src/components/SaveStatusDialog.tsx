@@ -10,6 +10,8 @@ interface SaveStatusDialogProps {
   status: SaveStatus;
   message?: string;
   title?: string;
+  /** Optional bullet list shown below the summary on error (no stack traces). */
+  details?: string[];
   onClose?: () => void;
 }
 
@@ -18,6 +20,7 @@ export default function SaveStatusDialog({
   status,
   message,
   title,
+  details = [],
   onClose,
 }: SaveStatusDialogProps) {
   if (!isOpen) return null;
@@ -92,6 +95,27 @@ export default function SaveStatusDialog({
           <p className={`text-sm ${content.textColor} leading-relaxed`}>
             {content.message}
           </p>
+
+          {status === 'error' && details.length > 0 && (
+            <div className="w-full mt-1 p-4 bg-red-50 border border-red-200 rounded-lg text-left">
+              <p className="text-sm font-medium text-red-800 mb-2">What to check:</p>
+              <ul className="list-disc pl-5 space-y-1 text-sm text-red-700">
+                {details.map((item, index) => (
+                  <li key={`${index}-${item.slice(0, 24)}`}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {status === 'error' && onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-2 px-5 py-2.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-800 font-semibold text-sm transition-colors"
+            >
+              Close
+            </button>
+          )}
 
           {/* Loading indicator for saving state */}
           {status === 'saving' && (

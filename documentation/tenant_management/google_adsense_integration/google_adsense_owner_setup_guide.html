@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google AdSense — Application Owner Setup Guide</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        h3 { font-size: 1.15em; margin-top: 20px; margin-bottom: 10px; color: #0052a3; }
+        h4 { font-size: 1.05em; margin-top: 16px; margin-bottom: 8px; color: #004080; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container { border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .section-container.owner { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-left: 4px solid #2e7d32; }
+        .section-container.tenant { background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border-left: 4px solid #7b1fa2; }
+        .section-container.hybrid { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-left: 4px solid #ef6c00; }
+        .section-header { font-size: 1.2em; font-weight: 700; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; background: #fff; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        tbody tr:hover { background: #f5f9fc; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; margin: 12px 0; position: relative; }
+        .copy-row { display: flex; justify-content: flex-end; margin: -4px 0 8px; }
+        .copy-btn { background: #0066cc; color: #fff; border: none; border-radius: 4px; padding: 6px 12px; font-size: 0.85em; cursor: pointer; }
+        .copy-btn:hover { background: #0052a3; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #856404; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .step-num { display: inline-block; background: #0066cc; color: #fff; font-weight: 700; width: 1.6em; height: 1.6em; line-height: 1.6em; text-align: center; border-radius: 50%; font-size: 0.85em; margin-right: 6px; }
+        .toc { background: #f0f7ff; border: 1px solid #b8d4e3; border-radius: 8px; padding: 16px 20px; margin: 20px 0; }
+        .toc ul { margin-bottom: 0; }
+        .toc a { color: #0052a3; }
+    </style>
+</head>
+<body>
+
+    <h1>Google AdSense — Application Owner Setup Guide</h1>
+    <p class="doc-meta">
+        <strong>Audience:</strong> Platform / application owner operating multiple satellite domains &nbsp;|&nbsp;
+        <strong>Companion doc:</strong> <a href="google_adsense_integration_prd.html">google_adsense_integration_prd.html</a> (technical integration) &nbsp;|&nbsp;
+        <strong>Updated:</strong> June 2026
+    </p>
+
+    <div class="lead">
+        <p>This guide explains how to configure <strong>Google AdSense</strong> when you run a multi-tenant platform with many satellite sites. It covers step-by-step work in the <strong>Google AdSense dashboard</strong> and how to map results into <strong>Tenant Settings → Integrations</strong> in your admin app.</p>
+        <p>You can choose either <strong>one shared Publisher ID</strong> (all ad revenue to the application owner) or <strong>per-tenant Publisher IDs</strong> (each organization keeps its own revenue). The application already stores AdSense settings per tenant row in <code>tenant_settings</code>.</p>
+    </div>
+
+    <nav class="toc" aria-label="Table of contents">
+        <strong>On this page</strong>
+        <ul>
+            <li><a href="#choose-model">1. Choose your monetization model</a></li>
+            <li><a href="#model-a">2. Model A — Shared Publisher ID (owner receives all revenue)</a></li>
+            <li><a href="#giventa-shared">2a. Production reference — giventa.com shared Publisher ID</a></li>
+            <li><a href="#model-b">3. Model B — Per-tenant Publisher ID (tenant receives revenue)</a></li>
+            <li><a href="#model-hybrid">4. Hybrid model (mixed)</a></li>
+            <li><a href="#google-dashboard">5. Google AdSense dashboard (step-by-step)</a></li>
+            <li><a href="#app-admin">6. Configure each tenant in the admin app</a></li>
+            <li><a href="#ads-txt">7. ads.txt per satellite domain</a></li>
+            <li><a href="#verify">8. Verification checklist</a></li>
+            <li><a href="#troubleshooting">9. Troubleshooting</a></li>
+        </ul>
+    </nav>
+
+    <h2 id="choose-model">1. Choose your monetization model</h2>
+    <p>Google pays the Google account that owns the <strong>Publisher ID</strong> (<code>ca-pub-XXXXXXXXXXXXXXXX</code>). Your application reads that ID from each tenant’s settings and injects it into ad slots on that tenant’s public site.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Model</th>
+                <th>Who gets paid</th>
+                <th>Google AdSense accounts</th>
+                <th>Best for</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>A — Shared Publisher ID</strong></td>
+                <td>Application owner (one organization)</td>
+                <td>One AdSense account; all satellite domains added as sites under that account</td>
+                <td>You operate the platform and want <em>all</em> satellite ad revenue in your AdSense account</td>
+            </tr>
+            <tr>
+                <td><strong>B — Per-tenant Publisher ID</strong></td>
+                <td>Each tenant organization</td>
+                <td>One AdSense account per tenant (each tenant signs up with Google)</td>
+                <td>Tenants are independent orgs that keep their own ad revenue; you only provide the tech</td>
+            </tr>
+            <tr>
+                <td><strong>Hybrid</strong></td>
+                <td>Mix: owner on some tenants, tenants on others</td>
+                <td>Owner account + optional tenant accounts</td>
+                <td>Owner monetizes default satellites; premium or partner tenants use their own IDs</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="success-box">
+        <p><strong>Recommendation for application owners:</strong> If you want revenue from <em>all</em> satellite domains to flow into <strong>your</strong> bank account, use <strong>Model A (Shared Publisher ID)</strong>. Create one AdSense account under your company, add every satellite domain as a site in Google, use the <strong>same</strong> <code>ca-pub-...</code> on every tenant’s Integrations tab, and create separate ad units per domain (or per region) for reporting.</p>
+    </div>
+
+    <div class="warning-box">
+        <p><strong>Legal / policy:</strong> Tenants whose sites display your Publisher ID should agree in your terms of service that you may monetize their satellite. Per-tenant IDs (Model B) avoid that revenue-sharing question because Google pays the tenant directly.</p>
+    </div>
+
+    <h2 id="model-a">2. Model A — Shared Publisher ID (owner receives all revenue)</h2>
+    <div class="section-container owner">
+        <div class="section-header">Centralized monetization — one <code>ca-pub-</code> for every tenant</div>
+        <p>All satellites share <strong>your</strong> Publisher ID. Google aggregates earnings in <strong>your</strong> AdSense payments. You can still use different ad unit slot IDs per tenant or per domain for analytics.</p>
+    </div>
+
+    <h3>Architecture</h3>
+    <ul>
+        <li><strong>One</strong> Google AdSense account (your company email).</li>
+        <li><strong>One</strong> Publisher ID: e.g. <code>ca-pub-1234567890123456</code>.</li>
+        <li><strong>Many</strong> sites in AdSense — one per satellite domain (e.g. <code>www.mosc-temp.com</code>, <code>www.partner-org.com</code>).</li>
+        <li><strong>Many</strong> ad units — typically 3+ per domain (sidebar, between sections, footer).</li>
+        <li><strong>Per tenant</strong> in admin: Enable AdSense, paste the <strong>same</strong> Publisher ID, paste placements JSON with <strong>that domain’s</strong> slot IDs.</li>
+    </ul>
+
+    <h3>Owner setup summary</h3>
+    <ol>
+        <li>Create or use your company AdSense account (Section 5).</li>
+        <li>Copy your Publisher ID from <strong>Account → Settings → Account information</strong>.</li>
+        <li>For <strong>each</strong> satellite domain: add site in AdSense, wait for approval, deploy <code>ads.txt</code> with <strong>your</strong> <code>pub-...</code> line.</li>
+        <li>For <strong>each</strong> domain: create display ad units; record slot IDs per region.</li>
+        <li>For <strong>each</strong> tenant row in admin: Integrations → Enable → same <code>ca-pub-...</code> → placements JSON with that tenant’s slot IDs → Save.</li>
+    </ol>
+
+    <h3>Example — two tenants, one owner account</h3>
+    <table>
+        <thead>
+            <tr><th>Tenant</th><th>Public domain</th><th>Publisher ID (all tenants)</th><th>Placements (unique slot IDs per site)</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>mosc_malankara_orthodox_2</code></td>
+                <td><code>www.mosc-temp.com</code></td>
+                <td><code>ca-pub-1016198353275904</code></td>
+                <td><code>sidebar</code>: 111…, <code>between_sections</code>: 222…, <code>footer_strip</code>: 333…</td>
+            </tr>
+            <tr>
+                <td><code>partner_church_001</code></td>
+                <td><code>www.partner-church.org</code></td>
+                <td><code>ca-pub-1016198353275904</code> <em>(same shared ID)</em></td>
+                <td><code>sidebar</code>: 444…, <code>between_sections</code>: 555…, <code>footer_strip</code>: 666…</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="copy-row"><button class="copy-btn" type="button" onclick="copyText('model-a-json')">Copy example placements JSON</button></div>
+    <pre id="model-a-json">{
+  "sidebar": "1234567890",
+  "between_sections": "0987654321",
+  "footer_strip": "1122334455"
+}</pre>
+    <p class="info-box">Slot IDs are <strong>not</strong> shared across domains in reporting — create new ad units in AdSense for each satellite even when the Publisher ID is the same.</p>
+
+    <h2 id="giventa-shared">2a. Production reference — giventa.com shared Publisher ID</h2>
+    <div class="section-container owner">
+        <div class="section-header">Model A credentials registered with giventa.com</div>
+        <p>Use these values on satellite domains that <strong>do not</strong> have their own per-tenant Publisher ID. Full copy-paste snippets (script, ads.txt, meta tag) are in the dedicated reference:</p>
+        <p><strong><a href="google_adsense_shared_publisher_giventa.html">google_adsense_shared_publisher_giventa.html</a></strong></p>
+    </div>
+    <table>
+        <thead><tr><th>Item</th><th>Value</th></tr></thead>
+        <tbody>
+            <tr><td>Publisher ID (admin Integrations tab)</td><td><code>ca-pub-1016198353275904</code></td></tr>
+            <tr><td>ads.txt numeric ID</td><td><code>pub-1016198353275904</code></td></tr>
+            <tr><td>Deployed in mosc-temp</td><td><code>public/ads.txt</code>, <code>src/app/layout.tsx</code> meta tag, <code>src/lib/adsense/sharedPublisherId.ts</code></td></tr>
+        </tbody>
+    </table>
+    <div class="copy-row"><button class="copy-btn" type="button" onclick="copyText('giventa-ads-txt')">Copy ads.txt line</button></div>
+    <pre id="giventa-ads-txt">google.com, pub-1016198353275904, DIRECT, f08c47fec0942fa0</pre>
+
+    <h2 id="model-b">3. Model B — Per-tenant Publisher ID (tenant receives revenue)</h2>
+    <div class="section-container tenant">
+        <div class="section-header">Decentralized monetization — each tenant uses their own <code>ca-pub-</code></div>
+        <p>Each organization creates its own Google AdSense account. You store <strong>their</strong> Publisher ID and slot IDs only on <strong>their</strong> tenant settings row. Google pays them directly; you do not receive their ad earnings.</p>
+    </div>
+
+    <h3>Tenant responsibilities</h3>
+    <ol>
+        <li>Tenant signs up at <a href="https://www.google.com/adsense">google.com/adsense</a> with their organization’s Google account.</li>
+        <li>Tenant adds <strong>their</strong> satellite domain as a site and completes verification / approval.</li>
+        <li>Tenant creates ad units and provides you (or enters in admin) Publisher ID + slot IDs.</li>
+        <li>Tenant deploys or requests <code>ads.txt</code> with <strong>their</strong> <code>pub-...</code> on their domain.</li>
+    </ol>
+
+    <h3>Your responsibilities as platform owner</h3>
+    <ul>
+        <li>Grant tenant admins access to <strong>Tenant Settings → Integrations</strong> (or enter values on their behalf).</li>
+        <li>Store <strong>their</strong> <code>ca-pub-...</code> only on their tenant row — never your owner ID on their tenant if they should receive payment.</li>
+        <li>Leave AdSense <strong>disabled</strong> for tenants who have not completed Google approval.</li>
+    </ul>
+
+    <div class="warning-box">
+        <p><strong>ads.txt conflict:</strong> Each domain can only declare one authorized seller line per publisher for a given relationship. If Tenant B uses their own <code>pub-...</code>, that domain’s <code>ads.txt</code> must list <strong>their</strong> numeric ID, not yours. See Section 7.</p>
+    </div>
+
+    <h2 id="model-hybrid">4. Hybrid model (mixed)</h2>
+    <div class="section-container hybrid">
+        <div class="section-header">Some tenants on owner ID, some on tenant ID</div>
+        <p>The database supports this today: each <code>tenant_settings</code> row has its own <code>google_adsense_publisher_id</code>. No code change is required — only configuration discipline.</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr><th>Tenant type</th><th>Publisher ID</th><th>Who gets paid</th><th>Typical use</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Platform-owned satellites</td>
+                <td>Owner’s <code>ca-pub-...</code></td>
+                <td>Application owner</td>
+                <td>Default churches / demos you host</td>
+            </tr>
+            <tr>
+                <td>Self-monetizing partners</td>
+                <td>Tenant’s <code>ca-pub-...</code></td>
+                <td>Partner organization</td>
+                <td>Franchise or white-label with own AdSense</td>
+            </tr>
+            <tr>
+                <td>Non-monetized</td>
+                <td><em>(AdSense disabled)</em></td>
+                <td>N/A</td>
+                <td>Internal, trial, or ad-free tier</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 id="google-dashboard">5. Google AdSense dashboard (step-by-step)</h2>
+    <p>These steps apply to whichever Google account owns the Publisher ID (yours for Model A, tenant’s for Model B). Menu names may vary slightly; look for <strong>Sites</strong>, <strong>Ads</strong>, and <strong>Account</strong>.</p>
+
+    <h3><span class="step-num">1</span> Create or open an AdSense account</h3>
+    <ol>
+        <li>Go to <a href="https://www.google.com/adsense">https://www.google.com/adsense</a> and sign in with the Google account that should receive payments.</li>
+        <li>Complete signup: country, timezone, payment address, phone verification.</li>
+        <li>If prompted for an initial site, enter your first satellite domain (you can add more later).</li>
+        <li>Wait for account and site review (often 24 hours to several days).</li>
+    </ol>
+
+    <h3><span class="step-num">2</span> Find your Publisher ID</h3>
+    <ol>
+        <li>In AdSense: <strong>Account</strong> → <strong>Settings</strong> → <strong>Account information</strong>.</li>
+        <li>Copy <strong>Publisher ID</strong> — format <code>pub-1234567890123456</code> or shown as <code>ca-pub-1234567890123456</code>.</li>
+        <li>For the admin app, always use the <code>ca-pub-</code> form (required by validation).</li>
+    </ol>
+
+    <h3><span class="step-num">3</span> Add each satellite domain as a site</h3>
+    <p>Repeat for every public hostname that will show ads (Model A: all your satellites; Model B: tenant’s domain only).</p>
+    <ol>
+        <li><strong>Sites</strong> → <strong>Add site</strong> (or <strong>Manage your sites</strong>).</li>
+        <li>Enter the URL exactly as users visit it (include <code>www</code> if that is canonical).</li>
+        <li>Submit and wait until status is <strong>Ready</strong> / approved. Fix policy issues if Google flags content.</li>
+        <li>Under the site, open <strong>ads.txt</strong> — Google shows the line you need for that account.</li>
+    </ol>
+
+    <h3><span class="step-num">4</span> Deploy ads.txt on each domain</h3>
+    <p>Google expects:</p>
+    <div class="copy-row"><button class="copy-btn" type="button" onclick="copyText('ads-txt-line')">Copy ads.txt line template</button></div>
+    <pre id="ads-txt-line">google.com, pub-1016198353275904, DIRECT, f08c47fec0942fa0</pre>
+    <p>For Model A (shared owner ID on giventa.com), use the line above. For Model B, substitute the tenant’s numeric <code>pub-...</code> ID. See <a href="google_adsense_shared_publisher_giventa.html">google_adsense_shared_publisher_giventa.html</a>.</p>
+    <ul>
+        <li>Use the <strong>numeric</strong> <code>pub-...</code> (no <code>ca-</code> prefix) in <code>ads.txt</code>.</li>
+        <li>File must be reachable at <code>https://YOUR-DOMAIN/ads.txt</code> (HTTPS, root path).</li>
+        <li>Repository template: <code>public/ads.txt</code> in mosc-temp — update before deploy per domain.</li>
+        <li>In AdSense, use <strong>Check for updates</strong> on the site’s ads.txt page after deploy.</li>
+    </ul>
+
+    <h3><span class="step-num">5</span> Create display ad units (slot IDs)</h3>
+    <p>For each layout region you use (see PRD region map):</p>
+    <ol>
+        <li><strong>Ads</strong> → <strong>By ad unit</strong> → <strong>New ad unit</strong>.</li>
+        <li>Choose <strong>Display ads</strong> (or responsive display).</li>
+        <li>Name clearly: e.g. <code>MOSC-TEMP — Sidebar</code>, <code>Partner — Footer strip</code>.</li>
+        <li>Save and open the unit — copy the <strong>data-ad-slot</strong> value (digits only, e.g. <code>1234567890</code>).</li>
+        <li>Do <strong>not</strong> paste the full HTML snippet into tenant settings; only the slot ID goes in placements JSON.</li>
+    </ol>
+
+    <table>
+        <thead>
+            <tr><th>Region ID (app)</th><th>Suggested AdSense unit</th><th>Where it appears</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>between_sections</code></td><td>Horizontal / responsive banner</td><td>Homepage after hero</td></tr>
+            <tr><td><code>sidebar</code></td><td>Vertical / display</td><td>Homepage sidebar (large screens)</td></tr>
+            <tr><td><code>footer_strip</code></td><td>Horizontal banner</td><td>Above footer copyright</td></tr>
+            <tr><td><code>article_inline</code></td><td>In-article (phase 2)</td><td>Event / news detail pages</td></tr>
+        </tbody>
+    </table>
+
+    <h3><span class="step-num">6</span> Optional — Auto ads</h3>
+    <p>This integration uses <strong>manual placements</strong> (region → slot ID). You do not need to enable Auto ads for the built-in regions. If you turn on Auto ads in Google for a site, you may see extra placements outside your configured regions.</p>
+
+    <h2 id="app-admin">6. Configure each tenant in the admin app</h2>
+    <p>After Google setup, map IDs into the platform (same for Model A or B; only the Publisher ID value changes).</p>
+
+    <h3>Where to configure</h3>
+    <ul>
+        <li><strong>Primary admin (all tenants):</strong> <code>/admin/tenant-management/settings</code> → edit tenant → <strong>Integrations</strong> tab</li>
+        <li><strong>Satellite admin:</strong> <code>/admin/tenant-management/settings/{id}/edit</code> → <strong>Integrations</strong> tab</li>
+    </ul>
+
+    <h3>Fields</h3>
+    <table>
+        <thead>
+            <tr><th>Field</th><th>Model A (owner)</th><th>Model B (tenant)</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Enable Google AdSense</td>
+                <td>On when site approved in Google</td>
+                <td>On when tenant’s site approved</td>
+            </tr>
+            <tr>
+                <td>Publisher ID</td>
+                <td>Owner’s <code>ca-pub-...</code> on every monetized tenant</td>
+                <td>Tenant’s <code>ca-pub-...</code> on their row only</td>
+            </tr>
+            <tr>
+                <td>Placements JSON</td>
+                <td>Slot IDs for <strong>that</strong> domain’s ad units</td>
+                <td>Tenant’s slot IDs for their domain</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Save workflow</h3>
+    <ol>
+        <li>Open Integrations tab.</li>
+        <li>Toggle <strong>Enable Google AdSense</strong>.</li>
+        <li>Enter Publisher ID (must match <code>^ca-pub-[0-9]+$</code>).</li>
+        <li>Paste placements JSON (valid object; keys = region IDs).</li>
+        <li>Save. If homepage is CDN-cached, bump <code>homepageCacheVersion</code> for that tenant.</li>
+        <li>To stop ads for one satellite only: disable the toggle and save — other tenants unchanged.</li>
+    </ol>
+
+    <h2 id="ads-txt">7. ads.txt per satellite domain</h2>
+    <table>
+        <thead>
+            <tr><th>Model</th><th>ads.txt content</th><th>Deploy note</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>A — Shared owner ID</strong></td>
+                <td>Same <code>pub-OWNER...</code> on every satellite domain</td>
+                <td>Each Amplify / hosting deploy for that domain must serve the file with owner’s numeric ID</td>
+            </tr>
+            <tr>
+                <td><strong>B — Per-tenant ID</strong></td>
+                <td><code>pub-TENANT...</code> specific to that tenant’s AdSense account</td>
+                <td>That tenant’s domain must <strong>not</strong> list the owner’s pub ID if tenant is paid</td>
+            </tr>
+            <tr>
+                <td><strong>Hybrid</strong></td>
+                <td>Per-domain: owner line OR tenant line matching Integrations Publisher ID</td>
+                <td>Document which domain uses which model before deploy</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="warning-box">
+        <p><strong>Current platform note:</strong> mosc-temp ships a single static <code>public/ads.txt</code>. For multiple satellites with <strong>different</strong> Publisher IDs (Model B or Hybrid), you need either separate deployments per domain with the correct file, or a future dynamic <code>ads.txt</code> route per hostname. For Model A (one owner ID), the same line on all domains is correct.</p>
+    </div>
+
+    <h2 id="verify">8. Verification checklist</h2>
+    <ol>
+        <li>AdSense account approved; each live domain shows <strong>Ready</strong> under Sites.</li>
+        <li><code>https://DOMAIN/ads.txt</code> returns 200 and correct <code>pub-...</code> for that domain’s Publisher ID.</li>
+        <li>Admin Integrations: AdSense enabled, Publisher ID saved, placements JSON valid.</li>
+        <li>Public homepage (logged out): ad regions visible where configured; empty regions hidden if slot missing.</li>
+        <li>Disable AdSense for tenant → ads disappear on that satellite only.</li>
+        <li>AdSense → Reports: impressions/clicks begin after traffic (may take hours).</li>
+        <li>EU/UK: implement consent (CMP / GDPR) before enabling in regulated regions.</li>
+    </ol>
+
+    <h2 id="troubleshooting">9. Troubleshooting</h2>
+    <table>
+        <thead>
+            <tr><th>Symptom</th><th>Likely cause</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Blank ad boxes</td>
+                <td>Site not approved, ads.txt missing, or wrong slot ID</td>
+                <td>Check Sites status, ads.txt URL, slot IDs in JSON</td>
+            </tr>
+            <tr>
+                <td>Save fails: invalid Publisher ID</td>
+                <td>Missing <code>ca-pub-</code> prefix or enabled with empty ID</td>
+                <td>Use <code>ca-pub-1234...</code>; or disable AdSense to clear requirement</td>
+            </tr>
+            <tr>
+                <td>Revenue goes to wrong party</td>
+                <td>Wrong Publisher ID on tenant row</td>
+                <td>Model A: same owner ID everywhere; Model B: tenant ID only on their row</td>
+            </tr>
+            <tr>
+                <td>ads.txt “Not found” in Google</td>
+                <td>File not deployed or HTTP redirect loop</td>
+                <td>Deploy <code>public/ads.txt</code>; verify HTTPS root path</td>
+            </tr>
+            <tr>
+                <td>Ads on wrong tenant’s site</td>
+                <td>Tenant settings mixed between rows</td>
+                <td>Verify <code>tenant_id</code> on settings row matches satellite’s <code>NEXT_PUBLIC_TENANT_ID</code></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Related documentation</h2>
+    <ul>
+        <li><a href="google_adsense_shared_publisher_giventa.html">google_adsense_shared_publisher_giventa.html</a> — Model A production ID (giventa.com): script, ads.txt, meta tag, admin values</li>
+        <li><a href="google_adsense_integration_prd.html">Google AdSense — Tenant Settings Integration PRD</a> — database fields, API, components, CSP, rollout checklist</li>
+        <li><code>public/ads.txt</code> — deployed ads.txt in mosc-temp (<code>pub-1016198353275904</code>)</li>
+        <li><code>src/lib/adsense/sharedPublisherId.ts</code> — shared Publisher ID constants</li>
+        <li><code>src/lib/adsense/parseAdsensePlacements.ts</code> — region IDs and JSON parsing</li>
+    </ul>
+
+    <script>
+        function copyText(elementId) {
+            var el = document.getElementById(elementId);
+            if (!el) return;
+            var text = el.textContent || el.innerText;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function () {
+                    alert('Copied to clipboard.');
+                }).catch(function () {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+        function fallbackCopy(text) {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                alert('Copied to clipboard.');
+            } catch (e) {
+                alert('Copy failed. Select the text manually.');
+            }
+            document.body.removeChild(ta);
+        }
+    </script>
+</body>
+</html>

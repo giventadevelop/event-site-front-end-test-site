@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Profile Site — Database Schema PRD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 48px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; }
+        h2 { font-size: 1.45em; border-left: 4px solid #0066cc; padding-left: 14px; margin: 28px 0 12px; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-size: 0.82em; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; padding: 12px 14px; text-align: left; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 6px; border-radius: 3px; border: 1px solid #b8d4e3; }
+        a { color: #0066cc; }
+    </style>
+</head>
+<body>
+    <h1>Personal Profile Site — Database Schema</h1>
+    <p><a href="personal_profile_site_prd.html">← Index</a> | <a href="personal_profile_attribute_catalog.md">Attribute catalog</a></p>
+    <h2>ERD (simplified)</h2>
+    <pre>tenant_organization (site_type, site_template_version)
+    ├── tenant_settings (+ profile section flags)
+    └── public_profile (1:1 tenant_id)
+            ├── profile_writing (1:N)
+            ├── profile_achievement (1:N)
+            ├── profile_affiliation (1:N)
+            └── profile_media_asset (1:N)</pre>
+    <h2>Changes to existing tables</h2>
+    <table>
+        <thead><tr><th>Table</th><th>Columns</th></tr></thead>
+        <tbody>
+            <tr><td><code>tenant_organization</code></td><td><code>site_type</code>, <code>site_template_version</code></td></tr>
+            <tr><td><code>tenant_settings</code></td><td><code>show_public_profile_hero_section</code>, <code>show_profile_writings_section</code>, <code>show_profile_achievements_section</code>, <code>show_profile_affiliations_section</code>, <code>show_profile_media_downloads_section</code>, <code>show_profile_contact_section</code></td></tr>
+        </tbody>
+    </table>
+    <h2>New tables</h2>
+    <p>See <code>migrations/001_personal_profile_site.sql</code> and canonical block in <code>Latest_Schema_Post__Blob_Claude_12.sql</code>.</p>
+    <h2>Reuse decisions</h2>
+    <table>
+        <thead><tr><th>Existing</th><th>Decision</th></tr></thead>
+        <tbody>
+            <tr><td><code>news_article</code></td><td>Defer merge — use <code>profile_writing</code> for portfolio semantics</td></tr>
+            <tr><td><code>executive_committee_team_members</code></td><td>Do not reuse — org roster, not single profile</td></tr>
+            <tr><td><code>official_document_*</code></td><td>Do not reuse — use <code>profile_media_asset</code></td></tr>
+        </tbody>
+    </table>
+</body>
+</html>

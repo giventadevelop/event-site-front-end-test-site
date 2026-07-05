@@ -25,6 +25,13 @@ export const MAX_ACTIVE_SLIDES = 10;
 export const RANDOM_FALLBACK_COUNT = 3;
 export const DEFAULT_HERO_MAX_DISPLAY_COUNT = 6;
 export const MAX_HERO_DISPLAY_COUNT = 6;
+export const TENANT_HERO_SLIDE_DURATION_MS = 8000;
+
+/** Backend rejects empty string for defaultHeroImageUrlsJson — use a valid empty array. */
+export function normalizeDefaultHeroImageUrlsJsonForApi(json?: string | null): string {
+  if (json == null || String(json).trim() === '') return '[]';
+  return json;
+}
 
 type HeroUrlSource = {
   defaultHeroImageUrls?: string[] | null;
@@ -276,4 +283,117 @@ export function mergeHeroUrlLines(existing: string[], lines: string): string[] {
     existing.map((url) => ({ url, active: false })),
     lines
   ).map((s) => s.url);
+}
+
+/**
+ * Active tenant hero URLs only (no random fallback when none are active).
+ */
+export function resolveTenantActiveHeroUrls(
+  json?: string | null,
+  maxDisplayCount?: number | null
+): string[] {
+  if (!json?.trim()) return [];
+
+  const slides = parseTenantDefaultHeroSlides(json);
+  if (slides.length === 0) return [];
+
+  if (isLegacyPlainHeroUrlJson(json)) {
+    return slides.map((s) => s.url);
+  }
+
+  const cap = normalizeMaxDisplayCount(maxDisplayCount);
+  return slides
+    .filter((s) => s.active)
+    .slice(0, cap)
+    .map((s) => s.url);
+}
+
+export function applyTenantDisplayMode(
+  urls: string[],
+  mode: DefaultHeroDisplayMode
+): string[] {
+  if (urls.length === 0) return [];
+  if (mode === 'single') return [urls[0]];
+  if (mode === 'random') {
+    return [urls[Math.floor(Math.random() * urls.length)]];
+  }
+  return urls;
+}
+
+export interface ResolveHeroImagesInput {
+  eventImageUrls: string[];
+  eventDurationsMs?: number[];
+  tenantSettings?: {
+    defaultHeroImageUrlsJson?: string | null;
+    defaultHeroDisplayMode?: string | null;
+    defaultHeroIncludeWithEvents?: boolean | null;
+    defaultHeroMaxDisplayCount?: number | null;
+  } | null;
+  noImagesFallbackUrl?: string;
+}
+
+export interface ResolveHeroImagesResult {
+  imageUrls: string[];
+  durationsMs: number[];
+  /** Leading slides mapped to upcoming events (overlays); tenant defaults use null. */
+  eventSlideCount: number;
+  defaultSlideCount: number;
+}
+
+/**
+ * Homepage hero slideshow: event hero media → optional tenant default slides → fallback image.
+ * Tenant defaults are included only when defaultHeroIncludeWithEvents is true (active slides only).
+ */
+export function resolveHeroImages(input: ResolveHeroImagesInput): ResolveHeroImagesResult {
+  const fallback =
+    input.noImagesFallbackUrl?.trim() || BUNDLED_EMERGENCY_HERO_IMAGE;
+  const eventUrls = input.eventImageUrls.filter((u) => typeof u === 'string' && u.trim().length > 0);
+  const rawDurations = input.eventDurationsMs ?? [];
+  const eventDurations = eventUrls.map((_, i) => rawDurations[i] ?? TENANT_HERO_SLIDE_DURATION_MS);
+
+  const includeDefaults = input.tenantSettings?.defaultHeroIncludeWithEvents ?? true;
+  const displayMode = normalizeDefaultHeroDisplayMode(
+    input.tenantSettings?.defaultHeroDisplayMode
+  );
+
+  let tenantUrls: string[] = [];
+  if (includeDefaults) {
+    tenantUrls = applyTenantDisplayMode(
+      resolveTenantActiveHeroUrls(
+        input.tenantSettings?.defaultHeroImageUrlsJson,
+        input.tenantSettings?.defaultHeroMaxDisplayCount
+      ),
+      displayMode
+    );
+  }
+
+  if (eventUrls.length > 0) {
+    const imageUrls = includeDefaults ? [...eventUrls, ...tenantUrls] : [...eventUrls];
+    const durationsMs = [
+      ...eventDurations,
+      ...tenantUrls.map(() => TENANT_HERO_SLIDE_DURATION_MS),
+    ];
+    return {
+      imageUrls,
+      durationsMs,
+      eventSlideCount: eventUrls.length,
+      defaultSlideCount: tenantUrls.length,
+    };
+  }
+
+  if (includeDefaults && tenantUrls.length > 0) {
+    return {
+      imageUrls: tenantUrls,
+      durationsMs: tenantUrls.map(() => TENANT_HERO_SLIDE_DURATION_MS),
+      eventSlideCount: 0,
+      defaultSlideCount: tenantUrls.length,
+    };
+  }
+
+  return {
+    imageUrls: [fallback],
+    durationsMs: [TENANT_HERO_SLIDE_DURATION_MS],
+    eventSlideCount: 0,
+    defaultSlideCount: 0,
+  };
 }

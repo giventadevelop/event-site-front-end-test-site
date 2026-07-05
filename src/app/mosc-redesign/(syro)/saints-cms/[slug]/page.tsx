@@ -8,6 +8,8 @@ import SyroPageBanner from '../../components/SyroPageBanner';
 import { getSaintEntryBySlug, getSaintEntriesData } from '../getSaintEntriesData';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 type PageProps = {
   params: Promise<{ slug: string }>;

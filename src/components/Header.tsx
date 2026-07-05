@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import { Search, ChevronDown, X, LogOut, User } from 'lucide-react';
 import { useAuth, useClerk, useUser } from '@clerk/nextjs';
 import { useTenantSettings } from '@/components/TenantSettingsProvider';
-import { isAdminRole } from '@/lib/utils';
 import { isPrimaryHostname, isSatelliteHostname } from '@/lib/clerkSatellite';
 import Image from 'next/image';
 
@@ -761,40 +760,19 @@ export default function Header({ hideMenuItems = false, variant = 'charity', isT
     // Fetch profile and check admin role, with optional retry for satellite domain timing
     const checkAdminStatus = async (attempt = 1): Promise<void> => {
       try {
-        const tenantId = process.env.NEXT_PUBLIC_TENANT_ID;
-        if (!tenantId) {
-          console.warn('[Header] NEXT_PUBLIC_TENANT_ID not set, cannot check admin status');
-          if (!cancelled) {
-            setIsAdmin(typeof isTenantAdmin === 'boolean' ? isTenantAdmin : false);
-          }
-          return;
-        }
-
-        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-        const url = `${baseUrl}/api/proxy/user-profiles?userId.equals=${encodeURIComponent(userId)}&tenantId.equals=${encodeURIComponent(tenantId)}&size=1`;
-
-        console.log(`[Header] Checking admin status (attempt ${attempt}), tenantId=${tenantId}, userId=${userId}`);
-        const resp = await fetch(url, {
+        console.log(`[Header] Checking admin status (attempt ${attempt}), userId=${userId}`);
+        const resp = await fetch('/api/auth/admin-status', {
           cache: 'no-store',
-          headers: { 'Content-Type': 'application/json' }
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
         });
 
         if (resp.ok) {
           const data = await resp.json();
-          // Handle both raw array and paginated { content: [...] } responses
-          let profile;
-          if (Array.isArray(data)) {
-            profile = data[0];
-          } else if (data?.content && Array.isArray(data.content)) {
-            profile = data.content[0];
-          } else if (data && typeof data === 'object' && 'userId' in data) {
-            profile = data;
-          }
-          const role = profile?.userRole ?? 'NONE';
-          const adminResult = profile
-            ? isAdminRole(profile.userRole)
-            : isTenantAdmin === true;
-          console.log(`[Header] Profile API response: profileId=${profile?.id ?? 'none'}, userRole="${role}", userStatus="${profile?.userStatus ?? 'none'}", isAdmin=${adminResult}, profileUserId=${profile?.userId}, dataType=${Array.isArray(data) ? 'array' : typeof data}, count=${Array.isArray(data) ? data.length : data?.content?.length ?? 1}, attempt=${attempt}`);
+          const adminResult = data?.isAdmin === true;
+          console.log(
+            `[Header] Admin status API: isAdmin=${adminResult}, userId=${data?.userId ?? userId}, attempt=${attempt}`
+          );
           if (!cancelled) {
             setIsAdmin(adminResult);
           }

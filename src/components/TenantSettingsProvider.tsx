@@ -30,6 +30,13 @@ interface TenantSettingsContextType {
   /** @deprecated Use showExecutiveCommitteeSection — kept for callers not yet migrated */
   showTeamSection: boolean;
   showSponsorsSection: boolean;
+  // Personal profile homepage sections (PERSONAL_PROFILE / HYBRID site types)
+  showProfileHero: boolean;
+  showProfileWritings: boolean;
+  showProfileAchievements: boolean;
+  showProfileAffiliations: boolean;
+  showProfileDownloads: boolean;
+  showProfileContact: boolean;
   /** When true and publisher ID is set, public pages may render AdSense regions */
   showGoogleAdsense: boolean;
   adsensePublisherId: string | null;
@@ -55,6 +62,12 @@ const TenantSettingsContext = React.createContext<TenantSettingsContextType>({
   showExecutiveCommitteeSection: true,
   showTeamSection: true,
   showSponsorsSection: true,
+  showProfileHero: false,
+  showProfileWritings: false,
+  showProfileAchievements: false,
+  showProfileAffiliations: false,
+  showProfileDownloads: false,
+  showProfileContact: false,
   showGoogleAdsense: false,
   adsensePublisherId: null,
   adsensePlacements: {},
@@ -282,6 +295,13 @@ export const TenantSettingsProvider: React.FC<TenantSettingsProviderProps> = ({ 
     true;
   const showTeamSection = showExecutiveCommitteeSection;
   const showSponsorsSection = settings?.showSponsorsSectionInHomePage ?? true;
+  // Profile sections default to hidden — only shown when explicitly enabled (profile site types)
+  const showProfileHero = settings?.showPublicProfileHeroSection ?? false;
+  const showProfileWritings = settings?.showProfileWritingsSection ?? false;
+  const showProfileAchievements = settings?.showProfileAchievementsSection ?? false;
+  const showProfileAffiliations = settings?.showProfileAffiliationsSection ?? false;
+  const showProfileDownloads = settings?.showProfileMediaDownloadsSection ?? false;
+  const showProfileContact = settings?.showProfileContactSection ?? false;
   const showGoogleAdsense =
     settings?.enableGoogleAdsense === true && Boolean(settings?.googleAdsensePublisherId?.trim());
   const adsensePublisherId = settings?.googleAdsensePublisherId?.trim() || null;
@@ -299,6 +319,12 @@ export const TenantSettingsProvider: React.FC<TenantSettingsProviderProps> = ({ 
     showExecutiveCommitteeSection,
     showTeamSection,
     showSponsorsSection,
+    showProfileHero,
+    showProfileWritings,
+    showProfileAchievements,
+    showProfileAffiliations,
+    showProfileDownloads,
+    showProfileContact,
     showGoogleAdsense,
     adsensePublisherId,
     adsensePlacements,

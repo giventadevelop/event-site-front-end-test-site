@@ -1,0 +1,283 @@
+---
+description: Local Docker PostgreSQL connectivity for ad-hoc SQL — container discovery, credentials, database name, and reusable psql patterns for this monorepo.
+globs: code_html_template/SQLS/**/*.sql, documentation/**/*.md, .env.local
+alwaysApply: false
+---
+
+# Local PostgreSQL Connectivity (Docker) — Fast Reuse Guide
+
+## **Overview**
+
+When `NEXT_PUBLIC_API_BASE_URL=http://localhost:8080` (see [`.env.local`](mdc:.env.local)), the Spring Boot API reads/writes **local Docker PostgreSQL**, not Supabase. Use this rule to connect and run SQL (tenant updates, event date fixes, counts, verification) without rediscovering credentials each session.
+
+**Related rules (do not duplicate):**
+- Bulk import/export: [database_export_import_vpc_local.mdc](mdc:.cursor/rules/database_export_import_vpc_local.mdc)
+- Table/column conventions: [database_schema_guidelines.mdc](mdc:.cursor/rules/database_schema_guidelines.mdc)
+- `pg_dump` / schema rebuild: [documentation/INSERT_TABLE_BULK_SQL_REORDERING_AND_PG_DUMP_GUIDE.md](mdc:documentation/INSERT_TABLE_BULK_SQL_REORDERING_AND_PG_DUMP_GUIDE.md)
+
+---
+
+## **Which database to use (decision tree)**
+
+```
+Is NEXT_PUBLIC_API_BASE_URL pointing to localhost:8080?
+├─ YES → Use LOCAL Docker Postgres (this rule)
+└─ NO  → Remote RDS / Supabase (do NOT use local Docker; use ops/VPN/RDS credentials)
+
+Does .env.local contain DATABASE_URL / DIRECT_URL (Supabase)?
+└─ Used by some Next.js/Prisma tooling — NOT the same DB as local Spring Boot on :8080
+```
+
+| Context | Database target |
+|--------|------------------|
+| Local dev (`localhost:8080` API) | Docker → `event_site_manager_db` |
+| `.env.local` `DATABASE_URL` (Supabase) | Cloud Supabase — separate from local API data |
+| Batch import script | Docker → `event_site_manager_db` (often `event_site_admin` user) |
+
+---
+
+## **Where connection details live (source of truth)**
+
+| Setting | Source file | Value (local dev defaults) |
+|--------|-------------|----------------------------|
+| Compose project / service name | [`event-site-manager-service/src/main/docker/postgres_docker/docker-compose.yml`](mdc:../event-site-manager-service/src/main/docker/postgres_docker/docker-compose.yml) | `name: event_site_manager_db`, service `postgresql` |
+| Postgres image / port | Same compose file | `postgres:16.0`, `127.0.0.1:5432:5432` |
+| Superuser creds | Same compose file `environment` | `POSTGRES_USER=postgres`, `POSTGRES_PASSWORD=postgres` |
+| **Application database name** | [`event-site-manager-service/src/main/docker/postgres_docker/init.sql`](mdc:../event-site-manager-service/src/main/docker/postgres_docker/init.sql) | **`event_site_manager_db`** (created on first init) |
+| App DB user (optional) | Same `init.sql` | `event_site_app` / `event_site_app!` |
+| Admin DB user (batch scripts) | Same `init.sql` | `event_site_admin` / `event_site_admin!` |
+| Spring app → DB host | [`event-site-manager-service/src/main/docker/Docker_Local/docker-compose.local.yml`](mdc:../event-site-manager-service/src/main/docker/Docker_Local/docker-compose.local.yml) | `RDS_ENDPOINT=event_site_manager_db-postgresql-1` |
+| Active tenant ID (frontend) | [`.env.local`](mdc:.env.local) `NEXT_PUBLIC_TENANT_ID` | e.g. `mosc_malankara_orthodox_2` |
+| Canonical schema reference | [`code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql`](mdc:code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql) | Table/column names |
+
+---
+
+## **CRITICAL: database name is NOT `postgres`**
+
+The default database `postgres` exists but **application tables live in `event_site_manager_db`**.
+
+```powershell
+# ❌ WRONG — empty or no event_details
+docker exec event_site_manager_db-postgresql-1 psql -U postgres -d postgres -c "\dt event_details"
+
+# ✅ DO — application data
+docker exec event_site_manager_db-postgresql-1 psql -U postgres -d event_site_manager_db -c "\dt event_details"
+```
+
+**Discovery if unsure:**
+
+```powershell
+docker exec event_site_manager_db-postgresql-1 psql -U postgres -d postgres -c "\l"
+```
+
+Look for database **`event_site_manager_db`**.
+
+---
+
+## **Step 1: Find the running Postgres container**
+
+```powershell
+docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}"
+```
+
+**Expected container name (compose project `event_site_manager_db` + service `postgresql`):**
+
+```
+event_site_manager_db-postgresql-1
+```
+
+**Related containers (same local stack):**
+
+| Container | Role |
+|-----------|------|
+| `event_site_manager_db-postgresql-1` | PostgreSQL (this rule) |
+| `event-mgmnt-site-app` | Spring Boot API `:8080` |
+| `event-site-manager-batch-jobs` | Batch jobs `:8081` |
+
+If Postgres is not running, start it from the backend repo:
+
+```powershell
+cd C:\project_workspace\event-site-manager-service\src\main\docker\postgres_docker
+docker compose up -d
+```
+
+---
+
+## **Step 2: Run SQL (preferred — `docker exec`)**
+
+Use **`postgres`** superuser + database **`event_site_manager_db`** for ad-hoc agent SQL (simplest, always works locally).
+
+```powershell
+docker exec event_site_manager_db-postgresql-1 psql -U postgres -d event_site_manager_db -c "SELECT COUNT(*) FROM event_details;"
+```
+
+**Multi-line / transaction:**
+
+```powershell
+docker exec event_site_manager_db-postgresql-1 psql -U postgres -d event_site_manager_db -c "
+BEGIN;
+-- your SQL
+COMMIT;
+"
+```
+
+**Interactive psql:**
+
+```powershell
+docker exec -it event_site_manager_db-postgresql-1 psql -U postgres -d event_site_manager_db
+```
+
+### **Alternative: `event_site_admin` (matches batch import scripts)**
+
+```powershell
+docker exec event_site_manager_db-postgresql-1 psql -U event_site_admin -d event_site_manager_db -c "SELECT 1;"
+```
+
+Password: `event_site_admin!` (only needed for host `psql`, not `docker exec`).
+
+### **Alternative: host `psql` on port 5432**
+
+```powershell
+psql "postgresql://postgres:postgres@127.0.0.1:5432/event_site_manager_db"
+```
+
+---
+
+## **Step 3: Tenant-scoped queries**
+
+Tenant column on most tables: **`tenant_id`** (`varchar`). Match frontend env:
+
+```powershell
+# Read tenant from .env.local
+# NEXT_PUBLIC_TENANT_ID=mosc_malankara_orthodox_2
+```
+
+```sql
+-- Example: future events for active tenant
+SELECT id, title, start_date, end_date
+FROM event_details
+WHERE tenant_id = 'mosc_malankara_orthodox_2'
+  AND start_date >= CURRENT_DATE
+ORDER BY start_date;
+```
+
+**Frontend “future events” filter:** `start_date >= today` (see [`src/app/events/page.tsx`](mdc:src/app/events/page.tsx) — `startDate.greaterThanOrEqual`).
+
+---
+
+## **Common tables (quick reference)**
+
+| Table | Notes |
+|-------|--------|
+| `event_details` | Events; `tenant_id`, `start_date`, `end_date`, `is_active`, `is_featured_event` |
+| `event_media` | Media; links via `event_id` |
+| `tenant_settings` | Per-tenant config; `tenant_id` |
+| `tenant_organization` | Org profile (address/description moved here in v2.0) |
+| `user_profile` | Users; `tenant_id`, `user_id` (Clerk), `user_role` |
+
+Snake_case in DB; Java/API uses camelCase (`startDate` → `start_date`).
+
+---
+
+## **Worked example: move future events to past (2025)**
+
+**Verified pattern** (local Docker, tenant `mosc_malankara_orthodox_2`):
+
+```powershell
+# 1) Preview
+docker exec event_site_manager_db-postgresql-1 psql -U postgres -d event_site_manager_db -c "
+SELECT id, title, start_date, end_date
+FROM event_details
+WHERE tenant_id = 'mosc_malankara_orthodox_2'
+  AND start_date >= CURRENT_DATE
+ORDER BY start_date;
+"
+
+# 2) Update — shift start/end year to 2025 (preserves month/day)
+docker exec event_site_manager_db-postgresql-1 psql -U postgres -d event_site_manager_db -c "
+BEGIN;
+UPDATE event_details
+SET
+  start_date = start_date - ((EXTRACT(YEAR FROM start_date)::integer - 2025) * INTERVAL '1 year'),
+  end_date = CASE
+    WHEN end_date IS NOT NULL
+      THEN end_date - ((EXTRACT(YEAR FROM end_date)::integer - 2025) * INTERVAL '1 year')
+    ELSE NULL
+  END,
+  updated_at = NOW()
+WHERE tenant_id = 'mosc_malankara_orthodox_2'
+  AND start_date >= CURRENT_DATE;
+COMMIT;
+"
+
+# 3) Verify zero future events remain
+docker exec event_site_manager_db-postgresql-1 psql -U postgres -d event_site_manager_db -c "
+SELECT COUNT(*) AS remaining_future
+FROM event_details
+WHERE tenant_id = 'mosc_malankara_orthodox_2'
+  AND start_date >= CURRENT_DATE;
+"
+```
+
+After data changes, refresh the Next.js app or invalidate homepage cache if hero/events look stale.
+
+---
+
+## **Agent checklist (fast path)**
+
+1. Confirm API target: `NEXT_PUBLIC_API_BASE_URL` in [`.env.local`](mdc:.env.local) → `http://localhost:8080` = **local Docker DB**.
+2. `docker ps` → container `event_site_manager_db-postgresql-1`.
+3. Use **`-d event_site_manager_db`** (not `-d postgres`).
+4. Use **`-U postgres`** for ad-hoc SQL (or `event_site_admin` to match batch scripts).
+5. Scope by **`tenant_id`** from `NEXT_PUBLIC_TENANT_ID`.
+6. Wrap mutations in `BEGIN;` / `COMMIT;`; run a `SELECT` before and after.
+7. For bulk import/schema rebuild, use [database_export_import_vpc_local.mdc](mdc:.cursor/rules/database_export_import_vpc_local.mdc) instead.
+
+---
+
+## **DO / DON'T**
+
+### **DO**
+- ✅ Use `docker exec … psql -U postgres -d event_site_manager_db`
+- ✅ List databases with `\l` if tables are missing
+- ✅ Read credentials from `postgres_docker/docker-compose.yml` and `init.sql`
+- ✅ Use `tenant_id = '<NEXT_PUBLIC_TENANT_ID>'` for tenant-scoped updates
+- ✅ Set `updated_at = NOW()` on manual `event_details` updates
+
+### **DON'T**
+- ❌ Assume `.env.local` `DATABASE_URL` (Supabase) is the same DB as local `:8080` API
+- ❌ Query `-d postgres` for application tables (wrong database)
+- ❌ Run destructive import scripts when you only need a small SQL fix
+- ❌ Update production/RDS without explicit user approval and correct remote credentials
+
+---
+
+## **Troubleshooting**
+
+| Symptom | Fix |
+|--------|-----|
+| `Did not find any relation named "event_details"` | Wrong DB — switch to `event_site_manager_db` |
+| `connection refused` on `:5432` | Start Postgres: `docker compose up -d` in `postgres_docker` |
+| Container name differs | `docker ps \| findstr postgres` — use actual name in `docker exec` |
+| API shows old data after SQL | Restart not required; hard-refresh browser or clear homepage sessionStorage cache |
+| DB triggers NOTICE on update | Normal — backend validation triggers on `event_details` |
+
+---
+
+## **File path summary (monorepo layout)**
+
+```
+C:\project_workspace\
+├── mosc-temp\                          # Next.js frontend (this repo)
+│   ├── .env.local                      # NEXT_PUBLIC_TENANT_ID, API URL, Supabase URLs
+│   └── code_html_template\SQLS\        # Schema + seed SQL
+└── event-site-manager-service\         # Spring Boot backend (sibling repo)
+    └── src\main\docker\
+        ├── postgres_docker\
+        │   ├── docker-compose.yml      # Postgres container + superuser creds
+        │   └── init.sql                # Creates event_site_manager_db + roles
+        └── Docker_Local\
+            └── docker-compose.local.yml  # API container → DB host name
+```
+
+**Default workspace path in docs:** `C:\project_workspace` — adjust if your clone root differs.

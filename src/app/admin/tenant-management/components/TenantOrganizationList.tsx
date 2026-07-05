@@ -2,13 +2,86 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FaPlus, FaSearch, FaSort } from 'react-icons/fa';
-import type { TenantOrganizationDTO, TenantOrganizationFilters, PaginationParams } from '@/app/admin/tenant-management/types';
+import { FaSearch, FaSort } from 'react-icons/fa';
+import type { TenantOrganizationDTO, TenantOrganizationFilters } from '@/app/admin/tenant-management/types';
+import {
+  AdminHoverTooltipPortal,
+  useAdminHoverTooltip,
+} from '@/components/admin/AdminHoverTooltip';
 
 interface TenantOrganizationListProps {
   initialData?: TenantOrganizationDTO[];
   initialTotalCount?: number;
   onRefresh?: () => void;
+}
+
+function getOrganizationTooltipEntries(org: TenantOrganizationDTO): Record<string, unknown> {
+  return {
+    id: org.id,
+    tenantId: org.tenantId,
+    organizationName: org.organizationName,
+    domain: org.domain,
+    contactEmail: org.contactEmail,
+    contactPhone: org.contactPhone,
+    subscriptionPlan: org.subscriptionPlan,
+    subscriptionStatus: org.subscriptionStatus,
+    subscriptionStartDate: org.subscriptionStartDate,
+    subscriptionEndDate: org.subscriptionEndDate,
+    monthlyFeeUsd: org.monthlyFeeUsd,
+    siteType: org.siteType,
+    isActive: org.isActive,
+    city: org.city,
+    stateProvince: org.stateProvince,
+    country: org.country,
+    websiteUrl: org.websiteUrl,
+    createdAt: org.createdAt,
+    updatedAt: org.updatedAt,
+  };
+}
+
+function OrganizationRowActions({
+  org,
+  onDelete,
+}: {
+  org: TenantOrganizationDTO;
+  onDelete: (id: number) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-2" onClick={(e) => e.stopPropagation()}>
+      <Link
+        href={`/admin/tenant-management/organizations/${org.id}`}
+        className="flex-shrink-0 w-10 h-10 sm:w-14 sm:h-14 rounded-xl bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 flex items-center justify-center transition-all duration-300 hover:scale-110"
+        title="View Organization"
+        aria-label="View Organization"
+      >
+        <svg className="w-6 h-6 sm:w-10 sm:h-10 text-green-500 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+      </Link>
+      <Link
+        href={`/admin/tenant-management/organizations/${org.id}/edit`}
+        className="flex-shrink-0 w-10 h-10 sm:w-14 sm:h-14 rounded-xl bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 flex items-center justify-center transition-all duration-300 hover:scale-110"
+        title="Edit Organization"
+        aria-label="Edit Organization"
+      >
+        <svg className="w-6 h-6 sm:w-10 sm:h-10 text-blue-500 dark:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        </svg>
+      </Link>
+      <button
+        onClick={() => onDelete(org.id!)}
+        className="flex-shrink-0 w-10 h-10 sm:w-14 sm:h-14 rounded-xl bg-red-100 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800 flex items-center justify-center transition-all duration-300 hover:scale-110"
+        title="Delete Organization"
+        aria-label="Delete Organization"
+        type="button"
+      >
+        <svg className="w-6 h-6 sm:w-10 sm:h-10 text-red-500 dark:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      </button>
+    </div>
+  );
 }
 
 export default function TenantOrganizationList({
@@ -36,6 +109,16 @@ export default function TenantOrganizationList({
 
   // Selection state for bulk operations
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+  const {
+    tooltipItem,
+    tooltipAnchor,
+    handleMouseEnter,
+    handleMouseLeave,
+    handleTooltipMouseEnter,
+    handleTooltipMouseLeave,
+    closeTooltip,
+  } = useAdminHoverTooltip<TenantOrganizationDTO>();
 
   // Load data function
   const loadData = async () => {
@@ -236,7 +319,7 @@ export default function TenantOrganizationList({
       {/* Table */}
       <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
         <div className="user-table-scroll-container">
-          <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600 border border-gray-300 dark:border-gray-600" style={{ minWidth: '800px', width: '100%' }}>
+          <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600 border border-gray-300 dark:border-gray-600" style={{ minWidth: '720px', width: '100%' }}>
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
                 <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left border-b border-r border-gray-300 dark:border-gray-600">
@@ -257,7 +340,7 @@ export default function TenantOrganizationList({
                   </div>
                 </th>
                 <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border-b border-r border-gray-300 dark:border-gray-600">
-                  Domain
+                  Domain / Actions
                 </th>
                 <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border-b border-r border-gray-300 dark:border-gray-600">
                   Contact Email
@@ -271,11 +354,8 @@ export default function TenantOrganizationList({
                     <FaSort className="text-xs" />
                   </div>
                 </th>
-                <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border-b border-r border-gray-300 dark:border-gray-600">
-                  Active
-                </th>
                 <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border-b border-gray-300 dark:border-gray-600">
-                  Actions
+                  Active
                 </th>
               </tr>
             </thead>
@@ -291,11 +371,16 @@ export default function TenantOrganizationList({
                     onClick={(e) => e.stopPropagation()}
                   />
                 </td>
-                <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                <td
+                  className="px-2 sm:px-4 lg:px-6 py-2 sm:py-4 text-xs sm:text-sm font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600 cursor-default"
+                  onMouseEnter={(e) => handleMouseEnter(org, e)}
+                  onMouseLeave={handleMouseLeave}
+                >
                   {org.organizationName}
                 </td>
-                <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-600">
-                  {org.domain || '-'}
+                <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-600">
+                  <span className="block">{org.domain || '—'}</span>
+                  <OrganizationRowActions org={org} onDelete={handleDelete} />
                 </td>
                 <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-600">
                   {org.contactEmail}
@@ -310,11 +395,12 @@ export default function TenantOrganizationList({
                     {org.subscriptionStatus || 'Unknown'}
                   </span>
                 </td>
-                <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-4 whitespace-nowrap border-r border-gray-200 dark:border-gray-600">
+                <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-4 whitespace-nowrap">
                   <button
                     onClick={() => handleToggleStatus(org.id!, org.isActive || false)}
                     className={`flex items-center gap-1 sm:gap-2 ${org.isActive ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'
                       }`}
+                    type="button"
                   >
                     {org.isActive ? (
                       <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-500 dark:text-green-400" fill="currentColor" viewBox="0 0 24 24">
@@ -328,47 +414,11 @@ export default function TenantOrganizationList({
                     <span className="text-xs sm:text-sm">{org.isActive ? 'Active' : 'Inactive'}</span>
                   </button>
                 </td>
-                <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium">
-                  <div className="flex gap-1 sm:gap-2">
-                    <Link
-                      href={`/admin/tenant-management/organizations/${org.id}`}
-                      className="flex-shrink-0 w-10 h-10 sm:w-14 sm:h-14 rounded-xl bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 flex items-center justify-center transition-all duration-300 hover:scale-110"
-                      title="View Organization"
-                      aria-label="View Organization"
-                    >
-                      <svg className="w-6 h-6 sm:w-10 sm:h-10 text-green-500 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                    </Link>
-                    <Link
-                      href={`/admin/tenant-management/organizations/${org.id}/edit`}
-                      className="flex-shrink-0 w-10 h-10 sm:w-14 sm:h-14 rounded-xl bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 flex items-center justify-center transition-all duration-300 hover:scale-110"
-                      title="Edit Organization"
-                      aria-label="Edit Organization"
-                    >
-                      <svg className="w-6 h-6 sm:w-10 sm:h-10 text-blue-500 dark:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(org.id!)}
-                      className="flex-shrink-0 w-10 h-10 sm:w-14 sm:h-14 rounded-xl bg-red-100 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800 flex items-center justify-center transition-all duration-300 hover:scale-110"
-                      title="Delete Organization"
-                      aria-label="Delete Organization"
-                      type="button"
-                    >
-                      <svg className="w-6 h-6 sm:w-10 sm:h-10 text-red-500 dark:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                </td>
               </tr>
             ))}
             {organizations.length === 0 && !loading && (
               <tr>
-                <td className="px-2 sm:px-4 lg:px-6 py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center" colSpan={7}>
+                <td className="px-2 sm:px-4 lg:px-6 py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center" colSpan={6}>
                   <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-50 border-2 border-orange-300 rounded-lg shadow-sm">
                     <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -383,6 +433,16 @@ export default function TenantOrganizationList({
         </table>
         </div>
       </div>
+
+      {tooltipItem && (
+        <AdminHoverTooltipPortal
+          entries={getOrganizationTooltipEntries(tooltipItem)}
+          anchorRect={tooltipAnchor}
+          onClose={closeTooltip}
+          onMouseEnter={handleTooltipMouseEnter}
+          onMouseLeave={handleTooltipMouseLeave}
+        />
+      )}
 
       {/* Pagination Controls - Always visible, matching admin page style */}
       <div className="mt-8">

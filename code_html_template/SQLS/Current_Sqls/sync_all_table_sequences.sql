@@ -93,7 +93,16 @@ DECLARE
         'event_competition_registration',
         'event_competition_result',
         'event_competition_content_block',
-        'event_competition_group_member'
+        'event_competition_group_member',
+        'public_profile',
+        'profile_writing',
+        'profile_achievement',
+        'profile_affiliation',
+        'profile_media_asset',
+        'gas_station_location',
+        'gas_station_integration',
+        'gas_station_daily_metrics',
+        'gas_station_recommendation'
     ];
 BEGIN
     FOREACH tbl IN ARRAY tables

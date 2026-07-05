@@ -1,7 +1,18 @@
+'use server';
+
 import { fetchWithJwtRetry } from '@/lib/proxyHandler';
 import { withTenantId } from '@/lib/withTenantId';
-import { getAppUrl, getApiBaseUrl } from '@/lib/env';
+import { getApiBaseUrl } from '@/lib/env';
+import {
+  getAppScopedTenantId,
+  isSatelliteTenantSettingsScope,
+} from '@/lib/tenantSettingsScope';
 import { stripDeprecatedSettingsIdentityFields } from '@/lib/resolveTenantOrganizationIdentity';
+import { normalizeDefaultHeroImageUrlsJsonForApi } from '@/lib/hero/defaultHeroImages';
+import {
+  parseJhipsterProblemErrorBody,
+  UserFacingSaveError,
+} from '@/lib/api/userFacingSaveError';
 import type {
   TenantSettingsDTO,
   TenantSettingsFormDTO,
@@ -33,8 +44,11 @@ export async function fetchTenantSettings(
     if (filters.search) {
       params.append('tenantId.contains', filters.search);
     }
-    if (filters.tenantId) {
-      params.append('tenantId.equals', filters.tenantId);
+    const scopedTenantId = isSatelliteTenantSettingsScope()
+      ? getAppScopedTenantId()
+      : filters.tenantId;
+    if (scopedTenantId) {
+      params.append('tenantId.equals', scopedTenantId);
     }
 
     // Add sorting
@@ -73,6 +87,22 @@ export async function fetchTenantSettings(
  */
 export async function fetchTenantSetting(id: number): Promise<TenantSettingsDTO | null> {
   try {
+    if (isSatelliteTenantSettingsScope()) {
+      const forConfiguredTenant = await fetchTenantSettingsByTenantId(getAppScopedTenantId());
+      if (!forConfiguredTenant?.id) {
+        return null;
+      }
+      if (forConfiguredTenant.id !== id) {
+        console.warn(
+          '[fetchTenantSetting] Satellite scope: ignoring settings id=%s; using id=%s for tenant %s',
+          id,
+          forConfiguredTenant.id,
+          getAppScopedTenantId()
+        );
+      }
+      return forConfiguredTenant;
+    }
+
     const response = await fetchWithJwtRetry(
       `${getApiBase()}/api/tenant-settings/${id}`,
       { cache: 'no-store' }
@@ -86,7 +116,8 @@ export async function fetchTenantSetting(id: number): Promise<TenantSettingsDTO 
       throw new Error(`Failed to fetch tenant setting: ${response.statusText}`);
     }
 
-    return await response.json();
+    const setting: TenantSettingsDTO = await response.json();
+    return setting;
   } catch (error) {
     console.error('Error fetching tenant setting:', error);
     throw new Error('Failed to fetch tenant setting');
@@ -118,33 +149,83 @@ export async function fetchTenantSettingsByTenantId(tenantId: string): Promise<T
   }
 }
 
-function parseTenantSettingsApiError(errorText: string, action: 'create' | 'update'): string {
-  const lower = errorText.toLowerCase();
-  if (lower.includes('duplicate key') || lower.includes('already exists')) {
-    return 'Settings for this tenant already exist. Edit the existing settings instead of creating new ones.';
+function buildTenantSettingsWritePayload(
+  existingSetting: TenantSettingsDTO,
+  data: Partial<TenantSettingsFormDTO>,
+  id: number
+): TenantSettingsDTO {
+  const { tenantOrganization: _org, ...existingRest } = existingSetting;
+  const stripped = stripDeprecatedSettingsIdentityFields(
+    data as Record<string, unknown>
+  ) as Partial<TenantSettingsFormDTO>;
+
+  const merged = stripDeprecatedSettingsIdentityFields({
+    ...existingRest,
+    ...stripped,
+    id,
+    createdAt: existingSetting.createdAt,
+    updatedAt: new Date().toISOString(),
+  }) as TenantSettingsDTO;
+
+  if (
+    'defaultHeroImageUrlsJson' in stripped ||
+    merged.defaultHeroImageUrlsJson !== undefined
+  ) {
+    merged.defaultHeroImageUrlsJson = normalizeDefaultHeroImageUrlsJsonForApi(
+      merged.defaultHeroImageUrlsJson
+    );
   }
-  if (lower.includes('column') && lower.includes('does not exist')) {
-    return 'The backend database is missing required columns. Apply the tenant profile migration and restart the API server.';
+
+  return merged as TenantSettingsDTO;
+}
+
+function finalizeTenantSettingsWritePayload(
+  payload: TenantSettingsDTO,
+  existingSetting: TenantSettingsDTO
+): TenantSettingsDTO {
+  if (isSatelliteTenantSettingsScope()) {
+    return withTenantId(payload) as TenantSettingsDTO;
   }
-  try {
-    const parsed = JSON.parse(errorText) as {
-      detail?: string;
-      title?: string;
-      message?: string;
-      error?: string;
-    };
-    if (parsed.detail) return parsed.detail;
-    if (parsed.message) return parsed.message;
-    if (parsed.title) return parsed.title;
-    if (parsed.error) return parsed.error;
-  } catch {
-    // not JSON
+  return {
+    ...payload,
+    tenantId: existingSetting.tenantId,
+  };
+}
+
+async function resolveTenantSettingsForMutation(
+  id: number
+): Promise<{ targetId: number; existingSetting: TenantSettingsDTO }> {
+  if (isSatelliteTenantSettingsScope()) {
+    const configuredTenantId = getAppScopedTenantId();
+    const existingSetting = await fetchTenantSettingsByTenantId(configuredTenantId);
+    if (!existingSetting?.id) {
+      throw new Error(
+        `No tenant settings found for this app (tenant: ${configuredTenantId}). Create settings for your tenant first.`
+      );
+    }
+    if (existingSetting.tenantId !== configuredTenantId) {
+      throw new Error('Tenant settings do not match this app configuration.');
+    }
+    if (existingSetting.id !== id) {
+      console.warn(
+        '[resolveTenantSettingsForMutation] Satellite: saving id=%s instead of requested id=%s',
+        existingSetting.id,
+        id
+      );
+    }
+    return { targetId: existingSetting.id, existingSetting };
   }
-  const trimmed = errorText.trim();
-  if (trimmed.length > 0 && trimmed.length <= 500) {
-    return trimmed;
+
+  const existingSetting = await fetchTenantSetting(id);
+  if (!existingSetting) {
+    throw new Error('Tenant setting not found');
   }
-  return action === 'create' ? 'Failed to create tenant settings.' : 'Failed to update tenant settings.';
+  return { targetId: id, existingSetting };
+}
+
+function throwTenantSettingsApiError(errorText: string, action: 'create' | 'update'): never {
+  const { summary, details } = parseJhipsterProblemErrorBody(errorText, action);
+  throw new UserFacingSaveError(summary, details);
 }
 
 /**
@@ -173,7 +254,7 @@ export async function createTenantSetting(data: TenantSettingsFormDTO): Promise<
         statusText: response.statusText,
         body: errorText.slice(0, 2000),
       });
-      throw new Error(parseTenantSettingsApiError(errorText, 'create'));
+      throwTenantSettingsApiError(errorText, 'create');
     }
 
     return await response.json();
@@ -194,60 +275,11 @@ export async function updateTenantSetting(
   data: Partial<TenantSettingsFormDTO>
 ): Promise<TenantSettingsDTO> {
   try {
-    // First fetch the existing tenant setting to preserve fields not in form
-    const existingSetting = await fetchTenantSetting(id);
+    const { targetId, existingSetting } = await resolveTenantSettingsForMutation(id);
+    const merged = buildTenantSettingsWritePayload(existingSetting, data, targetId);
+    const payload = finalizeTenantSettingsWritePayload(merged, existingSetting);
 
-    if (!existingSetting) {
-      throw new Error('Tenant setting not found');
-    }
-
-    // If tenantOrganization is missing or incomplete, try to fetch it by tenantId
-    let tenantOrganization = existingSetting.tenantOrganization;
-
-    if (!tenantOrganization || !tenantOrganization.id) {
-      console.log('[updateTenantSetting] Missing tenantOrganization, fetching by tenantId:', existingSetting.tenantId);
-
-      try {
-        // Import the function to fetch tenant organizations
-        const { fetchTenantOrganizations } = await import('@/app/admin/tenant-management/organizations/ApiServerActions');
-
-        const orgResult = await fetchTenantOrganizations(
-          { page: 0, pageSize: 1 },
-          { tenantId: existingSetting.tenantId }
-        );
-
-        if (orgResult.data && orgResult.data.length > 0) {
-          tenantOrganization = orgResult.data[0];
-          console.log('[updateTenantSetting] Found tenantOrganization:', {
-            id: tenantOrganization.id,
-            organizationName: tenantOrganization.organizationName,
-            tenantId: tenantOrganization.tenantId
-          });
-        } else {
-          console.warn('[updateTenantSetting] No tenant organization found for tenantId:', existingSetting.tenantId);
-        }
-      } catch (orgError) {
-        console.error('[updateTenantSetting] Error fetching tenant organization:', orgError);
-      }
-    }
-
-    const payload = withTenantId({
-      ...stripDeprecatedSettingsIdentityFields(data),
-      id,
-      createdAt: existingSetting.createdAt, // Preserve original createdAt
-      updatedAt: new Date().toISOString(),
-      // Include the tenantOrganization relationship (either existing or newly fetched)
-      tenantOrganization: tenantOrganization || null,
-    });
-
-    console.log('[updateTenantSetting] Final payload with tenantOrganization:', {
-      tenantId: payload.tenantId,
-      organizationId: tenantOrganization?.id,
-      organizationName: tenantOrganization?.organizationName,
-      hasOrganization: !!tenantOrganization
-    });
-
-    const response = await fetchWithJwtRetry(`${getApiBase()}/api/tenant-settings/${id}`, {
+    const response = await fetchWithJwtRetry(`${getApiBase()}/api/tenant-settings/${targetId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -257,12 +289,17 @@ export async function updateTenantSetting(
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Failed to update tenant setting: ${errorText}`);
+      console.error('[updateTenantSetting] Backend error:', {
+        status: response.status,
+        body: errorText.slice(0, 2000),
+      });
+      throwTenantSettingsApiError(errorText, 'update');
     }
 
     return await response.json();
   } catch (error) {
     console.error('Error updating tenant setting:', error);
+    if (error instanceof Error) throw error;
     throw new Error('Failed to update tenant setting');
   }
 }
@@ -275,59 +312,30 @@ export async function patchTenantSetting(
   data: Partial<TenantSettingsFormDTO>
 ): Promise<TenantSettingsDTO> {
   try {
-    // For PATCH operations, we should also preserve tenantOrganization if not explicitly provided
-    const existingSetting = await fetchTenantSetting(id);
+    const { targetId, existingSetting } = await resolveTenantSettingsForMutation(id);
 
-    if (!existingSetting) {
-      throw new Error('Tenant setting not found');
-    }
+    const stripped = stripDeprecatedSettingsIdentityFields(
+      data as Record<string, unknown>
+    ) as Partial<TenantSettingsFormDTO>;
 
-    // If tenantOrganization is missing or incomplete, try to fetch it by tenantId
-    let tenantOrganization = existingSetting.tenantOrganization;
-
-    if (!tenantOrganization || !tenantOrganization.id) {
-      console.log('[patchTenantSetting] Missing tenantOrganization, fetching by tenantId:', existingSetting.tenantId);
-
-      try {
-        // Import the function to fetch tenant organizations
-        const { fetchTenantOrganizations } = await import('@/app/admin/tenant-management/organizations/ApiServerActions');
-
-        const orgResult = await fetchTenantOrganizations(
-          { page: 0, pageSize: 1 },
-          { tenantId: existingSetting.tenantId }
-        );
-
-        if (orgResult.data && orgResult.data.length > 0) {
-          tenantOrganization = orgResult.data[0];
-          console.log('[patchTenantSetting] Found tenantOrganization:', {
-            id: tenantOrganization.id,
-            organizationName: tenantOrganization.organizationName,
-            tenantId: tenantOrganization.tenantId
-          });
-        } else {
-          console.warn('[patchTenantSetting] No tenant organization found for tenantId:', existingSetting.tenantId);
-        }
-      } catch (orgError) {
-        console.error('[patchTenantSetting] Error fetching tenant organization:', orgError);
-      }
-    }
-
-    const payload = withTenantId({
-      ...stripDeprecatedSettingsIdentityFields(data),
-      id,
+    const patchPayload: Partial<TenantSettingsFormDTO> & { id: number; updatedAt: string } = {
+      ...stripped,
+      id: targetId,
       updatedAt: new Date().toISOString(),
-      // Include the tenantOrganization relationship (either existing or newly fetched)
-      tenantOrganization: tenantOrganization || null,
-    });
+    };
 
-    console.log('[patchTenantSetting] Final payload with tenantOrganization:', {
-      tenantId: payload.tenantId,
-      organizationId: tenantOrganization?.id,
-      organizationName: tenantOrganization?.organizationName,
-      hasOrganization: !!tenantOrganization
-    });
+    if ('defaultHeroImageUrlsJson' in stripped) {
+      patchPayload.defaultHeroImageUrlsJson = normalizeDefaultHeroImageUrlsJsonForApi(
+        stripped.defaultHeroImageUrlsJson
+      );
+    }
 
-    const response = await fetchWithJwtRetry(`${getApiBase()}/api/tenant-settings/${id}`, {
+    const payload = finalizeTenantSettingsWritePayload(
+      patchPayload as TenantSettingsDTO,
+      existingSetting
+    );
+
+    const response = await fetchWithJwtRetry(`${getApiBase()}/api/tenant-settings/${targetId}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/merge-patch+json',
@@ -337,12 +345,17 @@ export async function patchTenantSetting(
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Failed to update tenant setting: ${errorText}`);
+      console.error('[patchTenantSetting] Backend error:', {
+        status: response.status,
+        body: errorText.slice(0, 2000),
+      });
+      throwTenantSettingsApiError(errorText, 'update');
     }
 
     return await response.json();
   } catch (error) {
     console.error('Error patching tenant setting:', error);
+    if (error instanceof Error) throw error;
     throw new Error('Failed to update tenant setting');
   }
 }
@@ -352,7 +365,9 @@ export async function patchTenantSetting(
  */
 export async function deleteTenantSetting(id: number): Promise<void> {
   try {
-    const response = await fetchWithJwtRetry(`${getApiBase()}/api/tenant-settings/${id}`, {
+    const { targetId } = await resolveTenantSettingsForMutation(id);
+
+    const response = await fetchWithJwtRetry(`${getApiBase()}/api/tenant-settings/${targetId}`, {
       method: 'DELETE',
     });
 
@@ -364,140 +379,4 @@ export async function deleteTenantSetting(id: number): Promise<void> {
     console.error('Error deleting tenant setting:', error);
     throw new Error('Failed to delete tenant setting');
   }
-}
-
-/**
- * Upload email footer HTML file (client-side function)
- * Note: This must be called from client components, not server actions
- */
-export async function uploadEmailFooterHtmlClient(
-  file: File
-): Promise<{ url: string }> {
-  const baseUrl = getAppUrl();
-  const formData = new FormData();
-
-  formData.append('file', file);
-
-  const url = `${baseUrl}/api/proxy/tenant-settings/upload/email-footer-html`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    console.error(`[Client] Error uploading email footer HTML: ${response.status} ${response.statusText}`, errorBody);
-    throw new Error(`Failed to upload email footer HTML. Status: ${response.status}`);
-  }
-
-  const result = await response.json();
-  return {
-    url: result.emailFooterHtmlUrl || result.url || '',
-  };
-}
-
-/**
- * Upload tenant logo image (client-side function)
- * Note: This must be called from client components, not server actions
- */
-export async function uploadTenantLogoClient(
-  file: File
-): Promise<{ url: string }> {
-  const baseUrl = getAppUrl();
-  const formData = new FormData();
-
-  formData.append('file', file);
-
-  const url = `${baseUrl}/api/proxy/tenant-settings/upload/tenant-logo`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    console.error(`[Client] Error uploading tenant logo: ${response.status} ${response.statusText}`, errorBody);
-    throw new Error(`Failed to upload tenant logo. Status: ${response.status}`);
-  }
-
-  const result = await response.json();
-  return {
-    url: result.logoImageUrl || result.url || '',
-  };
-}
-
-/**
- * Upload email header image (client-side function)
- * Note: This must be called from client components, not server actions
- */
-export async function uploadEmailHeaderImageClient(
-  file: File
-): Promise<{ url: string }> {
-  const baseUrl = getAppUrl();
-  const formData = new FormData();
-
-  formData.append('file', file);
-
-  const url = `${baseUrl}/api/proxy/tenant-settings/upload/email-header-image`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    console.error(`[Client] Error uploading email header image: ${response.status} ${response.statusText}`, errorBody);
-    throw new Error(`Failed to upload email header image. Status: ${response.status}`);
-  }
-
-  const result = await response.json();
-  return {
-    url: result.emailHeaderImageUrl || result.url || '',
-  };
-}
-
-function tenantUploadQuery(tenantIdForUpload?: string): string {
-  if (!tenantIdForUpload?.trim()) return '';
-  return `?tenantId=${encodeURIComponent(tenantIdForUpload.trim())}`;
-}
-
-/**
- * Upload default homepage hero image (client-side function).
- * Optional tenantIdForUpload scopes S3 path for super-admin editing another tenant.
- */
-export async function uploadDefaultHeroImageClient(
-  file: File,
-  tenantIdForUpload?: string
-): Promise<{ url: string }> {
-  const baseUrl = getAppUrl();
-  const formData = new FormData();
-  formData.append('file', file);
-
-  const url = `${baseUrl}/api/proxy/tenant-settings/upload/default-hero-image${tenantUploadQuery(tenantIdForUpload)}`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    console.error(
-      `[Client] Error uploading default hero image: ${response.status} ${response.statusText}`,
-      errorBody
-    );
-    throw new Error(`Failed to upload hero image. Status: ${response.status}`);
-  }
-
-  const result = await response.json();
-  return {
-    url:
-      result.defaultHeroImageUrl ||
-      result.url ||
-      result.imageUrl ||
-      '',
-  };
 }

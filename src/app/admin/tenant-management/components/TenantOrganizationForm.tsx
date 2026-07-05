@@ -49,6 +49,7 @@ export default function TenantOrganizationForm({
       zipCode: initialData?.zipCode || '',
       country: initialData?.country || '',
       websiteUrl: initialData?.websiteUrl || '',
+      siteType: initialData?.siteType || 'EVENT_ORG',
       subscriptionPlan: initialData?.subscriptionPlan || '',
       subscriptionStatus: initialData?.subscriptionStatus || '',
       subscriptionStartDate: initialData?.subscriptionStartDate || '',
@@ -243,6 +244,27 @@ export default function TenantOrganizationForm({
               {errors.contactPhone && (
                 <p className="mt-1 text-sm text-red-600">{errors.contactPhone.message}</p>
               )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Site Type
+              </label>
+              <select
+                {...register('siteType')}
+                className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base"
+              >
+                <option value="EVENT_ORG">Event Organization</option>
+                <option value="SPORTS_TEAM">Sports Team</option>
+                <option value="MUSIC_BAND">Music Band</option>
+                <option value="CHURCH_ORG">Church Organization</option>
+                <option value="PERSONAL_PROFILE">Personal Profile</option>
+                <option value="HYBRID">Hybrid (Profile + Events)</option>
+                <option value="GAS_STATION">Gas Station (AI COO)</option>
+              </select>
+              <p className="mt-1 text-sm text-gray-500">
+                Changing the site type re-applies the matching homepage section presets to tenant settings
+              </p>
             </div>
           </div>
         </div>

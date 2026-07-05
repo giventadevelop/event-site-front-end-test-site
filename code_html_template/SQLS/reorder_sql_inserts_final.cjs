@@ -41,6 +41,15 @@ const TABLE_ORDER = [
   'tenant_settings',
   'tenant_email_addresses',
   'satellite_domain',
+  'public_profile', // FK tenant_organization + user_profile (personal profile site type)
+  'profile_writing',
+  'profile_achievement',
+  'profile_affiliation',
+  'profile_media_asset',
+  'gas_station_location', // FK tenant_organization; parent of the other gas_station_* tables
+  'gas_station_integration',
+  'gas_station_daily_metrics',
+  'gas_station_recommendation',
   'user_payment_transaction',
   'user_subscription',
   'user_task',

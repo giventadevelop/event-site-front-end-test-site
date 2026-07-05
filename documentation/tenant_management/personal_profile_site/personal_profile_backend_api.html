@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Profile Site — Backend API PRD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 48px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; }
+        h2 { font-size: 1.45em; border-left: 4px solid #0066cc; padding-left: 14px; margin: 28px 0 12px; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; padding: 12px 14px; text-align: left; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 6px; border-radius: 3px; border: 1px solid #b8d4e3; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-size: 0.82em; }
+        a { color: #0066cc; }
+    </style>
+</head>
+<body>
+    <h1>Personal Profile Site — Backend API</h1>
+    <p><a href="personal_profile_site_prd.html">← Index</a> | <strong>Full service PRD:</strong> <a href="backend_event_site_manager_service_prd.html">backend_event_site_manager_service_prd.html</a> | <strong>Batch jobs:</strong> <a href="backend_event_site_manager_batch_jobs_prd.html">backend_event_site_manager_batch_jobs_prd.html</a></p>
+    <div style="background:#d1ecf1;border-left:4px solid #0c5460;padding:14px;border-radius:6px;margin:16px 0;">
+        <p><strong>Handoff:</strong> Give the service team <code>backend_event_site_manager_service_prd.html</code> + <code>migrations/001_personal_profile_site.sql</code> + <code>personal_profile_attribute_catalog.md</code>. Give the batch team <code>backend_event_site_manager_batch_jobs_prd.html</code> after the service Liquibase ships.</p>
+    </div>
+    <h2>REST resources</h2>
+    <table>
+        <thead><tr><th>Resource</th><th>Methods</th><th>Notes</th></tr></thead>
+        <tbody>
+            <tr><td><code>/api/public-profiles</code></td><td>GET, POST</td><td>List (0–1 per tenant); POST creates singleton</td></tr>
+            <tr><td><code>/api/public-profiles/{id}</code></td><td>GET, PATCH, DELETE</td><td>Merge-patch JSON</td></tr>
+            <tr><td><code>/api/profile-writings</code></td><td>GET, POST</td><td>Criteria: status, slug, sort=displayOrder,asc</td></tr>
+            <tr><td><code>/api/profile-writings/{id}</code></td><td>GET, PATCH, DELETE</td><td></td></tr>
+            <tr><td><code>/api/profile-achievements</code></td><td>GET, POST</td><td></td></tr>
+            <tr><td><code>/api/profile-achievements/{id}</code></td><td>GET, PATCH, DELETE</td><td></td></tr>
+            <tr><td><code>/api/profile-affiliations</code></td><td>GET, POST</td><td></td></tr>
+            <tr><td><code>/api/profile-affiliations/{id}</code></td><td>GET, PATCH, DELETE</td><td></td></tr>
+            <tr><td><code>/api/profile-media-assets</code></td><td>GET, POST</td><td></td></tr>
+            <tr><td><code>/api/profile-media-assets/{id}</code></td><td>GET, PATCH, DELETE</td><td></td></tr>
+            <tr><td><code>/api/tenant-organizations/{id}</code></td><td>PATCH</td><td>Include <code>siteType</code>, <code>siteTemplateVersion</code></td></tr>
+        </tbody>
+    </table>
+    <h2>Criteria filters (JHipster)</h2>
+    <pre>tenantId.equals={tenantId}
+status.equals=PUBLISHED
+slug.equals=my-article
+sort=displayOrder,asc</pre>
+    <h2>DTO field naming (camelCase JSON)</h2>
+    <p>Match frontend <code>src/types/profileSite.ts</code>: <code>displayName</code>, <code>bioMarkdown</code>, <code>writingType</code>, <code>isPublished</code>, etc.</p>
+    <h2>Liquibase</h2>
+    <p>Copy <code>migrations/001_personal_profile_site.sql</code> into a changeset (e.g. <code>20260703120000_personal_profile_site.xml</code>).</p>
+</body>
+</html>

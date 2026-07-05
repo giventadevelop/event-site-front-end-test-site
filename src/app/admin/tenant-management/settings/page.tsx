@@ -1,11 +1,27 @@
 import { Suspense } from 'react';
-import { fetchTenantSettings } from './ApiServerActions';
+import { redirect } from 'next/navigation';
+import { fetchTenantSettings, fetchTenantSettingsByTenantId } from './ApiServerActions';
 import TenantSettingsList from '@/app/admin/tenant-management/components/TenantSettingsList';
 import AdminNavigation from '@/components/AdminNavigation';
 import Link from 'next/link';
+import {
+  getAppScopedTenantId,
+  isSatelliteTenantSettingsScope,
+} from '@/lib/tenantSettingsScope';
 
 export default async function TenantSettingsPage() {
-  // Fetch initial data for server-side rendering
+  if (isSatelliteTenantSettingsScope()) {
+    const configuredTenantId = getAppScopedTenantId();
+    const forConfiguredTenant = await fetchTenantSettingsByTenantId(configuredTenantId);
+    if (forConfiguredTenant?.id) {
+      redirect(`/admin/tenant-management/settings/${forConfiguredTenant.id}/edit`);
+    }
+    redirect(
+      `/admin/tenant-management/settings/new?tenantId=${encodeURIComponent(configuredTenantId)}`
+    );
+  }
+
+  // Fetch initial data for server-side rendering (primary domain — all tenants)
   let initialData = [];
   let initialTotalCount = 0;
   let error = null;
@@ -23,13 +39,8 @@ export default async function TenantSettingsPage() {
   }
 
   return (
-    <div className="w-full overflow-x-hidden box-border" style={{ paddingTop: '120px' }}>
-      {/* Navigation Section - Full Width, Separate Responsive Container */}
-      <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 mb-6 sm:mb-8">
-        <AdminNavigation />
-      </div>
-      {/* Main Content Section - Constrained Width */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
+    <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8" style={{ paddingTop: '120px' }}>
+      <AdminNavigation />
         {/* Page Header */}
         <div className="mb-4 sm:mb-6 md:mb-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -252,7 +263,6 @@ export default async function TenantSettingsPage() {
             </div>
           </div>
         </div>
-      </div>
       </div>
     </div>
   );

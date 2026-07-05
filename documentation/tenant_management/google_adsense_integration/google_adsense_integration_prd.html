@@ -27,9 +27,12 @@
 
     <h1>Google AdSense — Tenant Settings Integration</h1>
     <p class="doc-meta">
-        <strong>Frontend repo:</strong> mosc-temp &nbsp;|&nbsp;
+        <strong>Frontend repo:</strong> mosc-temp (satellite sites) &nbsp;|&nbsp;
+        <strong>Admin repo:</strong> event-site-manager (multi-tenant settings UI) &nbsp;|&nbsp;
         <strong>Backend repo:</strong> event-site-manager-service &nbsp;|&nbsp;
-        <strong>Schema baseline:</strong> <code>Latest_Schema_Post__Blob_Claude_12.sql</code>
+        <strong>Schema baseline:</strong> <code>Latest_Schema_Post__Blob_Claude_12.sql</code> &nbsp;|&nbsp;
+        <strong>Owner guide:</strong> <a href="google_adsense_owner_setup_guide.html">google_adsense_owner_setup_guide.html</a> &nbsp;|&nbsp;
+        <strong>Shared ID (giventa.com):</strong> <a href="google_adsense_shared_publisher_giventa.html">google_adsense_shared_publisher_giventa.html</a>
     </p>
 
     <div class="lead">
@@ -64,6 +67,11 @@
     <p>Endpoints unchanged: <code>GET/PATCH /api/tenant-settings</code> via existing Next.js proxy.</p>
 
     <h2>3. Admin workflow</h2>
+    <p>Configure per tenant from either admin app:</p>
+    <ul>
+        <li><strong>event-site-manager</strong> (primary, all tenants): <code>/admin/tenant-management/settings</code> → edit row → <strong>Integrations</strong> tab</li>
+        <li><strong>mosc-temp</strong> (satellite tenant admin): <code>/admin/tenant-management/settings/{id}/edit</code> → <strong>Integrations</strong> tab</li>
+    </ul>
     <ol>
         <li>Sign in as tenant admin → <code>/admin/tenant-management/settings/{id}/edit</code></li>
         <li>Open <strong>Integrations</strong> tab</li>
@@ -97,9 +105,13 @@
         <li><code>GoogleAdSenseRegion.tsx</code> — gates by tenant settings + region slot mapping</li>
     </ul>
 
-    <h2>6. ads.txt</h2>
-    <p>Static template: <code>public/ads.txt</code>. Replace <code>pub-0000000000000000</code> with your numeric publisher id before production.</p>
-    <pre>google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0</pre>
+    <h2>6. ads.txt &amp; site verification</h2>
+    <p>Static file: <code>public/ads.txt</code> in mosc-temp (satellite deploy).</p>
+    <p><strong>Model A — shared Publisher ID (giventa.com):</strong></p>
+    <pre>google.com, pub-1016198353275904, DIRECT, f08c47fec0942fa0</pre>
+    <p>Meta tag in <code>src/app/layout.tsx</code>: <code>&lt;meta name="google-adsense-account" content="ca-pub-1016198353275904"&gt;</code></p>
+    <p>Full snippets and admin values: <a href="google_adsense_shared_publisher_giventa.html">google_adsense_shared_publisher_giventa.html</a></p>
+    <p><strong>Model B — per-tenant ID:</strong> replace <code>pub-...</code> with that tenant’s numeric ID on their domain only.</p>
     <p>Must be served at <code>https://YOUR-SATELLITE-DOMAIN/ads.txt</code> for each AdSense-approved domain.</p>
 
     <h2>7. Content Security Policy (when enforced)</h2>
@@ -114,6 +126,7 @@
     </ul>
 
     <h2>8. Per-satellite rollout checklist</h2>
+    <p>For Google Dashboard steps, shared vs per-tenant Publisher ID models, and owner monetization strategy, see <a href="google_adsense_owner_setup_guide.html">google_adsense_owner_setup_guide.html</a>.</p>
     <ol>
         <li>Register satellite domain in Google AdSense; wait for approval</li>
         <li>Create ad units for each region; note slot IDs</li>

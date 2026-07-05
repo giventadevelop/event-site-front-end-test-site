@@ -1,6 +1,10 @@
 'use client';
 
 import React from 'react';
+import {
+  AdminHoverTooltipPortal,
+  useAdminHoverTooltip,
+} from '@/components/admin/AdminHoverTooltip';
 
 export interface Column<T> {
   key: keyof T | string;
@@ -27,6 +31,10 @@ export interface DataTableProps<T> {
   sortDirection?: 'asc' | 'desc';
   emptyMessage?: string;
   className?: string;
+  /** When set, show a hover tooltip on the first column with these field entries */
+  getTooltipEntries?: (item: T) => Record<string, unknown>;
+  /** Column index (0-based) where action buttons are embedded as a second row in the cell */
+  actionsInColumnIndex?: number;
 }
 
 const actionButtonClass = 'flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center transition-all duration-300 hover:scale-110';
@@ -45,10 +53,94 @@ export default function DataTable<T extends Record<string, any>>({
   sortDirection,
   emptyMessage = 'No data available',
   className = '',
+  getTooltipEntries,
+  actionsInColumnIndex,
 }: DataTableProps<T>) {
   const hasView = onView || getViewHref;
   const hasEdit = onEdit || getEditHref;
   const hasActions = hasView || hasEdit || onDelete;
+  const showSeparateActionsColumn = hasActions && actionsInColumnIndex === undefined;
+  const {
+    tooltipItem,
+    tooltipAnchor,
+    handleMouseEnter,
+    handleMouseLeave,
+    handleTooltipMouseEnter,
+    handleTooltipMouseLeave,
+    closeTooltip,
+  } = useAdminHoverTooltip<T>();
+
+  const renderActionButtons = (item: T) => (
+    <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
+      {hasView && (getViewHref ? (
+        <a
+          href={getViewHref(item)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${actionButtonClass} bg-green-100 hover:bg-green-200`}
+          title="View (opens in new tab)"
+          aria-label="View (opens in new tab)"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+        </a>
+      ) : (
+        <button
+          onClick={() => onView?.(item)}
+          className={`${actionButtonClass} bg-green-100 hover:bg-green-200`}
+          title="View"
+          aria-label="View"
+          type="button"
+        >
+          <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+        </button>
+      ))}
+      {hasEdit && (getEditHref ? (
+        <a
+          href={getEditHref(item)}
+          className={`${actionButtonClass} bg-blue-100 hover:bg-blue-200`}
+          title="Edit"
+          aria-label="Edit"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <svg className="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </a>
+      ) : (
+        <button
+          onClick={() => onEdit?.(item)}
+          className={`${actionButtonClass} bg-blue-100 hover:bg-blue-200`}
+          title="Edit"
+          aria-label="Edit"
+          type="button"
+        >
+          <svg className="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </button>
+      ))}
+      {onDelete && (
+        <button
+          onClick={() => onDelete(item)}
+          className="flex-shrink-0 w-14 h-14 rounded-xl bg-red-100 hover:bg-red-200 flex items-center justify-center transition-all duration-300 hover:scale-110"
+          title="Delete"
+          aria-label="Delete"
+          type="button"
+        >
+          <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+      )}
+    </div>
+  );
   const handleSort = (key: string) => {
     if (!onSort) return;
 
@@ -193,7 +285,7 @@ export default function DataTable<T extends Record<string, any>>({
                     </div>
                   </th>
                 ))}
-                {hasActions && (
+                {showSeparateActionsColumn && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
@@ -204,7 +296,7 @@ export default function DataTable<T extends Record<string, any>>({
               {data.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={columns.length + (hasActions ? 1 : 0)}
+                    colSpan={columns.length + (showSeparateActionsColumn ? 1 : 0)}
                     className="px-6 py-12 text-center text-gray-500"
                   >
                     {emptyMessage}
@@ -217,87 +309,32 @@ export default function DataTable<T extends Record<string, any>>({
                     className={`hover:bg-gray-50 ${hasView ? 'cursor-pointer' : ''}`}
                     onClick={() => hasView && (getViewHref ? window.open(getViewHref(item), '_blank', 'noopener,noreferrer') : onView?.(item))}
                   >
-                    {columns.map((column) => (
+                    {columns.map((column, colIndex) => (
                       <td
                         key={String(column.key)}
-                        className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${column.className || ''}`}
+                        className={`px-6 py-4 text-sm text-gray-900 ${colIndex === 0 && getTooltipEntries ? '' : 'whitespace-nowrap'} ${column.className || ''}`}
+                        onMouseEnter={
+                          colIndex === 0 && getTooltipEntries
+                            ? (e) => handleMouseEnter(item, e)
+                            : undefined
+                        }
+                        onMouseLeave={
+                          colIndex === 0 && getTooltipEntries ? handleMouseLeave : undefined
+                        }
                       >
-                        {column.render
-                          ? column.render(item[column.key], item)
-                          : item[column.key]}
+                        <span className="block">
+                          {column.render
+                            ? column.render(item[column.key], item)
+                            : item[column.key]}
+                        </span>
+                        {hasActions && actionsInColumnIndex === colIndex && (
+                          <span className="block mt-2">{renderActionButtons(item)}</span>
+                        )}
                       </td>
                     ))}
-                    {hasActions && (
+                    {showSeparateActionsColumn && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                          {hasView && (getViewHref ? (
-                            <a
-                              href={getViewHref(item)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={`${actionButtonClass} bg-green-100 hover:bg-green-200`}
-                              title="View (opens in new tab)"
-                              aria-label="View (opens in new tab)"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                            </a>
-                          ) : (
-                            <button
-                              onClick={() => onView?.(item)}
-                              className={`${actionButtonClass} bg-green-100 hover:bg-green-200`}
-                              title="View"
-                              aria-label="View"
-                            >
-                              <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                            </button>
-                          ))}
-                          {hasEdit && (getEditHref ? (
-                            <a
-                              href={getEditHref(item)}
-                              className={`${actionButtonClass} bg-blue-100 hover:bg-blue-200`}
-                              title="Edit"
-                              aria-label="Edit"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <svg className="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                            </a>
-                          ) : (
-                            <button
-                              onClick={() => onEdit?.(item)}
-                              className={`${actionButtonClass} bg-blue-100 hover:bg-blue-200`}
-                              title="Edit"
-                              aria-label="Edit"
-                            >
-                              <svg className="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                            </button>
-                          ))}
-                          {onDelete && (
-                            <button
-                              onClick={() => {
-                                console.log('🗑️ Delete button clicked for item:', item);
-                                onDelete(item);
-                              }}
-                              className="flex-shrink-0 w-14 h-14 rounded-xl bg-red-100 hover:bg-red-200 flex items-center justify-center transition-all duration-300 hover:scale-110"
-                              title="Delete"
-                              aria-label="Delete"
-                            >
-                              <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          )}
-                        </div>
+                        {renderActionButtons(item)}
                       </td>
                     )}
                   </tr>
@@ -307,6 +344,15 @@ export default function DataTable<T extends Record<string, any>>({
           </table>
         </div>
       </div>
+      {getTooltipEntries && tooltipItem && (
+        <AdminHoverTooltipPortal
+          entries={getTooltipEntries(tooltipItem)}
+          anchorRect={tooltipAnchor}
+          onClose={closeTooltip}
+          onMouseEnter={handleTooltipMouseEnter}
+          onMouseLeave={handleTooltipMouseLeave}
+        />
+      )}
     </>
   );
 }

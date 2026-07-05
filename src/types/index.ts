@@ -1,3 +1,7 @@
+import type { TenantSiteType } from './profileSite';
+
+export type { TenantSiteType };
+
 export interface UserTaskDTO {
   id: number;
   tenantId?: string;
@@ -681,6 +685,8 @@ export interface TenantOrganizationDTO {
   subscriptionEndDate?: string;   // date (YYYY-MM-DD)
   monthlyFeeUsd?: number;
   stripeCustomerId?: string;
+  /** Stripe subscription id for the tenant platform subscription (gas station billing) */
+  stripeSubscriptionId?: string;
   description?: string;
   addressLine1?: string;
   addressLine2?: string;
@@ -689,6 +695,10 @@ export interface TenantOrganizationDTO {
   zipCode?: string;
   country?: string;
   websiteUrl?: string;
+  /** Product archetype: EVENT_ORG | SPORTS_TEAM | MUSIC_BAND | CHURCH_ORG | PERSONAL_PROFILE | HYBRID | GAS_STATION */
+  siteType?: TenantSiteType;
+  /** Optional theme/template variant within a siteType */
+  siteTemplateVersion?: string;
   isActive?: boolean;
   createdAt: string; // date-time
   updatedAt: string; // date-time
@@ -728,12 +738,32 @@ export interface TenantSettingsDTO {
   defaultHeroDisplayMode?: 'slideshow' | 'random' | 'single';
   defaultHeroIncludeWithEvents?: boolean;
   defaultHeroMaxDisplayCount?: number;
+  /** When true, show event hero images in the homepage hero section */
+  displayEventHeroImages?: boolean;
   /** When true, render Google AdSense regions on public satellite pages */
   enableGoogleAdsense?: boolean;
   /** AdSense publisher ID (ca-pub-...) */
   googleAdsensePublisherId?: string;
   /** JSON map of layout region id → ad slot id */
   googleAdsensePlacementsJson?: string;
+  // Personal profile homepage section flags (PERSONAL_PROFILE / HYBRID site types)
+  showPublicProfileHeroSection?: boolean;
+  showProfileWritingsSection?: boolean;
+  showProfileAchievementsSection?: boolean;
+  showProfileAffiliationsSection?: boolean;
+  showProfileMediaDownloadsSection?: boolean;
+  showProfileContactSection?: boolean;
+  // Gas station COO module (GAS_STATION site type)
+  /** Master on/off for the gas station admin module for this tenant */
+  enableGasStationModule?: boolean;
+  /** Base URL of the external AI engine deployment (invoked server-side only) */
+  gasAiEngineBaseUrl?: string;
+  /** Secrets-manager reference to the AI engine API key (never the raw key) */
+  gasAiEngineApiKeyRef?: string;
+  /** Token the AI engine presents on write-back callbacks */
+  gasAiEngineWebhookToken?: string;
+  /** Local hour (0-23) the morning brief is expected/delivered */
+  gasDailyBriefHourLocal?: number;
   // Deprecated identity fields (read fallback only — use tenant_organization)
   /** @deprecated v2.0 — use tenant_organization.addressLine1 */
   addressLine1?: string;

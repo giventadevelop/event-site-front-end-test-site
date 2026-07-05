@@ -5,7 +5,12 @@ import { getTenantId, getApiBaseUrl } from '@/lib/env';
 import type { EventMediaDTO } from '@/types';
 import { parseHierarchyDescription } from '@/lib/officialDocumentHierarchy';
 import { resolveOfficialDocumentDownloadUrl } from '@/lib/officialDocumentDownload';
-import { matchesDownloadSearchQuery } from '@/lib/downloads/downloadSearch';
+import {
+  compareDownloadsNewestFirst,
+  extractDownloadItemYears,
+  matchesDownloadSearchQuery,
+  matchesDownloadYearFilter,
+} from '@/lib/downloads/downloadSearch';
 import { deduplicateOfficialDocumentTreeItems } from '@/lib/downloads/deduplicateOfficialDocuments';
 import {
   buildOfficialDocumentThumbnailCacheKey,
@@ -155,15 +160,37 @@ async function fetchAllPublicOfficialDocumentsRaw(input?: {
   return all;
 }
 
+function sortDownloadTreeItemsNewestFirst(
+  items: PublicOfficialDocumentTreeItem[]
+): PublicOfficialDocumentTreeItem[] {
+  return [...items].sort((a, b) =>
+    compareDownloadsNewestFirst(
+      { ...toDownloadSearchItem(a), priorityRanking: a.priorityRanking },
+      { ...toDownloadSearchItem(b), priorityRanking: b.priorityRanking }
+    )
+  );
+}
+
+function toDownloadSearchItem(item: PublicOfficialDocumentTreeItem): Parameters<typeof extractDownloadItemYears>[0] {
+  return {
+    title: item.title,
+    fileName: item.fileName,
+    treePath: item.treePath,
+    pathSegments: item.pathSegments,
+    categoryLabel: item.categoryLabel,
+    description: item.description,
+    officialDocumentYear: item.officialDocumentYear,
+  };
+}
+
 function extractYearOptionsFromDocs(docs: EventMediaDTO[], categoryId?: number): number[] {
   const years = new Set<number>();
   for (const row of docs) {
     if (categoryId && row.officialDocumentCategoryId !== categoryId) {
       continue;
     }
-    const y = row.officialDocumentYear;
-    if (typeof y === 'number' && Number.isFinite(y) && y >= 1900 && y <= 2100) {
-      years.add(y);
+    for (const year of extractDownloadItemYears(toDownloadSearchItem(mapEventMediaToTreeItem(row)))) {
+      years.add(year);
     }
   }
   return [...years].sort((a, b) => b - a);
@@ -232,31 +259,16 @@ export async function fetchPublicOfficialDocumentsTreeServer(input?: {
       });
       const filteredDocs = allDocs.filter((doc) => {
         const item = mapEventMediaToTreeItem(doc);
-        if (input?.year && item.officialDocumentYear !== input.year) {
+        const searchItem = toDownloadSearchItem(item);
+        if (input?.year && !matchesDownloadYearFilter(searchItem, input.year)) {
           return false;
         }
-        return matchesDownloadSearchQuery(
-          {
-            title: item.title,
-            fileName: item.fileName,
-            treePath: item.treePath,
-            pathSegments: item.pathSegments,
-            categoryLabel: item.categoryLabel,
-            description: item.description,
-            officialDocumentYear: item.officialDocumentYear,
-          },
-          searchQuery
-        );
+        return matchesDownloadSearchQuery(searchItem, searchQuery);
       });
 
-      filteredDocs.sort((a, b) => {
-        const pa = a.displayPriority ?? a.priorityRanking ?? 999999;
-        const pb = b.displayPriority ?? b.priorityRanking ?? 999999;
-        if (pa !== pb) return pa - pb;
-        return String(a.title || '').localeCompare(String(b.title || ''));
-      });
-
-      const dedupedDocs = deduplicateOfficialDocumentTreeItems(filteredDocs.map(mapEventMediaToTreeItem));
+      const dedupedDocs = sortDownloadTreeItemsNewestFirst(
+        deduplicateOfficialDocumentTreeItems(filteredDocs.map(mapEventMediaToTreeItem))
+      );
       const totalElements = dedupedDocs.length;
       const totalPages = Math.max(1, Math.ceil(totalElements / size));
       const currentPage = Math.min(page, totalPages - 1);
@@ -284,23 +296,16 @@ export async function fetchPublicOfficialDocumentsTreeServer(input?: {
       categoryId: input?.categoryId,
     });
     const filteredDocs = allDocs.filter((doc) => {
-      if (input?.year) {
-        const item = mapEventMediaToTreeItem(doc);
-        if (item.officialDocumentYear !== input.year) {
-          return false;
-        }
+      if (!input?.year) {
+        return true;
       }
-      return true;
+      const item = mapEventMediaToTreeItem(doc);
+      return matchesDownloadYearFilter(toDownloadSearchItem(item), input.year);
     });
 
-    filteredDocs.sort((a, b) => {
-      const pa = a.displayPriority ?? a.priorityRanking ?? 999999;
-      const pb = b.displayPriority ?? b.priorityRanking ?? 999999;
-      if (pa !== pb) return pa - pb;
-      return String(a.title || '').localeCompare(String(b.title || ''));
-    });
-
-    const dedupedDocs = deduplicateOfficialDocumentTreeItems(filteredDocs.map(mapEventMediaToTreeItem));
+    const dedupedDocs = sortDownloadTreeItemsNewestFirst(
+      deduplicateOfficialDocumentTreeItems(filteredDocs.map(mapEventMediaToTreeItem))
+    );
     const totalElements = dedupedDocs.length;
     const totalPages = Math.max(1, Math.ceil(totalElements / size));
     const currentPage = Math.min(page, totalPages - 1);

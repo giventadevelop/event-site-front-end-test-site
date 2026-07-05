@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gas Station COO &amp; Site Types — Requirements &amp; Implementation</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #1f2937; max-width: 1100px; margin: 0 auto; padding: 24px; line-height: 1.55; }
+  h1 { color: #1e3a8a; border-bottom: 3px solid #2563eb; padding-bottom: 8px; }
+  h2 { color: #1e40af; margin-top: 36px; border-bottom: 1px solid #dbeafe; padding-bottom: 4px; }
+  h3 { color: #374151; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid #d1d5db; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #eff6ff; color: #1e3a8a; }
+  code { background: #f3f4f6; padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+  .status-done { color: #047857; font-weight: 600; }
+  .status-pending { color: #b45309; font-weight: 600; }
+  .callout { background: #fefce8; border-left: 4px solid #eab308; padding: 10px 14px; margin: 14px 0; }
+  .meta { color: #6b7280; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<h1>Gas Station COO &amp; Tenant Site Types — Requirements &amp; Implementation Record</h1>
+<p class="meta">Version 1.0 · 2026-07-04 · Repos: <code>mosc-temp</code> (satellite frontend), <code>event-site-manager</code> (platform admin), <code>event-site-manager-service</code> (Spring Boot backend)</p>
+
+<h2>1. Business requirement</h2>
+<p>Integrate the <strong>AI Gas Station COO</strong> concept (blueprint at <code>E:\Categories\Categories\Software_Projects\Gas_Station_AI</code>) into the multi-tenant event-site platform: each gas-station client (single owner or chain) is onboarded as a tenant; client management, subscription billing, and the daily-brief dashboard live in this platform, while the AI/LLM engine is a separately deployed service that writes curated results back via the tenant-scoped REST API. Additionally, complete the pending <strong>personal-profile site type</strong> integration.</p>
+
+<h2>2. Site-type architecture (two layers)</h2>
+<table>
+  <tr><th>Layer</th><th>Where stored</th><th>What it controls</th></tr>
+  <tr><td>Archetype</td><td><code>tenant_organization.site_type</code></td><td><code>EVENT_ORG | SPORTS_TEAM | MUSIC_BAND | CHURCH_ORG | PERSONAL_PROFILE | HYBRID | GAS_STATION</code></td></tr>
+  <tr><td>Homepage layout</td><td><code>tenant_settings</code> boolean flags</td><td>Which public sections render; auto-set by site-type presets (<code>src/lib/siteTypePresets.ts</code>)</td></tr>
+  <tr><td>Module enablement</td><td><code>tenant_settings.enable_gas_station_module</code></td><td>Gates the gas-station admin module + AI engine config</td></tr>
+</table>
+
+<h2>3. Multi-location (chain) requirements</h2>
+<ul>
+  <li>One tenant = one paying customer owning <strong>1..N</strong> <code>gas_station_location</code> rows (own id, code unique per tenant, full address, geo lat/long, region label, timezone, capability flags).</li>
+  <li>Chain-level recommendations: <code>gas_station_recommendation.station_id</code> is nullable — <code>NULL</code> = cross-store item.</li>
+  <li>Rollups are computed (SUM/GROUP BY), never stored; dashboards offer an "All stations" view plus per-station scope; a Compare view ranks stores.</li>
+</ul>
+
+<h2>4. Subscription &amp; billing requirements (captured 2026-07-04)</h2>
+<table>
+  <tr><th>#</th><th>Requirement</th><th>Decision</th></tr>
+  <tr><td>B1</td><td>Price scales per location, not flat per tenant</td><td>Stripe subscription <strong>quantity = billable location count</strong></td></tr>
+  <tr><td>B2</td><td>Volume discount for chains (one compounded price)</td><td><strong>Graduated tiers</strong>: 1–3 @ $199, 4–10 @ $149, 11+ @ $99 per location/month (placeholders; mirror in Stripe Price)</td></tr>
+  <tr><td>B3</td><td>Owner chooses which locations are subscribed</td><td><code>gas_station_location.included_in_subscription</code> toggle; quantity changes prorated by Stripe</td></tr>
+  <tr><td>B4</td><td>One subscription per tenant</td><td><code>tenant_organization.stripe_subscription_id</code> (customer id already existed)</td></tr>
+  <tr><td>B5</td><td>Cards, wallets, and bank (ACH) payment</td><td>Stripe Checkout with <code>card</code>, <code>link</code>, and <code>us_bank_account</code> (flag <code>STRIPE_GAS_ENABLE_ACH</code>)</td></tr>
+  <tr><td>B6</td><td>Mobile-friendly subscribe/manage</td><td>Stripe-hosted Checkout + Customer Portal (mobile-optimized); responsive dashboard UI</td></tr>
+  <tr><td>B7</td><td>Provider selection (Stripe vs Zoho Billing / Chargebee / Paddle)</td><td><strong>Stripe Billing</strong> — already integrated end-to-end in this codebase; third parties add a second system of record with no missing capability. Full analysis: <code>gas_station_subscription_billing.md</code></td></tr>
+</table>
+
+<h2>5. Implementation record</h2>
+<h3>5.1 Database (canonical schema <code>Latest_Schema_Post__Blob_Claude_12.sql</code> — pure CREATE-based DDL, no ALTER statements)</h3>
+<table>
+  <tr><th>Object</th><th>Purpose</th><th>Status</th></tr>
+  <tr><td><code>tenant_organization.site_type</code> + <code>site_template_version</code> + CHECK (7 values)</td><td>Archetype</td><td class="status-done">Done · inline</td></tr>
+  <tr><td><code>tenant_organization.stripe_subscription_id</code></td><td>Tenant platform subscription (B4)</td><td class="status-done">Done · inline</td></tr>
+  <tr><td><code>tenant_settings</code>: 6 profile flags, <code>enable_gas_station_module</code>, <code>gas_ai_engine_*</code>, <code>gas_daily_brief_hour_local</code></td><td>Presets + AI engine config</td><td class="status-done">Done · inline</td></tr>
+  <tr><td><code>public_profile</code>, <code>profile_writing</code>, <code>profile_achievement</code>, <code>profile_affiliation</code>, <code>profile_media_asset</code></td><td>Personal-profile site content</td><td class="status-done">Done</td></tr>
+  <tr><td><code>gas_station_location</code> (incl. <code>region</code>, <code>latitude/longitude</code>, <code>included_in_subscription</code>), <code>gas_station_integration</code>, <code>gas_station_daily_metrics</code> (unique station+date), <code>gas_station_recommendation</code> (nullable station_id)</td><td>Gas module</td><td class="status-done">Done</td></tr>
+  <tr><td>Sequences + setval sync entries for all 9 tables</td><td>Per-table id sequences</td><td class="status-done">Done</td></tr>
+</table>
+<p>Incremental migrations (idempotent, applied to local Docker Postgres): <code>migrations/001_gas_station_site.sql</code>, <code>migrations/002_gas_station_billing.sql</code>; profile: <code>../personal_profile_site/migrations/001_personal_profile_site.sql</code>.</p>
+
+<h3>5.2 Backend (<code>event-site-manager-service</code>)</h3>
+<ul>
+  <li><code>SiteType</code> enum incl. <code>GAS_STATION</code>; <code>TenantSettings</code> gas fields; <code>TenantOrganization.stripeSubscriptionId</code>; <code>GasStationLocation.includedInSubscription</code>.</li>
+  <li>Four full vertical slices (entity → repository → service → criteria/queryService → DTO → mapper → REST) at <code>/api/gas-station-locations|-integrations|-daily-metrics|-recommendations</code>; profile slices pre-existing.</li>
+  <li>Liquibase: <code>20260703120000_personal_profile_site.xml</code>, <code>20260703130000_gas_station_module.xml</code>, <code>20260704120000_gas_station_billing.xml</code> (all changesets have <code>MARK_RAN</code> preconditions). Compile verified.</li>
+</ul>
+
+<h3>5.3 Satellite frontend (<code>mosc-temp</code> — one tenant per deployment)</h3>
+<ul>
+  <li>Types (<code>profileSite.ts</code>, <code>gasStation.ts</code>, DTO fields), presets lib, 9 proxy route pairs.</li>
+  <li>Tenant-management: Site Type dropdown (auto-applies presets on change), profile section toggles, Gas Station AI Engine panel.</li>
+  <li><code>/admin/gas-station</code>: daily brief dashboard (date + station switcher, All-stations rollup, chain-level recs first, Accept/Dismiss/Done + owner feedback), Stations CRUD, Integrations registry, Compare, <strong>Billing</strong> (§5.5).</li>
+  <li><code>/admin/profile-site</code> + public <code>ProfileHomeSections</code> gated by settings flags; admin hub tiles for both modules.</li>
+  <li>Demo seed: tenant <code>demo_gas_station_001</code> (3 stations, 7 days of metrics, 6-item morning brief incl. 2 chain-level).</li>
+</ul>
+
+<h3>5.4 Platform admin (<code>event-site-manager</code> — all tenants, tenant passed on demand)</h3>
+<ul>
+  <li>Same types/presets/proxies; Site Type on org form; preset action takes an <strong>explicit tenantId</strong> (never env).</li>
+  <li><code>/admin/gas-station</code> and <code>/admin/profile-site</code> pages driven by the <code>?tenant=</code> selector; with no tenant selected they show a <strong>site-type tenant picker</strong> (all tenants whose site type matches the module, Select → scopes the page).</li>
+  <li>Admin dashboard + navigation buttons: <em>Personal Profile</em>, <em>Gas Stations</em>.</li>
+</ul>
+
+<h3>5.5 Billing dashboard (<code>/admin/gas-station/billing</code> in mosc-temp)</h3>
+<ul>
+  <li>Current plan summary; graduated pricing tier cards; per-location <em>Included</em> toggles with live monthly-total preview (<code>src/lib/gasStationPricing.ts</code>).</li>
+  <li>Actions via <code>/api/stripe/gas-station-billing</code>: <code>checkout</code> (Stripe Checkout, mode subscription, quantity = billable count), <code>portal</code> (Customer Portal), <code>sync-quantity</code> (prorated update). Auto-creates the tenant's Stripe customer.</li>
+  <li>Go-live setup: create graduated Price in Stripe; env <code>STRIPE_GAS_STATION_PRICE_ID</code>, <code>STRIPE_GAS_ENABLE_ACH=true</code>; enable ACH + Customer Portal in Stripe settings.</li>
+</ul>
+
+<h2>6. Out of scope / next phases</h2>
+<table>
+  <tr><th>Item</th><th>Phase</th></tr>
+  <tr><td>External AI engine (connectors, forecasting, LLM chat) — separate deployment writing back via service JWT</td><td class="status-pending">Separate project</td></tr>
+  <tr><td>Stripe webhook sync of <code>customer.subscription.*</code> onto <code>tenant_organization</code>; auto quantity-sync on toggle</td><td class="status-pending">Phase 2</td></tr>
+  <tr><td>Per-station manager logins / role-based station visibility (requires enabling Clerk auth)</td><td class="status-pending">Phase 2+</td></tr>
+  <tr><td>Enterprise committed-spend invoicing; per-tenant negotiated price overrides</td><td class="status-pending">Phase 3</td></tr>
+</table>
+
+<div class="callout"><strong>Operational note:</strong> uncommitted work in these repos was twice moved aside by an external <code>git stash push -m "build-script-auto-stash"</code> (stashes of 2026-07-03 17:08 and 20:28). All affected changes were re-applied and are now committed. If a build/deploy script auto-stashes, it must <code>git stash pop</code> on completion — or the repos should be committed before running it.</div>
+
+<h2>7. Related documents</h2>
+<ul>
+  <li><code>README.md</code> — folder index and implementation status</li>
+  <li><code>gas_station_site_feasibility.md</code> — architecture, multi-station design (§4.4), loops, risks</li>
+  <li><code>gas_station_subscription_billing.md</code> — full billing requirement + provider analysis</li>
+  <li><code>../personal_profile_site/</code> — personal-profile PRDs and migration</li>
+</ul>
+
+</body>
+</html>

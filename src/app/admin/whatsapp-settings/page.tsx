@@ -6,7 +6,7 @@ import WhatsAppSettingsFormSimple from './WhatsAppSettingsFormSimple';
 
 export default async function WhatsAppSettingsPage() {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style={{ paddingTop: '160px' }}>
       {/* Skip Navigation Link for Screen Readers */}
       <a
         href="#main-content"

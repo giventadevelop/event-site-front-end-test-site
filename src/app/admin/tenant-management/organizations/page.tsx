@@ -5,13 +5,8 @@ import Link from 'next/link';
 
 export default async function TenantOrganizationsPage() {
   return (
-    <div className="w-full overflow-x-hidden box-border" style={{ paddingTop: '120px' }}>
-      {/* Navigation Section - Full Width, Separate Responsive Container */}
-      <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 mb-6 sm:mb-8">
-        <AdminNavigation />
-      </div>
-      {/* Main Content Section - Constrained Width */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
+    <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8" style={{ paddingTop: '120px' }}>
+      <AdminNavigation />
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-4 md:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
             <div>
@@ -33,7 +28,6 @@ export default async function TenantOrganizationsPage() {
             <TenantOrganizationList />
           </Suspense>
         </div>
-      </div>
     </div>
   );
 }

@@ -20,9 +20,11 @@ import {
 } from '@/components/ui/alert-dialog';
 import { formatDownloadCardTitle, getDownloadCardSubtitle } from '@/lib/downloads/formatDownloadCardTitle';
 import {
+  buildDownloadCardMetaLine,
   matchesDownloadSearchQuery,
   resolveDownloadCardDisplayTitle,
 } from '@/lib/downloads/downloadSearch';
+import { triggerOfficialDocumentProxyDownload } from '@/lib/officialDocumentDownload';
 
 const BANNER_DESCRIPTION =
   'Official documents available for download. Browse, filter, and download.';
@@ -152,16 +154,6 @@ function DownloadErrorDialog({
   );
 }
 
-function startOfficialDocumentDownload(downloadUrl: string, fileName: string) {
-  const anchor = document.createElement('a');
-  anchor.href = downloadUrl;
-  anchor.download = fileName;
-  anchor.rel = 'noopener noreferrer';
-  document.body.appendChild(anchor);
-  anchor.click();
-  document.body.removeChild(anchor);
-}
-
 function DownloadCard({
   file,
   index,
@@ -204,9 +196,13 @@ function DownloadCard({
   });
   const cardSubtitle = getCardSubtitle(file);
   const displayIndex = String(index + 1).padStart(2, '0');
-  const metaLine = [file.categoryLabel, file.officialDocumentYear ? `Year ${file.officialDocumentYear}` : null]
-    .filter(Boolean)
-    .join(' · ');
+  const metaLine = buildDownloadCardMetaLine({
+    categoryLabel: file.categoryLabel,
+    officialDocumentYear: file.officialDocumentYear,
+    title: file.title,
+    fileName: file.fileName,
+    pathSegments: file.pathSegments,
+  });
 
   return (
     <li className="download-entry-card group grid h-full grid-rows-subgrid overflow-hidden rounded-xl border border-burgundy/15 bg-white shadow-[rgba(50,50,93,0.18)_0px_8px_20px_-4px,rgba(0,0,0,0.2)_0px_4px_10px_-4px] transition-all duration-300 hover:border-burgundy/30 hover:shadow-[rgba(50,50,93,0.22)_0px_12px_28px_-4px,rgba(0,0,0,0.22)_0px_6px_14px_-4px] [grid-row:span_4]">
@@ -268,9 +264,6 @@ function DownloadCard({
       </div>
 
       <footer className="border-t border-burgundy/10 bg-parchment/40 px-5 py-4">
-        <p className="mb-3 font-syro-display text-xs font-semibold uppercase tracking-widest text-syro-blue">
-          Download
-        </p>
         {file.downloadUrl ? (
           <button
             type="button"
@@ -1029,8 +1022,8 @@ export default function DownloadsPageClient({
     };
   }, []);
 
-  const handleDownload = React.useCallback(async (file: TreeItem) => {
-    if (!file.downloadUrl) {
+  const handleDownload = React.useCallback((file: TreeItem) => {
+    if (file.id == null) {
       return;
     }
 
@@ -1038,25 +1031,7 @@ export default function DownloadsPageClient({
     setDownloadError(null);
 
     try {
-      const jsonUrl = file.downloadUrl.includes('?')
-        ? `${file.downloadUrl}&format=json`
-        : `${file.downloadUrl}?format=json`;
-
-      const res = await fetch(jsonUrl, { method: 'GET', cache: 'no-store' });
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        const details =
-          typeof errBody?.error === 'string' ? errBody.error : 'Could not prepare the download link.';
-        throw new Error(details);
-      }
-
-      const payload = (await res.json()) as { downloadUrl?: string };
-      const freshUrl = payload.downloadUrl?.trim();
-      if (!freshUrl) {
-        throw new Error('No download URL was returned for this file.');
-      }
-
-      startOfficialDocumentDownload(freshUrl, file.fileName);
+      triggerOfficialDocumentProxyDownload(file.id, file.fileName);
     } catch (error) {
       setDownloadError({
         fileName: file.fileName,
@@ -1135,11 +1110,11 @@ export default function DownloadsPageClient({
                         </span>
                       </>
                     ) : null}
-                    . Lower priority values are shown first.
+                    . Newest documents (by year) are shown first.
                   </>
                 ) : (
                   <>
-                    Browse official documents by year and category. Lower priority values are shown first.
+                    Browse official documents by year and category. Newest documents (by year) are shown first.
                   </>
                 )}
               </div>

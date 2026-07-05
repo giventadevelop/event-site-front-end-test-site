@@ -296,7 +296,7 @@ export default function TenantEmailAddressesPage() {
 
   const columns: Column<TenantEmailAddressDTO>[] = [
     { key: 'emailType', label: 'Type', sortable: true },
-    { key: 'emailAddress', label: 'From Email Address', sortable: true },
+    { key: 'emailAddress', label: 'From Email / Actions', sortable: true },
     { key: 'copyToEmailAddress', label: 'Copy-To Address', sortable: true },
     { key: 'replyToEmailAddress', label: 'Reply-To Address', sortable: true },
     { key: 'displayName', label: 'Display Name', sortable: true },
@@ -332,7 +332,7 @@ export default function TenantEmailAddressesPage() {
 
   if (loading && items.length === 0) {
     return (
-      <div className="max-w-5xl mx-auto px-8 py-8" style={{ paddingTop: '180px' }}>
+      <div className="max-w-5xl mx-auto px-8 py-8" style={{ paddingTop: '120px' }}>
         <AdminNavigation currentPage="tenant-email-addresses" />
         <div className="flex justify-center items-center h-64">
           <div className="text-center">
@@ -345,7 +345,7 @@ export default function TenantEmailAddressesPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-8 py-8" style={{ paddingTop: '180px' }}>
+    <div className="max-w-5xl mx-auto px-8 py-8" style={{ paddingTop: '120px' }}>
       <AdminNavigation currentPage="tenant-email-addresses" />
 
       <div className="bg-white rounded-lg shadow-md p-6">
@@ -417,6 +417,21 @@ export default function TenantEmailAddressesPage() {
           loading={loading}
           onEdit={openEditModal}
           onDelete={openDeleteModal}
+          actionsInColumnIndex={1}
+          getTooltipEntries={(item) => ({
+            id: item.id,
+            emailType: item.emailType,
+            emailAddress: item.emailAddress,
+            copyToEmailAddress: item.copyToEmailAddress,
+            replyToEmailAddress: item.replyToEmailAddress,
+            displayName: item.displayName,
+            isActive: item.isActive,
+            isDefault: item.isDefault,
+            description: item.description,
+            tenantId: item.tenantId,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+          })}
           sortKey={sortKey}
           sortDirection={sortDirection}
           onSort={(key, direction) => {

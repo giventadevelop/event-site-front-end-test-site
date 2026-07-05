@@ -117,7 +117,7 @@ export default function MoscRedesignSaintsCarousel({ saints }: MoscRedesignSaint
         >
           {saints.map((saint) => (
             <Link
-              key={saint.name}
+              key={saint.href}
               href={saint.href}
               className="about-us-saints-slide group relative shrink-0 rounded-xl overflow-hidden aspect-[6/5] block border border-burgundy/20 bg-parchment-deep hover:border-burgundy/60 transition-all duration-300 hover:shadow-xl hover:shadow-burgundy/30 hover:-translate-y-1 transform"
               style={{ width: cardWidthPx > 0 ? `${cardWidthPx}px` : undefined }}
@@ -132,7 +132,9 @@ export default function MoscRedesignSaintsCarousel({ saints }: MoscRedesignSaint
               />
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-warmBrown-dark/90 via-warmBrown-dark/20 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-4">
-                <p className="saint-card-title font-semibold text-sm leading-tight">{saint.name}</p>
+                <p className="saint-card-title font-semibold text-sm leading-snug whitespace-normal">
+                  {saint.name}
+                </p>
                 <span className="text-warmGold text-xs mt-1 inline-flex items-center gap-1 group-hover:gap-2 transition-all">
                   Learn more
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

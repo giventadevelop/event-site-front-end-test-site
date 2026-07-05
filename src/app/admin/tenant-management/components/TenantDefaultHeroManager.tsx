@@ -15,7 +15,7 @@ import {
   resolveTenantDefaultHeroUrlsForPreview,
   serializeDefaultHeroSlides,
 } from '@/lib/hero/defaultHeroImages';
-import { uploadDefaultHeroImageClient } from '@/app/admin/tenant-management/settings/ApiServerActions';
+import { uploadDefaultHeroImageClient } from '@/app/admin/tenant-management/settings/uploadClients';
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const PREVIEW_ROTATION_MS = 4000;
@@ -217,14 +217,21 @@ export default function TenantDefaultHeroManager({
       if (newSlides.length > 0) {
         const merged = [...heroSlides, ...newSlides];
         setHeroSlides(merged);
-        await syncSlides(merged, true);
-        setUploadMessage({
-          type: failed > 0 ? 'error' : 'success',
-          text:
-            failed > 0
-              ? `Uploaded ${newSlides.length} of ${valid.length} image(s). ${failed} failed. New slides are inactive until you mark them active.`
-              : `Successfully uploaded ${newSlides.length} image(s). Mark slides active to include them on the homepage.`,
-        });
+        try {
+          await syncSlides(merged, true);
+          setUploadMessage({
+            type: failed > 0 ? 'error' : 'success',
+            text:
+              failed > 0
+                ? `Uploaded ${newSlides.length} of ${valid.length} image(s). ${failed} failed. New slides are inactive until you mark them active.`
+                : `Successfully uploaded ${newSlides.length} image(s). Mark slides active to include them on the homepage.`,
+          });
+        } catch {
+          setUploadMessage({
+            type: 'error',
+            text: 'Images uploaded but could not be saved. See the error dialog for details.',
+          });
+        }
       } else {
         setUploadMessage({ type: 'error', text: 'Upload failed. Please try again.' });
       }
@@ -619,8 +626,8 @@ export default function TenantDefaultHeroManager({
               className="mt-1 h-4 w-4 rounded border-gray-400 text-teal-600 focus:ring-teal-500"
             />
             <span className="text-sm text-gray-700">
-              Include default hero slides when upcoming events also have hero images (appended after
-              event heroes).
+              Show default hero slides on the homepage (active slides only). When enabled, slides
+              are appended after upcoming event hero images when those exist.
             </span>
           </label>
         </div>

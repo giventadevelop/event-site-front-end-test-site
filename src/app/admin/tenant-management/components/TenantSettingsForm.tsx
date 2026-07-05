@@ -7,9 +7,10 @@ import {
   uploadEmailFooterHtmlClient,
   uploadTenantLogoClient,
   uploadEmailHeaderImageClient,
-  patchTenantSetting,
-} from '@/app/admin/tenant-management/settings/ApiServerActions';
+} from '@/app/admin/tenant-management/settings/uploadClients';
+import { patchTenantSettingAction } from '@/app/admin/tenant-management/settings/actions';
 import SaveStatusDialog, { type SaveStatus } from '@/components/SaveStatusDialog';
+import { formatSaveErrorForDialog } from '@/lib/api/userFacingSaveError';
 import TenantDefaultHeroManager from '@/app/admin/tenant-management/components/TenantDefaultHeroManager';
 import TenantOrganizationSearchSelect from '@/app/admin/tenant-management/components/TenantOrganizationSearchSelect';
 import { stripDeprecatedSettingsIdentityFields } from '@/lib/resolveTenantOrganizationIdentity';
@@ -17,8 +18,23 @@ import {
   DEFAULT_HERO_MAX_DISPLAY_COUNT,
   normalizeDefaultHeroDisplayMode,
   normalizeMaxDisplayCount,
+  normalizeDefaultHeroImageUrlsJsonForApi,
   type DefaultHeroDisplayMode,
 } from '@/lib/hero/defaultHeroImages';
+import GoogleAdsensePlacementsFields from '@/app/admin/tenant-management/components/GoogleAdsensePlacementsFields';
+import {
+  adsensePlacementFieldsFromJson,
+  serializeAdsensePlacementFields,
+  validateAdsenseSlotId,
+  collectAdsensePlacementFieldErrors,
+  validateGoogleAdsenseForSave,
+  type AdsensePlacementFields,
+  type AdsenseRegionId,
+} from '@/lib/adsense/parseAdsensePlacements';
+import {
+  validateWhatsappIntegrationForSave,
+  type WhatsappIntegrationField,
+} from '@/lib/integrations/validateTenantIntegrationsForSave';
 
 interface TenantSettingsFormProps {
   initialData?: TenantSettingsDTO;
@@ -54,6 +70,20 @@ export default function TenantSettingsForm({
   const [logoUploadMessage, setLogoUploadMessage] = useState<string>('');
   const [headerImageUploadStatus, setHeaderImageUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [headerImageUploadMessage, setHeaderImageUploadMessage] = useState<string>('');
+  const [heroSaveStatus, setHeroSaveStatus] = useState<SaveStatus>('idle');
+  const [formSaveValidationDialog, setFormSaveValidationDialog] = useState<{
+    message: string;
+    details: string[];
+  } | null>(null);
+  const [heroSaveMessage, setHeroSaveMessage] = useState('');
+  const [heroSaveDetails, setHeroSaveDetails] = useState<string[]>([]);
+  const [adsensePlacements, setAdsensePlacements] = useState<AdsensePlacementFields>(() =>
+    adsensePlacementFieldsFromJson(initialData?.googleAdsensePlacementsJson)
+  );
+  const [adsensePlacementErrors, setAdsensePlacementErrors] = useState<
+    Partial<Record<AdsenseRegionId, string>>
+  >({});
+  const [adsensePlacementsFormError, setAdsensePlacementsFormError] = useState('');
   const footerHtmlFileInputRef = useRef<HTMLInputElement>(null);
   const logoFileInputRef = useRef<HTMLInputElement>(null);
   const headerImageFileInputRef = useRef<HTMLInputElement>(null);
@@ -63,6 +93,7 @@ export default function TenantSettingsForm({
     handleSubmit,
     formState: { errors, isSubmitting },
     setValue,
+    setError,
     watch,
     reset
   } = useForm<TenantSettingsFormDTO>({
@@ -89,6 +120,19 @@ export default function TenantSettingsForm({
       showTeamMembersSectionInHomePage: initialData?.showTeamMembersSectionInHomePage ?? true,
       showSponsorsSectionInHomePage: initialData?.showSponsorsSectionInHomePage ?? true,
       isMembershipSubscriptionEnabled: initialData?.isMembershipSubscriptionEnabled ?? false,
+      // Personal profile homepage sections (PERSONAL_PROFILE / HYBRID site types)
+      showPublicProfileHeroSection: initialData?.showPublicProfileHeroSection ?? false,
+      showProfileWritingsSection: initialData?.showProfileWritingsSection ?? false,
+      showProfileAchievementsSection: initialData?.showProfileAchievementsSection ?? false,
+      showProfileAffiliationsSection: initialData?.showProfileAffiliationsSection ?? false,
+      showProfileMediaDownloadsSection: initialData?.showProfileMediaDownloadsSection ?? false,
+      showProfileContactSection: initialData?.showProfileContactSection ?? false,
+      // Gas station COO module (GAS_STATION site type)
+      enableGasStationModule: initialData?.enableGasStationModule ?? false,
+      gasAiEngineBaseUrl: initialData?.gasAiEngineBaseUrl || '',
+      gasAiEngineApiKeyRef: initialData?.gasAiEngineApiKeyRef || '',
+      gasAiEngineWebhookToken: initialData?.gasAiEngineWebhookToken || '',
+      gasDailyBriefHourLocal: initialData?.gasDailyBriefHourLocal ?? undefined,
       // Enhanced WhatsApp Integration Fields
       whatsappPhoneNumber: initialData?.whatsappPhoneNumber || '',
       twilioAccountSid: initialData?.twilioAccountSid || '',
@@ -108,6 +152,7 @@ export default function TenantSettingsForm({
       defaultHeroIncludeWithEvents: initialData?.defaultHeroIncludeWithEvents ?? true,
       defaultHeroMaxDisplayCount:
         initialData?.defaultHeroMaxDisplayCount ?? DEFAULT_HERO_MAX_DISPLAY_COUNT,
+      displayEventHeroImages: initialData?.displayEventHeroImages ?? true,
       // Operational contact (identity fields live on tenant_organization)
       phoneNumber: initialData?.phoneNumber || '',
       email: initialData?.email || '',
@@ -124,6 +169,7 @@ export default function TenantSettingsForm({
   register('defaultHeroDisplayMode');
   register('defaultHeroIncludeWithEvents');
   register('defaultHeroMaxDisplayCount');
+  register('displayEventHeroImages');
 
   // Get settings ID from prop or initialData (for edit mode)
   const settingsId = propSettingsId || initialData?.id;
@@ -137,8 +183,15 @@ export default function TenantSettingsForm({
   const defaultHeroDisplayMode = watch('defaultHeroDisplayMode');
   const defaultHeroIncludeWithEvents = watch('defaultHeroIncludeWithEvents');
   const defaultHeroMaxDisplayCount = watch('defaultHeroMaxDisplayCount');
+  const displayEventHeroImages = watch('displayEventHeroImages');
   const tenantIdForUpload =
     watch('tenantId')?.trim() || initialData?.tenantId?.trim() || undefined;
+
+  useEffect(() => {
+    setAdsensePlacements(adsensePlacementFieldsFromJson(initialData?.googleAdsensePlacementsJson));
+    setAdsensePlacementErrors({});
+    setAdsensePlacementsFormError('');
+  }, [initialData?.id, initialData?.googleAdsensePlacementsJson]);
 
   const persistHeroSlides = async (json: string) => {
     if (!settingsId) return;
@@ -146,24 +199,129 @@ export default function TenantSettingsForm({
     const maxCount = normalizeMaxDisplayCount(
       defaultHeroMaxDisplayCount ?? DEFAULT_HERO_MAX_DISPLAY_COUNT
     );
-    await patchTenantSetting(settingsId, {
-      defaultHeroImageUrlsJson: json,
-      defaultHeroMaxDisplayCount: maxCount,
-    });
+    try {
+      setHeroSaveStatus('saving');
+      setHeroSaveMessage('Saving homepage hero slides...');
+      setHeroSaveDetails([]);
+      await patchTenantSettingAction(settingsId, {
+        defaultHeroImageUrlsJson: json,
+        defaultHeroMaxDisplayCount: maxCount,
+      });
+      setHeroSaveStatus('success');
+      setHeroSaveMessage('Homepage hero slides saved.');
+      setTimeout(() => {
+        setHeroSaveStatus('idle');
+        setHeroSaveMessage('');
+        setHeroSaveDetails([]);
+      }, 1500);
+    } catch (err: unknown) {
+      const { summary, details } = formatSaveErrorForDialog(
+        err,
+        'Failed to save homepage hero slides.'
+      );
+      setHeroSaveStatus('error');
+      setHeroSaveMessage(summary);
+      setHeroSaveDetails(details);
+      throw err;
+    }
   };
 
   const handleMaxDisplayCountChange = async (count: number) => {
     const normalized = normalizeMaxDisplayCount(count);
     setValue('defaultHeroMaxDisplayCount', normalized);
     if (settingsId) {
-      await patchTenantSetting(settingsId, { defaultHeroMaxDisplayCount: normalized });
+      await patchTenantSettingAction(settingsId, { defaultHeroMaxDisplayCount: normalized });
     }
+  };
+
+  const validateAdsensePlacementFields = (fields: AdsensePlacementFields): boolean => {
+    const nextErrors = collectAdsensePlacementFieldErrors(fields);
+    setAdsensePlacementErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const showIntegrationSaveValidationError = (summary: string, details: string[]) => {
+    setFormSaveValidationDialog({ message: summary, details });
+  };
+
+  const handleAdsensePlacementBlur = (regionId: AdsenseRegionId) => {
+    const result = validateAdsenseSlotId(adsensePlacements[regionId]);
+    setAdsensePlacementErrors((prev) => {
+      const next = { ...prev };
+      if (result === true) {
+        delete next[regionId];
+      } else {
+        next[regionId] = result;
+      }
+      return next;
+    });
   };
 
   // Handle form submission
   const onFormSubmit = async (data: TenantSettingsFormDTO) => {
     try {
-      await onSubmit(stripDeprecatedSettingsIdentityFields(data) as TenantSettingsFormDTO);
+      const whatsappValidation = validateWhatsappIntegrationForSave({
+        enableWhatsappIntegration: data.enableWhatsappIntegration,
+        whatsappPhoneNumber: data.whatsappPhoneNumber,
+        twilioAccountSid: data.twilioAccountSid,
+        twilioAuthToken: data.twilioAuthToken,
+      });
+      if (!whatsappValidation.valid) {
+        setActiveTab('integrations');
+        for (const [field, message] of Object.entries(whatsappValidation.fieldErrors)) {
+          setError(field as WhatsappIntegrationField, { type: 'manual', message });
+        }
+        showIntegrationSaveValidationError(whatsappValidation.summary, whatsappValidation.details);
+        return;
+      }
+
+      const adsenseValidation = validateGoogleAdsenseForSave(
+        Boolean(data.enableGoogleAdsense),
+        data.googleAdsensePublisherId,
+        adsensePlacements
+      );
+      if (!adsenseValidation.valid) {
+        setActiveTab('integrations');
+        if (adsenseValidation.field === 'googleAdsensePublisherId') {
+          setError('googleAdsensePublisherId', {
+            type: 'manual',
+            message: adsenseValidation.details[0] ?? adsenseValidation.summary,
+          });
+          setAdsensePlacementsFormError('');
+        } else {
+          validateAdsensePlacementFields(adsensePlacements);
+          setAdsensePlacementsFormError(adsenseValidation.summary);
+        }
+        showIntegrationSaveValidationError(adsenseValidation.summary, adsenseValidation.details);
+        return;
+      }
+
+      const placementsJson = serializeAdsensePlacementFields(adsensePlacements);
+      if (placementsJson.length > 8192) {
+        setActiveTab('integrations');
+        setAdsensePlacementsFormError('Combined placements exceed the maximum allowed size.');
+        showIntegrationSaveValidationError('Ad placement configuration is too large.', [
+          'Remove unused slot IDs or shorten values, then try again.',
+        ]);
+        return;
+      }
+      setAdsensePlacementsFormError('');
+
+      const payload = stripDeprecatedSettingsIdentityFields(data) as TenantSettingsFormDTO;
+      payload.defaultHeroImageUrlsJson = normalizeDefaultHeroImageUrlsJsonForApi(
+        payload.defaultHeroImageUrlsJson
+      );
+      payload.googleAdsensePlacementsJson = placementsJson;
+      if (!payload.enableGoogleAdsense) {
+        payload.googleAdsensePublisherId = '';
+        payload.googleAdsensePlacementsJson = '';
+      }
+      if (!payload.enableWhatsappIntegration) {
+        payload.whatsappPhoneNumber = '';
+        payload.twilioAccountSid = '';
+        payload.twilioAuthToken = '';
+      }
+      await onSubmit(payload);
     } catch (error) {
       console.error('Form submission error:', error);
       throw error;
@@ -185,7 +343,7 @@ export default function TenantSettingsForm({
 
       // Automatically update the settings with the new URL
       if (settingsId) {
-        await patchTenantSetting(settingsId, {
+        await patchTenantSettingAction(settingsId, {
           emailFooterHtmlUrl: result.url,
         });
       }
@@ -198,9 +356,11 @@ export default function TenantSettingsForm({
         setFooterHtmlUploadStatus('idle');
         setFooterHtmlUploadMessage('');
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setFooterHtmlUploadStatus('error');
-      setFooterHtmlUploadMessage(err.message || 'Failed to upload email footer HTML');
+      setFooterHtmlUploadMessage(
+        formatSaveErrorForDialog(err, 'Failed to upload email footer HTML').summary
+      );
     } finally {
       setUploadingFooterHtml(false);
       if (footerHtmlFileInputRef.current) {
@@ -224,7 +384,7 @@ export default function TenantSettingsForm({
 
       // Automatically update the settings with the new URL
       if (settingsId) {
-        await patchTenantSetting(settingsId, {
+        await patchTenantSettingAction(settingsId, {
           emailHeaderImageUrl: result.url,
         });
       }
@@ -237,9 +397,11 @@ export default function TenantSettingsForm({
         setHeaderImageUploadStatus('idle');
         setHeaderImageUploadMessage('');
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setHeaderImageUploadStatus('error');
-      setHeaderImageUploadMessage(err.message || 'Failed to upload email header image');
+      setHeaderImageUploadMessage(
+        formatSaveErrorForDialog(err, 'Failed to upload email header image').summary
+      );
     } finally {
       setUploadingHeaderImage(false);
       if (headerImageFileInputRef.current) {
@@ -263,7 +425,7 @@ export default function TenantSettingsForm({
 
       // Automatically update the settings with the new URL
       if (settingsId) {
-        await patchTenantSetting(settingsId, {
+        await patchTenantSettingAction(settingsId, {
           logoImageUrl: result.url,
         });
       }
@@ -276,9 +438,9 @@ export default function TenantSettingsForm({
         setLogoUploadStatus('idle');
         setLogoUploadMessage('');
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setLogoUploadStatus('error');
-      setLogoUploadMessage(err.message || 'Failed to upload logo image');
+      setLogoUploadMessage(formatSaveErrorForDialog(err, 'Failed to upload logo image').summary);
     } finally {
       setUploadingLogo(false);
       if (logoFileInputRef.current) {
@@ -408,7 +570,7 @@ export default function TenantSettingsForm({
     setFooterHtmlUploadStatus('uploading');
     setFooterHtmlUploadMessage('Removing email footer HTML...');
     try {
-      await patchTenantSetting(settingsId, {
+      await patchTenantSettingAction(settingsId, {
         emailFooterHtmlUrl: '',
       });
       setFooterHtmlUploadStatus('success');
@@ -417,9 +579,11 @@ export default function TenantSettingsForm({
         setFooterHtmlUploadStatus('idle');
         setFooterHtmlUploadMessage('');
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setFooterHtmlUploadStatus('error');
-      setFooterHtmlUploadMessage(err.message || 'Failed to remove email footer HTML');
+      setFooterHtmlUploadMessage(
+        formatSaveErrorForDialog(err, 'Failed to remove email footer HTML').summary
+      );
     }
   };
 
@@ -429,7 +593,7 @@ export default function TenantSettingsForm({
     setLogoUploadStatus('uploading');
     setLogoUploadMessage('Removing logo image...');
     try {
-      await patchTenantSetting(settingsId, {
+      await patchTenantSettingAction(settingsId, {
         logoImageUrl: '',
       });
       setLogoUploadStatus('success');
@@ -438,9 +602,9 @@ export default function TenantSettingsForm({
         setLogoUploadStatus('idle');
         setLogoUploadMessage('');
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setLogoUploadStatus('error');
-      setLogoUploadMessage(err.message || 'Failed to remove logo image');
+      setLogoUploadMessage(formatSaveErrorForDialog(err, 'Failed to remove logo image').summary);
     }
   };
 
@@ -450,7 +614,7 @@ export default function TenantSettingsForm({
     setHeaderImageUploadStatus('uploading');
     setHeaderImageUploadMessage('Removing email header image...');
     try {
-      await patchTenantSetting(settingsId, {
+      await patchTenantSettingAction(settingsId, {
         emailHeaderImageUrl: '',
       });
       setHeaderImageUploadStatus('success');
@@ -459,9 +623,11 @@ export default function TenantSettingsForm({
         setHeaderImageUploadStatus('idle');
         setHeaderImageUploadMessage('');
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setHeaderImageUploadStatus('error');
-      setHeaderImageUploadMessage(err.message || 'Failed to remove email header image');
+      setHeaderImageUploadMessage(
+        formatSaveErrorForDialog(err, 'Failed to remove email header image').summary
+      );
     }
   };
 
@@ -543,15 +709,15 @@ export default function TenantSettingsForm({
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       {/* Tab Navigation */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-4">
+      <div className="mb-6 pb-4 border-b border-gray-200">
+        <nav className="flex flex-wrap gap-2 w-full" aria-label="Settings sections">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             const getColorClasses = (color: string) => {
               if (color === 'blue') {
                 return {
-                  active: 'bg-blue-100 text-blue-600 border-blue-500',
-                  inactive: 'bg-blue-50 text-blue-400 border-transparent hover:bg-blue-100 hover:text-blue-500',
+                  active: 'bg-blue-100 text-blue-600 border-blue-500 ring-1 ring-blue-200',
+                  inactive: 'bg-white text-blue-400 border-gray-200 hover:bg-blue-50 hover:text-blue-500 hover:border-blue-300',
                   iconBgActive: 'bg-blue-100',
                   iconBgInactive: 'bg-blue-50',
                   iconTextActive: 'text-blue-500',
@@ -561,8 +727,8 @@ export default function TenantSettingsForm({
                 };
               } else if (color === 'green') {
                 return {
-                  active: 'bg-green-100 text-green-600 border-green-500',
-                  inactive: 'bg-green-50 text-green-400 border-transparent hover:bg-green-100 hover:text-green-500',
+                  active: 'bg-green-100 text-green-600 border-green-500 ring-1 ring-green-200',
+                  inactive: 'bg-white text-green-400 border-gray-200 hover:bg-green-50 hover:text-green-500 hover:border-green-300',
                   iconBgActive: 'bg-green-100',
                   iconBgInactive: 'bg-green-50',
                   iconTextActive: 'text-green-500',
@@ -572,8 +738,8 @@ export default function TenantSettingsForm({
                 };
               } else if (color === 'purple') {
                 return {
-                  active: 'bg-purple-100 text-purple-600 border-purple-500',
-                  inactive: 'bg-purple-50 text-purple-400 border-transparent hover:bg-purple-100 hover:text-purple-500',
+                  active: 'bg-purple-100 text-purple-600 border-purple-500 ring-1 ring-purple-200',
+                  inactive: 'bg-white text-purple-400 border-gray-200 hover:bg-purple-50 hover:text-purple-500 hover:border-purple-300',
                   iconBgActive: 'bg-purple-100',
                   iconBgInactive: 'bg-purple-50',
                   iconTextActive: 'text-purple-500',
@@ -583,8 +749,8 @@ export default function TenantSettingsForm({
                 };
               } else if (color === 'teal') {
                 return {
-                  active: 'bg-teal-100 text-teal-600 border-teal-500',
-                  inactive: 'bg-teal-50 text-teal-400 border-transparent hover:bg-teal-100 hover:text-teal-500',
+                  active: 'bg-teal-100 text-teal-600 border-teal-500 ring-1 ring-teal-200',
+                  inactive: 'bg-white text-teal-400 border-gray-200 hover:bg-teal-50 hover:text-teal-500 hover:border-teal-300',
                   iconBgActive: 'bg-teal-100',
                   iconBgInactive: 'bg-teal-50',
                   iconTextActive: 'text-teal-500',
@@ -594,8 +760,8 @@ export default function TenantSettingsForm({
                 };
               } else {
                 return {
-                  active: 'bg-orange-100 text-orange-600 border-orange-500',
-                  inactive: 'bg-orange-50 text-orange-400 border-transparent hover:bg-orange-100 hover:text-orange-500',
+                  active: 'bg-orange-100 text-orange-600 border-orange-500 ring-1 ring-orange-200',
+                  inactive: 'bg-white text-orange-400 border-gray-200 hover:bg-orange-50 hover:text-orange-500 hover:border-orange-300',
                   iconBgActive: 'bg-orange-100',
                   iconBgInactive: 'bg-orange-50',
                   iconTextActive: 'text-orange-500',
@@ -609,19 +775,20 @@ export default function TenantSettingsForm({
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`py-3 px-4 border-b-2 font-semibold text-base flex items-center gap-3 rounded-t-lg transition-all duration-300 ${
+                className={`py-2.5 px-3 sm:px-4 border-2 font-semibold text-sm sm:text-base flex items-center gap-2 sm:gap-3 rounded-lg transition-all duration-300 flex-[1_1_11rem] sm:flex-[1_1_auto] min-w-[11rem] max-w-full ${
                   isActive ? colors.active : colors.inactive
                 }`}
               >
-                <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center transition-all duration-300 hover:scale-110 ${
-                  isActive ? colors.iconBgActive : colors.iconBgInactive
-                }`}>
-                  <svg className={`w-10 h-10 ${isActive ? colors.iconTextActive : colors.iconTextInactive}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className={`flex-shrink-0 w-11 h-11 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                  isActive ? 'scale-105' : 'hover:scale-105'
+                } ${isActive ? colors.iconBgActive : colors.iconBgInactive}`}>
+                  <svg className={`w-8 h-8 sm:w-10 sm:h-10 ${isActive ? colors.iconTextActive : colors.iconTextInactive}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.svgPath} />
                   </svg>
                 </div>
-                <span className={isActive ? colors.textActive : colors.textInactive}>{tab.label}</span>
+                <span className={`whitespace-nowrap ${isActive ? colors.textActive : colors.textInactive}`}>{tab.label}</span>
               </button>
             );
           })}
@@ -844,6 +1011,74 @@ export default function TenantSettingsForm({
                 />
               </div>
             </div>
+
+            {/* Personal Profile Homepage Sections */}
+            <div className="space-y-4">
+              <h4 className="text-md font-medium text-gray-900">Personal Profile Sections</h4>
+              <p className="text-sm text-gray-600">
+                Homepage sections for Personal Profile / Hybrid site types (auto-set by the organization&apos;s Site Type preset)
+              </p>
+
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <ToggleSwitch
+                  name="showPublicProfileHeroSection"
+                  label="Show Profile Hero Section"
+                  description="Display the personal profile hero on the homepage"
+                  checked={watchedValues.showPublicProfileHeroSection || false}
+                  onChange={(checked) => setValue('showPublicProfileHeroSection', checked)}
+                />
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <ToggleSwitch
+                  name="showProfileWritingsSection"
+                  label="Show Writings Section"
+                  description="Display the writings / portfolio section"
+                  checked={watchedValues.showProfileWritingsSection || false}
+                  onChange={(checked) => setValue('showProfileWritingsSection', checked)}
+                />
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <ToggleSwitch
+                  name="showProfileAchievementsSection"
+                  label="Show Achievements Section"
+                  description="Display the achievements timeline section"
+                  checked={watchedValues.showProfileAchievementsSection || false}
+                  onChange={(checked) => setValue('showProfileAchievementsSection', checked)}
+                />
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <ToggleSwitch
+                  name="showProfileAffiliationsSection"
+                  label="Show Affiliations Section"
+                  description="Display the community / board affiliations section"
+                  checked={watchedValues.showProfileAffiliationsSection || false}
+                  onChange={(checked) => setValue('showProfileAffiliationsSection', checked)}
+                />
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <ToggleSwitch
+                  name="showProfileMediaDownloadsSection"
+                  label="Show Media Downloads Section"
+                  description="Display the downloadable media / documents section"
+                  checked={watchedValues.showProfileMediaDownloadsSection || false}
+                  onChange={(checked) => setValue('showProfileMediaDownloadsSection', checked)}
+                />
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <ToggleSwitch
+                  name="showProfileContactSection"
+                  label="Show Profile Contact Section"
+                  description="Display the profile contact section"
+                  checked={watchedValues.showProfileContactSection || false}
+                  onChange={(checked) => setValue('showProfileContactSection', checked)}
+                />
+              </div>
+            </div>
           </div>
         )}
 
@@ -851,6 +1086,124 @@ export default function TenantSettingsForm({
         {activeTab === 'integrations' && (
           <div className="space-y-6">
             <h3 className="text-lg font-medium text-gray-900">Integration Settings</h3>
+
+            {/* Gas Station AI Engine (GAS_STATION site type) */}
+            <div className="space-y-6">
+              <div className="border-b border-gray-200 pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-md font-medium text-gray-900 flex items-center">
+                      <span className="mr-2">⛽</span>
+                      Gas Station AI Engine
+                    </h4>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Enable the gas station COO module and connect the external AI engine (GAS_STATION site type)
+                    </p>
+                  </div>
+                  <a
+                    href="/admin/gas-station"
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    Gas Station Dashboard →
+                  </a>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <ToggleSwitch
+                  name="enableGasStationModule"
+                  label="Enable Gas Station Module"
+                  description="Show the gas station COO admin module for this tenant"
+                  checked={watchedValues.enableGasStationModule || false}
+                  onChange={(checked) => setValue('enableGasStationModule', checked)}
+                />
+              </div>
+
+              {watchedValues.enableGasStationModule && (
+                <div className="space-y-6 bg-white border border-gray-200 rounded-lg p-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      AI Engine Base URL
+                    </label>
+                    <input
+                      type="url"
+                      {...register('gasAiEngineBaseUrl', {
+                        maxLength: { value: 1024, message: 'Base URL must be 1024 characters or less' }
+                      })}
+                      className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base"
+                      placeholder="https://engine.example.com"
+                    />
+                    <p className="mt-1 text-sm text-gray-500">
+                      Invoked server-side only; never exposed to the browser
+                    </p>
+                    {errors.gasAiEngineBaseUrl && (
+                      <p className="mt-1 text-sm text-red-600">{errors.gasAiEngineBaseUrl.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      API Key Reference
+                    </label>
+                    <input
+                      type="text"
+                      {...register('gasAiEngineApiKeyRef', {
+                        maxLength: { value: 512, message: 'API key reference must be 512 characters or less' }
+                      })}
+                      className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base"
+                      placeholder="secrets-manager reference, e.g. arn:aws:secretsmanager:..."
+                    />
+                    <p className="mt-1 text-sm text-gray-500">
+                      Secrets-manager reference only — never paste the raw API key
+                    </p>
+                    {errors.gasAiEngineApiKeyRef && (
+                      <p className="mt-1 text-sm text-red-600">{errors.gasAiEngineApiKeyRef.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Webhook Token
+                    </label>
+                    <input
+                      type="password"
+                      {...register('gasAiEngineWebhookToken', {
+                        maxLength: { value: 1048, message: 'Webhook token must be 1048 characters or less' }
+                      })}
+                      className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base"
+                      placeholder="Token the engine presents on write-back callbacks"
+                    />
+                    {errors.gasAiEngineWebhookToken && (
+                      <p className="mt-1 text-sm text-red-600">{errors.gasAiEngineWebhookToken.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Daily Brief Hour (local)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="23"
+                      {...register('gasDailyBriefHourLocal', {
+                        min: { value: 0, message: 'Hour must be between 0 and 23' },
+                        max: { value: 23, message: 'Hour must be between 0 and 23' },
+                        valueAsNumber: true
+                      })}
+                      className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base"
+                      placeholder="6"
+                    />
+                    <p className="mt-1 text-sm text-gray-500">
+                      Hour (0–23) the morning brief is expected; interpreted per station timezone
+                    </p>
+                    {errors.gasDailyBriefHourLocal && (
+                      <p className="mt-1 text-sm text-red-600">{errors.gasDailyBriefHourLocal.message}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* WhatsApp Integration */}
             <div className="space-y-6">
@@ -897,10 +1250,19 @@ export default function TenantSettingsForm({
                       <input
                         type="text"
                         {...register('whatsappPhoneNumber', {
-                          pattern: {
-                            value: /^\+[1-9]\d{1,14}$/,
-                            message: 'Please enter a valid international phone number (e.g., +1234567890)'
-                          }
+                          validate: (value) => {
+                            if (!watch('enableWhatsappIntegration')) {
+                              return true;
+                            }
+                            const trimmed = value?.trim() ?? '';
+                            if (!trimmed) {
+                              return 'Phone number is required when WhatsApp Integration is enabled';
+                            }
+                            if (!/^\+[1-9]\d{1,14}$/.test(trimmed)) {
+                              return 'Please enter a valid international phone number (e.g., +1234567890)';
+                            }
+                            return true;
+                          },
                         })}
                         className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base"
                         placeholder="+1234567890"
@@ -917,11 +1279,19 @@ export default function TenantSettingsForm({
                       <input
                         type="text"
                         {...register('twilioAccountSid', {
-                          required: watchedValues.enableWhatsappIntegration ? 'Account SID is required' : false,
-                          pattern: {
-                            value: /^AC[a-f0-9]{32}$/,
-                            message: 'Please enter a valid Twilio Account SID'
-                          }
+                          validate: (value) => {
+                            if (!watch('enableWhatsappIntegration')) {
+                              return true;
+                            }
+                            const trimmed = value?.trim() ?? '';
+                            if (!trimmed) {
+                              return 'Account SID is required when WhatsApp Integration is enabled';
+                            }
+                            if (!/^AC[a-f0-9]{32}$/.test(trimmed)) {
+                              return 'Please enter a valid Twilio Account SID';
+                            }
+                            return true;
+                          },
                         })}
                         className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base"
                         placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
@@ -938,11 +1308,19 @@ export default function TenantSettingsForm({
                       <input
                         type="password"
                         {...register('twilioAuthToken', {
-                          required: watchedValues.enableWhatsappIntegration ? 'Auth Token is required' : false,
-                          minLength: {
-                            value: 32,
-                            message: 'Auth Token must be at least 32 characters'
-                          }
+                          validate: (value) => {
+                            if (!watch('enableWhatsappIntegration')) {
+                              return true;
+                            }
+                            const trimmed = value?.trim() ?? '';
+                            if (!trimmed) {
+                              return 'Auth Token is required when WhatsApp Integration is enabled';
+                            }
+                            if (trimmed.length < 32) {
+                              return 'Auth Token must be at least 32 characters';
+                            }
+                            return true;
+                          },
                         })}
                         className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base"
                         placeholder="Enter your Twilio Auth Token"
@@ -1203,14 +1581,21 @@ export default function TenantSettingsForm({
                     <input
                       type="text"
                       {...register('googleAdsensePublisherId', {
-                        required: watchedValues.enableGoogleAdsense ? 'Publisher ID is required when AdSense is enabled' : false,
-                        pattern: {
-                          value: /^ca-pub-[0-9]+$/,
-                          message: 'Publisher ID must start with ca-pub- followed by digits',
-                        },
-                        maxLength: {
-                          value: 32,
-                          message: 'Publisher ID must not exceed 32 characters',
+                        validate: (value) => {
+                          if (!watch('enableGoogleAdsense')) {
+                            return true;
+                          }
+                          const trimmed = value?.trim() ?? '';
+                          if (!trimmed) {
+                            return 'Publisher ID is required when Google AdSense is enabled';
+                          }
+                          if (!/^ca-pub-[0-9]+$/.test(trimmed)) {
+                            return 'Publisher ID must start with ca-pub- followed by digits';
+                          }
+                          if (trimmed.length > 32) {
+                            return 'Publisher ID must not exceed 32 characters';
+                          }
+                          return true;
                         },
                       })}
                       className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base font-mono text-sm"
@@ -1221,45 +1606,20 @@ export default function TenantSettingsForm({
                     )}
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Placements JSON (region → ad slot ID)
-                    </label>
-                    <p className="text-xs text-gray-500 mb-2">
-                      Regions: <code className="text-xs">sidebar</code>,{' '}
-                      <code className="text-xs">between_sections</code>,{' '}
-                      <code className="text-xs">footer_strip</code>,{' '}
-                      <code className="text-xs">article_inline</code>
-                    </p>
-                    <textarea
-                      {...register('googleAdsensePlacementsJson', {
-                        maxLength: {
-                          value: 8192,
-                          message: 'Placements JSON must be less than 8192 characters',
-                        },
-                        validate: (value) => {
-                          if (!value?.trim()) {
-                            return true;
-                          }
-                          try {
-                            const parsed = JSON.parse(value);
-                            if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-                              return 'Placements must be a JSON object mapping region ids to slot ids';
-                            }
-                            return true;
-                          } catch {
-                            return 'Placements must be valid JSON';
-                          }
-                        },
-                      })}
-                      rows={8}
-                      className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base font-mono text-sm"
-                      placeholder={'{\n  "sidebar": "1234567890",\n  "between_sections": "0987654321",\n  "footer_strip": "1122334455"\n}'}
-                    />
-                    {errors.googleAdsensePlacementsJson && (
-                      <p className="mt-1 text-sm text-red-600">{errors.googleAdsensePlacementsJson.message}</p>
-                    )}
-                  </div>
+                  <GoogleAdsensePlacementsFields
+                    value={adsensePlacements}
+                    onChange={(fields) => {
+                      setAdsensePlacements(fields);
+                      if (adsensePlacementsFormError) {
+                        setAdsensePlacementsFormError('');
+                      }
+                    }}
+                    fieldErrors={adsensePlacementErrors}
+                    onFieldBlur={handleAdsensePlacementBlur}
+                  />
+                  {adsensePlacementsFormError && (
+                    <p className="mt-1 text-sm text-red-600">{adsensePlacementsFormError}</p>
+                  )}
                 </div>
               )}
             </div>
@@ -1363,6 +1723,17 @@ export default function TenantSettingsForm({
           <div className="space-y-6">
             <input type="hidden" {...register('defaultHeroImageUrlsJson')} />
             <input type="hidden" {...register('defaultHeroMaxDisplayCount')} />
+
+            <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
+              <ToggleSwitch
+                name="displayEventHeroImages"
+                label="Show event hero images"
+                description="When enabled, upcoming events with hero media appear in the homepage hero slideshow. When disabled, only tenant default hero slides (if configured) or the fallback image are shown."
+                checked={displayEventHeroImages ?? true}
+                onChange={(checked) => setValue('displayEventHeroImages', checked)}
+              />
+            </div>
+
             <TenantDefaultHeroManager
               settingsId={settingsId}
               mode={mode}
@@ -1782,6 +2153,35 @@ export default function TenantSettingsForm({
             setHeaderImageUploadMessage('');
           }
         }}
+      />
+      <SaveStatusDialog
+        isOpen={heroSaveStatus !== 'idle'}
+        status={heroSaveStatus}
+        message={heroSaveMessage}
+        details={heroSaveDetails}
+        title={
+          heroSaveStatus === 'saving'
+            ? 'Saving hero slides...'
+            : heroSaveStatus === 'success'
+              ? 'Hero slides saved'
+              : 'Could not save hero slides'
+        }
+        onClose={() => {
+          if (heroSaveStatus === 'error') {
+            setHeroSaveStatus('idle');
+            setHeroSaveMessage('');
+            setHeroSaveDetails([]);
+          }
+        }}
+      />
+
+      <SaveStatusDialog
+        isOpen={formSaveValidationDialog !== null}
+        status="error"
+        title="Cannot save settings"
+        message={formSaveValidationDialog?.message ?? ''}
+        details={formSaveValidationDialog?.details ?? []}
+        onClose={() => setFormSaveValidationDialog(null)}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import TenantSettingsForm from '@/app/admin/tenant-management/components/TenantSettingsForm';
 import SaveStatusDialog, { type SaveStatus } from '@/components/SaveStatusDialog';
+import { formatSaveErrorForDialog } from '@/lib/api/userFacingSaveError';
 import { createTenantSettingAction } from '@/app/admin/tenant-management/settings/new/actions';
 import type { TenantOrganizationDTO, TenantSettingsFormDTO } from '@/app/admin/tenant-management/types';
 
@@ -20,6 +21,7 @@ export default function NewTenantSettingsClient({
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [saveMessage, setSaveMessage] = useState<string>('');
+  const [saveDetails, setSaveDetails] = useState<string[]>([]);
 
   async function handleSubmit(data: TenantSettingsFormDTO) {
     setLoading(true);
@@ -41,12 +43,13 @@ export default function NewTenantSettingsClient({
         router.push(redirectPath);
       }, 1500);
     } catch (error: unknown) {
+      const { summary, details } = formatSaveErrorForDialog(
+        error,
+        'Failed to save settings. Please check your input and try again.'
+      );
       setSaveStatus('error');
-      const userMessage =
-        error instanceof Error
-          ? error.message
-          : 'Failed to save settings. Please check your input and try again.';
-      setSaveMessage(userMessage);
+      setSaveMessage(summary);
+      setSaveDetails(details);
     } finally {
       setLoading(false);
     }
@@ -84,6 +87,7 @@ export default function NewTenantSettingsClient({
         isOpen={saveStatus !== 'idle'}
         status={saveStatus}
         message={saveMessage}
+        details={saveDetails}
         title={
           saveStatus === 'saving'
             ? 'Saving...'
@@ -97,6 +101,7 @@ export default function NewTenantSettingsClient({
           if (saveStatus === 'error') {
             setSaveStatus('idle');
             setSaveMessage('');
+            setSaveDetails([]);
           }
         }}
       />

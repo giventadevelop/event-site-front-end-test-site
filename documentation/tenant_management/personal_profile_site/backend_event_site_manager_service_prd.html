@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Profile Site — event-site-manager-service PRD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        h2 { font-size: 1.45em; border-left: 4px solid #0066cc; padding-left: 14px; margin: 28px 0 12px; }
+        h3 { font-size: 1.15em; margin: 18px 0 8px; color: #0052a3; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        pre { background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3; padding: 14px; border-radius: 6px; font-family: Consolas, monospace; font-size: 0.82em; white-space: pre-wrap; overflow-x: auto; }
+    </style>
+</head>
+<body>
+
+    <h1>Personal Profile Site — Backend PRD</h1>
+    <p class="doc-meta">
+        <strong>Project:</strong> <code>event-site-manager-service</code> (Spring Boot / JHipster-style REST)<br>
+        <strong>Repo path:</strong> <code>F:/project_workspace/event-site-manager-service</code><br>
+        <strong>Index:</strong> <a href="personal_profile_site_prd.html">personal_profile_site_prd.html</a> ·
+        <strong>Schema:</strong> <a href="personal_profile_database_schema.html">personal_profile_database_schema.html</a> ·
+        <strong>Fields:</strong> <a href="personal_profile_attribute_catalog.md">personal_profile_attribute_catalog.md</a> ·
+        <strong>Batch jobs:</strong> <a href="backend_event_site_manager_batch_jobs_prd.html">batch-jobs PRD</a>
+    </p>
+
+    <div class="lead">
+        <p><strong>Goal:</strong> Expose tenant site archetypes (<code>site_type</code>) and a full CRUD API for personal portfolio content so the Next.js app (<code>mosc-temp</code>) can admin and render profile homepages.</p>
+        <p><strong>v1 model:</strong> One <code>public_profile</code> row per <code>tenant_id</code>. Frontend proxies already call the endpoints below.</p>
+        <p><strong>Pattern reference:</strong> Clone <code>ExecutiveCommitteeTeamMember</code> (entity + criteria + Resource) for each new table. Extend existing <code>TenantOrganization</code> and <code>TenantSettings</code> resources.</p>
+    </div>
+
+    <h2>1. What to implement (summary)</h2>
+    <table>
+        <thead><tr><th>Priority</th><th>Work item</th><th>Deliverable</th></tr></thead>
+        <tbody>
+            <tr><td><strong>P0</strong></td><td>Liquibase migration</td><td>Changelog from <code>migrations/001_personal_profile_site.sql</code></td></tr>
+            <tr><td><strong>P0</strong></td><td>Extend <code>tenant_organization</code></td><td><code>siteType</code>, <code>siteTemplateVersion</code> on entity + DTO + PATCH</td></tr>
+            <tr><td><strong>P0</strong></td><td>Extend <code>tenant_settings</code></td><td>Six profile homepage boolean flags on entity + DTO + PATCH</td></tr>
+            <tr><td><strong>P1</strong></td><td>New entity <code>public_profile</code></td><td>Full JHipster stack + <code>/api/public-profiles</code></td></tr>
+            <tr><td><strong>P1</strong></td><td>New entities (4 child tables)</td><td>writings, achievements, affiliations, media assets + REST</td></tr>
+            <tr><td><strong>P2</strong></td><td>OpenAPI + sequence sync</td><td>Update <code>api-docs.json</code>; add tables to <code>sync_all_table_sequences.sql</code></td></tr>
+            <tr><td><strong>P3</strong></td><td>Smoke tests</td><td>Criteria GET + POST/PATCH per resource with service JWT</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. Database migration (Liquibase)</h2>
+    <div class="info-box">
+        <p><strong>Source SQL:</strong> <code>documentation/tenant_management/personal_profile_site/migrations/001_personal_profile_site.sql</code></p>
+        <p><strong>Canonical DDL:</strong> <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code> (already updated in mosc-temp)</p>
+        <p><strong>Suggested changelog id:</strong> <code>20260703120000_personal_profile_site.xml</code></p>
+    </div>
+    <h3>2.1 Tables and columns</h3>
+    <table>
+        <thead><tr><th>Object</th><th>Change</th></tr></thead>
+        <tbody>
+            <tr><td><code>tenant_organization</code></td><td><code>site_type</code> VARCHAR(32) NOT NULL DEFAULT 'EVENT_ORG'; CHECK enum; <code>site_template_version</code> VARCHAR(32) nullable</td></tr>
+            <tr><td><code>tenant_settings</code></td><td>Six <code>show_profile_*</code> / <code>show_public_profile_hero_section</code> booleans (see attribute catalog)</td></tr>
+            <tr><td><code>public_profile</code></td><td>New table; UNIQUE <code>tenant_id</code>; optional UNIQUE <code>(tenant_id, public_slug)</code></td></tr>
+            <tr><td><code>profile_writing</code></td><td>New table; writing_type + status CHECK constraints</td></tr>
+            <tr><td><code>profile_achievement</code></td><td>New table; category CHECK</td></tr>
+            <tr><td><code>profile_affiliation</code></td><td>New table</td></tr>
+            <tr><td><code>profile_media_asset</code></td><td>New table</td></tr>
+        </tbody>
+    </table>
+    <h3>2.2 Sequences</h3>
+    <p>Create per-table sequences (see <a href="../../../.cursor/rules/sequence_id_alignment_and_import.mdc">sequence_id_alignment rule</a>):</p>
+    <pre>public_profile_id_seq
+profile_writing_id_seq
+profile_achievement_id_seq
+profile_affiliation_id_seq
+profile_media_asset_id_seq</pre>
+    <p>After migration on environments with manual data import, run <code>sync_all_table_sequences.sql</code>.</p>
+
+    <h2>3. Extend existing entities</h2>
+
+    <h3>3.1 TenantOrganization</h3>
+    <table>
+        <thead><tr><th>Java field</th><th>DB column</th><th>Notes</th></tr></thead>
+        <tbody>
+            <tr><td><code>siteType</code></td><td><code>site_type</code></td><td>Enum or String; values: EVENT_ORG, SPORTS_TEAM, MUSIC_BAND, CHURCH_ORG, PERSONAL_PROFILE, HYBRID</td></tr>
+            <tr><td><code>siteTemplateVersion</code></td><td><code>site_template_version</code></td><td>Optional theme variant, e.g. <code>profile-writer-v1</code></td></tr>
+        </tbody>
+    </table>
+    <p><strong>REST:</strong> Existing <code>/api/tenant-organizations</code> GET/PATCH must include both fields. Frontend admin saves <code>siteType</code> and applies homepage presets client-side via separate PATCH to <code>tenant-settings</code>.</p>
+    <p><strong>Validation:</strong> Reject unknown <code>siteType</code> values with 400.</p>
+
+    <h3>3.2 TenantSettings</h3>
+    <table>
+        <thead><tr><th>Java field (camelCase JSON)</th><th>DB column</th><th>Default</th></tr></thead>
+        <tbody>
+            <tr><td><code>showPublicProfileHeroSection</code></td><td><code>show_public_profile_hero_section</code></td><td>false</td></tr>
+            <tr><td><code>showProfileWritingsSection</code></td><td><code>show_profile_writings_section</code></td><td>false</td></tr>
+            <tr><td><code>showProfileAchievementsSection</code></td><td><code>show_profile_achievements_section</code></td><td>false</td></tr>
+            <tr><td><code>showProfileAffiliationsSection</code></td><td><code>show_profile_affiliations_section</code></td><td>false</td></tr>
+            <tr><td><code>showProfileMediaDownloadsSection</code></td><td><code>show_profile_media_downloads_section</code></td><td>false</td></tr>
+            <tr><td><code>showProfileContactSection</code></td><td><code>show_profile_contact_section</code></td><td>false</td></tr>
+        </tbody>
+    </table>
+    <p><strong>REST:</strong> Extend existing <code>/api/tenant-settings</code> GET/POST/PATCH (merge-patch). No new resource path.</p>
+
+    <h2>4. New JPA entities (full stack each)</h2>
+    <p>For each table below, add the standard JHipster layers (mirror <code>ExecutiveCommitteeTeamMember</code>):</p>
+    <pre>domain.{Entity}
+repository.{Entity}Repository
+service.dto.{Entity}DTO
+service.mapper.{Entity}Mapper
+service.criteria.{Entity}Criteria
+service.{Entity}QueryService
+web.rest.{Entity}Resource</pre>
+    <p>Package root in this repo is typically <code>com.nextjstemplate.*</code> (match existing resources).</p>
+
+    <h3>4.1 PublicProfile</h3>
+    <p>Fields: see <a href="personal_profile_attribute_catalog.md">attribute catalog</a>. Key rules:</p>
+    <ul>
+        <li><code>tenantId</code> required on create; enforce UNIQUE per tenant (one profile per tenant in v1)</li>
+        <li><code>displayName</code> required</li>
+        <li><code>isPublished</code> default false</li>
+        <li>Optional FK <code>ownerUserProfileId</code> → <code>user_profile.id</code></li>
+        <li>Sequence: <code>public_profile_id_seq</code>, <code>allocationSize = 1</code></li>
+    </ul>
+
+    <h3>4.2 ProfileWriting</h3>
+    <ul>
+        <li><code>writingType</code>: ORIGINAL | REPUBLISHED | EXTERNAL_LINK</li>
+        <li><code>status</code>: DRAFT | PUBLISHED | ARCHIVED</li>
+        <li><code>externalUrl</code> required when <code>writingType = EXTERNAL_LINK</code> (validate in service or DTO)</li>
+        <li>Criteria: <code>tenantId.equals</code>, <code>status.equals</code>, <code>slug.equals</code>, <code>sort=displayOrder,asc</code></li>
+    </ul>
+
+    <h3>4.3 ProfileAchievement</h3>
+    <ul>
+        <li><code>category</code>: AWARD | HONOR | SPEAKING | EDUCATION | OTHER</li>
+        <li>Criteria: <code>tenantId.equals</code>, <code>sort=displayOrder,asc</code></li>
+    </ul>
+
+    <h3>4.4 ProfileAffiliation</h3>
+    <ul>
+        <li>Criteria: <code>tenantId.equals</code>, <code>sort=displayOrder,asc</code></li>
+    </ul>
+
+    <h3>4.5 ProfileMediaAsset</h3>
+    <ul>
+        <li><code>fileUrl</code> required</li>
+        <li><code>isDownloadable</code> default true; <code>requiresEmail</code> default false</li>
+        <li>Criteria: <code>tenantId.equals</code>, <code>sort=displayOrder,asc</code></li>
+    </ul>
+
+    <h2>5. REST API contract</h2>
+    <p>Frontend proxies in <code>mosc-temp/src/pages/api/proxy/</code> forward to these paths. JSON uses <strong>camelCase</strong> matching <code>src/types/profileSite.ts</code>.</p>
+    <table>
+        <thead><tr><th>Resource</th><th>Methods</th><th>Notes</th></tr></thead>
+        <tbody>
+            <tr><td><code>/api/public-profiles</code></td><td>GET, POST</td><td>List filtered by <code>tenantId.equals</code>; expect 0–1 row per tenant</td></tr>
+            <tr><td><code>/api/public-profiles/{id}</code></td><td>GET, PATCH, DELETE</td><td>PATCH: <code>Content-Type: application/merge-patch+json</code></td></tr>
+            <tr><td><code>/api/profile-writings</code></td><td>GET, POST</td><td></td></tr>
+            <tr><td><code>/api/profile-writings/{id}</code></td><td>GET, PATCH, DELETE</td><td></td></tr>
+            <tr><td><code>/api/profile-achievements</code></td><td>GET, POST</td><td></td></tr>
+            <tr><td><code>/api/profile-achievements/{id}</code></td><td>GET, PATCH, DELETE</td><td></td></tr>
+            <tr><td><code>/api/profile-affiliations</code></td><td>GET, POST</td><td></td></tr>
+            <tr><td><code>/api/profile-affiliations/{id}</code></td><td>GET, PATCH, DELETE</td><td></td></tr>
+            <tr><td><code>/api/profile-media-assets</code></td><td>GET, POST</td><td></td></tr>
+            <tr><td><code>/api/profile-media-assets/{id}</code></td><td>GET, PATCH, DELETE</td><td></td></tr>
+            <tr><td><code>/api/tenant-organizations/{id}</code></td><td>PATCH</td><td>Include <code>siteType</code>, <code>siteTemplateVersion</code></td></tr>
+            <tr><td><code>/api/tenant-settings</code></td><td>GET, PATCH</td><td>Include six profile section flags</td></tr>
+        </tbody>
+    </table>
+
+    <h3>5.1 Criteria query examples (JHipster / Spring Data REST)</h3>
+    <pre>GET /api/public-profiles?tenantId.equals=tenant_demo_002
+GET /api/profile-writings?tenantId.equals=tenant_demo_002&amp;status.equals=PUBLISHED&amp;sort=displayOrder,asc
+GET /api/profile-achievements?tenantId.equals=tenant_demo_002&amp;sort=displayOrder,asc</pre>
+
+    <h3>5.2 Create payload requirements</h3>
+    <ul>
+        <li>All POST bodies must include <code>tenantId</code> (frontend uses <code>withTenantId</code> / proxy injection)</li>
+        <li>Include <code>createdAt</code> and <code>updatedAt</code> ISO timestamps if your validators require them (frontend sends them)</li>
+        <li>Do <strong>not</strong> require <code>id</code> on POST (or accept <code>null</code>)</li>
+        <li>PATCH payloads must accept <code>id</code> in body (frontend sends <code>id</code> with merge-patch)</li>
+    </ul>
+
+    <h3>5.3 Authentication and tenancy</h3>
+    <ul>
+        <li>Service JWT (<code>Authorization: Bearer</code>) from Next.js proxy and server actions</li>
+        <li><code>X-Tenant-ID</code> header required for tenant-scoped reads (see <code>TenantContextFilter</code>)</li>
+        <li>Public pages call <code>/api/proxy/*</code> without Clerk; backend still uses service JWT from proxy</li>
+    </ul>
+
+    <h2>6. DTO ↔ frontend mapping</h2>
+    <p>Keep field names identical to <code>mosc-temp/src/types/profileSite.ts</code>:</p>
+    <pre>displayName, tagline, headline, bioMarkdown, profileImageUrl, coverImageUrl,
+location, languages, publicSlug, contactEmail, contactFormEnabled,
+linkedinUrl, twitterUrl, facebookUrl, instagramUrl, youtubeUrl, websiteUrl,
+cvDocumentUrl, metaTitle, metaDescription, isPublished, ownerUserProfileId,
+writingType, externalUrl, publicationName, publishedAt, displayOrder,
+achievementDate, category, issuer, isFeatured, organizationName, fileUrl,
+fileType, fileSizeBytes, isDownloadable, requiresEmail</pre>
+
+    <h2>7. Files to touch (checklist)</h2>
+    <table>
+        <thead><tr><th>Area</th><th>Typical paths (adjust to your tree)</th></tr></thead>
+        <tbody>
+            <tr><td>Liquibase</td><td><code>src/main/resources/config/liquibase/changelog/20260703120000_personal_profile_site.xml</code></td></tr>
+            <tr><td>Domain</td><td><code>.../domain/PublicProfile.java</code>, <code>ProfileWriting.java</code>, etc.</td></tr>
+            <tr><td>REST</td><td><code>.../web/rest/PublicProfileResource.java</code>, etc.</td></tr>
+            <tr><td>Extend</td><td><code>TenantOrganization.java</code>, <code>TenantSettings.java</code>, mappers, DTOs, Criteria</td></tr>
+            <tr><td>OpenAPI</td><td><code>src/main/resources/swagger/api-docs.json</code> → sync to mosc-temp <code>documentation/Swagger_API_Docs/</code></td></tr>
+            <tr><td>Sequences</td><td><code>src/main/resources/sqls/sync_all_table_sequences.sql</code> — add five new tables</td></tr>
+        </tbody>
+    </table>
+
+    <h2>8. Acceptance criteria</h2>
+    <ol>
+        <li>Liquibase applies cleanly on empty and existing databases.</li>
+        <li><code>GET /api/tenant-organizations/{id}</code> returns <code>siteType</code>.</li>
+        <li><code>PATCH /api/tenant-settings/{id}</code> persists all six profile section flags.</li>
+        <li>CRUD smoke test for each new resource with <code>tenantId.equals</code> filter.</li>
+        <li>Second <code>POST /api/public-profiles</code> for same <code>tenantId</code> returns 409 or clear validation error.</li>
+        <li>Frontend <code>mosc-temp</code> admin <code>/admin/profile-site</code> loads and saves without 404.</li>
+        <li>Public homepage for <code>PERSONAL_PROFILE</code> tenant shows data from proxy GETs.</li>
+    </ol>
+
+    <h2>9. Out of scope (v1)</h2>
+    <ul>
+        <li>Batch jobs reading profile tables (see batch-jobs PRD — not required)</li>
+        <li>Merge with <code>news_article</code> table</li>
+        <li>Multi-profile per tenant (multiple <code>public_profile</code> rows)</li>
+        <li>Public unauthenticated backend endpoints (proxy + JWT is sufficient)</li>
+        <li>Contact form email job triggered from <code>contactFormEnabled</code> (future)</li>
+    </ul>
+
+    <div class="warning-box">
+        <p><strong>Deployment order:</strong> Deploy backend (Liquibase + REST) <em>before</em> enabling a pilot <code>PERSONAL_PROFILE</code> tenant in production. Until then, mosc-temp fails gracefully with empty sections.</p>
+    </div>
+
+</body>
+</html>

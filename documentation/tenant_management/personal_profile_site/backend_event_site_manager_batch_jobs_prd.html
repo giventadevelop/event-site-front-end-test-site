@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Profile Site — event-site-manager-batch-jobs PRD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        h2 { font-size: 1.45em; border-left: 4px solid #0066cc; padding-left: 14px; margin: 28px 0 12px; }
+        h3 { font-size: 1.15em; margin: 18px 0 8px; color: #0052a3; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 14px; border-radius: 6px; margin: 16px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+    </style>
+</head>
+<body>
+
+    <h1>Personal Profile Site — Batch Jobs PRD</h1>
+    <p class="doc-meta">
+        <strong>Project:</strong> <code>event-site-manager-batch-jobs</code><br>
+        <strong>Repo path:</strong> <code>F:/project_workspace/event-site-manager-batch-jobs</code><br>
+        <strong>Index:</strong> <a href="personal_profile_site_prd.html">personal_profile_site_prd.html</a> ·
+        <strong>Main API PRD:</strong> <a href="backend_event_site_manager_service_prd.html">event-site-manager-service PRD</a>
+    </p>
+
+    <div class="lead">
+        <p><strong>v1 position:</strong> Batch jobs do <strong>not</strong> need new scheduled jobs, email flows, or REST endpoints for personal profile content. They share the <strong>same PostgreSQL database</strong> as <code>event-site-manager-service</code> and run with <code>ddl-auto: validate</code> against a subset of JPA entities.</p>
+        <p><strong>Required work:</strong> Keep <strong>shared entity mappings</strong> and <strong>canonical schema copy</strong> in sync so batch servers start after Liquibase runs on the main service.</p>
+    </div>
+
+    <div class="warning-box">
+        <p><strong>Do not block MVP on batch-jobs.</strong> If the main service migration is deployed first, batch-jobs must be updated before the next batch server restart — otherwise Hibernate validation can fail on <code>TenantSettings</code> / <code>TenantOrganization</code> column mismatches.</p>
+    </div>
+
+    <h2>1. Shared vs service-only changes</h2>
+    <table>
+        <thead><tr><th>Database object</th><th>event-site-manager-service</th><th>event-site-manager-batch-jobs</th></tr></thead>
+        <tbody>
+            <tr><td><code>tenant_organization.site_type</code></td><td>Entity + DTO + REST</td><td><strong>JPA fields only</strong> on shared <code>TenantOrganization</code> entity</td></tr>
+            <tr><td><code>tenant_organization.site_template_version</code></td><td>Entity + DTO + REST</td><td><strong>JPA fields only</strong></td></tr>
+            <tr><td><code>tenant_settings</code> (6 profile flags)</td><td>Entity + DTO + REST</td><td><strong>JPA fields only</strong> on <code>com.eventmanager.batch.domain.TenantSettings</code></td></tr>
+            <tr><td><code>public_profile</code></td><td>Full entity + REST</td><td><strong>No entity required</strong> (no job reads it in v1)</td></tr>
+            <tr><td><code>profile_writing</code></td><td>Full entity + REST</td><td><strong>No entity required</strong></td></tr>
+            <tr><td><code>profile_achievement</code></td><td>Full entity + REST</td><td><strong>No entity required</strong></td></tr>
+            <tr><td><code>profile_affiliation</code></td><td>Full entity + REST</td><td><strong>No entity required</strong></td></tr>
+            <tr><td><code>profile_media_asset</code></td><td>Full entity + REST</td><td><strong>No entity required</strong></td></tr>
+            <tr><td>Liquibase migration</td><td><strong>Yes</strong> — runtime migration</td><td><strong>No</strong> — uses DB already migrated by main service</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. Why only two entities change in batch-jobs</h2>
+    <p>The batch application embeds a <strong>small copy</strong> of domain entities (typically ~11 tables) for jobs that send email, process payments, etc. Those jobs load <code>TenantSettings</code> (logo, support email, branding) and may reference <code>TenantOrganization</code>.</p>
+    <p>New profile tables exist in PostgreSQL but are <strong>invisible to Hibernate</strong> until you add matching <code>@Entity</code> classes. Hibernate <code>ddl-auto: validate</code> only validates mapped entities — not every table in the database.</p>
+    <p><strong>Therefore:</strong> Add columns only to entities batch-jobs already maps. Do <strong>not</strong> add <code>PublicProfile</code> entities to batch-jobs unless a future job needs them.</p>
+
+    <h2>3. TenantOrganization entity (batch-jobs)</h2>
+    <p><strong>File (typical):</strong> <code>com.eventmanager.batch.domain.TenantOrganization</code> or equivalent in your tree.</p>
+    <table>
+        <thead><tr><th>Java field</th><th>Column</th><th>Type</th></tr></thead>
+        <tbody>
+            <tr><td><code>siteType</code></td><td><code>site_type</code></td><td><code>String</code>, length 32, NOT NULL, default EVENT_ORG</td></tr>
+            <tr><td><code>siteTemplateVersion</code></td><td><code>site_template_version</code></td><td><code>String</code>, length 32, nullable</td></tr>
+        </tbody>
+    </table>
+    <p>No DTO, Resource, or job logic changes required for v1.</p>
+
+    <h2>4. TenantSettings entity (batch-jobs)</h2>
+    <p><strong>File:</strong> <code>com.eventmanager.batch.domain.TenantSettings</code> (same pattern as Google AdSense integration).</p>
+    <table>
+        <thead><tr><th>Java field</th><th>Column</th><th>Default</th></tr></thead>
+        <tbody>
+            <tr><td><code>showPublicProfileHeroSection</code></td><td><code>show_public_profile_hero_section</code></td><td>false</td></tr>
+            <tr><td><code>showProfileWritingsSection</code></td><td><code>show_profile_writings_section</code></td><td>false</td></tr>
+            <tr><td><code>showProfileAchievementsSection</code></td><td><code>show_profile_achievements_section</code></td><td>false</td></tr>
+            <tr><td><code>showProfileAffiliationsSection</code></td><td><code>show_profile_affiliations_section</code></td><td>false</td></tr>
+            <tr><td><code>showProfileMediaDownloadsSection</code></td><td><code>show_profile_media_downloads_section</code></td><td>false</td></tr>
+            <tr><td><code>showProfileContactSection</code></td><td><code>show_profile_contact_section</code></td><td>false</td></tr>
+        </tbody>
+    </table>
+    <p>Batch jobs do not read these flags in v1; fields exist so ORM metadata matches the table after migration.</p>
+
+    <h2>5. Canonical schema mirror</h2>
+    <div class="info-box">
+        <p><strong>Action:</strong> Copy updated <code>CREATE TABLE</code> / <code>ALTER</code> definitions from mosc-temp into batch-jobs canonical SQL (same as AdSense pattern).</p>
+    </div>
+    <table>
+        <thead><tr><th>File</th><th>Action</th></tr></thead>
+        <tbody>
+            <tr><td><code>mosc-temp/code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></td><td>Source of truth</td></tr>
+            <tr><td><code>event-site-manager-batch-jobs/database/Latest_Schema_Post__Blob_Claude_12.sql</code></td><td>Mirror tenant_organization, tenant_settings, and new profile tables in CREATE TABLE blocks</td></tr>
+        </tbody>
+    </table>
+    <p>Do <strong>not</strong> add standalone ALTER migration files in batch-jobs; Liquibase runs only in <code>event-site-manager-service</code>.</p>
+
+    <h2>6. Sequence / import alignment</h2>
+    <p>If you restore DB dumps or re-import SQL on a batch server:</p>
+    <ol>
+        <li>Run <code>sync_all_table_sequences.sql</code> (includes new profile sequences once main service adds them)</li>
+        <li>Run <code>sync_spring_batch_sequences.sql</code> for batch metadata tables</li>
+    </ol>
+    <p>See <code>documentation/database_export_import/SEQUENCE_ID_ALIGNMENT_GUIDE.html</code> and <code>.cursor/rules/sequence_id_alignment_and_import.mdc</code>.</p>
+
+    <h2>7. Future optional jobs (not v1)</h2>
+    <table>
+        <thead><tr><th>Job idea</th><th>Trigger</th><th>Prerequisite</th></tr></thead>
+        <tbody>
+            <tr><td>Profile contact form email</td><td>Public form POST when <code>contactFormEnabled=true</code></td><td>Add <code>PublicProfile</code> entity to batch-jobs or call main API</td></tr>
+            <tr><td>“Profile published” notification</td><td>Admin sets <code>isPublished=true</code></td><td>Webhook or polling on <code>public_profile</code></td></tr>
+            <tr><td>Digest of new writings</td><td>Cron weekly</td><td><code>ProfileWriting</code> entity in batch-jobs</td></tr>
+        </tbody>
+    </table>
+    <p>Follow existing patterns: <code>contactFormEmailJob</code>, donation receipt jobs in batch-jobs.</p>
+
+    <h2>8. Acceptance criteria (batch-jobs)</h2>
+    <ol>
+        <li>Application starts with <code>ddl-auto: validate</code> after main service Liquibase migration.</li>
+        <li><code>TenantSettings</code> and <code>TenantOrganization</code> entities include all new columns.</li>
+        <li><code>database/Latest_Schema_Post__Blob_Claude_12.sql</code> matches mosc-temp canonical schema for changed tables.</li>
+        <li>Existing batch jobs (email, Stripe, etc.) run unchanged — no regression.</li>
+    </ol>
+
+    <h2>9. Coordination checklist (both repos)</h2>
+    <table>
+        <thead><tr><th>Step</th><th>Owner</th><th>Action</th></tr></thead>
+        <tbody>
+            <tr><td>1</td><td>mosc-temp</td><td>Canonical SQL + migration SQL (done)</td></tr>
+            <tr><td>2</td><td>event-site-manager-service</td><td>Liquibase + full REST + entity stack</td></tr>
+            <tr><td>3</td><td>event-site-manager-batch-jobs</td><td>Update shared JPA entities + schema mirror</td></tr>
+            <tr><td>4</td><td>Ops</td><td>Deploy main service first; restart batch server; smoke-test one job</td></tr>
+            <tr><td>5</td><td>mosc-temp</td><td>Pilot tenant per <a href="pilot_tenant_acceptance.md">pilot_tenant_acceptance.md</a></td></tr>
+        </tbody>
+    </table>
+
+</body>
+</html>

@@ -1,3 +1,5 @@
+import type { TenantSiteType } from '@/types/profileSite';
+
 /**
  * DTO for tenant organization details.
  * Matches backend OpenAPI schema.
@@ -18,6 +20,8 @@ export interface TenantOrganizationDTO {
   subscriptionEndDate?: string;   // YYYY-MM-DD
   monthlyFeeUsd?: number;
   stripeCustomerId?: string;
+  /** Stripe subscription id for the tenant platform subscription (gas station billing) */
+  stripeSubscriptionId?: string;
   description?: string;
   addressLine1?: string;
   addressLine2?: string;
@@ -26,6 +30,10 @@ export interface TenantOrganizationDTO {
   zipCode?: string;
   country?: string;
   websiteUrl?: string;
+  /** Product archetype: EVENT_ORG | SPORTS_TEAM | MUSIC_BAND | CHURCH_ORG | PERSONAL_PROFILE | HYBRID | GAS_STATION */
+  siteType?: TenantSiteType;
+  /** Optional theme/template variant within a siteType */
+  siteTemplateVersion?: string;
   isActive?: boolean;
   createdAt: string; // ISO date-time
   updatedAt: string; // ISO date-time
@@ -78,12 +86,27 @@ export interface TenantSettingsDTO {
   defaultHeroIncludeWithEvents?: boolean;
   /** Max active slides shown on homepage rotation (1–6, default 6) */
   defaultHeroMaxDisplayCount?: number;
+  /** When true, show event hero images in the homepage hero section */
+  displayEventHeroImages?: boolean;
   /** When true, render Google AdSense regions on public satellite pages */
   enableGoogleAdsense?: boolean;
   /** AdSense publisher ID (ca-pub-...) */
   googleAdsensePublisherId?: string;
   /** JSON map of layout region id → ad slot id */
   googleAdsensePlacementsJson?: string;
+  // Personal profile homepage section flags (PERSONAL_PROFILE / HYBRID site types)
+  showPublicProfileHeroSection?: boolean;
+  showProfileWritingsSection?: boolean;
+  showProfileAchievementsSection?: boolean;
+  showProfileAffiliationsSection?: boolean;
+  showProfileMediaDownloadsSection?: boolean;
+  showProfileContactSection?: boolean;
+  // Gas station COO module (GAS_STATION site type)
+  enableGasStationModule?: boolean;
+  gasAiEngineBaseUrl?: string;
+  gasAiEngineApiKeyRef?: string;
+  gasAiEngineWebhookToken?: string;
+  gasDailyBriefHourLocal?: number;
   // Homepage edge cache version (cache-busting; bump to refresh CDN cache)
   homepageCacheVersion?: number;
   /** @deprecated v2.0 — canonical source is tenant_organization.description */

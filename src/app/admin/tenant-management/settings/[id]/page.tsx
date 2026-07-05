@@ -1,11 +1,15 @@
 import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import { fetchTenantSetting } from '@/app/admin/tenant-management/settings/ApiServerActions';
+import { notFound, redirect } from 'next/navigation';
+import { fetchTenantSetting, fetchTenantSettingsByTenantId } from '@/app/admin/tenant-management/settings/ApiServerActions';
 import { fetchTenantOrganization, fetchTenantOrganizations } from '@/app/admin/tenant-management/organizations/ApiServerActions';
 import Link from 'next/link';
 import { FaArrowLeft } from 'react-icons/fa';
 import { TenantSettingsDTO, TenantOrganizationDTO } from '@/app/admin/tenant-management/types';
 import TenantSettingsViewClient from './TenantSettingsViewClient';
+import {
+  getAppScopedTenantId,
+  isSatelliteTenantSettingsScope,
+} from '@/lib/tenantSettingsScope';
 
 interface PageProps {
   params: { id: string };
@@ -19,6 +23,17 @@ export default async function TenantSettingsViewPage({ params }: PageProps) {
 
   if (isNaN(settingsId)) {
     notFound();
+  }
+
+  if (isSatelliteTenantSettingsScope()) {
+    const configuredTenantId = getAppScopedTenantId();
+    const forConfiguredTenant = await fetchTenantSettingsByTenantId(configuredTenantId);
+    if (forConfiguredTenant?.id && forConfiguredTenant.id !== settingsId) {
+      redirect(`/admin/tenant-management/settings/${forConfiguredTenant.id}`);
+    }
+    if (!forConfiguredTenant) {
+      notFound();
+    }
   }
 
   // Fetch settings data
@@ -68,7 +83,7 @@ export default async function TenantSettingsViewPage({ params }: PageProps) {
 
   if (error) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style={{ paddingTop: '120px' }}>
         <div className="mb-8">
           <Link
             href="/admin/tenant-management/settings"
@@ -109,7 +124,7 @@ export default async function TenantSettingsViewPage({ params }: PageProps) {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style={{ paddingTop: '120px' }}>
       {/* Breadcrumb Navigation */}
       <nav className="flex mb-8" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">

@@ -203,6 +203,17 @@ DROP TABLE IF EXISTS public.rel_event_details__discount_codes CASCADE;
 DROP TABLE IF EXISTS public.user_task CASCADE;
 DROP TABLE IF EXISTS public.user_subscription CASCADE;
 DROP TABLE IF EXISTS public.event_type_details CASCADE;
+-- Gas station COO module (children before gas_station_location)
+DROP TABLE IF EXISTS public.gas_station_recommendation CASCADE;
+DROP TABLE IF EXISTS public.gas_station_daily_metrics CASCADE;
+DROP TABLE IF EXISTS public.gas_station_integration CASCADE;
+DROP TABLE IF EXISTS public.gas_station_location CASCADE;
+-- Personal profile site module
+DROP TABLE IF EXISTS public.profile_media_asset CASCADE;
+DROP TABLE IF EXISTS public.profile_affiliation CASCADE;
+DROP TABLE IF EXISTS public.profile_achievement CASCADE;
+DROP TABLE IF EXISTS public.profile_writing CASCADE;
+DROP TABLE IF EXISTS public.public_profile CASCADE;
 DROP TABLE IF EXISTS public.tenant_settings CASCADE;
 DROP TABLE IF EXISTS public.user_profile CASCADE;
 DROP TABLE IF EXISTS public.tenant_organization CASCADE;
@@ -575,6 +586,18 @@ END IF;
         RAISE EXCEPTION 'Event capacity must be greater than zero, got: %', NEW.capacity;
 END IF;
 
+    IF NEW.description IS NOT NULL AND char_length(NEW.description) > 900 THEN
+        RAISE EXCEPTION 'Event description cannot exceed 900 characters, got: %', char_length(NEW.description);
+    END IF;
+
+    IF NEW.directions_to_venue IS NOT NULL AND char_length(NEW.directions_to_venue) > 600 THEN
+        RAISE EXCEPTION 'Directions to venue cannot exceed 600 characters, got: %', char_length(NEW.directions_to_venue);
+    END IF;
+
+    IF NEW.caption IS NOT NULL AND char_length(NEW.caption) > 255 THEN
+        RAISE EXCEPTION 'Event caption cannot exceed 255 characters, got: %', char_length(NEW.caption);
+    END IF;
+
     -- Log the validation success
     RAISE NOTICE 'Event validation passed for event: %', NEW.title;
 
@@ -818,6 +841,69 @@ CREATE SEQUENCE IF NOT EXISTS public.tenant_organization_id_seq
     CACHE 1;
 
 CREATE SEQUENCE IF NOT EXISTS public.tenant_settings_id_seq
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    START WITH 1
+    CACHE 1;
+
+CREATE SEQUENCE IF NOT EXISTS public.public_profile_id_seq
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    START WITH 1
+    CACHE 1;
+
+CREATE SEQUENCE IF NOT EXISTS public.profile_writing_id_seq
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    START WITH 1
+    CACHE 1;
+
+CREATE SEQUENCE IF NOT EXISTS public.profile_achievement_id_seq
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    START WITH 1
+    CACHE 1;
+
+CREATE SEQUENCE IF NOT EXISTS public.profile_affiliation_id_seq
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    START WITH 1
+    CACHE 1;
+
+CREATE SEQUENCE IF NOT EXISTS public.profile_media_asset_id_seq
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    START WITH 1
+    CACHE 1;
+
+CREATE SEQUENCE IF NOT EXISTS public.gas_station_location_id_seq
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    START WITH 1
+    CACHE 1;
+
+CREATE SEQUENCE IF NOT EXISTS public.gas_station_integration_id_seq
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    START WITH 1
+    CACHE 1;
+
+CREATE SEQUENCE IF NOT EXISTS public.gas_station_daily_metrics_id_seq
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    START WITH 1
+    CACHE 1;
+
+CREATE SEQUENCE IF NOT EXISTS public.gas_station_recommendation_id_seq
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
@@ -1322,8 +1408,8 @@ CREATE TABLE public.event_details (
                                       id int8 DEFAULT nextval('public.event_details_id_seq'::regclass) NOT NULL,
                                       tenant_id varchar(255) NULL,
                                       title varchar(255) NOT NULL,
-                                      caption varchar(500) NULL,
-                                      description text NULL,
+                                      caption varchar(255) NULL,
+                                      description varchar(900) NULL,
                                       start_date date NOT NULL,
                                       promotion_start_date date NOT NULL,
                                       end_date date NOT NULL,
@@ -1331,7 +1417,7 @@ CREATE TABLE public.event_details (
                                       end_time varchar(100) NOT NULL,
                                       timezone varchar(64) NOT NULL,
                                       "location" varchar(500) NULL,
-                                      directions_to_venue text NULL,
+                                      directions_to_venue varchar(600) NULL,
                                       capacity int4 NULL,
                                       admission_type varchar(50) NULL,
                                       is_active bool DEFAULT true NULL,
@@ -1380,6 +1466,9 @@ CREATE TABLE public.event_details (
                                       CONSTRAINT check_deadlines CHECK (((registration_deadline IS NULL) OR (cancellation_deadline IS NULL) OR (cancellation_deadline <= registration_deadline))),
                                       CONSTRAINT check_event_dates CHECK ((end_date >= start_date)),
                                       CONSTRAINT event_details_max_guests_per_attendee_check CHECK ((max_guests_per_attendee >= 0)),
+                                      CONSTRAINT event_details_description_len_chk CHECK ((description IS NULL OR char_length(description) <= 900)),
+                                      CONSTRAINT event_details_directions_len_chk CHECK ((directions_to_venue IS NULL OR char_length(directions_to_venue) <= 600)),
+                                      CONSTRAINT event_details_caption_len_chk CHECK ((caption IS NULL OR char_length(caption) <= 255)),
                                       CONSTRAINT event_details_pkey PRIMARY KEY (id),
                                       CONSTRAINT fk_event__created_by_id FOREIGN KEY (created_by_id) REFERENCES public.user_profile(id) ON DELETE SET NULL,
                                       CONSTRAINT fk_event__event_type_id FOREIGN KEY (event_type_id) REFERENCES public.event_type_details(id) ON DELETE SET NULL,
@@ -2912,6 +3001,7 @@ CREATE TABLE public.tenant_organization (
                                             subscription_end_date date,
                                             monthly_fee_usd numeric(21,2),
                                             stripe_customer_id character varying(255),
+                                            stripe_subscription_id character varying(255),
                                             description character varying(1000),
                                             address_line_1 character varying(255),
                                             address_line_2 character varying(255),
@@ -2920,9 +3010,12 @@ CREATE TABLE public.tenant_organization (
                                             zip_code character varying(20),
                                             country character varying(100),
                                             website_url character varying(1024),
+                                            site_type character varying(32) DEFAULT 'EVENT_ORG' NOT NULL,
+                                            site_template_version character varying(32),
                                             is_active boolean DEFAULT true,
                                             created_at timestamp without time zone DEFAULT now() NOT NULL,
                                             updated_at timestamp without time zone DEFAULT now() NOT NULL,
+                                            CONSTRAINT chk_tenant_organization__site_type CHECK ((site_type IN ('EVENT_ORG', 'SPORTS_TEAM', 'MUSIC_BAND', 'CHURCH_ORG', 'PERSONAL_PROFILE', 'HYBRID', 'GAS_STATION'))),
                                             CONSTRAINT check_monthly_fee_positive CHECK ((monthly_fee_usd >= (0)::numeric)),
                                             CONSTRAINT check_subscription_dates CHECK (((subscription_end_date IS NULL) OR (subscription_end_date >= subscription_start_date))),
                                             CONSTRAINT tenant_organization_pkey PRIMARY KEY (id),
@@ -2948,6 +3041,9 @@ COMMENT ON COLUMN public.tenant_organization.state_province IS 'Canonical state,
 COMMENT ON COLUMN public.tenant_organization.zip_code IS 'Canonical ZIP or postal code.';
 COMMENT ON COLUMN public.tenant_organization.country IS 'Canonical country name (free text).';
 COMMENT ON COLUMN public.tenant_organization.website_url IS 'Canonical public website URL for the organization.';
+COMMENT ON COLUMN public.tenant_organization.site_type IS 'Product archetype for the tenant site: EVENT_ORG | SPORTS_TEAM | MUSIC_BAND | CHURCH_ORG | PERSONAL_PROFILE | HYBRID | GAS_STATION.';
+COMMENT ON COLUMN public.tenant_organization.site_template_version IS 'Optional theme/template variant within a site_type.';
+COMMENT ON COLUMN public.tenant_organization.stripe_subscription_id IS 'Stripe subscription id for the tenant platform subscription (gas station per-location billing).';
 
 
 --
@@ -3000,6 +3096,7 @@ CREATE TABLE public.tenant_settings (
                                         default_hero_display_mode character varying(32) DEFAULT 'slideshow',
                                         default_hero_include_with_events boolean DEFAULT true,
                                         default_hero_max_display_count INTEGER null,
+                                        display_event_hero_images boolean DEFAULT true NOT NULL,
                                         facebook_url varchar(1024) NULL,
                                         instagram_url varchar(1024) NULL,
                                         twitter_url varchar(1024) NULL,
@@ -3009,8 +3106,20 @@ CREATE TABLE public.tenant_settings (
                                         enable_google_adsense boolean DEFAULT false NOT NULL,
                                         google_adsense_publisher_id character varying(32),
                                         google_adsense_placements_json text,
+                                        show_public_profile_hero_section boolean DEFAULT false NOT NULL,
+                                        show_profile_writings_section boolean DEFAULT false NOT NULL,
+                                        show_profile_achievements_section boolean DEFAULT false NOT NULL,
+                                        show_profile_affiliations_section boolean DEFAULT false NOT NULL,
+                                        show_profile_media_downloads_section boolean DEFAULT false NOT NULL,
+                                        show_profile_contact_section boolean DEFAULT false NOT NULL,
+                                        enable_gas_station_module boolean DEFAULT false NOT NULL,
+                                        gas_ai_engine_base_url character varying(1024),
+                                        gas_ai_engine_api_key_ref character varying(512),
+                                        gas_ai_engine_webhook_token character varying(1048),
+                                        gas_daily_brief_hour_local smallint,
                                         created_at timestamp without time zone DEFAULT now() NOT NULL,
                                         updated_at timestamp without time zone DEFAULT now() NOT NULL,
+                                        CONSTRAINT chk_tenant_settings__gas_brief_hour CHECK (((gas_daily_brief_hour_local IS NULL) OR ((gas_daily_brief_hour_local >= 0) AND (gas_daily_brief_hour_local <= 23)))),
                                         CONSTRAINT check_default_capacity_positive CHECK (((default_event_capacity IS NULL) OR (default_event_capacity > 0))),
                                         CONSTRAINT check_max_attendees_positive CHECK (((max_attendees_per_event IS NULL) OR (max_attendees_per_event > 0))),
                                         CONSTRAINT check_max_events_positive CHECK (((max_events_per_month IS NULL) OR (max_events_per_month > 0))),
@@ -3060,6 +3169,307 @@ COMMENT ON COLUMN public.tenant_settings.default_hero_include_with_events IS 'Wh
 COMMENT ON COLUMN public.tenant_settings.enable_google_adsense IS 'Master on/off for Google AdSense ad regions on this tenant satellite site.';
 COMMENT ON COLUMN public.tenant_settings.google_adsense_publisher_id IS 'AdSense publisher ID (ca-pub-...) required when enable_google_adsense is true.';
 COMMENT ON COLUMN public.tenant_settings.google_adsense_placements_json IS 'JSON map of layout region id to AdSense ad slot id, e.g. {"sidebar":"123","between_sections":"456","footer_strip":"789"}.';
+
+COMMENT ON COLUMN public.tenant_settings.show_public_profile_hero_section IS 'When true, homepage shows the personal profile hero section (PERSONAL_PROFILE / HYBRID site types).';
+COMMENT ON COLUMN public.tenant_settings.show_profile_writings_section IS 'When true, homepage shows the profile writings/portfolio section.';
+COMMENT ON COLUMN public.tenant_settings.show_profile_achievements_section IS 'When true, homepage shows the profile achievements timeline section.';
+COMMENT ON COLUMN public.tenant_settings.show_profile_affiliations_section IS 'When true, homepage shows the profile affiliations section.';
+COMMENT ON COLUMN public.tenant_settings.show_profile_media_downloads_section IS 'When true, homepage shows the profile downloadable media section.';
+COMMENT ON COLUMN public.tenant_settings.show_profile_contact_section IS 'When true, homepage shows the profile contact section.';
+COMMENT ON COLUMN public.tenant_settings.enable_gas_station_module IS 'Master on/off for the gas station COO admin module for this tenant (GAS_STATION site type).';
+COMMENT ON COLUMN public.tenant_settings.gas_ai_engine_base_url IS 'Base URL of the external AI engine deployment serving this tenant (invoked server-side only).';
+COMMENT ON COLUMN public.tenant_settings.gas_ai_engine_api_key_ref IS 'Secrets-manager reference to the API key for calling the AI engine. Never store the raw key.';
+COMMENT ON COLUMN public.tenant_settings.gas_ai_engine_webhook_token IS 'Token the AI engine presents on write-back callbacks for verification.';
+COMMENT ON COLUMN public.tenant_settings.gas_daily_brief_hour_local IS 'Local hour (0-23) the morning brief is expected/delivered for this tenant; interpreted per station timezone.';
+
+
+--
+-- Personal profile site tables (site_type = PERSONAL_PROFILE / HYBRID)
+--
+
+CREATE TABLE IF NOT EXISTS public.public_profile (
+  id bigint DEFAULT nextval('public.public_profile_id_seq'::regclass) NOT NULL,
+  tenant_id character varying(255) NOT NULL,
+  display_name character varying(255) NOT NULL,
+  tagline character varying(500),
+  headline character varying(500),
+  bio_markdown text,
+  profile_image_url character varying(1024),
+  cover_image_url character varying(1024),
+  location character varying(255),
+  languages character varying(255),
+  public_slug character varying(100),
+  contact_email character varying(255),
+  contact_form_enabled boolean DEFAULT false NOT NULL,
+  linkedin_url character varying(500),
+  twitter_url character varying(500),
+  facebook_url character varying(500),
+  instagram_url character varying(500),
+  youtube_url character varying(500),
+  website_url character varying(500),
+  cv_document_url character varying(1024),
+  meta_title character varying(255),
+  meta_description character varying(500),
+  is_published boolean DEFAULT false NOT NULL,
+  owner_user_profile_id bigint,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  CONSTRAINT public_profile_pkey PRIMARY KEY (id),
+  CONSTRAINT public_profile_tenant_id_key UNIQUE (tenant_id),
+  CONSTRAINT fk_public_profile__tenant_id FOREIGN KEY (tenant_id) REFERENCES public.tenant_organization(tenant_id) ON DELETE CASCADE,
+  CONSTRAINT fk_public_profile__owner_user_profile_id FOREIGN KEY (owner_user_profile_id) REFERENCES public.user_profile(id) ON DELETE SET NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_public_profile__tenant_slug ON public.public_profile (tenant_id, public_slug) WHERE public_slug IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS public.profile_writing (
+  id bigint DEFAULT nextval('public.profile_writing_id_seq'::regclass) NOT NULL,
+  tenant_id character varying(255) NOT NULL,
+  title character varying(500) NOT NULL,
+  slug character varying(150),
+  excerpt character varying(2000),
+  body text,
+  featured_image_url character varying(1024),
+  writing_type character varying(32) NOT NULL DEFAULT 'ORIGINAL',
+  external_url character varying(1024),
+  publication_name character varying(255),
+  published_at date,
+  status character varying(32) NOT NULL DEFAULT 'DRAFT',
+  display_order integer,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  CONSTRAINT profile_writing_pkey PRIMARY KEY (id),
+  CONSTRAINT chk_profile_writing__writing_type CHECK (writing_type IN ('ORIGINAL', 'REPUBLISHED', 'EXTERNAL_LINK')),
+  CONSTRAINT chk_profile_writing__status CHECK (status IN ('DRAFT', 'PUBLISHED', 'ARCHIVED')),
+  CONSTRAINT fk_profile_writing__tenant_id FOREIGN KEY (tenant_id) REFERENCES public.tenant_organization(tenant_id) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_profile_writing__tenant_slug ON public.profile_writing (tenant_id, slug) WHERE slug IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_profile_writing_tenant_status ON public.profile_writing (tenant_id, status);
+
+CREATE TABLE IF NOT EXISTS public.profile_achievement (
+  id bigint DEFAULT nextval('public.profile_achievement_id_seq'::regclass) NOT NULL,
+  tenant_id character varying(255) NOT NULL,
+  title character varying(500) NOT NULL,
+  description character varying(2000),
+  achievement_date date,
+  category character varying(32) NOT NULL DEFAULT 'OTHER',
+  issuer character varying(255),
+  url character varying(500),
+  display_order integer,
+  is_featured boolean DEFAULT false NOT NULL,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  CONSTRAINT profile_achievement_pkey PRIMARY KEY (id),
+  CONSTRAINT chk_profile_achievement__category CHECK (category IN ('AWARD', 'HONOR', 'SPEAKING', 'EDUCATION', 'OTHER')),
+  CONSTRAINT fk_profile_achievement__tenant_id FOREIGN KEY (tenant_id) REFERENCES public.tenant_organization(tenant_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_profile_achievement_tenant ON public.profile_achievement (tenant_id);
+
+CREATE TABLE IF NOT EXISTS public.profile_affiliation (
+  id bigint DEFAULT nextval('public.profile_affiliation_id_seq'::regclass) NOT NULL,
+  tenant_id character varying(255) NOT NULL,
+  organization_name character varying(255) NOT NULL,
+  role character varying(255),
+  description character varying(2000),
+  start_date date,
+  end_date date,
+  logo_url character varying(1024),
+  url character varying(500),
+  display_order integer,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  CONSTRAINT profile_affiliation_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_profile_affiliation__tenant_id FOREIGN KEY (tenant_id) REFERENCES public.tenant_organization(tenant_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_profile_affiliation_tenant ON public.profile_affiliation (tenant_id);
+
+CREATE TABLE IF NOT EXISTS public.profile_media_asset (
+  id bigint DEFAULT nextval('public.profile_media_asset_id_seq'::regclass) NOT NULL,
+  tenant_id character varying(255) NOT NULL,
+  title character varying(500) NOT NULL,
+  description character varying(2000),
+  file_url character varying(1024) NOT NULL,
+  file_type character varying(64),
+  file_size_bytes bigint,
+  display_order integer,
+  is_downloadable boolean DEFAULT true NOT NULL,
+  requires_email boolean DEFAULT false NOT NULL,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  CONSTRAINT profile_media_asset_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_profile_media_asset__tenant_id FOREIGN KEY (tenant_id) REFERENCES public.tenant_organization(tenant_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_profile_media_asset_tenant ON public.profile_media_asset (tenant_id);
+
+
+--
+-- Gas station COO module tables (site_type = GAS_STATION)
+--
+
+CREATE TABLE IF NOT EXISTS public.gas_station_location (
+  id bigint DEFAULT nextval('public.gas_station_location_id_seq'::regclass) NOT NULL,
+  tenant_id character varying(255) NOT NULL,
+  station_name character varying(255) NOT NULL,
+  station_code character varying(64) NOT NULL,
+  brand character varying(255),
+  region character varying(255),
+  address_line_1 character varying(255),
+  address_line_2 character varying(255),
+  city character varying(255),
+  state_province character varying(255),
+  zip_code character varying(20),
+  country character varying(100),
+  latitude numeric(10,7),
+  longitude numeric(10,7),
+  timezone character varying(64) DEFAULT 'America/New_York' NOT NULL,
+  sells_fuel boolean DEFAULT true NOT NULL,
+  fuel_dispenser_count integer,
+  has_car_wash boolean DEFAULT false NOT NULL,
+  has_foodservice boolean DEFAULT false NOT NULL,
+  has_lottery boolean DEFAULT false NOT NULL,
+  is_24_hours boolean DEFAULT false NOT NULL,
+  is_active boolean DEFAULT true NOT NULL,
+  included_in_subscription boolean DEFAULT true NOT NULL,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  CONSTRAINT gas_station_location_pkey PRIMARY KEY (id),
+  CONSTRAINT ux_gas_station_location__tenant_code UNIQUE (tenant_id, station_code),
+  CONSTRAINT chk_gas_station_location__dispensers CHECK ((fuel_dispenser_count IS NULL) OR (fuel_dispenser_count >= 0)),
+  CONSTRAINT fk_gas_station_location__tenant_id FOREIGN KEY (tenant_id) REFERENCES public.tenant_organization(tenant_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_gas_station_location_tenant ON public.gas_station_location (tenant_id);
+CREATE INDEX IF NOT EXISTS idx_gas_station_location_tenant_region ON public.gas_station_location (tenant_id, region);
+
+COMMENT ON TABLE public.gas_station_location IS 'Physical store locations owned by a GAS_STATION tenant. One tenant (paying customer) owns 1..N stations; all dashboards are station-scoped or tenant-rollup.';
+COMMENT ON COLUMN public.gas_station_location.region IS 'Free-text region/district label for chain grouping and rollups (e.g. "North Bay"). Promote to a dedicated table only if per-region settings are ever needed.';
+COMMENT ON COLUMN public.gas_station_location.latitude IS 'Geo latitude for competitor-proximity, weather and local-event signals used by the AI engine.';
+COMMENT ON COLUMN public.gas_station_location.longitude IS 'Geo longitude — see latitude.';
+
+-- =====================================================================
+-- 5. gas_station_integration — registry of connected systems per station
+--    Metadata only; the external AI engine performs the actual ingestion.
+-- =====================================================================
+
+CREATE TABLE IF NOT EXISTS public.gas_station_integration (
+  id bigint DEFAULT nextval('public.gas_station_integration_id_seq'::regclass) NOT NULL,
+  tenant_id character varying(255) NOT NULL,
+  station_id bigint NOT NULL,
+  system_type character varying(32) NOT NULL,
+  provider_name character varying(255),
+  connection_mode character varying(32) DEFAULT 'MANUAL' NOT NULL,
+  config_json text,
+  credentials_ref character varying(512),
+  sync_frequency character varying(32),
+  last_sync_at timestamp with time zone,
+  last_sync_status character varying(32),
+  is_enabled boolean DEFAULT true NOT NULL,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  CONSTRAINT gas_station_integration_pkey PRIMARY KEY (id),
+  CONSTRAINT chk_gas_station_integration__system_type CHECK (
+    system_type IN ('POS', 'FUEL_CONTROLLER', 'INVENTORY', 'PAYROLL_SCHEDULING', 'ACCOUNTING', 'LOTTERY', 'CAR_WASH', 'FOODSERVICE', 'OTHER')
+  ),
+  CONSTRAINT chk_gas_station_integration__connection_mode CHECK (
+    connection_mode IN ('API', 'FILE_UPLOAD', 'SFTP', 'MANUAL')
+  ),
+  CONSTRAINT fk_gas_station_integration__tenant_id FOREIGN KEY (tenant_id) REFERENCES public.tenant_organization(tenant_id) ON DELETE CASCADE,
+  CONSTRAINT fk_gas_station_integration__station_id FOREIGN KEY (station_id) REFERENCES public.gas_station_location(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_gas_station_integration_tenant ON public.gas_station_integration (tenant_id);
+CREATE INDEX IF NOT EXISTS idx_gas_station_integration_station ON public.gas_station_integration (station_id);
+
+COMMENT ON TABLE public.gas_station_integration IS 'Registry of a station''s connected source systems (POS, fuel controller, ...). Connection metadata only — raw ingestion and credentials live with the external AI engine / secrets manager.';
+COMMENT ON COLUMN public.gas_station_integration.credentials_ref IS 'Secrets-manager reference for connection credentials. Never store raw credentials.';
+
+-- =====================================================================
+-- 6. gas_station_daily_metrics — curated daily aggregates per station,
+--    written back by the AI engine (or entered manually pre-integration)
+-- =====================================================================
+
+CREATE TABLE IF NOT EXISTS public.gas_station_daily_metrics (
+  id bigint DEFAULT nextval('public.gas_station_daily_metrics_id_seq'::regclass) NOT NULL,
+  tenant_id character varying(255) NOT NULL,
+  station_id bigint NOT NULL,
+  metric_date date NOT NULL,
+  fuel_gallons_sold numeric(21,2),
+  fuel_revenue_usd numeric(21,2),
+  fuel_margin_cents_per_gallon numeric(8,2),
+  in_store_sales_usd numeric(21,2),
+  foodservice_sales_usd numeric(21,2),
+  lottery_sales_usd numeric(21,2),
+  transactions_count integer,
+  labor_hours numeric(10,2),
+  labor_cost_usd numeric(21,2),
+  waste_cost_usd numeric(21,2),
+  shrink_cost_usd numeric(21,2),
+  expected_profit_usd numeric(21,2),
+  actual_profit_usd numeric(21,2),
+  metrics_json text,
+  source_model_run_id character varying(128),
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  CONSTRAINT gas_station_daily_metrics_pkey PRIMARY KEY (id),
+  CONSTRAINT ux_gas_station_daily_metrics__station_date UNIQUE (station_id, metric_date),
+  CONSTRAINT fk_gas_station_daily_metrics__tenant_id FOREIGN KEY (tenant_id) REFERENCES public.tenant_organization(tenant_id) ON DELETE CASCADE,
+  CONSTRAINT fk_gas_station_daily_metrics__station_id FOREIGN KEY (station_id) REFERENCES public.gas_station_location(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_gas_station_daily_metrics_tenant_date ON public.gas_station_daily_metrics (tenant_id, metric_date);
+
+COMMENT ON TABLE public.gas_station_daily_metrics IS 'Curated per-station daily aggregates written back by the external AI engine. Raw transaction/time-series data is NOT stored in this schema.';
+COMMENT ON COLUMN public.gas_station_daily_metrics.metrics_json IS 'JSON object for additional curated metrics, allowing engine payload growth without schema migrations.';
+
+-- =====================================================================
+-- 7. gas_station_recommendation — the prescriptive morning action list
+-- =====================================================================
+
+CREATE TABLE IF NOT EXISTS public.gas_station_recommendation (
+  id bigint DEFAULT nextval('public.gas_station_recommendation_id_seq'::regclass) NOT NULL,
+  tenant_id character varying(255) NOT NULL,
+  station_id bigint,
+  recommendation_date date NOT NULL,
+  category character varying(32) NOT NULL,
+  title character varying(500) NOT NULL,
+  detail text,
+  estimated_impact_usd numeric(21,2),
+  priority integer,
+  confidence_pct numeric(5,2),
+  explanation text,
+  status character varying(32) DEFAULT 'NEW' NOT NULL,
+  owner_feedback character varying(2000),
+  source_model_run_id character varying(128),
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  CONSTRAINT gas_station_recommendation_pkey PRIMARY KEY (id),
+  CONSTRAINT chk_gas_station_recommendation__category CHECK (
+    category IN ('FUEL_PRICING', 'ORDERING', 'STAFFING', 'INVENTORY', 'LOSS_PREVENTION', 'MAINTENANCE', 'ANOMALY', 'COMPLIANCE', 'OTHER')
+  ),
+  CONSTRAINT chk_gas_station_recommendation__status CHECK (
+    status IN ('NEW', 'VIEWED', 'ACCEPTED', 'DISMISSED', 'COMPLETED')
+  ),
+  CONSTRAINT chk_gas_station_recommendation__confidence CHECK (
+    (confidence_pct IS NULL) OR (confidence_pct >= 0 AND confidence_pct <= 100)
+  ),
+  CONSTRAINT fk_gas_station_recommendation__tenant_id FOREIGN KEY (tenant_id) REFERENCES public.tenant_organization(tenant_id) ON DELETE CASCADE,
+  CONSTRAINT fk_gas_station_recommendation__station_id FOREIGN KEY (station_id) REFERENCES public.gas_station_location(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_gas_station_recommendation_tenant_date ON public.gas_station_recommendation (tenant_id, recommendation_date);
+CREATE INDEX IF NOT EXISTS idx_gas_station_recommendation_station_date ON public.gas_station_recommendation (station_id, recommendation_date);
+
+COMMENT ON TABLE public.gas_station_recommendation IS 'Prescriptive daily action items produced by the external AI engine. The morning brief = rows grouped by (station_id, recommendation_date) plus the matching daily_metrics expected_profit_usd headline.';
+COMMENT ON COLUMN public.gas_station_recommendation.station_id IS 'NULL = tenant/chain-level recommendation (cross-store comparison, portfolio anomaly, consolidated ordering). Non-null = specific to one station.';
+COMMENT ON COLUMN public.gas_station_recommendation.explanation IS 'Plain-language "why am I being told this?" justification shown to the owner.';
+COMMENT ON COLUMN public.gas_station_recommendation.owner_feedback IS 'Owner''s free-text feedback on accept/dismiss — read by the engine for its learning loop.';
+
+COMMENT ON COLUMN public.gas_station_location.included_in_subscription IS 'Owner opt-in: when true and is_active, this location counts toward the Stripe subscription quantity (graduated per-location pricing).';
+
 
 --
 -- TOC entry (class 1259 OID)
@@ -6614,6 +7024,60 @@ SELECT pg_catalog.setval(
 SELECT pg_catalog.setval(
     'public.tenant_settings_id_seq',
     GREATEST(COALESCE((SELECT MAX(id) FROM public.tenant_settings), 1), 1),
+    true
+);
+-- public_profile
+SELECT pg_catalog.setval(
+    'public.public_profile_id_seq',
+    GREATEST(COALESCE((SELECT MAX(id) FROM public.public_profile), 1), 1),
+    true
+);
+-- profile_writing
+SELECT pg_catalog.setval(
+    'public.profile_writing_id_seq',
+    GREATEST(COALESCE((SELECT MAX(id) FROM public.profile_writing), 1), 1),
+    true
+);
+-- profile_achievement
+SELECT pg_catalog.setval(
+    'public.profile_achievement_id_seq',
+    GREATEST(COALESCE((SELECT MAX(id) FROM public.profile_achievement), 1), 1),
+    true
+);
+-- profile_affiliation
+SELECT pg_catalog.setval(
+    'public.profile_affiliation_id_seq',
+    GREATEST(COALESCE((SELECT MAX(id) FROM public.profile_affiliation), 1), 1),
+    true
+);
+-- profile_media_asset
+SELECT pg_catalog.setval(
+    'public.profile_media_asset_id_seq',
+    GREATEST(COALESCE((SELECT MAX(id) FROM public.profile_media_asset), 1), 1),
+    true
+);
+-- gas_station_location
+SELECT pg_catalog.setval(
+    'public.gas_station_location_id_seq',
+    GREATEST(COALESCE((SELECT MAX(id) FROM public.gas_station_location), 1), 1),
+    true
+);
+-- gas_station_integration
+SELECT pg_catalog.setval(
+    'public.gas_station_integration_id_seq',
+    GREATEST(COALESCE((SELECT MAX(id) FROM public.gas_station_integration), 1), 1),
+    true
+);
+-- gas_station_daily_metrics
+SELECT pg_catalog.setval(
+    'public.gas_station_daily_metrics_id_seq',
+    GREATEST(COALESCE((SELECT MAX(id) FROM public.gas_station_daily_metrics), 1), 1),
+    true
+);
+-- gas_station_recommendation
+SELECT pg_catalog.setval(
+    'public.gas_station_recommendation_id_seq',
+    GREATEST(COALESCE((SELECT MAX(id) FROM public.gas_station_recommendation), 1), 1),
     true
 );
 -- tenant_email_addresses

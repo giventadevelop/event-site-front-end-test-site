@@ -1,10 +1,17 @@
 import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import { fetchTenantSetting } from '@/app/admin/tenant-management/settings/ApiServerActions';
+import { notFound, redirect } from 'next/navigation';
+import {
+  fetchTenantSetting,
+  fetchTenantSettingsByTenantId,
+} from '@/app/admin/tenant-management/settings/ApiServerActions';
 import { fetchRecentTenantOrganizationsForSelectServer } from '@/app/admin/tenant-management/organizations/organizationSelectServerActions';
 import TenantSettingsEditClient from './TenantSettingsEditClient';
 import Link from 'next/link';
 import { FaArrowLeft } from 'react-icons/fa';
+import {
+  getAppScopedTenantId,
+  isSatelliteTenantSettingsScope,
+} from '@/lib/tenantSettingsScope';
 
 interface PageProps {
   params: { id: string };
@@ -18,6 +25,19 @@ export default async function EditTenantSettingsPage({ params }: PageProps) {
 
   if (isNaN(settingsId)) {
     notFound();
+  }
+
+  if (isSatelliteTenantSettingsScope()) {
+    const configuredTenantId = getAppScopedTenantId();
+    const forConfiguredTenant = await fetchTenantSettingsByTenantId(configuredTenantId);
+    if (forConfiguredTenant?.id && forConfiguredTenant.id !== settingsId) {
+      redirect(`/admin/tenant-management/settings/${forConfiguredTenant.id}/edit`);
+    }
+    if (!forConfiguredTenant) {
+      redirect(
+        `/admin/tenant-management/settings/new?tenantId=${encodeURIComponent(configuredTenantId)}`
+      );
+    }
   }
 
   // Fetch settings data
@@ -41,7 +61,7 @@ export default async function EditTenantSettingsPage({ params }: PageProps) {
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style={{ paddingTop: '120px' }}>
         <div className="mb-8">
           <Link
             href="/admin/tenant-management/settings"
@@ -82,7 +102,7 @@ export default async function EditTenantSettingsPage({ params }: PageProps) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style={{ paddingTop: '120px' }}>
       {/* Breadcrumb Navigation */}
       <nav className="flex mb-8" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">

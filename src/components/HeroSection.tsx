@@ -13,12 +13,17 @@ import {
   isUpcomingEventForHero,
   type HeroMediaRow,
 } from '@/lib/hero/heroSliderMedia';
+import { resolveHeroImages } from '@/lib/hero/defaultHeroImages';
+import { useTenantSettings } from '@/components/TenantSettingsProvider';
 import { useDeferredFetch } from '@/hooks/usePageReady';
 import { getHomepageCacheKey, HOMEPAGE_CACHE_INVALIDATE_CHANNEL } from '@/lib/homepageCacheKeys';
 import { ArrowRight, Heart, Play, Pause, ChevronLeft, ChevronRight } from 'lucide-react';
 import GivebutterDonateButton from '@/components/GivebutterDonateButton';
 
 const HERO_SLIDER_CAP = 24;
+
+/** Shown when no upcoming event hero images are available. */
+const HERO_FALLBACK_NO_EVENTS_IMAGE = '/images/hero_section/default_cloud_hero_image_1.webp';
 
 /** Crossfade duration — must match `.hero-crossfade-layer` opacity transition in globals.css. */
 const HERO_SLIDESHOW_CROSSFADE_MS = 420;
@@ -114,6 +119,7 @@ function HeroKenBurnsSlide({
 const DynamicHeroImage: React.FC<{
   onEventChange?: (event: EventWithMediaExtended | null) => void;
 }> = ({ onEventChange }) => {
+  const { settings: tenantSettings, loading: tenantSettingsLoading } = useTenantSettings();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   /** Two stacked slide indices for crossfade (only used when length ≥ 2). */
   const [slide, setSlide] = useState<HeroSlideCrossfade>({ a: 0, b: 1, showA: true });
@@ -148,8 +154,6 @@ const DynamicHeroImage: React.FC<{
 
   const heroFetchEnabled = useDeferredFetch(500);
   const [heroDataVersion, setHeroDataVersion] = useState(0);
-
-  const defaultImage = "/images/hero_section/default_hero_section_second_column_poster.jpeg";
 
   const CACHE_KEY = getHomepageCacheKey('homepage_hero_section_cache');
   const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes (same as other homepage sections)
@@ -217,7 +221,7 @@ const DynamicHeroImage: React.FC<{
 
   // Initialize hero images from Admin → Media hero flags, sorted by displayOrder (includes event-linked + standalone).
   useEffect(() => {
-    if (!heroFetchEnabled) return;
+    if (!heroFetchEnabled || tenantSettingsLoading) return;
 
     const resolveEventForMedia = async (
       media: HeroMediaRow,
@@ -244,58 +248,76 @@ const DynamicHeroImage: React.FC<{
 
     const initializeHeroImages = async () => {
       try {
-        const imageUrls: string[] = [];
-        const durations: number[] = [];
-        const slideEvents: (EventWithMediaExtended | null)[] = [];
-        const tenantId = getTenantId();
-        const heroList = await fetchHomepageHeroMediaList(tenantId);
-        const capped = heroList.slice(0, HERO_SLIDER_CAP);
-        const eventById = new Map<number, EventWithMediaExtended>();
+        const eventImageUrls: string[] = [];
+        const eventDurations: number[] = [];
+        const eventSlideEvents: (EventWithMediaExtended | null)[] = [];
+        const displayEventHeroImages = tenantSettings?.displayEventHeroImages ?? true;
 
-        if (heroList.length > HERO_SLIDER_CAP) {
-          console.log('[HeroSection] Hero cap applied:', {
-            totalEligible: heroList.length,
-            cap: HERO_SLIDER_CAP,
-            showing: capped.length,
-            tip: 'Set Display Order lower (e.g. 0, 1, 2) in Admin → Media so preferred images show first.',
-          });
-        }
+        if (displayEventHeroImages) {
+          const tenantId = getTenantId();
+          const heroList = await fetchHomepageHeroMediaList(tenantId);
+          const capped = heroList.slice(0, HERO_SLIDER_CAP);
+          const eventById = new Map<number, EventWithMediaExtended>();
 
-        for (const media of capped) {
-          const url = getHeroSliderImageUrl(media);
-          if (!url) {
-            console.warn('[HeroSection] Hero media skipped (no usable image URL):', {
-              id: media.id,
-              title: media.title,
-              eventId: media.eventId ?? media.event_id,
+          if (heroList.length > HERO_SLIDER_CAP) {
+            console.log('[HeroSection] Hero cap applied:', {
+              totalEligible: heroList.length,
+              cap: HERO_SLIDER_CAP,
+              showing: capped.length,
+              tip: 'Set Display Order lower (e.g. 0, 1, 2) in Admin → Media so preferred images show first.',
             });
-            continue;
           }
-          const linkedEvent = await resolveEventForMedia(media, eventById);
-          if (!linkedEvent || !isUpcomingEventForHero(linkedEvent)) {
-            continue;
+
+          for (const media of capped) {
+            const url = getHeroSliderImageUrl(media);
+            if (!url) {
+              console.warn('[HeroSection] Hero media skipped (no usable image URL):', {
+                id: media.id,
+                title: media.title,
+                eventId: media.eventId ?? media.event_id,
+              });
+              continue;
+            }
+            const linkedEvent = await resolveEventForMedia(media, eventById);
+            if (!linkedEvent || !isUpcomingEventForHero(linkedEvent)) {
+              continue;
+            }
+            eventImageUrls.push(url);
+            eventDurations.push(getHeroMediaDurationMs(media));
+            eventSlideEvents.push(linkedEvent);
           }
-          imageUrls.push(url);
-          durations.push(getHeroMediaDurationMs(media));
-          slideEvents.push(linkedEvent);
         }
 
-        imageUrls.push(defaultImage);
-        durations.push(8000);
-        slideEvents.push(null);
+        const resolved = resolveHeroImages({
+          eventImageUrls,
+          eventDurationsMs: eventDurations,
+          tenantSettings: tenantSettings
+            ? {
+                defaultHeroImageUrlsJson: tenantSettings.defaultHeroImageUrlsJson,
+                defaultHeroDisplayMode: tenantSettings.defaultHeroDisplayMode,
+                defaultHeroIncludeWithEvents: tenantSettings.defaultHeroIncludeWithEvents,
+                defaultHeroMaxDisplayCount: tenantSettings.defaultHeroMaxDisplayCount,
+              }
+            : null,
+          noImagesFallbackUrl: HERO_FALLBACK_NO_EVENTS_IMAGE,
+        });
+
+        const imageUrls = resolved.imageUrls;
+        const durations = resolved.durationsMs;
+        const slideEvents: (EventWithMediaExtended | null)[] = resolved.imageUrls.map(
+          (_, index) =>
+            index < resolved.eventSlideCount ? eventSlideEvents[index] ?? null : null
+        );
 
         const linkedUpcoming = slideEvents.filter((e): e is EventWithMediaExtended => e != null);
 
         console.log('[HeroSection] Image rotation initialized:', {
           totalImages: imageUrls.length,
-          heroMediaCount: imageUrls.length - 1,
-          hasDefaultImage: true,
-          displayOrders: capped.map((m) => ({
-            id: m.id,
-            title: m.title,
-            displayOrder: m.displayOrder ?? m.display_order,
-            eventId: m.eventId ?? m.event_id,
-          })),
+          eventSlideCount: resolved.eventSlideCount,
+          tenantDefaultSlideCount: resolved.defaultSlideCount,
+          displayEventHeroImages,
+          includeTenantDefaults: tenantSettings?.defaultHeroIncludeWithEvents ?? true,
+          usingNoEventFallback: linkedUpcoming.length === 0 && resolved.defaultSlideCount === 0,
           durations: durations.map((d) => `${d}ms (${d / 1000}s)`),
         });
 
@@ -330,7 +352,7 @@ const DynamicHeroImage: React.FC<{
         }
       } catch (error) {
         console.error('Failed to initialize hero images:', error);
-        setDynamicImages([defaultImage]);
+        setDynamicImages([HERO_FALLBACK_NO_EVENTS_IMAGE]);
         setImageDurations([8000]);
         setUpcomingEvents([]);
         setHeroSlideEvents([null]);
@@ -340,7 +362,7 @@ const DynamicHeroImage: React.FC<{
     };
 
     initializeHeroImages();
-  }, [heroFetchEnabled, CACHE_KEY, defaultImage, heroDataVersion]);
+  }, [heroFetchEnabled, CACHE_KEY, heroDataVersion, tenantSettings, tenantSettingsLoading]);
 
   // Update refs whenever state changes to avoid stale closures
   useEffect(() => {
@@ -661,7 +683,7 @@ const DynamicHeroImage: React.FC<{
     };
   }, [finalizeInterruptedCrossfade]);
 
-  const currentImage = dynamicImages[currentImageIndex] || defaultImage;
+  const currentImage = dynamicImages[currentImageIndex] || HERO_FALLBACK_NO_EVENTS_IMAGE;
   const showControls = isHovered || isTouched;
   const hasMultipleImages = dynamicImages.length > 1;
 
@@ -679,7 +701,7 @@ const DynamicHeroImage: React.FC<{
         <div className="hero-crossfade-stack">
           <div className={`hero-crossfade-layer${slide.showA ? ' is-visible' : ''}`}>
             <HeroKenBurnsSlide
-              src={dynamicImages[slide.a] || defaultImage}
+              src={dynamicImages[slide.a] || HERO_FALLBACK_NO_EVENTS_IMAGE}
               alt="Featured Event"
               priority={slide.showA}
               durationMs={kenBurnsDurationMs(slide.a)}
@@ -689,7 +711,7 @@ const DynamicHeroImage: React.FC<{
           </div>
           <div className={`hero-crossfade-layer${!slide.showA ? ' is-visible' : ''}`}>
             <HeroKenBurnsSlide
-              src={dynamicImages[slide.b] || defaultImage}
+              src={dynamicImages[slide.b] || HERO_FALLBACK_NO_EVENTS_IMAGE}
               alt="Featured Event"
               priority={!slide.showA}
               durationMs={kenBurnsDurationMs(slide.b)}
