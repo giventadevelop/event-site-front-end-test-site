@@ -1,0 +1,260 @@
+---
+description: Deploy frontend (Amplify) and backend (ECS) apps — auth via GH_TOKEN, merge work branch to release, push, verify builds (Windows PowerShell)
+globs: **/*
+alwaysApply: false
+---
+
+# Deploy Apps to Amplify / ECS
+
+Use when the user asks to **deploy** one or more apps under `F:\project_workspace\`, **merge local work into release/deploy branches**, and **push** so production CI runs.
+
+**Prerequisite rules (commit + secret filter first):**
+- [git_commit_push_release_deploy.mdc](mdc:.cursor/rules/git_commit_push_release_deploy.mdc) — commit, push work branch, release merge
+- [git_local_push.mdc](mdc:.cursor/rules/git_local_push.mdc) — `GIT_SSL_NO_VERIFY`, secret scan, pull-before-push
+
+---
+
+## **Copy-paste user prompt**
+
+```
+Deploy to Amplify / ECS — merge local branches into release versions and push:
+- F:\project_workspace\mosc-temp
+- F:\project_workspace\event-site-manager-service
+- F:\project_workspace\event-site-manager
+- F:\project_workspace\event-site-front-end-template
+- F:\project_workspace\event-site-front-end-test-site
+- F:\project_workspace\event-site-manager-batch-jobs
+
+Follow deploy_apps_to_amplify_ecs.mdc.
+```
+
+Adjust the repo list for single-repo deploys.
+
+---
+
+## **Deploy map (canonical)**
+
+| Repo | Path | Work branch | **Deploy branch** | Target | Amplify app (us-east-2) / CI |
+|------|------|-------------|-------------------|--------|------------------------------|
+| **mosc-temp** | `F:\project_workspace\mosc-temp` | `MOSC-redesign-sub-poc-2` | **`release/v1.0.0`** | Amplify satellite prod | `d1jo61890p2myt` |
+| **event-site-manager** | `F:\project_workspace\event-site-manager` | `release/v1.0.0` (direct) | **`release/v1.0.0`** | Amplify primary prod | `d3gov7yn1ctow1` |
+| **event-site-front-end-test-site** | `F:\project_workspace\event-site-front-end-test-site` | `main` | **`release/v1.0.0`** | Amplify test satellite | `d1502cffqchuun` |
+| **event-site-front-end-template** | `F:\project_workspace\event-site-front-end-template` | `main` | **`main`** | Amplify (no release branch) | verify console |
+| **event-site-manager-service** | `F:\project_workspace\event-site-manager-service` | `feature_Freelance_Work` | **`release/v1.0.0`** | ECS prod | GitHub Actions on push |
+| **event-site-manager-batch-jobs** | `F:\project_workspace\event-site-manager-batch-jobs` | `main` | **`release/v1.0.0`** | ECS prod | GitHub Actions on push |
+
+- **Amplify region:** `us-east-2` for all apps above.
+- **ECS:** workflows run on `giventadeveloporg/*` when `release/v1.0.0` is pushed.
+- Protected `release/v1.0.0` may show *"Bypassed rule violations"* — push still succeeds with admin token.
+
+---
+
+## **Phase 0 — GitHub auth (Windows)**
+
+### **DO: use User-level `GH_TOKEN` (typical on this machine)**
+
+```powershell
+$env:GH_TOKEN = [Environment]::GetEnvironmentVariable('GH_TOKEN', 'User')
+gh auth setup-git
+$env:GIT_SSL_NO_VERIFY = 'true'
+gh auth status
+```
+
+- Valid token shows: `Logged in to github.com account giventadevelop (GH_TOKEN)`.
+- **`git push`** uses `gh` credential helper after `gh auth setup-git`.
+
+### **DON'T: run `gh auth login` while `GH_TOKEN` is set**
+
+Symptom:
+
+```text
+The value of the GH_TOKEN environment variable is being used for authentication.
+To have GitHub CLI store credentials instead, first clear the value from the environment.
+```
+
+**Fix:** Load `GH_TOKEN` in the session (above) — **no interactive login needed** if token is valid.
+
+### **If push fails with invalid default token**
+
+Stale keychain entry vs valid `GH_TOKEN`:
+
+```powershell
+$env:GH_TOKEN = [Environment]::GetEnvironmentVariable('GH_TOKEN', 'User')
+gh auth setup-git
+# retry push
+```
+
+Optional cleanup for interactive login later:
+
+```powershell
+Remove-Item Env:GH_TOKEN -ErrorAction SilentlyContinue
+gh auth logout -h github.com -u giventadevelop
+gh auth login -h github.com
+```
+
+### **DON'T**
+
+- ❌ `git config http.sslVerify false` globally — use one-time `$env:GIT_SSL_NO_VERIFY = 'true'`
+- ❌ Force-push `release/v1.0.0` without user approval
+
+---
+
+## **Phase 1 — Pre-deploy (per repo)**
+
+1. **Commit work branch first** — follow [git_commit_push_release_deploy.mdc](mdc:.cursor/rules/git_commit_push_release_deploy.mdc) Phases 0–4.
+2. **Record SHAs:**
+
+```powershell
+cd F:\project_workspace\<repo>
+git fetch origin
+git rev-parse --short HEAD                    # local work
+git rev-parse --short origin/<deploy-branch>  # remote deploy (before)
+```
+
+3. **Sync release to work** (when deploy branch ≠ work branch):
+
+```powershell
+git checkout <deploy-branch>
+git pull origin <deploy-branch>
+git reset --hard <work-branch>
+```
+
+4. **When work branch = deploy branch** (event-site-manager, batch-jobs on release): push deploy branch only after commit.
+
+---
+
+## **Phase 2 — Push (triggers Amplify / ECS)**
+
+```powershell
+$env:GH_TOKEN = [Environment]::GetEnvironmentVariable('GH_TOKEN', 'User')
+$env:GIT_SSL_NO_VERIFY = 'true'
+
+# Work branch (if different from deploy)
+git push origin <work-branch>
+
+# Deploy branch
+git push origin <deploy-branch>
+```
+
+**Batch example (all six repos):**
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File `
+  "F:\project_workspace\application-deployments\documentation\aws-infrastructure\_private\scripts\Invoke-ReleaseDeployAll.ps1"
+```
+
+(Ensure `GH_TOKEN` is set in the parent shell or script loads it from User env.)
+
+---
+
+## **Workarounds**
+
+### **A — Windows file lock on SQL artifacts (mosc-temp / test-site)**
+
+After DB import, checkout/reset may fail:
+
+```text
+unable to unlink old 'code_html_template/SQLS/corrected_event_media_inserts.ordered.sql': Invalid argument
+```
+
+**Remote deploy without local checkout** (fast-forward ref push):
+
+```powershell
+cd F:\project_workspace\mosc-temp
+git fetch origin
+$workSha = git rev-parse MOSC-redesign-sub-poc-2
+git merge-base --is-ancestor origin/release/v1.0.0 $workSha
+if ($LASTEXITCODE -eq 0) {
+  git push origin "${workSha}:release/v1.0.0"
+}
+```
+
+- ✅ Updates remote `release/v1.0.0` and triggers Amplify even if local release checkout is dirty.
+- Close IDE/DB tools holding the SQL file before cleaning local tree: `git checkout -f <work-branch>`.
+
+### **B — Verify fast-forward before ref push**
+
+```powershell
+git log --oneline origin/release/v1.0.0..<work-sha>
+git merge-base --is-ancestor origin/release/v1.0.0 <work-sha>
+```
+
+If **not** fast-forward → use merge on release (Phase 1 step 3 merge path) or PR — do not force-push without approval.
+
+### **C — LFS on template / test-site**
+
+Large pushes upload LFS objects (`Uploading LFS objects: 100%`). Wait for completion; exit 0 means push succeeded.
+
+### **D — Protected branch messages**
+
+```text
+remote: Bypassed rule violations for refs/heads/release/v1.0.0
+remote: - Cannot update this protected ref.
+remote: - Changes must be made through a pull request.
+```
+
+If push ends with `release/v1.0.0 -> release/v1.0.0`, deploy proceeded. If push is **rejected**, use `gh pr create` / `gh pr merge` per [git_commit_push_release_deploy.mdc](mdc:.cursor/rules/git_commit_push_release_deploy.mdc).
+
+---
+
+## **Phase 3 — Verify builds**
+
+### **Amplify (us-east-2)**
+
+```powershell
+$region = 'us-east-2'
+aws amplify list-jobs --app-id <app-id> --branch-name release/v1.0.0 `
+  --region $region --max-items 1 `
+  --query "jobSummaries[0].{jobId:jobId,status:status,commitId:commitId}" --output json
+```
+
+| App | App ID | Branch |
+|-----|--------|--------|
+| mosc-temp | `d1jo61890p2myt` | `release/v1.0.0` |
+| event-site-manager | `d3gov7yn1ctow1` | `release/v1.0.0` |
+| test-site | `d1502cffqchuun` | `release/v1.0.0` |
+
+Expect **RUNNING** then **SUCCEED**; `commitId` prefix should match pushed SHA.
+
+### **ECS (GitHub Actions)**
+
+```powershell
+$env:GH_TOKEN = [Environment]::GetEnvironmentVariable('GH_TOKEN', 'User')
+gh run list --repo giventadeveloporg/event-site-manager-service --branch release/v1.0.0 --limit 3
+gh run list --repo giventadeveloporg/event-site-manager-batch-jobs --branch release/v1.0.0 --limit 3
+```
+
+---
+
+## **Agent checklist**
+
+| Step | Action |
+|------|--------|
+| 1 | Load `GH_TOKEN` + `gh auth setup-git` + `GIT_SSL_NO_VERIFY` |
+| 2 | Commit/push work branch (secret scan) |
+| 3 | `git fetch`; sync deploy branch to work (`reset --hard` or ref push) |
+| 4 | Push work + deploy branches |
+| 5 | Verify Amplify jobs + GH Actions |
+| 6 | Report table: repo, branch, SHA, build status, blockers |
+
+**BLOCKERS:** auth failure, merge conflicts, ref push not fast-forward, push rejected on protected branch without bypass.
+
+---
+
+## **Anti-patterns**
+
+- ❌ Push feature branch only and assume prod deployed
+- ❌ Run `gh auth login` without clearing/conflicting `GH_TOKEN` when token already works
+- ❌ Skip deploy-branch push for Amplify/ECS repos
+- ❌ Commit `ordered_PROD.sql` or `.env*` during deploy prep
+- ❌ Local `reset --hard` on mosc-temp while SQL file is locked — use **ref push** instead
+
+---
+
+## **References**
+
+- [git_commit_push_release_deploy.mdc](mdc:.cursor/rules/git_commit_push_release_deploy.mdc)
+- [git_local_push.mdc](mdc:.cursor/rules/git_local_push.mdc)
+- [git_commit_push_core_repos.mdc](mdc:.cursor/rules/git_commit_push_core_repos.mdc)
+- Batch script: `application-deployments/documentation/aws-infrastructure/_private/scripts/Invoke-ReleaseDeployAll.ps1`
+- Satellite / Amplify: `application-deployments/documentation/aws-infrastructure/satellite-frontend-deployment-guide.html`

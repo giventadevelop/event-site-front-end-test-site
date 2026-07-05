@@ -103,6 +103,14 @@ git commit -m "<short summary sentence>" -m "<optional body with scope>"
 
 ### **Step 3 — Push work branch (repos that committed or have unpushed commits)**
 
+**Load GitHub auth first** (User-level `GH_TOKEN` — see [deploy_apps_to_amplify_ecs.mdc](mdc:.cursor/rules/deploy_apps_to_amplify_ecs.mdc)):
+
+```powershell
+$env:GH_TOKEN = [Environment]::GetEnvironmentVariable('GH_TOKEN', 'User')
+gh auth setup-git
+$env:GIT_SSL_NO_VERIFY = 'true'
+```
+
 ```powershell
 cd "F:\project_workspace\mosc-temp"
 git push origin MOSC-redesign-sub-poc-2
@@ -114,7 +122,7 @@ cd "F:\project_workspace\event-site-manager-service"
 git push origin feature_Freelance_Work
 ```
 
-Replace branch names if `git branch --show-current` differs. Retry with `$env:GIT_SSL_NO_VERIFY='true'` on SSL errors.
+Replace branch names if `git branch --show-current` differs. Retry push after reloading `GH_TOKEN` if auth fails (do not use interactive `gh auth login` when User token is valid).
 
 ### **Step 3b — Release merge: pull, merge, resolve conflicts, push or PR**
 
@@ -143,6 +151,8 @@ git commit -m "merge: resolve conflicts merging $work into release/v1.0.0"
 **Push release (or PR if protected):**
 
 ```powershell
+$env:GH_TOKEN = [Environment]::GetEnvironmentVariable('GH_TOKEN', 'User')
+gh auth setup-git
 $env:GIT_SSL_NO_VERIFY = 'true'
 git push origin release/v1.0.0
 Remove-Item Env:GIT_SSL_NO_VERIFY

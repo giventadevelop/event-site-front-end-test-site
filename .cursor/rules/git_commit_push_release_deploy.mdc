@@ -11,6 +11,7 @@ Use this rule when the user asks to **commit and push** named project(s), **incl
 **Detail rules (read when needed):**
 - [git_local_push.mdc](mdc:.cursor/rules/git_local_push.mdc) — secret blocklist, SSL workaround, unstaged/untracked staging
 - [git_commit_push_core_repos.mdc](mdc:.cursor/rules/git_commit_push_core_repos.mdc) — batch workflow for mosc-temp + batch-jobs + service
+- [deploy_apps_to_amplify_ecs.mdc](mdc:.cursor/rules/deploy_apps_to_amplify_ecs.mdc) — **push release/deploy branches**, GH_TOKEN auth, Amplify/ECS verify, SQL file-lock ref-push workaround
 
 ---
 
@@ -35,6 +36,7 @@ Follow git_commit_push_release_deploy.mdc.
 | Repo | Path | Work branch (typical) | **Deploy branch** | Deploy target |
 |------|------|----------------------|-------------------|---------------|
 | **mosc-temp** | `F:\project_workspace\mosc-temp` | `MOSC-redesign-sub-poc-2` | **`release/v1.0.0`** | AWS Amplify (satellite prod) |
+| **event-site-manager** | `F:\project_workspace\event-site-manager` | `release/v1.0.0` | **`release/v1.0.0`** | AWS Amplify (primary prod) |
 | **event-site-front-end-test-site** | `F:\project_workspace\event-site-front-end-test-site` | `main` | **`release/v1.0.0`** | AWS Amplify (test satellite prod) |
 | **event-site-front-end-template** | `F:\project_workspace\event-site-front-end-template` | `main` | **`main`** | AWS Amplify (no release branch) |
 | **strapi-editorial-template** | `F:\project_workspace\strapi-editorial-template` | `main` | **`release/v1.0.0`** (if used) or **`main`** | Strapi Cloud / CI — verify console |
@@ -42,13 +44,40 @@ Follow git_commit_push_release_deploy.mdc.
 | **event-site-manager-service** | `F:\project_workspace\event-site-manager-service` | `feature_Freelance_Work` | **`release/v1.0.0`** | ECS prod (GitHub Actions) |
 | **common_project_work** | `F:\project_workspace\common_project_work` | `main` | **`main`** | Docs/rules only |
 | **application-deployments** | `F:\project_workspace\application-deployments` | `main` | **`main`** | Docs/scripts only |
+| **misc-project** | `F:\project_workspace\misc-project` | `main` | **`main`** | Docs/rules/misc workspace |
 
-- **DO** run `git branch --show-current` and `git branch -a` — do not assume branch names.
+- **New repo setup (first time):** [git_new_project_setup.mdc](mdc:.cursor/rules/git_new_project_setup.mdc)
 - **DO** after commit on work branch: update **deploy branch** so CI/Amplify/Strapi builds run.
 
 ---
 
 ## **Agent checklist (every request)**
+
+### **Phase 0a — GitHub auth (before any push)**
+
+Load User-level `GH_TOKEN` on this machine — **required** for agent/automated pushes (stale keychain `gh` login will fail):
+
+```powershell
+$env:GH_TOKEN = [Environment]::GetEnvironmentVariable('GH_TOKEN', 'User')
+gh auth setup-git
+$env:GIT_SSL_NO_VERIFY = 'true'
+gh auth status   # expect: Logged in to github.com … (GH_TOKEN)
+```
+
+See [deploy_apps_to_amplify_ecs.mdc](mdc:.cursor/rules/deploy_apps_to_amplify_ecs.mdc) Phase 0. Do **not** run `gh auth login` interactively when `GH_TOKEN` is valid.
+
+### **Phase 0 — Pull remote FIRST (before commit or release merge)**
+
+See [git_local_push.mdc](mdc:.cursor/rules/git_local_push.mdc) **Phase 0**. For each repo:
+
+```powershell
+git fetch origin
+git pull origin <work-branch>
+git diff --name-only --diff-filter=U   # must be empty before commit
+```
+
+- Resolve conflicts locally; if unresolvable → **BLOCKER** (report and skip that repo).
+- Repos with no blockers continue through Phases 1–6.
 
 ### **Phase 1 — Inspect (parallel per repo)**
 
@@ -70,6 +99,7 @@ $dest = 'F:\project_workspace\<repo>\.cursor\rules'
 Copy-Item "$canonical\git_local_push.mdc" "$dest\git_local_push.mdc" -Force
 Copy-Item "$canonical\git_commit_push_core_repos.mdc" "$dest\git_commit_push_core_repos.mdc" -Force
 Copy-Item "$canonical\git_commit_push_release_deploy.mdc" "$dest\git_commit_push_release_deploy.mdc" -Force
+Copy-Item "$canonical\deploy_apps_to_amplify_ecs.mdc" "$dest\deploy_apps_to_amplify_ecs.mdc" -Force
 ```
 
 Also commit rule updates back to **common_project_work** and **application-deployments** when this consolidated rule changes.
@@ -83,8 +113,8 @@ git add -A
 git restore --staged tsconfig.tsbuildinfo 2>$null
 git restore --staged code_html_template/SQLS/corrected_event_media_inserts.ordered_PROD.sql 2>$null
 git diff --cached --name-only | Select-String -Pattern `
-  'prod\.env$|\.env\.local|\.env\.production|auth\.json|\.auth-state|secrets|\.pem$|\.key$|credentials|ordered_PROD\.sql' `
-  -CaseSensitive:$false | ForEach-Object { git restore --staged $_.Line }
+  'prod\.env$|\.env\.local|\.env\.production|auth\.json$|\.auth-state|secrets|\.pem$|\.key$|credentials|ordered_PROD\.sql|tsconfig\.tsbuildinfo$' `
+  -CaseSensitive:$false | ForEach-Object { git restore --staged $_.Line.Trim() }
 ```
 
 **Secret scan (required — empty output before commit):**
@@ -104,6 +134,8 @@ If nothing to commit after scan, skip to Phase 5 (release merge may still be nee
 
 ```powershell
 git commit -m "<type(scope): message from diff>"
+$env:GH_TOKEN = [Environment]::GetEnvironmentVariable('GH_TOKEN', 'User')
+gh auth setup-git
 $env:GIT_SSL_NO_VERIFY = 'true'
 git push origin <current-branch>
 Remove-Item Env:GIT_SSL_NO_VERIFY
@@ -112,9 +144,11 @@ git status --porcelain
 
 Repeat until working tree is clean (except gitignored/blocklisted paths).
 
-### **Phase 5 — Merge to deploy branch and push**
+### **Phase 5 — Merge to deploy branch: pull, merge, resolve conflicts, push or PR**
 
-**Fast-forward (preferred)** when deploy branch has no unique commits:
+**Always `git pull` on release before merge.** Resolve conflicts before push.
+
+**Fast-forward (preferred)** when deploy branch has no unique prod commits:
 
 ```powershell
 git fetch origin
@@ -133,14 +167,17 @@ git checkout <work-branch>
 git checkout release/v1.0.0
 git pull origin release/v1.0.0
 git merge <work-branch> -m "merge: <work-branch> into release/v1.0.0 for deployment"
+# On conflict: resolve, git add, git commit; or git merge --abort and report BLOCKER
 $env:GIT_SSL_NO_VERIFY = 'true'
 git push origin release/v1.0.0
 Remove-Item Env:GIT_SSL_NO_VERIFY
 ```
 
+**If push rejected (protected branch):** `gh pr create --base release/v1.0.0 --head <work-branch>` → check mergeability → `gh pr merge` or report BLOCKER with PR URL and conflicted files.
+
 **Repos with deploy branch = `main`:** push `main` only (no release step).
 
-### **Phase 6 — Verify**
+### **Phase 6 — Verify and report**
 
 ```powershell
 git fetch origin
@@ -150,7 +187,7 @@ git status -sb
 git status --porcelain
 ```
 
-Report: commit hashes, branches pushed, deploy branch updated, any paths skipped (secrets/build artifacts).
+Report **COMPLETED** and **BLOCKERS** tables (see [git_local_push.mdc](mdc:.cursor/rules/git_local_push.mdc)). Continue commit/push for repos with no blockers.
 
 ---
 

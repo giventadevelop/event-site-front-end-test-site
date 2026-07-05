@@ -10,8 +10,18 @@ alwaysApply: false
   - **Also use** when pushing frontend repos so **AWS Amplify production builds** trigger on the correct branch.
   - When the user asks to commit/push the **core trio** (mosc-temp + batch-jobs + service together), also follow [git_commit_push_core_repos.mdc](mdc:.cursor/rules/git_commit_push_core_repos.mdc).
   - **One-shot prompt** (commit + unstaged files + release deploy): [git_commit_push_release_deploy.mdc](mdc:.cursor/rules/git_commit_push_release_deploy.mdc).
+  - **Deploy to Amplify/ECS** (after commit, push release + verify builds): [deploy_apps_to_amplify_ecs.mdc](mdc:.cursor/rules/deploy_apps_to_amplify_ecs.mdc).
 
 - **Pre-checks**
+  - **GitHub auth (load before every push on this machine)** — see [deploy_apps_to_amplify_ecs.mdc](mdc:.cursor/rules/deploy_apps_to_amplify_ecs.mdc) Phase 0:
+    ```powershell
+    $env:GH_TOKEN = [Environment]::GetEnvironmentVariable('GH_TOKEN', 'User')
+    gh auth setup-git
+    $env:GIT_SSL_NO_VERIFY = 'true'
+    gh auth status   # expect: Logged in … (GH_TOKEN)
+    ```
+    - **DO NOT** run interactive `gh auth login` while `GH_TOKEN` is set and valid.
+    - If push fails with invalid default token but `GH_TOKEN` works, load User token again and retry.
   - **Verify current branch**:
     ```powershell
     git status -sb
@@ -307,6 +317,8 @@ git diff --cached --name-only | Select-String -Pattern 'prod\.env|\.env\.local|a
 # Fix any matches, then:
 git commit -m "feat(scope): short imperative message"
 
+$env:GH_TOKEN = [Environment]::GetEnvironmentVariable('GH_TOKEN', 'User')
+gh auth setup-git
 $env:GIT_SSL_NO_VERIFY = "true"
 git push origin $branch
 Remove-Item Env:GIT_SSL_NO_VERIFY
