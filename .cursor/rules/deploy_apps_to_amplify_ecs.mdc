@@ -195,6 +195,113 @@ remote: - Changes must be made through a pull request.
 
 If push ends with `release/v1.0.0 -> release/v1.0.0`, deploy proceeded. If push is **rejected**, use `gh pr create` / `gh pr merge` per [git_commit_push_release_deploy.mdc](mdc:.cursor/rules/git_commit_push_release_deploy.mdc).
 
+### **E — Amplify WEB_COMPUTE: build output exceeds 220 MiB (bloated deploy artifact)**
+
+**Applies to:** Next.js **App Router SSR** frontends on Amplify **`WEB_COMPUTE`** (`mosc-temp`, `event-site-front-end-test-site`, `event-site-manager`, `event-site-front-end-template` when they use the shared `amplify.yml` + prune scripts).
+
+#### **Symptoms**
+
+Build logs show **prune success** and even `## Build completed successfully`, then the job **fails** during caching or deploy packaging:
+
+```text
+[prune-amplify] Total .next size: 167.2 MB (Amplify limit ~220.0 MB)
+[prune-amplify] Prune complete — within Amplify size limit
+## Build completed successfully
+...
+[ERROR]: !!! CustomerError: The size of the build output (234886359) exceeds the max allowed size of 230686720 bytes. Please reduce the size of your build output and try again.
+```
+
+- **Actual bundle:** 234,886,359 bytes (~224 MB)
+- **Hard limit:** 230,686,720 bytes (exactly **220 MiB**)
+- UI may show **BUILD** with a checkmark while overall job status is **FAILED**; **DEPLOY** may show **CANCELLED**.
+
+**Misleading signal:** `[prune-amplify] Prune complete — within Amplify size limit` only measures **raw `.next` on disk**. Amplify **WEB_COMPUTE** ships a **larger bundled compute artifact** (observed **~55–60 MB overhead** on `event-site-front-end-test-site` job #10: 167 MB `.next` → 224 MB bundle).
+
+#### **Root cause**
+
+| Layer | What Amplify measures |
+|-------|------------------------|
+| `scripts/prune-amplify-next-artifact.mjs` (old) | `.next/` directory size only |
+| Amplify WEB_COMPUTE packaging | `.next` + compute adapter overhead + restored cache artifacts |
+
+Common contributors:
+
+1. **900+ App Router pages** (e.g. `mosc` + `mosc-old` + `mosc-redesign` route trees built together).
+2. **`.next/standalone`** when `output: 'standalone'` is enabled (150–180 MB bloat; **not** used by Amplify Hosting SSR).
+3. **`.next/cache` in Amplify cache paths** — restored webpack cache inflates the artifact size check.
+4. **`.next/node_modules`**, source maps, wrong-platform `@swc` / `@esbuild` binaries left in `.next`.
+
+#### **Fix (verified on test-site — job #11 SUCCEED, commit `cc47364`)**
+
+**1. `amplify.yml` — default route slimming + cache**
+
+```yaml
+build:
+  commands:
+    # Default: omit legacy mosc + mosc-old (~500 routes). Override with AMPLIFY_ROUTE_SET=all if needed.
+    - export AMPLIFY_ROUTE_SET="${AMPLIFY_ROUTE_SET:-redesign-only}"
+    - node scripts/amplify-prepare-build.mjs
+    - npm run build
+    - node scripts/prune-amplify-next-artifact.mjs
+cache:
+  paths:
+    - node_modules/**/*
+    # Do NOT cache .next/cache — inflates WEB_COMPUTE bundle size checks
+```
+
+**2. `scripts/amplify-prepare-build.mjs` — route sets**
+
+| `AMPLIFY_ROUTE_SET` | Effect |
+|---------------------|--------|
+| `redesign-only` (recommended default for test-site) | Removes `src/app/mosc`, `src/app/mosc-old`; keeps `mosc-redesign` |
+| `legacy-mosc` | Removes `src/app/mosc-redesign`; keeps `mosc` + `mosc-old` |
+| `all` | Builds every route (may exceed 220 MiB again) |
+
+Set in Amplify Console → Environment variables only when overriding the `amplify.yml` default.
+
+**3. `scripts/prune-amplify-next-artifact.mjs` — effective limit**
+
+- Keep **`MAX_BYTES = 230_686_720`** (220 MiB).
+- Use **`COMPUTE_OVERHEAD_BYTES = 58 * 1024 * 1024`** and **`EFFECTIVE_LIMIT = MAX_BYTES - COMPUTE_OVERHEAD_BYTES`** so the build **fails at prune time** if the estimated WEB_COMPUTE bundle would exceed the cap.
+- Log **estimated WEB_COMPUTE bundle** size in build logs.
+- Continue removing: `.next/cache`, `.next/standalone`, `.next/node_modules`, `*.map`, wrong-platform native binaries.
+
+**4. `next.config.mjs` (already in front-end repos)**
+
+- **Do NOT** use `output: 'standalone'` for Amplify SSR.
+- `productionBrowserSourceMaps: false`
+- `npm run build` → `next build --webpack` (avoid shipping `.next/dev` from Turbopack).
+- `serverExternalPackages`, `outputFileTracingExcludes`, `experimental.optimizePackageImports` to shrink `.next/server`.
+
+**Reference implementation:** `F:\project_workspace\event-site-front-end-test-site` — `amplify.yml`, `scripts/prune-amplify-next-artifact.mjs`, `scripts/amplify-prepare-build.mjs`, `next.config.mjs`.
+
+#### **Agent workflow when this error appears**
+
+1. **Confirm platform:** `aws amplify get-app --app-id <id> --region us-east-2 --query app.platform` → expect `WEB_COMPUTE`.
+2. **Read failed job logs** — search for `CustomerError: The size of the build output` and compare `[prune-amplify] Total .next size` vs reported bundle bytes.
+3. **Apply/port fixes** from test-site `cc47364` if the repo lacks them.
+4. **For satellite/prod needing all routes:** try `AMPLIFY_ROUTE_SET=legacy-mosc` or `redesign-only` per product need; do not set `all` unless user accepts risk of re-hitting the cap.
+5. **Commit, push deploy branch**, verify:
+
+```powershell
+aws amplify list-jobs --app-id <app-id> --branch-name release/v1.0.0 `
+  --region us-east-2 --max-items 1 `
+  --query "jobSummaries[0].{jobId:jobId,status:status,commitId:commitId}" --output json
+```
+
+Expect **BUILD → DEPLOY → VERIFY** all **SUCCEED** (test-site job **#11** after fix).
+
+#### **DO / DON'T**
+
+- ✅ Default `AMPLIFY_ROUTE_SET=redesign-only` in `amplify.yml` for multi-tree MOSC apps when full build exceeds cap.
+- ✅ Remove `.next/cache` from Amplify `cache.paths`.
+- ✅ Fail build in `prune-amplify-next-artifact.mjs` using **effective limit** (raw `.next` + overhead), not raw 220 MiB on `.next` alone.
+- ✅ Strip `.next/standalone` after every production build on Amplify.
+- ❌ Trust `[prune-amplify] Prune complete` alone when bundle error appears later in the same job.
+- ❌ Cache `.next/cache` on WEB_COMPUTE Next.js SSR apps.
+- ❌ Enable `output: 'standalone'` in `next.config` for Amplify Hosting SSR.
+- ❌ Delete `.next/server/pages` in prune script — **Pages Router API routes** (`src/pages/api/proxy/*`) depend on it.
+
 ---
 
 ## **Phase 3 — Verify builds**
@@ -235,9 +342,10 @@ gh run list --repo giventadeveloporg/event-site-manager-batch-jobs --branch rele
 | 3 | `git fetch`; sync deploy branch to work (`reset --hard` or ref push) |
 | 4 | Push work + deploy branches |
 | 5 | Verify Amplify jobs + GH Actions |
-| 6 | Report table: repo, branch, SHA, build status, blockers |
+| 6 | If Amplify FAILED with `build output ... exceeds ... 230686720` → apply **Workaround E** (WEB_COMPUTE 220 MiB cap) |
+| 7 | Report table: repo, branch, SHA, build status, blockers |
 
-**BLOCKERS:** auth failure, merge conflicts, ref push not fast-forward, push rejected on protected branch without bypass.
+**BLOCKERS:** auth failure, merge conflicts, ref push not fast-forward, push rejected on protected branch without bypass, Amplify WEB_COMPUTE artifact > 220 MiB (see Workaround E).
 
 ---
 
@@ -248,6 +356,7 @@ gh run list --repo giventadeveloporg/event-site-manager-batch-jobs --branch rele
 - ❌ Skip deploy-branch push for Amplify/ECS repos
 - ❌ Commit `ordered_PROD.sql` or `.env*` during deploy prep
 - ❌ Local `reset --hard` on mosc-temp while SQL file is locked — use **ref push** instead
+- ❌ Assume Amplify deploy succeeded because `[prune-amplify]` reported under 220 MB — WEB_COMPUTE bundle can be ~58 MB larger (Workaround E)
 
 ---
 
@@ -258,3 +367,4 @@ gh run list --repo giventadeveloporg/event-site-manager-batch-jobs --branch rele
 - [git_commit_push_core_repos.mdc](mdc:.cursor/rules/git_commit_push_core_repos.mdc)
 - Batch script: `application-deployments/documentation/aws-infrastructure/_private/scripts/Invoke-ReleaseDeployAll.ps1`
 - Satellite / Amplify: `application-deployments/documentation/aws-infrastructure/satellite-frontend-deployment-guide.html`
+- Amplify 220 MiB WEB_COMPUTE fix: `event-site-front-end-test-site/amplify.yml`, `scripts/prune-amplify-next-artifact.mjs`, `scripts/amplify-prepare-build.mjs` (commit `cc47364`, job #11)
