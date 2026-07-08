@@ -152,18 +152,18 @@ export default function NewsletterEmailTemplateEditClient({
   };
 
   const processHeaderImageUpload = async (file: File) => {
-    if (!file || !formData.eventId) return;
+    if (!file) return;
 
     setUploadingHeader(true);
     setError(null);
 
     try {
       const result = await uploadNewsletterEmailHeaderImageClient(
-        formData.eventId,
+        formData.eventId || null,
         templateId,
         file,
-        'Promotional Email Header Image',
-        'Promotional email header image'
+        'Newsletter Email Header Image',
+        'Newsletter email header image'
       );
 
       setFormData((prev) => ({
@@ -198,7 +198,7 @@ export default function NewsletterEmailTemplateEditClient({
   const handleHeaderDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!uploadingHeader && formData.eventId) {
+    if (!uploadingHeader) {
       setIsDraggingHeader(true);
     }
   };
@@ -214,7 +214,7 @@ export default function NewsletterEmailTemplateEditClient({
     e.stopPropagation();
     setIsDraggingHeader(false);
 
-    if (uploadingHeader || !formData.eventId) return;
+    if (uploadingHeader) return;
 
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
@@ -225,18 +225,18 @@ export default function NewsletterEmailTemplateEditClient({
   };
 
   const processFooterImageUpload = async (file: File) => {
-    if (!file || !formData.eventId) return;
+    if (!file) return;
 
     setUploadingFooter(true);
     setError(null);
 
     try {
       const result = await uploadNewsletterEmailFooterImageClient(
-        formData.eventId,
+        formData.eventId || null,
         templateId,
         file,
-        'Promotional Email Footer Image',
-        'Promotional email footer image'
+        'Newsletter Email Footer Image',
+        'Newsletter email footer image'
       );
 
       setFormData((prev) => ({
@@ -271,7 +271,7 @@ export default function NewsletterEmailTemplateEditClient({
   const handleFooterDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!uploadingFooter && formData.eventId) {
+    if (!uploadingFooter) {
       setIsDraggingFooter(true);
     }
   };
@@ -287,7 +287,7 @@ export default function NewsletterEmailTemplateEditClient({
     e.stopPropagation();
     setIsDraggingFooter(false);
 
-    if (uploadingFooter || !formData.eventId) return;
+    if (uploadingFooter) return;
 
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
@@ -582,22 +582,23 @@ export default function NewsletterEmailTemplateEditClient({
               <div>
                 <input
                   ref={headerFileInputRef}
+                  id="newsletter-header-image-input"
                   type="file"
                   accept="image/*"
                   onChange={handleHeaderImageUpload}
-                  disabled={uploadingHeader || !formData.eventId}
-                  className="hidden"
+                  disabled={uploadingHeader}
+                  className="sr-only"
                 />
-                <div
+                <label
+                  htmlFor="newsletter-header-image-input"
                   onDragOver={handleHeaderDragOver}
                   onDragLeave={handleHeaderDragLeave}
                   onDrop={handleHeaderDrop}
-                  onClick={() => !uploadingHeader && formData.eventId && headerFileInputRef.current?.click()}
-                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full ${
+                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors block w-full ${
                     isDraggingHeader
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-300 hover:border-blue-500'
-                  } ${uploadingHeader || !formData.eventId ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  } ${uploadingHeader ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
                 >
                   <FaUpload className={`mx-auto h-12 w-12 mb-2 ${
                     isDraggingHeader ? 'text-blue-500' : 'text-gray-400'
@@ -614,7 +615,7 @@ export default function NewsletterEmailTemplateEditClient({
                   <p className="text-xs text-gray-500 mt-1">
                     PNG, JPG, GIF up to 5MB
                   </p>
-                </div>
+                </label>
               </div>
             )}
           </div>
@@ -643,22 +644,23 @@ export default function NewsletterEmailTemplateEditClient({
               <div>
                 <input
                   ref={footerFileInputRef}
+                  id="newsletter-footer-image-input"
                   type="file"
                   accept="image/*"
                   onChange={handleFooterImageUpload}
-                  disabled={uploadingFooter || !formData.eventId}
-                  className="hidden"
+                  disabled={uploadingFooter}
+                  className="sr-only"
                 />
-                <div
+                <label
+                  htmlFor="newsletter-footer-image-input"
                   onDragOver={handleFooterDragOver}
                   onDragLeave={handleFooterDragLeave}
                   onDrop={handleFooterDrop}
-                  onClick={() => !uploadingFooter && formData.eventId && footerFileInputRef.current?.click()}
-                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full ${
+                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors block w-full ${
                     isDraggingFooter
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-300 hover:border-blue-500'
-                  } ${uploadingFooter || !formData.eventId ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  } ${uploadingFooter ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
                 >
                   <FaUpload className={`mx-auto h-12 w-12 mb-2 ${
                     isDraggingFooter ? 'text-blue-500' : 'text-gray-400'
@@ -675,7 +677,7 @@ export default function NewsletterEmailTemplateEditClient({
                   <p className="text-xs text-gray-500 mt-1">
                     PNG, JPG, GIF up to 5MB
                   </p>
-                </div>
+                </label>
               </div>
             )}
           </div>

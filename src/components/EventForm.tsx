@@ -5,7 +5,7 @@ import { flushSync } from 'react-dom';
 import type { EventDetailsDTO, EventTypeDetailsDTO } from '@/types';
 import timezones from '@/lib/timezones'; // (We'll create this file for the IANA timezone list)
 import { FaCalendarAlt, FaEnvelope } from 'react-icons/fa';
-import { parseEventMetadata, serializeEventMetadata, createFundraiserMetadata, createRecurrenceMetadata, getRecurrenceConfig, createDonationMetadata, removeNullUndefined } from '@/lib/eventUtils';
+import { parseEventMetadata, serializeEventMetadata, createFundraiserMetadata, createRecurrenceMetadata, getRecurrenceConfig, createDonationMetadata, removeNullUndefined, sanitizeEventDescriptionForForm } from '@/lib/eventUtils';
 import EmailHeaderImageUpload from '@/components/EmailHeaderImageUpload';
 import RecurrenceConfigSection from '@/components/RecurrenceConfigSection';
 import RecurrencePreview from '@/components/RecurrencePreview';
@@ -126,8 +126,13 @@ export function EventForm({ event, eventTypes, onSubmit, loading, onCancel }: Ev
           }
         }
 
-        // Set form with validated fromEmail
-        const formData = { ...defaultEvent, ...event, fromEmail: validFromEmail };
+        // Set form with validated fromEmail; cap corrupt/oversized descriptions so the page stays responsive
+        const formData = {
+          ...defaultEvent,
+          ...event,
+          fromEmail: validFromEmail,
+          description: sanitizeEventDescriptionForForm(event.description),
+        };
         setForm(formData);
 
         // Load donation metadata (NEW - preferred)

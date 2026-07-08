@@ -396,13 +396,16 @@ function EditUserModal({ user, open, onClose, onSave, loading }: {
                 <option value="">Select Role</option>
                 <option value="SUPER_ADMIN">SUPER ADMIN</option>
                 <option value="ADMIN">ADMIN</option>
+                <option value="GAS_STATION_ADMIN">GAS STATION ADMIN (all locations)</option>
+                <option value="GAS_STATION_MANAGER">GAS STATION MANAGER (assigned locations)</option>
                 <option value="ORGANIZER">ORGANIZER</option>
                 <option value="VOLUNTEER">VOLUNTEER</option>
                 <option value="MEMBER">MEMBER</option>
               </select>
               <p className="mt-1.5 text-xs text-gray-500 leading-relaxed">
-                Set to <strong>ADMIN</strong> to grant access to the Admin panel. The user must already be registered on
-                this site; after saving, ask them to sign out and sign back in.
+                Set to <strong>ADMIN</strong> for full admin panel. For gas tenants, use{' '}
+                <strong>GAS_STATION_ADMIN</strong> (all locations) or <strong>GAS_STATION_MANAGER</strong>{' '}
+                (assign locations under Gas Station → Location access). User must sign out/in after save.
               </p>
             </div>
             <div>
@@ -482,6 +485,10 @@ const renderRoleBadge = (role: string | null | undefined) => {
       return <span className={`bg-blue-100 text-blue-800 ${baseClasses}`}>SUPER_ADMIN</span>;
     case 'ADMIN':
       return <span className={`bg-blue-100 text-blue-800 ${baseClasses}`}>ADMIN</span>;
+    case 'GAS_STATION_ADMIN':
+      return <span className={`bg-teal-100 text-teal-800 ${baseClasses}`}>GAS_STATION_ADMIN</span>;
+    case 'GAS_STATION_MANAGER':
+      return <span className={`bg-cyan-100 text-cyan-800 ${baseClasses}`}>GAS_STATION_MANAGER</span>;
     case 'ORGANIZER':
       return <span className={`bg-purple-100 text-purple-800 ${baseClasses}`}>ORGANIZER</span>;
     case 'VOLUNTEER':
@@ -882,6 +889,8 @@ export default function ManageUsageClient({ adminProfile }: { adminProfile: User
             <option value="">All Roles</option>
             <option value="SUPER_ADMIN">Super Admin</option>
             <option value="ADMIN">Admin</option>
+            <option value="GAS_STATION_ADMIN">Gas Station Admin</option>
+            <option value="GAS_STATION_MANAGER">Gas Station Manager</option>
             <option value="ORGANIZER">Organizer</option>
             <option value="VOLUNTEER">Volunteer</option>
             <option value="MEMBER">Member</option>

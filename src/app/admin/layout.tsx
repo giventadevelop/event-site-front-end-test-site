@@ -4,6 +4,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { fetchAdminProfileServer } from './manage-usage/ApiServerActions';
 import { bootstrapUserProfile } from '@/components/ProfileBootstrapperApiServerActions';
 import { isAdminRole } from '@/lib/utils';
+import { canAccessGasStationAdminModule } from '@/lib/gasStationAccess';
 
 const CLERK_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? process.env.AMPLIFY_NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
 
@@ -75,15 +76,24 @@ export default async function AdminLayout({
       return <>{children}</>;
     }
 
-    // Check if user has ADMIN or SUPER_ADMIN role
+    // Check if user has ADMIN/SUPER_ADMIN or gas-station module role on gas-station routes
+    const pathname = headersList.get('x-pathname') || '';
+    const isGasStationRoute = pathname.startsWith('/admin/gas-station');
     const isAdmin = isAdminRole(userProfile?.userRole);
+    const isGasStaff =
+      isGasStationRoute && canAccessGasStationAdminModule(userProfile?.userRole);
 
-    if (!isAdmin) {
+    if (!isAdmin && !isGasStaff) {
       console.warn(
-        `[AdminLayout] User ${userId} does not have ADMIN/SUPER_ADMIN role. ` +
-        `Role: ${userProfile?.userRole || 'NONE'}, Status: ${userProfile?.userStatus || 'NONE'}`
+        `[AdminLayout] User ${userId} denied admin area. ` +
+        `Role: ${userProfile?.userRole || 'NONE'}, path: ${pathname}`
       );
-      redirect('/');
+      redirect(isGasStationRoute ? '/' : '/');
+    }
+
+    // Gas station managers may only use /admin/gas-station/* — not the rest of admin
+    if (!isAdmin && isGasStaff && !isGasStationRoute) {
+      redirect('/admin/gas-station');
     }
 
     // User is authenticated and has ADMIN role

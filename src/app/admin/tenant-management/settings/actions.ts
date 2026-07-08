@@ -13,8 +13,8 @@ import type {
 export async function patchTenantSettingAction(
   id: number,
   data: Partial<TenantSettingsFormDTO>
-): Promise<TenantSettingsDTO> {
-  return patchTenantSetting(id, data);
+): Promise<void> {
+  await patchTenantSetting(id, data);
 }
 
 export async function updateTenantSettingAction(

@@ -207,6 +207,7 @@ DROP TABLE IF EXISTS public.event_type_details CASCADE;
 DROP TABLE IF EXISTS public.gas_station_recommendation CASCADE;
 DROP TABLE IF EXISTS public.gas_station_daily_metrics CASCADE;
 DROP TABLE IF EXISTS public.gas_station_integration CASCADE;
+DROP TABLE IF EXISTS public.gas_station_user_station_assignment CASCADE;
 DROP TABLE IF EXISTS public.gas_station_location CASCADE;
 -- Personal profile site module
 DROP TABLE IF EXISTS public.profile_media_asset CASCADE;
@@ -3256,6 +3257,7 @@ CREATE TABLE IF NOT EXISTS public.profile_achievement (
   category character varying(32) NOT NULL DEFAULT 'OTHER',
   issuer character varying(255),
   url character varying(500),
+  image_url character varying(1024),
   display_order integer,
   is_featured boolean DEFAULT false NOT NULL,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -3291,6 +3293,7 @@ CREATE TABLE IF NOT EXISTS public.profile_media_asset (
   tenant_id character varying(255) NOT NULL,
   title character varying(500) NOT NULL,
   description character varying(2000),
+  cover_image_url character varying(1024),
   file_url character varying(1024) NOT NULL,
   file_type character varying(64),
   file_size_bytes bigint,
@@ -3469,6 +3472,43 @@ COMMENT ON COLUMN public.gas_station_recommendation.explanation IS 'Plain-langua
 COMMENT ON COLUMN public.gas_station_recommendation.owner_feedback IS 'Owner''s free-text feedback on accept/dismiss — read by the engine for its learning loop.';
 
 COMMENT ON COLUMN public.gas_station_location.included_in_subscription IS 'Owner opt-in: when true and is_active, this location counts toward the Stripe subscription quantity (graduated per-location pricing).';
+
+-- =====================================================================
+-- 8. gas_station_user_station_assignment — location-scoped RBAC for managers
+-- =====================================================================
+
+CREATE SEQUENCE IF NOT EXISTS public.gas_station_user_station_assignment_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+CREATE TABLE IF NOT EXISTS public.gas_station_user_station_assignment (
+  id bigint DEFAULT nextval('public.gas_station_user_station_assignment_id_seq'::regclass) NOT NULL,
+  tenant_id character varying(255) NOT NULL,
+  user_profile_id bigint NOT NULL,
+  station_id bigint NOT NULL,
+  assigned_by_user_profile_id bigint,
+  notes character varying(500),
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  CONSTRAINT gas_station_user_station_assignment_pkey PRIMARY KEY (id),
+  CONSTRAINT ux_gas_station_user_station_assignment__tenant_user_station UNIQUE (tenant_id, user_profile_id, station_id),
+  CONSTRAINT fk_gas_station_user_station_assignment__tenant_id FOREIGN KEY (tenant_id) REFERENCES public.tenant_organization(tenant_id) ON DELETE CASCADE,
+  CONSTRAINT fk_gas_station_user_station_assignment__user_profile FOREIGN KEY (user_profile_id) REFERENCES public.user_profile(id) ON DELETE CASCADE,
+  CONSTRAINT fk_gas_station_user_station_assignment__station FOREIGN KEY (station_id) REFERENCES public.gas_station_location(id) ON DELETE CASCADE,
+  CONSTRAINT fk_gas_station_user_station_assignment__assigned_by FOREIGN KEY (assigned_by_user_profile_id) REFERENCES public.user_profile(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_gas_station_user_station_assignment_tenant_user
+  ON public.gas_station_user_station_assignment (tenant_id, user_profile_id);
+
+CREATE INDEX IF NOT EXISTS idx_gas_station_user_station_assignment_tenant_station
+  ON public.gas_station_user_station_assignment (tenant_id, station_id);
+
+COMMENT ON TABLE public.gas_station_user_station_assignment IS 'Junction: which gas_station_location rows a GAS_STATION_MANAGER may access. SUPER_ADMIN, ADMIN, and GAS_STATION_ADMIN see all locations without rows here.';
+COMMENT ON COLUMN public.gas_station_user_station_assignment.assigned_by_user_profile_id IS 'Admin who granted this assignment (audit trail).';
 
 
 --

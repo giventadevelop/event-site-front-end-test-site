@@ -77,6 +77,8 @@ const isPublicRouteClerk = createRouteMatcher([
   // Matches /pricing — avoids satellite RSC prefetch CORS when signInUrl points at primary domain.
   // /membership/manage and /membership/subscribe redirect to same-origin /sign-in in page code.
   '/membership(.*)',
+  '/writings(.*)',
+  '/downloads(.*)',
 ]);
 
 // Clerk 6: default export MUST be clerkMiddleware() so auth() is detected in layout

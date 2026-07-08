@@ -29,6 +29,7 @@ import {
   applySiteTypePresetsForTenant,
 } from '@/app/admin/profile-site/ApiServerActions';
 import { getTenantId } from '@/lib/env';
+import { ensureProfileWritingSlug } from '@/lib/profileSlug';
 
 type Tab = 'profile' | 'writings' | 'achievements' | 'affiliations' | 'downloads' | 'presets';
 
@@ -201,12 +202,38 @@ export default function ProfileSiteAdminClient({
   );
 }
 
-function ProfileField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function ProfileTextArea({
+  label,
+  value,
+  onChange,
+  rows = 4,
+  className = '',
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  rows?: number;
+  className?: string;
+}) {
+  return (
+    <label className={`block ${className}`}>
+      <span className="text-sm font-medium text-gray-700">{label}</span>
+      <textarea
+        rows={rows}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-1 block w-full border border-gray-400 rounded-xl px-4 py-3 text-base"
+      />
+    </label>
+  );
+}
+
+function ProfileField({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
   return (
     <label className="block">
       <span className="text-sm font-medium text-gray-700">{label}</span>
       <input
-        type="text"
+        type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="mt-1 block w-full border border-gray-400 rounded-xl px-4 py-3"
@@ -235,7 +262,18 @@ function WritingsAdmin({
 
   async function save() {
     if (!form.title?.trim()) return;
-    const payload = { ...form, title: form.title.trim() };
+    const slug = ensureProfileWritingSlug(form.title.trim(), form.slug);
+    const payload = {
+      ...form,
+      title: form.title.trim(),
+      slug,
+      excerpt: form.excerpt ?? '',
+      body: form.body ?? '',
+      featuredImageUrl: form.featuredImageUrl ?? '',
+      publicationName: form.publicationName ?? '',
+      externalUrl: form.externalUrl ?? '',
+      publishedAt: form.publishedAt || undefined,
+    };
     const result = editingId
       ? await updateProfileWritingServer(editingId, payload)
       : await createProfileWritingServer(payload);
@@ -271,11 +309,37 @@ function WritingsAdmin({
         </label>
         <ProfileField label="Publication name" value={form.publicationName ?? ''} onChange={(v) => setForm((f) => ({ ...f, publicationName: v }))} />
         <ProfileField label="External URL" value={form.externalUrl ?? ''} onChange={(v) => setForm((f) => ({ ...f, externalUrl: v }))} />
+        <ProfileField
+          label="URL slug"
+          value={form.slug ?? ''}
+          onChange={(v) => setForm((f) => ({ ...f, slug: v }))}
+        />
+        <ProfileField
+          label="Featured image URL"
+          value={form.featuredImageUrl ?? ''}
+          onChange={(v) => setForm((f) => ({ ...f, featuredImageUrl: v }))}
+        />
+        <ProfileField
+          label="Published date"
+          value={form.publishedAt ?? ''}
+          onChange={(v) => setForm((f) => ({ ...f, publishedAt: v }))}
+          type="date"
+        />
+        <ProfileTextArea
+          label="Excerpt (max 2000 characters — card summary)"
+          value={form.excerpt ?? ''}
+          onChange={(v) => setForm((f) => ({ ...f, excerpt: v }))}
+          rows={3}
+          className="md:col-span-2"
+        />
+        <ProfileTextArea
+          label="Body (full article — paragraphs / markdown)"
+          value={form.body ?? ''}
+          onChange={(v) => setForm((f) => ({ ...f, body: v }))}
+          rows={8}
+          className="md:col-span-2"
+        />
         <label className="block md:col-span-2">
-          <span className="text-sm font-medium text-gray-700">Excerpt</span>
-          <textarea rows={2} value={form.excerpt ?? ''} onChange={(e) => setForm((f) => ({ ...f, excerpt: e.target.value }))} className="mt-1 block w-full border border-gray-400 rounded-xl px-4 py-3" />
-        </label>
-        <label className="block">
           <span className="text-sm font-medium text-gray-700">Status</span>
           <select value={form.status ?? 'DRAFT'} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as ProfileWritingStatus }))} className="mt-1 block w-full border border-gray-400 rounded-xl px-4 py-3">
             <option value="DRAFT">Draft</option>
@@ -314,9 +378,20 @@ function AchievementsAdmin({
 
   async function save() {
     if (!form.title?.trim()) return;
+    const payload: Partial<ProfileAchievementDTO> = {
+      title: form.title.trim(),
+      category: form.category,
+      description: form.description ?? '',
+      issuer: form.issuer ?? '',
+      url: form.url ?? '',
+      imageUrl: form.imageUrl ?? '',
+      achievementDate: form.achievementDate || undefined,
+      displayOrder: form.displayOrder,
+      isFeatured: form.isFeatured ?? false,
+    };
     const result = editingId
-      ? await updateProfileAchievementServer(editingId, form)
-      : await createProfileAchievementServer({ title: form.title, category: form.category, description: form.description, issuer: form.issuer, achievementDate: form.achievementDate, displayOrder: form.displayOrder, isFeatured: form.isFeatured });
+      ? await updateProfileAchievementServer(editingId, payload)
+      : await createProfileAchievementServer(payload as Omit<ProfileAchievementDTO, 'id' | 'tenantId'>);
     if (!result) { setMessage('Failed to save achievement.'); return; }
     if (editingId) setItems((p) => p.map((a) => (a.id === editingId ? result : a)));
     else setItems((p) => [...p, result]);
@@ -327,14 +402,34 @@ function AchievementsAdmin({
 
   return (
     <AdminListShell title="Achievements">
-      <ProfileField label="Title *" value={form.title ?? ''} onChange={(v) => setForm((f) => ({ ...f, title: v }))} />
-      <ProfileField label="Issuer" value={form.issuer ?? ''} onChange={(v) => setForm((f) => ({ ...f, issuer: v }))} />
-      <label className="block mb-4">
-        <span className="text-sm font-medium text-gray-700">Category</span>
-        <select value={form.category ?? 'OTHER'} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value as ProfileAchievementCategory }))} className="mt-1 block w-full border border-gray-400 rounded-xl px-4 py-3">
-          {['AWARD', 'HONOR', 'SPEAKING', 'EDUCATION', 'OTHER'].map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
-      </label>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+        <ProfileField label="Title *" value={form.title ?? ''} onChange={(v) => setForm((f) => ({ ...f, title: v }))} />
+        <ProfileField label="Issuer" value={form.issuer ?? ''} onChange={(v) => setForm((f) => ({ ...f, issuer: v }))} />
+        <ProfileField label="Image URL" value={form.imageUrl ?? ''} onChange={(v) => setForm((f) => ({ ...f, imageUrl: v }))} />
+        <ProfileField label="Link URL" value={form.url ?? ''} onChange={(v) => setForm((f) => ({ ...f, url: v }))} />
+        <ProfileField label="Date" value={form.achievementDate ?? ''} onChange={(v) => setForm((f) => ({ ...f, achievementDate: v }))} type="date" />
+        <label className="block">
+          <span className="text-sm font-medium text-gray-700">Category</span>
+          <select value={form.category ?? 'OTHER'} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value as ProfileAchievementCategory }))} className="mt-1 block w-full border border-gray-400 rounded-xl px-4 py-3">
+            {['AWARD', 'HONOR', 'SPEAKING', 'EDUCATION', 'OTHER'].map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </label>
+        <ProfileTextArea
+          label="Description (max 2000 characters)"
+          value={form.description ?? ''}
+          onChange={(v) => setForm((f) => ({ ...f, description: v }))}
+          rows={4}
+          className="md:col-span-2"
+        />
+        <label className="flex items-center gap-2 md:col-span-2">
+          <input
+            type="checkbox"
+            checked={form.isFeatured ?? false}
+            onChange={(e) => setForm((f) => ({ ...f, isFeatured: e.target.checked }))}
+          />
+          <span className="text-sm font-medium">Featured achievement</span>
+        </label>
+      </div>
       <button type="button" onClick={save} className="mb-4 px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold">{editingId ? 'Update' : 'Add'}</button>
       <ul className="space-y-2">{items.map((a) => (
         <li key={a.id} className="flex justify-between border rounded-lg px-4 py-3">
@@ -408,7 +503,15 @@ function DownloadsAdmin({
     if (!form.title?.trim() || !form.fileUrl?.trim()) return;
     const result = editingId
       ? await updateProfileMediaAssetServer(editingId, form)
-      : await createProfileMediaAssetServer({ title: form.title, fileUrl: form.fileUrl, description: form.description, fileType: form.fileType, isDownloadable: form.isDownloadable ?? true, displayOrder: form.displayOrder });
+      : await createProfileMediaAssetServer({
+          title: form.title,
+          fileUrl: form.fileUrl,
+          description: form.description ?? '',
+          coverImageUrl: form.coverImageUrl ?? '',
+          fileType: form.fileType,
+          isDownloadable: form.isDownloadable ?? true,
+          displayOrder: form.displayOrder,
+        });
     if (!result) { setMessage('Failed to save download.'); return; }
     if (editingId) setItems((p) => p.map((a) => (a.id === editingId ? result : a)));
     else setItems((p) => [...p, result]);
@@ -419,9 +522,19 @@ function DownloadsAdmin({
 
   return (
     <AdminListShell title="Downloadable assets">
-      <ProfileField label="Title *" value={form.title ?? ''} onChange={(v) => setForm((f) => ({ ...f, title: v }))} />
-      <ProfileField label="File URL *" value={form.fileUrl ?? ''} onChange={(v) => setForm((f) => ({ ...f, fileUrl: v }))} />
-      <ProfileField label="File type" value={form.fileType ?? ''} onChange={(v) => setForm((f) => ({ ...f, fileType: v }))} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+        <ProfileField label="Title *" value={form.title ?? ''} onChange={(v) => setForm((f) => ({ ...f, title: v }))} />
+        <ProfileField label="File URL *" value={form.fileUrl ?? ''} onChange={(v) => setForm((f) => ({ ...f, fileUrl: v }))} />
+        <ProfileField label="Cover image URL" value={form.coverImageUrl ?? ''} onChange={(v) => setForm((f) => ({ ...f, coverImageUrl: v }))} />
+        <ProfileField label="File type" value={form.fileType ?? ''} onChange={(v) => setForm((f) => ({ ...f, fileType: v }))} />
+        <ProfileTextArea
+          label="Description (max 2000 characters)"
+          value={form.description ?? ''}
+          onChange={(v) => setForm((f) => ({ ...f, description: v }))}
+          rows={4}
+          className="md:col-span-2"
+        />
+      </div>
       <button type="button" onClick={save} className="mb-4 px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold">{editingId ? 'Update' : 'Add'}</button>
       <ul className="space-y-2">{items.map((a) => (
         <li key={a.id} className="flex justify-between border rounded-lg px-4 py-3">

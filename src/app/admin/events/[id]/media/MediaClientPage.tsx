@@ -3,6 +3,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { EventMediaDTO, EventDetailsDTO } from "@/types";
 import { FaEdit, FaTrashAlt, FaUpload, FaFolderOpen, FaSpinner, FaBan, FaTimes, FaCheckCircle, FaPhotoVideo } from 'react-icons/fa';
 import { deleteMediaServer, editMediaServer } from './ApiServerActions';
+import { notifyHomepageCacheInvalidate } from '@/lib/homepageCacheKeys';
 import { createPortal } from "react-dom";
 import Link from 'next/link';
 import { ConfirmModal } from '@/components/ui/Modal';
@@ -308,18 +309,29 @@ export function MediaClientPage({ eventId, mediaList: initialMediaList, eventDet
         }
       }
 
-      // Same-origin relative URL — avoids wrong port when NEXT_PUBLIC_APP_URL is unset (e.g. dev on :3001)
-      const res = await fetch('/api/proxy/event-medias/upload-multiple', {
-        method: 'POST',
-        body: formData,
-      });
+      const uploadController = new AbortController();
+      const uploadTimeoutMs = 120_000;
+      const uploadTimeoutId = window.setTimeout(() => uploadController.abort(), uploadTimeoutMs);
+
+      let res: Response;
+      try {
+        // Same-origin relative URL — avoids wrong port when NEXT_PUBLIC_APP_URL is unset (e.g. dev on :3001)
+        res = await fetch('/api/proxy/event-medias/upload-multiple', {
+          method: 'POST',
+          body: formData,
+          signal: uploadController.signal,
+        });
+      } finally {
+        window.clearTimeout(uploadTimeoutId);
+      }
+
+      const responseText = await res.text();
 
       if (!res.ok) {
-        const text = await res.text();
-        let errMsg = text;
+        let errMsg = responseText;
         try {
-          const json = JSON.parse(text) as { details?: string; message?: string; error?: string };
-          errMsg = json.details?.trim() || json.message || json.error || text;
+          const json = JSON.parse(responseText) as { details?: string; message?: string; error?: string };
+          errMsg = json.details?.trim() || json.message || json.error || responseText;
         } catch {
           /* not JSON */
         }
@@ -329,7 +341,29 @@ export function MediaClientPage({ eventId, mediaList: initialMediaList, eventDet
         throw new Error(errMsg || `Upload failed (HTTP ${res.status})`);
       }
 
-      const result = await res.json();
+      let result: EventMediaDTO[] | null = null;
+      if (responseText.trim()) {
+        try {
+          const parsed = JSON.parse(responseText) as unknown;
+          if (Array.isArray(parsed)) {
+            result = parsed as EventMediaDTO[];
+          }
+        } catch {
+          /* empty or non-JSON success body */
+        }
+      }
+
+      if (result && result.length > 0) {
+        setMediaList((prev) => {
+          const newIds = new Set(result!.map((m) => m.id).filter((id): id is number => id != null));
+          const rest = prev.filter((m) => m.id == null || !newIds.has(m.id));
+          return [...result!, ...rest];
+        });
+      }
+
+      if (isHomePageHeroImage || isHeroImage) {
+        notifyHomepageCacheInvalidate();
+      }
 
       // Show success dialog
       setShowSuccessDialog(true);
@@ -349,13 +383,17 @@ export function MediaClientPage({ eventId, mediaList: initialMediaList, eventDet
       setEventFocusGroupId(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
 
-      // Refresh the page after dialog is shown (user can close it manually or wait for auto-close)
       setTimeout(() => {
         setShowSuccessDialog(false);
-        window.location.reload();
       }, 3000);
-    } catch (err: any) {
-      setMessage(`Upload error: ${err.message}`);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error && err.name === 'AbortError'
+          ? 'Upload timed out. The file may still have uploaded — refresh the page to check.'
+          : err instanceof Error
+            ? err.message
+            : 'Upload failed';
+      setMessage(`Upload error: ${message}`);
     } finally {
       setUploading(false);
       setProgress(100);
@@ -445,6 +483,14 @@ export function MediaClientPage({ eventId, mediaList: initialMediaList, eventDet
       setOfficialDocsList((prev) =>
         prev.map((m) => (m.id === editMedia.id ? { ...m, ...updated } : m))
       );
+      if (
+        updated.isHomePageHeroImage === true ||
+        updated.isHeroImage === true ||
+        editMedia.isHomePageHeroImage ||
+        editMedia.isHeroImage
+      ) {
+        notifyHomepageCacheInvalidate();
+      }
       setEditMedia(null); // Close modal on success
       setMessage('Media updated successfully.');
     } catch (err: any) {
@@ -1616,10 +1662,7 @@ export function MediaClientPage({ eventId, mediaList: initialMediaList, eventDet
           >
             {/* Close button */}
             <button
-              onClick={() => {
-                setShowSuccessDialog(false);
-                window.location.reload();
-              }}
+              onClick={() => setShowSuccessDialog(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
               aria-label="Close"
             >
@@ -1641,15 +1684,12 @@ export function MediaClientPage({ eventId, mediaList: initialMediaList, eventDet
               {/* Message */}
               <div className="text-sm text-green-800 leading-relaxed">
                 <p>Your media files have been uploaded successfully.</p>
-                <p className="mt-2">The page will refresh automatically to show the new files.</p>
+                <p className="mt-2">New files appear in the list below.</p>
               </div>
 
               {/* OK Button */}
               <button
-                onClick={() => {
-                  setShowSuccessDialog(false);
-                  window.location.reload();
-                }}
+                onClick={() => setShowSuccessDialog(false)}
                 className="mt-4 px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
               >
                 OK

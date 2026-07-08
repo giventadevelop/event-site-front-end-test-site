@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { FaCog, FaCode } from 'react-icons/fa';
+import { FaCog, FaCode, FaImage } from 'react-icons/fa';
 import { TenantSettingsDTO, TenantOrganizationDTO } from '@/app/admin/tenant-management/types';
+import TenantDefaultHeroView from '@/app/admin/tenant-management/components/TenantDefaultHeroView';
 
 interface TenantSettingsViewClientProps {
   settings: TenantSettingsDTO;
@@ -13,21 +14,22 @@ interface TenantSettingsViewClientProps {
 }
 
 export default function TenantSettingsViewClient({ settings, settingsId, organization }: TenantSettingsViewClientProps) {
-  const [activeTab, setActiveTab] = useState<'general' | 'integrations' | 'limits' | 'customization'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'integrations' | 'limits' | 'homepageHero' | 'customization'>('general');
 
   // Tab navigation with colorful icons
   const tabs = [
     { id: 'general' as const, label: 'General', icon: FaCog, color: 'blue' },
     { id: 'integrations' as const, label: 'Integrations', icon: FaCode, color: 'green' },
     { id: 'limits' as const, label: 'Limits', icon: FaCog, color: 'purple' },
+    { id: 'homepageHero' as const, label: 'Homepage Hero', icon: FaImage, color: 'teal' },
     { id: 'customization' as const, label: 'Customization', icon: FaCode, color: 'orange' }
   ];
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       {/* Tab Navigation */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-4">
+      <div className="mb-6 pb-4 border-b border-gray-200">
+        <nav className="flex flex-wrap gap-2 w-full" aria-label="Settings sections">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -65,6 +67,17 @@ export default function TenantSettingsViewClient({ settings, settingsId, organiz
                   textActive: 'text-purple-700',
                   textInactive: 'text-purple-500'
                 };
+              } else if (color === 'teal') {
+                return {
+                  active: 'bg-teal-100 text-teal-600 border-teal-500',
+                  inactive: 'bg-teal-50 text-teal-400 border-transparent hover:bg-teal-100 hover:text-teal-500',
+                  iconBgActive: 'bg-teal-100',
+                  iconBgInactive: 'bg-teal-50',
+                  iconTextActive: 'text-teal-600',
+                  iconTextInactive: 'text-teal-400',
+                  textActive: 'text-teal-700',
+                  textInactive: 'text-teal-500'
+                };
               } else {
                 return {
                   active: 'bg-orange-100 text-orange-600 border-orange-500',
@@ -82,17 +95,18 @@ export default function TenantSettingsViewClient({ settings, settingsId, organiz
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-3 px-4 border-b-2 font-semibold text-base flex items-center gap-3 rounded-t-lg transition-all duration-300 ${
+                className={`py-2.5 px-3 sm:px-4 border-2 font-semibold text-sm sm:text-base flex items-center gap-2 sm:gap-3 rounded-lg transition-all duration-300 flex-[1_1_calc(50%-0.25rem)] md:flex-[1_1_calc(33.333%-0.34rem)] min-w-[10rem] max-w-full ${
                   isActive ? colors.active : colors.inactive
                 }`}
               >
-                <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center transition-all duration-300 hover:scale-110 ${
-                  isActive ? colors.iconBgActive : colors.iconBgInactive
-                }`}>
-                  <Icon className={`w-10 h-10 ${isActive ? colors.iconTextActive : colors.iconTextInactive}`} />
+                <div className={`flex-shrink-0 w-11 h-11 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                  isActive ? 'scale-105' : 'hover:scale-105'
+                } ${isActive ? colors.iconBgActive : colors.iconBgInactive}`}>
+                  <Icon className={`w-8 h-8 sm:w-10 sm:h-10 ${isActive ? colors.iconTextActive : colors.iconTextInactive}`} />
                 </div>
-                <span className={isActive ? colors.textActive : colors.textInactive}>{tab.label}</span>
+                <span className={`whitespace-nowrap ${isActive ? colors.textActive : colors.textInactive}`}>{tab.label}</span>
               </button>
             );
           })}
@@ -429,6 +443,18 @@ export default function TenantSettingsViewClient({ settings, settingsId, organiz
             </div>
           </dl>
         </div>
+      )}
+
+      {/* Homepage Hero Tab */}
+      {activeTab === 'homepageHero' && (
+        <TenantDefaultHeroView
+          settingsId={settingsId}
+          displayEventHeroImages={settings?.displayEventHeroImages}
+          defaultHeroImageUrlsJson={settings?.defaultHeroImageUrlsJson}
+          defaultHeroDisplayMode={settings?.defaultHeroDisplayMode}
+          defaultHeroIncludeWithEvents={settings?.defaultHeroIncludeWithEvents}
+          defaultHeroMaxDisplayCount={settings?.defaultHeroMaxDisplayCount}
+        />
       )}
 
       {/* Customization Tab */}

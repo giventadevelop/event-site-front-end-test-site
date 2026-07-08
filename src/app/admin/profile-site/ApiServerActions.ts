@@ -5,6 +5,7 @@ import { getTenantId, getApiBaseUrl } from '@/lib/env';
 import { withTenantId } from '@/lib/withTenantId';
 import { parseProfileSiteListResponse } from '@/lib/parseProfileSiteResponses';
 import { applySiteTypePresetsToSettings } from '@/lib/siteTypePresets';
+import { ensureProfileWritingSlug } from '@/lib/profileSlug';
 import { fetchTenantSettingsByTenantId, patchTenantSetting } from '@/app/admin/tenant-management/settings/ApiServerActions';
 import type {
   PublicProfileDTO,
@@ -108,14 +109,19 @@ export async function fetchProfileMediaAssetsServer() {
 export async function createProfileWritingServer(
   data: Omit<ProfileWritingDTO, 'id' | 'tenantId'>
 ): Promise<ProfileWritingDTO | null> {
-  return createProfileResource('/api/profile-writings', data);
+  const slug = ensureProfileWritingSlug(data.title, data.slug);
+  return createProfileResource('/api/profile-writings', { ...data, slug });
 }
 
 export async function updateProfileWritingServer(
   id: number,
   data: Partial<ProfileWritingDTO>
 ): Promise<ProfileWritingDTO | null> {
-  return patchProfileResource('/api/profile-writings', id, data);
+  const payload = { ...data };
+  if (data.title && !data.slug?.trim()) {
+    payload.slug = ensureProfileWritingSlug(data.title, data.slug);
+  }
+  return patchProfileResource('/api/profile-writings', id, payload);
 }
 
 export async function deleteProfileWritingServer(id: number): Promise<boolean> {

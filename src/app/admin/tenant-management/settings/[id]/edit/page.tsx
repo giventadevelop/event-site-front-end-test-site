@@ -61,7 +61,7 @@ export default async function EditTenantSettingsPage({ params }: PageProps) {
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style={{ paddingTop: '120px' }}>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 pt-[9.5rem]">
         <div className="mb-8">
           <Link
             href="/admin/tenant-management/settings"
@@ -102,17 +102,21 @@ export default async function EditTenantSettingsPage({ params }: PageProps) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style={{ paddingTop: '120px' }}>
-      {/* Breadcrumb Navigation */}
-      <nav className="flex mb-8" aria-label="Breadcrumb">
-        <ol className="inline-flex items-center space-x-1 md:space-x-3">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 pt-[9.5rem]">
+      {/* Breadcrumb Navigation — pt-[9.5rem] clears fixed header (8rem) + breathing room */}
+      <nav className="flex items-center py-3 mb-6" aria-label="Breadcrumb">
+        <ol className="inline-flex flex-wrap items-center gap-y-2 space-x-1 md:space-x-3">
           <li className="inline-flex items-center">
             <Link
               href="/admin"
-              className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600"
+              className="flex-shrink-0 h-14 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-6"
+              title="Admin Dashboard"
+              aria-label="Admin Dashboard"
             >
-              <FaArrowLeft className="w-4 h-4 mr-2" />
-              Admin Dashboard
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center">
+                <FaArrowLeft className="w-6 h-6 text-gray-600" />
+              </div>
+              <span className="font-semibold text-gray-700">Admin Dashboard</span>
             </Link>
           </li>
           <li>

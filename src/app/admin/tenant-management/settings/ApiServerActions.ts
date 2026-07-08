@@ -305,12 +305,14 @@ export async function updateTenantSetting(
 }
 
 /**
- * Partially update an existing tenant setting
+ * Partially update an existing tenant setting.
+ * Does not parse the response body — callers only need success/failure (avoids large DTO
+ * deserialization hanging server-action round-trips after hero slide saves).
  */
 export async function patchTenantSetting(
   id: number,
   data: Partial<TenantSettingsFormDTO>
-): Promise<TenantSettingsDTO> {
+): Promise<void> {
   try {
     const { targetId, existingSetting } = await resolveTenantSettingsForMutation(id);
 
@@ -352,7 +354,12 @@ export async function patchTenantSetting(
       throwTenantSettingsApiError(errorText, 'update');
     }
 
-    return await response.json();
+    // Drain body so the connection closes; skip JSON parse (not needed for PATCH callers).
+    try {
+      await response.text();
+    } catch {
+      // ignore drain errors after a successful status
+    }
   } catch (error) {
     console.error('Error patching tenant setting:', error);
     if (error instanceof Error) throw error;

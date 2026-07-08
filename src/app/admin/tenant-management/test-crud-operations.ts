@@ -161,11 +161,11 @@ export async function testSettingsCRUD() {
 
     // 6. PATCH - Partial update
     console.log('6️⃣ Patching settings...');
-    const patchedSettings = await patchTenantSetting(settingsId, {
+    await patchTenantSetting(settingsId, {
       enableEmailMarketing: false,
       maxEvents: 100
     });
-    console.log('✅ Settings patched:', patchedSettings);
+    console.log('✅ Settings patched');
 
     // 7. DELETE - Delete the settings
     console.log('7️⃣ Deleting settings...');

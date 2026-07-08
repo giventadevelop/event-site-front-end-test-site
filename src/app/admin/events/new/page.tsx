@@ -41,6 +41,7 @@ export default function CreateEventPage() {
             ...event,
             id: undefined, // Remove ID so it's treated as a new event
             title: event.title ? `${event.title} (Copy)` : '',
+            isActive: true,
             // Retain original start and end dates
             startDate: event.startDate || '', // YYYY-MM-DD format - EventForm will convert to MM/DD/YYYY for display
             endDate: event.endDate || '', // YYYY-MM-DD format - EventForm will convert to MM/DD/YYYY for display

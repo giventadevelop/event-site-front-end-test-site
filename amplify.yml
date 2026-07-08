@@ -15,9 +15,7 @@ frontend:
         - echo "__NEXT_PRIVATE_PREBUNDLED_REACT=next" >> .env.production
         # Inject Amplify environment variables into .env.production for SSR Lambda runtime
         - env | grep -E '^(NEXT_PUBLIC_|AMPLIFY_|STRIPE_|CLERK_|API_JWT|DATABASE_URL|DIRECT_URL|POOLED_URL|SUPABASE_|STRAPI_)' >> .env.production || true
-        # Drop legacy mosc + mosc-old (~500 routes) so WEB_COMPUTE bundle stays under Amplify ~220MB cap.
-        # Override in Amplify env with AMPLIFY_ROUTE_SET=all if a full-route build is required.
-        - export AMPLIFY_ROUTE_SET="${AMPLIFY_ROUTE_SET:-redesign-only}"
+        # Optional: AMPLIFY_ROUTE_SET=redesign-only drops mosc + mosc-old (~600 routes) to fit ~220MB cap
         - node scripts/amplify-prepare-build.mjs
         - npm run build
         # Shrink .next under Amplify ~220MB SSR cap (maps, cache, .next/node_modules, @swc/@esbuild binaries).
@@ -29,4 +27,4 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
-      # Do not cache .next/cache — restored cache inflates WEB_COMPUTE deploy bundle size checks.
+      - .next/cache/**/*

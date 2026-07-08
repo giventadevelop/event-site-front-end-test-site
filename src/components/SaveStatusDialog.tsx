@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FaCheckCircle, FaSpinner, FaExclamationCircle, FaTimes } from 'react-icons/fa';
 
 export type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
@@ -13,6 +13,8 @@ interface SaveStatusDialogProps {
   /** Optional bullet list shown below the summary on error (no stack traces). */
   details?: string[];
   onClose?: () => void;
+  /** Auto-close after success (ms). Set to 0 to disable. Default 1500. */
+  autoCloseSuccessMs?: number;
 }
 
 export default function SaveStatusDialog({
@@ -22,7 +24,18 @@ export default function SaveStatusDialog({
   title,
   details = [],
   onClose,
+  autoCloseSuccessMs = 1500,
 }: SaveStatusDialogProps) {
+  useEffect(() => {
+    if (!isOpen || status !== 'success' || !onClose || autoCloseSuccessMs <= 0) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      onClose();
+    }, autoCloseSuccessMs);
+    return () => window.clearTimeout(timer);
+  }, [isOpen, status, onClose, autoCloseSuccessMs]);
+
   if (!isOpen) return null;
 
   const getStatusContent = () => {

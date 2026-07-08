@@ -7,6 +7,8 @@ import { useTenantSettings } from '@/components/TenantSettingsProvider';
 import { HomeSectionRail } from '@/components/HomeSectionRail';
 import { HomeSectionTitle } from '@/components/HomeSectionTitle';
 import { parseProfileSiteListResponse } from '@/lib/parseProfileSiteResponses';
+import { ProfileWritingCard } from '@/components/profile/ProfileWritingViews';
+import { formatProfileDate } from '@/lib/profileSitePaths';
 import type {
   PublicProfileDTO,
   ProfileWritingDTO,
@@ -64,7 +66,7 @@ export function ProfileHeroSection({ profile }: { profile: PublicProfileDTO }) {
               </a>
             )}
             <Link href="/profile" className="px-6 py-3 border-2 border-primary text-primary rounded-sacred font-semibold reverent-hover">
-              View full profile
+              Account profile
             </Link>
           </div>
         </div>
@@ -76,30 +78,13 @@ export function ProfileHeroSection({ profile }: { profile: PublicProfileDTO }) {
 export function ProfileWritingsSection({ writings }: { writings: ProfileWritingDTO[] }) {
   if (writings.length === 0) return null;
   return (
-    <section className="py-16 bg-card">
+    <section id="profile-writings" className="py-16 bg-card">
       <HomeSectionRail eyebrow="Writings" containerClassName="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <HomeSectionTitle className="text-3xl font-heading font-semibold text-center mb-10">Selected works</HomeSectionTitle>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {writings.map((w) => {
-            const href = w.writingType === 'EXTERNAL_LINK' && w.externalUrl ? w.externalUrl : `/profile#writing-${w.id}`;
-            const isExternal = w.writingType === 'EXTERNAL_LINK' && Boolean(w.externalUrl);
-            return (
-              <a
-                key={w.id}
-                href={href}
-                target={isExternal ? '_blank' : undefined}
-                rel={isExternal ? 'noopener noreferrer' : undefined}
-                id={w.id ? `writing-${w.id}` : undefined}
-                className="bg-background rounded-lg sacred-shadow p-6 reverent-hover block"
-              >
-                {w.publicationName && (
-                  <span className="text-xs font-caption uppercase text-primary">{w.publicationName}</span>
-                )}
-                <h3 className="font-heading text-lg font-semibold mt-2 text-foreground">{w.title}</h3>
-                {w.excerpt && <p className="font-body text-sm text-muted-foreground mt-2 line-clamp-3">{w.excerpt}</p>}
-              </a>
-            );
-          })}
+          {writings.map((w) => (
+            <ProfileWritingCard key={w.id} writing={w} />
+          ))}
         </div>
       </HomeSectionRail>
     </section>
@@ -115,15 +100,31 @@ export function ProfileAchievementsSection({ items }: { items: ProfileAchievemen
         <ul className="space-y-6">
           {items.map((a) => (
             <li key={a.id} className="bg-card rounded-lg sacred-shadow p-6 border-l-4 border-primary">
-              <div className="flex justify-between items-start gap-4">
-                <div>
-                  <h3 className="font-heading font-semibold text-lg">{a.title}</h3>
-                  {a.issuer && <p className="text-sm text-muted-foreground">{a.issuer}</p>}
-                  {a.description && <p className="font-body text-sm mt-2">{a.description}</p>}
-                </div>
-                {a.achievementDate && (
-                  <span className="text-sm font-caption text-primary whitespace-nowrap">{a.achievementDate}</span>
+              <div className="flex flex-col sm:flex-row gap-4 justify-between items-start">
+                {a.imageUrl && (
+                  <div className="relative w-full sm:w-28 h-28 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
+                    <Image src={a.imageUrl} alt="" fill className="object-cover" unoptimized />
+                  </div>
                 )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start gap-4">
+                    <div>
+                      <h3 className="font-heading font-semibold text-lg">{a.title}</h3>
+                      {a.issuer && <p className="text-sm text-muted-foreground">{a.issuer}</p>}
+                    </div>
+                    {a.achievementDate && (
+                      <span className="text-sm font-caption text-primary whitespace-nowrap">
+                        {formatProfileDate(a.achievementDate)}
+                      </span>
+                    )}
+                  </div>
+                  {a.description && <p className="font-body text-sm mt-2 text-muted-foreground">{a.description}</p>}
+                  {a.url?.trim() && (
+                    <a href={a.url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary font-semibold mt-2 inline-block hover:underline">
+                      Learn more →
+                    </a>
+                  )}
+                </div>
               </div>
             </li>
           ))}
@@ -167,21 +168,32 @@ export function ProfileDownloadsSection({ assets }: { assets: ProfileMediaAssetD
     <section className="py-16 bg-muted">
       <HomeSectionRail eyebrow="Downloads" containerClassName="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <HomeSectionTitle className="text-3xl font-heading font-semibold text-center mb-10">Publications &amp; downloads</HomeSectionTitle>
-        <ul className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {downloadable.map((a) => (
-            <li key={a.id}>
-              <a
-                href={a.fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between bg-card rounded-lg sacred-shadow px-5 py-4 reverent-hover"
+            <div key={a.id}>
+              <Link
+                href={`/downloads/${a.id}`}
+                className="flex flex-col bg-card rounded-lg sacred-shadow overflow-hidden reverent-hover h-full"
               >
-                <span className="font-semibold text-foreground">{a.title}</span>
-                {a.fileType && <span className="text-xs uppercase text-muted-foreground">{a.fileType}</span>}
-              </a>
-            </li>
+                {a.coverImageUrl ? (
+                  <div className="relative w-full h-36 bg-muted">
+                    <Image src={a.coverImageUrl} alt="" fill className="object-cover" unoptimized />
+                  </div>
+                ) : null}
+                <div className="px-5 py-4 flex flex-col flex-1 gap-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="font-semibold text-foreground">{a.title}</span>
+                    {a.fileType && <span className="text-xs uppercase text-muted-foreground shrink-0">{a.fileType}</span>}
+                  </div>
+                  {a.description && (
+                    <p className="text-sm text-muted-foreground line-clamp-2">{a.description}</p>
+                  )}
+                  <span className="text-sm text-primary font-semibold mt-auto">View details →</span>
+                </div>
+              </Link>
+            </div>
           ))}
-        </ul>
+        </div>
       </HomeSectionRail>
     </section>
   );
@@ -221,7 +233,7 @@ export function ProfileContactSection({ profile }: { profile: PublicProfileDTO }
 export function ProfileAboutSection({ profile }: { profile: PublicProfileDTO }) {
   if (!profile.bioMarkdown?.trim()) return null;
   return (
-    <section className="py-16 bg-background">
+    <section id="profile-about" className="py-16 bg-background">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <HomeSectionTitle className="text-3xl font-heading font-semibold text-center mb-8">About</HomeSectionTitle>
         <div className="font-body text-lg text-muted-foreground whitespace-pre-wrap leading-relaxed">{profile.bioMarkdown}</div>

@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PRD for the External Gas Station AI Engine — connectors, forecasting, LLM chat, service JWT write-back to the event-site platform.">
+    <title>Gas Station AI Engine — External Service PRD &amp; Implementation Guide</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px 20px 56px;
+        }
+        h1 { font-size: 2.2em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 36px; margin-bottom: 14px; }
+        h3 { font-size: 1.2em; color: #0052a3; margin: 20px 0 10px; }
+        h4 { font-size: 1.05em; color: #374151; margin: 14px 0 8px; }
+        p, li { margin-bottom: 10px; }
+        ul, ol { margin: 10px 0 14px 24px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        code {
+            background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px;
+            border: 1px solid #b8d4e3; font-family: Consolas, 'Courier New', monospace; font-size: 0.88em;
+        }
+        code.script-name {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff; border: none; font-weight: bold; padding: 3px 10px;
+        }
+        code.code-highlight {
+            background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3;
+        }
+        .lead {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+            border-left: 4px solid #0066cc; border-radius: 8px;
+            padding: 18px 20px; margin: 20px 0;
+        }
+        .section-container {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc; border-radius: 8px;
+            padding: 20px; margin: 20px 0; box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-container.usage {
+            background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%);
+            border-left-color: #9c27b0;
+        }
+        .section-container.parameters {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left-color: #ff9800;
+        }
+        .section-container.output {
+            background: linear-gradient(135deg, #e6ffe6 0%, #ccffcc 100%);
+            border-left-color: #28a745;
+        }
+        .section-header {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: #fff; padding: 12px 20px; margin: -20px -20px 20px -20px;
+            border-radius: 8px 8px 0 0; font-size: 1.15em; font-weight: bold;
+        }
+        .section-header.usage { background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%); }
+        .section-header.parameters { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); }
+        .section-header.output { background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%); }
+        .info, .warning, .success {
+            padding: 14px 18px; margin: 16px 0; border-radius: 6px; border-left: 4px solid;
+        }
+        .info { background: #d1ecf1; border-color: #0c5460; }
+        .warning { background: #fff3cd; border-color: #ffc107; }
+        .success { background: #d4edda; border-color: #28a745; }
+        .info code, .warning code, .success code {
+            background: #e8f4f8; color: #0d3b66; border: 1px solid #b8d4e3;
+        }
+        table {
+            width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em;
+            background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+        thead th {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: #fff; text-align: left; padding: 12px 14px;
+            text-transform: uppercase; font-size: 0.85em; letter-spacing: 0.4px;
+        }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        tr:nth-child(even) { background: #f8f9fa; }
+        tr:hover { background: #e3f2fd; transition: background 0.2s; }
+        td code { font-size: 0.85em; }
+        .toc {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border: 2px solid #b8d4e3; border-radius: 8px; padding: 18px 22px; margin: 24px 0;
+        }
+        .toc h2 { margin-top: 0; border: none; padding: 0; font-size: 1.2em; }
+        .toc ul { margin-bottom: 0; }
+        .toc a { color: #0052a3; text-decoration: none; font-weight: 600; }
+        .toc a:hover { text-decoration: underline; }
+        .diagram-box {
+            background: #fff; border: 2px solid #b8d4e3; border-radius: 8px;
+            padding: 16px; margin: 16px 0; overflow-x: auto;
+        }
+        .diagram-caption { font-size: 0.9em; color: #555; margin-top: 8px; font-style: italic; }
+        .layer-split {
+            display: grid; grid-template-columns: 1fr; gap: 14px; margin: 16px 0;
+        }
+        @media (min-width: 720px) { .layer-split { grid-template-columns: 1fr 1fr; } }
+        .layer-card {
+            background: #fff; border: 2px solid #b8d4e3; border-radius: 8px; padding: 16px;
+        }
+        .layer-card h3 { margin-top: 0; }
+        .layer-card.platform { border-color: #0066cc; }
+        .layer-card.engine { border-color: #9c27b0; }
+        .effort-pill {
+            display: inline-block; padding: 2px 10px; border-radius: 12px;
+            font-size: 0.8em; font-weight: bold;
+        }
+        .effort-s { background: #d4edda; color: #155724; }
+        .effort-m { background: #fff3cd; color: #856404; }
+        .effort-l { background: #f8d7da; color: #721c24; }
+        .effort-xl { background: #e2d5f1; color: #4a235a; }
+        pre, .code-block {
+            background: #e8f4f8; color: #0d3b66; padding: 15px; border-radius: 5px;
+            border: 1px solid #b8d4e3; overflow-x: auto; margin: 15px 0;
+            font-family: Consolas, 'Courier New', monospace; font-size: 0.88em;
+            white-space: pre-wrap;
+        }
+        .prompt-block {
+            background: #fff; border: 2px solid #9c27b0; border-radius: 8px;
+            margin: 16px 0; overflow: hidden;
+        }
+        .prompt-header {
+            display: flex; justify-content: space-between; align-items: center;
+            background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+            color: #fff; padding: 10px 16px; font-weight: bold;
+        }
+        .copy-button {
+            background: #fff; color: #7b1fa2; border: none; padding: 6px 14px;
+            border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85em;
+        }
+        .copy-button:hover { background: #f3e5f5; }
+        .copy-button.copied { background: #28a745; color: #fff; }
+        .prompt-body {
+            padding: 16px; white-space: pre-wrap; font-family: Consolas, monospace;
+            font-size: 0.85em; line-height: 1.5; color: #1f2937;
+        }
+        .phase-timeline { margin: 20px 0; }
+        .phase-step {
+            display: flex; gap: 16px; margin-bottom: 16px; align-items: flex-start;
+        }
+        .phase-num {
+            flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%;
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: #fff; display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 0.95em;
+        }
+        .phase-content { flex: 1; padding-bottom: 8px; border-bottom: 1px dashed #b8d4e3; }
+        .excalidraw-link {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: #fff5e6; border: 2px solid #ff9800; border-radius: 8px;
+            padding: 12px 18px; margin: 16px 0; font-weight: 600; color: #e65100;
+            text-decoration: none;
+        }
+        .excalidraw-link:hover { background: #ffe6cc; }
+    </style>
+</head>
+<body>
+
+<h1>Gas Station AI Engine — External Service PRD</h1>
+<p class="doc-meta">
+    <strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> July 2026 &nbsp;|&nbsp; <strong>Status:</strong> Draft — separate project<br>
+    <strong>Parent record:</strong> <a href="gas_station_requirements_implementation.html">gas_station_requirements_implementation.html</a> (§6 Out of scope)<br>
+    <strong>Feasibility:</strong> <a href="gas_station_site_feasibility.md">gas_station_site_feasibility.md</a> &nbsp;|&nbsp;
+    <strong>Excalidraw diagram:</strong> <a href="gas_station_ai_engine_workflow.excalidraw">gas_station_ai_engine_workflow.excalidraw</a>
+</p>
+
+<div class="lead">
+    <p><strong>Purpose:</strong> This document elaborates the <em>External AI engine</em> line item from the gas-station implementation record — a <strong>separately deployed service</strong> responsible for data connectors, forecasting, anomaly detection, and LLM-powered “AI Manager” chat. It <strong>reads</strong> tenant/station/integration registry from the platform backend and <strong>writes back</strong> curated daily metrics and recommendations via the existing REST API using a <strong>service JWT</strong>.</p>
+    <p><strong>What already exists (this platform):</strong> Postgres tables (<code>gas_station_*</code>), Spring Boot CRUD APIs, Next.js admin dashboard (<code>/admin/gas-station</code>), demo seed data, billing. Loop 3 of the feasibility plan is complete — the dashboard works with hand-inserted rows <em>without</em> the engine.</p>
+    <p><strong>What this PRD covers:</strong> The separate <code>gas-station-ai-engine</code> project — architecture, components, training, connectors, LLM agent design, write-back contract, security, phases, and effort.</p>
+</div>
+
+<nav class="toc" aria-label="Table of contents">
+    <h2>Table of Contents</h2>
+    <ul>
+        <li><a href="#split">1. Platform vs engine split</a></li>
+        <li><a href="#architecture">2. High-level architecture (diagrams)</a></li>
+        <li><a href="#components">3. AI engine components</a></li>
+        <li><a href="#connectors">4. Data connectors — process &amp; steps</a></li>
+        <li><a href="#training">5. Model training &amp; learning loops</a></li>
+        <li><a href="#llm">6. LLM agent — features &amp; connection pattern</a></li>
+        <li><a href="#writeback">7. Write-back to platform (service JWT)</a></li>
+        <li><a href="#ondemand">8. On-demand calls (refresh &amp; chat)</a></li>
+        <li><a href="#security">9. Security &amp; multi-tenancy</a></li>
+        <li><a href="#phases">10. Implementation phases &amp; effort</a></li>
+        <li><a href="#repos">11. Repositories &amp; deployment</a></li>
+        <li><a href="#acceptance">12. Acceptance criteria</a></li>
+    </ul>
+</nav>
+
+<h2 id="split">1. Platform vs engine split</h2>
+
+<div class="layer-split">
+    <div class="layer-card platform">
+        <h3>This platform (system of record)</h3>
+        <ul>
+            <li>Tenant onboarding, subscriptions (Stripe), station CRUD</li>
+            <li>Integration <em>registry</em> (metadata only — no raw POS rows)</li>
+            <li>Daily brief dashboard UI (read metrics + recommendations)</li>
+            <li>Owner actions: Accept / Dismiss / Done + feedback text</li>
+            <li><code>tenant_settings.gas_ai_engine_*</code> config per tenant</li>
+        </ul>
+        <p><strong>Repos:</strong> <code>mosc-temp</code>, <code>event-site-manager</code>, <code>event-site-manager-service</code></p>
+    </div>
+    <div class="layer-card engine">
+        <h3>External AI engine (separate project)</h3>
+        <ul>
+            <li>POS / fuel / payroll <strong>connectors</strong> (ingest raw data)</li>
+            <li>Data foundation + feature store (time-series, cleaned history)</li>
+            <li>Forecasting, staffing, pricing, anomaly models</li>
+            <li>LLM layer: explanations + conversational “AI Manager”</li>
+            <li>Overnight batch + on-demand API for chat/refresh</li>
+        </ul>
+        <p><strong>Repo (proposed):</strong> <code>gas-station-ai-engine</code> or reuse blueprint at <code>Gas_Station_AI</code></p>
+    </div>
+</div>
+
+<div class="info">
+    <strong>Contract in one sentence:</strong> The platform tells the engine <em>what</em> to connect to; the engine tells the platform <em>what to do today</em> (dollar impact per recommendation) — never the other way around for raw transactional data.
+</div>
+
+<h2 id="architecture">2. High-level architecture</h2>
+
+<h3>2.1 System context (Mermaid)</h3>
+<div class="diagram-box">
+<pre class="mermaid">
+flowchart TB
+  subgraph stores["Store systems"]
+    POS["POS / Verifone"]
+    FUEL["Fuel controller / Gilbarco"]
+    PAY["Payroll / scheduling"]
+  end
+
+  subgraph engine["External AI Engine — separate deployment"]
+    CONN["Connectors"]
+    RAW[("Raw + feature store")]
+    MODELS["ML models"]
+    LLM["LLM agent"]
+    ORCH["Orchestrator / scheduler"]
+    CONN --> RAW --> MODELS --> ORCH
+    MODELS --> LLM
+    ORCH --> LLM
+  end
+
+  subgraph platform["Event-site platform"]
+  FE["Next.js /admin/gas-station"]
+  API["Spring Boot REST API"]
+  DB[("Postgres gas_station_*")]
+  FE --> API --> DB
+  end
+
+  stores --> CONN
+  ORCH -->|"POST metrics + recommendations\n(service JWT)"| API
+  FE -->|"server action: refresh / chat"| LLM
+  API -->|"GET locations, integrations,\nfeedback status"| ORCH
+</pre>
+</div>
+<p class="diagram-caption">Figure 1 — Three-system view. Raw data never lands in platform Postgres; only curated aggregates and recommendation rows do.</p>
+
+<a class="excalidraw-link" href="gas_station_ai_engine_workflow.excalidraw">📐 Open Excalidraw diagram — LLM ↔ Platform ↔ Backend workflow</a>
+<p>Open <code>gas_station_ai_engine_workflow.excalidraw</code> in <a href="https://excalidraw.com">excalidraw.com</a> (File → Open) for the editable high-level workflow between the LLM agent, frontend, backend API, and store connectors.</p>
+
+<h3>2.2 Overnight batch sequence (Mermaid)</h3>
+<div class="diagram-box">
+<pre class="mermaid">
+sequenceDiagram
+  participant Cron as Engine scheduler
+  participant API as Platform REST API
+  participant Conn as Connectors
+  participant ML as Models
+  participant LLM as LLM explainer
+
+  Cron->>API: GET gas-station-locations + integrations (JWT)
+  loop Per enabled station
+    Conn->>Conn: Pull POS / fuel / files
+    Conn->>ML: Build features for station+date
+    ML->>ML: Forecast, anomalies, actions
+    ML->>LLM: Structured candidates + context
+    LLM->>LLM: Rank, explain, chain-level merge
+    Cron->>API: POST daily-metrics (JWT)
+    Cron->>API: POST recommendations (JWT)
+  end
+  Note over API: Owner sees brief in /admin/gas-station
+</pre>
+</div>
+<p class="diagram-caption">Figure 2 — Nightly run per tenant (respects each station’s timezone + <code>gas_daily_brief_hour_local</code>).</p>
+
+<h3>2.3 Owner feedback loop (Mermaid)</h3>
+<div class="diagram-box">
+<pre class="mermaid">
+flowchart LR
+  A["Engine writes recommendations"] --> B["Owner views daily brief"]
+  B --> C["Accept / Dismiss / Done + feedback"]
+  C --> D["Platform PATCH recommendation status"]
+  D --> E["Engine reads status on next run"]
+  E --> F["Model + prompt tuning"]
+  F --> A
+</pre>
+</div>
+<p class="diagram-caption">Figure 3 — Learning loop uses platform as source of truth for human decisions; engine ingests on next sync.</p>
+
+<h2 id="components">3. AI engine components</h2>
+
+<table>
+    <thead>
+        <tr><th>Component</th><th>Responsibility</th><th>Technology (suggested)</th><th>Effort</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Connector framework</strong></td>
+            <td>Plugin per <code>system_type</code> + <code>connection_mode</code> (API, SFTP, FILE_UPLOAD). Updates <code>last_sync_at</code> / <code>last_sync_status</code> via platform PATCH.</td>
+            <td>Python workers or Node; queue (SQS/RQ)</td>
+            <td><span class="effort-pill effort-xl">XL</span></td>
+        </tr>
+        <tr>
+            <td><strong>Raw + feature store</strong></td>
+            <td>Immutable raw landing zone; cleaned daily/hourly features per station (sales, gallons, labor, shrink).</td>
+            <td>Parquet on S3 + DuckDB/Postgres TSDB or Timescale</td>
+            <td><span class="effort-pill effort-l">L</span></td>
+        </tr>
+        <tr>
+            <td><strong>Forecasting service</strong></td>
+            <td>Demand, fuel margin, category sales — outputs drive ORDERING and STAFFING recommendations.</td>
+            <td>scikit-learn / Prophet / lightweight GBM; per-category baselines first</td>
+            <td><span class="effort-pill effort-l">L</span></td>
+        </tr>
+        <tr>
+            <td><strong>Pricing + anomaly service</strong></td>
+            <td>Competitor-aware fuel pricing signals; cash/void/shrink anomalies (LOSS_PREVENTION).</td>
+            <td>Rules + statistical detectors; optional external rack/competitor feed</td>
+            <td><span class="effort-pill effort-m">M</span></td>
+        </tr>
+        <tr>
+            <td><strong>Recommendation composer</strong></td>
+            <td>Merge model outputs into ranked actions with <code>estimated_impact_usd</code>, <code>priority</code>, <code>category</code>; emit chain-level rows (<code>station_id = null</code>).</td>
+            <td>Deterministic Python service</td>
+            <td><span class="effort-pill effort-m">M</span></td>
+        </tr>
+        <tr>
+            <td><strong>LLM explainer + chat agent</strong></td>
+            <td>Turn structured facts into owner-readable <code>explanation</code>; answer “why?” and ad-hoc questions with retrieval over station context.</td>
+            <td>OpenAI / Anthropic API; RAG over metrics + recs</td>
+            <td><span class="effort-pill effort-l">L</span></td>
+        </tr>
+        <tr>
+            <td><strong>Orchestrator</strong></td>
+            <td>Per-tenant cron, idempotent runs, <code>source_model_run_id</code>, retries, dead-letter alerts.</td>
+            <td>EventBridge + Lambda, or ECS scheduled task</td>
+            <td><span class="effort-pill effort-m">M</span></td>
+        </tr>
+        <tr>
+            <td><strong>Platform client SDK</strong></td>
+            <td>JWT auth, tenant header, CRUD wrappers for gas-station endpoints, pagination, 401 retry.</td>
+            <td>Shared lib (mirror <code>fetchWithJwtRetry</code> semantics)</td>
+            <td><span class="effort-pill effort-s">S</span></td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 id="connectors">4. Data connectors — process &amp; steps</h2>
+
+<div class="section-container usage">
+    <div class="section-header usage">Connector lifecycle</div>
+    <ol>
+        <li><strong>Discover</strong> — Engine calls <code>GET /api/gas-station-integrations?tenantId.equals={id}&amp;isEnabled.equals=true</code> and joins station timezone + capabilities from <code>gas-station-locations</code>.</li>
+        <li><strong>Resolve secrets</strong> — Read <code>credentials_ref</code> from integration row; fetch actual API keys / SFTP passwords from AWS Secrets Manager (never store in platform DB).</li>
+        <li><strong>Extract</strong> — Run provider-specific adapter:
+            <ul>
+                <li><code>API</code> — REST polling (POS end-of-day, fuel controller status)</li>
+                <li><code>FILE_UPLOAD</code> — Owner or agent drops CSV in S3 inbox; engine parses</li>
+                <li><code>SFTP</code> — Nightly pull from vendor folder</li>
+                <li><code>MANUAL</code> — Skip auto-ingest; metrics may be entered in admin until connector live</li>
+            </ul>
+        </li>
+        <li><strong>Normalize</strong> — Map to internal schema: transactions, line items, fuel gallons, labor hours, lottery, car wash.</li>
+        <li><strong>Validate</strong> — Row counts, date alignment, station_id match; on failure set integration <code>last_sync_status=FAILED</code> and alert.</li>
+        <li><strong>Load</strong> — Append to raw store; rebuild features for <code>metric_date</code>.</li>
+        <li><strong>Report</strong> — PATCH integration <code>last_sync_at</code>, <code>last_sync_status=SUCCESS</code> via platform API.</li>
+    </ol>
+</div>
+
+<h3>4.1 Connector priority for MVP</h3>
+<table>
+    <thead><tr><th>Priority</th><th>system_type</th><th>MVP approach</th></tr></thead>
+    <tbody>
+        <tr><td>P0</td><td><code>POS</code></td><td>CSV export or single vendor API (e.g. Verifone Commander) for 1 design-partner store</td></tr>
+        <tr><td>P0</td><td><code>FUEL_CONTROLLER</code></td><td>Daily file upload (Gilbarco Passport pattern already in demo seed)</td></tr>
+        <tr><td>P1</td><td><code>PAYROLL_SCHEDULING</code></td><td>CSV hours for staffing recommendations</td></tr>
+        <tr><td>P2</td><td><code>LOTTERY</code>, <code>CAR_WASH</code>, <code>FOODSERVICE</code></td><td>After core loop proven</td></tr>
+    </tbody>
+</table>
+
+<h2 id="training">5. Model training &amp; learning loops</h2>
+
+<div class="warning">
+    <strong>Important distinction:</strong> “Training” here means <em>building and refreshing quantitative models</em> on store history — not fine-tuning the LLM on day one. The LLM starts with strong prompting + RAG; fine-tuning is optional in Phase 3+.
+</div>
+
+<h3>5.1 Cold start (new station, &lt; 30 days data)</h3>
+<ul>
+    <li>Use <strong>category baselines</strong> from anonymized cohort (similar station size, region, capabilities).</li>
+    <li>Recommendations are lower <code>confidence_pct</code>; engine sets conservative <code>estimated_impact_usd</code>.</li>
+    <li>LLM explanations cite “limited history” explicitly.</li>
+</ul>
+
+<h3>5.2 Warm model (30–90 days)</h3>
+<ul>
+    <li>Per-station time-series forecasts (weekly seasonality, day-of-week).</li>
+    <li>Anomaly thresholds calibrated per station (void rate, cash shortage z-score).</li>
+    <li>Retrain on schedule: <strong>weekly</strong> batch job reading feature store — not on every nightly inference.</li>
+</ul>
+
+<h3>5.3 Continuous improvement from owner feedback</h3>
+<table>
+    <thead><tr><th>Signal (from platform)</th><th>Engine use</th></tr></thead>
+    <tbody>
+        <tr><td><code>status = ACCEPTED | COMPLETED</code></td><td>Positive label for recommendation type + category</td></tr>
+        <tr><td><code>status = DISMISSED</code> + <code>owner_feedback</code></td><td>Down-rank similar actions; optional LLM summarization of objection themes</td></tr>
+        <tr><td>Actual vs <code>expected_profit_usd</code> next day</td><td>Calibration of impact estimates</td></tr>
+    </tbody>
+</table>
+
+<h3>5.4 Training pipeline steps (batch, weekly)</h3>
+<div class="phase-timeline">
+    <div class="phase-step"><div class="phase-num">1</div><div class="phase-content"><strong>Extract</strong> features for all stations with ≥30 days history.</div></div>
+    <div class="phase-step"><div class="phase-num">2</div><div class="phase-content"><strong>Train</strong> per-model artifacts (fuel demand, category sales, labor curve) → versioned in S3 (<code>model_version</code>).</div></div>
+    <div class="phase-step"><div class="phase-num">3</div><div class="phase-content"><strong>Evaluate</strong> holdout last 7 days; if MAPE degrades &gt; threshold, keep previous artifact.</div></div>
+    <div class="phase-step"><div class="phase-num">4</div><div class="phase-content"><strong>Promote</strong> artifact to “production” pointer used by nightly orchestrator.</div></div>
+    <div class="phase-step"><div class="phase-num">5</div><div class="phase-content"><strong>Log</strong> <code>source_model_run_id</code> on every recommendation row for traceability.</div></div>
+</div>
+
+<h2 id="llm">6. LLM agent — features &amp; connection pattern</h2>
+
+<div class="section-container">
+    <div class="section-header">AI Manager agent — required capabilities</div>
+    <table>
+        <thead><tr><th>Feature</th><th>Description</th><th>Phase</th></tr></thead>
+        <tbody>
+            <tr><td><strong>Explanation writer</strong></td><td>Convert structured model output → <code>explanation</code> field (“why am I being told this?”)</td><td>MVP</td></tr>
+            <tr><td><strong>Daily brief narrator</strong></td><td>Optional 3-sentence executive summary for email/WhatsApp delivery</td><td>P1</td></tr>
+            <tr><td><strong>Grounded Q&amp;A</strong></td><td>Owner asks: “Why premium pricing?” — agent retrieves today’s rec + metrics, cites numbers</td><td>P1</td></tr>
+            <tr><td><strong>Action chat</strong></td><td>“What if I don’t raise price?” — scenario using forecast service (not hallucinated dollars)</td><td>P2</td></tr>
+            <tr><td><strong>Chain rollup assistant</strong></td><td>Compare stores, explain cross-store recommendation (<code>station_id null</code>)</td><td>P2</td></tr>
+            <tr><td><strong>Tool use / function calling</strong></td><td>LLM calls <code>get_metrics</code>, <code>get_recommendations</code>, <code>run_forecast</code> — never raw SQL on platform DB</td><td>MVP for chat</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<h3>6.1 How the LLM connects (no client-side keys)</h3>
+<ol>
+    <li>Owner opens chat in <code>/admin/gas-station</code> (future UI) or clicks “Ask about this recommendation.”</li>
+    <li><strong>Next.js server action</strong> reads <code>tenant_settings.gas_ai_engine_base_url</code> + resolves API key from secrets ref — same pattern as Stripe webhooks using service JWT for backend.</li>
+    <li>Server POSTs to engine <code>/v1/chat</code> with <code>tenantId</code>, <code>stationId</code>, <code>recommendationId</code>, Clerk <code>userId</code> (audit only).</li>
+    <li>Engine agent loads context via <strong>platform SDK</strong> (JWT) — not from browser.</li>
+    <li>LLM response streamed or returned JSON to server action → UI.</li>
+</ol>
+
+<div class="info">
+    <strong>Alignment with cursor rules:</strong> Client components must not call the engine or backend directly. All paths go through <code>ApiServerActions.ts</code> on the satellite frontend.
+</div>
+
+<h3>6.2 Example system prompt (MVP explainer)</h3>
+<div class="prompt-block">
+    <div class="prompt-header">
+        <span>LLM system prompt — recommendation explainer</span>
+        <button type="button" class="copy-button" onclick="copyPrompt('prompt-explainer', this)" title="Copy prompt" aria-label="Copy prompt to clipboard">📋 Copy</button>
+    </div>
+    <div class="prompt-body" id="prompt-explainer">You are the AI Manager for a convenience store and fuel retailer. You write clear, brief explanations for store owners.
+
+Rules:
+- Use ONLY facts from the provided JSON context (metrics, model outputs, competitor signals).
+- State estimated dollar impact only if present in structured fields.
+- No legal or compliance guarantees; use "consider" not "must".
+- Max 3 sentences for explanation field.
+- If confidence is below 70%, mention uncertainty.
+
+Output JSON: { "explanation": "..." }</div>
+</div>
+
+<h3>6.3 Agent tools (function calling)</h3>
+<table>
+    <thead><tr><th>Tool name</th><th>Data source</th></tr></thead>
+    <tbody>
+        <tr><td><code>list_stations</code></td><td>GET <code>/api/gas-station-locations</code></td></tr>
+        <tr><td><code>get_daily_metrics</code></td><td>GET <code>/api/gas-station-daily-metrics</code> filtered by date + station</td></tr>
+        <tr><td><code>get_recommendations</code></td><td>GET <code>/api/gas-station-recommendations</code></td></tr>
+        <tr><td><code>get_integration_status</code></td><td>GET <code>/api/gas-station-integrations</code></td></tr>
+        <tr><td><code>run_forecast</code></td><td>Internal engine API (not platform)</td></tr>
+    </tbody>
+</table>
+
+<h2 id="writeback">7. Write-back to platform (service JWT)</h2>
+
+<div class="section-container output">
+    <div class="section-header output">Write-back contract (v1)</div>
+    <p>Engine uses dedicated service account credentials (<code>API_JWT_USER</code> / <code>API_JWT_PASS</code> — same pattern as platform proxy). Every request includes:</p>
+    <ul>
+        <li><code>Authorization: Bearer &lt;service JWT&gt;</code></li>
+        <li><code>X-Tenant-ID: &lt;tenantId&gt;</code> (required for tenant-scoped APIs)</li>
+        <li><code>Content-Type: application/json</code> (POST) or <code>application/merge-patch+json</code> (PATCH)</li>
+    </ul>
+</div>
+
+<h3>7.1 Endpoints the engine writes</h3>
+<table>
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Purpose</th></tr></thead>
+    <tbody>
+        <tr><td>POST</td><td><code>/api/gas-station-daily-metrics</code></td><td>One row per station per <code>metric_date</code> (upsert by unique constraint)</td></tr>
+        <tr><td>POST</td><td><code>/api/gas-station-recommendations</code></td><td>N action cards; <code>station_id</code> null for chain-level</td></tr>
+        <tr><td>PATCH</td><td><code>/api/gas-station-integrations/{id}</code></td><td>Update <code>last_sync_at</code>, <code>last_sync_status</code></td></tr>
+    </tbody>
+</table>
+
+<h3>7.2 Sample recommendation payload</h3>
+<pre class="code-block">{
+  "tenantId": "demo_gas_station_001",
+  "stationId": 1,
+  "recommendationDate": "2026-07-07",
+  "category": "FUEL_PRICING",
+  "title": "Raise premium fuel by 3 cents",
+  "detail": "Competitors within 2 miles moved up overnight.",
+  "estimatedImpactUsd": 182.00,
+  "priority": 1,
+  "confidencePct": 88.0,
+  "explanation": "Three tracked competitor stations raised premium 3-5c...",
+  "status": "NEW",
+  "sourceModelRunId": "run_20260707_t001_s1_v3",
+  "createdAt": "2026-07-07T11:00:00Z",
+  "updatedAt": "2026-07-07T11:00:00Z"
+}</pre>
+
+<h3>7.3 Idempotency</h3>
+<ul>
+    <li>Nightly run uses <code>source_model_run_id</code> = <code>run_{date}_{tenant}_{version}</code>.</li>
+    <li>Before POST, engine may DELETE or PATCH existing rows for same <code>recommendation_date</code> + <code>source_model_run_id</code> if re-run (agree policy with backend team).</li>
+    <li>Metrics: upsert on <code>(station_id, metric_date)</code> unique key.</li>
+</ul>
+
+<h2 id="ondemand">8. On-demand calls (refresh &amp; chat)</h2>
+
+<table>
+    <thead><tr><th>Trigger</th><th>Caller</th><th>Engine route</th></tr></thead>
+    <tbody>
+        <tr><td>“Refresh brief” button (admin)</td><td>Server action → engine</td><td><code>POST /v1/runs/trigger</code> { tenantId, stationId? }</td></tr>
+        <tr><td>AI Manager chat message</td><td>Server action → engine</td><td><code>POST /v1/chat</code> { tenantId, messages[], context }</td></tr>
+        <tr><td>Health check</td><td>Platform ops</td><td><code>GET /health</code></td></tr>
+    </tbody>
+</table>
+
+<p>Configure per tenant in <code>tenant_settings</code>:</p>
+<ul>
+    <li><code>gas_ai_engine_base_url</code> — e.g. <code>https://ai-engine.example.com</code></li>
+    <li><code>gas_ai_engine_api_key_ref</code> — Secrets Manager ARN/name (engine validates inbound calls from platform)</li>
+    <li><code>gas_ai_engine_webhook_token</code> — optional HMAC for engine→platform callbacks</li>
+    <li><code>gas_daily_brief_hour_local</code> — scheduler hint per station timezone</li>
+</ul>
+
+<h2 id="security">9. Security &amp; multi-tenancy</h2>
+
+<table>
+    <thead><tr><th>Topic</th><th>Rule</th></tr></thead>
+    <tbody>
+        <tr><td>Tenant isolation</td><td>Engine processes one <code>tenantId</code> per job; raw data partitioned in object store by tenant.</td></tr>
+        <tr><td>Credentials</td><td>Only <code>credentials_ref</code> in platform DB; engine resolves from Secrets Manager.</td></tr>
+        <tr><td>JWT</td><td>Service account for write-back; rotate on same schedule as other API JWT users.</td></tr>
+        <tr><td>PII</td><td>No cashier names in recommendations; aggregate labor only.</td></tr>
+        <tr><td>LLM data</td><td>Do not send secrets or full transaction logs to LLM — send summaries + structured features.</td></tr>
+        <tr><td>Auth for owners</td><td>Clerk must be enabled before production financial data (feasibility risk #3).</td></tr>
+    </tbody>
+</table>
+
+<h2 id="phases">10. Implementation phases &amp; effort</h2>
+
+<div class="section-container parameters">
+    <div class="section-header parameters">Phased delivery (maps to feasibility Loop 4–5)</div>
+    <table>
+        <thead><tr><th>Phase</th><th>Scope</th><th>Duration (indicative)</th><th>Team</th></tr></thead>
+        <tbody>
+            <tr>
+                <td><strong>0 — Foundation</strong></td>
+                <td>Repo scaffold, platform SDK, JWT write-back smoke test, POST one manual metric + rec to dev API</td>
+                <td>1–2 weeks</td>
+                <td>1 backend</td>
+            </tr>
+            <tr>
+                <td><strong>1 — MVP ingest</strong></td>
+                <td>POS CSV + fuel file connectors for 1 pilot tenant; feature store; rule-based recommendations (no ML)</td>
+                <td>3–4 weeks</td>
+                <td>1 backend + 0.5 data</td>
+            </tr>
+            <tr>
+                <td><strong>2 — ML brief</strong></td>
+                <td>Forecasting + anomaly models; LLM explanations; overnight orchestrator; chain-level recs</td>
+                <td>4–6 weeks</td>
+                <td>+1 ML engineer</td>
+            </tr>
+            <tr>
+                <td><strong>3 — Chat + refresh</strong></td>
+                <td>Engine <code>/v1/chat</code>, server actions in mosc-temp, grounded tool use</td>
+                <td>2–3 weeks</td>
+                <td>1 full-stack</td>
+            </tr>
+            <tr>
+                <td><strong>4 — Hardening</strong></td>
+                <td>Multi-tenant scale, monitoring, connector #2 vendor, feedback learning loop</td>
+                <td>4+ weeks</td>
+                <td>Ops + eng</td>
+            </tr>
+        </tbody>
+    </table>
+    <p><strong>Total to pilot-quality brief:</strong> roughly <strong>10–15 person-weeks</strong> after platform Loop 3 (dashboard) is done.</p>
+</div>
+
+<h3>10.1 Dependencies on platform team</h3>
+<ul>
+    <li>Dedicated <strong>engine service JWT user</strong> with write access to gas-station endpoints only.</li>
+    <li>Agreement on write-back idempotency and <code>source_model_run_id</code> versioning.</li>
+    <li>Server actions for refresh/chat (small mosc-temp change in Phase 3).</li>
+    <li>Optional: webhook from engine when brief ready → trigger email/WhatsApp (Loop 5).</li>
+</ul>
+
+<h2 id="repos">11. Repositories &amp; deployment</h2>
+
+<table>
+    <thead><tr><th>Artifact</th><th>Location / hosting</th></tr></thead>
+    <tbody>
+        <tr><td>Engine API + workers</td><td>New repo <code>gas-station-ai-engine</code>; deploy ECS Fargate or Lambda + queue (match <code>event-site-manager-batch-jobs</code> patterns)</td></tr>
+        <tr><td>Raw + features</td><td>S3 + optional Timescale/Postgres (separate from platform RDS)</td></tr>
+        <tr><td>LLM keys</td><td>Engine env only — never in mosc-temp</td></tr>
+        <tr><td>IaC</td><td>Extend <code>application-deployments</code> with <code>gas-station-ai-engine</code> stack</td></tr>
+        <tr><td>Blueprint reference</td><td><code>E:\Categories\Categories\Software_Projects\Gas_Station_AI</code></td></tr>
+    </tbody>
+</table>
+
+<h2 id="acceptance">12. Acceptance criteria</h2>
+
+<div class="success">
+    <strong>Loop 4 complete when:</strong>
+    <ol style="margin: 10px 0 0 20px;">
+        <li>Overnight job runs for <code>demo_gas_station_001</code> (or first paying tenant) without manual SQL.</li>
+        <li><code>/admin/gas-station</code> daily brief shows engine-produced metrics + ≥3 recommendations including ≥1 with LLM <code>explanation</code>.</li>
+        <li>Integration rows show <code>last_sync_status=SUCCESS</code> after connector run.</li>
+        <li>Owner Accept/Dismiss updates platform; next engine run reads new statuses.</li>
+        <li>All engine→platform calls use service JWT + <code>X-Tenant-ID</code>; no secrets in git.</li>
+    </ol>
+</div>
+
+<h2>Related documents</h2>
+<ul>
+    <li><a href="gas_station_requirements_implementation.html">gas_station_requirements_implementation.html</a> — platform implementation record</li>
+    <li><a href="gas_station_site_feasibility.md">gas_station_site_feasibility.md</a> — architecture §2, loops §7</li>
+    <li><a href="gas_station_ai_engine_workflow.excalidraw">gas_station_ai_engine_workflow.excalidraw</a> — editable workflow diagram</li>
+    <li><a href="README.md">README.md</a> — folder index</li>
+</ul>
+
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose' });
+</script>
+<script>
+    function copyPrompt(id, button) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const text = el.textContent.trim();
+        const done = () => {
+            button.classList.add('copied');
+            button.textContent = '✓ Copied!';
+            setTimeout(() => {
+                button.classList.remove('copied');
+                button.textContent = '📋 Copy';
+            }, 2000);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, button));
+        } else {
+            fallbackCopy(text, button);
+        }
+    }
+    function fallbackCopy(text, button) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); button.classList.add('copied'); button.textContent = '✓ Copied!'; } catch (e) { console.error(e); }
+        document.body.removeChild(ta);
+    }
+</script>
+</body>
+</html>

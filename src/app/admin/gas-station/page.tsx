@@ -7,6 +7,7 @@ import {
   fetchGasStationDailyMetricsServer,
   fetchGasStationRecommendationsServer,
 } from './ApiServerActions';
+import { resolveGasStationAccessForCurrentUser } from './gasStationAccessServer';
 import GasStationDashboardClient from './GasStationDashboardClient';
 
 export const dynamic = 'force-dynamic';
@@ -14,14 +15,16 @@ export const dynamic = 'force-dynamic';
 export default async function GasStationDashboardPage() {
   const today = new Date().toISOString().slice(0, 10);
 
-  const [settings, stations, metrics, recommendations] = await Promise.all([
+  const [settings, stations, metrics, recommendations, access] = await Promise.all([
     fetchTenantSettingsByTenantId(getTenantId()),
     fetchGasStationLocationsServer(),
     fetchGasStationDailyMetricsServer(today),
     fetchGasStationRecommendationsServer(today),
+    resolveGasStationAccessForCurrentUser(),
   ]);
 
   const moduleEnabled = settings?.enableGasStationModule ?? false;
+  const isTenantGasAdmin = access.scope === 'ALL';
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style={{ paddingTop: '160px' }}>
@@ -42,13 +45,23 @@ export default async function GasStationDashboardPage() {
             Daily morning brief — prescriptive actions with dollar impact per station
           </p>
         </div>
-        <div className="flex gap-3">
-          <Link
-            href="/admin/gas-station/stations"
-            className="px-4 py-2 rounded-xl bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold transition-colors"
-          >
-            Stations
-          </Link>
+        <div className="flex gap-3 flex-wrap">
+          {isTenantGasAdmin && (
+            <>
+              <Link
+                href="/admin/gas-station/stations"
+                className="px-4 py-2 rounded-xl bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold transition-colors"
+              >
+                Stations
+              </Link>
+              <Link
+                href="/admin/gas-station/access"
+                className="px-4 py-2 rounded-xl bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-semibold transition-colors"
+              >
+                Location access
+              </Link>
+            </>
+          )}
           <Link
             href="/admin/gas-station/integrations"
             className="px-4 py-2 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-700 font-semibold transition-colors"
@@ -61,12 +74,14 @@ export default async function GasStationDashboardPage() {
           >
             Compare
           </Link>
-          <Link
-            href="/admin/gas-station/billing"
-            className="px-4 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-700 font-semibold transition-colors"
-          >
-            Billing
-          </Link>
+          {isTenantGasAdmin && (
+            <Link
+              href="/admin/gas-station/billing"
+              className="px-4 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-700 font-semibold transition-colors"
+            >
+              Billing
+            </Link>
+          )}
         </div>
       </div>
 
@@ -77,6 +92,21 @@ export default async function GasStationDashboardPage() {
             Tenant Settings → Integrations
           </Link>{' '}
           and set the organization&apos;s Site Type to <strong>Gas Station (AI COO)</strong>.
+        </div>
+      )}
+
+      {access.scope === 'ASSIGNED' && (
+        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900">
+          You are signed in as a <strong>location manager</strong> with access to{' '}
+          <strong>{access.allowedStationIds?.length ?? 0}</strong> station(s). Chain-level items appear
+          when you have at least one assigned location.
+        </div>
+      )}
+
+      {!access.canAccessModule && moduleEnabled && (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
+          Your account does not have a gas station admin role. Ask a tenant admin to assign{' '}
+          <code>GAS_STATION_MANAGER</code> (with locations) or <code>GAS_STATION_ADMIN</code>.
         </div>
       )}
 

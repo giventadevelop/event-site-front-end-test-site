@@ -18,6 +18,30 @@ export function parseEventMetadata(metadata?: string): Record<string, any> {
   }
 }
 
+export const EVENT_DESCRIPTION_MAX_LENGTH = 900;
+
+/** Prevent edit-page freezes when description column contains corrupt/oversized data. */
+export function sanitizeEventDescriptionForForm(description?: string | null): string {
+  if (!description) return '';
+  if (description.length <= EVENT_DESCRIPTION_MAX_LENGTH) return description;
+
+  let cut = EVENT_DESCRIPTION_MAX_LENGTH;
+  for (let i = 0; i < Math.min(description.length, EVENT_DESCRIPTION_MAX_LENGTH); i++) {
+    const code = description.charCodeAt(i);
+    if (code < 9 || (code > 13 && code < 32) || code > 126) {
+      cut = Math.min(cut, i);
+      break;
+    }
+  }
+
+  const text = description.slice(0, cut).trimEnd();
+  console.warn('[EventForm] Truncated oversized description on load', {
+    originalLength: description.length,
+    keptLength: text.length,
+  });
+  return text;
+}
+
 /**
  * Check if event is a fundraiser event
  * @param event - Event details DTO

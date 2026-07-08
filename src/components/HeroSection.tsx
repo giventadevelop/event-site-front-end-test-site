@@ -7,6 +7,7 @@ import type { EventWithMedia, EventMediaDTO, EventDetailsDTO } from '@/types';
 import { getOverlayInfo } from '@/lib/heroOverlay';
 import { getTenantId } from '@/lib/env';
 import {
+  fetchEventDetailsByIdForTenant,
   fetchHomepageHeroMediaList,
   getHeroMediaDurationMs,
   getHeroSliderImageUrl,
@@ -231,9 +232,8 @@ const DynamicHeroImage: React.FC<{
       if (eventId == null) return null;
       if (eventById.has(eventId)) return eventById.get(eventId) ?? null;
       try {
-        const res = await fetch(`/api/proxy/event-details/${eventId}`, { cache: 'no-store' });
-        if (!res.ok) return null;
-        const event = (await res.json()) as EventDetailsDTO;
+        const event = await fetchEventDetailsByIdForTenant(eventId, getTenantId());
+        if (!event) return null;
         const eventWithMedia = {
           ...event,
           thumbnailUrl: getHeroSliderImageUrl(media) ?? media.fileUrl,

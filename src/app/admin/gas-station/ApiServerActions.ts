@@ -12,6 +12,11 @@ import type {
   GasStationRecommendationStatus,
 } from '@/types/gasStation';
 import type { TenantOrganizationDTO } from '@/types';
+import {
+  filterByAllowedStationIds,
+  filterLocationsByAllowedStationIds,
+} from '@/lib/gasStationAccess';
+import { resolveGasStationAccessForCurrentUser, assertGasStationTenantAdminAccess } from './gasStationAccessServer';
 
 function getApiBase() {
   return getApiBaseUrl();
@@ -91,14 +96,22 @@ async function deleteGasResource(path: string, id: number): Promise<boolean> {
 // ---------------------------------------------------------------------------
 
 export async function fetchGasStationLocationsServer(): Promise<GasStationLocationDTO[]> {
-  return fetchGasList<GasStationLocationDTO>('/api/gas-station-locations', {
+  const access = await resolveGasStationAccessForCurrentUser();
+  if (!access.canAccessModule) return [];
+  const all = await fetchGasList<GasStationLocationDTO>('/api/gas-station-locations', {
     sort: 'stationCode,asc',
   });
+  return filterLocationsByAllowedStationIds(all, access.allowedStationIds);
 }
 
 export async function createGasStationLocationServer(
   data: Omit<GasStationLocationDTO, 'id' | 'tenantId'>
 ): Promise<GasStationLocationDTO | null> {
+  try {
+    await assertGasStationTenantAdminAccess();
+  } catch {
+    return null;
+  }
   return createGasResource<GasStationLocationDTO>('/api/gas-station-locations', data);
 }
 
@@ -106,10 +119,20 @@ export async function updateGasStationLocationServer(
   id: number,
   data: Partial<GasStationLocationDTO>
 ): Promise<GasStationLocationDTO | null> {
+  const access = await resolveGasStationAccessForCurrentUser();
+  if (!access.canAccessModule) return null;
+  if (access.scope === 'ASSIGNED' && access.allowedStationIds && !access.allowedStationIds.includes(id)) {
+    return null;
+  }
   return patchGasResource<GasStationLocationDTO>('/api/gas-station-locations', id, data);
 }
 
 export async function deleteGasStationLocationServer(id: number): Promise<boolean> {
+  try {
+    await assertGasStationTenantAdminAccess();
+  } catch {
+    return false;
+  }
   return deleteGasResource('/api/gas-station-locations', id);
 }
 
@@ -120,9 +143,12 @@ export async function deleteGasStationLocationServer(id: number): Promise<boolea
 export async function fetchGasStationIntegrationsServer(
   stationId?: number
 ): Promise<GasStationIntegrationDTO[]> {
+  const access = await resolveGasStationAccessForCurrentUser();
+  if (!access.canAccessModule) return [];
   const extra: Record<string, string> = { sort: 'systemType,asc' };
   if (stationId != null) extra['stationId.equals'] = String(stationId);
-  return fetchGasList<GasStationIntegrationDTO>('/api/gas-station-integrations', extra);
+  const all = await fetchGasList<GasStationIntegrationDTO>('/api/gas-station-integrations', extra);
+  return filterByAllowedStationIds(all, access.allowedStationIds);
 }
 
 export async function createGasStationIntegrationServer(
@@ -150,9 +176,12 @@ export async function deleteGasStationIntegrationServer(id: number): Promise<boo
 export async function fetchGasStationDailyMetricsServer(
   metricDate: string
 ): Promise<GasStationDailyMetricsDTO[]> {
-  return fetchGasList<GasStationDailyMetricsDTO>('/api/gas-station-daily-metrics', {
+  const access = await resolveGasStationAccessForCurrentUser();
+  if (!access.canAccessModule) return [];
+  const all = await fetchGasList<GasStationDailyMetricsDTO>('/api/gas-station-daily-metrics', {
     'metricDate.equals': metricDate,
   });
+  return filterByAllowedStationIds(all, access.allowedStationIds);
 }
 
 /** Fetch metrics for an inclusive date range (all stations) for the compare/trends views. */
@@ -160,11 +189,14 @@ export async function fetchGasStationMetricsRangeServer(
   fromDate: string,
   toDate: string
 ): Promise<GasStationDailyMetricsDTO[]> {
-  return fetchGasList<GasStationDailyMetricsDTO>('/api/gas-station-daily-metrics', {
+  const access = await resolveGasStationAccessForCurrentUser();
+  if (!access.canAccessModule) return [];
+  const all = await fetchGasList<GasStationDailyMetricsDTO>('/api/gas-station-daily-metrics', {
     'metricDate.greaterThanOrEqual': fromDate,
     'metricDate.lessThanOrEqual': toDate,
     size: '2000',
   });
+  return filterByAllowedStationIds(all, access.allowedStationIds);
 }
 
 // ---------------------------------------------------------------------------
@@ -175,10 +207,13 @@ export async function fetchGasStationMetricsRangeServer(
 export async function fetchGasStationRecommendationsServer(
   recommendationDate: string
 ): Promise<GasStationRecommendationDTO[]> {
-  return fetchGasList<GasStationRecommendationDTO>('/api/gas-station-recommendations', {
+  const access = await resolveGasStationAccessForCurrentUser();
+  if (!access.canAccessModule) return [];
+  const all = await fetchGasList<GasStationRecommendationDTO>('/api/gas-station-recommendations', {
     'recommendationDate.equals': recommendationDate,
     sort: 'priority,asc',
   });
+  return filterByAllowedStationIds(all, access.allowedStationIds);
 }
 
 export async function updateGasStationRecommendationServer(
@@ -212,6 +247,11 @@ export async function updateStationSubscriptionFlagServer(
   id: number,
   includedInSubscription: boolean
 ): Promise<GasStationLocationDTO | null> {
+  try {
+    await assertGasStationTenantAdminAccess();
+  } catch {
+    return null;
+  }
   return patchGasResource<GasStationLocationDTO>('/api/gas-station-locations', id, {
     includedInSubscription,
   });

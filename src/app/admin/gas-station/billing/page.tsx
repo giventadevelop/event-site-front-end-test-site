@@ -1,14 +1,22 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { FaArrowLeft } from 'react-icons/fa';
 import {
   fetchGasStationLocationsServer,
   fetchTenantOrganizationForBillingServer,
 } from '../ApiServerActions';
+import { assertGasStationTenantAdminAccess } from '../gasStationAccessServer';
 import BillingClient from './BillingClient';
 
 export const dynamic = 'force-dynamic';
 
 export default async function GasStationBillingPage() {
+  try {
+    await assertGasStationTenantAdminAccess();
+  } catch {
+    redirect('/admin/gas-station');
+  }
+
   const [organization, stations] = await Promise.all([
     fetchTenantOrganizationForBillingServer(),
     fetchGasStationLocationsServer(),

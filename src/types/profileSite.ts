@@ -70,6 +70,8 @@ export interface ProfileAchievementDTO {
   category?: ProfileAchievementCategory;
   issuer?: string;
   url?: string;
+  /** Badge, certificate, or photo URL (varchar 1024 in DB) */
+  imageUrl?: string;
   displayOrder?: number;
   isFeatured?: boolean;
   createdAt?: string;
@@ -96,6 +98,8 @@ export interface ProfileMediaAssetDTO {
   tenantId: string;
   title: string;
   description?: string;
+  /** Cover / preview image for the download card (varchar 1024 in DB) */
+  coverImageUrl?: string;
   fileUrl: string;
   fileType?: string;
   fileSizeBytes?: number;

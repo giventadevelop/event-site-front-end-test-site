@@ -123,3 +123,23 @@ export interface GasStationRecommendationDTO {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export type {
+  GasStationUserStationAssignmentDTO,
+  GasStationAccessContext,
+  GasStationAccessScope,
+  GasStationModuleRole,
+} from '@/lib/gasStationAccess';
+
+export {
+  GAS_STATION_ALL_LOCATIONS_ROLES,
+  GAS_STATION_MANAGER_ROLE,
+  GAS_STATION_MODULE_ROLES,
+  GAS_STATION_ROLE_LABELS,
+  canAccessGasStationAdminModule,
+  filterByAllowedStationIds,
+  filterLocationsByAllowedStationIds,
+  getGasStationAccessScope,
+  isGasStationAllLocationsRole,
+  isGasStationManagerRole,
+} from '@/lib/gasStationAccess';

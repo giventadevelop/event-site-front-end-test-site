@@ -307,7 +307,7 @@ export async function sendBulkNewsletterEmailToSubscribedMembersServer(
  * Upload newsletter email header image (client-side function)
  */
 export async function uploadNewsletterEmailHeaderImageClient(
-  eventId: number,
+  eventId: number | null | undefined,
   newsletterId: number,
   file: File,
   title?: string,
@@ -315,20 +315,24 @@ export async function uploadNewsletterEmailHeaderImageClient(
 ): Promise<{ url: string; mediaId: number }> {
   const baseUrl = await getAppUrlFromRequestHeaders();
   const formData = new FormData();
-
   formData.append('file', file);
-  formData.append('eventId', eventId.toString());
-  formData.append('newsletterId', newsletterId.toString());
 
-  if (title) {
-    formData.append('title', title);
-  }
-  if (description) {
-    formData.append('description', description);
-  }
+  const hasEvent = eventId != null && eventId > 0;
+  let url: string;
 
-  // Reuse the promotional email header upload endpoint
-  const url = `${baseUrl}/api/proxy/event-medias/upload/promotional-email-header-image`;
+  if (hasEvent) {
+    const queryParams = new URLSearchParams({
+      eventId: String(eventId),
+      tenantId: getTenantId(),
+      title: title || 'Newsletter Email Header Image',
+      description: description || 'Newsletter email header image',
+      isPublic: 'true',
+    });
+    url = `${baseUrl}/api/proxy/event-medias/upload/email-header-image?${queryParams.toString()}`;
+  } else {
+    // Newsletter templates without an event: use tenant-scoped email header upload (S3 URL only)
+    url = `${baseUrl}/api/proxy/tenant-settings/upload/email-header-image`;
+  }
 
   const response = await fetch(url, {
     method: 'POST',
@@ -342,9 +346,16 @@ export async function uploadNewsletterEmailHeaderImageClient(
   }
 
   const result = await response.json();
+  if (hasEvent) {
+    return {
+      url: result.fileUrl || result.url || result.mediaUrl || '',
+      mediaId: result.id || 0,
+    };
+  }
+
   return {
-    url: result.url || result.mediaUrl || '',
-    mediaId: result.id || 0,
+    url: result.emailHeaderImageUrl || result.url || result.mediaUrl || '',
+    mediaId: 0,
   };
 }
 
@@ -352,7 +363,7 @@ export async function uploadNewsletterEmailHeaderImageClient(
  * Upload newsletter email footer image (client-side function)
  */
 export async function uploadNewsletterEmailFooterImageClient(
-  eventId: number,
+  eventId: number | null | undefined,
   newsletterId: number,
   file: File,
   title?: string,
@@ -360,20 +371,25 @@ export async function uploadNewsletterEmailFooterImageClient(
 ): Promise<{ url: string; mediaId: number }> {
   const baseUrl = await getAppUrlFromRequestHeaders();
   const formData = new FormData();
-
   formData.append('file', file);
-  formData.append('eventId', eventId.toString());
-  formData.append('newsletterId', newsletterId.toString());
 
-  if (title) {
-    formData.append('title', title);
-  }
-  if (description) {
-    formData.append('description', description);
-  }
+  const hasEvent = eventId != null && eventId > 0;
+  let url: string;
 
-  // Reuse the promotional email footer upload endpoint
-  const url = `${baseUrl}/api/proxy/event-medias/upload/promotional-email-footer-image`;
+  if (hasEvent) {
+    // Store image on the linked event; promotional footer API does not support NEWS_LETTER templates
+    const queryParams = new URLSearchParams({
+      eventId: String(eventId),
+      tenantId: getTenantId(),
+      title: title || 'Newsletter Email Footer Image',
+      description: description || 'Newsletter email footer image',
+      isPublic: 'true',
+    });
+    url = `${baseUrl}/api/proxy/event-medias/upload/email-header-image?${queryParams.toString()}`;
+  } else {
+    // Newsletter templates without an event: tenant-scoped upload returns an S3 URL for the template
+    url = `${baseUrl}/api/proxy/tenant-settings/upload/email-header-image`;
+  }
 
   const response = await fetch(url, {
     method: 'POST',
@@ -387,9 +403,16 @@ export async function uploadNewsletterEmailFooterImageClient(
   }
 
   const result = await response.json();
+  if (hasEvent) {
+    return {
+      url: result.fileUrl || result.url || result.mediaUrl || '',
+      mediaId: result.id || 0,
+    };
+  }
+
   return {
-    url: result.url || result.mediaUrl || '',
-    mediaId: result.id || 0,
+    url: result.emailHeaderImageUrl || result.url || result.mediaUrl || '',
+    mediaId: 0,
   };
 }
 

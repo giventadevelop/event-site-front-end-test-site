@@ -11,10 +11,32 @@ export const config = {
   },
 };
 
+async function forwardUpload(
+  apiUrl: string,
+  rawBody: Buffer,
+  contentType: string | undefined,
+  token: string,
+  tenantId: string
+) {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+    'X-Tenant-ID': tenantId,
+    'content-length': String(rawBody.length),
+  };
+  if (contentType) {
+    headers['content-type'] = contentType;
+  }
+  return fetch(apiUrl, {
+    method: 'POST',
+    headers,
+    body: rawBody,
+  });
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!API_BASE_URL) {
-      res.status(500).json({ error: "API base URL not configured" });
+      res.status(500).json({ error: 'API base URL not configured' });
       return;
     }
 
@@ -24,75 +46,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
-    // Get JWT token
     let token = await getCachedApiJwt();
     if (!token) {
       token = await generateApiJwt();
     }
 
-    // Construct the backend API URL
     const apiUrl = `${API_BASE_URL}/api/event-medias/upload-multiple`;
-
-    // Use node-fetch for proper multipart form handling
-    const fetch = (await import("node-fetch")).default;
-
     const tenantId = getTenantId();
-
-    // Buffer multipart body (more reliable on Amplify/Lambda than streaming IncomingMessage)
     const rawBody = await getRawBody(req);
+    const contentType = Array.isArray(req.headers['content-type'])
+      ? req.headers['content-type'][0]
+      : req.headers['content-type'];
 
-    const headers: Record<string, string> = {
-      Authorization: `Bearer ${token}`,
-      'X-Tenant-ID': tenantId,
-      'content-length': String(rawBody.length),
-    };
+    let apiRes = await forwardUpload(apiUrl, rawBody, contentType, token, tenantId);
 
-    if (req.headers['content-type']) {
-      headers['content-type'] = Array.isArray(req.headers['content-type'])
-        ? req.headers['content-type'][0]
-        : req.headers['content-type'];
+    if (apiRes.status === 401) {
+      token = await generateApiJwt();
+      apiRes = await forwardUpload(apiUrl, rawBody, contentType, token, tenantId);
     }
 
-    const apiRes = await fetch(apiUrl, {
-      method: 'POST',
-      headers,
-      body: rawBody,
-    });
+    const bodyText = await apiRes.text();
 
-    // Check response status and handle accordingly
     if (apiRes.status >= 200 && apiRes.status < 300) {
-      // Success - pipe the response
-      console.log('✅ Proxy: Backend upload successful - HTTP status:', apiRes.status);
+      console.log('✅ Proxy: Backend upload-multiple successful - HTTP status:', apiRes.status);
       res.status(apiRes.status);
-
-      // Copy response headers
-      for (const [key, value] of Object.entries(apiRes.headers.raw())) {
-        if (key.toLowerCase() !== 'content-encoding' && key.toLowerCase() !== 'transfer-encoding') {
-          res.setHeader(key, value);
-        }
+      const responseContentType = apiRes.headers.get('content-type');
+      if (responseContentType) {
+        res.setHeader('Content-Type', responseContentType);
+      } else if (bodyText.trim().startsWith('[') || bodyText.trim().startsWith('{')) {
+        res.setHeader('Content-Type', 'application/json');
       }
-
-      apiRes.body.pipe(res);
-    } else {
-      console.error('❌ Proxy: Backend upload failed - HTTP status:', apiRes.status);
-
-      let backendDetail = '';
-      try {
-        backendDetail = await apiRes.text();
-      } catch {
-        /* ignore */
-      }
-
-      res.status(apiRes.status >= 400 ? apiRes.status : 500);
-      res.setHeader('Content-Type', 'application/json');
-      res.json({
-        error: 'Upload failed',
-        status: apiRes.status,
-        message: `Upload operation failed with HTTP status ${apiRes.status}`,
-        details: backendDetail || undefined,
-        success: false,
-      });
+      // Buffer response — do not pipe (pipe can hang browser fetch in Next.js API routes).
+      res.send(bodyText);
+      return;
     }
+
+    console.error('❌ Proxy: Backend upload-multiple failed - HTTP status:', apiRes.status);
+    res.status(apiRes.status >= 400 ? apiRes.status : 500);
+    res.setHeader('Content-Type', 'application/json');
+    res.json({
+      error: 'Upload failed',
+      status: apiRes.status,
+      message: `Upload operation failed with HTTP status ${apiRes.status}`,
+      details: bodyText || undefined,
+      success: false,
+    });
   } catch (err) {
     console.error('Proxy error:', err);
     res.status(500).json({ error: 'Internal server error', details: String(err) });

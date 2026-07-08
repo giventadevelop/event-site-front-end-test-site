@@ -50,3 +50,15 @@ export function clearHomepageCaches(): void {
   }
   toRemove.forEach((k) => sessionStorage.removeItem(k));
 }
+
+/** Notify open homepage tabs to drop hero/settings caches and refetch (after hero media changes). */
+export function notifyHomepageCacheInvalidate(): void {
+  clearHomepageCaches();
+  if (typeof BroadcastChannel !== 'undefined') {
+    try {
+      new BroadcastChannel(HOMEPAGE_CACHE_INVALIDATE_CHANNEL).postMessage('invalidate');
+    } catch {
+      /* ignore */
+    }
+  }
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import type { TenantSettingsDTO, TenantSettingsFormDTO, TenantOrganizationDTO } from '@/app/admin/tenant-management/types';
 import {
@@ -87,6 +87,22 @@ export default function TenantSettingsForm({
   const footerHtmlFileInputRef = useRef<HTMLInputElement>(null);
   const logoFileInputRef = useRef<HTMLInputElement>(null);
   const headerImageFileInputRef = useRef<HTMLInputElement>(null);
+  const heroPersistChainRef = useRef<Promise<void>>(Promise.resolve());
+  const heroSaveIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearHeroSaveIdleTimer = useCallback(() => {
+    if (heroSaveIdleTimerRef.current) {
+      clearTimeout(heroSaveIdleTimerRef.current);
+      heroSaveIdleTimerRef.current = null;
+    }
+  }, []);
+
+  const resetHeroSaveDialog = useCallback(() => {
+    clearHeroSaveIdleTimer();
+    setHeroSaveStatus('idle');
+    setHeroSaveMessage('');
+    setHeroSaveDetails([]);
+  }, [clearHeroSaveIdleTimer]);
 
   const {
     register,
@@ -193,38 +209,79 @@ export default function TenantSettingsForm({
     setAdsensePlacementsFormError('');
   }, [initialData?.id, initialData?.googleAdsensePlacementsJson]);
 
-  const persistHeroSlides = async (json: string) => {
-    if (!settingsId) return;
-    setValue('defaultHeroImageUrlsJson', json);
-    const maxCount = normalizeMaxDisplayCount(
-      defaultHeroMaxDisplayCount ?? DEFAULT_HERO_MAX_DISPLAY_COUNT
-    );
-    try {
-      setHeroSaveStatus('saving');
-      setHeroSaveMessage('Saving homepage hero slides...');
-      setHeroSaveDetails([]);
-      await patchTenantSettingAction(settingsId, {
-        defaultHeroImageUrlsJson: json,
-        defaultHeroMaxDisplayCount: maxCount,
-      });
-      setHeroSaveStatus('success');
-      setHeroSaveMessage('Homepage hero slides saved.');
-      setTimeout(() => {
-        setHeroSaveStatus('idle');
-        setHeroSaveMessage('');
-        setHeroSaveDetails([]);
-      }, 1500);
-    } catch (err: unknown) {
-      const { summary, details } = formatSaveErrorForDialog(
-        err,
-        'Failed to save homepage hero slides.'
-      );
-      setHeroSaveStatus('error');
-      setHeroSaveMessage(summary);
-      setHeroSaveDetails(details);
-      throw err;
-    }
-  };
+  const persistHeroSlides = useCallback(
+    async (json: string) => {
+      if (!settingsId) return;
+
+      const runPersist = async () => {
+        try {
+          setValue('defaultHeroImageUrlsJson', json);
+          const maxCount = normalizeMaxDisplayCount(
+            defaultHeroMaxDisplayCount ?? DEFAULT_HERO_MAX_DISPLAY_COUNT
+          );
+
+          clearHeroSaveIdleTimer();
+          setHeroSaveStatus('saving');
+          setHeroSaveMessage('Saving homepage hero slides...');
+          setHeroSaveDetails([]);
+
+          const patchPromise = patchTenantSettingAction(settingsId, {
+            defaultHeroImageUrlsJson: json,
+            defaultHeroMaxDisplayCount: maxCount,
+          });
+
+          const timeoutMs = 60_000;
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            window.setTimeout(
+              () =>
+                reject(
+                  new Error(
+                    'Saving hero slides timed out. The images may still have uploaded — refresh the page to check.'
+                  )
+                ),
+              timeoutMs
+            );
+          });
+
+          await Promise.race([patchPromise, timeoutPromise]);
+
+          setHeroSaveStatus('success');
+          setHeroSaveMessage('Homepage hero slides saved.');
+          heroSaveIdleTimerRef.current = setTimeout(() => {
+            resetHeroSaveDialog();
+          }, 1500);
+        } catch (err: unknown) {
+          clearHeroSaveIdleTimer();
+          const { summary, details } = formatSaveErrorForDialog(
+            err,
+            'Failed to save homepage hero slides.'
+          );
+          setHeroSaveStatus('error');
+          setHeroSaveMessage(summary);
+          setHeroSaveDetails(details);
+          throw err;
+        }
+      };
+
+      const previous = heroPersistChainRef.current;
+      const current = previous.catch(() => undefined).then(runPersist);
+      heroPersistChainRef.current = current.catch(() => undefined);
+      await current;
+    },
+    [
+      settingsId,
+      defaultHeroMaxDisplayCount,
+      setValue,
+      clearHeroSaveIdleTimer,
+      resetHeroSaveDialog,
+    ]
+  );
+
+  useEffect(() => {
+    return () => {
+      clearHeroSaveIdleTimer();
+    };
+  }, [clearHeroSaveIdleTimer]);
 
   const handleMaxDisplayCountChange = async (count: number) => {
     const normalized = normalizeMaxDisplayCount(count);
@@ -777,7 +834,7 @@ export default function TenantSettingsForm({
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`py-2.5 px-3 sm:px-4 border-2 font-semibold text-sm sm:text-base flex items-center gap-2 sm:gap-3 rounded-lg transition-all duration-300 flex-[1_1_11rem] sm:flex-[1_1_auto] min-w-[11rem] max-w-full ${
+                className={`py-2.5 px-3 sm:px-4 border-2 font-semibold text-sm sm:text-base flex items-center gap-2 sm:gap-3 rounded-lg transition-all duration-300 flex-[1_1_calc(50%-0.25rem)] md:flex-[1_1_calc(33.333%-0.34rem)] min-w-[10rem] max-w-full ${
                   isActive ? colors.active : colors.inactive
                 }`}
               >
@@ -2166,13 +2223,7 @@ export default function TenantSettingsForm({
               ? 'Hero slides saved'
               : 'Could not save hero slides'
         }
-        onClose={() => {
-          if (heroSaveStatus === 'error') {
-            setHeroSaveStatus('idle');
-            setHeroSaveMessage('');
-            setHeroSaveDetails([]);
-          }
-        }}
+        onClose={resetHeroSaveDialog}
       />
 
       <SaveStatusDialog
