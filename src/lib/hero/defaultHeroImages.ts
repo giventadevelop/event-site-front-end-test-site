@@ -21,10 +21,10 @@ export const DEFAULT_HERO_DISPLAY_MODES: DefaultHeroDisplayMode[] = [
 ];
 
 export const MAX_TENANT_HERO_SLIDES = 20;
-export const MAX_ACTIVE_SLIDES = 10;
+export const MAX_ACTIVE_SLIDES = 20;
 export const RANDOM_FALLBACK_COUNT = 3;
 export const DEFAULT_HERO_MAX_DISPLAY_COUNT = 6;
-export const MAX_HERO_DISPLAY_COUNT = 6;
+export const MAX_HERO_DISPLAY_COUNT = 20;
 export const TENANT_HERO_SLIDE_DURATION_MS = 8000;
 
 /** Backend rejects empty string for defaultHeroImageUrlsJson — use a valid empty array. */

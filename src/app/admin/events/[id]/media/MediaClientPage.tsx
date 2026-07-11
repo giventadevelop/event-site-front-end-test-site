@@ -839,8 +839,8 @@ export function MediaClientPage({ eventId, mediaList: initialMediaList, eventDet
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto bg-white rounded shadow" style={{ paddingTop: '118px' }}>
-      {/* Responsive Button Group */}
+    <div className="p-8 max-w-4xl mx-auto bg-white rounded shadow" style={{ paddingTop: '180px' }}>
+      {/* Responsive Button Group — 180px clears fixed header (8rem) + breathing room */}
       <div className="w-full mb-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <Link

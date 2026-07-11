@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Full-site E2E TestSprite guide: inventory, smoke crawls, admin CRUD, exclude mosc-old, Windows copyable commands">
+    <title>Full-Site E2E Testing Guide (TestSprite)</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        h1 {
+            color: #0066cc;
+            font-size: 2.2em;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 12px;
+        }
+        h2 {
+            color: #0052a3;
+            font-size: 1.5em;
+            margin-top: 36px;
+            border-left: 4px solid #0066cc;
+            padding-left: 12px;
+        }
+        h3 { color: #333; margin-top: 22px; }
+        a { color: #0066cc; }
+        code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        code.script-name {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+        }
+        .section-intro {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .info {
+            background: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            border-radius: 6px;
+            padding: 14px 18px;
+            margin: 16px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 6px;
+            padding: 14px 18px;
+            margin: 16px 0;
+        }
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            border-radius: 6px;
+            padding: 14px 18px;
+            margin: 16px 0;
+        }
+        .info code, .warning code, .success code, .info .code-highlight, .warning .code-highlight, .success .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            border: 1px solid #b8d4e3;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .parameters-list {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left: 4px solid #ff9800;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .parameters-list strong { color: #e65100; }
+        .parameters-list code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            border: 1px solid #b8d4e3;
+        }
+        .section-container {
+            border-radius: 8px;
+            margin: 24px 0;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            background: #fff;
+        }
+        .section-header {
+            padding: 12px 20px;
+            font-weight: bold;
+            color: #fff;
+            font-size: 1.15em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-header.overview { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); }
+        .section-header.usage { background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%); }
+        .section-header.parameters { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); }
+        .section-header.output { background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%); }
+        .section-body { padding: 20px; }
+        .toc {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 20px 0;
+        }
+        .toc ul { margin: 8px 0 0; padding-left: 1.4em; }
+        .toc li { margin: 4px 0; }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #b8d4e3;
+            padding: 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.4px;
+        }
+        tr:nth-child(even) { background-color: #f8fbfd; }
+        tr:hover { background-color: #e3f2fd; }
+        td code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            border: 1px solid #b8d4e3;
+        }
+        .command-block {
+            border: 2px solid #2196f3;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        }
+        .command-block.setup {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-color: #2196f3;
+        }
+        .command-block.expedite {
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+            border-color: #9c27b0;
+        }
+        .command-block.verify {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-color: #4caf50;
+        }
+        .command-block.advance {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-color: #ff9800;
+        }
+        .command-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.55);
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+        }
+        .command-type { font-weight: bold; color: #0d47a1; }
+        .command-block.expedite .command-type { color: #4a148c; }
+        .command-block.verify .command-type { color: #1b5e20; }
+        .command-block.advance .command-type { color: #e65100; }
+        .command-header-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+        .copy-button, .copy-button-template {
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .copy-button { background-color: #0066cc; }
+        .copy-button:hover { background-color: #0052a3; transform: translateY(-1px); }
+        .copy-button.copied, .copy-button-template.copied { background-color: #28a745; }
+        .copy-button-template { background-color: #6c757d; }
+        .copy-button-template:hover { background-color: #5a6268; }
+        .command-parameters {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.5);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .command-parameters h5 {
+            margin: 0 0 12px 0;
+            font-size: 0.9em;
+            color: #333;
+            font-weight: bold;
+        }
+        .parameter-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .parameter-group.single { grid-template-columns: 1fr; }
+        .parameter-input { display: flex; flex-direction: column; gap: 4px; }
+        .parameter-input label { font-size: 0.8em; color: #555; font-weight: 600; }
+        .parameter-input input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .parameter-input input:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+        .command-content {
+            padding: 14px 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.92em;
+            color: #0d3b66;
+            background: #e8f4f8;
+            border-top: 1px solid #b8d4e3;
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+        .command-single-line {
+            padding: 12px 15px;
+            background: #e8f4f8;
+            border-top: 1px solid #b8d4e3;
+        }
+        .command-single-line-label {
+            font-size: 0.75em;
+            color: #666;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .command-single-line code {
+            display: block;
+            background: transparent;
+            border: none;
+            padding: 0;
+            word-break: break-all;
+            white-space: pre-wrap;
+            color: #0d3b66;
+        }
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .parameter-group { grid-template-columns: 1fr; }
+            .command-block { font-size: 0.85em; }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Full-Site E2E Testing Guide (TestSprite)</h1>
+
+        <div class="section-intro">
+            <p>
+                This guide covers the inventory-driven Playwright / TestSprite E2E loop for MOSC:
+                route inventory generation, admin + public smoke crawls, demo-tenant CRUD, and MOSC tree crawls.
+                Prefer tenant <code class="code-highlight">tenant_demo_002</code> for safe mutations.
+                Primary scripts live under <code class="script-name">TestSprite/</code>.
+            </p>
+            <p>
+                Also see the short markdown summary:
+                <code class="script-name">TestSprite/E2E_FULL_README.md</code>
+                and run log <code class="script-name">TestSprite/reports/LOOP_LOG.md</code>.
+            </p>
+        </div>
+
+        <div class="toc">
+            <h2 style="border:none;margin:0;padding:0;color:#0052a3;">Table of Contents</h2>
+            <ul>
+                <li><a href="#prerequisites">1. Prerequisites</a></li>
+                <li><a href="#npm-scripts">2. npm script map</a></li>
+                <li><a href="#quick-start">3. Quick start (Windows)</a></li>
+                <li><a href="#inventory">4. Generate route inventory</a></li>
+                <li><a href="#orchestrator">5. Full / quick orchestrator</a></li>
+                <li><a href="#smoke">6. Smoke crawls (admin / public / kinds)</a></li>
+                <li><a href="#exclude-mosc-old">7. Exclude <code>/mosc-old</code></a></li>
+                <li><a href="#crud">8. Admin CRUD (demo tenant)</a></li>
+                <li><a href="#public-dynamic">9. Public dynamic demo IDs</a></li>
+                <li><a href="#reports">10. Reports &amp; safety</a></li>
+                <li><a href="#scoped-ladder">11. Recommended: public + admin + mosc-redesign (tenant_demo_002)</a></li>
+                <li><a href="#html-reports-contact">12. HTML reports &amp; contact-form in the recommended bundle</a></li>
+            </ul>
+        </div>
+
+        <h2 id="prerequisites">1. Prerequisites</h2>
+        <div class="section-container">
+            <div class="section-header overview">Before you run</div>
+            <div class="section-body">
+                <ul>
+                    <li>Node.js 18+ and <code>npm install</code> at repo root</li>
+                    <li>Playwright Chromium: <code>npm run test:install-playwright</code></li>
+                    <li>App running (e.g. <code>npm run dev</code>) and backend API reachable</li>
+                    <li>Copy <code class="script-name">TestSprite/admin-tests/auth.json.example</code> → <code class="script-name">TestSprite/admin-tests/auth.json</code> (ADMIN email/password for the tenant)</li>
+                    <li>Prefer <code class="code-highlight">NEXT_PUBLIC_TENANT_ID=tenant_demo_002</code>. If your local tenant differs, set <code class="code-highlight">E2E_ALLOW_ANY_TENANT=1</code></li>
+                </ul>
+                <div class="warning">
+                    <strong>Windows tip:</strong> Prefer <code class="code-highlight">cmd /c "set VAR=value&& node ..."</code> for env vars.
+                    PowerShell <code>$env:...</code> can fail to surface script output with some npm wrappers.
+                </div>
+            </div>
+        </div>
+
+        <h2 id="npm-scripts">2. npm script map</h2>
+        <table>
+            <thead>
+                <tr><th>Script</th><th>Purpose</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>test:inventory</code></td><td>Build <code class="script-name">TestSprite/generated/route-inventory.json</code> from all <code>page.tsx</code></td></tr>
+                <tr><td><code>test:e2e:quick</code></td><td>Inventory + public dynamic + CRUD + admin/public smoke (skips MOSC trees)</td></tr>
+                <tr><td><code>test:e2e:full</code></td><td>Full orchestrator (optional <code>--skip-mosc-old</code>)</td></tr>
+                <tr><td><code>test:smoke:admin</code></td><td>All admin routes + 34 admin-home button click-through</td></tr>
+                <tr><td><code>test:smoke:public</code></td><td>Core public routes</td></tr>
+                <tr><td><code>test:mosc:all</code></td><td><code>/mosc</code> + <code>/mosc-redesign</code> only (excludes <code>/mosc-old</code>)</td></tr>
+                <tr><td><code>test:mosc:with-old</code></td><td>Same plus <code>/mosc-old</code></td></tr>
+                <tr><td><code>test:public:dynamic</code></td><td>Public pages with discovered event/plan IDs</td></tr>
+                <tr><td><code>test:admin:crud</code></td><td><code>[E2E]</code> create/update/delete on demo tenant</td></tr>
+            </tbody>
+        </table>
+
+        <h2 id="quick-start">3. Quick start (Windows)</h2>
+        <div class="section-container usage">
+            <div class="section-header usage">📋 Recommended first run</div>
+            <div class="section-body">
+                <p>Run from repo root after the app is up and <code class="script-name">auth.json</code> exists.</p>
+
+                <div class="command-block setup"
+                     data-command-type="setup"
+                     data-command-base="cmd /c"
+                     data-template-command="cmd /c &quot;set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\run-e2e-full.js --quick&quot;">
+                    <div class="command-header">
+                        <span class="command-type">Quick E2E (skip MOSC trees)</span>
+                        <div class="command-header-buttons">
+                            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'e2e-quick')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+                            <button type="button" class="copy-button" onclick="copyCommand(this, 'e2e-quick')" title="Copy customized command" aria-label="Copy customized command">📋 Copy</button>
+                        </div>
+                    </div>
+                    <div class="command-parameters">
+                        <h5>Customize Parameters:</h5>
+                        <div class="parameter-group">
+                            <div class="parameter-input">
+                                <label for="e2e-quick-base-url">TEST_BASE_URL:</label>
+                                <input type="text" id="e2e-quick-base-url" value="http://localhost:3000" oninput="updateCommand('e2e-quick', 'base-url', this.value)">
+                            </div>
+                            <div class="parameter-input">
+                                <label for="e2e-quick-allow-any">E2E_ALLOW_ANY_TENANT (1 or empty):</label>
+                                <input type="text" id="e2e-quick-allow-any" value="1" placeholder="1" oninput="updateCommand('e2e-quick', 'allow-any', this.value)">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="command-content" id="e2e-quick">cmd /c "set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\run-e2e-full.js --quick"</div>
+                    <div class="command-single-line" id="e2e-quick-single">
+                        <div class="command-single-line-label">Windows Single-Line:</div>
+                        <code id="e2e-quick-single-code">cmd /c "set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\run-e2e-full.js --quick"</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2 id="inventory">4. Generate route inventory</h2>
+        <div class="section-intro">
+            Walks <code class="code-highlight">src/app/**/page.tsx</code> and writes
+            <code class="script-name">TestSprite/generated/route-inventory.json</code>
+            (~973 unique routes: admin, public, mosc, mosc-redesign, mosc-old).
+        </div>
+
+        <div class="command-block verify"
+             data-command-type="verify"
+             data-command-base="node TestSprite/tools/generate-route-inventory.js"
+             data-template-command="node TestSprite/tools/generate-route-inventory.js">
+            <div class="command-header">
+                <span class="command-type">Generate inventory</span>
+                <div class="command-header-buttons">
+                    <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'inv-gen')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+                    <button type="button" class="copy-button" onclick="copyCommand(this, 'inv-gen')" title="Copy customized command" aria-label="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-content" id="inv-gen">node TestSprite/tools/generate-route-inventory.js</div>
+            <div class="command-single-line" id="inv-gen-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="inv-gen-single-code">node TestSprite/tools/generate-route-inventory.js</code>
+            </div>
+        </div>
+
+        <div class="command-block verify"
+             data-command-type="verify"
+             data-command-base="npm run test:inventory"
+             data-template-command="npm run test:inventory">
+            <div class="command-header">
+                <span class="command-type">Via npm</span>
+                <div class="command-header-buttons">
+                    <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'inv-npm')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+                    <button type="button" class="copy-button" onclick="copyCommand(this, 'inv-npm')" title="Copy customized command" aria-label="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-content" id="inv-npm">npm run test:inventory</div>
+            <div class="command-single-line" id="inv-npm-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="inv-npm-single-code">npm run test:inventory</code>
+            </div>
+        </div>
+
+        <h2 id="orchestrator">5. Full / quick orchestrator</h2>
+        <div class="section-container usage">
+            <div class="section-header usage">📋 <code class="script-name" style="color:#fff;background:rgba(255,255,255,0.2);">TestSprite/run-e2e-full.js</code></div>
+            <div class="section-body">
+                <div class="parameters-list">
+                    <p><strong>Orchestrator flags:</strong></p>
+                    <ul>
+                        <li><code>--quick</code> — skip MOSC trees + legacy admin suites</li>
+                        <li><code>--skip-mosc</code> — skip all MOSC kinds</li>
+                        <li><code>--skip-mosc-old</code> — skip only <code>/mosc-old</code></li>
+                        <li><code>--skip-crud</code> — skip CRUD suite</li>
+                        <li><code>--skip-legacy-admin</code> — skip comprehensive + dynamic admin suites</li>
+                        <li><code>--mosc-limit=N</code> — cap MOSC crawl size</li>
+                        <li><code>--base-url=...</code> / <code>--port=3001</code> — app URL</li>
+                    </ul>
+                </div>
+
+                <div class="command-block expedite"
+                     data-command-type="expedite"
+                     data-command-base="cmd /c"
+                     data-template-command="cmd /c &quot;set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\run-e2e-full.js --skip-mosc-old&quot;">
+                    <div class="command-header">
+                        <span class="command-type">Full E2E excluding /mosc-old</span>
+                        <div class="command-header-buttons">
+                            <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'e2e-full-skip-old')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+                            <button type="button" class="copy-button" onclick="copyCommand(this, 'e2e-full-skip-old')" title="Copy customized command" aria-label="Copy customized command">📋 Copy</button>
+                        </div>
+                    </div>
+                    <div class="command-parameters">
+                        <h5>Customize Parameters:</h5>
+                        <div class="parameter-group">
+                            <div class="parameter-input">
+                                <label for="e2e-full-skip-old-base-url">TEST_BASE_URL:</label>
+                                <input type="text" id="e2e-full-skip-old-base-url" value="http://localhost:3000" oninput="updateCommand('e2e-full-skip-old', 'base-url', this.value)">
+                            </div>
+                            <div class="parameter-input">
+                                <label for="e2e-full-skip-old-allow-any">E2E_ALLOW_ANY_TENANT:</label>
+                                <input type="text" id="e2e-full-skip-old-allow-any" value="1" oninput="updateCommand('e2e-full-skip-old', 'allow-any', this.value)">
+                            </div>
+                        </div>
+                        <div class="parameter-group single">
+                            <div class="parameter-input">
+                                <label for="e2e-full-skip-old-extra-flags">Extra flags (optional):</label>
+                                <input type="text" id="e2e-full-skip-old-extra-flags" value="--skip-mosc-old" placeholder="--skip-mosc-old --mosc-limit=50" oninput="updateCommand('e2e-full-skip-old', 'extra-flags', this.value)">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="command-content" id="e2e-full-skip-old">cmd /c "set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\run-e2e-full.js --skip-mosc-old"</div>
+                    <div class="command-single-line" id="e2e-full-skip-old-single">
+                        <div class="command-single-line-label">Windows Single-Line:</div>
+                        <code id="e2e-full-skip-old-single-code">cmd /c "set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\run-e2e-full.js --skip-mosc-old"</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2 id="smoke">6. Smoke crawls (admin / public / kinds)</h2>
+        <div class="section-intro">
+            Script: <code class="script-name">TestSprite/sanity-tests/run-inventory-smoke-crawl.js</code>.
+            Use <code class="code-highlight">--kind=</code> to include kinds and <code class="code-highlight">--exclude=</code> to drop kinds.
+            Kinds: <code>admin</code>, <code>public</code>, <code>mosc</code>, <code>mosc-redesign</code>, <code>mosc-old</code>.
+        </div>
+
+        <div class="command-block setup"
+             data-command-type="setup"
+             data-command-base="cmd /c"
+             data-template-command="cmd /c &quot;set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --kind=admin&quot;">
+            <div class="command-header">
+                <span class="command-type">Admin smoke (+ home buttons)</span>
+                <div class="command-header-buttons">
+                    <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'smoke-admin')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+                    <button type="button" class="copy-button" onclick="copyCommand(this, 'smoke-admin')" title="Copy customized command" aria-label="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>Customize Parameters:</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="smoke-admin-base-url">TEST_BASE_URL:</label>
+                        <input type="text" id="smoke-admin-base-url" value="http://localhost:3000" oninput="updateCommand('smoke-admin', 'base-url', this.value)">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="smoke-admin-kind">--kind=</label>
+                        <input type="text" id="smoke-admin-kind" value="admin" oninput="updateCommand('smoke-admin', 'kind', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="smoke-admin">cmd /c "set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --kind=admin"</div>
+            <div class="command-single-line" id="smoke-admin-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="smoke-admin-single-code">cmd /c "set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --kind=admin"</code>
+            </div>
+        </div>
+
+        <div class="command-block setup"
+             data-command-type="setup"
+             data-command-base="cmd /c"
+             data-template-command="cmd /c &quot;set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --kind=public&quot;">
+            <div class="command-header">
+                <span class="command-type">Public smoke</span>
+                <div class="command-header-buttons">
+                    <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'smoke-public')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+                    <button type="button" class="copy-button" onclick="copyCommand(this, 'smoke-public')" title="Copy customized command" aria-label="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>Customize Parameters:</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="smoke-public-base-url">TEST_BASE_URL:</label>
+                        <input type="text" id="smoke-public-base-url" value="http://localhost:3000" oninput="updateCommand('smoke-public', 'base-url', this.value)">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="smoke-public-kind">--kind=</label>
+                        <input type="text" id="smoke-public-kind" value="public" oninput="updateCommand('smoke-public', 'kind', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="smoke-public">cmd /c "set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --kind=public"</div>
+            <div class="command-single-line" id="smoke-public-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="smoke-public-single-code">cmd /c "set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --kind=public"</code>
+            </div>
+        </div>
+
+        <h2 id="exclude-mosc-old">7. Exclude <code>/mosc-old</code></h2>
+        <div class="info">
+            <strong>Default:</strong> <code class="code-highlight">npm run test:mosc:all</code> already excludes <code class="code-highlight">mosc-old</code>.
+            Use <code class="code-highlight">npm run test:mosc:with-old</code> only when you intentionally want the legacy tree.
+        </div>
+
+        <div class="command-block advance"
+             data-command-type="advance"
+             data-command-base="cmd /c"
+             data-template-command="cmd /c &quot;set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --exclude=mosc-old&quot;">
+            <div class="command-header">
+                <span class="command-type">Smoke all kinds except mosc-old</span>
+                <div class="command-header-buttons">
+                    <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'smoke-exclude-old')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+                    <button type="button" class="copy-button" onclick="copyCommand(this, 'smoke-exclude-old')" title="Copy customized command" aria-label="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>Customize Parameters:</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="smoke-exclude-old-base-url">TEST_BASE_URL:</label>
+                        <input type="text" id="smoke-exclude-old-base-url" value="http://localhost:3000" oninput="updateCommand('smoke-exclude-old', 'base-url', this.value)">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="smoke-exclude-old-exclude">--exclude=</label>
+                        <input type="text" id="smoke-exclude-old-exclude" value="mosc-old" placeholder="mosc-old,mosc" oninput="updateCommand('smoke-exclude-old', 'exclude', this.value)">
+                    </div>
+                </div>
+                <div class="parameter-group single">
+                    <div class="parameter-input">
+                        <label for="smoke-exclude-old-limit">--limit= (optional):</label>
+                        <input type="text" id="smoke-exclude-old-limit" value="" placeholder="50" oninput="updateCommand('smoke-exclude-old', 'limit', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="smoke-exclude-old">cmd /c "set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --exclude=mosc-old"</div>
+            <div class="command-single-line" id="smoke-exclude-old-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="smoke-exclude-old-single-code">cmd /c "set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --exclude=mosc-old"</code>
+            </div>
+        </div>
+
+        <div class="command-block advance"
+             data-command-type="advance"
+             data-command-base="cmd /c"
+             data-template-command="cmd /c &quot;set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --kind=mosc,mosc-redesign&quot;">
+            <div class="command-header">
+                <span class="command-type">Only /mosc + /mosc-redesign</span>
+                <div class="command-header-buttons">
+                    <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'smoke-mosc-pair')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+                    <button type="button" class="copy-button" onclick="copyCommand(this, 'smoke-mosc-pair')" title="Copy customized command" aria-label="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>Customize Parameters:</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="smoke-mosc-pair-base-url">TEST_BASE_URL:</label>
+                        <input type="text" id="smoke-mosc-pair-base-url" value="http://localhost:3000" oninput="updateCommand('smoke-mosc-pair', 'base-url', this.value)">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="smoke-mosc-pair-kind">--kind=</label>
+                        <input type="text" id="smoke-mosc-pair-kind" value="mosc,mosc-redesign" oninput="updateCommand('smoke-mosc-pair', 'kind', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="smoke-mosc-pair">cmd /c "set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --kind=mosc,mosc-redesign"</div>
+            <div class="command-single-line" id="smoke-mosc-pair-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="smoke-mosc-pair-single-code">cmd /c "set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --kind=mosc,mosc-redesign"</code>
+            </div>
+        </div>
+
+        <div class="command-block advance"
+             data-command-type="advance"
+             data-command-base="npm run test:mosc:all"
+             data-template-command="npm run test:mosc:all">
+            <div class="command-header">
+                <span class="command-type">npm: mosc:all (excludes mosc-old)</span>
+                <div class="command-header-buttons">
+                    <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'npm-mosc-all')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+                    <button type="button" class="copy-button" onclick="copyCommand(this, 'npm-mosc-all')" title="Copy customized command" aria-label="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-content" id="npm-mosc-all">npm run test:mosc:all</div>
+            <div class="command-single-line" id="npm-mosc-all-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="npm-mosc-all-single-code">npm run test:mosc:all</code>
+            </div>
+        </div>
+
+        <h2 id="crud">8. Admin CRUD (demo tenant)</h2>
+        <div class="section-intro">
+            Script: <code class="script-name">TestSprite/admin-tests/admin-crud-demo-tenant-suite.js</code>.
+            Creates/updates entities tagged <code class="code-highlight">[E2E]</code> when forms exist.
+            Manage Usage and Test Stripe are read-only smoke.
+        </div>
+        <div class="warning">
+            For true isolation set <code class="code-highlight">NEXT_PUBLIC_TENANT_ID=tenant_demo_002</code> and omit <code class="code-highlight">E2E_ALLOW_ANY_TENANT</code>.
+            Never delete original seed rows — only <code>[E2E]</code> copies.
+        </div>
+
+        <div class="command-block expedite"
+             data-command-type="expedite"
+             data-command-base="cmd /c"
+             data-template-command="cmd /c &quot;set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\admin-tests\admin-crud-demo-tenant-suite.js&quot;">
+            <div class="command-header">
+                <span class="command-type">Admin CRUD suite</span>
+                <div class="command-header-buttons">
+                    <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'crud-admin')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+                    <button type="button" class="copy-button" onclick="copyCommand(this, 'crud-admin')" title="Copy customized command" aria-label="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>Customize Parameters:</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="crud-admin-base-url">TEST_BASE_URL:</label>
+                        <input type="text" id="crud-admin-base-url" value="http://localhost:3000" oninput="updateCommand('crud-admin', 'base-url', this.value)">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="crud-admin-allow-any">E2E_ALLOW_ANY_TENANT:</label>
+                        <input type="text" id="crud-admin-allow-any" value="1" oninput="updateCommand('crud-admin', 'allow-any', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="crud-admin">cmd /c "set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\admin-tests\admin-crud-demo-tenant-suite.js"</div>
+            <div class="command-single-line" id="crud-admin-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="crud-admin-single-code">cmd /c "set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\admin-tests\admin-crud-demo-tenant-suite.js"</code>
+            </div>
+        </div>
+
+        <h2 id="public-dynamic">9. Public dynamic demo IDs</h2>
+        <div class="section-intro">
+            Discovers event/plan/sponsor IDs via <code class="code-highlight">/api/proxy/*</code> and smokes
+            <code>/events/{id}</code>, membership subscribe, etc. Auth redirects count as pass (<code>auth-gated</code>).
+        </div>
+
+        <div class="command-block verify"
+             data-command-type="verify"
+             data-command-base="cmd /c"
+             data-template-command="cmd /c &quot;set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\sanity-tests\run-public-dynamic-demo-tests.js&quot;">
+            <div class="command-header">
+                <span class="command-type">Public dynamic demo</span>
+                <div class="command-header-buttons">
+                    <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'public-dyn')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+                    <button type="button" class="copy-button" onclick="copyCommand(this, 'public-dyn')" title="Copy customized command" aria-label="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>Customize Parameters:</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="public-dyn-base-url">TEST_BASE_URL:</label>
+                        <input type="text" id="public-dyn-base-url" value="http://localhost:3000" oninput="updateCommand('public-dyn', 'base-url', this.value)">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="public-dyn-allow-any">E2E_ALLOW_ANY_TENANT:</label>
+                        <input type="text" id="public-dyn-allow-any" value="1" oninput="updateCommand('public-dyn', 'allow-any', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="public-dyn">cmd /c "set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\sanity-tests\run-public-dynamic-demo-tests.js"</div>
+            <div class="command-single-line" id="public-dyn-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="public-dyn-single-code">cmd /c "set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\sanity-tests\run-public-dynamic-demo-tests.js"</code>
+            </div>
+        </div>
+
+        <h2 id="reports">10. Reports &amp; safety</h2>
+        <div class="section-container output">
+            <div class="section-header output">📊 Outputs</div>
+            <div class="section-body">
+                <ul>
+                    <li>Coverage JSON: <code class="script-name">TestSprite/reports/coverage-*.json</code></li>
+                    <li>Coverage HTML (pass/fail, wall clock, per-module timings): <code class="script-name">TestSprite/reports/coverage-*.html</code> — written automatically with JSON; regenerate with <code class="script-name">npm run test:coverage:html</code></li>
+                    <li>Append-only log: <code class="script-name">TestSprite/reports/LOOP_LOG.md</code></li>
+                    <li>Inventory: <code class="script-name">TestSprite/generated/route-inventory.json</code></li>
+                    <li>Contact form suite: <code class="script-name">npm run test:contact-form</code> → <code class="script-name">/mosc-redesign/contact-form-email</code> + send-html API validation (no live email)</li>
+                </ul>
+                <div class="success">
+                    <strong>Safety rules:</strong>
+                    mutate only <code class="code-highlight">[E2E]</code> copies; no live Stripe charges;
+                    auth-gated public redirects are recorded as pass; MOSC crawls pace requests to avoid saturating the Next.js dev server.
+                </div>
+            </div>
+        </div>
+
+        <h2 id="scoped-ladder">11. Recommended command: public + admin + mosc-redesign (tenant_demo_002)</h2>
+        <div class="section-intro">
+            <strong>Use this command</strong> for the standard scoped E2E run on
+            <code class="code-highlight">tenant_demo_002</code>:
+            core site pages (<code class="code-highlight">http://localhost:3000</code>),
+            full admin including home-button click-through (<code class="code-highlight">/admin</code>),
+            and every page under <code class="code-highlight">/mosc-redesign</code>,
+            while <strong>excluding</strong> <code class="code-highlight">/mosc</code> and
+            <code class="code-highlight">/mosc-old</code>.
+            This is the canonical copy-paste command for that profile.
+        </div>
+
+        <div class="section-container">
+            <div class="section-header overview">What this command does</div>
+            <div class="section-body">
+                <p>
+                    One <code class="code-highlight">cmd /c</code> line sets the demo tenant env vars,
+                    points Playwright at <code class="code-highlight">http://localhost:3000</code>,
+                    then runs four steps in order.
+                    Env vars are joined with <code class="code-highlight">&&</code>;
+                    Node steps are joined with <code class="code-highlight">&amp;</code> so CRUD and smoke
+                    still run even if the comprehensive admin suite exits non-zero (failed assertions).
+                </p>
+                <ol>
+                    <li>
+                        <code class="script-name">generate-route-inventory.js</code> —
+                        rebuilds <code class="script-name">TestSprite/generated/route-inventory.json</code>
+                        from all <code>page.tsx</code> files so smoke knows which URLs exist.
+                    </li>
+                    <li>
+                        <code class="script-name">comprehensive-admin-test-suite.js</code> —
+                        deeper admin UI checks (forms, tables, key interactions) beyond a simple page load.
+                    </li>
+                    <li>
+                        <code class="script-name">admin-crud-demo-tenant-suite.js</code> —
+                        create / update / delete <code class="code-highlight">[E2E]</code> sample rows on the demo tenant.
+                    </li>
+                    <li>
+                        <code class="script-name">run-contact-form-email-tests.js</code> —
+                        Contact Us HTML email page (<code>/mosc-redesign/contact-form-email</code>): form fields,
+                        client validation, and <code>send-html</code> API 400/405 checks (no live email send).
+                    </li>
+                    <li>
+                        <code class="script-name">run-inventory-smoke-crawl.js --kind=admin,public,mosc-redesign</code> —
+                        visits every inventory route for those three kinds only
+                        (core public + all <code>/admin</code> routes + admin-home buttons + all
+                        <code>/mosc-redesign</code> pages). Omitting <code>mosc</code> and
+                        <code>mosc-old</code> from <code>--kind</code> excludes those trees.
+                    </li>
+                </ol>
+                <div class="success">
+                    <strong>Recommended for documentation / daily use:</strong>
+                    copy the command block below. Do not use an all-<code>&&</code> Node chain for this profile —
+                    a failing comprehensive suite would skip CRUD and smoke.
+                </div>
+                <div class="info">
+                    <strong>Tenant env vars:</strong>
+                    <code class="code-highlight">NEXT_PUBLIC_TENANT_ID</code>,
+                    <code class="code-highlight">E2E_TENANT_ID</code>, and
+                    <code class="code-highlight">E2E_EXPECTED_TENANT</code> are all set to
+                    <code class="code-highlight">tenant_demo_002</code> so the harness hard-checks the demo tenant
+                    (do not set <code class="code-highlight">E2E_ALLOW_ANY_TENANT=1</code> for this profile).
+                    Restart the Next.js app with the same tenant in <code>.env</code> so the UI serves demo data.
+                </div>
+                <div class="warning">
+                    Prerequisites still apply: app running on port 3000,
+                    <code class="script-name">TestSprite/admin-tests/auth.json</code> present,
+                    Playwright browsers installed.
+                </div>
+            </div>
+        </div>
+
+        <div class="section-container usage">
+            <div class="section-header usage">📋 Brief ladder (run order)</div>
+            <div class="section-body">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Step</th>
+                            <th>Script</th>
+                            <th>Covers</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td><code class="script-name">generate-route-inventory.js</code></td>
+                            <td>Fresh route list</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td><code class="script-name">comprehensive-admin-test-suite.js</code></td>
+                            <td>Fuller admin UI assertions</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td><code class="script-name">admin-crud-demo-tenant-suite.js</code></td>
+                            <td><code>[E2E]</code> CRUD on <code>tenant_demo_002</code></td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td><code class="script-name">run-inventory-smoke-crawl.js</code></td>
+                            <td><code>--kind=admin,public,mosc-redesign</code> only (no <code>/mosc</code>, no <code>/mosc-old</code>)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="command-block expedite"
+             data-command-type="expedite"
+             data-command-base="cmd /c"
+             data-template-command="cmd /c &quot;set NEXT_PUBLIC_TENANT_ID=tenant_demo_002&& set E2E_TENANT_ID=tenant_demo_002&& set E2E_EXPECTED_TENANT=tenant_demo_002&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\tools\generate-route-inventory.js & node TestSprite\admin-tests\comprehensive-admin-test-suite.js & node TestSprite\admin-tests\admin-crud-demo-tenant-suite.js & node TestSprite\sanity-tests\run-contact-form-email-tests.js & node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --kind=admin,public,mosc-redesign&quot;">
+            <div class="command-header">
+                <span class="command-type">★ Recommended: tenant_demo_002 · exclude /mosc + /mosc-old</span>
+                <div class="command-header-buttons">
+                    <button type="button" class="copy-button-template" onclick="copyTemplateCommand(this, 'scoped-ladder')" title="Copy template command" aria-label="Copy template command">📄 Template</button>
+                    <button type="button" class="copy-button" onclick="copyCommand(this, 'scoped-ladder')" title="Copy customized command" aria-label="Copy customized command">📋 Copy</button>
+                </div>
+            </div>
+            <div class="command-parameters">
+                <h5>Customize Parameters (pre-filled for tenant_demo_002):</h5>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="scoped-ladder-tenant-id">NEXT_PUBLIC_TENANT_ID / E2E_TENANT_ID:</label>
+                        <input type="text" id="scoped-ladder-tenant-id" value="tenant_demo_002" oninput="updateCommand('scoped-ladder', 'tenant-id', this.value)">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="scoped-ladder-expected-tenant">E2E_EXPECTED_TENANT:</label>
+                        <input type="text" id="scoped-ladder-expected-tenant" value="tenant_demo_002" oninput="updateCommand('scoped-ladder', 'expected-tenant', this.value)">
+                    </div>
+                </div>
+                <div class="parameter-group">
+                    <div class="parameter-input">
+                        <label for="scoped-ladder-base-url">TEST_BASE_URL:</label>
+                        <input type="text" id="scoped-ladder-base-url" value="http://localhost:3000" oninput="updateCommand('scoped-ladder', 'base-url', this.value)">
+                    </div>
+                    <div class="parameter-input">
+                        <label for="scoped-ladder-kind">Smoke --kind=</label>
+                        <input type="text" id="scoped-ladder-kind" value="admin,public,mosc-redesign" oninput="updateCommand('scoped-ladder', 'kind', this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="command-content" id="scoped-ladder">cmd /c "set NEXT_PUBLIC_TENANT_ID=tenant_demo_002&& set E2E_TENANT_ID=tenant_demo_002&& set E2E_EXPECTED_TENANT=tenant_demo_002&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\tools\generate-route-inventory.js & node TestSprite\admin-tests\comprehensive-admin-test-suite.js & node TestSprite\admin-tests\admin-crud-demo-tenant-suite.js & node TestSprite\sanity-tests\run-contact-form-email-tests.js & node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --kind=admin,public,mosc-redesign"</div>
+            <div class="command-single-line" id="scoped-ladder-single">
+                <div class="command-single-line-label">Windows Single-Line:</div>
+                <code id="scoped-ladder-single-code">cmd /c "set NEXT_PUBLIC_TENANT_ID=tenant_demo_002&& set E2E_TENANT_ID=tenant_demo_002&& set E2E_EXPECTED_TENANT=tenant_demo_002&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\tools\generate-route-inventory.js & node TestSprite\admin-tests\comprehensive-admin-test-suite.js & node TestSprite\admin-tests\admin-crud-demo-tenant-suite.js & node TestSprite\sanity-tests\run-contact-form-email-tests.js & node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --kind=admin,public,mosc-redesign"</code>
+            </div>
+        </div>
+
+        <h2 id="html-reports-contact">12. HTML reports &amp; contact-form in the recommended bundle</h2>
+        <div class="section-container">
+            <div class="section-header overview">Does <code>/mosc-redesign/contact-form-email</code> run with the §11 command?</div>
+            <div class="section-body">
+                <div class="success">
+                    <strong>Yes — with the current recommended command (§11).</strong>
+                    You do <em>not</em> need a separate run for the deep contact-form suite when you use that full ladder.
+                    The step <code class="script-name">run-contact-form-email-tests.js</code> is already in the chain
+                    (between CRUD and the inventory smoke crawl).
+                </div>
+                <ul>
+                    <li>
+                        <strong>Deep contact-form suite</strong> (form fields, empty-submit validation, API 400/405 —
+                        no live email): runs via
+                        <code class="script-name">TestSprite/sanity-tests/run-contact-form-email-tests.js</code>
+                        inside the §11 command. Standalone: <code class="script-name">npm run test:contact-form</code>.
+                    </li>
+                    <li>
+                        <strong>Smoke page visit</strong>: the same URL is also visited again during
+                        <code class="script-name">run-inventory-smoke-crawl.js --kind=…,mosc-redesign</code>
+                        (inventory kind <code class="code-highlight">mosc-redesign</code>). That is a load/smoke check only,
+                        not the deep form/API assertions.
+                    </li>
+                    <li>
+                        <strong>Older runs</strong> that used a ladder <em>without</em>
+                        <code class="script-name">run-contact-form-email-tests.js</code> only smoke-visited the page.
+                        Re-copy the §11 command (or run <code class="script-name">npm run test:contact-form</code>) to get the deep suite.
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="section-container">
+            <div class="section-header output">Where to find the HTML report</div>
+            <div class="section-body">
+                <p class="section-intro">
+                    Every harness suite that uses <code class="code-highlight">CoverageTracker</code> writes
+                    <strong>both</strong> JSON and HTML under <code class="script-name">TestSprite/reports/</code>.
+                </p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Artifact</th>
+                            <th>Path / pattern</th>
+                            <th>What it shows</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Coverage JSON</td>
+                            <td><code class="script-name">TestSprite/reports/coverage-*.json</code></td>
+                            <td>Machine-readable pass/fail list and timings</td>
+                        </tr>
+                        <tr>
+                            <td>Coverage HTML</td>
+                            <td><code class="script-name">TestSprite/reports/coverage-*.html</code></td>
+                            <td>Overview: totals, wall clock, per-module durations, failures, all results — open in a browser</td>
+                        </tr>
+                        <tr>
+                            <td>Smoke (scoped ladder)</td>
+                            <td><code class="script-name">coverage-smoke-admin+public+mosc-redesign-&lt;stamp&gt;.html</code></td>
+                            <td>HTML for the inventory smoke step of §11</td>
+                        </tr>
+                        <tr>
+                            <td>Contact-form suite</td>
+                            <td><code class="script-name">coverage-contact-form-email-&lt;stamp&gt;.html</code></td>
+                            <td>HTML for the deep contact-form / send-html checks</td>
+                        </tr>
+                        <tr>
+                            <td>Loop log</td>
+                            <td><code class="script-name">TestSprite/reports/LOOP_LOG.md</code></td>
+                            <td>Append-only summary lines pointing at JSON + HTML paths</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="info">
+                    <strong>Console hint:</strong> when a suite finishes you should see
+                    <code class="code-highlight">[harness] HTML report: …\TestSprite\reports\coverage-….html</code>
+                    next to the JSON path. Open that <code>.html</code> file in Chrome/Edge.
+                </div>
+                <div class="warning">
+                    <strong>JSON-only older reports:</strong> if you have a
+                    <code class="script-name">coverage-*.json</code> from before HTML generation existed, regenerate with:
+                    <code class="script-name">npm run test:coverage:html</code>
+                    (or pass a specific JSON path to
+                    <code class="script-name">node TestSprite/tools/coverage-json-to-html.js …</code>).
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const commandParams = {};
+
+        function buildCmdEnvNode(params, nodeRelPath, flags) {
+            const allow = (params['allow-any'] || '').trim();
+            const baseUrl = (params['base-url'] || 'http://localhost:3000').trim();
+            let inner = '';
+            if (allow) inner += 'set E2E_ALLOW_ANY_TENANT=' + allow + '&& ';
+            inner += 'set TEST_BASE_URL=' + baseUrl + '&& ';
+            inner += 'node ' + nodeRelPath.replace(/\//g, '\\');
+            if (flags && flags.trim()) inner += ' ' + flags.trim();
+            return 'cmd /c "' + inner + '"';
+        }
+
+        function updateCommandFromParams(commandId) {
+            const commandElement = document.getElementById(commandId);
+            if (!commandElement) return;
+            const commandBlock = commandElement.closest('.command-block');
+            if (!commandBlock) return;
+            const params = commandParams[commandId] || {};
+            let command = '';
+
+            if (commandId === 'e2e-quick') {
+                command = buildCmdEnvNode(params, 'TestSprite\\run-e2e-full.js', '--quick');
+            } else if (commandId === 'e2e-full-skip-old') {
+                const extra = (params['extra-flags'] || '--skip-mosc-old').trim();
+                command = buildCmdEnvNode(params, 'TestSprite\\run-e2e-full.js', extra);
+            } else if (commandId === 'smoke-admin') {
+                const kind = (params['kind'] || 'admin').trim();
+                command = buildCmdEnvNode(params, 'TestSprite\\sanity-tests\\run-inventory-smoke-crawl.js', '--kind=' + kind);
+            } else if (commandId === 'smoke-public') {
+                const kind = (params['kind'] || 'public').trim();
+                command = buildCmdEnvNode(params, 'TestSprite\\sanity-tests\\run-inventory-smoke-crawl.js', '--kind=' + kind);
+            } else if (commandId === 'smoke-exclude-old') {
+                let flags = '';
+                const ex = (params['exclude'] || 'mosc-old').trim();
+                if (ex) flags += '--exclude=' + ex;
+                const lim = (params['limit'] || '').trim();
+                if (lim) flags += (flags ? ' ' : '') + '--limit=' + lim;
+                command = buildCmdEnvNode(params, 'TestSprite\\sanity-tests\\run-inventory-smoke-crawl.js', flags);
+            } else if (commandId === 'smoke-mosc-pair') {
+                const kind = (params['kind'] || 'mosc,mosc-redesign').trim();
+                command = buildCmdEnvNode(params, 'TestSprite\\sanity-tests\\run-inventory-smoke-crawl.js', '--kind=' + kind);
+            } else if (commandId === 'crud-admin') {
+                command = buildCmdEnvNode(params, 'TestSprite\\admin-tests\\admin-crud-demo-tenant-suite.js', '');
+            } else if (commandId === 'public-dyn') {
+                command = buildCmdEnvNode(params, 'TestSprite\\sanity-tests\\run-public-dynamic-demo-tests.js', '');
+            } else if (commandId === 'scoped-ladder') {
+                const tenant = (params['tenant-id'] || 'tenant_demo_002').trim();
+                const expected = (params['expected-tenant'] || tenant).trim();
+                const baseUrl = (params['base-url'] || 'http://localhost:3000').trim();
+                const kind = (params['kind'] || 'admin,public,mosc-redesign').trim();
+                // Use & between Node steps so CRUD + smoke continue after comprehensive failures
+                command =
+                    'cmd /c "set NEXT_PUBLIC_TENANT_ID=' + tenant +
+                    '&& set E2E_TENANT_ID=' + tenant +
+                    '&& set E2E_EXPECTED_TENANT=' + expected +
+                    '&& set TEST_BASE_URL=' + baseUrl +
+                    '&& node TestSprite\\tools\\generate-route-inventory.js' +
+                    ' & node TestSprite\\admin-tests\\comprehensive-admin-test-suite.js' +
+                    ' & node TestSprite\\admin-tests\\admin-crud-demo-tenant-suite.js' +
+                    ' & node TestSprite\\sanity-tests\\run-contact-form-email-tests.js' +
+                    ' & node TestSprite\\sanity-tests\\run-inventory-smoke-crawl.js --kind=' + kind + '"';
+            } else {
+                command = commandBlock.getAttribute('data-command-base') || commandElement.textContent.trim();
+            }
+
+            commandElement.textContent = command;
+            const singleLineCode = document.getElementById(commandId + '-single-code');
+            if (singleLineCode) singleLineCode.textContent = command;
+        }
+
+        function updateCommand(commandId, paramName, paramValue) {
+            if (!commandParams[commandId]) commandParams[commandId] = {};
+            commandParams[commandId][paramName] = paramValue;
+            updateCommandFromParams(commandId);
+        }
+
+        function fallbackCopy(text, button, resetLabel) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                button.classList.add('copied');
+                const original = resetLabel;
+                button.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.textContent = original;
+                }, 2000);
+            } catch (e) {
+                console.error(e);
+            }
+            document.body.removeChild(ta);
+        }
+
+        function copyTemplateCommand(button, commandId) {
+            const commandBlock = button.closest('.command-block');
+            if (!commandBlock) return;
+            let templateCommand = commandBlock.getAttribute('data-template-command');
+            if (!templateCommand) {
+                const el = document.getElementById(commandId);
+                if (!el) return;
+                templateCommand = el.textContent.trim();
+            }
+            templateCommand = templateCommand.replace(/&quot;/g, '"');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(templateCommand).then(() => {
+                    button.classList.add('copied');
+                    button.textContent = '✓ Copied!';
+                    setTimeout(() => {
+                        button.classList.remove('copied');
+                        button.textContent = '📄 Template';
+                    }, 2000);
+                }).catch(() => fallbackCopy(templateCommand, button, '📄 Template'));
+            } else {
+                fallbackCopy(templateCommand, button, '📄 Template');
+            }
+        }
+
+        function copyCommand(button, commandId) {
+            const commandElement = document.getElementById(commandId);
+            if (!commandElement) return;
+            const commandText = commandElement.textContent.trim();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(commandText).then(() => {
+                    button.classList.add('copied');
+                    button.textContent = '✓ Copied!';
+                    setTimeout(() => {
+                        button.classList.remove('copied');
+                        button.textContent = '📋 Copy';
+                    }, 2000);
+                }).catch(() => fallbackCopy(commandText, button, '📋 Copy'));
+            } else {
+                fallbackCopy(commandText, button, '📋 Copy');
+            }
+        }
+
+        function initializeCommands() {
+            document.querySelectorAll('.command-block[data-command-base]').forEach(block => {
+                const commandContent = block.querySelector('.command-content');
+                if (!commandContent) return;
+                const commandId = commandContent.id;
+                if (!commandId) return;
+                block.querySelectorAll('.parameter-input input').forEach(input => {
+                    const inputId = input.id;
+                    if (!inputId || !inputId.startsWith(commandId + '-')) return;
+                    const paramName = inputId.substring(commandId.length + 1);
+                    if (!commandParams[commandId]) commandParams[commandId] = {};
+                    commandParams[commandId][paramName] = input.value || '';
+                });
+                if (block.querySelector('.parameter-input input')) {
+                    updateCommandFromParams(commandId);
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeCommands);
+    </script>
+</body>
+</html>

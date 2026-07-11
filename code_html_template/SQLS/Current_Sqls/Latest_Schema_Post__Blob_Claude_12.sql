@@ -210,6 +210,7 @@ DROP TABLE IF EXISTS public.gas_station_integration CASCADE;
 DROP TABLE IF EXISTS public.gas_station_user_station_assignment CASCADE;
 DROP TABLE IF EXISTS public.gas_station_location CASCADE;
 -- Personal profile site module
+DROP TABLE IF EXISTS public.profile_audience_contact CASCADE;
 DROP TABLE IF EXISTS public.profile_media_asset CASCADE;
 DROP TABLE IF EXISTS public.profile_affiliation CASCADE;
 DROP TABLE IF EXISTS public.profile_achievement CASCADE;
@@ -849,6 +850,13 @@ CREATE SEQUENCE IF NOT EXISTS public.tenant_settings_id_seq
     CACHE 1;
 
 CREATE SEQUENCE IF NOT EXISTS public.public_profile_id_seq
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    START WITH 1
+    CACHE 1;
+
+CREATE SEQUENCE IF NOT EXISTS public.profile_audience_contact_id_seq
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
@@ -3222,6 +3230,36 @@ CREATE TABLE IF NOT EXISTS public.public_profile (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_public_profile__tenant_slug ON public.public_profile (tenant_id, public_slug) WHERE public_slug IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS public.profile_audience_contact (
+  id bigint DEFAULT nextval('public.profile_audience_contact_id_seq'::regclass) NOT NULL,
+  tenant_id character varying(255) NOT NULL,
+  public_profile_id bigint NOT NULL,
+  email character varying(255) NOT NULL,
+  first_name character varying(255),
+  last_name character varying(255),
+  source character varying(32) NOT NULL DEFAULT 'ADMIN_MANUAL',
+  opt_in_status character varying(32) NOT NULL DEFAULT 'OPTED_IN',
+  unsubscribe_token character varying(64),
+  notes character varying(500),
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  CONSTRAINT profile_audience_contact_pkey PRIMARY KEY (id),
+  CONSTRAINT profile_audience_contact_tenant_email_key UNIQUE (tenant_id, email),
+  CONSTRAINT chk_profile_audience_contact__source CHECK (
+    source IN ('SUBSCRIBE_FORM', 'CONTACT_FORM', 'CSV_IMPORT', 'GATED_DOWNLOAD', 'ADMIN_MANUAL')
+  ),
+  CONSTRAINT chk_profile_audience_contact__opt_in_status CHECK (
+    opt_in_status IN ('OPTED_IN', 'OPTED_OUT', 'PENDING')
+  ),
+  CONSTRAINT fk_profile_audience_contact__tenant_id FOREIGN KEY (tenant_id)
+    REFERENCES public.tenant_organization(tenant_id) ON DELETE CASCADE,
+  CONSTRAINT fk_profile_audience_contact__public_profile_id FOREIGN KEY (public_profile_id)
+    REFERENCES public.public_profile(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_profile_audience_contact_profile ON public.profile_audience_contact (public_profile_id);
+CREATE INDEX IF NOT EXISTS idx_profile_audience_contact_tenant_opt_in ON public.profile_audience_contact (tenant_id, opt_in_status);
 
 CREATE TABLE IF NOT EXISTS public.profile_writing (
   id bigint DEFAULT nextval('public.profile_writing_id_seq'::regclass) NOT NULL,
@@ -7070,6 +7108,12 @@ SELECT pg_catalog.setval(
 SELECT pg_catalog.setval(
     'public.public_profile_id_seq',
     GREATEST(COALESCE((SELECT MAX(id) FROM public.public_profile), 1), 1),
+    true
+);
+-- profile_audience_contact
+SELECT pg_catalog.setval(
+    'public.profile_audience_contact_id_seq',
+    GREATEST(COALESCE((SELECT MAX(id) FROM public.profile_audience_contact), 1), 1),
     true
 );
 -- profile_writing

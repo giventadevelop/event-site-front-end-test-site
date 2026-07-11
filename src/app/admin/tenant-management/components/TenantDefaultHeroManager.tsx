@@ -278,7 +278,7 @@ export default function TenantDefaultHeroManager({
   const handleToggleActive = async (index: number) => {
     const slide = heroSlides[index];
     if (!slide.active && activeCount >= MAX_ACTIVE_SLIDES) {
-      setUploadMessage({ type: 'error', text: 'Maximum 10 active slides' });
+      setUploadMessage({ type: 'error', text: `Maximum ${MAX_ACTIVE_SLIDES} active slides` });
       return;
     }
     const next = heroSlides.map((s, i) =>
@@ -350,7 +350,7 @@ export default function TenantDefaultHeroManager({
           <h4 className="font-semibold text-teal-800 mb-2">Get started with homepage hero slides</h4>
           <ol className="list-decimal pl-5 text-sm text-teal-900 space-y-1 mb-3">
             <li>Upload one or more landscape images (recommended 2000×800, 5:2 ratio).</li>
-            <li>Mark slides <strong>Active</strong> (up to 10) and set display count.</li>
+            <li>Mark slides <strong>Active</strong> (up to {MAX_ACTIVE_SLIDES}) and set display count.</li>
             <li>Choose display mode: slideshow, random, or single — then view your homepage.</li>
           </ol>
           <div className="flex flex-wrap gap-2">
@@ -614,7 +614,7 @@ export default function TenantDefaultHeroManager({
             ))}
           </select>
           <p className="mt-1 text-xs text-gray-500">
-            When slides are active, show up to this many in order (max 6).
+            When slides are active, show up to this many in order (max {MAX_HERO_DISPLAY_COUNT}).
           </p>
         </div>
         <div className="flex items-start md:pt-8">

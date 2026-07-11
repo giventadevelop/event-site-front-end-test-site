@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="QA checklist and AI/agent prompt to verify homepage hero slider eligibility conditions against live data.">
+    <title>Homepage Hero Slider — Conditions QA Checklist</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        h1 {
+            font-size: 2.5em;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            color: #1a1a2e;
+        }
+        h2 {
+            font-size: 1.8em;
+            border-left: 4px solid #0066cc;
+            padding-left: 15px;
+            margin-top: 40px;
+            color: #1a1a2e;
+        }
+        h3 { font-size: 1.4em; color: #333; margin-top: 25px; }
+        .toc {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border: 1px solid #b8d4e3;
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px 25px;
+            margin: 25px 0;
+        }
+        .toc h2 { border-left: none; padding-left: 0; margin-top: 0; font-size: 1.4em; color: #0066cc; }
+        .toc ol { margin: 0; padding-left: 20px; }
+        .toc li { margin: 8px 0; }
+        .toc a { color: #0066cc; text-decoration: none; font-weight: 500; }
+        .toc a:hover { text-decoration: underline; }
+        code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .code-highlight {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+        pre {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #b8d4e3;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+        pre code { background: transparent; border: none; padding: 0; color: #0d3b66; }
+        .section-container {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .section-container.usage {
+            background: linear-gradient(135deg, #f0e6ff 0%, #e6ccff 100%);
+            border-left-color: #9c27b0;
+        }
+        .section-container.parameters {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            border-left-color: #ff9800;
+        }
+        .section-container.output {
+            background: linear-gradient(135deg, #e6ffe6 0%, #ccffcc 100%);
+            border-left-color: #28a745;
+        }
+        .section-header {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            padding: 12px 20px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 8px 8px 0 0;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .section-header.usage { background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%); }
+        .section-header.parameters { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); }
+        .section-header.output { background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%); }
+        .section-intro {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%);
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .info {
+            background: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            border-radius: 4px;
+            padding: 14px 16px;
+            margin: 16px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
+            padding: 14px 16px;
+            margin: 16px 0;
+        }
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            border-radius: 4px;
+            padding: 14px 16px;
+            margin: 16px 0;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+        tr:nth-child(even) { background-color: #f0f7ff; }
+        tr:hover { background-color: #e3f2fd; }
+        td code {
+            background-color: #e8f4f8;
+            color: #0d3b66;
+            padding: 3px 8px;
+            border-radius: 3px;
+            border: 1px solid #b8d4e3;
+            font-family: 'Courier New', monospace;
+        }
+        .checklist label {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin: 8px 0;
+            cursor: pointer;
+        }
+        .checklist input[type="checkbox"] {
+            margin-top: 4px;
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+        .prompt-block {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            border: 1px solid #b8d4e3;
+            border-left: 4px solid #0066cc;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        .prompt-header {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            font-weight: bold;
+        }
+        .prompt-body {
+            padding: 16px;
+            background: #e8f4f8;
+            color: #0d3b66;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            margin: 0;
+            max-height: 420px;
+            overflow-y: auto;
+            border-top: 1px solid #b8d4e3;
+        }
+        .copy-button {
+            background-color: #ffffff;
+            color: #0066cc;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .copy-button:hover {
+            background-color: #e8f4f8;
+            transform: translateY(-1px);
+        }
+        .copy-button.copied {
+            background-color: #28a745;
+            color: white;
+        }
+        .meta {
+            color: #555;
+            font-size: 0.95em;
+            margin-bottom: 12px;
+        }
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            h1 { font-size: 1.8em; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Homepage Hero Slider — Conditions QA Checklist</h1>
+    <p class="meta">
+        Target: <code class="code-highlight">http://localhost:3000/</code> ·
+        Code: <code class="code-highlight">src/lib/hero/heroSliderMedia.ts</code>,
+        <code class="code-highlight">src/lib/hero/defaultHeroImages.ts</code>,
+        <code class="code-highlight">src/components/HeroSection.tsx</code> ·
+        Automated skeleton: <code class="code-highlight">tests/e2e/hero-slider-conditions.spec.ts</code>
+    </p>
+
+    <div class="toc">
+        <h2>Table of Contents</h2>
+        <ol>
+            <li><a href="#goal">Goal &amp; environment</a></li>
+            <li><a href="#pass">Pass conditions</a></li>
+            <li><a href="#fail">Fail conditions</a></li>
+            <li><a href="#plan">Test plan checklist</a></li>
+            <li><a href="#verdict">Verdict template</a></li>
+            <li><a href="#prompt">Copyable AI / agent prompt</a></li>
+            <li><a href="#playwright">Playwright skeleton</a></li>
+        </ol>
+    </div>
+
+    <div class="section-intro" id="goal">
+        <p>
+            Verify that every image shown in the homepage hero slider is eligible under the real product rules,
+            and that images failing any rule do <strong>not</strong> appear. Do not trust admin UI labels alone —
+            cross-check against API data and the browser console log
+            <code class="code-highlight">[HeroSection] Image rotation initialized:</code>.
+        </p>
+    </div>
+
+    <div class="section-container parameters">
+        <div class="section-header parameters">Environment</div>
+        <ul>
+            <li>Frontend: <code class="code-highlight">http://localhost:3000/</code></li>
+            <li>Backend: <code class="code-highlight">http://localhost:8080</code></li>
+            <li>Tenant: <code class="code-highlight">NEXT_PUBLIC_TENANT_ID</code> (e.g. <code class="code-highlight">mosc_malankara_orthodox_2</code>)</li>
+            <li>Before major scenarios: clear sessionStorage keys containing
+                <code class="code-highlight">homepage_hero_section_cache</code> and
+                <code class="code-highlight">homepage_tenant_settings_cache</code>, then hard refresh</li>
+        </ul>
+    </div>
+
+    <h2 id="pass">Pass conditions (image SHOULD appear)</h2>
+
+    <div class="section-container usage">
+        <div class="section-header usage">Event media (Admin → Media)</div>
+        <p>All of the following must be true:</p>
+        <ol>
+            <li><code class="code-highlight">displayEventHeroImages === true</code> in tenant settings (default true)</li>
+            <li><code class="code-highlight">isHeroImage === true</code> <strong>OR</strong> <code class="code-highlight">isHomePageHeroImage === true</code></li>
+            <li><code class="code-highlight">startDisplayingFromDate</code> empty/null <strong>OR</strong> ≤ today (local date)</li>
+            <li><code class="code-highlight">eventId</code> is set (standalone media excluded)</li>
+            <li>Linked event is upcoming/ongoing for the same tenant
+                (endDate ≥ today, or startDate ≥ today; recurring uses next occurrence)</li>
+            <li>Usable non-expired <code class="code-highlight">preSignedUrl</code> or stable <code class="code-highlight">fileUrl</code></li>
+            <li>Within displayOrder sort and first <strong>24</strong> slides (<code class="code-highlight">HERO_SLIDER_CAP</code>)</li>
+        </ol>
+    </div>
+
+    <div class="section-container usage">
+        <div class="section-header usage">Tenant default slides (Homepage Hero tab)</div>
+        <ol>
+            <li><code class="code-highlight">defaultHeroIncludeWithEvents === true</code> (default true)</li>
+            <li>URL protocol is <code class="code-highlight">https://</code></li>
+            <li>Slide <code class="code-highlight">active: true</code> in JSON (homepage does <strong>not</strong> use admin “random 3 when none active”)</li>
+            <li>Within <code class="code-highlight">defaultHeroMaxDisplayCount</code> (1–6)</li>
+            <li>Mode applied: <code class="code-highlight">slideshow</code> | <code class="code-highlight">random</code> | <code class="code-highlight">single</code></li>
+        </ol>
+        <div class="info">
+            <strong>Merge order:</strong> eligible event heroes first, then active tenant defaults.
+            Fallback <code class="code-highlight">/images/hero_section/default_cloud_hero_image_1.webp</code>
+            (<code class="code-highlight">HERO_FALLBACK_NO_EVENTS_IMAGE</code> in HeroSection) only when both sources are empty.
+            Admin preview helpers may use a different bundled emergency path — homepage production merge uses the HeroSection fallback above.
+        </div>
+    </div>
+
+    <h2 id="fail">Fail conditions (MUST NOT appear)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Scenario</th>
+                <th>Expected</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>F1</td><td>Neither hero checkbox set</td><td>Excluded</td></tr>
+            <tr><td>F2</td><td><code>startDisplayingFromDate</code> in the future</td><td>Excluded</td></tr>
+            <tr><td>F3</td><td><code>eventId</code> null (standalone)</td><td>Excluded</td></tr>
+            <tr><td>F4</td><td>Past linked event</td><td>Excluded</td></tr>
+            <tr><td>F5</td><td>Wrong tenant</td><td>Excluded</td></tr>
+            <tr><td>F6</td><td>Empty / expired URL only</td><td>Excluded</td></tr>
+            <tr><td>F7</td><td><code>displayEventHeroImages === false</code></td><td>No event heroes</td></tr>
+            <tr><td>F8</td><td>Tenant slide inactive</td><td>Not on homepage</td></tr>
+            <tr><td>F9</td><td>Tenant URL is http (not https)</td><td>Rejected</td></tr>
+            <tr><td>F10</td><td><code>defaultHeroIncludeWithEvents === false</code></td><td>Tenant slides omitted</td></tr>
+            <tr><td>F11</td><td>Beyond maxDisplayCount</td><td>Extra actives omitted</td></tr>
+            <tr><td>F12</td><td>Beyond top 24 by displayOrder</td><td>Extra event heroes omitted</td></tr>
+        </tbody>
+    </table>
+
+    <h2 id="plan">Test plan checklist</h2>
+
+    <div class="section-container">
+        <div class="section-header">Phase A — Live inventory</div>
+        <div class="checklist">
+            <label><input type="checkbox"> Cleared hero/tenant sessionStorage and hard-refreshed homepage</label>
+            <label><input type="checkbox"> Captured console <code class="code-highlight">[HeroSection] Image rotation initialized:</code> counts</label>
+            <label><input type="checkbox"> Listed media via <code class="code-highlight">isHeroImage.equals=true</code> and <code class="code-highlight">isHomePageHeroImage.equals=true</code></label>
+            <label><input type="checkbox"> Listed tenant settings hero JSON / flags</label>
+            <label><input type="checkbox"> Marked each flagged media ELIGIBLE vs EXCLUDED with reason</label>
+            <label><input type="checkbox"> Built expected URL list (events then tenant defaults)</label>
+            <label><input type="checkbox"> Compared expected vs actual hero slides — exact match</label>
+        </div>
+    </div>
+
+    <div class="section-container">
+        <div class="section-header">Phase B — Event hero matrix</div>
+        <div class="checklist">
+            <label><input type="checkbox"> E1 Upcoming + both flags + display date ok + URL → appears</label>
+            <label><input type="checkbox"> E2 Only <code class="code-highlight">isHeroImage</code> → appears</label>
+            <label><input type="checkbox"> E3 Only <code class="code-highlight">isHomePageHeroImage</code> → appears</label>
+            <label><input type="checkbox"> E4 Both flags off → absent</label>
+            <label><input type="checkbox"> E5 Future display date → absent</label>
+            <label><input type="checkbox"> E6 Past event → absent</label>
+            <label><input type="checkbox"> E7 Standalone media → absent</label>
+            <label><input type="checkbox"> E8 Bad/expired URL → absent</label>
+            <label><input type="checkbox"> E9 displayOrder preserved (lower first)</label>
+            <label><input type="checkbox"> E10 <code class="code-highlight">displayEventHeroImages=false</code> → no event heroes</label>
+        </div>
+    </div>
+
+    <div class="section-container">
+        <div class="section-header">Phase C — Tenant defaults matrix</div>
+        <div class="checklist">
+            <label><input type="checkbox"> T1 3 active https, max=3, include=true, no events → those 3</label>
+            <label><input type="checkbox"> T2 maxDisplayCount=1 with 3 active → first only</label>
+            <label><input type="checkbox"> T3 all inactive → fallback / no tenant slides (not admin random-3)</label>
+            <label><input type="checkbox"> T4 include=false with event heroes → events only</label>
+            <label><input type="checkbox"> T5 include=true with both → events then tenants</label>
+            <label><input type="checkbox"> T6 mode=single → one tenant slide</label>
+            <label><input type="checkbox"> T7 mode=random → one slide from active set</label>
+        </div>
+    </div>
+
+    <div class="section-container">
+        <div class="section-header">Phase D — Loading / fallback UX</div>
+        <div class="checklist">
+            <label><input type="checkbox"> Empty sources → only fallback after init</label>
+            <label><input type="checkbox"> While loading with real slides pending → spinner/dark frame, no fallback flash</label>
+            <label><input type="checkbox"> Cached reload → no false fallback flash before real/cached slides</label>
+        </div>
+    </div>
+
+    <div class="section-container output" id="verdict">
+        <div class="section-header output">Verdict template</div>
+        <pre>PASS / FAIL
+Eligible event slides expected: N | actual: N
+Tenant default slides expected: M | actual: M
+Unexpected images: [list]
+Missing images: [list]
+Failed conditions: [E#/T#/F# ...]
+Notes:</pre>
+        <div class="warning">
+            <strong>Critical:</strong> If any visible hero image cannot be proven to pass every applicable condition, mark <strong>FAIL</strong>.
+        </div>
+    </div>
+
+    <h2 id="prompt">Copyable AI / agent prompt</h2>
+    <div class="prompt-block">
+        <div class="prompt-header">
+            <span>Full hero-slider conditions test prompt</span>
+            <button type="button" class="copy-button" onclick="copyPrompt(this, 'hero-qa-prompt')" title="Copy prompt to clipboard" aria-label="Copy prompt to clipboard">📋 Copy</button>
+        </div>
+        <pre class="prompt-body" id="hero-qa-prompt">Goal: Verify that every image shown in the hero slider on http://localhost:3000/ is there only because it passed the real eligibility rules, and that images that fail any rule do NOT appear. Validate against data + console, not UI labels alone.
+
+Environment
+- Frontend: http://localhost:3000/
+- Backend API: http://localhost:8080
+- Tenant: NEXT_PUBLIC_TENANT_ID from .env.local
+- Clear sessionStorage keys containing homepage_hero_section_cache and homepage_tenant_settings_cache; hard refresh before major scenarios
+
+Source of truth
+- src/lib/hero/heroSliderMedia.ts
+- src/lib/hero/defaultHeroImages.ts
+- src/components/HeroSection.tsx
+- Checklist: documentation/default_hero_images_rotation/HERO_SLIDER_CONDITIONS_QA_CHECKLIST.html
+- Playwright skeleton: tests/e2e/hero-slider-conditions.spec.ts
+
+Pass — event media (ALL must be true)
+1) displayEventHeroImages === true
+2) isHeroImage OR isHomePageHeroImage
+3) startDisplayingFromDate empty/null OR &lt;= today
+4) eventId set (no standalone)
+5) linked event upcoming/ongoing for same tenant
+6) usable non-expired URL
+7) within displayOrder sort and first 24 slides
+
+Pass — tenant defaults
+1) defaultHeroIncludeWithEvents === true
+2) https:// URL
+3) active: true
+4) within defaultHeroMaxDisplayCount
+5) mode slideshow|random|single applied
+Merge: events first, then tenant defaults. Fallback only if both empty.
+
+Fail must-not-appear cases: F1–F12 in the checklist HTML (flags off, future display date, standalone, past event, wrong tenant, bad URL, displayEventHeroImages false, inactive tenant slide, http URL, include false, maxDisplayCount, &gt;24).
+
+Execute
+Phase A: inventory console counts + API medias + tenant settings; build expected URL list; compare to DOM.
+Phase B: event matrix E1–E10.
+Phase C: tenant matrix T1–T7.
+Phase D: loading/fallback UX (no fallback flash when real slides exist).
+
+Evidence: screenshot, console initialized log, per-image mediaId/eventId or tenant-default proof.
+
+Final verdict:
+PASS / FAIL
+Eligible event slides expected: N | actual: N
+Tenant default slides expected: M | actual: M
+Unexpected images: [...]
+Missing images: [...]
+Failed conditions: [...]
+Notes:
+
+Critical: if any visible image cannot be proven to pass every applicable condition, mark FAIL.</pre>
+    </div>
+
+    <h2 id="playwright">Playwright skeleton</h2>
+    <div class="section-container">
+        <div class="section-header">How to run</div>
+        <p>Install browser once, then run the skeleton (requires Playwright browsers):</p>
+        <pre>npm run test:install-playwright
+npx playwright test tests/e2e/hero-slider-conditions.spec.ts --config=tests/e2e/playwright.config.ts</pre>
+        <div class="success">
+            The scaffold audits live homepage slides against eligibility helpers and fails if an unexpected URL appears.
+            Expand fixture matrices for F1–F12 / E1–E10 / T1–T7 as data setup becomes automatable.
+        </div>
+    </div>
+
+    <script>
+        function copyPrompt(button, elementId) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            const text = el.textContent || '';
+            const done = () => {
+                button.classList.add('copied');
+                button.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.textContent = '📋 Copy';
+                }, 2000);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, button));
+            } else {
+                fallbackCopy(text, button);
+            }
+        }
+        function fallbackCopy(text, button) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                button.classList.add('copied');
+                button.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.textContent = '📋 Copy';
+                }, 2000);
+            } finally {
+                document.body.removeChild(ta);
+            }
+        }
+    </script>
+</body>
+</html>

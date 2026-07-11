@@ -151,11 +151,18 @@ web.rest.{Entity}Resource</pre>
         <li>Criteria: <code>tenantId.equals</code>, <code>sort=displayOrder,asc</code></li>
     </ul>
 
-    <h3>4.5 ProfileMediaAsset</h3>
+    <h3>4.6 ProfileAudienceContact (v2 — Audience CRM)</h3>
     <ul>
-        <li><code>fileUrl</code> required</li>
-        <li><code>isDownloadable</code> default true; <code>requiresEmail</code> default false</li>
-        <li>Criteria: <code>tenantId.equals</code>, <code>sort=displayOrder,asc</code></li>
+        <li>Liquibase: <code>20260709120000_profile_audience_contact.xml</code></li>
+        <li>Unique constraint: <code>(tenant_id, email)</code></li>
+        <li><code>source</code>: SUBSCRIBE_FORM | CONTACT_FORM | CSV_IMPORT | GATED_DOWNLOAD | ADMIN_MANUAL</li>
+        <li><code>optInStatus</code>: OPTED_IN | OPTED_OUT | PENDING — never email OPTED_OUT</li>
+        <li>Generate <code>unsubscribeToken</code> on create; public GET <code>/unsubscribe?email=&amp;token=</code></li>
+        <li>POST <code>/bulk-import</code> — upsert by tenant + email</li>
+        <li>POST <code>/public/subscribe</code> — public capture (requires X-Tenant-ID)</li>
+        <li>Extend <code>PromotionEmailTemplateResource</code>: POST <code>/{id}/send-to-profile-audience</code></li>
+        <li>Extend <code>RecipientType</code>: <code>PROFILE_AUDIENCE</code></li>
+        <li>See <a href="personal_profile_audience_backend_api.html">audience backend API</a></li>
     </ul>
 
     <h2>5. REST API contract</h2>
@@ -173,6 +180,11 @@ web.rest.{Entity}Resource</pre>
             <tr><td><code>/api/profile-affiliations/{id}</code></td><td>GET, PATCH, DELETE</td><td></td></tr>
             <tr><td><code>/api/profile-media-assets</code></td><td>GET, POST</td><td></td></tr>
             <tr><td><code>/api/profile-media-assets/{id}</code></td><td>GET, PATCH, DELETE</td><td></td></tr>
+            <tr><td><code>/api/profile-audience-contacts</code></td><td>GET, POST</td><td>v2 Audience CRM</td></tr>
+            <tr><td><code>/api/profile-audience-contacts/{id}</code></td><td>GET, PATCH, DELETE</td><td></td></tr>
+            <tr><td><code>/api/profile-audience-contacts/bulk-import</code></td><td>POST</td><td>Upsert by tenant + email</td></tr>
+            <tr><td><code>/api/profile-audience-contacts/public/subscribe</code></td><td>POST</td><td>Public capture</td></tr>
+            <tr><td><code>/api/promotion-email-templates/{id}/send-to-profile-audience</code></td><td>POST</td><td>EMAIL_BATCH with PROFILE_AUDIENCE</td></tr>
             <tr><td><code>/api/tenant-organizations/{id}</code></td><td>PATCH</td><td>Include <code>siteType</code>, <code>siteTemplateVersion</code></td></tr>
             <tr><td><code>/api/tenant-settings</code></td><td>GET, PATCH</td><td>Include six profile section flags</td></tr>
         </tbody>

@@ -84,7 +84,7 @@ export interface TenantSettingsDTO {
   defaultHeroDisplayMode?: 'slideshow' | 'random' | 'single';
   /** When true, append tenant default slides after upcoming event hero images */
   defaultHeroIncludeWithEvents?: boolean;
-  /** Max active slides shown on homepage rotation (1–6, default 6) */
+  /** Max active slides shown on homepage rotation (1–20, default 6) */
   defaultHeroMaxDisplayCount?: number;
   /** When true, show event hero images in the homepage hero section */
   displayEventHeroImages?: boolean;

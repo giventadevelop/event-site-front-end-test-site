@@ -99,6 +99,25 @@ Optional: `site_template_version` (varchar 32) — e.g. `profile-writer-v1`.
 | `is_downloadable` | boolean | Yes | Default true |
 | `requires_email` | boolean | No | Default false (future gate) |
 
+## `profile_audience_contact` (v2)
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `id` | bigint | Yes | PK; sequence `profile_audience_contact_id_seq` |
+| `tenant_id` | varchar(255) | Yes | FK → `tenant_organization` |
+| `public_profile_id` | bigint | Yes | FK → `public_profile` |
+| `email` | varchar(255) | Yes | Unique per tenant with `tenant_id` |
+| `first_name` | varchar(255) | No | |
+| `last_name` | varchar(255) | No | |
+| `source` | varchar(32) | Yes | `SUBSCRIBE_FORM`, `CONTACT_FORM`, `CSV_IMPORT`, `GATED_DOWNLOAD`, `ADMIN_MANUAL` |
+| `opt_in_status` | varchar(32) | Yes | Default `OPTED_IN`; `OPTED_OUT`, `PENDING` |
+| `unsubscribe_token` | varchar(64) | No | Per-contact token for bulk email unsubscribe |
+| `notes` | varchar(500) | No | Admin or contact-form message |
+| `created_at` | timestamptz | Yes | |
+| `updated_at` | timestamptz | Yes | |
+
+**Separation rule:** Do not conflate with `user_profile.is_email_subscribed` — profile audience is a separate list with its own opt-in and unsubscribe token.
+
 ## `tenant_settings` profile section flags
 
 | Flag | Default (EVENT_ORG) | Default (PERSONAL_PROFILE preset) |

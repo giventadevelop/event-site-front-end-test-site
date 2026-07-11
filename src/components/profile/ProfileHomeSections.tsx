@@ -207,7 +207,47 @@ export function ProfileContactSection({ profile }: { profile: PublicProfileDTO }
     { label: 'YouTube', url: profile.youtubeUrl },
   ].filter((s) => s.url?.trim());
 
-  if (!profile.contactEmail && socials.length === 0) return null;
+  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [feedbackError, setFeedbackError] = useState(false);
+
+  const showSubscribe = profile.isPublished !== false;
+  const showContactForm = profile.contactFormEnabled === true;
+
+  if (!profile.contactEmail && socials.length === 0 && !showSubscribe) return null;
+
+  async function submitAudience(payload: { email: string; firstName?: string; lastName?: string; message?: string }) {
+    setSubmitting(true);
+    setFeedback(null);
+    setFeedbackError(false);
+    try {
+      const res = await fetch('/api/public/profile-subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        setFeedback(text || 'Something went wrong. Please try again.');
+        setFeedbackError(true);
+        return;
+      }
+      setFeedback(showContactForm && payload.message ? 'Message sent. Thank you!' : 'You are subscribed. Thank you!');
+      setEmail('');
+      setFirstName('');
+      setLastName('');
+      setMessage('');
+    } catch {
+      setFeedback('Network error. Please try again.');
+      setFeedbackError(true);
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <section id="profile-contact" className="py-16 bg-card">
@@ -218,13 +258,80 @@ export function ProfileContactSection({ profile }: { profile: PublicProfileDTO }
             <a href={`mailto:${profile.contactEmail}`} className="text-primary hover:underline">{profile.contactEmail}</a>
           </p>
         )}
-        <div className="flex flex-wrap justify-center gap-4">
+        <div className="flex flex-wrap justify-center gap-4 mb-8">
           {socials.map((s) => (
             <a key={s.label} href={s.url!} target="_blank" rel="noopener noreferrer" className="text-primary font-semibold hover:underline">
               {s.label}
             </a>
           ))}
         </div>
+
+        {showSubscribe && (
+          <div className="text-left max-w-md mx-auto bg-muted/50 rounded-xl p-6 border border-border/30">
+            <h3 className="font-heading font-semibold text-lg mb-3 text-center">
+              {showContactForm ? 'Send a message' : 'Subscribe to updates'}
+            </h3>
+            <form
+              className="space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!email.trim()) return;
+                submitAudience({
+                  email: email.trim(),
+                  firstName: firstName.trim() || undefined,
+                  lastName: lastName.trim() || undefined,
+                  message: showContactForm ? message.trim() || undefined : undefined,
+                });
+              }}
+            >
+              <input
+                type="email"
+                required
+                placeholder="Email *"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full border border-gray-400 rounded-xl px-4 py-3 text-base"
+              />
+              {(showContactForm || firstName || lastName) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    placeholder="First name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="w-full border border-gray-400 rounded-xl px-4 py-3 text-base"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Last name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="w-full border border-gray-400 rounded-xl px-4 py-3 text-base"
+                  />
+                </div>
+              )}
+              {showContactForm && (
+                <textarea
+                  placeholder="Your message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={4}
+                  className="w-full border border-gray-400 rounded-xl px-4 py-3 text-base"
+                />
+              )}
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold disabled:opacity-50"
+              >
+                {submitting ? 'Sending…' : showContactForm ? 'Send message' : 'Subscribe'}
+              </button>
+            </form>
+            {feedback && (
+              <p className={`mt-3 text-sm text-center ${feedbackError ? 'text-destructive' : 'text-success'}`}>{feedback}</p>
+            )}
+          </div>
+        )}
       </HomeSectionRail>
     </section>
   );

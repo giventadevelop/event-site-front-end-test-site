@@ -14,6 +14,55 @@ function getApiBase() {
   return getApiBaseUrl();
 }
 
+/** Backend ignores null/empty on merge-patch for these fields; use PUT with "". */
+function normalizeClearableString(value: string | null | undefined): string {
+  if (value == null) return '';
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : '';
+}
+
+function buildNewsletterTemplatePutPayload(
+  id: number,
+  existing: PromotionEmailTemplateDTO,
+  formData: Partial<PromotionEmailTemplateFormDTO>
+): Record<string, unknown> {
+  const hasEventId =
+    formData.eventId !== undefined
+      ? formData.eventId != null && formData.eventId > 0
+      : existing.eventId != null && existing.eventId > 0;
+
+  const payload: Record<string, unknown> = withTenantId({
+    ...existing,
+    ...formData,
+    id,
+    updatedAt: new Date().toISOString(),
+    templateType: formData.templateType || existing.templateType || 'NEWS_LETTER',
+    eventId: hasEventId
+      ? (formData.eventId !== undefined ? formData.eventId : existing.eventId)
+      : null,
+    fromEmail:
+      formData.fromEmail !== undefined
+        ? formData.fromEmail
+        : existing.fromEmail,
+  });
+
+  if (formData.footerHtml !== undefined) {
+    payload.footerHtml = normalizeClearableString(formData.footerHtml);
+  }
+  if (formData.headerImageUrl !== undefined) {
+    payload.headerImageUrl = normalizeClearableString(formData.headerImageUrl);
+  }
+  if (formData.footerImageUrl !== undefined) {
+    payload.footerImageUrl = normalizeClearableString(formData.footerImageUrl);
+  }
+
+  delete payload.event;
+  delete payload.discountCode;
+  delete payload.createdBy;
+
+  return payload;
+}
+
 /**
  * Fetch newsletter email templates with optional filtering
  */
@@ -127,7 +176,7 @@ export async function createNewsletterEmailTemplateServer(
     subject: formData.subject,
     fromEmail: formData.fromEmail.trim(),
     bodyHtml: formData.bodyHtml,
-    footerHtml: null,
+    footerHtml: formData.footerHtml?.trim() ? formData.footerHtml : null,
     headerImageUrl: formData.headerImageUrl || '',
     footerImageUrl: formData.footerImageUrl || '',
     discountCodeId: formData.discountCodeId,
@@ -159,29 +208,30 @@ export async function updateNewsletterEmailTemplateServer(
   id: number,
   formData: Partial<PromotionEmailTemplateFormDTO>
 ): Promise<PromotionEmailTemplateDTO> {
-  const baseUrl = await getAppUrlFromRequestHeaders();
-  // Use the same backend resource as promotional emails
-  const url = `${baseUrl}/api/proxy/promotion-email-templates/${id}`;
+  const apiBase = getApiBaseUrl();
+  const getUrl = `${apiBase}/api/promotion-email-templates/${id}`;
 
-  const now = new Date().toISOString();
-  const payload = withTenantId({
-    ...formData,
-    id,
-    updatedAt: now,
-    // Ensure templateType is always present for newsletter templates
-    templateType: formData.templateType || 'NEWS_LETTER',
-    // Always send eventId as null for newsletter templates (not event-scoped)
-    eventId: formData.eventId ?? null,
-    ...(formData.fromEmail !== undefined && { fromEmail: formData.fromEmail }),
-    footerHtml: null,
-  });
+  const getResponse = await fetchWithJwtRetry(getUrl, { cache: 'no-store' });
+  if (!getResponse.ok) {
+    const errorBody = await getResponse.text();
+    console.error(
+      `[Server] Error loading newsletter email template ${id} before update: ${getResponse.status}`,
+      errorBody
+    );
+    throw new Error(`Failed to load newsletter email template before update. Status: ${getResponse.status}`);
+  }
+
+  const existing = (await getResponse.json()) as PromotionEmailTemplateDTO;
+  const payload = buildNewsletterTemplatePutPayload(id, existing, formData);
 
   if (!payload.tenantId) throw new Error('tenantId missing from payload');
 
-  const response = await fetch(url, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/merge-patch+json' },
+  // Backend merge-patch ignores clearing headerImageUrl/footerImageUrl/footerHtml; PUT with "" works.
+  const response = await fetchWithJwtRetry(getUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+    cache: 'no-store',
   });
 
   if (!response.ok) {
@@ -303,116 +353,129 @@ export async function sendBulkNewsletterEmailToSubscribedMembersServer(
   return await response.json();
 }
 
-/**
- * Upload newsletter email header image (client-side function)
- */
-export async function uploadNewsletterEmailHeaderImageClient(
-  eventId: number | null | undefined,
-  newsletterId: number,
-  file: File,
-  title?: string,
-  description?: string
-): Promise<{ url: string; mediaId: number }> {
-  const baseUrl = await getAppUrlFromRequestHeaders();
-  const formData = new FormData();
-  formData.append('file', file);
-
-  const hasEvent = eventId != null && eventId > 0;
-  let url: string;
-
-  if (hasEvent) {
-    const queryParams = new URLSearchParams({
-      eventId: String(eventId),
-      tenantId: getTenantId(),
-      title: title || 'Newsletter Email Header Image',
-      description: description || 'Newsletter email header image',
-      isPublic: 'true',
-    });
-    url = `${baseUrl}/api/proxy/event-medias/upload/email-header-image?${queryParams.toString()}`;
-  } else {
-    // Newsletter templates without an event: use tenant-scoped email header upload (S3 URL only)
-    url = `${baseUrl}/api/proxy/tenant-settings/upload/email-header-image`;
-  }
-
-  const response = await fetch(url, {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    console.error(`[Client] Error uploading newsletter header image: ${response.status} ${response.statusText}`, errorBody);
-    throw new Error(`Failed to upload newsletter header image. Status: ${response.status}`);
-  }
-
-  const result = await response.json();
-  if (hasEvent) {
-    return {
-      url: result.fileUrl || result.url || result.mediaUrl || '',
-      mediaId: result.id || 0,
-    };
-  }
-
+function parseUploadedImageResult(result: Record<string, unknown>): { url: string; mediaId: number } {
+  const url = String(
+    result.fileUrl ||
+      result.url ||
+      result.mediaUrl ||
+      result.emailFooterImageUrl ||
+      result.emailHeaderImageUrl ||
+      ''
+  );
   return {
-    url: result.emailHeaderImageUrl || result.url || result.mediaUrl || '',
-    mediaId: 0,
+    url,
+    mediaId: Number(result.id || 0),
   };
 }
 
-/**
- * Upload newsletter email footer image (client-side function)
- */
-export async function uploadNewsletterEmailFooterImageClient(
-  eventId: number | null | undefined,
-  newsletterId: number,
+async function postNewsletterImageUpload(
+  uploadUrl: string,
   file: File,
-  title?: string,
-  description?: string
+  errorLabel: string
 ): Promise<{ url: string; mediaId: number }> {
-  const baseUrl = await getAppUrlFromRequestHeaders();
   const formData = new FormData();
   formData.append('file', file);
 
-  const hasEvent = eventId != null && eventId > 0;
-  let url: string;
-
-  if (hasEvent) {
-    // Store image on the linked event; promotional footer API does not support NEWS_LETTER templates
-    const queryParams = new URLSearchParams({
-      eventId: String(eventId),
-      tenantId: getTenantId(),
-      title: title || 'Newsletter Email Footer Image',
-      description: description || 'Newsletter email footer image',
-      isPublic: 'true',
-    });
-    url = `${baseUrl}/api/proxy/event-medias/upload/email-header-image?${queryParams.toString()}`;
-  } else {
-    // Newsletter templates without an event: tenant-scoped upload returns an S3 URL for the template
-    url = `${baseUrl}/api/proxy/tenant-settings/upload/email-header-image`;
-  }
-
-  const response = await fetch(url, {
+  const response = await fetch(uploadUrl, {
     method: 'POST',
     body: formData,
   });
 
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error(`[Client] Error uploading newsletter footer image: ${response.status} ${response.statusText}`, errorBody);
-    throw new Error(`Failed to upload newsletter footer image. Status: ${response.status}`);
+    console.error(`[Client] Error uploading ${errorLabel}: ${response.status} ${response.statusText}`, errorBody);
+    throw new Error(`Failed to upload ${errorLabel}. Status: ${response.status}`);
   }
 
-  const result = await response.json();
+  const result = (await response.json()) as Record<string, unknown>;
+  return parseUploadedImageResult(result);
+}
+
+/**
+ * Upload newsletter email header image (server action invoked from client)
+ */
+export async function uploadNewsletterEmailHeaderImageClient(
+  eventId: number | null | undefined,
+  _newsletterId: number,
+  file: File,
+  title?: string,
+  description?: string
+): Promise<{ url: string; mediaId: number }> {
+  const baseUrl = await getAppUrlFromRequestHeaders();
+  const hasEvent = eventId != null && eventId > 0;
+  const imageTitle = title || 'Newsletter Email Header Image';
+  const imageDescription = description || 'Newsletter email header image';
+
+  const queryParams = new URLSearchParams({
+    tenantId: getTenantId(),
+    title: imageTitle,
+    description: imageDescription,
+    isPublic: 'true',
+  });
+
+  const uploadPath = hasEvent
+    ? 'email-header-image'
+    : 'newsletter-email-image';
+
   if (hasEvent) {
-    return {
-      url: result.fileUrl || result.url || result.mediaUrl || '',
-      mediaId: result.id || 0,
-    };
+    queryParams.set('eventId', String(eventId));
   }
 
-  return {
-    url: result.emailHeaderImageUrl || result.url || result.mediaUrl || '',
-    mediaId: 0,
-  };
+  const url = `${baseUrl}/api/proxy/event-medias/upload/${uploadPath}?${queryParams.toString()}`;
+  return postNewsletterImageUpload(url, file, 'newsletter header image');
+}
+
+/**
+ * Upload newsletter email footer image (server action invoked from client)
+ */
+export async function uploadNewsletterEmailFooterImageClient(
+  eventId: number | null | undefined,
+  _newsletterId: number,
+  file: File,
+  title?: string,
+  description?: string
+): Promise<{ url: string; mediaId: number }> {
+  const baseUrl = await getAppUrlFromRequestHeaders();
+  const hasEvent = eventId != null && eventId > 0;
+  const imageTitle = title || 'Newsletter Email Footer Image';
+  const imageDescription = description || 'Newsletter email footer image';
+
+  const queryParams = new URLSearchParams({
+    tenantId: getTenantId(),
+    title: imageTitle,
+    description: imageDescription,
+    isPublic: 'true',
+  });
+
+  const uploadPath = hasEvent
+    ? 'email-header-image'
+    : 'newsletter-email-image';
+
+  if (hasEvent) {
+    queryParams.set('eventId', String(eventId));
+  }
+
+  const url = `${baseUrl}/api/proxy/event-medias/upload/${uploadPath}?${queryParams.toString()}`;
+  return postNewsletterImageUpload(url, file, 'newsletter footer image');
+}
+
+/**
+ * Upload newsletter email body image (embedded in body HTML only — does not set headerImageUrl)
+ */
+export async function uploadNewsletterEmailBodyImageClient(
+  file: File,
+  title?: string,
+  description?: string
+): Promise<{ url: string; mediaId: number }> {
+  const baseUrl = await getAppUrlFromRequestHeaders();
+  const queryParams = new URLSearchParams({
+    tenantId: getTenantId(),
+    title: title || 'Newsletter Email Body Image',
+    description: description || 'Newsletter email body image',
+    isPublic: 'true',
+  });
+
+  const url = `${baseUrl}/api/proxy/event-medias/upload/newsletter-email-image?${queryParams.toString()}`;
+  return postNewsletterImageUpload(url, file, 'newsletter body image');
 }
 

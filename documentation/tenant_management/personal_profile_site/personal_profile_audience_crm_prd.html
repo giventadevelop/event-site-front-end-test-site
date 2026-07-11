@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Audience CRM v2 — Index</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
+        h1 { font-size: 2.1em; border-bottom: 3px solid #0066cc; padding-bottom: 12px; margin-bottom: 8px; }
+        h2 { font-size: 1.55em; border-left: 4px solid #0066cc; padding-left: 14px; margin-top: 32px; margin-bottom: 14px; }
+        .doc-meta { color: #555; font-size: 0.95em; margin-bottom: 20px; }
+        .doc-meta a { color: #0066cc; font-weight: 600; }
+        p, li { margin-bottom: 10px; }
+        ul { margin: 10px 0 14px 24px; }
+        .lead { background: linear-gradient(135deg, #e8f4f8 0%, #d1e7f0 100%); border-left: 4px solid #0066cc; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+        .layer-cards { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 20px 0; }
+        @media (min-width: 640px) { .layer-cards { grid-template-columns: 1fr 1fr; } }
+        .layer-card { background: #fff; border: 2px solid #b8d4e3; border-radius: 8px; padding: 16px; }
+        .layer-card h3 { margin-top: 0; color: #0052a3; }
+        table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.92em; }
+        thead th { background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: #fff; text-align: left; padding: 12px 14px; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #e0e8f0; vertical-align: top; }
+        code { background: #e8f4f8; color: #0d3b66; padding: 2px 7px; border-radius: 3px; border: 1px solid #b8d4e3; font-family: Consolas, monospace; font-size: 0.88em; }
+        .warning-box { background: #fff8e6; border: 2px solid #f0c040; border-radius: 8px; padding: 14px 18px; margin: 18px 0; }
+    </style>
+</head>
+<body>
+    <h1>Profile Audience CRM v2 — Index</h1>
+    <p class="doc-meta">
+        <strong>Version:</strong> 2.0 &nbsp;|&nbsp; <strong>Date:</strong> July 2026 &nbsp;|&nbsp; <strong>Status:</strong> Implemented (Loops 6–9)<br>
+        <strong>Parent:</strong> <a href="personal_profile_site_prd.html">Personal Profile Site PRD</a> &nbsp;|&nbsp;
+        <strong>Loops:</strong> <a href="personal_profile_iterative_loops.html">Iterative loops 6–9</a>
+    </p>
+    <div class="lead">
+        <p>Personal-profile tenants can <strong>capture</strong>, <strong>import</strong>, and <strong>bulk email</strong> an audience scoped to their <code>public_profile</code>. Data lives in a single table <code>profile_audience_contact</code> — separate from tenant-wide <code>user_profile.is_email_subscribed</code> members.</p>
+        <p><strong>Admin UI:</strong> <code>/admin/profile-site</code> → <strong>Audience</strong> tab in both <code>mosc-temp</code> and <code>event-site-manager</code>. <strong>Public capture:</strong> mosc-temp only.</p>
+    </div>
+    <div class="layer-cards">
+        <div class="layer-card"><h3><a href="migrations/002_profile_audience_contact.sql">Migration 002</a></h3><p>DDL + sequence for <code>profile_audience_contact</code>.</p></div>
+        <div class="layer-card"><h3><a href="personal_profile_audience_backend_api.html">Backend API</a></h3><p>REST contract: CRUD, bulk-import, public subscribe, send.</p></div>
+        <div class="layer-card"><h3><a href="personal_profile_audience_frontend.html">Frontend</a></h3><p>Admin Audience tab, proxies, public forms.</p></div>
+        <div class="layer-card"><h3><a href="backend_event_site_manager_service_prd.html">Service PRD</a></h3><p>Entity, Liquibase, <code>send-to-profile-audience</code>.</p></div>
+        <div class="layer-card"><h3><a href="backend_event_site_manager_batch_jobs_prd.html">Batch jobs PRD</a></h3><p><code>RecipientType.PROFILE_AUDIENCE</code> in email batch.</p></div>
+        <div class="layer-card"><h3><a href="profile_audience_crm_prd.txt">Plain-text PRD</a></h3><p>For <code>node scripts/dev.js parse-prd</code>.</p></div>
+    </div>
+    <h2>Goals</h2>
+    <ul>
+        <li>Capture emails from subscribe form, contact form (when enabled), CSV import, and admin manual entry</li>
+        <li>Send newsletter/promotion templates to opted-in profile audience only</li>
+        <li>Per-contact unsubscribe token — never merge with member subscription flags</li>
+    </ul>
+    <h2>Repository map</h2>
+    <table>
+        <thead><tr><th>Repo</th><th>Responsibility</th></tr></thead>
+        <tbody>
+            <tr><td><code>event-site-manager-service</code></td><td>Liquibase, JPA, REST, <code>send-to-profile-audience</code></td></tr>
+            <tr><td><code>event-site-manager-batch-jobs</code></td><td><code>EmailBatchReader</code> resolves <code>PROFILE_AUDIENCE</code> emails</td></tr>
+            <tr><td><code>mosc-temp</code></td><td>Admin Audience tab, public subscribe/contact forms, proxies</td></tr>
+            <tr><td><code>event-site-manager</code></td><td>Multi-tenant admin Audience tab (parity)</td></tr>
+        </tbody>
+    </table>
+    <h2>Build order (Loops 6–9)</h2>
+    <table>
+        <thead><tr><th>Loop</th><th>Scope</th></tr></thead>
+        <tbody>
+            <tr><td><strong>6</strong></td><td>Schema + backend CRUD + bulk-import + public subscribe/unsubscribe</td></tr>
+            <tr><td><strong>7</strong></td><td>Admin Audience tab + proxies in both Next.js apps</td></tr>
+            <tr><td><strong>8</strong></td><td>Public subscribe + contact form in <code>ProfileHomeSections</code></td></tr>
+            <tr><td><strong>9</strong></td><td>Send endpoint + batch-jobs + <code>scripts/build-profile-audience-v2.ps1</code></td></tr>
+        </tbody>
+    </table>
+    <h2>Compliance</h2>
+    <ul>
+        <li>Include unsubscribe link (token per contact) in every profile-audience bulk email</li>
+        <li>Never email rows with <code>opt_in_status = OPTED_OUT</code></li>
+        <li>CSV import: validate email; upsert on <code>(tenant_id, email)</code></li>
+        <li>Send requires tenant admin (existing layout admin check)</li>
+    </ul>
+    <h2>Out of scope (v2.0)</h2>
+    <ul>
+        <li>Named contact lists (<code>profile_contact_list</code>)</li>
+        <li>Double opt-in confirmation email</li>
+        <li>Merging with <code>user_profile</code> subscribers</li>
+        <li>WhatsApp bulk to profile audience</li>
+    </ul>
+    <div class="warning-box">
+        <p><strong>Build script:</strong> <code>scripts/build-profile-audience-v2.ps1</code> — compiles service → batch-jobs → lint both frontends.</p>
+    </div>
+</body>
+</html>

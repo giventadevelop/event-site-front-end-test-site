@@ -28,10 +28,11 @@ import {
   deleteProfileMediaAssetServer,
   applySiteTypePresetsForTenant,
 } from '@/app/admin/profile-site/ApiServerActions';
+import ProfileAudiencePanel from '@/app/admin/profile-site/ProfileAudiencePanel';
 import { getTenantId } from '@/lib/env';
 import { ensureProfileWritingSlug } from '@/lib/profileSlug';
 
-type Tab = 'profile' | 'writings' | 'achievements' | 'affiliations' | 'downloads' | 'presets';
+type Tab = 'profile' | 'writings' | 'achievements' | 'affiliations' | 'downloads' | 'audience' | 'presets';
 
 interface Props {
   initialProfile: PublicProfileDTO | null;
@@ -65,6 +66,7 @@ export default function ProfileSiteAdminClient({
     { id: 'achievements', label: 'Achievements' },
     { id: 'affiliations', label: 'Affiliations' },
     { id: 'downloads', label: 'Downloads' },
+    { id: 'audience', label: 'Audience' },
     { id: 'presets', label: 'Site presets' },
   ];
 
@@ -86,6 +88,7 @@ export default function ProfileSiteAdminClient({
       languages: profile.languages ?? '',
       publicSlug: profile.publicSlug ?? '',
       contactEmail: profile.contactEmail ?? '',
+      contactFormEnabled: profile.contactFormEnabled ?? false,
       contactFormEnabled: profile.contactFormEnabled ?? false,
       linkedinUrl: profile.linkedinUrl ?? '',
       twitterUrl: profile.twitterUrl ?? '',
@@ -164,6 +167,14 @@ export default function ProfileSiteAdminClient({
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
+              checked={profile.contactFormEnabled ?? false}
+              onChange={(e) => setProfile((p) => ({ ...p, contactFormEnabled: e.target.checked }))}
+            />
+            <span className="text-sm font-medium">Enable contact form on public site</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
               checked={profile.isPublished ?? false}
               onChange={(e) => setProfile((p) => ({ ...p, isPublished: e.target.checked }))}
             />
@@ -186,6 +197,9 @@ export default function ProfileSiteAdminClient({
       )}
       {tab === 'downloads' && (
         <DownloadsAdmin items={assets} setItems={setAssets} setMessage={setMessage} />
+      )}
+      {tab === 'audience' && (
+        <ProfileAudiencePanel setMessage={setMessage} />
       )}
       {tab === 'presets' && (
         <div className="bg-white rounded-lg shadow-md p-6">

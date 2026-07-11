@@ -1,0 +1,60 @@
+# Profile Audience CRM v2 — Task Master PRD
+
+## Overview
+Add profile-scoped audience capture, CSV import, and bulk email for PERSONAL_PROFILE tenants. Single table profile_audience_contact per tenant. Admin UI in mosc-temp and event-site-manager. Public capture in mosc-temp only.
+
+## Dependencies
+- Personal profile v1 (public_profile tables and REST) must exist.
+
+## Loop 6 — Schema and Backend CRUD
+Priority: high
+Repository: event-site-manager-service
+
+1. Create Liquibase changelog 20260709120000_profile_audience_contact.xml from migrations/002_profile_audience_contact.sql
+2. Add ProfileAudienceContact JPA entity, repository, DTO, mapper, criteria, query service, service impl
+3. Add ProfileAudienceContactResource with GET/POST/PATCH/DELETE and criteria filters
+4. Add POST /api/profile-audience-contacts/bulk-import (JSON array upsert on tenant_id+email)
+5. Add POST /api/profile-audience-contacts/public/subscribe (public, X-Tenant-ID)
+6. Add GET /api/profile-audience-contacts/unsubscribe?email=&token=
+7. Sync Latest_Schema_Post__Blob_Claude_12.sql in mosc-temp
+
+## Loop 7 — Admin UI Both Apps
+Priority: high
+Depends on: Loop 6
+
+1. Add ProfileAudienceContactDTO to mosc-temp src/types/profileSite.ts and event-site-manager types
+2. Add proxy routes profile-audience-contacts in both Next apps
+3. Add Audience tab to mosc-temp ProfileSiteAdminClient (list, add, edit, delete, CSV import)
+4. Mirror Audience section in event-site-manager profile-site page and ApiServerActions
+5. Server actions use fetchWithJwtRetry to backend API
+
+## Loop 8 — Public Capture
+Priority: high
+Depends on: Loop 7
+
+1. Add mosc-temp App Router POST /api/public/profile-subscribe forwarding to backend public subscribe
+2. Update ProfileContactSection with subscribe form and optional contact form when contactFormEnabled
+3. Add public routes to middleware for /api/public/profile-subscribe and unsubscribe
+4. Persist CONTACT_FORM and SUBSCRIBE_FORM sources via backend
+
+## Loop 9 — Send and Batch Jobs
+Priority: high
+Depends on: Loop 8
+
+1. Add RecipientType.PROFILE_AUDIENCE in event-site-manager-service and batch-jobs
+2. Add POST /api/promotion-email-templates/{id}/send-to-profile-audience in PromotionEmailTemplateResource
+3. Implement sendToProfileAudience in PromotionEmailServiceImpl
+4. Add ProfileAudienceContact entity and repository in batch-jobs; extend EmailBatchReader for PROFILE_AUDIENCE
+5. Add sendToProfileAudienceServer in profile-site ApiServerActions (both apps)
+6. Create scripts/build-profile-audience-v2.ps1 orchestration script
+7. Run node .task-master/dev.js parse-prd on this file to generate tasks.json (or use tasks/tasks.json if API unavailable)
+
+## Compliance
+- Separate unsubscribe_token from user_profile subscription
+- Never email OPTED_OUT contacts
+- Unsubscribe link in profile-audience bulk emails
+
+## Out of Scope v2.0
+- Named contact lists (profile_contact_list)
+- Double opt-in confirmation email
+- Merging with user_profile.is_email_subscribed

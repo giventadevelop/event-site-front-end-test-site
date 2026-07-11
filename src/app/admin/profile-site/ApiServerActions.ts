@@ -1,7 +1,7 @@
 'use server';
 
 import { fetchWithJwtRetry } from '@/lib/proxyHandler';
-import { getTenantId, getApiBaseUrl } from '@/lib/env';
+import { getTenantId, getApiBaseUrl, getAppUrl } from '@/lib/env';
 import { withTenantId } from '@/lib/withTenantId';
 import { parseProfileSiteListResponse } from '@/lib/parseProfileSiteResponses';
 import { applySiteTypePresetsToSettings } from '@/lib/siteTypePresets';
@@ -13,6 +13,8 @@ import type {
   ProfileAchievementDTO,
   ProfileAffiliationDTO,
   ProfileMediaAssetDTO,
+  ProfileAudienceContactDTO,
+  ProfileAudienceBulkImportResultDTO,
   TenantSiteType,
 } from '@/types/profileSite';
 
@@ -249,5 +251,158 @@ export async function applySiteTypePresetsForTenant(
   } catch (error) {
     console.error('[applySiteTypePresetsForTenant]', error);
     return false;
+  }
+}
+
+export async function fetchProfileAudienceContactsServer(params?: {
+  emailContains?: string;
+  optInStatus?: string;
+  page?: number;
+  size?: number;
+}): Promise<{ contacts: ProfileAudienceContactDTO[]; totalCount: number }> {
+  try {
+    const qs = new URLSearchParams({
+      sort: 'createdAt,desc',
+      size: String(params?.size ?? 20),
+      page: String(params?.page ?? 0),
+    });
+    if (params?.emailContains?.trim()) {
+      qs.append('email.contains', params.emailContains.trim());
+    }
+    if (params?.optInStatus) {
+      qs.append('optInStatus.equals', params.optInStatus);
+    }
+    const res = await fetchWithJwtRetry(`${getApiBase()}/api/profile-audience-contacts?${qs}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) return { contacts: [], totalCount: 0 };
+    const data = await res.json();
+    const contacts = parseProfileSiteListResponse<ProfileAudienceContactDTO>(data);
+    const totalCount =
+      typeof data === 'object' && data !== null && 'totalElements' in data
+        ? Number((data as { totalElements: number }).totalElements)
+        : contacts.length;
+    return { contacts, totalCount };
+  } catch (error) {
+    console.error('[fetchProfileAudienceContactsServer]', error);
+    return { contacts: [], totalCount: 0 };
+  }
+}
+
+export async function createProfileAudienceContactServer(
+  data: Omit<ProfileAudienceContactDTO, 'id' | 'tenantId' | 'createdAt' | 'updatedAt'>
+): Promise<ProfileAudienceContactDTO | null> {
+  try {
+    const profile = await fetchPublicProfileServer();
+    if (!profile?.id) {
+      console.error('[createProfileAudienceContactServer] No public profile for tenant');
+      return null;
+    }
+    const payload = withTenantId({
+      ...data,
+      publicProfileId: profile.id,
+      source: data.source ?? 'ADMIN_MANUAL',
+      optInStatus: data.optInStatus ?? 'OPTED_IN',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    const res = await fetchWithJwtRetry(`${getApiBase()}/api/profile-audience-contacts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return await res.json();
+  } catch (error) {
+    console.error('[createProfileAudienceContactServer]', error);
+    return null;
+  }
+}
+
+export async function updateProfileAudienceContactServer(
+  id: number,
+  data: Partial<ProfileAudienceContactDTO>
+): Promise<ProfileAudienceContactDTO | null> {
+  try {
+    const payload = withTenantId({ ...data, id, updatedAt: new Date().toISOString() });
+    const res = await fetchWithJwtRetry(`${getApiBase()}/api/profile-audience-contacts/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/merge-patch+json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return await res.json();
+  } catch (error) {
+    console.error('[updateProfileAudienceContactServer]', error);
+    return null;
+  }
+}
+
+export async function deleteProfileAudienceContactServer(id: number): Promise<boolean> {
+  try {
+    const res = await fetchWithJwtRetry(`${getApiBase()}/api/profile-audience-contacts/${id}`, {
+      method: 'DELETE',
+    });
+    return res.ok;
+  } catch (error) {
+    console.error('[deleteProfileAudienceContactServer]', error);
+    return false;
+  }
+}
+
+export async function bulkImportProfileAudienceServer(
+  contacts: Partial<ProfileAudienceContactDTO>[]
+): Promise<ProfileAudienceBulkImportResultDTO | null> {
+  try {
+    const profile = await fetchPublicProfileServer();
+    if (!profile?.id) return null;
+    const payload = contacts
+      .filter((c) => c.email?.trim())
+      .map((c) =>
+        withTenantId({
+          email: c.email!.trim(),
+          firstName: c.firstName ?? '',
+          lastName: c.lastName ?? '',
+          notes: c.notes ?? '',
+          publicProfileId: profile.id,
+          source: 'CSV_IMPORT' as const,
+          optInStatus: c.optInStatus ?? 'OPTED_IN',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+      );
+    const res = await fetchWithJwtRetry(`${getApiBase()}/api/profile-audience-contacts/bulk-import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return await res.json();
+  } catch (error) {
+    console.error('[bulkImportProfileAudienceServer]', error);
+    return null;
+  }
+}
+
+export async function sendToProfileAudienceServer(
+  templateId: number
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    const baseUrl = getAppUrl();
+    const url = `${baseUrl}/api/proxy/promotion-email-templates/${templateId}/send-to-profile-audience`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      console.error('[sendToProfileAudienceServer]', res.status, text);
+      return { success: false, message: text };
+    }
+    return { success: true };
+  } catch (error) {
+    console.error('[sendToProfileAudienceServer]', error);
+    return { success: false, message: String(error) };
   }
 }

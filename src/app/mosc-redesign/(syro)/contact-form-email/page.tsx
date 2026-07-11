@@ -24,10 +24,10 @@ export default function ContactFormEmailPage() {
 
       {/* Contact Form Section */}
       <section className="py-16 bg-syro-bg-gray">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Contact Form */}
           <div className="bg-white rounded-lg shadow-syro-card p-8 md:p-12">
-            <div className="flex items-center space-x-4 mb-8">
+            <div className="flex items-center space-x-4 mb-6">
               <div className="w-12 h-12 bg-syro-red/10 rounded-full flex items-center justify-center">
                 <svg className="w-6 h-6 text-syro-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
@@ -45,6 +45,12 @@ export default function ContactFormEmailPage() {
                 </p>
               </div>
             </div>
+
+            <p className="font-syro-primary text-sm text-syro-dark-gray mb-8 rounded-lg border border-syro-table-border bg-syro-bg-gray/60 px-4 py-3">
+              Your email is built in three parts — <strong>Header</strong>, <strong>Body</strong>, and{' '}
+              <strong>Footer</strong> — similar to our newsletter template. Optional images for each section are
+              included in the rendered HTML email we send (same style as newsletter test emails).
+            </p>
 
             <ContactForm />
           </div>

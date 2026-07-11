@@ -110,6 +110,44 @@ export interface ProfileMediaAssetDTO {
   updatedAt?: string;
 }
 
+export type ProfileAudienceContactSource =
+  | 'SUBSCRIBE_FORM'
+  | 'CONTACT_FORM'
+  | 'CSV_IMPORT'
+  | 'GATED_DOWNLOAD'
+  | 'ADMIN_MANUAL';
+
+export type ProfileAudienceContactOptInStatus = 'OPTED_IN' | 'OPTED_OUT' | 'PENDING';
+
+export interface ProfileAudienceContactDTO {
+  id?: number | null;
+  tenantId: string;
+  publicProfileId: number;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  source: ProfileAudienceContactSource;
+  optInStatus: ProfileAudienceContactOptInStatus;
+  unsubscribeToken?: string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ProfileAudienceBulkImportResultDTO {
+  createdCount: number;
+  updatedCount: number;
+  skippedCount: number;
+  errorCount: number;
+}
+
+export interface ProfileAudienceSubscribeRequestDTO {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  message?: string;
+}
+
 export const TENANT_SITE_TYPE_LABELS: Record<TenantSiteType, string> = {
   EVENT_ORG: 'Event organization',
   SPORTS_TEAM: 'Sports team',

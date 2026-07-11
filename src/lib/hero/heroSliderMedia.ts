@@ -202,7 +202,10 @@ async function resolveUpcomingEventIdsForHeroMedia(
   return upcomingIds;
 }
 
-const HERO_FETCH_PAGE_SIZE = 100;
+/** Max homepage hero slideshow slides (event + tenant defaults). */
+export const HERO_SLIDER_CAP = 200;
+
+const HERO_FETCH_PAGE_SIZE = HERO_SLIDER_CAP;
 
 /**
  * Load homepage hero candidates: hero-flagged media for upcoming events only,

@@ -1,0 +1,57 @@
+{
+  "project": "Profile Audience CRM v2",
+  "version": "2.0.0",
+  "description": "Profile-scoped audience capture, CSV import, and bulk email for PERSONAL_PROFILE tenants",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Loop 6 — Schema and Backend CRUD",
+      "description": "Liquibase, ProfileAudienceContact entity stack, REST CRUD, bulk-import, public subscribe/unsubscribe",
+      "status": "done",
+      "priority": "high",
+      "dependencies": [],
+      "details": "Repository: event-site-manager-service. Liquibase 20260709120000_profile_audience_contact.xml. ProfileAudienceContactResource with criteria GET, bulk-import, public/subscribe, unsubscribe. Sync Latest_Schema_Post__Blob_Claude_12.sql in mosc-temp.",
+      "testStrategy": "Criteria GET with tenantId.equals; POST bulk-import 3 rows upsert; public subscribe creates row; unsubscribe sets OPTED_OUT"
+    },
+    {
+      "id": 2,
+      "title": "Loop 7 — Admin UI Both Apps",
+      "description": "Types, proxy routes, Audience tab in mosc-temp and event-site-manager",
+      "status": "done",
+      "priority": "high",
+      "dependencies": [1],
+      "details": "ProfileAudienceContactDTO in profileSite.ts. Proxies under profile-audience-contacts. ProfileAudiencePanel + ApiServerActions in both apps. Audience tab in ProfileSiteAdminClient (mosc-temp) and profile-site page (event-site-manager).",
+      "testStrategy": "Admin lists contacts, add/edit/delete, CSV import shows imported count"
+    },
+    {
+      "id": 3,
+      "title": "Loop 8 — Public Capture",
+      "description": "Public subscribe route and ProfileContactSection forms in mosc-temp",
+      "status": "done",
+      "priority": "high",
+      "dependencies": [2],
+      "details": "POST /api/public/profile-subscribe. ProfileContactSection subscribe + contact form when contactFormEnabled. Middleware /api/public(.*) already public.",
+      "testStrategy": "Visitor submit creates profile_audience_contact with SUBSCRIBE_FORM or CONTACT_FORM source"
+    },
+    {
+      "id": 4,
+      "title": "Loop 9 — Send and Batch Jobs",
+      "description": "send-to-profile-audience, PROFILE_AUDIENCE in EmailBatchReader, build script",
+      "status": "done",
+      "priority": "high",
+      "dependencies": [2, 3],
+      "details": "RecipientType.PROFILE_AUDIENCE. PromotionEmailTemplate send-to-profile-audience. ProfileAudienceContact in batch-jobs. sendToProfileAudienceServer in both apps. scripts/build-profile-audience-v2.ps1.",
+      "testStrategy": "Admin send by template id queues batch; OPTED_OUT excluded; promotion_email_sent_log updated"
+    },
+    {
+      "id": 5,
+      "title": "Documentation pack v2",
+      "description": "HTML PRD pack, README, loops 6-9, attribute catalog, schema updates",
+      "status": "done",
+      "priority": "medium",
+      "dependencies": [],
+      "details": "personal_profile_audience_crm_prd.html, backend/frontend API HTML, migrations/002, README and iterative loops updates.",
+      "testStrategy": "All doc links resolve; ERD includes profile_audience_contact"
+    }
+  ]
+}

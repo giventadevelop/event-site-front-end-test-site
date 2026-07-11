@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import type {
   PromotionEmailTemplateDTO,
@@ -15,14 +15,147 @@ import {
   updateNewsletterEmailTemplateServer,
   uploadNewsletterEmailHeaderImageClient,
   uploadNewsletterEmailFooterImageClient,
+  uploadNewsletterEmailBodyImageClient,
 } from '../ApiServerActions';
 import { fetchDiscountCodesForEvent } from '@/app/admin/events/[id]/discount-codes/list/ApiServerActions';
 import FromEmailSelect from '@/components/FromEmailSelect';
+import { useTenantSettings } from '@/components/TenantSettingsProvider';
+import {
+  buildSiteFooterEmailHtmlFromTenant,
+} from '@/lib/newsletter/siteFooterEmailHtml';
 // Event selection is no longer editable for newsletter templates.
 
 interface NewsletterEmailTemplateEditClientProps {
   template: PromotionEmailTemplateDTO | null;
   templateId: number;
+}
+
+function extractBodyImageUrls(html: string): string[] {
+  const urls: string[] = [];
+  const regex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+  let match = regex.exec(html);
+  while (match) {
+    const url = match[1]?.trim();
+    if (url && !urls.includes(url)) {
+      urls.push(url);
+    }
+    match = regex.exec(html);
+  }
+  return urls;
+}
+
+function removeBodyImageFromHtml(html: string, imageUrl: string): string {
+  const escaped = imageUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  let result = html
+    .replace(
+      new RegExp(`<p[^>]*>\\s*<img[^>]+src=["']${escaped}["'][^>]*>\\s*</p>`, 'gi'),
+      ''
+    )
+    .replace(new RegExp(`<img[^>]+src=["']${escaped}["'][^>]*>`, 'gi'), '')
+    .trim();
+  return result.replace(/\n{3,}/g, '\n\n');
+}
+
+function NewsletterEmailSection({
+  title,
+  description,
+  step,
+  accent,
+  children,
+}: {
+  title: string;
+  description: string;
+  step: number;
+  accent: 'blue' | 'emerald' | 'purple';
+  children: React.ReactNode;
+}) {
+  const styles = {
+    blue: {
+      box: 'border-blue-300 bg-blue-50/50',
+      header: 'border-blue-200',
+      badge: 'bg-blue-100 text-blue-800 border-blue-300',
+      title: 'text-blue-900',
+    },
+    emerald: {
+      box: 'border-emerald-300 bg-emerald-50/50',
+      header: 'border-emerald-200',
+      badge: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+      title: 'text-emerald-900',
+    },
+    purple: {
+      box: 'border-purple-300 bg-purple-50/50',
+      header: 'border-purple-200',
+      badge: 'bg-purple-100 text-purple-800 border-purple-300',
+      title: 'text-purple-900',
+    },
+  }[accent];
+
+  return (
+    <section className={`rounded-xl border-2 ${styles.box} p-5 sm:p-6 shadow-sm`}>
+      <header className={`flex items-start gap-3 border-b-2 ${styles.header} pb-4 mb-5`}>
+        <span
+          className={`flex-shrink-0 w-9 h-9 rounded-full border-2 flex items-center justify-center text-sm font-bold ${styles.badge}`}
+          aria-hidden="true"
+        >
+          {step}
+        </span>
+        <div>
+          <h2 className={`text-lg font-semibold font-heading ${styles.title}`}>{title}</h2>
+          <p className="text-sm text-gray-600 mt-1">{description}</p>
+        </div>
+      </header>
+      <div className="space-y-5">{children}</div>
+    </section>
+  );
+}
+
+function NewsletterEmailImagePreview({
+  imageUrl,
+  alt,
+  label,
+  variant,
+  onRemove,
+}: {
+  imageUrl: string;
+  alt: string;
+  label: string;
+  variant: 'header' | 'footer' | 'body';
+  onRemove: () => void;
+}) {
+  const aspectClass =
+    variant === 'header' ? 'aspect-[3/1]' : variant === 'footer' ? 'aspect-[6/1]' : 'min-h-[8rem]';
+
+  return (
+    <div className="relative w-full max-w-[600px]">
+      <div
+        className={`w-full ${aspectClass} p-4 bg-gray-50 border border-gray-300 rounded-lg flex items-center justify-center overflow-hidden`}
+      >
+        <img
+          src={imageUrl}
+          alt={alt}
+          className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg"
+        />
+      </div>
+      <p className="text-sm text-gray-700 mt-2 mb-1">Current {label} (email width preview ~600px):</p>
+      <a
+        href={imageUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-600 hover:text-blue-800 underline text-sm break-all"
+      >
+        {imageUrl}
+      </a>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="mt-3 flex-shrink-0 w-14 h-14 rounded-xl bg-red-100 hover:bg-red-200 flex items-center justify-center transition-all duration-300 hover:scale-110"
+        title={`Remove ${label}`}
+        aria-label={`Remove ${label}`}
+      >
+        <FaTimes className="w-10 h-10 text-red-500" />
+      </button>
+    </div>
+  );
 }
 
 export default function NewsletterEmailTemplateEditClient({
@@ -62,17 +195,35 @@ export default function NewsletterEmailTemplateEditClient({
   <p style="font-size: 16px; color: #444;">Enter this code at checkout to enjoy your savings!</p>
 
 </div>`;
+  const { settings, organization, organizationIdentity } = useTenantSettings();
   const [uploadingHeader, setUploadingHeader] = useState(false);
   const [uploadingFooter, setUploadingFooter] = useState(false);
+  const [uploadingBodyImage, setUploadingBodyImage] = useState(false);
   const [isDraggingHeader, setIsDraggingHeader] = useState(false);
   const [isDraggingFooter, setIsDraggingFooter] = useState(false);
+  const [isDraggingBodyImage, setIsDraggingBodyImage] = useState(false);
+  const [addSiteFooter, setAddSiteFooter] = useState(false);
   const headerFileInputRef = useRef<HTMLInputElement>(null);
   const footerFileInputRef = useRef<HTMLInputElement>(null);
+  const bodyImageFileInputRef = useRef<HTMLInputElement>(null);
   const [isEmailListEmpty, setIsEmailListEmpty] = useState(false);
   const [fromEmailError, setFromEmailError] = useState<string | null>(null);
+  const [copiedSizeHint, setCopiedSizeHint] = useState<'header' | 'footer' | null>(null);
+
+  const HEADER_SIZE_GUIDANCE =
+    'Recommended for email: 600 × 200 px (or 1200 × 400 px for retina). Keep important content centered; email clients typically display at ~600 px wide.';
+  const FOOTER_SIZE_GUIDANCE =
+    'Recommended for email: 600 × 100–150 px (or 1200 × 200–300 px for retina). Use a shorter landscape strip so it fits the ~600 px email content width.';
+
+  const bodyImageUrls = useMemo(
+    () => extractBodyImageUrls(formData.bodyHtml || ''),
+    [formData.bodyHtml]
+  );
 
   useEffect(() => {
     if (template) {
+      const hasSavedFooterHtml = !!(template.footerHtml?.trim());
+      setAddSiteFooter(hasSavedFooterHtml);
       setFormData({
         eventId: template.eventId,
         templateName: template.templateName,
@@ -80,7 +231,7 @@ export default function NewsletterEmailTemplateEditClient({
         subject: template.subject,
         fromEmail: template.fromEmail || '',
         bodyHtml: template.bodyHtml,
-        footerHtml: template.footerHtml || '',
+        footerHtml: '',
         headerImageUrl: template.headerImageUrl || '',
         footerImageUrl: template.footerImageUrl || '',
         discountCodeId: template.discountCodeId,
@@ -140,6 +291,113 @@ export default function NewsletterEmailTemplateEditClient({
       }));
     } catch (err) {
       console.error('Failed to copy example HTML:', err);
+    }
+  };
+
+  const getSiteFooterHtml = () =>
+    buildSiteFooterEmailHtmlFromTenant(settings, organization, organizationIdentity);
+
+  const handleAddSiteFooterChange = (checked: boolean) => {
+    setAddSiteFooter(checked);
+  };
+
+  const buildSavePayload = (): Partial<PromotionEmailTemplateFormDTO> => ({
+    ...formData,
+    footerHtml: addSiteFooter ? getSiteFooterHtml() : '',
+    headerImageUrl: formData.headerImageUrl?.trim() || '',
+    footerImageUrl: formData.footerImageUrl?.trim() || '',
+  });
+
+  const appendBodyImageToHtml = (imageUrl: string) => {
+    const imgTag = `<p style="text-align:center;margin:16px 0;"><img src="${imageUrl}" alt="Newsletter image" width="600" style="max-width:100%;width:600px;height:auto;display:block;margin:0 auto;border:0;" /></p>`;
+    setFormData((prev) => ({
+      ...prev,
+      bodyHtml: prev.bodyHtml?.trim() ? `${prev.bodyHtml}\n\n${imgTag}` : imgTag,
+    }));
+  };
+
+  const processBodyImageUpload = async (file: File) => {
+    if (!file) return;
+
+    setUploadingBodyImage(true);
+    setError(null);
+
+    try {
+      const result = await uploadNewsletterEmailBodyImageClient(
+        file,
+        'Newsletter Email Body Image',
+        'Newsletter email body image'
+      );
+
+      if (!result.url) {
+        throw new Error('Upload succeeded but no image URL was returned.');
+      }
+
+      appendBodyImageToHtml(result.url);
+      setSuccessMessage('Body image uploaded and inserted into HTML!');
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to upload body image');
+    } finally {
+      setUploadingBodyImage(false);
+      if (bodyImageFileInputRef.current) {
+        bodyImageFileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleBodyImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await processBodyImageUpload(file);
+    }
+  };
+
+  const handleBodyImageDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!uploadingBodyImage) {
+      setIsDraggingBodyImage(true);
+    }
+  };
+
+  const handleBodyImageDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingBodyImage(false);
+  };
+
+  const handleBodyImageDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingBodyImage(false);
+
+    if (uploadingBodyImage) return;
+
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      await processBodyImageUpload(file);
+    } else {
+      setError('Please drop a valid image file');
+    }
+  };
+
+  const handleRemoveBodyImage = (imageUrl: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      bodyHtml: removeBodyImageFromHtml(prev.bodyHtml || '', imageUrl),
+    }));
+  };
+
+  const handleCopySizeGuidance = async (kind: 'header' | 'footer') => {
+    const text = kind === 'header' ? HEADER_SIZE_GUIDANCE : FOOTER_SIZE_GUIDANCE;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedSizeHint(kind);
+      setTimeout(() => setCopiedSizeHint((prev) => (prev === kind ? null : prev)), 2000);
+    } catch (err) {
+      console.error('Failed to copy size guidance:', err);
+      setError('Failed to copy size guidance to clipboard');
     }
   };
 
@@ -303,11 +561,11 @@ export default function NewsletterEmailTemplateEditClient({
       headerImageUrl: '',
     }));
 
-    // Update template to remove header image URL
     try {
       await updateNewsletterEmailTemplateServer(templateId, {
         headerImageUrl: '',
       });
+      router.refresh();
       setSuccessMessage('Header image removed successfully!');
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err: any) {
@@ -321,11 +579,11 @@ export default function NewsletterEmailTemplateEditClient({
       footerImageUrl: '',
     }));
 
-    // Update template to remove footer image URL
     try {
       await updateNewsletterEmailTemplateServer(templateId, {
         footerImageUrl: '',
       });
+      router.refresh();
       setSuccessMessage('Footer image removed successfully!');
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err: any) {
@@ -372,7 +630,8 @@ export default function NewsletterEmailTemplateEditClient({
     setSaving(true);
 
     try {
-      await updateNewsletterEmailTemplateServer(templateId, formData);
+      await updateNewsletterEmailTemplateServer(templateId, buildSavePayload());
+      router.refresh();
 
       // Show success message
       setSaveStatus('success');
@@ -465,7 +724,7 @@ export default function NewsletterEmailTemplateEditClient({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-8">
           {/* Template Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -558,26 +817,41 @@ export default function NewsletterEmailTemplateEditClient({
             </div>
           )}
 
-          {/* Header Image Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Header Image
-            </label>
-            {formData.headerImageUrl ? (
-              <div className="relative inline-block">
-                <img
-                  src={formData.headerImageUrl}
-                  alt="Header preview"
-                  className="max-w-full h-auto max-h-48 rounded-lg border border-gray-300"
-                />
-                <button
-                  type="button"
-                  onClick={handleRemoveHeaderImage}
-                  className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-lg"
-                >
-                  <FaTimes className="w-4 h-4" />
-                </button>
-              </div>
+          {/* Email Header Section */}
+          <NewsletterEmailSection
+            step={1}
+            title="Email Header"
+            description="Banner image displayed at the top of the newsletter (~600 px wide in most email clients)."
+            accent="blue"
+          >
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Header Image
+              </label>
+            <div className="flex items-start gap-2 mb-2">
+              <p className="text-xs text-blue-700 leading-relaxed flex-1">
+                <strong>Recommended for email:</strong> 600 × 200 px (or 1200 × 400 px for retina).
+                Keep important content centered; email clients typically display at ~600 px wide.
+              </p>
+              <button
+                type="button"
+                onClick={() => handleCopySizeGuidance('header')}
+                className="flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 transition-colors"
+                title="Copy header size guidance"
+                aria-label="Copy header size guidance"
+              >
+                <FaCopy className="w-3 h-3" />
+                {copiedSizeHint === 'header' ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            {formData.headerImageUrl?.trim() ? (
+              <NewsletterEmailImagePreview
+                imageUrl={formData.headerImageUrl}
+                alt="Header preview"
+                label="header image"
+                variant="header"
+                onRemove={handleRemoveHeaderImage}
+              />
             ) : (
               <div>
                 <input
@@ -618,80 +892,86 @@ export default function NewsletterEmailTemplateEditClient({
                 </label>
               </div>
             )}
-          </div>
+            </div>
+          </NewsletterEmailSection>
 
-          {/* Footer Image Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Footer Image
-            </label>
-            {formData.footerImageUrl ? (
-              <div className="relative inline-block">
-                <img
-                  src={formData.footerImageUrl}
-                  alt="Footer preview"
-                  className="max-w-full h-auto max-h-48 rounded-lg border border-gray-300"
-                />
-                <button
-                  type="button"
-                  onClick={handleRemoveFooterImage}
-                  className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-lg"
-                >
-                  <FaTimes className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <div>
-                <input
-                  ref={footerFileInputRef}
-                  id="newsletter-footer-image-input"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFooterImageUpload}
-                  disabled={uploadingFooter}
-                  className="sr-only"
-                />
-                <label
-                  htmlFor="newsletter-footer-image-input"
-                  onDragOver={handleFooterDragOver}
-                  onDragLeave={handleFooterDragLeave}
-                  onDrop={handleFooterDrop}
-                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors block w-full ${
-                    isDraggingFooter
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-300 hover:border-blue-500'
-                  } ${uploadingFooter ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
-                >
-                  <FaUpload className={`mx-auto h-12 w-12 mb-2 ${
-                    isDraggingFooter ? 'text-blue-500' : 'text-gray-400'
-                  }`} />
-                  <p className={`text-sm ${
-                    isDraggingFooter ? 'text-blue-600 font-semibold' : 'text-gray-600'
-                  }`}>
-                    {uploadingFooter
-                      ? 'Uploading...'
-                      : isDraggingFooter
-                        ? 'Drop image here'
-                        : 'Click to upload or drag and drop footer image'}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    PNG, JPG, GIF up to 5MB
-                  </p>
-                </label>
+          {/* Email Body Section */}
+          <NewsletterEmailSection
+            step={2}
+            title="Email Body"
+            description="Main message content — upload images and/or edit the HTML for the center of the email."
+            accent="emerald"
+          >
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Body Image (optional)
+              </label>
+            <p className="text-xs text-blue-700 mb-2">
+              Upload an image to insert into the body HTML. Recommended: 600 px wide (or 1200 px for retina). The image is added as an &lt;img&gt; tag you can move or edit in the HTML editor below.
+            </p>
+
+            {bodyImageUrls.length > 0 && (
+              <div className="space-y-6 mb-4">
+                {bodyImageUrls.map((url) => (
+                  <NewsletterEmailImagePreview
+                    key={url}
+                    imageUrl={url}
+                    alt="Body image preview"
+                    label="body image"
+                    variant="body"
+                    onRemove={() => handleRemoveBodyImage(url)}
+                  />
+                ))}
               </div>
             )}
-          </div>
 
-          {/* Body HTML */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Body HTML <span className="text-red-500">*</span>
+            <input
+              ref={bodyImageFileInputRef}
+              id="newsletter-body-image-input"
+              type="file"
+              accept="image/*"
+              onChange={handleBodyImageUpload}
+              disabled={uploadingBodyImage}
+              className="sr-only"
+            />
+            <label
+              htmlFor="newsletter-body-image-input"
+              onDragOver={handleBodyImageDragOver}
+              onDragLeave={handleBodyImageDragLeave}
+              onDrop={handleBodyImageDrop}
+              className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors block w-full ${
+                isDraggingBodyImage
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-300 hover:border-blue-500'
+              } ${uploadingBodyImage ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+            >
+              <FaUpload className={`mx-auto h-12 w-12 mb-2 ${
+                isDraggingBodyImage ? 'text-blue-500' : 'text-gray-400'
+              }`} />
+              <p className={`text-sm ${
+                isDraggingBodyImage ? 'text-blue-600 font-semibold' : 'text-gray-600'
+              }`}>
+                {uploadingBodyImage
+                  ? 'Uploading...'
+                  : isDraggingBodyImage
+                    ? 'Drop image here'
+                    : bodyImageUrls.length > 0
+                      ? 'Click to upload or drag and drop another body image'
+                      : 'Click to upload or drag and drop a body image'}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 5MB</p>
             </label>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email Body HTML <span className="text-red-500">*</span>
+              </label>
 
             {/* Tip with Example */}
             <div className="mb-3 bg-gray-50 border border-gray-200 rounded-lg p-4">
               <p className="text-sm text-gray-700 mb-2">
-                <strong>Tip:</strong> Paste only the inner HTML (no &lt;body&gt; tags). You can create a sample email body HTML using ChatGPT AI tools.
+                <strong>Tip:</strong> Paste only the inner HTML (no &lt;body&gt; tags). You can combine HTML with uploaded images — images are inserted as &lt;img&gt; tags in the editor below.
               </p>
               <p className="text-sm text-gray-700 mb-2">
                 You can preview your HTML template or snippet in one of the sites like{' '}
@@ -736,15 +1016,108 @@ export default function NewsletterEmailTemplateEditClient({
               className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-base font-mono text-sm"
               placeholder="Enter HTML content for the email body..."
             />
-          </div>
+            </div>
+          </NewsletterEmailSection>
 
-          {/* Footer HTML - Hidden for now, passed as null */}
-          {/* <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Footer HTML <span className="text-red-500">*</span>
-            </label>
-            ...
-          </div> */}
+          {/* Email Footer Section */}
+          <NewsletterEmailSection
+            step={3}
+            title="Email Footer"
+            description="Closing strip — footer image and/or HTML (site footer layout, links, contact info)."
+            accent="purple"
+          >
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Footer Image
+              </label>
+            <div className="flex items-start gap-2 mb-2">
+              <p className="text-xs text-blue-700 leading-relaxed flex-1">
+                <strong>Recommended for email:</strong> 600 × 100–150 px (or 1200 × 200–300 px for retina).
+                Use a shorter landscape strip so it fits the ~600 px email content width.
+              </p>
+              <button
+                type="button"
+                onClick={() => handleCopySizeGuidance('footer')}
+                className="flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 transition-colors"
+                title="Copy footer size guidance"
+                aria-label="Copy footer size guidance"
+              >
+                <FaCopy className="w-3 h-3" />
+                {copiedSizeHint === 'footer' ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            {formData.footerImageUrl?.trim() ? (
+              <NewsletterEmailImagePreview
+                imageUrl={formData.footerImageUrl}
+                alt="Footer preview"
+                label="footer image"
+                variant="footer"
+                onRemove={handleRemoveFooterImage}
+              />
+            ) : (
+              <div>
+                <input
+                  ref={footerFileInputRef}
+                  id="newsletter-footer-image-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFooterImageUpload}
+                  disabled={uploadingFooter}
+                  className="sr-only"
+                />
+                <label
+                  htmlFor="newsletter-footer-image-input"
+                  onDragOver={handleFooterDragOver}
+                  onDragLeave={handleFooterDragLeave}
+                  onDrop={handleFooterDrop}
+                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors block w-full ${
+                    isDraggingFooter
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-300 hover:border-blue-500'
+                  } ${uploadingFooter ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+                >
+                  <FaUpload className={`mx-auto h-12 w-12 mb-2 ${
+                    isDraggingFooter ? 'text-blue-500' : 'text-gray-400'
+                  }`} />
+                  <p className={`text-sm ${
+                    isDraggingFooter ? 'text-blue-600 font-semibold' : 'text-gray-600'
+                  }`}>
+                    {uploadingFooter
+                      ? 'Uploading...'
+                      : isDraggingFooter
+                        ? 'Drop image here'
+                        : 'Click to upload or drag and drop footer image'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    PNG, JPG, GIF up to 5MB
+                  </p>
+                </label>
+              </div>
+            )}
+            </div>
+
+            <div className="rounded-lg border border-purple-200 bg-purple-50/60 p-4">
+              <p className="text-sm text-gray-700 mb-3">
+                Upload a footer banner image above, or enable the site footer layout below. You can use both — they are sent separately in the email.
+              </p>
+
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="addSiteFooter"
+                  checked={addSiteFooter}
+                  onChange={(e) => handleAddSiteFooterChange(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <label htmlFor="addSiteFooter" className="block text-sm text-gray-700">
+                  <span className="font-medium text-gray-900">Add site footer</span>
+                  <span className="block text-gray-600 mt-0.5">
+                    Inserts your homepage-style footer (tenant name, contact, links) at ~600 px email width when the template is saved or sent.
+                  </span>
+                </label>
+              </div>
+            </div>
+          </NewsletterEmailSection>
 
           {/* Active Status */}
           <div className="flex items-center">

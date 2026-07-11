@@ -27,3 +27,4 @@ function runSuite(name, scriptFile) {
 
 runSuite('comprehensive', 'comprehensive-admin-test-suite.js');
 runSuite('dynamic', 'dynamic-event-test-suite.js');
+runSuite('crud', 'admin-crud-demo-tenant-suite.js');

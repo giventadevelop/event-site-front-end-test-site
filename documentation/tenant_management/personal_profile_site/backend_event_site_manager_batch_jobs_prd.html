@@ -54,6 +54,7 @@
             <tr><td><code>profile_achievement</code></td><td>Full entity + REST</td><td><strong>No entity required</strong></td></tr>
             <tr><td><code>profile_affiliation</code></td><td>Full entity + REST</td><td><strong>No entity required</strong></td></tr>
             <tr><td><code>profile_media_asset</code></td><td>Full entity + REST</td><td><strong>No entity required</strong></td></tr>
+            <tr><td><code>profile_audience_contact</code></td><td>Full entity + REST + send</td><td><strong>Entity + repository</strong> for <code>EmailBatchReader</code> (<code>PROFILE_AUDIENCE</code>)</td></tr>
             <tr><td>Liquibase migration</td><td><strong>Yes</strong> — runtime migration</td><td><strong>No</strong> — uses DB already migrated by main service</td></tr>
         </tbody>
     </table>
@@ -110,7 +111,21 @@
     </ol>
     <p>See <code>documentation/database_export_import/SEQUENCE_ID_ALIGNMENT_GUIDE.html</code> and <code>.cursor/rules/sequence_id_alignment_and_import.mdc</code>.</p>
 
-    <h2>7. Future optional jobs (not v1)</h2>
+    <h2>7. Profile Audience CRM v2 (email batch)</h2>
+    <div class="info-box">
+        <p><strong>Required for v2 send:</strong> Add <code>ProfileAudienceContact</code> entity and <code>ProfileAudienceContactRepository.findOptedInEmailsByTenantId</code>. Extend <code>EmailBatchReader.getRecipientEmailsFromDatabase()</code> for <code>recipientType=PROFILE_AUDIENCE</code>.</p>
+    </div>
+    <table>
+        <thead><tr><th>File</th><th>Change</th></tr></thead>
+        <tbody>
+            <tr><td><code>domain/ProfileAudienceContact.java</code></td><td>Minimal JPA mirror (id, tenantId, email, optInStatus)</td></tr>
+            <tr><td><code>repository/ProfileAudienceContactRepository.java</code></td><td>Query opted-in distinct emails by tenant</td></tr>
+            <tr><td><code>job/email/reader/EmailBatchReader.java</code></td><td>Branch for <code>PROFILE_AUDIENCE</code> alongside SUBSCRIBED_MEMBERS</td></tr>
+        </tbody>
+    </table>
+    <p>CSV import batch job is <strong>not</strong> required — admin bulk-import via REST is sufficient for v2.0.</p>
+
+    <h2>8. Future optional jobs (not v1)</h2>
     <table>
         <thead><tr><th>Job idea</th><th>Trigger</th><th>Prerequisite</th></tr></thead>
         <tbody>
@@ -121,15 +136,16 @@
     </table>
     <p>Follow existing patterns: <code>contactFormEmailJob</code>, donation receipt jobs in batch-jobs.</p>
 
-    <h2>8. Acceptance criteria (batch-jobs)</h2>
+    <h2>9. Acceptance criteria (batch-jobs)</h2>
     <ol>
         <li>Application starts with <code>ddl-auto: validate</code> after main service Liquibase migration.</li>
         <li><code>TenantSettings</code> and <code>TenantOrganization</code> entities include all new columns.</li>
         <li><code>database/Latest_Schema_Post__Blob_Claude_12.sql</code> matches mosc-temp canonical schema for changed tables.</li>
         <li>Existing batch jobs (email, Stripe, etc.) run unchanged — no regression.</li>
+        <li>EMAIL_BATCH with <code>PROFILE_AUDIENCE</code> resolves opted-in profile audience emails (v2).</li>
     </ol>
 
-    <h2>9. Coordination checklist (both repos)</h2>
+    <h2>10. Coordination checklist (both repos)</h2>
     <table>
         <thead><tr><th>Step</th><th>Owner</th><th>Action</th></tr></thead>
         <tbody>
