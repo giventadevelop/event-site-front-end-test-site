@@ -8,7 +8,10 @@ import { existsSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const NEXT_DIR = '.next';
-const MAX_BYTES = 230_686_720; // Amplify documented limit
+const MAX_BYTES = 230_686_720; // Amplify documented hard limit (220 MiB)
+// WEB_COMPUTE packaging adds ~55–60 MB overhead beyond raw .next on disk.
+const COMPUTE_OVERHEAD_BYTES = 58 * 1024 * 1024;
+const EFFECTIVE_LIMIT = MAX_BYTES - COMPUTE_OVERHEAD_BYTES;
 
 function rmrf(target) {
   try {
@@ -139,14 +142,20 @@ if (existsSync(nextNodeModules)) {
 logTopLevelSizes();
 
 const total = dirSizeBytes(NEXT_DIR);
+const estimatedBundle = total + COMPUTE_OVERHEAD_BYTES;
 const totalMb = (total / 1024 / 1024).toFixed(1);
+const estimatedMb = (estimatedBundle / 1024 / 1024).toFixed(1);
 const limitMb = (MAX_BYTES / 1024 / 1024).toFixed(1);
-console.log(`[prune-amplify] Total .next size: ${totalMb} MB (Amplify limit ~${limitMb} MB)`);
+const effectiveMb = (EFFECTIVE_LIMIT / 1024 / 1024).toFixed(1);
+console.log(`[prune-amplify] Total .next size: ${totalMb} MB (raw Amplify limit ~${limitMb} MB)`);
+console.log(
+  `[prune-amplify] Estimated WEB_COMPUTE bundle: ${estimatedMb} MB (effective .next budget ~${effectiveMb} MB after ${COMPUTE_OVERHEAD_BYTES / 1024 / 1024} MB overhead)`,
+);
 
-if (total > MAX_BYTES) {
+if (total > EFFECTIVE_LIMIT) {
   logDirSizes(join(NEXT_DIR, 'server', 'app'), 'Largest .next/server/app segments (deploy bloat)');
   console.error(
-    `[prune-amplify] ERROR: .next still exceeds Amplify limit by ${((total - MAX_BYTES) / 1024 / 1024).toFixed(1)} MB`,
+    `[prune-amplify] ERROR: estimated WEB_COMPUTE bundle would exceed Amplify limit (raw .next ${totalMb} MB + overhead > ${limitMb} MB)`,
   );
   console.error(
     '[prune-amplify] Tip: set AMPLIFY_ROUTE_SET=redesign-only in Amplify env to omit mosc + mosc-old from the build.',
@@ -154,4 +163,4 @@ if (total > MAX_BYTES) {
   process.exit(1);
 }
 
-console.log('[prune-amplify] Prune complete — within Amplify size limit');
+console.log('[prune-amplify] Prune complete — within Amplify size limit (including WEB_COMPUTE overhead estimate)');

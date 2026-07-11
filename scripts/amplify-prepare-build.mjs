@@ -5,12 +5,13 @@
  * Set in Amplify Console → Environment variables:
  *   AMPLIFY_ROUTE_SET=redesign-only  — drop src/app/mosc + src/app/mosc-old (keep mosc-redesign)
  *   AMPLIFY_ROUTE_SET=legacy-mosc    — drop src/app/mosc-redesign (keep mosc + mosc-old)
- *   (unset or "all")                 — build every app route (default)
+ *   (unset)                          — defaults to redesign-only (Amplify.yml export)
+ *   AMPLIFY_ROUTE_SET=all            — build every app route
  */
 import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
-const mode = (process.env.AMPLIFY_ROUTE_SET || 'all').trim().toLowerCase();
+const mode = (process.env.AMPLIFY_ROUTE_SET || 'redesign-only').trim().toLowerCase();
 
 const routeSets = {
   all: [],
