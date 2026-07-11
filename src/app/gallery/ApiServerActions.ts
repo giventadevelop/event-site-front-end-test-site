@@ -425,8 +425,20 @@ export async function fetchAlbumWithMedia(
 
     const album: GalleryAlbumDTO = await albumResponse.json();
 
+    // Satellite / multi-tenant: never expose another tenant's album by raw ID
+    const tenantId = getTenantId();
+    if (!album?.tenantId || album.tenantId !== tenantId) {
+      console.warn('[fetchAlbumWithMedia] Cross-tenant album rejected', {
+        albumId,
+        albumTenantId: album?.tenantId ?? null,
+        expectedTenantId: tenantId,
+      });
+      return null;
+    }
+
     // Fetch media for album
     const mediaParams = new URLSearchParams();
+    mediaParams.append('tenantId.equals', tenantId);
     mediaParams.append('albumId.equals', albumId.toString());
     mediaParams.append('isPublic.equals', 'true');
     mediaParams.append('sort', 'displayOrder,asc');

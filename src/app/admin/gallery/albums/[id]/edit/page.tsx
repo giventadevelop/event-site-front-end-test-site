@@ -17,6 +17,7 @@ export default async function AdminAlbumEditPage({
 
   const album = await fetchAlbumServer(albumId);
 
+  // Cross-tenant IDs (e.g. tenant_demo_002) are rejected by fetchAlbumServer
   if (!album) {
     notFound();
   }

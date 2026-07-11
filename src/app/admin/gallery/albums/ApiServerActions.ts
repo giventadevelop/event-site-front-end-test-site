@@ -242,10 +242,13 @@ export async function fetchAlbumsServer(
 }
 
 /**
- * Fetch album by ID
+ * Fetch album by ID — tenant-scoped for satellite / multi-tenant apps.
+ * Returns null when the album is missing or belongs to another tenant
+ * (edit/media pages treat null as notFound).
  */
 export async function fetchAlbumServer(albumId: number): Promise<GalleryAlbumDTO | null> {
   try {
+    const tenantId = getTenantId();
     const url = `${getApiBase()}/api/gallery-albums/${albumId}`;
     const res = await fetchWithJwtRetry(url, { cache: 'no-store' });
 
@@ -257,7 +260,17 @@ export async function fetchAlbumServer(albumId: number): Promise<GalleryAlbumDTO
       throw new Error(`Failed to fetch album: ${res.statusText}`);
     }
 
-    return await res.json();
+    const album: GalleryAlbumDTO = await res.json();
+    if (!album?.tenantId || album.tenantId !== tenantId) {
+      console.warn('[fetchAlbumServer] Cross-tenant album rejected', {
+        albumId,
+        albumTenantId: album?.tenantId ?? null,
+        expectedTenantId: tenantId,
+      });
+      return null;
+    }
+
+    return album;
   } catch (error) {
     console.error('Error fetching album:', error);
     throw error;

@@ -188,11 +188,83 @@ export class CoverageTracker {
       `- report: \`${path.relative(ROOT, file)}\`\n` +
       `- html: \`${path.relative(ROOT, htmlFile)}\`\n`;
     fs.appendFileSync(logPath, line, 'utf8');
+
+    const pruned = pruneReportsDir();
+    if (pruned > 0) {
+      console.log(`[harness] Pruned ${pruned} old coverage file(s) from reports/`);
+    }
+
     console.log(`[harness] Coverage written: ${file}`);
     console.log(`[harness] HTML report: ${htmlFile}`);
     console.log(`[harness] Summary:`, s);
     return file;
   }
+}
+
+/**
+ * Rotate old coverage reports under TestSprite/reports/.
+ * Keeps LOOP_LOG.md. Per suite, keeps the newest N JSON + HTML pairs
+ * (E2E_REPORT_KEEP, default 5) and deletes files older than E2E_REPORT_MAX_AGE_DAYS (default 5).
+ * @returns {number} files deleted
+ */
+export function pruneReportsDir(options = {}) {
+  ensureDir(REPORTS_DIR);
+  const keepPerSuite = Math.max(
+    1,
+    Number(process.env.E2E_REPORT_KEEP || options.keepPerSuite || 5)
+  );
+  const maxAgeDays = Number(
+    process.env.E2E_REPORT_MAX_AGE_DAYS || options.maxAgeDays || 5
+  );
+  const maxAgeMs = maxAgeDays > 0 ? maxAgeDays * 24 * 60 * 60 * 1000 : 0;
+  const now = Date.now();
+
+  let deleted = 0;
+  /** @type {Map<string, { file: string, mtime: number }[]>} */
+  const bySuiteExt = new Map();
+
+  for (const name of fs.readdirSync(REPORTS_DIR)) {
+    if (name === 'LOOP_LOG.md' || name.startsWith('.')) continue;
+    if (name === 'coverage-global-latest.html') continue;
+    const full = path.join(REPORTS_DIR, name);
+    let st;
+    try {
+      st = fs.statSync(full);
+    } catch {
+      continue;
+    }
+    if (!st.isFile()) continue;
+
+    if (maxAgeMs > 0 && now - st.mtimeMs > maxAgeMs) {
+      try {
+        fs.unlinkSync(full);
+        deleted += 1;
+      } catch {
+        /* ignore */
+      }
+      continue;
+    }
+
+    const m = name.match(/^coverage-(.+)-(\d{4}-\d{2}-\d{2}T.+)\.(json|html)$/);
+    if (!m) continue;
+    const key = `${m[1]}::${m[3]}`;
+    if (!bySuiteExt.has(key)) bySuiteExt.set(key, []);
+    bySuiteExt.get(key).push({ file: full, mtime: st.mtimeMs });
+  }
+
+  for (const files of bySuiteExt.values()) {
+    files.sort((a, b) => b.mtime - a.mtime);
+    for (const old of files.slice(keepPerSuite)) {
+      try {
+        fs.unlinkSync(old.file);
+        deleted += 1;
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  return deleted;
 }
 
 function escapeHtml(value) {
@@ -379,6 +451,221 @@ export function writeCoverageHtmlReport(payload, suiteName, stamp) {
 
   fs.writeFileSync(htmlFile, html, 'utf8');
   return htmlFile;
+}
+
+/**
+ * Build a global consolidated coverage report from the latest coverage-*.json
+ * per suite under TestSprite/reports/ (excludes prior global-consolidated files).
+ *
+ * Writes:
+ *   - coverage-global-consolidated-<stamp>.json
+ *   - coverage-global-consolidated-<stamp>.html
+ *   - coverage-global-latest.html  (stable name for the newest rollup)
+ *
+ * @param {{ maxAgeHours?: number }} [options]
+ * @returns {{ jsonPath: string, htmlPath: string, latestPath: string, suites: string[] }}
+ */
+export function writeConsolidatedCoverageReport(options = {}) {
+  ensureDir(REPORTS_DIR);
+  const maxAgeHours = Number(
+    process.env.E2E_CONSOLIDATED_MAX_AGE_HOURS || options.maxAgeHours || 36
+  );
+  const maxAgeMs = maxAgeHours > 0 ? maxAgeHours * 60 * 60 * 1000 : 0;
+  const now = Date.now();
+
+  /** @type {Map<string, { file: string, mtime: number }>} */
+  const latestBySuite = new Map();
+
+  for (const name of fs.readdirSync(REPORTS_DIR)) {
+    if (!name.startsWith('coverage-') || !name.endsWith('.json')) continue;
+    if (name.startsWith('coverage-global-consolidated-')) continue;
+    const m = name.match(/^coverage-(.+)-(\d{4}-\d{2}-\d{2}T.+)\.json$/);
+    if (!m) continue;
+    const suite = m[1];
+    const full = path.join(REPORTS_DIR, name);
+    let st;
+    try {
+      st = fs.statSync(full);
+    } catch {
+      continue;
+    }
+    if (maxAgeMs > 0 && now - st.mtimeMs > maxAgeMs) continue;
+    const prev = latestBySuite.get(suite);
+    if (!prev || st.mtimeMs > prev.mtime) {
+      latestBySuite.set(suite, { file: full, mtime: st.mtimeMs });
+    }
+  }
+
+  if (latestBySuite.size === 0) {
+    throw new Error(
+      `No recent coverage-*.json files found in ${REPORTS_DIR} (maxAgeHours=${maxAgeHours}). ` +
+        'Run CRUD/smoke (or other harness suites) first.'
+    );
+  }
+
+  const suitePayloads = [];
+  for (const [suite, meta] of [...latestBySuite.entries()].sort((a, b) =>
+    a[0].localeCompare(b[0])
+  )) {
+    const payload = JSON.parse(fs.readFileSync(meta.file, 'utf8'));
+    const summary = payload.summary || { pass: 0, fail: 0, skip: 0, todo: 0 };
+    const results = Array.isArray(payload.results) ? payload.results : [];
+    const durationMs = results.reduce((sum, r) => sum + (Number(r.durationMs) || 0), 0);
+    const wallMs =
+      payload.startedAt && payload.finishedAt
+        ? Math.max(
+            0,
+            new Date(payload.finishedAt).getTime() - new Date(payload.startedAt).getTime()
+          )
+        : durationMs;
+    const htmlSibling = meta.file.replace(/\.json$/i, '.html');
+    suitePayloads.push({
+      suite,
+      sourceJson: path.relative(ROOT, meta.file),
+      sourceHtml: fs.existsSync(htmlSibling) ? path.relative(ROOT, htmlSibling) : null,
+      summary,
+      results,
+      startedAt: payload.startedAt,
+      finishedAt: payload.finishedAt,
+      durationMs: wallMs,
+      ok: (summary.fail || 0) === 0,
+    });
+  }
+
+  const mergedResults = [];
+  const totals = { pass: 0, fail: 0, skip: 0, todo: 0 };
+  let startedAt = null;
+  let finishedAt = null;
+  for (const sp of suitePayloads) {
+    totals.pass += sp.summary.pass || 0;
+    totals.fail += sp.summary.fail || 0;
+    totals.skip += sp.summary.skip || 0;
+    totals.todo += sp.summary.todo || 0;
+    if (sp.startedAt && (!startedAt || sp.startedAt < startedAt)) startedAt = sp.startedAt;
+    if (sp.finishedAt && (!finishedAt || sp.finishedAt > finishedAt)) finishedAt = sp.finishedAt;
+    for (const r of sp.results) {
+      mergedResults.push({
+        ...r,
+        kind: r.kind ? `${sp.suite}/${r.kind}` : sp.suite,
+        path: r.path,
+        message: r.message
+          ? `[${sp.suite}] ${r.message}`
+          : undefined,
+      });
+    }
+  }
+
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const suiteName = 'global-consolidated';
+  const overallOk = totals.fail === 0;
+  const payload = {
+    suite: suiteName,
+    reportType: 'global-consolidated',
+    overallSuccess: overallOk,
+    startedAt,
+    finishedAt: finishedAt || new Date().toISOString(),
+    summary: totals,
+    suites: suitePayloads.map((sp) => ({
+      suite: sp.suite,
+      ok: sp.ok,
+      summary: sp.summary,
+      durationMs: sp.durationMs,
+      sourceJson: sp.sourceJson,
+      sourceHtml: sp.sourceHtml,
+      startedAt: sp.startedAt,
+      finishedAt: sp.finishedAt,
+    })),
+    results: mergedResults,
+  };
+
+  const jsonPath = path.join(REPORTS_DIR, `coverage-${suiteName}-${stamp}.json`);
+  fs.writeFileSync(jsonPath, JSON.stringify(payload, null, 2), 'utf8');
+
+  // Reuse standard HTML writer for modules / failures / all results
+  const htmlPath = writeCoverageHtmlReport(payload, suiteName, stamp);
+
+  // Enrich with suite rollup section near the top (inject after first meta block)
+  const suiteRows = suitePayloads
+    .map(
+      (sp) => `<tr>
+      <td><span class="badge ${sp.ok ? 'pass' : 'fail'}">${sp.ok ? 'pass' : 'fail'}</span></td>
+      <td><code>${escapeHtml(sp.suite)}</code></td>
+      <td class="pass">${sp.summary.pass || 0}</td>
+      <td class="fail">${sp.summary.fail || 0}</td>
+      <td>${sp.summary.skip || 0}</td>
+      <td>${formatDuration(sp.durationMs)}</td>
+      <td>${
+        sp.sourceHtml
+          ? `<a href="${escapeHtml(path.basename(sp.sourceHtml))}">module HTML</a>`
+          : '—'
+      }</td>
+    </tr>`
+    )
+    .join('\n');
+
+  const overallBanner = `<div class="meta" style="border-left-color:${overallOk ? '#28a745' : '#dc3545'};background:${overallOk ? '#dcfce7' : '#fee2e2'}">
+      <div style="font-size:1.25em;font-weight:700">${
+        overallOk ? 'OVERALL SUCCESS' : 'OVERALL FAILED'
+      }</div>
+      <div class="muted">Global rollup of ${suitePayloads.length} suite(s) · fail=${totals.fail}</div>
+    </div>
+    <h2>Suites in this run</h2>
+    <p class="muted">Individual harness modules included in this consolidated report.</p>
+    <table>
+      <thead>
+        <tr><th>Status</th><th>Suite / module</th><th>Pass</th><th>Fail</th><th>Skip</th><th>Duration</th><th>Detail</th></tr>
+      </thead>
+      <tbody>
+        ${suiteRows}
+      </tbody>
+    </table>`;
+
+  let html = fs.readFileSync(htmlPath, 'utf8');
+  html = html
+    .replace(
+      '<title>E2E Coverage — global-consolidated</title>',
+      '<title>E2E Global Consolidated Coverage</title>'
+    )
+    .replace(
+      '<h1>E2E Coverage Report</h1>',
+      '<h1>E2E Global Consolidated Report</h1>'
+    )
+    .replace(
+      '<div class="meta">',
+      `${overallBanner}\n    <div class="meta">`
+    );
+  fs.writeFileSync(htmlPath, html, 'utf8');
+
+  const latestPath = path.join(REPORTS_DIR, 'coverage-global-latest.html');
+  fs.writeFileSync(latestPath, html, 'utf8');
+
+  const logPath = path.join(REPORTS_DIR, 'LOOP_LOG.md');
+  fs.appendFileSync(
+    logPath,
+    `\n## ${new Date().toISOString()} — global-consolidated\n` +
+      `- overall: ${overallOk ? 'SUCCESS' : 'FAILED'} | pass: ${totals.pass} | fail: ${totals.fail} | skip: ${totals.skip}\n` +
+      `- suites: ${suitePayloads.map((s) => s.suite).join(', ')}\n` +
+      `- html: \`${path.relative(ROOT, htmlPath)}\`\n` +
+      `- latest: \`${path.relative(ROOT, latestPath)}\`\n`,
+    'utf8'
+  );
+
+  pruneReportsDir();
+
+  console.log(`[harness] Global consolidated JSON: ${jsonPath}`);
+  console.log(`[harness] Global consolidated HTML: ${htmlPath}`);
+  console.log(`[harness] Global latest (stable name): ${latestPath}`);
+  console.log(
+    `[harness] Overall: ${overallOk ? 'SUCCESS' : 'FAILED'} across ${suitePayloads.length} suite(s)`
+  );
+
+  return {
+    jsonPath,
+    htmlPath,
+    latestPath,
+    suites: suitePayloads.map((s) => s.suite),
+    overallSuccess: overallOk,
+  };
 }
 
 /**

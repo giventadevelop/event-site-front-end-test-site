@@ -739,7 +739,29 @@
                     <li>Append-only log: <code class="script-name">TestSprite/reports/LOOP_LOG.md</code></li>
                     <li>Inventory: <code class="script-name">TestSprite/generated/route-inventory.json</code></li>
                     <li>Contact form suite: <code class="script-name">npm run test:contact-form</code> → <code class="script-name">/mosc-redesign/contact-form-email</code> + send-html API validation (no live email)</li>
+                    <li>Legacy admin HTML only: <code class="script-name">TestSprite/admin-tests/admin-test-report.html</code> (comprehensive suite — <strong>not</strong> under <code>reports/</code>)</li>
                 </ul>
+                <div class="info">
+                    <strong>Report rotation:</strong> each harness suite write keeps the newest
+                    <code class="code-highlight">E2E_REPORT_KEEP</code> files per suite (default <strong>5</strong>)
+                    and deletes coverage files older than
+                    <code class="code-highlight">E2E_REPORT_MAX_AGE_DAYS</code> (default <strong>5</strong>).
+                    <code class="script-name">LOOP_LOG.md</code> is kept. Folder is gitignored.
+                </div>
+                <div class="success">
+                    <strong>Global consolidated report:</strong> after the recommended ladder (or
+                    <code class="script-name">npm run test:coverage:consolidated</code>), open
+                    <code class="script-name">TestSprite/reports/coverage-global-latest.html</code>
+                    for overall SUCCESS/FAILED plus every suite’s pass/fail and links to module HTML.
+                    Timestamped copy:
+                    <code class="script-name">coverage-global-consolidated-&lt;stamp&gt;.html</code>.
+                </div>
+                <div class="warning">
+                    If you chain Node steps with all <code class="code-highlight">&&</code> and comprehensive admin
+                    exits non-zero (e.g. Membership Plans fail), <strong>CRUD and smoke never run</strong> —
+                    so nothing new appears under <code class="script-name">TestSprite/reports/</code>.
+                    Use <code class="code-highlight">&amp;</code> between Node steps (see §11).
+                </div>
                 <div class="success">
                     <strong>Safety rules:</strong>
                     mutate only <code class="code-highlight">[E2E]</code> copies; no live Stripe charges;
@@ -766,7 +788,7 @@
                 <p>
                     One <code class="code-highlight">cmd /c</code> line sets the demo tenant env vars,
                     points Playwright at <code class="code-highlight">http://localhost:3000</code>,
-                    then runs four steps in order.
+                    then runs five steps in order.
                     Env vars are joined with <code class="code-highlight">&&</code>;
                     Node steps are joined with <code class="code-highlight">&amp;</code> so CRUD and smoke
                     still run even if the comprehensive admin suite exits non-zero (failed assertions).
@@ -786,16 +808,16 @@
                         create / update / delete <code class="code-highlight">[E2E]</code> sample rows on the demo tenant.
                     </li>
                     <li>
-                        <code class="script-name">run-contact-form-email-tests.js</code> —
-                        Contact Us HTML email page (<code>/mosc-redesign/contact-form-email</code>): form fields,
-                        client validation, and <code>send-html</code> API 400/405 checks (no live email send).
-                    </li>
-                    <li>
                         <code class="script-name">run-inventory-smoke-crawl.js --kind=admin,public,mosc-redesign</code> —
                         visits every inventory route for those three kinds only
                         (core public + all <code>/admin</code> routes + admin-home buttons + all
                         <code>/mosc-redesign</code> pages). Omitting <code>mosc</code> and
                         <code>mosc-old</code> from <code>--kind</code> excludes those trees.
+                    </li>
+                    <li>
+                        <code class="script-name">write-consolidated-coverage-report.js</code> —
+                        writes <code class="script-name">coverage-global-latest.html</code> (overall SUCCESS/FAILED
+                        + per-suite rollup + merged detail tables).
                     </li>
                 </ol>
                 <div class="success">
@@ -852,6 +874,11 @@
                             <td><code class="script-name">run-inventory-smoke-crawl.js</code></td>
                             <td><code>--kind=admin,public,mosc-redesign</code> only (no <code>/mosc</code>, no <code>/mosc-old</code>)</td>
                         </tr>
+                        <tr>
+                            <td>5</td>
+                            <td><code class="script-name">write-consolidated-coverage-report.js</code></td>
+                            <td>Global rollup → <code>coverage-global-latest.html</code></td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -860,7 +887,7 @@
         <div class="command-block expedite"
              data-command-type="expedite"
              data-command-base="cmd /c"
-             data-template-command="cmd /c &quot;set NEXT_PUBLIC_TENANT_ID=tenant_demo_002&& set E2E_TENANT_ID=tenant_demo_002&& set E2E_EXPECTED_TENANT=tenant_demo_002&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\tools\generate-route-inventory.js & node TestSprite\admin-tests\comprehensive-admin-test-suite.js & node TestSprite\admin-tests\admin-crud-demo-tenant-suite.js & node TestSprite\sanity-tests\run-contact-form-email-tests.js & node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --kind=admin,public,mosc-redesign&quot;">
+             data-template-command="cmd /c &quot;set NEXT_PUBLIC_TENANT_ID=tenant_demo_002&& set E2E_TENANT_ID=tenant_demo_002&& set E2E_EXPECTED_TENANT=tenant_demo_002&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\tools\generate-route-inventory.js & node TestSprite\admin-tests\comprehensive-admin-test-suite.js & node TestSprite\admin-tests\admin-crud-demo-tenant-suite.js & node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --kind=admin,public,mosc-redesign & node TestSprite\tools\write-consolidated-coverage-report.js&quot;">
             <div class="command-header">
                 <span class="command-type">★ Recommended: tenant_demo_002 · exclude /mosc + /mosc-old</span>
                 <div class="command-header-buttons">
@@ -891,40 +918,42 @@
                     </div>
                 </div>
             </div>
-            <div class="command-content" id="scoped-ladder">cmd /c "set NEXT_PUBLIC_TENANT_ID=tenant_demo_002&& set E2E_TENANT_ID=tenant_demo_002&& set E2E_EXPECTED_TENANT=tenant_demo_002&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\tools\generate-route-inventory.js & node TestSprite\admin-tests\comprehensive-admin-test-suite.js & node TestSprite\admin-tests\admin-crud-demo-tenant-suite.js & node TestSprite\sanity-tests\run-contact-form-email-tests.js & node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --kind=admin,public,mosc-redesign"</div>
+            <div class="command-content" id="scoped-ladder">cmd /c "set NEXT_PUBLIC_TENANT_ID=tenant_demo_002&& set E2E_TENANT_ID=tenant_demo_002&& set E2E_EXPECTED_TENANT=tenant_demo_002&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\tools\generate-route-inventory.js & node TestSprite\admin-tests\comprehensive-admin-test-suite.js & node TestSprite\admin-tests\admin-crud-demo-tenant-suite.js & node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --kind=admin,public,mosc-redesign & node TestSprite\tools\write-consolidated-coverage-report.js"</div>
             <div class="command-single-line" id="scoped-ladder-single">
                 <div class="command-single-line-label">Windows Single-Line:</div>
-                <code id="scoped-ladder-single-code">cmd /c "set NEXT_PUBLIC_TENANT_ID=tenant_demo_002&& set E2E_TENANT_ID=tenant_demo_002&& set E2E_EXPECTED_TENANT=tenant_demo_002&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\tools\generate-route-inventory.js & node TestSprite\admin-tests\comprehensive-admin-test-suite.js & node TestSprite\admin-tests\admin-crud-demo-tenant-suite.js & node TestSprite\sanity-tests\run-contact-form-email-tests.js & node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --kind=admin,public,mosc-redesign"</code>
+                <code id="scoped-ladder-single-code">cmd /c "set NEXT_PUBLIC_TENANT_ID=tenant_demo_002&& set E2E_TENANT_ID=tenant_demo_002&& set E2E_EXPECTED_TENANT=tenant_demo_002&& set TEST_BASE_URL=http://localhost:3000&& node TestSprite\tools\generate-route-inventory.js & node TestSprite\admin-tests\comprehensive-admin-test-suite.js & node TestSprite\admin-tests\admin-crud-demo-tenant-suite.js & node TestSprite\sanity-tests\run-inventory-smoke-crawl.js --kind=admin,public,mosc-redesign & node TestSprite\tools\write-consolidated-coverage-report.js"</code>
             </div>
         </div>
 
-        <h2 id="html-reports-contact">12. HTML reports &amp; contact-form in the recommended bundle</h2>
+        <h2 id="html-reports-contact">12. HTML reports &amp; contact-form</h2>
         <div class="section-container">
-            <div class="section-header overview">Does <code>/mosc-redesign/contact-form-email</code> run with the §11 command?</div>
+            <div class="section-header overview">Global rollup + optional contact-form suite</div>
             <div class="section-body">
                 <div class="success">
-                    <strong>Yes — with the current recommended command (§11).</strong>
-                    You do <em>not</em> need a separate run for the deep contact-form suite when you use that full ladder.
-                    The step <code class="script-name">run-contact-form-email-tests.js</code> is already in the chain
-                    (between CRUD and the inventory smoke crawl).
+                    <strong>Global report:</strong> the §11 ladder ends with
+                    <code class="script-name">write-consolidated-coverage-report.js</code>, which writes
+                    <code class="script-name">TestSprite/reports/coverage-global-latest.html</code>
+                    (and a timestamped <code class="script-name">coverage-global-consolidated-*.html</code>).
+                    It merges the latest harness suite JSON (CRUD, smoke, etc.) into one overall SUCCESS/FAILED
+                    view with per-suite rows and the same detail tables as module reports.
+                </div>
+                <div class="info">
+                    <strong>Contact-form deep suite</strong> is optional — run separately with
+                    <code class="script-name">npm run test:contact-form</code>
+                    (<code class="script-name">TestSprite/sanity-tests/run-contact-form-email-tests.js</code>
+                    (form fields + send-html API 400/405; no live email). The §11 smoke crawl still visits
+                    <code class="code-highlight">/mosc-redesign/contact-form-email</code> as a page load.
                 </div>
                 <ul>
                     <li>
-                        <strong>Deep contact-form suite</strong> (form fields, empty-submit validation, API 400/405 —
-                        no live email): runs via
-                        <code class="script-name">TestSprite/sanity-tests/run-contact-form-email-tests.js</code>
-                        inside the §11 command. Standalone: <code class="script-name">npm run test:contact-form</code>.
+                        Module reports remain as
+                        <code class="script-name">coverage-&lt;suite&gt;-&lt;stamp&gt;.html</code>
+                        (e.g. smoke-admin+public+mosc-redesign).
                     </li>
                     <li>
-                        <strong>Smoke page visit</strong>: the same URL is also visited again during
-                        <code class="script-name">run-inventory-smoke-crawl.js --kind=…,mosc-redesign</code>
-                        (inventory kind <code class="code-highlight">mosc-redesign</code>). That is a load/smoke check only,
-                        not the deep form/API assertions.
-                    </li>
-                    <li>
-                        <strong>Older runs</strong> that used a ladder <em>without</em>
-                        <code class="script-name">run-contact-form-email-tests.js</code> only smoke-visited the page.
-                        Re-copy the §11 command (or run <code class="script-name">npm run test:contact-form</code>) to get the deep suite.
+                        Legacy comprehensive admin still writes only
+                        <code class="script-name">TestSprite/admin-tests/admin-test-report.html</code>
+                        (not merged into the harness global JSON unless you add a harness adapter later).
                     </li>
                 </ul>
             </div>
@@ -961,7 +990,12 @@
                             <td>HTML for the inventory smoke step of §11</td>
                         </tr>
                         <tr>
-                            <td>Contact-form suite</td>
+                            <td><strong>Global consolidated</strong></td>
+                            <td><code class="script-name">coverage-global-latest.html</code> (+ <code class="script-name">coverage-global-consolidated-&lt;stamp&gt;.html</code>)</td>
+                            <td>Overall SUCCESS/FAILED + every suite’s pass/fail + merged detail tables</td>
+                        </tr>
+                        <tr>
+                            <td>Contact-form suite (optional)</td>
                             <td><code class="script-name">coverage-contact-form-email-&lt;stamp&gt;.html</code></td>
                             <td>HTML for the deep contact-form / send-html checks</td>
                         </tr>
@@ -1041,6 +1075,7 @@
                 const baseUrl = (params['base-url'] || 'http://localhost:3000').trim();
                 const kind = (params['kind'] || 'admin,public,mosc-redesign').trim();
                 // Use & between Node steps so CRUD + smoke continue after comprehensive failures
+                // Ends with write-consolidated-coverage-report.js → coverage-global-latest.html
                 command =
                     'cmd /c "set NEXT_PUBLIC_TENANT_ID=' + tenant +
                     '&& set E2E_TENANT_ID=' + tenant +
@@ -1049,8 +1084,8 @@
                     '&& node TestSprite\\tools\\generate-route-inventory.js' +
                     ' & node TestSprite\\admin-tests\\comprehensive-admin-test-suite.js' +
                     ' & node TestSprite\\admin-tests\\admin-crud-demo-tenant-suite.js' +
-                    ' & node TestSprite\\sanity-tests\\run-contact-form-email-tests.js' +
-                    ' & node TestSprite\\sanity-tests\\run-inventory-smoke-crawl.js --kind=' + kind + '"';
+                    ' & node TestSprite\\sanity-tests\\run-inventory-smoke-crawl.js --kind=' + kind +
+                    ' & node TestSprite\\tools\\write-consolidated-coverage-report.js"';
             } else {
                 command = commandBlock.getAttribute('data-command-base') || commandElement.textContent.trim();
             }

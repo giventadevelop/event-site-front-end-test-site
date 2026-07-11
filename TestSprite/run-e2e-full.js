@@ -36,6 +36,7 @@ import {
   requireAuthJson,
   REPORTS_DIR,
   ensureDir,
+  writeConsolidatedCoverageReport,
 } from './lib/e2e-harness.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -150,11 +151,19 @@ async function main() {
     'utf8'
   );
 
+  // Always try to write a global rollup of whatever harness JSON exists from this session
+  try {
+    writeConsolidatedCoverageReport();
+  } catch (err) {
+    console.warn(`[e2e-full] Consolidated report skipped: ${err.message || err}`);
+  }
+
   if (failed > 0) {
-    console.error(`\n${failed} suite(s) failed. See TestSprite/reports/`);
+    console.error(`\n${failed} suite(s) failed. See TestSprite/reports/ (coverage-global-latest.html)`);
     process.exit(1);
   }
   console.log('\nAll orchestrated suites completed successfully.');
+  console.log('Open TestSprite/reports/coverage-global-latest.html for the global rollup.');
 }
 
 main().catch((err) => {

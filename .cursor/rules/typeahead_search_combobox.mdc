@@ -1,0 +1,149 @@
+---
+description: Smooth multi-field typeahead/combobox patterns for admin searches (tenant ID, org, event, and similar filters)
+globs: src/app/admin/**/*Filter*.tsx, src/app/admin/**/*SearchSelect*.tsx, src/app/admin/**/*Combobox*.tsx, src/components/admin/**/*Search*.tsx, src/app/admin/**/organizationSelectServerActions.ts
+alwaysApply: false
+---
+
+# Typeahead Search / Combobox (Smooth + Multi-Field)
+
+Use this pattern for admin filter fields that suggest options while typing (Tenant ID, organizations, events, contacts, categories, years, etc.).
+
+**Reference implementation:** [`AdminTenantFilterField.tsx`](mdc:src/app/admin/AdminTenantFilterField.tsx)  
+**Server search (name + ID):** [`organizationSelectServerActions.ts`](mdc:src/app/admin/tenant-management/organizations/organizationSelectServerActions.ts)  
+**Inspiration:** mosc-temp `YearCombobox` / `CategoryCombobox` (downloads page)
+
+---
+
+## Core Principle: Multi-Field Typeahead (Generic)
+
+Typeahead is **not** a single-column name search. Wherever a user might type an **ID**, **code**, **email**, **domain**, or **display name**, the suggestion query should match **all reasonable identifying fields**—as long as the UX stays smooth (debounced, capped list, merge/dedupe).
+
+| Search UI | Match these fields (examples) |
+|-----------|-------------------------------|
+| Tenant / org picker | `organizationName`, `tenantId`, `domain` |
+| Event picker | title, event id, slug (if present) |
+| User / contact picker | firstName, lastName, email, userId |
+| Settings / resource lists | display name **and** business key / id |
+
+### Why this matters (Tenant ID fix)
+
+Typing `ten` must surface orgs whose **`tenantId`** contains `ten` (e.g. `tenant_demo_002` / Techies US).  
+Typing `techie` must still match **`organizationName`** (“Techies US”).
+
+**Broken:** server only sent `organizationName.contains` → `ten` showed “No matching organizations” even though `tenant_demo_002` exists.  
+**Fixed:** parallel criteria, then merge/dedupe:
+
+```typescript
+// ✅ DO: searchTenantOrganizationsForSelectServer
+const [byName, byTenantId] = await Promise.all([
+  fetchTenantOrganizations(page, { search: trimmed, ...sort }),           // organizationName.contains
+  fetchTenantOrganizations(page, { tenantIdContains: trimmed, ...sort }), // tenantId.contains
+]);
+return mergeOrganizationsByKey(byTenantId.data, byName.data).slice(0, LIMIT);
+```
+
+- Add `tenantIdContains` → `tenantId.contains` in [`fetchTenantOrganizations`](mdc:src/app/admin/tenant-management/organizations/ApiServerActions.ts) / [`TenantOrganizationFilters`](mdc:src/app/admin/tenant-management/types.ts).
+- Client local filter should also match name **and** id (and domain when available).
+- After server returns, **merge** with local matches so an empty name-only response never blanks good ID hits already in cache.
+
+Apply the **same idea** to any new typeahead: identify the human label fields + stable id/key fields, query both (or filter both client-side when the dataset is small), merge, cap (~20).
+
+---
+
+## Required Behaviors (Smoothness)
+
+1. **Local controlled input** — Keep `inputValue` in component state. Do **not** drive the input solely from URL/`router` on every keystroke (flicker / list refetch thrash).
+2. **Do not write partial typeahead text into the URL** — Typing filters the dropdown only. Commit `?tenant=` (or similar) **only** on suggestion select, Enter, or clear. Debouncing partial strings into the URL causes wrong filters and effect loops.
+3. **Multi-field server (and local) match** — See Core Principle above. Never ship a typeahead that only searches the pretty name when users also know the id/code.
+4. **`onMouseDown` + `preventDefault` on options** — So input `blur` does not close the menu before `click` runs.
+5. **Click-outside closes** — `mousedown` on `document`; ignore events inside the container `ref`.
+6. **Keyboard** — `Enter` selects the only filtered match (or commits typed value); `Escape` closes; optionally `ArrowDown` opens.
+7. **ARIA** — `role="combobox"`; `aria-expanded`, `aria-controls`, `aria-autocomplete="list"`; list `role="listbox"` / `role="option"`. Prefer `useId()` for listbox ids; keep stable product ids (e.g. `admin-filter-tenant-id`) when tests/docs reference them.
+8. **Clear control** — Clear button uses `onMouseDown={(e) => e.preventDefault()}`.
+9. **Resolve URL → label once** — Hydrating a label from a committed id: guard with `resolveAttemptedRef`; accept **exact id matches only** (never `results[0]`). Do **not** put the growing suggestion cache in that effect’s deps in a way that re-fires the same search (infinite loop).
+
+---
+
+## DO
+
+```tsx
+<button
+  type="button"
+  onMouseDown={(e) => e.preventDefault()} // critical — blur vs click race
+  onClick={() => applySelection(item)}
+  role="option"
+  aria-selected={selected}
+>
+  {item.label}
+</button>
+```
+
+```tsx
+const [inputValue, setInputValue] = useState(valueFromUrl);
+const [open, setOpen] = useState(false);
+// filter suggestions from inputValue; open on focus / change
+// commit URL only on select / Enter / clear — never while typing partial queries
+```
+
+```typescript
+// ✅ Local multi-field filter (mirror server fields)
+function filterLocally(items, query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return items;
+  return items.filter((item) =>
+    [item.organizationName, item.tenantId, item.domain]
+      .some((v) => (v ?? '').toLowerCase().includes(q)),
+  );
+}
+```
+
+## DON'T
+
+```tsx
+// ❌ DON'T: sync URL / refetch on every keystroke (partial queries like "fa" cause loops)
+onChange={(e) => {
+  setInputValue(e.target.value);
+  scheduleCommit(e.target.value); // WRONG for typeahead
+}}
+
+// ❌ DON'T: name-only server search when users also type IDs / codes
+fetchTenantOrganizations(page, { search: trimmed }); // organizationName.contains only
+
+// ❌ DON'T: resolve effect that depends on suggestion cache and falls back to results[0]
+useEffect(() => {
+  if (!cachedOrgs.some((o) => o.tenantId === tenantFromUrl)) {
+    search(tenantFromUrl).then((results) => setCachedOrgs([results[0], ...])); // infinite loop
+  }
+}, [tenantFromUrl, cachedOrgs]);
+
+// ❌ DON'T: replace dropdown with empty server results and wipe local ID matches
+setDisplayOrgs(serverResults); // if empty, user loses cached tenantId hits
+
+// ❌ DON'T: option click without mousedown preventDefault
+<li onClick={() => select(item)}>{item.label}</li>
+
+// ❌ DON'T: uncontrolled input bound only to searchParams
+<input value={searchParams.get('tenant') ?? ''} onChange={...} />
+```
+
+---
+
+## Where It Applies
+
+- **Shared Tenant ID typeahead:** [`AdminTenantFilterField`](mdc:src/app/admin/AdminTenantFilterField.tsx) — use this on every admin list search form that filters by tenant (do not reinvent a plain text Tenant ID input).
+- Pages already wired (same multi-field search): Manage Usage, **Gallery Albums** (`/admin/gallery/albums`), Manage Events, executive committee, sponsors, contacts, performers, program directors, email modules, manual payments, satellite domains, tenant settings list, etc.
+- Admin top bar: [`AdminTenantContext`](mdc:src/app/admin/AdminTenantContext.tsx) — hide top bar when the page already has an in-form `AdminTenantFilterField` (`hasInlineTenantFilter`).
+- When a tenant is selected (`?tenant=`), list/create server actions must pass **`tenantId.equals` + `X-Tenant-ID`** for that tenant (see manage-usage + gallery albums `ApiServerActions`).
+- Org pickers: [`TenantOrganizationSearchSelect`](mdc:src/app/admin/tenant-management/components/TenantOrganizationSearchSelect.tsx)
+- Shared search action: [`searchTenantOrganizationsForSelectServer`](mdc:src/app/admin/tenant-management/organizations/organizationSelectServerActions.ts)
+- Event pickers: `EventSearchSelect` under newsletter / promotion emails (extend with id/title multi-field when adding search)
+- Any new admin typeahead / combobox filter — default to **multi-field** match + reuse `AdminTenantFilterField` for tenant
+
+## Data Loading Checklist
+
+- [ ] Recent-N list on open, then **debounced** server search as the query grows
+- [ ] Match **label + id/key** fields (and other natural identifiers when cheap)
+- [ ] Parallel `.contains` queries when the API is single-field criteria; **merge/dedupe**
+- [ ] Cap suggestions (~20) for snappy menus
+- [ ] Merge server + local matches so empty name-only responses do not clear ID hits
+- [ ] Placeholder text mentions what can be typed (e.g. “Search by Tenant ID or organization name…”)

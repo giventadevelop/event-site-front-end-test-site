@@ -29,6 +29,7 @@ cmd /c "set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& n
 | `test:public:dynamic` | Public pages with discovered demo event/plan IDs |
 | `test:contact-form` | Contact Us HTML email page + send-html API validation (no live send) |
 | `test:coverage:html` | Regenerate `coverage-*.html` from existing `coverage-*.json` |
+| `test:coverage:consolidated` | Global rollup → `coverage-global-latest.html` |
 | `test:admin:crud` | Copy/create → update → delete `[E2E]` rows on demo tenant |
 | `test:e2e:full` | Orchestrated full loop (includes contact-form suite) |
 | `test:e2e:quick` | Inventory admin+public + dynamic + CRUD + contact-form |
@@ -38,6 +39,8 @@ cmd /c "set E2E_ALLOW_ANY_TENANT=1&& set TEST_BASE_URL=http://localhost:3000&& n
 Each harness suite writes:
 - `TestSprite/reports/coverage-<suite>-<stamp>.json`
 - `TestSprite/reports/coverage-<suite>-<stamp>.html` — overview (pass/fail/skip, wall clock, per-module timings, failures, all results)
+- **`TestSprite/reports/coverage-global-latest.html`** — consolidated overall SUCCESS/FAILED + all suites (`npm run test:coverage:consolidated` or end of §11 ladder). Also `coverage-global-consolidated-<stamp>.html`.
+- `TestSprite/reports/LOOP_LOG.md`
 
 ## Safety
 
