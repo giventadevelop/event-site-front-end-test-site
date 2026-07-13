@@ -89,17 +89,17 @@ export default function RecurrenceConfigSection({
                   checked={isRecurring}
                   onChange={(e) => onRecurringChange(e.target.checked)}
                   onClick={(e) => e.stopPropagation()}
-                  className="custom-checkbox"
+                  className="custom-checkbox custom-checkbox--yellow"
                 />
                 <span className="custom-checkbox-tick">
                   {isRecurring && (
-                    <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l5 5L19 7" />
                     </svg>
                   )}
                 </span>
               </span>
-              <span className="mt-2 text-xs text-center select-none break-words max-w-[6rem]">Make this event recurring</span>
+              <span className="mt-2 text-sm font-semibold text-center select-none break-words max-w-[8rem]">Make this event recurring</span>
             </label>
           </div>
         </div>
@@ -119,17 +119,17 @@ export default function RecurrenceConfigSection({
                 checked={isRecurring}
                 onChange={(e) => onRecurringChange(e.target.checked)}
                 onClick={(e) => e.stopPropagation()}
-                className="custom-checkbox"
+                className="custom-checkbox custom-checkbox--yellow"
               />
               <span className="custom-checkbox-tick">
                 {isRecurring && (
-                  <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l5 5L19 7" />
                   </svg>
                 )}
               </span>
             </span>
-            <span className="mt-2 text-xs text-center select-none break-words max-w-[6rem]">Make this event recurring</span>
+              <span className="mt-2 text-sm font-semibold text-center select-none break-words max-w-[8rem]">Make this event recurring</span>
           </label>
         </div>
       </div>
@@ -197,14 +197,24 @@ export default function RecurrenceConfigSection({
                 <label className="block font-medium mb-2">On days of week *</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {WEEKDAYS.map((day) => (
-                    <label key={day.value} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={weeklyDays.includes(day.value)}
-                        onChange={() => handleWeeklyDayToggle(day.value)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">{day.label}</span>
+                    <label key={day.value} className="flex items-center gap-3 cursor-pointer">
+                      <span className="relative flex items-center justify-center flex-shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={weeklyDays.includes(day.value)}
+                          onChange={() => handleWeeklyDayToggle(day.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="custom-checkbox custom-checkbox--yellow"
+                        />
+                        <span className="custom-checkbox-tick">
+                          {weeklyDays.includes(day.value) && (
+                            <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l5 5L19 7" />
+                            </svg>
+                          )}
+                        </span>
+                      </span>
+                      <span className="text-base font-semibold text-gray-900">{day.label}</span>
                     </label>
                   ))}
                 </div>
@@ -224,14 +234,24 @@ export default function RecurrenceConfigSection({
                 <label className="block font-medium mb-2">On days of week *</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {WEEKDAYS.map((day) => (
-                    <label key={day.value} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={weeklyDays.includes(day.value)}
-                        onChange={() => handleWeeklyDayToggle(day.value)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">{day.label}</span>
+                    <label key={day.value} className="flex items-center gap-3 cursor-pointer">
+                      <span className="relative flex items-center justify-center flex-shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={weeklyDays.includes(day.value)}
+                          onChange={() => handleWeeklyDayToggle(day.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="custom-checkbox custom-checkbox--yellow"
+                        />
+                        <span className="custom-checkbox-tick">
+                          {weeklyDays.includes(day.value) && (
+                            <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l5 5L19 7" />
+                            </svg>
+                          )}
+                        </span>
+                      </span>
+                      <span className="text-base font-semibold text-gray-900">{day.label}</span>
                     </label>
                   ))}
                 </div>

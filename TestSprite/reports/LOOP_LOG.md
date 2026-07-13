@@ -24,3 +24,19 @@
 - pass: 509 | fail: 0 | skip: 1 | todo: 0
 - report: `TestSprite\reports\coverage-smoke-admin+public+mosc-redesign-2026-07-11T18-34-29-837Z.json`
 - html: `TestSprite\reports\coverage-smoke-admin+public+mosc-redesign-2026-07-11T18-34-29-837Z.html`
+
+## 2026-07-12T00:53:18.247Z — admin-crud
+- pass: 8 | fail: 0 | skip: 9 | todo: 0
+- report: `TestSprite\reports\coverage-admin-crud-2026-07-12T00-53-18-244Z.json`
+- html: `TestSprite\reports\coverage-admin-crud-2026-07-12T00-53-18-244Z.html`
+
+## 2026-07-12T02:56:37.752Z — smoke-admin+public+mosc-redesign
+- pass: 501 | fail: 8 | skip: 1 | todo: 0
+- report: `TestSprite\reports\coverage-smoke-admin+public+mosc-redesign-2026-07-12T02-56-37-743Z.json`
+- html: `TestSprite\reports\coverage-smoke-admin+public+mosc-redesign-2026-07-12T02-56-37-743Z.html`
+
+## 2026-07-12T02:56:37.845Z — global-consolidated
+- overall: FAILED | pass: 516 | fail: 8 | skip: 10
+- suites: admin-crud, contact-form-email, smoke-admin+public+mosc-redesign
+- html: `TestSprite\reports\coverage-global-consolidated-2026-07-12T02-56-37-837Z.html`
+- latest: `TestSprite\reports\coverage-global-latest.html`

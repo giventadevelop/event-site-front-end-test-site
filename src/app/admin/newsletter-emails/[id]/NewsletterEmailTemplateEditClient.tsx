@@ -1101,17 +1101,30 @@ export default function NewsletterEmailTemplateEditClient({
                 Upload a footer banner image above, or enable the site footer layout below. You can use both — they are sent separately in the email.
               </p>
 
-              <div className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  id="addSiteFooter"
-                  checked={addSiteFooter}
-                  onChange={(e) => handleAddSiteFooterChange(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                />
-                <label htmlFor="addSiteFooter" className="block text-sm text-gray-700">
-                  <span className="font-medium text-gray-900">Add site footer</span>
-                  <span className="block text-gray-600 mt-0.5">
+              <div className="flex items-start gap-4">
+                <label
+                  htmlFor="addSiteFooter"
+                  className="relative flex items-center justify-center flex-shrink-0 mt-1 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    id="addSiteFooter"
+                    checked={addSiteFooter}
+                    onChange={(e) => handleAddSiteFooterChange(e.target.checked)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="custom-checkbox custom-checkbox--yellow"
+                  />
+                  <span className="custom-checkbox-tick">
+                    {addSiteFooter && (
+                      <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l5 5L19 7" />
+                      </svg>
+                    )}
+                  </span>
+                </label>
+                <label htmlFor="addSiteFooter" className="block cursor-pointer min-w-0">
+                  <span className="text-xl font-semibold text-gray-900">Add site footer</span>
+                  <span className="block text-base text-gray-600 mt-1">
                     Inserts your homepage-style footer (tenant name, contact, links) at ~600 px email width when the template is saved or sent.
                   </span>
                 </label>
@@ -1120,16 +1133,29 @@ export default function NewsletterEmailTemplateEditClient({
           </NewsletterEmailSection>
 
           {/* Active Status */}
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              name="isActive"
-              id="isActive"
-              checked={formData.isActive}
-              onChange={handleChange}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
+          <div className="flex items-center gap-4">
+            <label
+              htmlFor="isActive"
+              className="relative flex items-center justify-center flex-shrink-0 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                name="isActive"
+                id="isActive"
+                checked={formData.isActive}
+                onChange={handleChange}
+                onClick={(e) => e.stopPropagation()}
+                className="custom-checkbox custom-checkbox--yellow"
+              />
+              <span className="custom-checkbox-tick">
+                {formData.isActive && (
+                  <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l5 5L19 7" />
+                  </svg>
+                )}
+              </span>
+            </label>
+            <label htmlFor="isActive" className="block cursor-pointer text-xl font-semibold text-gray-900">
               Template is active
             </label>
           </div>

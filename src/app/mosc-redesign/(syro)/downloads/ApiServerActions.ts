@@ -131,11 +131,14 @@ async function fetchAllPublicOfficialDocumentsRaw(input?: {
 }): Promise<EventMediaDTO[]> {
   const tenantId = getTenantId();
   const all: EventMediaDTO[] = [];
-  const batchSize = 100;
+  // Keep batches small: concurrent size=100 loads OOM the Java heap / Postgres
+  // result buffer (SQLState 53200). size=50 is usually fine alone; 25 is safer
+  // when the page also loads categories in parallel.
+  const batchSize = 25;
   let page = 0;
   let totalElements = Number.POSITIVE_INFINITY;
 
-  while (all.length < totalElements && page < 50) {
+  while (all.length < totalElements && page < 100) {
     const params = new globalThis.URLSearchParams();
     params.set('tenantId', tenantId);
     if (input?.categoryId) {
@@ -146,7 +149,13 @@ async function fetchAllPublicOfficialDocumentsRaw(input?: {
 
     const url = buildPublicOfficialDocumentsUrl(params);
     const res = await fetchWithJwtRetry(url, { cache: 'no-store' });
-    if (!res.ok) break;
+    if (!res.ok) {
+      globalThis.console.error(
+        '[downloads] public-official-documents page failed',
+        { page, status: res.status, tenantId }
+      );
+      break;
+    }
 
     const batch = (await res.json()) as EventMediaDTO[];
     if (!Array.isArray(batch)) break;
@@ -227,18 +236,6 @@ export async function fetchPublicOfficialDocumentCategoriesServer(): Promise<
   return fetchOfficialDocumentCategoryOptionsServer();
 }
 
-async function fetchPublicOfficialDocumentYearOptionsServer(input?: {
-  categoryId?: number;
-  docs?: EventMediaDTO[];
-}): Promise<number[]> {
-  try {
-    const docs = input?.docs ?? (await fetchAllPublicOfficialDocumentsRaw({ categoryId: input?.categoryId }));
-    return extractYearOptionsFromDocs(docs, input?.categoryId);
-  } catch {
-    return [];
-  }
-}
-
 export async function fetchPublicOfficialDocumentsTreeServer(input?: {
   page?: number;
   size?: number;
@@ -251,56 +248,30 @@ export async function fetchPublicOfficialDocumentsTreeServer(input?: {
   const searchQuery = input?.search?.trim() ?? '';
 
   try {
-    const tenantId = getTenantId();
+    // Load the full public document list once (small batches), then filter and
+    // derive year options in memory. Never issue a second parallel full-list
+    // fetch for yearOptions — that OOMed the JVM with concurrent large pages.
+    const [allDocs, categoryOptions] = await Promise.all([
+      fetchAllPublicOfficialDocumentsRaw(),
+      fetchOfficialDocumentCategoryOptionsServer(),
+    ]);
 
-    if (searchQuery) {
-      const allDocs = await fetchAllPublicOfficialDocumentsRaw({
-        categoryId: input?.categoryId,
-      });
-      const filteredDocs = allDocs.filter((doc) => {
-        const item = mapEventMediaToTreeItem(doc);
-        const searchItem = toDownloadSearchItem(item);
-        if (input?.year && !matchesDownloadYearFilter(searchItem, input.year)) {
-          return false;
-        }
-        return matchesDownloadSearchQuery(searchItem, searchQuery);
-      });
+    const allYearOptions = extractYearOptionsFromDocs(allDocs);
+    const scopedDocs = input?.categoryId
+      ? allDocs.filter((doc) => doc.officialDocumentCategoryId === input.categoryId)
+      : allDocs;
+    const yearOptions = extractYearOptionsFromDocs(scopedDocs, input?.categoryId);
 
-      const dedupedDocs = sortDownloadTreeItemsNewestFirst(
-        deduplicateOfficialDocumentTreeItems(filteredDocs.map(mapEventMediaToTreeItem))
-      );
-      const totalElements = dedupedDocs.length;
-      const totalPages = Math.max(1, Math.ceil(totalElements / size));
-      const currentPage = Math.min(page, totalPages - 1);
-      const content = dedupedDocs.slice(currentPage * size, currentPage * size + size);
-
-      const [yearOptions, allYearOptions, categoryOptions] = await Promise.all([
-        fetchPublicOfficialDocumentYearOptionsServer({ categoryId: input?.categoryId }),
-        fetchPublicOfficialDocumentYearOptionsServer(),
-        fetchOfficialDocumentCategoryOptionsServer(),
-      ]);
-
-      return {
-        content,
-        totalElements,
-        totalPages,
-        page: currentPage,
-        size,
-        categoryOptions,
-        yearOptions,
-        allYearOptions,
-      };
-    }
-
-    const allDocs = await fetchAllPublicOfficialDocumentsRaw({
-      categoryId: input?.categoryId,
-    });
-    const filteredDocs = allDocs.filter((doc) => {
-      if (!input?.year) {
-        return true;
-      }
+    const filteredDocs = scopedDocs.filter((doc) => {
       const item = mapEventMediaToTreeItem(doc);
-      return matchesDownloadYearFilter(toDownloadSearchItem(item), input.year);
+      const searchItem = toDownloadSearchItem(item);
+      if (input?.year && !matchesDownloadYearFilter(searchItem, input.year)) {
+        return false;
+      }
+      if (searchQuery && !matchesDownloadSearchQuery(searchItem, searchQuery)) {
+        return false;
+      }
+      return true;
     });
 
     const dedupedDocs = sortDownloadTreeItemsNewestFirst(
@@ -310,12 +281,6 @@ export async function fetchPublicOfficialDocumentsTreeServer(input?: {
     const totalPages = Math.max(1, Math.ceil(totalElements / size));
     const currentPage = Math.min(page, totalPages - 1);
     const content = dedupedDocs.slice(currentPage * size, currentPage * size + size);
-
-    const [yearOptions, allYearOptions, categoryOptions] = await Promise.all([
-      fetchPublicOfficialDocumentYearOptionsServer({ categoryId: input?.categoryId }),
-      fetchPublicOfficialDocumentYearOptionsServer(),
-      fetchOfficialDocumentCategoryOptionsServer(),
-    ]);
 
     return {
       content,

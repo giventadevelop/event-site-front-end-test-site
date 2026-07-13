@@ -358,16 +358,29 @@ export default function NewsletterEmailTemplateCreateForm({
         </div> */}
 
         {/* Active Status */}
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            name="isActive"
-            id="isActive"
-            checked={formData.isActive}
-            onChange={handleChange}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
+        <div className="flex items-center gap-4">
+          <label
+            htmlFor="isActive"
+            className="relative flex items-center justify-center flex-shrink-0 cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              name="isActive"
+              id="isActive"
+              checked={formData.isActive}
+              onChange={handleChange}
+              onClick={(e) => e.stopPropagation()}
+              className="custom-checkbox custom-checkbox--yellow"
+            />
+            <span className="custom-checkbox-tick">
+              {formData.isActive && (
+                <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l5 5L19 7" />
+                </svg>
+              )}
+            </span>
+          </label>
+          <label htmlFor="isActive" className="block cursor-pointer text-xl font-semibold text-gray-900">
             Template is active
           </label>
         </div>

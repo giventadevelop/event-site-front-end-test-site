@@ -79,6 +79,7 @@ export default function AdminPage() {
       href: '/admin/tenant-email-addresses',
       icon: 'mailBulk',
       label: 'Email Addresses',
+      sublabel: 'tenant email ids',
       color: 'lime',
       key: 'tenant-email-addresses'
     },

@@ -3494,14 +3494,20 @@ To use a consistent, modern checkbox style with a custom tick mark, use:
 - See prompt below for full usage.
 */
 
-/* Checkbox: per .cursor/rules/ui_style_guide.mdc */
+/*
+  Large square admin checkboxes (ui_style_guide.mdc)
+  - w-7 h-7 = 28×28px square (keep width === height)
+  - rounded = 4px only — NOT rounded-lg / rounded-full (square, not pill/circle)
+  - appearance-none removes native OS checkbox
+  - --yellow: border-4 + yellow-500 fill when checked; tick is overlay SVG
+*/
 .custom-checkbox {
-  @apply h-6 w-6 border-2 border-gray-400 rounded-lg cursor-pointer appearance-none relative bg-white;
+  @apply w-7 h-7 accent-yellow-400 appearance-none border-2 border-gray-400 rounded bg-white cursor-pointer relative flex-shrink-0 focus:ring-2 focus:ring-yellow-400 focus:outline-none checked:bg-yellow-400 checked:border-yellow-500;
 }
 .custom-checkbox:checked {
-  @apply bg-blue-600 border-blue-600;
+  @apply bg-yellow-400 border-yellow-500;
 }
-/* Admin media card: yellow when checked, thicker border */
+/* Admin forms — thicker border, stronger yellow when checked */
 .custom-checkbox--yellow {
   @apply border-4 border-gray-500;
 }
@@ -3509,7 +3515,7 @@ To use a consistent, modern checkbox style with a custom tick mark, use:
   @apply bg-yellow-500 border-yellow-500 border-4;
 }
 .custom-checkbox-tick {
-  @apply absolute inset-0 flex items-center justify-center pointer-events-none;
+  @apply pointer-events-none absolute inset-0 flex items-center justify-center;
 }
 .custom-checkbox:checked + .custom-checkbox-tick svg {
   @apply block;

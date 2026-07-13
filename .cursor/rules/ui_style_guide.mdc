@@ -137,29 +137,35 @@ This guide provides standards for creating consistent and maintainable UI compon
 
 ### Checkboxes
 
-- **Rule:** Use the `custom-checkbox` implementation for a larger, more visible checkbox with a custom tick mark.
-- **Click Handling:** Always include `onClick={(e) => e.stopPropagation()}` on the `input` to prevent unintended event bubbling, especially inside clickable table rows or containers.
-- **Example:**
+- **Rule:** Use large **square** admin checkboxes (`custom-checkbox` + optional `custom-checkbox--yellow`) with a custom SVG tick overlay. Do **not** use `rounded-lg` or `rounded-full` — shape must stay a square with only slight rounding (`rounded` = 4px).
+- **Size:** Always `w-7 h-7` (28×28px). Width must equal height.
+- **Yellow variant (admin forms):** Add `custom-checkbox--yellow` for thick gray border unchecked / solid yellow-500 fill+border when checked (EventForm, Tenant Settings “Add site footer”, newsletter “Template is active”, etc.).
+- **Tick:** Overlay SVG (`w-6 h-6 text-gray-800`, `strokeWidth={4}`) inside `.custom-checkbox-tick`; render only when checked. Parent of input+tick must be `relative`.
+- **Label:** Prefer label **below** the box, centered (`flex flex-col items-center` + `mt-2 text-sm font-semibold`). Inline labels beside the box are OK for weekday pickers / dense rows.
+- **Click Handling:** Always include `onClick={(e) => e.stopPropagation()}` on the `input`.
+- **Example (grid / EventForm tile):**
   ```tsx
-  // ✅ DO: Use consistent checkbox styling with stopPropagation
+  // ✅ DO: Square yellow checkbox, label under box
   <label className="flex flex-col items-center">
     <span className="relative flex items-center justify-center">
       <input
         type="checkbox"
-        className="custom-checkbox"
+        className="custom-checkbox custom-checkbox--yellow"
         checked={isChecked}
         onChange={handleChange}
         onClick={(e) => e.stopPropagation()}
       />
       <span className="custom-checkbox-tick">
         {isChecked && (
-          <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l5 5L19 7" />
           </svg>
         )}
       </span>
     </span>
-    <span className="mt-2 text-xs text-center select-none break-words max-w-[6rem]">Checkbox Label</span>
+    <span className="mt-2 text-sm font-semibold text-center select-none break-words max-w-[8rem]">
+      Checkbox Label
+    </span>
   </label>
   ```
 
@@ -174,17 +180,26 @@ This guide provides standards for creating consistent and maintainable UI compon
 - **Required CSS (`globals.css`):**
   ```css
   .custom-checkbox {
-    @apply h-6 w-6 border-2 border-gray-400 rounded-lg cursor-pointer appearance-none relative bg-white;
+    @apply w-7 h-7 accent-yellow-400 appearance-none border-2 border-gray-400 rounded bg-white cursor-pointer relative flex-shrink-0 focus:ring-2 focus:ring-yellow-400 focus:outline-none checked:bg-yellow-400 checked:border-yellow-500;
   }
-  .custom-checkbox:checked {
-    @apply bg-blue-600 border-blue-600;
+  .custom-checkbox--yellow {
+    @apply border-4 border-gray-500;
+  }
+  .custom-checkbox--yellow:checked {
+    @apply bg-yellow-500 border-yellow-500 border-4;
   }
   .custom-checkbox-tick {
-    @apply absolute inset-0 flex items-center justify-center pointer-events-none;
+    @apply pointer-events-none absolute inset-0 flex items-center justify-center;
   }
   ```
 
----
+- **DON'T:**
+  - ❌ `rounded-lg` / `rounded-full` (too round or circular)
+  - ❌ `h-4 w-4` native checkboxes for admin forms
+  - ❌ Rely on `accent-color` alone without `appearance-none`
+  - ❌ Forget `relative` on the wrapper (tick won't overlay)
+
+- **Visual spec:** Unchecked = white + thick gray-500 border (yellow variant). Checked = yellow-500 fill/border + dark centered checkmark.
 
 ## 3. Buttons & Icons
 

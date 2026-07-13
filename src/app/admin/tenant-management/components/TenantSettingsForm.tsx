@@ -13,7 +13,11 @@ import SaveStatusDialog, { type SaveStatus } from '@/components/SaveStatusDialog
 import { formatSaveErrorForDialog } from '@/lib/api/userFacingSaveError';
 import TenantDefaultHeroManager from '@/app/admin/tenant-management/components/TenantDefaultHeroManager';
 import TenantOrganizationSearchSelect from '@/app/admin/tenant-management/components/TenantOrganizationSearchSelect';
-import { stripDeprecatedSettingsIdentityFields } from '@/lib/resolveTenantOrganizationIdentity';
+import {
+  resolveTenantOrganizationIdentity,
+  stripDeprecatedSettingsIdentityFields,
+} from '@/lib/resolveTenantOrganizationIdentity';
+import { buildSiteFooterEmailHtmlFromTenant } from '@/lib/newsletter/siteFooterEmailHtml';
 import {
   DEFAULT_HERO_MAX_DISPLAY_COUNT,
   normalizeDefaultHeroDisplayMode,
@@ -59,6 +63,7 @@ export default function TenantSettingsForm({
     'general' | 'integrations' | 'limits' | 'homepageHero' | 'customization'
   >('general');
   const [uploadingFooterHtml, setUploadingFooterHtml] = useState(false);
+  const [addSiteFooter, setAddSiteFooter] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingHeaderImage, setUploadingHeaderImage] = useState(false);
   const [isDraggingFooterHtml, setIsDraggingFooterHtml] = useState(false);
@@ -386,8 +391,8 @@ export default function TenantSettingsForm({
   };
 
   // Process email footer HTML upload
-  const processFooterHtmlUpload = async (file: File) => {
-    if (!file || !settingsId) return;
+  const processFooterHtmlUpload = async (file: File): Promise<boolean> => {
+    if (!file || !settingsId) return false;
 
     setUploadingFooterHtml(true);
     setFooterHtmlUploadStatus('uploading');
@@ -413,16 +418,72 @@ export default function TenantSettingsForm({
         setFooterHtmlUploadStatus('idle');
         setFooterHtmlUploadMessage('');
       }, 2000);
+      return true;
     } catch (err: unknown) {
       setFooterHtmlUploadStatus('error');
       setFooterHtmlUploadMessage(
         formatSaveErrorForDialog(err, 'Failed to upload email footer HTML').summary
       );
+      return false;
     } finally {
       setUploadingFooterHtml(false);
       if (footerHtmlFileInputRef.current) {
         footerHtmlFileInputRef.current.value = '';
       }
+    }
+  };
+
+  const handleAddSiteFooterChange = async (checked: boolean) => {
+    if (!checked) {
+      // Do not auto-delete the S3 file — user clears via Remove
+      setAddSiteFooter(false);
+      return;
+    }
+
+    if (!settingsId) {
+      setFooterHtmlUploadStatus('error');
+      setFooterHtmlUploadMessage(
+        'Save tenant settings first, then use Add site footer to generate and upload footer HTML.'
+      );
+      return;
+    }
+
+    const currentUrl = (emailFooterHtmlUrl || '').trim();
+    if (currentUrl) {
+      const overwrite = window.confirm(
+        'A footer HTML file is already uploaded. Generate and overwrite it with the homepage-style site footer?'
+      );
+      if (!overwrite) return;
+    }
+
+    setAddSiteFooter(true);
+
+    try {
+      const tenantId = tenantIdForUpload;
+      const organization =
+        availableOrganizations.find((org) => org.tenantId === tenantId) ?? null;
+      const settingsSnapshot = {
+        ...(initialData || {}),
+        ...watchedValues,
+        tenantId: tenantId || initialData?.tenantId || '',
+      } as TenantSettingsDTO;
+      const identity = resolveTenantOrganizationIdentity(organization, settingsSnapshot);
+      const html = buildSiteFooterEmailHtmlFromTenant(
+        settingsSnapshot,
+        organization,
+        identity
+      );
+      const file = new File([html], 'site-footer-email.html', { type: 'text/html' });
+      const uploaded = await processFooterHtmlUpload(file);
+      if (!uploaded) {
+        setAddSiteFooter(false);
+      }
+    } catch (err: unknown) {
+      setAddSiteFooter(false);
+      setFooterHtmlUploadStatus('error');
+      setFooterHtmlUploadMessage(
+        formatSaveErrorForDialog(err, 'Failed to generate site footer HTML').summary
+      );
     }
   };
 
@@ -1958,6 +2019,60 @@ export default function TenantSettingsForm({
             {/* Email Footer HTML Upload */}
             <div className="border-t border-gray-200 pt-6">
               <h4 className="text-md font-medium text-gray-900 mb-4">Email Footer HTML</h4>
+
+              <div className="rounded-lg border border-purple-200 bg-purple-50/60 p-4 mb-4">
+                <p className="text-sm text-gray-700 mb-3">
+                  Upload a custom HTML footer below, or generate the homepage-style site footer and save it to S3.
+                </p>
+                <div className="flex items-start gap-4">
+                  <label
+                    htmlFor="addSiteFooter"
+                    className={`relative flex items-center justify-center flex-shrink-0 mt-1 ${
+                      uploadingFooterHtml || !settingsId ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      id="addSiteFooter"
+                      checked={addSiteFooter}
+                      onChange={(e) => {
+                        void handleAddSiteFooterChange(e.target.checked);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      disabled={uploadingFooterHtml || !settingsId}
+                      className="custom-checkbox custom-checkbox--yellow disabled:cursor-not-allowed"
+                    />
+                    <span className="custom-checkbox-tick">
+                      {addSiteFooter && (
+                        <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l5 5L19 7" />
+                        </svg>
+                      )}
+                    </span>
+                  </label>
+                  <label
+                    htmlFor="addSiteFooter"
+                    className={`block min-w-0 ${
+                      uploadingFooterHtml || !settingsId ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                    }`}
+                  >
+                    <span className="text-xl font-semibold text-gray-900">Add site footer</span>
+                    <span className="block text-base text-gray-600 mt-1">
+                      Inserts your homepage-style footer (tenant name, contact, links) at ~600 px email width and uploads it as the email footer HTML file.
+                    </span>
+                    <span className="block text-base text-gray-600 mt-2">
+                      <span className="font-semibold text-gray-800">Example use:</span> this saved footer HTML can be reused as a template for Contact Us and other transactional emails (upload once, reference via{' '}
+                      <code className="text-sm bg-purple-100 px-1 rounded">emailFooterHtmlUrl</code>).
+                    </span>
+                  </label>
+                </div>
+                {!settingsId && (
+                  <p className="text-xs text-amber-700 mt-2">
+                    Available after settings are saved (edit mode).
+                  </p>
+                )}
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Email Footer HTML File
