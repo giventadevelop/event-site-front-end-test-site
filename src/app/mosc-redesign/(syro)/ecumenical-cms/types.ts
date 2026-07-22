@@ -1,3 +1,5 @@
+import type { DirectoryListPagination } from '../directory/types/listPagination';
+
 export interface EcumenicalArticle {
   documentId: string;
   name: string;
@@ -9,6 +11,14 @@ export interface EcumenicalArticle {
   order: number;
 }
 
+export interface EcumenicalArticlesListOptions {
+  nameSearch?: string;
+  page?: number;
+  pageSize?: number;
+  loadAll?: boolean;
+}
+
 export interface EcumenicalArticlesListResult {
   articles: EcumenicalArticle[];
+  pagination: DirectoryListPagination;
 }

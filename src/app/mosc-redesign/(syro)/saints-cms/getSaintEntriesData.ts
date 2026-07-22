@@ -14,12 +14,23 @@ import {
 } from '@/lib/strapi';
 import { unwrapStrapiRecord } from '@/lib/strapi/unwrapRecord';
 import { getMediaUrl, getMediaAlt } from '@/app/mosc-redesign/(syro)/directory/lib/strapiMedia';
-import type { SaintEntry, SaintEntriesListResult } from './types';
+import {
+  EMPTY_DIRECTORY_PAGINATION,
+  DIRECTORY_PAGE_SIZE,
+  type DirectoryListPagination,
+} from '@/app/mosc-redesign/(syro)/directory/types/listPagination';
+import type {
+  SaintEntry,
+  SaintEntriesListOptions,
+  SaintEntriesListResult,
+} from './types';
 
 const STRAPI_LIST_FETCH: RequestInit = {
   cache: 'no-store',
   next: { revalidate: 0 },
 };
+
+const LOAD_ALL_PAGE_SIZE = 100;
 
 function parseStrapiOrder(value: unknown): number {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -77,11 +88,40 @@ function parseEntry(raw: Record<string, unknown>, baseUrl: string): SaintEntry {
   };
 }
 
-const EMPTY_LIST: SaintEntriesListResult = { entries: [] };
+function parsePagination(
+  meta: { page?: number; pageCount?: number; pageSize?: number; total?: number } | undefined,
+  page: number,
+  pageSize: number
+): DirectoryListPagination {
+  return {
+    page: meta?.page ?? page,
+    pageCount: meta?.pageCount ?? 0,
+    pageSize: meta?.pageSize ?? pageSize,
+    total: meta?.total ?? 0,
+  };
+}
+
+const EMPTY_LIST: SaintEntriesListResult = {
+  entries: [],
+  pagination: EMPTY_DIRECTORY_PAGINATION,
+};
+
+async function buildBaseParams(tenantId: string, nameSearch?: string): Promise<URLSearchParams> {
+  const params = new URLSearchParams();
+  await applyTenantFilter(params, tenantId);
+  const nameQuery = nameSearch?.trim();
+  if (nameQuery) {
+    params.set('filters[name][$containsi]', nameQuery);
+  }
+  params.set('sort[0]', 'order:asc');
+  params.set('sort[1]', 'name:asc');
+  params.set('populate[0]', 'image');
+  return params;
+}
 
 async function fetchSaintEntryBySlugFromStrapi(
   slug: string,
-  options?: { tenantId?: string },
+  options?: { tenantId?: string }
 ): Promise<SaintEntry | null> {
   const baseUrl = getStrapiUrl();
   const base = getStrapiApiBase();
@@ -117,7 +157,7 @@ async function fetchSaintEntryBySlugFromStrapi(
  * card title matches the Strapi entry detail page, then fall back to tenant-scoped list.
  */
 export async function getHomepageSaintCarouselEntries(
-  slugBases: readonly string[],
+  slugBases: readonly string[]
 ): Promise<SaintEntry[]> {
   const tenantId = getStrapiTenantId();
   const resolved: SaintEntry[] = [];
@@ -138,7 +178,7 @@ export async function getHomepageSaintCarouselEntries(
     return resolved;
   }
 
-  const { entries } = await getSaintEntriesData();
+  const { entries } = await getSaintEntriesData({ loadAll: true });
   const picked = slugBases
     .map((base) => {
       const candidates = entries.filter((entry) => entry.slug.replace(/-mo2$/, '') === base);
@@ -156,9 +196,12 @@ export async function getHomepageSaintCarouselEntries(
 }
 
 /**
- * Fetches all saint entries for the current tenant, sorted by display order.
+ * Fetches saint entries for the current tenant.
+ * Pass page/pageSize for paginated list+search; omit (or loadAll) for full list.
  */
-export async function getSaintEntriesData(): Promise<SaintEntriesListResult> {
+export async function getSaintEntriesData(
+  options?: SaintEntriesListOptions
+): Promise<SaintEntriesListResult> {
   noStore();
   const baseUrl = getStrapiUrl();
   const base = getStrapiApiBase();
@@ -167,32 +210,99 @@ export async function getSaintEntriesData(): Promise<SaintEntriesListResult> {
     return EMPTY_LIST;
   }
 
-  const params = new URLSearchParams();
-  await applyTenantFilter(params, tenantId);
-  params.set('sort[0]', 'order:asc');
-  params.set('sort[1]', 'id:asc');
-  params.set('populate[0]', 'image');
-  params.set('pagination[pageSize]', '100');
-
-  const url = `${base}/saint-entries?${params.toString()}`;
+  const loadAll =
+    options?.loadAll === true ||
+    options == null ||
+    (options.page == null && options.pageSize == null && !options.nameSearch?.trim());
 
   try {
-    const res = await fetch(url, {
-      headers: getStrapiHeaders(),
-      ...STRAPI_LIST_FETCH,
-    });
-    if (!res.ok) {
-      return EMPTY_LIST;
+    if (!loadAll) {
+      const page = Math.max(1, options?.page ?? 1);
+      const pageSize = Math.min(100, Math.max(1, options?.pageSize ?? DIRECTORY_PAGE_SIZE));
+      const params = await buildBaseParams(tenantId, options?.nameSearch);
+      params.set('pagination[page]', String(page));
+      params.set('pagination[pageSize]', String(pageSize));
+
+      const res = await fetch(`${base}/saint-entries?${params.toString()}`, {
+        headers: getStrapiHeaders(),
+        ...STRAPI_LIST_FETCH,
+      });
+      if (!res.ok) {
+        return EMPTY_LIST;
+      }
+      const json = (await res.json()) as {
+        data?: unknown[];
+        meta?: {
+          pagination?: {
+            page?: number;
+            pageCount?: number;
+            pageSize?: number;
+            total?: number;
+          };
+        };
+      };
+      const list = Array.isArray(json?.data) ? json.data : [];
+      const entries = list
+        .filter((item): item is Record<string, unknown> => item != null && typeof item === 'object')
+        .map((item) => parseEntry(item, baseUrl));
+      sortSaintEntriesByDisplayOrder(entries);
+      return {
+        entries,
+        pagination: parsePagination(json?.meta?.pagination, page, pageSize),
+      };
     }
-    const json = (await res.json()) as { data?: unknown[] };
-    const list = Array.isArray(json?.data) ? json.data : [];
-    const records = list.filter(
-      (item): item is Record<string, unknown> => item != null && typeof item === 'object',
-    );
-    const entries = records.map((item) => parseEntry(item, baseUrl));
-    // Use each tenant entry's own Display Order — do not override from other tenants'/canonical rows.
-    sortSaintEntriesByDisplayOrder(entries);
-    return { entries };
+
+    const allEntries: SaintEntry[] = [];
+    let page = 1;
+    let pageCount = 1;
+    let total = 0;
+
+    while (page <= pageCount) {
+      const params = await buildBaseParams(tenantId, options?.nameSearch);
+      params.set('pagination[page]', String(page));
+      params.set('pagination[pageSize]', String(LOAD_ALL_PAGE_SIZE));
+
+      const res = await fetch(`${base}/saint-entries?${params.toString()}`, {
+        headers: getStrapiHeaders(),
+        ...STRAPI_LIST_FETCH,
+      });
+      if (!res.ok) {
+        return EMPTY_LIST;
+      }
+      const json = (await res.json()) as {
+        data?: unknown[];
+        meta?: {
+          pagination?: {
+            page?: number;
+            pageCount?: number;
+            pageSize?: number;
+            total?: number;
+          };
+        };
+      };
+      const list = Array.isArray(json?.data) ? json.data : [];
+      allEntries.push(
+        ...list
+          .filter((item): item is Record<string, unknown> => item != null && typeof item === 'object')
+          .map((item) => parseEntry(item, baseUrl))
+      );
+      const meta = json?.meta?.pagination;
+      pageCount = meta?.pageCount ?? 1;
+      total = meta?.total ?? allEntries.length;
+      page += 1;
+      if (list.length === 0) break;
+    }
+
+    sortSaintEntriesByDisplayOrder(allEntries);
+    return {
+      entries: allEntries,
+      pagination: {
+        page: 1,
+        pageCount: 1,
+        pageSize: allEntries.length || DIRECTORY_PAGE_SIZE,
+        total: total || allEntries.length,
+      },
+    };
   } catch {
     return EMPTY_LIST;
   }
@@ -217,7 +327,7 @@ export async function getSaintEntryBySlug(slug: string): Promise<SaintEntry | nu
     tenantId,
     populate: ['image'],
     parse: parseEntry,
-    fetchList: async () => (await getSaintEntriesData()).entries,
+    fetchList: async () => (await getSaintEntriesData({ loadAll: true })).entries,
     isValid: (entry) => Boolean(entry.slug || entry.name),
   });
 }

@@ -1,3 +1,5 @@
+import type { DirectoryListPagination } from '../directory/types/listPagination';
+
 export interface CatholicateEntry {
   documentId: string;
   name: string;
@@ -10,8 +12,18 @@ export interface CatholicateEntry {
   order: number;
 }
 
+export interface CatholicateEntriesListOptions {
+  nameSearch?: string;
+  page?: number;
+  pageSize?: number;
+  loadAll?: boolean;
+  /** When true, exclude intro/hub-banner slugs from results. */
+  excludeIntro?: boolean;
+}
+
 export interface CatholicateEntriesListResult {
   entries: CatholicateEntry[];
+  pagination: DirectoryListPagination;
 }
 
 /** Slugs reserved for hub intro content (excluded from the card grid). */

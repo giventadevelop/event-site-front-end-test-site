@@ -1,3 +1,5 @@
+import type { DirectoryListPagination } from '../directory/types/listPagination';
+
 export interface SaintEntry {
   documentId: string;
   name: string;
@@ -9,6 +11,14 @@ export interface SaintEntry {
   order: number;
 }
 
+export interface SaintEntriesListOptions {
+  nameSearch?: string;
+  page?: number;
+  pageSize?: number;
+  loadAll?: boolean;
+}
+
 export interface SaintEntriesListResult {
   entries: SaintEntry[];
+  pagination: DirectoryListPagination;
 }
