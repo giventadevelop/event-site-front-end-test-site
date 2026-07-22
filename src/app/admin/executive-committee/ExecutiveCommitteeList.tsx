@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { ExecutiveCommitteeTeamMemberDTO } from '@/types/executiveCommitteeTeamMember';
 import ReactDOM from 'react-dom';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 
 interface ExecutiveCommitteeListProps {
   members: ExecutiveCommitteeTeamMemberDTO[];
@@ -14,6 +15,9 @@ interface ExecutiveCommitteeListProps {
   pageSize: number;
   totalCount: number;
   onPageChange: (page: number) => void;
+  searchTerm: string;
+  onSearchChange: (term: string) => void;
+  loading?: boolean;
 }
 
 // DetailsTooltip component following the UI style guide
@@ -144,25 +148,14 @@ export default function ExecutiveCommitteeList({
   pageSize,
   totalCount,
   onPageChange,
+  searchTerm,
+  onSearchChange,
+  loading,
 }: ExecutiveCommitteeListProps) {
-  // Search: filter by first name, last name, or title (case-insensitive)
-  const [searchTerm, setSearchTerm] = useState('');
-  const filteredMembers = searchTerm.trim()
-    ? members.filter((m) => {
-        const q = searchTerm.trim().toLowerCase();
-        const first = (m.firstName || '').toLowerCase();
-        const last = (m.lastName || '').toLowerCase();
-        const title = (m.title || '').toLowerCase();
-        const designation = (m.designation || '').toLowerCase();
-        const department = (m.department || '').toLowerCase();
-        return first.includes(q) || last.includes(q) || title.includes(q) || designation.includes(q) || department.includes(q);
-      })
-    : members;
-  const filteredCount = filteredMembers.length;
-  const totalPages = Math.max(1, Math.ceil(filteredCount / pageSize));
-  const startItem = filteredCount > 0 ? page * pageSize + 1 : 0;
-  const endItem = filteredCount > 0 ? Math.min((page + 1) * pageSize, filteredCount) : 0;
-  const paginatedMembers = filteredMembers.slice(page * pageSize, (page + 1) * pageSize);
+  // Search is committed server-side (`.contains` criteria); `members` is the current server page.
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const startItem = totalCount > 0 ? page * pageSize + 1 : 0;
+  const endItem = totalCount > 0 ? Math.min(page * pageSize + members.length, totalCount) : 0;
 
   // Reset to first page when search changes
   useEffect(() => {
@@ -213,7 +206,7 @@ export default function ExecutiveCommitteeList({
     };
   }, []);
 
-  if (members.length === 0) {
+  if (members.length === 0 && !searchTerm.trim()) {
     return (
       <div className="text-center py-12">
         <div className="text-gray-400 text-6xl mb-4">👥</div>
@@ -222,26 +215,31 @@ export default function ExecutiveCommitteeList({
       </div>
     );
   }
-  
-  const isLoading = false; // Can be passed as prop if needed
+
+  const isLoading = !!loading;
 
   return (
     <div className="bg-white shadow-sm rounded-lg overflow-hidden mx-8 my-6">
       {/* Search bar */}
       <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
         <label htmlFor="exec-committee-search" className="sr-only">Search members</label>
-        <input
-          id="exec-committee-search"
-          type="search"
+        <AdminListSearchCombobox<ExecutiveCommitteeTeamMemberDTO & Record<string, unknown>>
+          items={members as (ExecutiveCommitteeTeamMemberDTO & Record<string, unknown>)[]}
+          committedValue={searchTerm}
+          onCommit={onSearchChange}
+          inputId="exec-committee-search"
+          ariaLabel="Search members by name, title, designation, or department"
           placeholder="Search by first name, last name, title, designation, or department..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full max-w-xl px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          aria-label="Search members by name, title, designation, or department"
+          className="relative w-full max-w-xl"
+          inputClassName="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          getSearchFields={(m) => [m.firstName, m.lastName, m.title, m.designation, m.department, m.id]}
+          getCommitValue={(m) => m.title?.trim() || `${m.firstName} ${m.lastName}`.trim()}
+          formatPrimary={(m) => `${m.firstName} ${m.lastName}`.trim()}
+          formatSecondary={(m) => [m.title, m.designation, m.department].filter(Boolean).join(' · ')}
         />
         {searchTerm.trim() && (
           <p className="mt-2 text-sm text-gray-600">
-            Showing {filteredCount} of {members.length} member{members.length !== 1 ? 's' : ''}
+            {totalCount} member{totalCount !== 1 ? 's' : ''} match your search
           </p>
         )}
       </div>
@@ -272,7 +270,7 @@ export default function ExecutiveCommitteeList({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {paginatedMembers.map((member) => (
+            {members.map((member) => (
               <tr key={member.id} className="hover:bg-gray-50">
                 <td className="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                   {member.priorityOrder ?? '—'}
@@ -422,11 +420,10 @@ export default function ExecutiveCommitteeList({
 
         {/* Item Count Text */}
         <div className="text-center mt-3">
-          {filteredCount > 0 ? (
+          {totalCount > 0 ? (
             <div className="inline-flex items-center px-4 py-2 bg-blue-50 border-2 border-blue-300 rounded-lg shadow-sm">
               <span className="text-sm text-gray-700">
-                Showing <span className="font-bold text-blue-600">{startItem}</span> to <span className="font-bold text-blue-600">{endItem}</span> of <span className="font-bold text-blue-600">{filteredCount}</span> members
-                {searchTerm.trim() ? ` (filtered from ${members.length})` : ''}
+                Showing <span className="font-bold text-blue-600">{startItem}</span> to <span className="font-bold text-blue-600">{endItem}</span> of <span className="font-bold text-blue-600">{totalCount}</span> members
               </span>
             </div>
           ) : (

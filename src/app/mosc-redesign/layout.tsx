@@ -28,6 +28,14 @@ export const metadata: Metadata = {
   },
   description:
     'Malankara Orthodox Syrian Church — redesigned experience. Subpages use the Syro site shell.',
+  applicationName: 'Malankara Orthodox Syrian Church',
+  keywords: [
+    'Malankara Orthodox Syrian Church',
+    'MOSC',
+    'Orthodox',
+    'Saint Thomas',
+    'Indian Orthodox Church',
+  ],
 };
 
 export default function MoscRedesignLayout({ children }: { children: React.ReactNode }) {

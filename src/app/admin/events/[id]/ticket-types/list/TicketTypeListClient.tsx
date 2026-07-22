@@ -148,7 +148,7 @@ export default function TicketTypeListClient({ eventId, eventDetails, ticketType
 
   // Pagination state
   const [page, setPage] = useState(0);
-  const pageSize = 10;
+  const pageSize = 20;
 
   // Reset page if current page is out of bounds (e.g., after deletion)
   useEffect(() => {

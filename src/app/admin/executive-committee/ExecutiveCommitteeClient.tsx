@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { FaPlus, FaEdit, FaTrashAlt, FaEye } from 'react-icons/fa';
 import type { ExecutiveCommitteeTeamMemberDTO } from '@/types/executiveCommitteeTeamMember';
 import ExecutiveCommitteeForm from './ExecutiveCommitteeForm';
 import ExecutiveCommitteeList from './ExecutiveCommitteeList';
 import ImageUploadDialog from './ImageUploadDialog';
 import { Modal } from '@/components/Modal';
-import { deleteExecutiveCommitteeMember } from './ApiServerActions';
+import {
+  deleteExecutiveCommitteeMember,
+  fetchExecutiveCommitteeMembersPage,
+} from './ApiServerActions';
 
 interface ExecutiveCommitteeClientProps {
   initialMembers: ExecutiveCommitteeTeamMemberDTO[];
@@ -19,34 +22,61 @@ function sortByPriority(members: ExecutiveCommitteeTeamMemberDTO[]): ExecutiveCo
 }
 
 export default function ExecutiveCommitteeClient({ initialMembers }: ExecutiveCommitteeClientProps) {
-  const [members, setMembers] = useState<ExecutiveCommitteeTeamMemberDTO[]>(() => sortByPriority(initialMembers));
+  // Pagination state (server-driven; initial render shows the first page of the SSR data)
+  const [page, setPage] = useState(0);
+  const [pageSize] = useState(20);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [totalCount, setTotalCount] = useState(initialMembers.length);
+  const [listLoading, setListLoading] = useState(false);
+  const [members, setMembers] = useState<ExecutiveCommitteeTeamMemberDTO[]>(
+    () => sortByPriority(initialMembers).slice(0, 20)
+  );
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<ExecutiveCommitteeTeamMemberDTO | null>(null);
   const [viewingMember, setViewingMember] = useState<ExecutiveCommitteeTeamMemberDTO | null>(null);
   const [deletingMember, setDeletingMember] = useState<ExecutiveCommitteeTeamMemberDTO | null>(null);
   const [uploadingMember, setUploadingMember] = useState<ExecutiveCommitteeTeamMemberDTO | null>(null);
-  
-  // Pagination state
-  const [page, setPage] = useState(0);
-  const [pageSize] = useState(10);
-  const totalCount = members.length;
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
-  const handleMemberCreated = (newMember: ExecutiveCommitteeTeamMemberDTO) => {
-    setMembers(prev => sortByPriority([...prev, newMember]));
+  const loadListAt = useCallback(
+    async (targetPage: number) => {
+      setListLoading(true);
+      try {
+        const { members: rows, totalCount: tc } = await fetchExecutiveCommitteeMembersPage(
+          targetPage,
+          pageSize,
+          searchTerm
+        );
+        setMembers(rows);
+        setTotalCount(tc);
+      } catch (error) {
+        console.error('[ExecutiveCommitteeClient] Failed to load members page:', error);
+      } finally {
+        setListLoading(false);
+      }
+    },
+    [pageSize, searchTerm]
+  );
+
+  useEffect(() => {
+    void loadListAt(page);
+  }, [page, loadListAt]);
+
+  const handleMemberCreated = (_newMember: ExecutiveCommitteeTeamMemberDTO) => {
     setIsFormOpen(false);
+    if (page === 0) void loadListAt(0);
+    else setPage(0);
   };
 
-  const handleMemberUpdated = (updatedMember: ExecutiveCommitteeTeamMemberDTO) => {
-    setMembers(prev => sortByPriority(prev.map(member =>
-      member.id === updatedMember.id ? updatedMember : member
-    )));
+  const handleMemberUpdated = (_updatedMember: ExecutiveCommitteeTeamMemberDTO) => {
     setEditingMember(null);
+    void loadListAt(page);
   };
 
-  const handleMemberDeleted = (deletedId: number) => {
-    setMembers(prev => prev.filter(member => member.id !== deletedId));
+  const handleMemberDeleted = (_deletedId: number) => {
     setDeletingMember(null);
+    const nextPage = members.length <= 1 && page > 0 ? page - 1 : page;
+    if (nextPage !== page) setPage(nextPage);
+    else void loadListAt(page);
   };
 
   const handleImageUploadSuccess = (imageUrl: string) => {
@@ -89,7 +119,7 @@ export default function ExecutiveCommitteeClient({ initialMembers }: ExecutiveCo
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-semibold text-gray-900">
-            Team Members ({members.length})
+            Team Members ({totalCount})
           </h2>
         </div>
         <button
@@ -164,6 +194,9 @@ export default function ExecutiveCommitteeClient({ initialMembers }: ExecutiveCo
         pageSize={pageSize}
         totalCount={totalCount}
         onPageChange={setPage}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        loading={listLoading}
       />
 
       {/* Add/Edit Form Modal */}

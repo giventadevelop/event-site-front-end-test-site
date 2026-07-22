@@ -237,7 +237,7 @@ export function AdminMembershipPlansClient({
   return (
     <div className="max-w-5xl mx-auto px-8 py-8" style={{ paddingTop: '180px' }}>
       {/* Header with back button */}
-      <div className="flex items-center mb-8">
+      <div className="flex items-center gap-2 sm:gap-3 md:gap-4 mb-8 px-2.5 sm:px-3 md:px-4 lg:px-6 xl:px-8">
         <Link
           href="/admin"
           className="flex-shrink-0 h-14 rounded-xl bg-indigo-100 hover:bg-indigo-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-6"
@@ -251,7 +251,7 @@ export function AdminMembershipPlansClient({
           </div>
           <span className="font-semibold text-indigo-700">Back to Admin</span>
         </Link>
-        <div>
+        <div className="flex-1 min-w-0">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Membership Plans</h1>
           <p className="text-gray-600">
             Create, edit, and manage all membership plans in the system.
@@ -272,7 +272,7 @@ export function AdminMembershipPlansClient({
             setEditingPlan(null);
             setIsModalOpen(true);
           }}
-          className="flex items-center justify-center gap-3 px-6 py-3 rounded-xl bg-blue-100 hover:bg-blue-200 transition-all duration-300 hover:scale-105"
+          className="flex-shrink-0 h-14 rounded-xl bg-blue-100 hover:bg-blue-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-6"
           title="Create Plan"
           aria-label="Create Plan"
         >

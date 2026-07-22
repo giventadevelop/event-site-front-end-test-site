@@ -9,6 +9,7 @@ import SponsorMediaGallery from '@/components/sponsors/SponsorMediaGallery';
 import SponsorImageUploadArea from '@/components/sponsors/SponsorImageUploadArea';
 import type { EventSponsorsDTO, EventMediaDTO } from '@/types';
 import { updateEventSponsorServer, fetchSponsorMediaServer } from '../ApiServerActions';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 import PaginatedMediaList from './PaginatedMediaList';
 
 interface SponsorEditClientProps {
@@ -471,13 +472,16 @@ export default function SponsorEditClient({
               <label htmlFor="sponsor-media-search" className="block text-sm font-medium text-gray-700 mb-1">
                 Search by Title
               </label>
-              <input
-                id="sponsor-media-search"
-                type="text"
+              <AdminListSearchCombobox
+                items={initialMediaList}
+                committedValue={mediaSearchTerm}
+                onCommit={setMediaSearchTerm}
+                getSearchFields={(m) => [m.title, m.id]}
+                getCommitValue={(m) => m.title || String(m.id ?? '')}
+                formatPrimary={(m) => m.title || `Media #${m.id}`}
                 placeholder="Enter media title to search..."
-                value={mediaSearchTerm}
-                onChange={(e) => setMediaSearchTerm(e.target.value)}
-                className="w-full min-w-0 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                inputId="sponsor-media-search"
+                inputClassName="w-full min-w-0 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               />
             </div>
             <div className="flex flex-wrap items-center gap-4 lg:flex-shrink-0 lg:ml-auto">

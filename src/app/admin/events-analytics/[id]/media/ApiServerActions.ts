@@ -20,7 +20,8 @@ export async function fetchUserProfileServer(userId: string) {
 }
 
 export async function fetchMediaServer(eventId: string) {
-  const url = `${getApiBase()}/api/event-medias?eventId.equals=${eventId}&isEventManagementOfficialDocument.equals=false&sort=updatedAt,desc&tenantId.equals=${getTenantId()}`;
+  // Event-scoped bounded set: explicit size keeps the request bounded; client paginates locally
+  const url = `${getApiBase()}/api/event-medias?eventId.equals=${eventId}&isEventManagementOfficialDocument.equals=false&sort=updatedAt,desc&tenantId.equals=${getTenantId()}&size=200`;
   const res = await fetchWithJwtRetry(url, { cache: 'no-store' });
   if (!res.ok) return [];
   const data = await res.json();
@@ -73,7 +74,8 @@ export async function fetchMediaFilteredServer(
 }
 
 export async function fetchOfficialDocsServer(eventId: string) {
-  const url = `${getApiBase()}/api/event-medias?eventId.equals=${eventId}&isEventManagementOfficialDocument.equals=true&sort=updatedAt,desc&tenantId.equals=${getTenantId()}`;
+  // Event-scoped bounded set: explicit size keeps the request bounded; client paginates locally
+  const url = `${getApiBase()}/api/event-medias?eventId.equals=${eventId}&isEventManagementOfficialDocument.equals=true&sort=updatedAt,desc&tenantId.equals=${getTenantId()}&size=200`;
   const res = await fetchWithJwtRetry(url, { cache: 'no-store' });
   if (!res.ok) return [];
   const data = await res.json();

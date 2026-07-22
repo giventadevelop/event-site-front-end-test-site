@@ -47,6 +47,8 @@ export async function getDiocesesData(options: {
   nameSearch?: string;
   page?: number;
   pageSize?: number;
+  /** Strapi sort string (e.g. `name:asc`). Pass `null` to omit sort and keep API default order. */
+  sort?: string | null;
 }): Promise<DiocesesListResult> {
   const baseUrl = getStrapiUrl();
   const base = getStrapiApiBase();
@@ -59,7 +61,8 @@ export async function getDiocesesData(options: {
   params.set('filters[tenant][tenantId][$eq]', tenantId);
   const nameQuery = options.nameSearch?.trim();
   if (nameQuery) params.set('filters[name][$containsi]', nameQuery);
-  params.set('sort', 'name:asc');
+  const sort = options.sort === undefined ? 'name:asc' : options.sort;
+  if (sort) params.set('sort', sort);
   params.set('populate[0]', 'image');
   const page = Math.max(1, options.page ?? 1);
   const pageSize = Math.min(100, Math.max(1, options.pageSize ?? 20));

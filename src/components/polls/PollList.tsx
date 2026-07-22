@@ -23,7 +23,7 @@ export function PollList({ eventId, userId, onPollSelect }: PollListProps) {
   const [pollOptions, setPollOptions] = useState<EventPollOptionDTO[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
-  const pageSize = 10;
+  const pageSize = 20;
 
   useEffect(() => {
     const loadPolls = async () => {

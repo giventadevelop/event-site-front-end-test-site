@@ -14,6 +14,7 @@ import {
   type ManualPaymentSummaryBatchJobResponse,
 } from './ApiServerActions';
 import type { ManualPaymentRequestDTO, ManualPaymentSummaryReportDTO } from '@/types';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 import { FaDollarSign, FaSpinner, FaSearch, FaCheckCircle, FaTimesCircle, FaBan, FaDownload, FaEye, FaSync, FaExclamationTriangle } from 'react-icons/fa';
 import Link from 'next/link';
 
@@ -818,12 +819,16 @@ export default function ManualPaymentsClient({
               {/* Search */}
               <div className="relative">
                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                <AdminListSearchCombobox
+                  items={payments?.payments ?? []}
+                  committedValue={searchQuery}
+                  onCommit={setSearchQuery}
                   placeholder="Search by ID, handle, or instructions..."
-                  className="pl-10 pr-4 py-2 border border-gray-400 rounded-lg focus:border-blue-500 focus:ring-blue-500 w-full sm:w-64"
+                  inputClassName="pl-10 pr-10 py-2 border border-gray-400 rounded-lg focus:border-blue-500 focus:ring-blue-500 w-full sm:w-64"
+                  getSearchFields={(p) => [p.id, p.paymentHandle, p.paymentInstructions]}
+                  getCommitValue={(p) => p.paymentHandle || p.id?.toString() || ''}
+                  formatPrimary={(p) => p.paymentHandle || (p.id != null ? `Payment #${p.id}` : 'Payment')}
+                  formatSecondary={(p) => [p.paymentInstructions, p.id != null ? `ID: ${p.id}` : null].filter(Boolean).join(' · ')}
                 />
               </div>
               {/* Status Filter */}

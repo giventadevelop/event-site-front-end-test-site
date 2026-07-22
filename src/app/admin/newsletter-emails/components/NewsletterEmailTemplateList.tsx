@@ -9,6 +9,7 @@ import {
   fetchNewsletterEmailTemplatesServer,
   deleteNewsletterEmailTemplateServer,
 } from '../ApiServerActions';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 
 interface NewsletterEmailTemplateListProps {
   eventId?: number;
@@ -177,7 +178,7 @@ export default function NewsletterEmailTemplateList({
   const [deleting, setDeleting] = useState(false);
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
-  const pageSize = 10;
+  const pageSize = 20;
   const tooltipTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -438,12 +439,16 @@ export default function NewsletterEmailTemplateList({
                 💡 Tip: Search by promotion name or title
               </p>
             </div>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+            <AdminListSearchCombobox
+              items={templates}
+              committedValue={searchTerm}
+              onCommit={setSearchTerm}
               placeholder="Search by name or subject..."
-              className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-2 text-base"
+              inputClassName="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-2 pr-10 text-base"
+              getSearchFields={(template) => [template.templateName, template.subject, template.id]}
+              getCommitValue={(template) => template.templateName || template.subject || ''}
+              formatPrimary={(template) => template.templateName || template.subject || 'Template'}
+              formatSecondary={(template) => [template.subject, template.id != null ? `ID: ${template.id}` : null].filter(Boolean).join(' · ')}
             />
           </div>
         </div>

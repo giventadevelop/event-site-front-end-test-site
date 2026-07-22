@@ -88,7 +88,7 @@ export function MediaClientPage({ eventId, mediaList: initialMediaList, eventDet
   const [message, setMessage] = useState<string | null>(null);
   const [mediaList, setMediaList] = useState<EventMediaDTO[]>(initialMediaList);
   const [mediaPage, setMediaPage] = useState(0);
-  const mediaPageSize = 10;
+  const mediaPageSize = 20;
   const [showOnlyEventFlyers, setShowOnlyEventFlyers] = useState(false);
   const filteredMediaList = showOnlyEventFlyers ? mediaList.filter(m => m.eventFlyer) : mediaList;
   const pagedMedia = filteredMediaList.slice(mediaPage * mediaPageSize, (mediaPage + 1) * mediaPageSize);
@@ -97,7 +97,7 @@ export function MediaClientPage({ eventId, mediaList: initialMediaList, eventDet
   const [isEventManagementOfficialDocument, setIsEventManagementOfficialDocument] = useState(false);
   const [officialDocsList, setOfficialDocsList] = useState<EventMediaDTO[]>(initialOfficialDocsList);
   const [officialDocsPage, setOfficialDocsPage] = useState(0);
-  const officialDocsPageSize = 10;
+  const officialDocsPageSize = 20;
   const pagedOfficialDocs = officialDocsList.slice(officialDocsPage * officialDocsPageSize, (officialDocsPage + 1) * officialDocsPageSize);
   const hasNextOfficialDocsPage = (officialDocsPage + 1) * officialDocsPageSize < officialDocsList.length;
   const [hoveredOfficialDocId, setHoveredOfficialDocId] = useState<string | number | null>(null);

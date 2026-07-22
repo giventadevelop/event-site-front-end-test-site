@@ -8,7 +8,7 @@ function getApiBase() {
   return getApiBaseUrl();
 }
 
-export async function fetchEventsServer(pageNum = 0, pageSize = 5): Promise<EventDetailsDTO[]> {
+export async function fetchEventsServer(pageNum = 0, pageSize = 20): Promise<EventDetailsDTO[]> {
   try {
     const url = `${getApiBase()}/api/event-details?page=${pageNum}&size=${pageSize}&sort=startDate,asc&tenantId.equals=${getTenantId()}`;
     const res = await fetchWithJwtRetry(url, { cache: 'no-store' });
@@ -38,9 +38,16 @@ export async function fetchEventTypesServer(): Promise<EventTypeDetailsDTO[]> {
   }
 }
 
-export async function fetchCalendarEventsServer(): Promise<EventCalendarEntryDTO[]> {
+export async function fetchCalendarEventsServer(eventIds: number[] = []): Promise<EventCalendarEntryDTO[]> {
   try {
-    const url = `${getApiBase()}/api/event-calendar-entries?size=1000&tenantId.equals=${getTenantId()}`;
+    const ids = eventIds.filter((id) => id != null);
+    if (ids.length === 0) return [];
+    // Scope the fetch to the events actually being enriched (repeated eventId.in params)
+    const params = new URLSearchParams();
+    ids.forEach((id) => params.append('eventId.in', String(id)));
+    params.append('size', String(ids.length));
+    params.append('tenantId.equals', getTenantId());
+    const url = `${getApiBase()}/api/event-calendar-entries?${params.toString()}`;
     const res = await fetchWithJwtRetry(url, { cache: 'no-store' });
     if (!res.ok) {
       console.error('[fetchCalendarEventsServer] Failed:', res.status);
@@ -133,12 +140,12 @@ export async function createCalendarEventServer(event: EventDetailsDTO, userProf
 }
 
 export async function findCalendarEventByEventIdServer(eventId: number): Promise<EventCalendarEntryDTO | null> {
-  const url = `${getApiBase()}/api/event-calendar-entries?size=1000&tenantId.equals=${getTenantId()}`;
+  const url = `${getApiBase()}/api/event-calendar-entries?eventId.equals=${eventId}&size=1&tenantId.equals=${getTenantId()}`;
   const res = await fetchWithJwtRetry(url, { cache: 'no-store' });
   if (!res.ok) return null;
   const data = await res.json();
-  if (!Array.isArray(data)) return null;
-  return data.find((ce: EventCalendarEntryDTO) => ce.event && ce.event.id === eventId) || null;
+  if (!Array.isArray(data) || data.length === 0) return null;
+  return data[0];
 }
 
 export async function updateCalendarEventForEventServer(event: EventDetailsDTO, userProfile: UserProfileDTO) {
@@ -200,7 +207,7 @@ export async function fetchEventsFilteredServer(params: {
     const queryParams = new URLSearchParams({
       'tenantId.equals': tenantId,
       page: String(params.pageNum || 0),
-      size: String(params.pageSize || 5),
+      size: String(params.pageSize || 20),
       sort: params.sort || 'startDate,asc'
     });
 
@@ -229,6 +236,77 @@ export async function fetchEventsFilteredServer(params: {
     console.error('[fetchEventsFilteredServer] Error:', error);
     return { events: [], totalCount: 0 };
   }
+}
+
+const EVENT_TYPEAHEAD_LIMIT = 20;
+
+function normalizeEventList(data: unknown): EventDetailsDTO[] {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object' && Array.isArray((data as { content?: unknown }).content)) {
+    return (data as { content: EventDetailsDTO[] }).content;
+  }
+  return [];
+}
+
+function mergeEventsById(...lists: EventDetailsDTO[][]): EventDetailsDTO[] {
+  const byKey = new Map<string, EventDetailsDTO>();
+  for (const list of lists) {
+    for (const event of list) {
+      const key =
+        event.id != null
+          ? `id:${event.id}`
+          : event.title
+            ? `title:${event.title}`
+            : null;
+      if (!key || byKey.has(key)) continue;
+      byKey.set(key, event);
+    }
+  }
+  return Array.from(byKey.values());
+}
+
+/**
+ * Multi-field typeahead for Manage Events:
+ * matches title, caption, and numeric id (parallel criteria queries).
+ */
+export async function searchEventsForTypeaheadServer(
+  query: string,
+): Promise<EventDetailsDTO[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  const tenantId = getTenantId();
+  const baseParams = () => {
+    const params = new URLSearchParams();
+    params.append('tenantId.equals', tenantId);
+    params.append('page', '0');
+    params.append('size', String(EVENT_TYPEAHEAD_LIMIT));
+    params.append('sort', 'startDate,asc');
+    return params;
+  };
+
+  const fetchBy = async (apply: (params: URLSearchParams) => void) => {
+    const params = baseParams();
+    apply(params);
+    const res = await fetchWithJwtRetry(
+      `${getApiBase()}/api/event-details?${params.toString()}`,
+      { cache: 'no-store' },
+    );
+    if (!res.ok) return [] as EventDetailsDTO[];
+    return normalizeEventList(await res.json());
+  };
+
+  const jobs: Promise<EventDetailsDTO[]>[] = [
+    fetchBy((p) => p.append('title.contains', trimmed)),
+    fetchBy((p) => p.append('caption.contains', trimmed)),
+  ];
+
+  if (!Number.isNaN(Number(trimmed))) {
+    jobs.push(fetchBy((p) => p.append('id.equals', String(Number(trimmed)))));
+  }
+
+  const results = await Promise.all(jobs);
+  return mergeEventsById(...results).slice(0, EVENT_TYPEAHEAD_LIMIT);
 }
 
 export async function fetchEventDetailsServer(eventId: number): Promise<EventDetailsDTO | null> {

@@ -7,6 +7,7 @@ import ReactDOM from 'react-dom';
 import * as XLSX from 'xlsx';
 import { getTenantId } from '@/lib/env';
 import { fetchUsersServer, patchUserProfileServer, bulkUploadUsersServer } from './ApiServerActions';
+import ManageUsageUserSearchCombobox from './ManageUsageUserSearchCombobox';
 import AdminNavigation from '@/components/AdminNavigation';
 import SuccessDialog from '@/components/SuccessDialog';
 
@@ -18,7 +19,7 @@ const SEARCH_FIELDS = [
   { label: 'Last Name', value: 'lastName' },
   { label: 'Email', value: 'email' },
   { label: 'Phone', value: 'phone' },
-];
+] as const;
 
 function AdminPromotionGuidance() {
   const tenantId = getTenantId();
@@ -525,7 +526,7 @@ export default function ManageUsageClient({ adminProfile }: { adminProfile: User
   const [users, setUsers] = useState<UserProfileDTO[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [search, setSearch] = useState('');
-  const [searchField, setSearchField] = useState('firstName');
+  const [searchField, setSearchField] = useState<(typeof SEARCH_FIELDS)[number]['value']>('firstName');
   const [status, setStatus] = useState('');
   const [role, setRole] = useState('');
   const [loading, setLoading] = useState(false);
@@ -543,7 +544,7 @@ export default function ManageUsageClient({ adminProfile }: { adminProfile: User
   const [bulkMessage, setBulkMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [page, setPage] = useState(1); // 1-indexed for UI
-  const pageSize = 10;
+  const pageSize = 20;
 
   // Fetch users (paginated)
   async function fetchUsers() {
@@ -846,21 +847,34 @@ export default function ManageUsageClient({ adminProfile }: { adminProfile: User
       {/* Filter and Action Controls */}
       <div className="bg-white shadow-md rounded-lg p-4 sm:p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-          {/* Search Input */}
-          <div className="flex items-center gap-2">
+          {/* Search: field select + typeahead combobox (commit on select / Enter / clear) */}
+          <div className="flex items-center gap-2 md:col-span-1">
             <select
               value={searchField}
-              onChange={(e) => setSearchField(e.target.value)}
-              className="border border-gray-400 rounded-l-xl focus:ring-blue-500 focus:border-blue-500 px-4 py-3 text-base min-h-[48px]"
+              onChange={(e) => {
+                setSearchField(e.target.value as (typeof SEARCH_FIELDS)[number]['value']);
+                setPage(1);
+              }}
+              className="border border-gray-400 rounded-l-xl focus:ring-blue-500 focus:border-blue-500 px-4 py-3 text-base min-h-[48px] shrink-0"
+              aria-label="Search field"
             >
-              {SEARCH_FIELDS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+              {SEARCH_FIELDS.map((f) => (
+                <option key={f.value} value={f.value}>
+                  {f.label}
+                </option>
+              ))}
             </select>
-            <input
-              type="text"
-              placeholder={`Search by ${SEARCH_FIELDS.find(f => f.value === searchField)?.label}...`}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="block w-full border border-gray-400 rounded-r-xl focus:ring-blue-500 focus:border-blue-500 px-4 py-3 text-base min-h-[48px]"
+            <ManageUsageUserSearchCombobox
+              searchField={searchField}
+              committedValue={search}
+              onCommit={(value) => {
+                setSearch(value);
+                setPage(1);
+              }}
+              localUsers={users}
+              statusFilter={status}
+              roleFilter={role}
+              fieldLabel={SEARCH_FIELDS.find((f) => f.value === searchField)?.label ?? 'user'}
             />
           </div>
 

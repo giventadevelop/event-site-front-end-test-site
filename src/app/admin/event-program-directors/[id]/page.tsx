@@ -36,7 +36,7 @@ export default async function DirectorEditPage({ params, searchParams }: Directo
 
   // Pagination parameters
   const page = Math.max(0, parseInt(sp.page || '0', 10));
-  const pageSize = parseInt(sp.pageSize || '10', 10);
+  const pageSize = parseInt(sp.pageSize || '20', 10);
 
   // Calculate pagination
   const totalCount = mediaList.length;

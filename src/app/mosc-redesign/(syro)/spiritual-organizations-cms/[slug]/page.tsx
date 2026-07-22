@@ -10,16 +10,14 @@ import {
   getSpiritualOrganisationsData,
 } from '../getSpiritualOrganisationData';
 import type { SpiritualOrganisationEntry } from '../types';
+import {
+  mergeContactLists,
+  parseSpiritualOrganisationDescription,
+  type ExtractedContact,
+  type OfficerSection,
+} from '../parseDescription';
 
 export const dynamic = 'force-dynamic';
-
-function splitContactList(value: string | null): string[] {
-  if (!value?.trim()) return [];
-  return value
-    .split(/[,;\n]+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
 
 function formatWebsiteHref(website: string): string {
   const trimmed = website.trim();
@@ -27,19 +25,55 @@ function formatWebsiteHref(website: string): string {
   return `https://${trimmed.replace(/^\/\//, '')}`;
 }
 
-function SpiritualOrganisationContactSection({ entry }: { entry: SpiritualOrganisationEntry }) {
-  const emails = splitContactList(entry.email);
-  const phones = splitContactList(entry.phones);
-  const addressLines = entry.address
-    ? entry.address.split('\n').map((line) => line.trim()).filter(Boolean)
-    : [];
+function formatWebsiteLabel(website: string): string {
+  return website.trim().replace(/^https?:\/\//i, '').replace(/\/$/, '');
+}
+
+function SpiritualOrganisationOfficersSection({ officers }: { officers: OfficerSection[] }) {
+  if (officers.length === 0) return null;
+
+  return (
+    <div className="space-y-6 mt-2">
+      {officers.map((section, index) => (
+        <div key={`${section.heading}-${index}`} className="space-y-2">
+          {section.heading ? (
+            <h3 className="font-syro-primary font-medium text-base text-syro-dark-gray">
+              {section.heading}
+            </h3>
+          ) : null}
+          {section.lines.map((line) => (
+            <p key={line} className="font-syro-primary text-syro-dark-gray">
+              {line}
+            </p>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SpiritualOrganisationContactSection({
+  entry,
+  extracted,
+}: {
+  entry: SpiritualOrganisationEntry;
+  extracted: ExtractedContact;
+}) {
+  const addressLines = entry.address?.trim()
+    ? entry.address
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+    : extracted.addressLines;
+
+  const phones = mergeContactLists(entry.phones, extracted.phones);
+  const emails = mergeContactLists(entry.email, extracted.emails);
+  const websites = mergeContactLists(entry.website, extracted.websites);
+
   const hasContact =
-    addressLines.length > 0 || emails.length > 0 || phones.length > 0 || Boolean(entry.website?.trim());
+    addressLines.length > 0 || phones.length > 0 || emails.length > 0 || websites.length > 0;
 
   if (!hasContact) return null;
-
-  const websiteHref = entry.website?.trim() ? formatWebsiteHref(entry.website) : null;
-  const websiteLabel = entry.website?.trim().replace(/^https?:\/\//i, '').replace(/\/$/, '') ?? '';
 
   return (
     <>
@@ -75,7 +109,7 @@ function SpiritualOrganisationContactSection({ entry }: { entry: SpiritualOrgani
               ))}
             </div>
           ) : null}
-          {websiteHref ? (
+          {websites.length > 0 ? (
             <div
               className={
                 emails.length > 0
@@ -88,28 +122,24 @@ function SpiritualOrganisationContactSection({ entry }: { entry: SpiritualOrgani
               <p className="mb-2">
                 <strong>Website:</strong>
               </p>
-              <a
-                href={websiteHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-syro-red hover:underline transition-all duration-300"
-              >
-                {websiteLabel}
-              </a>
+              {websites.map((website) => (
+                <p key={website}>
+                  <a
+                    href={formatWebsiteHref(website)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-syro-red hover:underline transition-all duration-300"
+                  >
+                    {formatWebsiteLabel(website)}
+                  </a>
+                </p>
+              ))}
             </div>
           ) : null}
         </div>
       </div>
     </>
   );
-}
-
-function descriptionParagraphs(description: string | null): string[] {
-  if (!description?.trim()) return [];
-  return description
-    .split(/\n\n+/)
-    .map((block) => block.trim())
-    .filter(Boolean);
 }
 
 type PageProps = {
@@ -122,7 +152,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!entry) {
     return { title: 'Organization Not Found | Spiritual Organizations | MOSC' };
   }
-  const excerpt = entry.description?.split('\n\n')[0]?.trim();
+  const parsed = parseSpiritualOrganisationDescription(entry.description);
+  const excerpt = parsed.narrative[0] ?? entry.description?.split('\n\n')[0]?.trim();
   return {
     title: `${entry.name} | Spiritual Organizations | MOSC`,
     description: excerpt ?? `Spiritual organization: ${entry.name}.`,
@@ -146,7 +177,7 @@ export default async function SpiritualOrganisationCmsEntryPage({ params }: Page
     href: `/mosc-redesign/spiritual-organizations-cms/${item.slug}`,
   }));
 
-  const paragraphs = descriptionParagraphs(entry.description);
+  const { narrative, officers, contact } = parseSpiritualOrganisationDescription(entry.description);
 
   return (
     <div className="bg-syro-bg-gray">
@@ -174,10 +205,11 @@ export default async function SpiritualOrganisationCmsEntryPage({ params }: Page
                 ) : null}
 
                 <div className="space-y-6 font-syro-primary text-syro-dark-gray leading-relaxed">
-                  {paragraphs.map((paragraph) => (
+                  {narrative.map((paragraph) => (
                     <p key={paragraph.slice(0, 48)}>{paragraph}</p>
                   ))}
-                  <SpiritualOrganisationContactSection entry={entry} />
+                  <SpiritualOrganisationOfficersSection officers={officers} />
+                  <SpiritualOrganisationContactSection entry={entry} extracted={contact} />
                 </div>
               </div>
 

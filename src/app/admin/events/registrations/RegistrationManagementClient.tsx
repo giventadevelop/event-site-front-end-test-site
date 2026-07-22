@@ -515,100 +515,42 @@ export default function RegistrationManagementClient({ data }: RegistrationManag
 
   return (
     <div className="w-full overflow-x-hidden box-border" style={{ paddingTop: '120px' }}>
-      {/* Navigation Section - Full Width, Separate Responsive Container */}
-      <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 mb-6 sm:mb-8">
+      {/* Header and navigation */}
+      <div className="w-full pt-4 sm:pt-6 px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 mb-6 sm:mb-8">
+        <div className="max-w-5xl mx-auto px-2.5 sm:px-3 md:px-4 lg:px-6 xl:px-8">
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
+            <Link
+              href="/admin"
+              className="flex-shrink-0 h-10 sm:h-12 md:h-14 rounded-xl bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/50 dark:hover:bg-indigo-900/70 flex items-center justify-center gap-1.5 sm:gap-2 md:gap-3 transition-all duration-300 hover:scale-105 px-2 sm:px-3 md:px-6"
+              title="Back to Admin"
+              aria-label="Back to Admin"
+            >
+              <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-indigo-200 dark:bg-indigo-800 flex items-center justify-center">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-indigo-700 dark:text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+              </div>
+              <span className="font-semibold text-indigo-700 dark:text-indigo-200 text-[10px] sm:text-xs md:text-sm lg:text-base hidden sm:inline">Back to Admin</span>
+            </Link>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-sm sm:text-base md:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white truncate">Registration Management</h1>
+              <p className="text-[10px] sm:text-xs md:text-sm text-gray-600 dark:text-gray-400 truncate hidden sm:block">
+                {selectedEvent ? (
+                  <>
+                    Manage registrations for{' '}
+                    <span className="text-blue-600 dark:text-blue-400 font-semibold">{selectedEvent.title}</span>
+                  </>
+                ) : (
+                  'Search by event to view registrations'
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
         <AdminNavigation currentPage="event-registrations" />
       </div>
       {/* Main Content Section - Constrained Width */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
-        {/* Header with back button - Moved to top, single line on mobile */}
-        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
-          <Link
-            href="/admin"
-            className="flex-shrink-0 h-10 sm:h-12 md:h-14 rounded-xl bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/50 dark:hover:bg-indigo-900/70 flex items-center justify-center gap-1.5 sm:gap-2 md:gap-3 transition-all duration-300 hover:scale-105 px-2 sm:px-3 md:px-6"
-            title="Back to Admin"
-            aria-label="Back to Admin"
-          >
-            <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-lg bg-indigo-200 dark:bg-indigo-800 flex items-center justify-center">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-indigo-700 dark:text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </div>
-            <span className="font-semibold text-indigo-700 dark:text-indigo-200 text-[10px] sm:text-xs md:text-sm lg:text-base hidden sm:inline">Back to Admin</span>
-          </Link>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-sm sm:text-base md:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white truncate">Registration Management</h1>
-            <p className="text-[10px] sm:text-xs md:text-sm text-gray-600 dark:text-gray-400 truncate hidden sm:block">
-              {selectedEvent ? (
-                <>
-                  Manage registrations for{' '}
-                  <span className="text-blue-600 dark:text-blue-400 font-semibold">{selectedEvent.title}</span>
-                </>
-              ) : (
-                'Search by event to view registrations'
-              )}
-            </p>
-          </div>
-        </div>
-
-        {/* Quick Action Buttons */}
-        <div className="w-full mb-6 sm:mb-8">
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6">
-            <Link
-              href="/admin/manage-events"
-              className="flex flex-col items-center justify-center bg-green-50 hover:bg-green-100 text-green-800 rounded-lg shadow-md p-1.5 sm:p-2 md:p-2.5 lg:p-3 xl:p-4 text-[9px] sm:text-[10px] md:text-xs lg:text-sm xl:text-base transition-all group overflow-hidden"
-              title="Manage Events"
-              aria-label="Manage Events"
-            >
-              <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 xl:w-11 xl:h-11 rounded-xl bg-green-100 flex items-center justify-center mb-1.5 sm:mb-2 group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <span className="font-semibold text-center leading-tight px-1 break-words hyphens-auto">Manage Events</span>
-            </Link>
-            <Link
-              href="/admin/manage-usage"
-              className="flex flex-col items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-lg shadow-md p-1.5 sm:p-2 md:p-2.5 lg:p-3 xl:p-4 text-[9px] sm:text-[10px] md:text-xs lg:text-sm xl:text-base transition-all group overflow-hidden"
-              title="Manage Usage"
-              aria-label="Manage Usage"
-            >
-              <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 xl:w-11 xl:h-11 rounded-xl bg-blue-100 flex items-center justify-center mb-1.5 sm:mb-2 group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              </div>
-              <span className="font-semibold text-center leading-tight px-1 break-words hyphens-auto">Manage Usage<br />[Users]</span>
-            </Link>
-            <Link
-              href="/admin/events/dashboard"
-              className="flex flex-col items-center justify-center bg-teal-50 hover:bg-teal-100 text-teal-800 rounded-lg shadow-md p-1.5 sm:p-2 md:p-2.5 lg:p-3 xl:p-4 text-[9px] sm:text-[10px] md:text-xs lg:text-sm xl:text-base transition-all group overflow-hidden"
-              title="Event Analytics Dashboard"
-              aria-label="Event Analytics Dashboard"
-            >
-              <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 xl:w-11 xl:h-11 rounded-xl bg-teal-100 flex items-center justify-center mb-1.5 sm:mb-2 group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <span className="font-semibold text-center leading-tight px-1 break-words hyphens-auto">Event Analytics<br />Dashboard</span>
-            </Link>
-            <Link
-              href="/admin/communication"
-              className="flex flex-col items-center justify-center bg-indigo-50 hover:bg-indigo-100 text-indigo-800 rounded-lg shadow-md p-1.5 sm:p-2 md:p-2.5 lg:p-3 xl:p-4 text-[9px] sm:text-[10px] md:text-xs lg:text-sm xl:text-base transition-all group overflow-hidden"
-              title="Communication Center"
-              aria-label="Communication Center"
-            >
-              <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 xl:w-11 xl:h-11 rounded-xl bg-indigo-100 flex items-center justify-center mb-1.5 sm:mb-2 group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <span className="font-semibold text-center leading-tight px-1 break-words hyphens-auto">Communication<br />Center</span>
-            </Link>
-        </div>
-      </div>
-
       {/* Event Search Section - Show when no event selected */}
       {!hasSelectedEvent && (
         <div className="mb-6">

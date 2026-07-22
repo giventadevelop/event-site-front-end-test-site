@@ -26,6 +26,40 @@ export async function fetchEventEmailsServer(eventId?: number) {
   return await response.json();
 }
 
+/**
+ * Paginated criteria fetch driven by backend page/size/sort + X-Total-Count.
+ * `search` maps to `email.contains` (or `id.equals` when numeric).
+ */
+export async function fetchEventEmailsPageServer(options: {
+  page: number;
+  size: number;
+  search?: string;
+  sort?: string;
+}): Promise<{ data: EventEmailsDTO[]; totalCount: number }> {
+  const params = new URLSearchParams({
+    page: String(Math.max(0, options.page)),
+    size: String(Math.max(1, options.size)),
+    sort: options.sort || 'id,asc',
+  });
+  const term = options.search?.trim();
+  if (term) {
+    if (/^\d+$/.test(term)) params.append('id.equals', term);
+    else params.append('email.contains', term);
+  }
+
+  const response = await fetchWithJwtRetry(`${getApiBase()}/api/event-emails?${params.toString()}`, {
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch event emails: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  const totalCount = parseInt(response.headers.get('x-total-count') || '0', 10);
+  return { data: Array.isArray(data) ? data : [], totalCount };
+}
+
 export async function fetchEventEmailServer(id: number) {
   const response = await fetchWithJwtRetry(`${getApiBase()}/api/event-emails/${id}`, {
     cache: 'no-store',

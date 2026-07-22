@@ -71,26 +71,25 @@ export default function HomepageCacheClient({ initialSettings }: HomepageCacheCl
           type="button"
           onClick={handleReloadFromDb}
           disabled={reloading}
-          className="flex-shrink-0 inline-flex h-10 px-4 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold text-sm items-center justify-center gap-2 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className="flex-shrink-0 h-14 rounded-xl bg-orange-100 hover:bg-orange-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-6 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           title="Reload data from database"
           aria-label="Reload data from database"
         >
-          {reloading ? (
-            <>
-              <svg className="animate-spin w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-orange-200 flex items-center justify-center">
+            {reloading ? (
+              <svg className="animate-spin w-6 h-6 text-orange-600" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
-              <span>Reloading…</span>
-            </>
-          ) : (
-            <>
-              <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            ) : (
+              <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              <span>Reload data from database</span>
-            </>
-          )}
+            )}
+          </div>
+          <span className="font-semibold text-orange-700">
+            {reloading ? 'Reloading…' : 'Reload data from database'}
+          </span>
         </button>
       </div>
 
@@ -128,14 +127,14 @@ export default function HomepageCacheClient({ initialSettings }: HomepageCacheCl
                       type="button"
                       onClick={() => handleRefresh(row)}
                       disabled={loadingId !== null}
-                      className="flex-shrink-0 inline-flex h-10 px-4 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold text-sm items-center justify-center gap-2 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                      className="flex-shrink-0 h-14 rounded-xl bg-blue-100 hover:bg-blue-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-6 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                       title="Refresh cache records for this tenant"
                       aria-label="Refresh cache records for this tenant"
                     >
-                      {loadingId === row.id ? (
-                        <>
+                      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-200 flex items-center justify-center">
+                        {loadingId === row.id ? (
                           <svg
-                            className="animate-spin w-5 h-5 text-blue-600"
+                            className="animate-spin w-6 h-6 text-blue-600"
                             fill="none"
                             viewBox="0 0 24 24"
                             aria-hidden="true"
@@ -154,12 +153,9 @@ export default function HomepageCacheClient({ initialSettings }: HomepageCacheCl
                               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                             />
                           </svg>
-                          <span>Refreshing…</span>
-                        </>
-                      ) : (
-                        <>
+                        ) : (
                           <svg
-                            className="w-5 h-5 text-blue-600"
+                            className="w-6 h-6 text-blue-600"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -172,9 +168,11 @@ export default function HomepageCacheClient({ initialSettings }: HomepageCacheCl
                               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                             />
                           </svg>
-                          <span>Refresh cache records</span>
-                        </>
-                      )}
+                        )}
+                      </div>
+                      <span className="font-semibold text-blue-700">
+                        {loadingId === row.id ? 'Refreshing…' : 'Refresh cache records'}
+                      </span>
                     </button>
                   </td>
                 </tr>

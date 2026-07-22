@@ -5,6 +5,7 @@ import { FaPlus, FaSearch, FaArrowLeft, FaHome, FaUsers, FaCalendarAlt, FaPhotoV
 import { useAuth } from '@clerk/nextjs';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Modal, { ConfirmModal } from '@/components/ui/Modal';
 import ImageUpload from '@/components/ui/ImageUpload';
@@ -394,12 +395,16 @@ export default function EventPerformersPage() {
           <div className="flex-1 min-w-64">
             <div className="relative">
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
+              <AdminListSearchCombobox
+                items={performers}
+                committedValue={searchTerm}
+                onCommit={setSearchTerm}
+                getSearchFields={(p) => [p.name, p.stageName, p.role, p.email, p.id]}
+                getCommitValue={(p) => p.name || p.stageName || String(p.id ?? '')}
+                formatPrimary={(p) => p.name || p.stageName || 'Unknown'}
+                formatSecondary={(p) => [p.role, p.email].filter(Boolean).join(' · ')}
                 placeholder="Search performers..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                inputClassName="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>

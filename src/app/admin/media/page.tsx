@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { EventMediaDTO } from "@/types";
 import { FaUsers, FaPhotoVideo, FaCalendarAlt, FaTimes, FaChevronLeft, FaChevronRight, FaTicketAlt, FaUpload, FaTags, FaHome, FaFolderOpen } from 'react-icons/fa';
-import AdminNavigation from '@/components/AdminNavigation';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 import { Modal } from "@/components/Modal";
 import SaveStatusDialog, { type SaveStatus } from '@/components/SaveStatusDialog';
 import { formatInTimeZone } from 'date-fns-tz';
@@ -1036,7 +1036,7 @@ export default function AdminMediaPage() {
   const [editLoading, setEditLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [page, setPage] = useState(0);
-  const [pageSize] = useState(12);
+  const [pageSize] = useState(20);
   const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [eventFlyerOnly, setEventFlyerOnly] = useState(false);
@@ -1395,24 +1395,35 @@ export default function AdminMediaPage() {
 
   return (
     <div ref={pageTopRef} className="w-[80%] mx-auto py-8" style={{ paddingTop: '118px' }}>
-      <div className="mb-8">
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 justify-items-center mx-auto max-w-6xl">
-            <Link href="/admin" className="w-full max-w-xs flex flex-col items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-lg shadow-sm hover:shadow-md p-2 sm:p-3 text-xs sm:text-sm transition-all duration-200">
-              <FaHome className="text-base sm:text-lg mb-1.5 text-blue-600" />
-              <span className="font-semibold text-center leading-tight">Admin Home</span>
+      <div
+        className="w-full max-w-5xl mx-auto mb-8 admin-navigation-container"
+        style={{ width: '100%', maxWidth: '64rem' }}
+      >
+        <div className="bg-white rounded-xl shadow-lg p-2.5 sm:p-3 md:p-4 lg:p-6 xl:p-8 overflow-hidden box-border">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6 w-full box-border">
+            <Link href="/admin" className="flex flex-col items-center justify-center rounded-lg border-2 border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 p-1.5 sm:p-2 md:p-2.5 lg:p-3 xl:p-4 transition-all duration-300 hover:scale-105 hover:shadow-md group box-border w-full min-w-0" title="Admin Home" aria-label="Admin Home">
+              <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 xl:w-11 xl:h-11 rounded-xl bg-blue-100 flex items-center justify-center mb-1 sm:mb-1.5 md:mb-2 group-hover:scale-110 transition-transform duration-300">
+                <FaHome className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 text-blue-600" />
+              </div>
+              <span className="font-semibold text-center text-[9px] sm:text-[10px] md:text-xs lg:text-sm xl:text-base leading-tight px-0.5 sm:px-1">Admin Home</span>
             </Link>
-            <Link href="/admin/manage-usage" className="w-full max-w-xs flex flex-col items-center justify-center bg-indigo-50 hover:bg-indigo-100 text-indigo-800 rounded-lg shadow-sm hover:shadow-md p-2 sm:p-3 text-xs sm:text-sm transition-all duration-200">
-              <FaUsers className="text-base sm:text-lg mb-1.5 text-indigo-600" />
-              <span className="font-semibold text-center leading-tight">Manage Users [Usage]</span>
+            <Link href="/admin/manage-usage" className="flex flex-col items-center justify-center rounded-lg border-2 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 p-1.5 sm:p-2 md:p-2.5 lg:p-3 xl:p-4 transition-all duration-300 hover:scale-105 hover:shadow-md group box-border w-full min-w-0" title="Manage Users [Usage]" aria-label="Manage Users [Usage]">
+              <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 xl:w-11 xl:h-11 rounded-xl bg-indigo-100 flex items-center justify-center mb-1 sm:mb-1.5 md:mb-2 group-hover:scale-110 transition-transform duration-300">
+                <FaUsers className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 text-indigo-600" />
+              </div>
+              <span className="font-semibold text-center text-[9px] sm:text-[10px] md:text-xs lg:text-sm xl:text-base leading-tight px-0.5 sm:px-1">Manage Users [Usage]</span>
             </Link>
-            <Link href="/admin/manage-events" className="w-full max-w-xs flex flex-col items-center justify-center bg-green-50 hover:bg-green-100 text-green-800 rounded-lg shadow-sm hover:shadow-md p-2 sm:p-3 text-xs sm:text-sm transition-all duration-200">
-              <FaCalendarAlt className="text-base sm:text-lg mb-1.5 text-green-600" />
-              <span className="font-semibold text-center leading-tight">Manage Events</span>
+            <Link href="/admin/manage-events" className="flex flex-col items-center justify-center rounded-lg border-2 border-green-200 bg-green-50 hover:bg-green-100 text-green-800 p-1.5 sm:p-2 md:p-2.5 lg:p-3 xl:p-4 transition-all duration-300 hover:scale-105 hover:shadow-md group box-border w-full min-w-0" title="Manage Events" aria-label="Manage Events">
+              <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 xl:w-11 xl:h-11 rounded-xl bg-green-100 flex items-center justify-center mb-1 sm:mb-1.5 md:mb-2 group-hover:scale-110 transition-transform duration-300">
+                <FaCalendarAlt className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 text-green-600" />
+              </div>
+              <span className="font-semibold text-center text-[9px] sm:text-[10px] md:text-xs lg:text-sm xl:text-base leading-tight px-0.5 sm:px-1">Manage Events</span>
             </Link>
-            <Link href="/admin/media" className="w-full max-w-xs flex flex-col items-center justify-center bg-cyan-50 hover:bg-cyan-100 text-cyan-800 rounded-lg shadow-sm hover:shadow-md p-2 sm:p-3 text-xs sm:text-sm transition-all duration-200">
-              <FaPhotoVideo className="text-base sm:text-lg mb-1.5 text-cyan-600" />
-              <span className="font-semibold text-center leading-tight">Manage Media</span>
+            <Link href="/admin/media" className="flex flex-col items-center justify-center rounded-lg border-2 border-cyan-200 bg-cyan-50 hover:bg-cyan-100 text-cyan-800 p-1.5 sm:p-2 md:p-2.5 lg:p-3 xl:p-4 transition-all duration-300 hover:scale-105 hover:shadow-md group box-border w-full min-w-0" title="Manage Media" aria-label="Manage Media">
+              <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 xl:w-11 xl:h-11 rounded-xl bg-cyan-100 flex items-center justify-center mb-1 sm:mb-1.5 md:mb-2 group-hover:scale-110 transition-transform duration-300">
+                <FaPhotoVideo className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 text-cyan-600" />
+              </div>
+              <span className="font-semibold text-center text-[9px] sm:text-[10px] md:text-xs lg:text-sm xl:text-base leading-tight px-0.5 sm:px-1">Manage Media</span>
             </Link>
           </div>
         </div>
@@ -1483,13 +1494,17 @@ export default function AdminMediaPage() {
             <label htmlFor="search-input" className="block text-sm font-medium text-gray-700 mb-1">
               Search by Title
             </label>
-            <input
-              id="search-input"
-              type="text"
+            <AdminListSearchCombobox
+              items={mediaList}
+              committedValue={searchTerm}
+              onCommit={setSearchTerm}
+              getSearchFields={(m) => [m.title, m.id, m.eventMediaType]}
+              getCommitValue={(m) => m.title || String(m.id ?? '')}
+              formatPrimary={(m) => m.title || `Media #${m.id}`}
+              formatSecondary={(m) => m.eventMediaType || undefined}
               placeholder="Enter media title to search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              inputId="search-input"
+              inputClassName="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 

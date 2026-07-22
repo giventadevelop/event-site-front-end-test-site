@@ -30,68 +30,17 @@ function parseStrapiOrder(value: unknown): number {
   return 0;
 }
 
-/** Strapi saint-entry display order: `priority` (admin label) or legacy `order`. Lower = first. */
+/** Strapi Display Order field is `order` (admin label); `priority` kept as optional alias. Lower = first. */
 function parseSaintDisplayOrder(item: Record<string, unknown>): number {
-  return parseStrapiOrder(item.priority ?? item.order);
+  return parseStrapiOrder(item.order ?? item.priority);
 }
 
-function getSaintSlugBase(slug: string): string {
-  return slug.replace(/-mo2$/i, '');
-}
-
-/** Matches Strapi list view: order ascending, then name ascending for ties. */
-function sortSaintEntries(entries: SaintEntry[], canonicalOrders: Map<string, number>): void {
-  const effectiveOrder = (entry: SaintEntry) =>
-    canonicalOrders.get(getSaintSlugBase(entry.slug)) ?? entry.order;
-
+/** Matches Strapi list view: Display Order ascending, then name for ties. */
+function sortSaintEntriesByDisplayOrder(entries: SaintEntry[]): void {
   entries.sort((a, b) => {
-    const orderA = effectiveOrder(a);
-    const orderB = effectiveOrder(b);
-    if (orderA !== orderB) return orderA - orderB;
+    if (a.order !== b.order) return a.order - b.order;
     return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
   });
-}
-
-/**
- * Loads display order from canonical saint-entry rows (slug without -mo2 suffix).
- * Editors often maintain order on tenant_demo_002 entries while the site reads -mo2 copies.
- */
-async function fetchCanonicalOrdersBySlugBases(slugBases: string[]): Promise<Map<string, number>> {
-  const base = getStrapiApiBase();
-  const uniqueBases = [...new Set(slugBases.filter(Boolean))];
-  if (!base || uniqueBases.length === 0) {
-    return new Map();
-  }
-
-  const params = new URLSearchParams();
-  uniqueBases.forEach((slug, index) => {
-    params.set(`filters[$or][${index}][slug][$eq]`, slug);
-  });
-  params.set('pagination[pageSize]', String(Math.min(uniqueBases.length + 10, 100)));
-
-  try {
-    const res = await fetch(`${base}/saint-entries?${params.toString()}`, {
-      headers: getStrapiHeaders(),
-      ...STRAPI_LIST_FETCH,
-    });
-    if (!res.ok) return new Map();
-
-    const json = (await res.json()) as { data?: unknown[] };
-    const list = Array.isArray(json?.data) ? json.data : [];
-    const orders = new Map<string, number>();
-
-    for (const raw of list) {
-      if (!raw || typeof raw !== 'object') continue;
-      const item = unwrapStrapiRecord(raw as Record<string, unknown>);
-      const slug = typeof item.slug === 'string' ? item.slug : '';
-      if (!slug) continue;
-      orders.set(getSaintSlugBase(slug), parseSaintDisplayOrder(item));
-    }
-
-    return orders;
-  } catch {
-    return new Map();
-  }
 }
 
 async function applyTenantFilter(params: URLSearchParams, tenantId: string): Promise<void> {
@@ -241,10 +190,8 @@ export async function getSaintEntriesData(): Promise<SaintEntriesListResult> {
       (item): item is Record<string, unknown> => item != null && typeof item === 'object',
     );
     const entries = records.map((item) => parseEntry(item, baseUrl));
-    const canonicalOrders = await fetchCanonicalOrdersBySlugBases(
-      entries.map((entry) => getSaintSlugBase(entry.slug)),
-    );
-    sortSaintEntries(entries, canonicalOrders);
+    // Use each tenant entry's own Display Order — do not override from other tenants'/canonical rows.
+    sortSaintEntriesByDisplayOrder(entries);
     return { entries };
   } catch {
     return EMPTY_LIST;

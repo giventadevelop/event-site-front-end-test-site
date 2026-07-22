@@ -54,7 +54,7 @@ import {
 
 
 
-const PAGE_SIZE = 18;
+const PAGE_SIZE = 20;
 
 
 

@@ -12,6 +12,7 @@ export interface SiteTypePresetSettings {
   showProfileAffiliationsSection?: boolean;
   showProfileMediaDownloadsSection?: boolean;
   showProfileContactSection?: boolean;
+  showProfileProjectsSection?: boolean;
 }
 
 const EVENT_ORG_PRESET: SiteTypePresetSettings = {
@@ -25,6 +26,7 @@ const EVENT_ORG_PRESET: SiteTypePresetSettings = {
   showProfileAffiliationsSection: false,
   showProfileMediaDownloadsSection: false,
   showProfileContactSection: false,
+  showProfileProjectsSection: false,
 };
 
 const SPORTS_PRESET: SiteTypePresetSettings = {
@@ -49,6 +51,7 @@ const PERSONAL_PROFILE_PRESET: SiteTypePresetSettings = {
   showProfileAffiliationsSection: true,
   showProfileMediaDownloadsSection: true,
   showProfileContactSection: true,
+  showProfileProjectsSection: true,
 };
 
 const HYBRID_PRESET: SiteTypePresetSettings = {
@@ -69,6 +72,7 @@ const GAS_STATION_PRESET: SiteTypePresetSettings = {
   showProfileAffiliationsSection: false,
   showProfileMediaDownloadsSection: false,
   showProfileContactSection: false,
+  showProfileProjectsSection: false,
 };
 
 export function getSiteTypePresetSettings(siteType: TenantSiteType): SiteTypePresetSettings {

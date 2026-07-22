@@ -425,6 +425,24 @@ function SearchLensIcon() {
   );
 }
 
+/** Inline “×” inside a search box — clears just that field (Clear filters resets everything). */
+function ClearInputButton({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={onClick}
+      className="absolute inset-y-0 right-2 flex items-center text-syro-blue/50 hover:text-syro-red"
+      title={label}
+      aria-label={label}
+    >
+      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  );
+}
+
 function ClearFiltersButton({
   onClick,
   disabled,
@@ -530,8 +548,13 @@ function YearCombobox({
   const filteredYears = React.useMemo(() => {
     const query = inputValue.trim();
     if (!query) return dropdownYears;
+    // Input holding the current selection is display state, not a search query —
+    // filtering by it would hide every other year on reopen.
+    if (isOlderYearSelected && selectedYear != null && query === String(selectedYear)) {
+      return dropdownYears;
+    }
     return dropdownYears.filter((year) => String(year).includes(query));
-  }, [dropdownYears, inputValue]);
+  }, [dropdownYears, inputValue, isOlderYearSelected, selectedYear]);
 
   const applyYear = (year: number | null) => {
     setOpen(false);
@@ -586,10 +609,22 @@ function YearCombobox({
           onChange={(e) => handleInputChange(e.target.value)}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
-          className={`w-full rounded-md border-2 py-1.5 pl-9 pr-3 text-xs font-semibold text-syro-blue bg-white focus:outline-none focus:ring-2 focus:ring-syro-blue/30 ${
+          className={`w-full rounded-md border-2 py-1.5 pl-9 pr-8 text-xs font-semibold text-syro-blue bg-white focus:outline-none focus:ring-2 focus:ring-syro-blue/30 ${
             comboboxActive ? 'border-syro-red bg-red-50' : 'border-syro-gold/40'
           }`}
         />
+        {comboboxActive ? (
+          <ClearInputButton
+            label="Clear year search"
+            onClick={() => {
+              setInputValue('');
+              setOpen(false);
+              if (isOlderYearSelected) {
+                router.push(buildFilterHref(categoryId, null));
+              }
+            }}
+          />
+        ) : null}
       </label>
       {open ? (
         <ul
@@ -686,8 +721,13 @@ function CategoryCombobox({
   const filteredCategories = React.useMemo(() => {
     const query = normalizeCategoryLabel(inputValue);
     if (!query) return sortedCategories.slice(0, MAX_DROPDOWN_CATEGORIES);
+    // Input holding the current selection is display state, not a search query —
+    // filtering by it would hide every other category on reopen.
+    if (selectedCategory && normalizeCategoryLabel(selectedCategory.displayName) === query) {
+      return sortedCategories.slice(0, MAX_DROPDOWN_CATEGORIES);
+    }
     return sortedCategories.filter((cat) => normalizeCategoryLabel(cat.displayName).includes(query));
-  }, [sortedCategories, inputValue]);
+  }, [sortedCategories, inputValue, selectedCategory]);
 
   const applyCategory = (categoryId: number | null) => {
     setOpen(false);
@@ -737,10 +777,22 @@ function CategoryCombobox({
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
-          className={`w-full rounded-md border-2 py-1.5 pl-9 pr-3 text-xs font-semibold text-syro-blue bg-white focus:outline-none focus:ring-2 focus:ring-syro-blue/30 ${
+          className={`w-full rounded-md border-2 py-1.5 pl-9 pr-8 text-xs font-semibold text-syro-blue bg-white focus:outline-none focus:ring-2 focus:ring-syro-blue/30 ${
             comboboxActive ? 'border-syro-blue bg-blue-50' : 'border-syro-gold/40'
           }`}
         />
+        {comboboxActive ? (
+          <ClearInputButton
+            label="Clear category search"
+            onClick={() => {
+              setInputValue('');
+              setOpen(false);
+              if (isOtherCategorySelected) {
+                router.push(buildFilterHref(null, year));
+              }
+            }}
+          />
+        ) : null}
       </label>
       {open ? (
         <ul
@@ -844,9 +896,12 @@ function YearFilterBar({
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Search documents…"
-              className="w-full sm:w-56 rounded-md border-2 border-syro-gold/40 bg-white py-1.5 pl-9 pr-3 text-xs font-semibold text-syro-blue placeholder:font-normal placeholder:text-gray-400 focus:border-syro-blue focus:outline-none focus:ring-2 focus:ring-syro-blue/30"
+              className="w-full sm:w-56 rounded-md border-2 border-syro-gold/40 bg-white py-1.5 pl-9 pr-8 text-xs font-semibold text-syro-blue placeholder:font-normal placeholder:text-gray-400 focus:border-syro-blue focus:outline-none focus:ring-2 focus:ring-syro-blue/30 [&::-webkit-search-cancel-button]:hidden"
               aria-label="Search documents across the library"
             />
+            {searchQuery.trim() ? (
+              <ClearInputButton label="Clear document search" onClick={() => onSearchChange('')} />
+            ) : null}
           </label>
           <ClearFiltersButton onClick={onClearFilters} disabled={!hasActiveFiltersOrSearch} />
         </div>
@@ -943,7 +998,7 @@ export default function DownloadsPageClient({
   currentFilters,
 }: Props) {
   const router = useRouter();
-  const pageSize = officialTreePage.size || 24;
+  const pageSize = officialTreePage.size || 20;
   const totalPages = Math.max(officialTreePage.totalPages || 1, 1);
   const currentPageZeroBased = Math.min(Math.max(officialTreePage.page, 0), totalPages - 1);
 

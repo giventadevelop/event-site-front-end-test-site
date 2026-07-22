@@ -8,6 +8,7 @@ import {
   AdminHoverTooltipPortal,
   useAdminHoverTooltip,
 } from '@/components/admin/AdminHoverTooltip';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 
 interface TenantSettingsListProps {
   initialData?: TenantSettingsDTO[];
@@ -89,7 +90,7 @@ export default function TenantSettingsList({
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(20);
 
   // Filter state
   const [filters, setFilters] = useState<TenantSettingsFilters>({
@@ -273,21 +274,29 @@ export default function TenantSettingsList({
           <div className="flex-1">
             <div className="relative">
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-              <input
-                type="text"
+              <AdminListSearchCombobox
+                items={settings}
+                committedValue={filters.search || ''}
+                onCommit={handleSearch}
                 placeholder="Search by tenant ID..."
-                value={filters.search || ''}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-xs sm:text-sm"
+                inputClassName="pl-10 pr-10 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-xs sm:text-sm"
+                getSearchFields={(s) => [s.tenantId, s.id, organizationNameByTenantId[s.tenantId ?? '']]}
+                getCommitValue={(s) => s.tenantId || ''}
+                formatPrimary={(s) => s.tenantId || 'Tenant settings'}
+                formatSecondary={(s) => [organizationNameByTenantId[s.tenantId ?? ''], s.id != null ? `ID: ${s.id}` : null].filter(Boolean).join(' · ')}
               />
             </div>
           </div>
-          <input
-            type="text"
+          <AdminListSearchCombobox
+            items={settings}
+            committedValue={filters.tenantId || ''}
+            onCommit={(value) => handleFilterChange('tenantId', value || undefined)}
             placeholder="Filter by specific tenant ID..."
-            value={filters.tenantId || ''}
-            onChange={(e) => handleFilterChange('tenantId', e.target.value || undefined)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-xs sm:text-sm"
+            inputClassName="px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-xs sm:text-sm"
+            getSearchFields={(s) => [s.tenantId, s.id, organizationNameByTenantId[s.tenantId ?? '']]}
+            getCommitValue={(s) => s.tenantId || ''}
+            formatPrimary={(s) => s.tenantId || 'Tenant settings'}
+            formatSecondary={(s) => [organizationNameByTenantId[s.tenantId ?? ''], s.id != null ? `ID: ${s.id}` : null].filter(Boolean).join(' · ')}
           />
         </div>
       </div>

@@ -126,44 +126,94 @@ function mapEventMediaToTreeItem(doc: EventMediaDTO): PublicOfficialDocumentTree
   };
 }
 
+/**
+ * Fetch ONE backend page of public official documents (true server-side pagination).
+ * The backend `findPublicOfficialDocumentsForDownloadsLite` query orders by
+ * COALESCE(displayPriority, priorityRanking, 999999) ASC, createdAt DESC and
+ * rejects extra `sort` params (500) — never append sort here.
+ */
+async function fetchPublicOfficialDocumentsPageRaw(input: {
+  page: number;
+  size: number;
+  categoryId?: number;
+  year?: number;
+}): Promise<{ docs: EventMediaDTO[]; totalElements: number }> {
+  const tenantId = getTenantId();
+  const params = new globalThis.URLSearchParams();
+  params.set('tenantId', tenantId);
+  if (input.categoryId) {
+    params.set('officialDocumentCategoryId', String(input.categoryId));
+  }
+  if (input.year) {
+    params.set('officialDocumentYear', String(input.year));
+  }
+  params.set('page', String(input.page));
+  params.set('size', String(input.size));
+
+  const res = await fetchWithJwtRetry(buildPublicOfficialDocumentsUrl(params), { cache: 'no-store' });
+  if (!res.ok) {
+    globalThis.console.error('[downloads] public-official-documents page failed', {
+      page: input.page,
+      status: res.status,
+      tenantId,
+    });
+    return { docs: [], totalElements: 0 };
+  }
+
+  const batch = (await res.json()) as EventMediaDTO[];
+  const docs = Array.isArray(batch) ? batch : [];
+  return { docs, totalElements: parseSpringTotalCountHeader(res, docs.length) };
+}
+
+/**
+ * Year filter options need distinct years across the WHOLE corpus (incl. years found in
+ * title/path text), not just the current page. Cache the slim scan so the browse path
+ * stays one page request per view while options refresh at most every 5 minutes.
+ */
+const YEAR_OPTIONS_CORPUS_TTL_MS = 5 * 60 * 1000;
+let yearOptionsCorpusCache: { fetchedAt: number; docs: EventMediaDTO[] } | null = null;
+
+function storeYearOptionsCorpus(docs: EventMediaDTO[]): void {
+  if (docs.length > 0) {
+    yearOptionsCorpusCache = { fetchedAt: Date.now(), docs };
+  }
+}
+
+async function getYearOptionsCorpus(): Promise<EventMediaDTO[] | null> {
+  if (yearOptionsCorpusCache && Date.now() - yearOptionsCorpusCache.fetchedAt < YEAR_OPTIONS_CORPUS_TTL_MS) {
+    return yearOptionsCorpusCache.docs;
+  }
+  const docs = await fetchAllPublicOfficialDocumentsRaw();
+  storeYearOptionsCorpus(docs);
+  // On a failed/empty scan keep serving the previous corpus rather than thin options.
+  return docs.length > 0 ? docs : yearOptionsCorpusCache?.docs ?? null;
+}
+
+/**
+ * Full slim-list scan — ONLY for the text-search path (backend has no search param)
+ * and the cached year-options corpus above.
+ * The default browse path must use fetchPublicOfficialDocumentsPageRaw instead.
+ */
 async function fetchAllPublicOfficialDocumentsRaw(input?: {
   categoryId?: number;
 }): Promise<EventMediaDTO[]> {
-  const tenantId = getTenantId();
   const all: EventMediaDTO[] = [];
-  // Keep batches small: concurrent size=100 loads OOM the Java heap / Postgres
-  // result buffer (SQLState 53200). size=50 is usually fine alone; 25 is safer
-  // when the page also loads categories in parallel.
-  const batchSize = 25;
+  // Sequential size=100 batches are safe with the backend's Lite projection
+  // (slim SELECT + SUBSTRING'd hierarchy fields — built to avoid the old OOM).
+  const batchSize = 100;
   let page = 0;
   let totalElements = Number.POSITIVE_INFINITY;
 
   while (all.length < totalElements && page < 100) {
-    const params = new globalThis.URLSearchParams();
-    params.set('tenantId', tenantId);
-    if (input?.categoryId) {
-      params.set('officialDocumentCategoryId', String(input.categoryId));
-    }
-    params.set('page', String(page));
-    params.set('size', String(batchSize));
-
-    const url = buildPublicOfficialDocumentsUrl(params);
-    const res = await fetchWithJwtRetry(url, { cache: 'no-store' });
-    if (!res.ok) {
-      globalThis.console.error(
-        '[downloads] public-official-documents page failed',
-        { page, status: res.status, tenantId }
-      );
-      break;
-    }
-
-    const batch = (await res.json()) as EventMediaDTO[];
-    if (!Array.isArray(batch)) break;
-
-    totalElements = parseSpringTotalCountHeader(res, all.length + batch.length);
-    all.push(...batch);
+    const { docs, totalElements: total } = await fetchPublicOfficialDocumentsPageRaw({
+      page,
+      size: batchSize,
+      categoryId: input?.categoryId,
+    });
+    if (docs.length === 0) break;
+    totalElements = total;
+    all.push(...docs);
     page += 1;
-    if (batch.length === 0) break;
   }
 
   return all;
@@ -244,17 +294,65 @@ export async function fetchPublicOfficialDocumentsTreeServer(input?: {
   search?: string;
 }): Promise<PublicOfficialDocumentTreePage> {
   const page = Math.max(0, input?.page ?? 0);
-  const size = Math.min(Math.max(1, input?.size ?? 24), 100);
+  const size = Math.min(Math.max(1, input?.size ?? 20), 100);
   const searchQuery = input?.search?.trim() ?? '';
 
   try {
-    // Load the full public document list once (small batches), then filter and
-    // derive year options in memory. Never issue a second parallel full-list
-    // fetch for yearOptions — that OOMed the JVM with concurrent large pages.
+    if (!searchQuery) {
+      // Default browse path: true server-side pagination — one documents request
+      // per view (page/size/category/year handled by the backend query). The year
+      // options corpus is TTL-cached, so it costs nothing on warm renders.
+      const [{ docs, totalElements }, categoryOptions, yearCorpus] = await Promise.all([
+        fetchPublicOfficialDocumentsPageRaw({
+          page,
+          size,
+          categoryId: input?.categoryId,
+          year: input?.year,
+        }),
+        fetchOfficialDocumentCategoryOptionsServer(),
+        getYearOptionsCorpus(),
+      ]);
+
+      const totalPages = Math.max(1, Math.ceil(totalElements / size));
+      // Out-of-range page (hand-edited URL): clamp and refetch the last page once.
+      let pageDocs = docs;
+      let currentPage = page;
+      if (docs.length === 0 && totalElements > 0 && page > totalPages - 1) {
+        currentPage = totalPages - 1;
+        pageDocs = (
+          await fetchPublicOfficialDocumentsPageRaw({
+            page: currentPage,
+            size,
+            categoryId: input?.categoryId,
+            year: input?.year,
+          })
+        ).docs;
+      }
+
+      // Keep the backend's newest-first order; dedup only collapses duplicate
+      // uploads within the page. Year options derive from the cached corpus so
+      // the dropdown lists every document year, not just the current page's.
+      const content = deduplicateOfficialDocumentTreeItems(pageDocs.map(mapEventMediaToTreeItem));
+      const yearSource = yearCorpus ?? pageDocs;
+      return {
+        content,
+        totalElements,
+        totalPages,
+        page: currentPage,
+        size,
+        categoryOptions,
+        yearOptions: extractYearOptionsFromDocs(yearSource, input?.categoryId),
+        allYearOptions: extractYearOptionsFromDocs(yearSource),
+      };
+    }
+
+    // Text-search path only: the backend has no search param, so scan the slim
+    // list (sequential batches) and filter/sort/paginate in memory as before.
     const [allDocs, categoryOptions] = await Promise.all([
       fetchAllPublicOfficialDocumentsRaw(),
       fetchOfficialDocumentCategoryOptionsServer(),
     ]);
+    storeYearOptionsCorpus(allDocs);
 
     const allYearOptions = extractYearOptionsFromDocs(allDocs);
     const scopedDocs = input?.categoryId
@@ -268,7 +366,7 @@ export async function fetchPublicOfficialDocumentsTreeServer(input?: {
       if (input?.year && !matchesDownloadYearFilter(searchItem, input.year)) {
         return false;
       }
-      if (searchQuery && !matchesDownloadSearchQuery(searchItem, searchQuery)) {
+      if (!matchesDownloadSearchQuery(searchItem, searchQuery)) {
         return false;
       }
       return true;

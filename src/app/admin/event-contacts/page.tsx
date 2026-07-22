@@ -5,30 +5,31 @@ import { FaPlus, FaSearch, FaFilter } from 'react-icons/fa';
 import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import DataTable, { Column } from '@/components/ui/DataTable';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 import Modal, { ConfirmModal } from '@/components/ui/Modal';
 import AdminNavigation from '@/components/AdminNavigation';
+import EventTypeaheadSelect from '@/components/admin/EventTypeaheadSelect';
 import type { EventContactsDTO, EventDetailsDTO } from '@/types';
 import {
-  fetchEventContactsServer,
+  fetchEventContactsPageServer,
   createEventContactServer,
   updateEventContactServer,
   deleteEventContactServer,
 } from './ApiServerActions';
-import { fetchEventsFilteredServer } from '../ApiServerActions';
 
 export default function EventContactsPage() {
   const { userId } = useAuth();
   const router = useRouter();
 
   const [contacts, setContacts] = useState<EventContactsDTO[]>([]);
-  const [events, setEvents] = useState<EventDetailsDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [eventFilter, setEventFilter] = useState<string>('');
+  const [eventFilter, setEventFilter] = useState<EventDetailsDTO | null>(null);
 
-  // Pagination state
+  // Pagination state (server-driven)
   const [page, setPage] = useState(0);
-  const [pageSize] = useState(10);
+  const [pageSize] = useState(20);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -54,21 +55,8 @@ export default function EventContactsPage() {
   useEffect(() => {
     if (userId) {
       loadContacts();
-      loadEvents();
     }
-  }, [userId]);
-
-  const loadEvents = async () => {
-    try {
-      const result = await fetchEventsFilteredServer({
-        pageSize: 1000, // Load all events for dropdown
-        sort: 'startDate,desc'
-      });
-      setEvents(result.events);
-    } catch (err: any) {
-      console.error('Failed to load events:', err);
-    }
-  };
+  }, [userId, page, searchTerm, eventFilter]);
 
   useEffect(() => {
     if (toastMessage) {
@@ -81,8 +69,14 @@ export default function EventContactsPage() {
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchEventContactsServer();
-      setContacts(data);
+      const result = await fetchEventContactsPageServer({
+        page,
+        size: pageSize,
+        search: searchTerm,
+        eventId: eventFilter?.id ?? undefined,
+      });
+      setContacts(result.data);
+      setTotalCount(result.totalCount);
     } catch (err: any) {
       setError(err.message || 'Failed to load contacts');
       setToastMessage({ type: 'error', message: err.message || 'Failed to load contacts' });
@@ -101,8 +95,8 @@ export default function EventContactsPage() {
         email: formData.email || undefined,
         event: formData.event?.id ? { id: formData.event.id } as EventDetailsDTO : undefined
       };
-      const newContact = await createEventContactServer(contactData as any);
-      setContacts(prev => [...prev, newContact]);
+      await createEventContactServer(contactData as any);
+      await loadContacts();
       setIsCreateModalOpen(false);
       resetForm();
       setToastMessage({ type: 'success', message: 'Contact created successfully' });
@@ -142,7 +136,7 @@ export default function EventContactsPage() {
     try {
       setLoading(true);
       await deleteEventContactServer(selectedContact.id!);
-      setContacts(prev => prev.filter(c => c.id !== selectedContact.id));
+      await loadContacts();
       setIsDeleteModalOpen(false);
       setSelectedContact(null);
       setToastMessage({ type: 'success', message: 'Contact deleted successfully' });
@@ -196,22 +190,10 @@ export default function EventContactsPage() {
     setContacts(sorted);
   };
 
-  const filteredContacts = contacts.filter(contact => {
-    const matchesSearch = contact.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contact.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contact.email?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesEventFilter = !eventFilter || contact.event?.id?.toString() === eventFilter;
-
-    return matchesSearch && matchesEventFilter;
-  });
-
-  // Client-side pagination
-  const totalCount = filteredContacts.length;
+  // Server-side pagination totals (X-Total-Count)
   const totalPages = Math.ceil(totalCount / pageSize) || 1;
   const startItem = totalCount > 0 ? page * pageSize + 1 : 0;
-  const endItem = totalCount > 0 ? Math.min((page + 1) * pageSize, totalCount) : 0;
-  const paginatedContacts = filteredContacts.slice(page * pageSize, (page + 1) * pageSize);
+  const endItem = totalCount > 0 ? Math.min(page * pageSize + contacts.length, totalCount) : 0;
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -291,31 +273,32 @@ export default function EventContactsPage() {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center">
             <div className="flex-1 min-w-0">
               <div className="relative">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-                <input
-                  type="text"
+                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 z-10 pointer-events-none" />
+                <AdminListSearchCombobox<EventContactsDTO & Record<string, unknown>>
+                  items={contacts as (EventContactsDTO & Record<string, unknown>)[]}
+                  committedValue={searchTerm}
+                  onCommit={setSearchTerm}
                   placeholder="Search contacts..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                  className="relative w-full"
+                  inputClassName="pl-10 pr-10 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                  getSearchFields={(c) => [c.name, c.phone, c.email, c.id]}
+                  getCommitValue={(c) => c.name || ''}
+                  formatPrimary={(c) => c.name || 'Unnamed contact'}
+                  formatSecondary={(c) => [c.email, c.phone].filter(Boolean).join(' · ')}
                 />
               </div>
             </div>
             <div className="min-w-0 sm:min-w-48">
               <div className="relative">
-                <FaFilter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-                <select
-                  value={eventFilter}
-                  onChange={(e) => setEventFilter(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
-                >
-                  <option value="">All Events</option>
-                  {events.map(event => (
-                    <option key={event.id} value={event.id?.toString()}>
-                      {event.title}
-                    </option>
-                  ))}
-                </select>
+                <FaFilter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 z-10 pointer-events-none" />
+                <EventTypeaheadSelect
+                  selectedEvent={eventFilter}
+                  onSelect={setEventFilter}
+                  clearLabel="All Events"
+                  placeholder="All Events"
+                  className="relative w-full"
+                  inputClassName="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                />
               </div>
             </div>
             <button
@@ -340,7 +323,7 @@ export default function EventContactsPage() {
         )}
 
         <DataTable
-          data={paginatedContacts}
+          data={contacts}
           columns={columns}
           loading={loading}
           onSort={handleSort}
@@ -429,7 +412,6 @@ export default function EventContactsPage() {
           onSubmit={handleCreate}
           loading={loading}
           submitText="Create Contact"
-          events={events}
         />
       </Modal>
 
@@ -450,7 +432,6 @@ export default function EventContactsPage() {
           onSubmit={handleEdit}
           loading={loading}
           submitText="Update Contact"
-          events={events}
         />
       </Modal>
 
@@ -478,10 +459,9 @@ interface ContactFormProps {
   onSubmit: () => void;
   loading: boolean;
   submitText: string;
-  events: EventDetailsDTO[];
 }
 
-function ContactForm({ formData, setFormData, onSubmit, loading, submitText, events }: ContactFormProps) {
+function ContactForm({ formData, setFormData, onSubmit, loading, submitText }: ContactFormProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -499,25 +479,12 @@ function ContactForm({ formData, setFormData, onSubmit, loading, submitText, eve
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Event (Optional)
           </label>
-          <select
-            name="event"
-            value={formData.event?.id?.toString() || ''}
-            onChange={(e) => {
-              const eventId = e.target.value ? parseInt(e.target.value) : undefined;
-              setFormData(prev => ({
-                ...prev,
-                event: eventId ? { id: eventId } as EventDetailsDTO : undefined
-              }));
-            }}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">No Event (Global)</option>
-            {events.map(event => (
-              <option key={event.id} value={event.id?.toString()}>
-                {event.title} {event.startDate ? `(${event.startDate})` : ''}
-              </option>
-            ))}
-          </select>
+          <EventTypeaheadSelect
+            selectedEvent={formData.event ?? null}
+            onSelect={(event) => setFormData(prev => ({ ...prev, event: event ?? undefined }))}
+            clearLabel="No Event (Global)"
+            placeholder="No Event (Global)"
+          />
         </div>
 
         <div>

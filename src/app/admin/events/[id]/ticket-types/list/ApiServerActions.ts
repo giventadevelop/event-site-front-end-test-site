@@ -420,7 +420,8 @@ export async function fetchEventDetailsForTicketListPage(eventId: number): Promi
 
 export async function fetchTicketTypesForTicketListPage(eventId: number): Promise<EventTicketTypeDTO[]> {
     try {
-        const url = `${APP_URL}/api/proxy/event-ticket-types?eventId.equals=${eventId}`;
+        // Event-scoped bounded set: explicit size keeps the request bounded; client paginates locally
+        const url = `${APP_URL}/api/proxy/event-ticket-types?eventId.equals=${eventId}&size=200`;
         const response = await fetch(url, { cache: 'no-store' });
         if (!response.ok) {
             // If it's a 500 error, it might be a backend connection issue

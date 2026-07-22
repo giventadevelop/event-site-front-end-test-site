@@ -6,35 +6,27 @@ import Link from 'next/link';
 import { useTenantSettings } from '@/components/TenantSettingsProvider';
 import { HomeSectionRail } from '@/components/HomeSectionRail';
 import { HomeSectionTitle } from '@/components/HomeSectionTitle';
-import { parseProfileSiteListResponse } from '@/lib/parseProfileSiteResponses';
 import { ProfileWritingCard } from '@/components/profile/ProfileWritingViews';
 import { formatProfileDate } from '@/lib/profileSitePaths';
+import {
+  fetchPublishedPublicProfileClient,
+  fetchPublishedWritingsClient,
+  fetchAchievementsClient,
+  fetchAffiliationsClient,
+  fetchMediaAssetsClient,
+  fetchProjectsClient,
+  isTalksMediaAsset,
+  isDownloadDocumentAsset,
+  parseOutcomeMetrics,
+} from '@/lib/profileSiteClient';
 import type {
   PublicProfileDTO,
   ProfileWritingDTO,
   ProfileAchievementDTO,
   ProfileAffiliationDTO,
   ProfileMediaAssetDTO,
+  ProfileProjectDTO,
 } from '@/types/profileSite';
-
-async function fetchProxyList<T>(path: string, publishedOnly = false): Promise<T[]> {
-  const params = new URLSearchParams({ sort: 'displayOrder,asc' });
-  if (publishedOnly) params.append('status.equals', 'PUBLISHED');
-  const res = await fetch(`/api/proxy/${path}?${params}`, { cache: 'no-store' });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return parseProfileSiteListResponse<T>(data);
-}
-
-async function fetchPublicProfile(): Promise<PublicProfileDTO | null> {
-  const res = await fetch('/api/proxy/public-profiles?size=1', { cache: 'no-store' });
-  if (!res.ok) return null;
-  const data = await res.json();
-  const list = parseProfileSiteListResponse<PublicProfileDTO>(data);
-  const profile = list[0] ?? null;
-  if (profile && !profile.isPublished) return null;
-  return profile;
-}
 
 export function ProfileHeroSection({ profile }: { profile: PublicProfileDTO }) {
   return (
@@ -65,8 +57,21 @@ export function ProfileHeroSection({ profile }: { profile: PublicProfileDTO }) {
                 Download CV
               </a>
             )}
-            <Link href="/profile" className="px-6 py-3 border-2 border-primary text-primary rounded-sacred font-semibold reverent-hover">
-              Account profile
+            {profile.bookingUrl?.trim() && (
+              <a
+                href={profile.bookingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-3 bg-accent text-accent-foreground rounded-sacred font-semibold reverent-hover"
+              >
+                Book a call
+              </a>
+            )}
+            <Link href="/about" className="px-6 py-3 border-2 border-primary text-primary rounded-sacred font-semibold reverent-hover">
+              About
+            </Link>
+            <Link href="/contact" className="px-6 py-3 border-2 border-primary text-primary rounded-sacred font-semibold reverent-hover">
+              Contact
             </Link>
           </div>
         </div>
@@ -79,8 +84,11 @@ export function ProfileWritingsSection({ writings }: { writings: ProfileWritingD
   if (writings.length === 0) return null;
   return (
     <section id="profile-writings" className="py-16 bg-card">
-      <HomeSectionRail eyebrow="Writings" containerClassName="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <HomeSectionTitle className="text-3xl font-heading font-semibold text-center mb-10">Selected works</HomeSectionTitle>
+      <HomeSectionRail eyebrow="Perspectives" containerClassName="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <HomeSectionTitle className="text-3xl font-heading font-semibold text-center mb-4">Selected works</HomeSectionTitle>
+        <p className="font-body text-center text-muted-foreground mb-10 max-w-2xl mx-auto">
+          Essays and notes — subscribe below to get new Perspectives in your inbox.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {writings.map((w) => (
             <ProfileWritingCard key={w.id} writing={w} />
@@ -91,14 +99,127 @@ export function ProfileWritingsSection({ writings }: { writings: ProfileWritingD
   );
 }
 
+export function ProfileTalksSection({
+  speaking,
+  media,
+}: {
+  speaking: ProfileAchievementDTO[];
+  media: ProfileMediaAssetDTO[];
+}) {
+  if (speaking.length === 0 && media.length === 0) return null;
+  return (
+    <section id="profile-talks" className="py-16 bg-background">
+      <HomeSectionRail eyebrow="Talks & media" containerClassName="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <HomeSectionTitle className="text-3xl font-heading font-semibold text-center mb-10">Talks &amp; media</HomeSectionTitle>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {speaking.map((a) => (
+            <article key={`speak-${a.id}`} className="bg-card rounded-lg sacred-shadow p-5 border-t-4 border-primary">
+              <p className="font-caption text-xs uppercase tracking-wide text-primary mb-2">Speaking</p>
+              <h3 className="font-heading font-semibold text-lg mb-2">{a.title}</h3>
+              {a.issuer && <p className="text-sm text-muted-foreground mb-2">{a.issuer}</p>}
+              {a.achievementDate && (
+                <p className="text-sm font-caption text-primary mb-2">{formatProfileDate(a.achievementDate)}</p>
+              )}
+              {a.description && <p className="font-body text-sm text-muted-foreground line-clamp-3">{a.description}</p>}
+              {a.url?.trim() && (
+                <a href={a.url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary font-semibold mt-3 inline-block hover:underline">
+                  Watch / details →
+                </a>
+              )}
+            </article>
+          ))}
+          {media.map((m) => (
+            <article key={`media-${m.id}`} className="bg-card rounded-lg sacred-shadow overflow-hidden flex flex-col">
+              {m.coverImageUrl && (
+                <div className="relative w-full h-36 bg-muted">
+                  <Image src={m.coverImageUrl} alt="" fill className="object-cover" unoptimized />
+                </div>
+              )}
+              <div className="p-5 flex flex-col flex-1">
+                <p className="font-caption text-xs uppercase tracking-wide text-primary mb-2">
+                  {m.mediaKind || 'Media'}
+                </p>
+                <h3 className="font-heading font-semibold text-lg mb-2">{m.title}</h3>
+                {m.description && <p className="font-body text-sm text-muted-foreground line-clamp-3 mb-3">{m.description}</p>}
+                <a
+                  href={m.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary font-semibold mt-auto hover:underline"
+                >
+                  Open →
+                </a>
+              </div>
+            </article>
+          ))}
+        </div>
+      </HomeSectionRail>
+    </section>
+  );
+}
+
+export function ProfileProjectsSection({ projects }: { projects: ProfileProjectDTO[] }) {
+  if (projects.length === 0) return null;
+  const featured = projects.filter((p) => p.isFeatured).slice(0, 5);
+  const display = featured.length > 0 ? featured : projects.slice(0, 5);
+
+  return (
+    <section id="profile-projects" className="py-16 bg-muted">
+      <HomeSectionRail eyebrow="Projects" containerClassName="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <HomeSectionTitle className="text-3xl font-heading font-semibold text-center mb-10">Projects &amp; case studies</HomeSectionTitle>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {display.map((p) => {
+            const metrics = parseOutcomeMetrics(p.outcomeMetricsJson);
+            return (
+              <article key={p.id} className="bg-card rounded-lg sacred-shadow overflow-hidden flex flex-col">
+                {p.coverImageUrl && (
+                  <div className="relative w-full h-40 bg-muted">
+                    <Image src={p.coverImageUrl} alt="" fill className="object-cover" unoptimized />
+                  </div>
+                )}
+                <div className="p-5 flex flex-col flex-1">
+                  <h3 className="font-heading font-semibold text-lg mb-1">{p.title}</h3>
+                  {p.role && <p className="text-sm text-primary mb-2">{p.role}</p>}
+                  {p.summary && <p className="font-body text-sm text-muted-foreground line-clamp-3 mb-4">{p.summary}</p>}
+                  {metrics.length > 0 && (
+                    <dl className="grid grid-cols-2 gap-3 mb-4">
+                      {metrics.slice(0, 4).map((m) => (
+                        <div key={`${m.label}-${m.value}`} className="bg-muted/60 rounded-lg px-3 py-2">
+                          <dt className="font-caption text-xs text-muted-foreground">{m.label}</dt>
+                          <dd className="font-heading font-semibold text-foreground">{m.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+                  {p.projectUrl?.trim() && (
+                    <a
+                      href={p.projectUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary font-semibold mt-auto hover:underline"
+                    >
+                      View project →
+                    </a>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </HomeSectionRail>
+    </section>
+  );
+}
+
 export function ProfileAchievementsSection({ items }: { items: ProfileAchievementDTO[] }) {
-  if (items.length === 0) return null;
+  const nonSpeaking = items.filter((a) => a.category !== 'SPEAKING');
+  if (nonSpeaking.length === 0) return null;
   return (
     <section className="py-16 bg-muted">
       <HomeSectionRail eyebrow="Achievements" containerClassName="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <HomeSectionTitle className="text-3xl font-heading font-semibold text-center mb-10">Achievements</HomeSectionTitle>
         <ul className="space-y-6">
-          {items.map((a) => (
+          {nonSpeaking.map((a) => (
             <li key={a.id} className="bg-card rounded-lg sacred-shadow p-6 border-l-4 border-primary">
               <div className="flex flex-col sm:flex-row gap-4 justify-between items-start">
                 {a.imageUrl && (
@@ -162,7 +283,7 @@ export function ProfileAffiliationsSection({ items }: { items: ProfileAffiliatio
 }
 
 export function ProfileDownloadsSection({ assets }: { assets: ProfileMediaAssetDTO[] }) {
-  const downloadable = assets.filter((a) => a.isDownloadable !== false);
+  const downloadable = assets.filter(isDownloadDocumentAsset);
   if (downloadable.length === 0) return null;
   return (
     <section className="py-16 bg-muted">
@@ -217,8 +338,9 @@ export function ProfileContactSection({ profile }: { profile: PublicProfileDTO }
 
   const showSubscribe = profile.isPublished !== false;
   const showContactForm = profile.contactFormEnabled === true;
+  const hasBooking = Boolean(profile.bookingUrl?.trim());
 
-  if (!profile.contactEmail && socials.length === 0 && !showSubscribe) return null;
+  if (!profile.contactEmail && socials.length === 0 && !showSubscribe && !hasBooking) return null;
 
   async function submitAudience(payload: { email: string; firstName?: string; lastName?: string; message?: string }) {
     setSubmitting(true);
@@ -236,7 +358,7 @@ export function ProfileContactSection({ profile }: { profile: PublicProfileDTO }
         setFeedbackError(true);
         return;
       }
-      setFeedback(showContactForm && payload.message ? 'Message sent. Thank you!' : 'You are subscribed. Thank you!');
+      setFeedback(showContactForm && payload.message ? 'Message sent. Thank you!' : 'You are subscribed to Perspectives. Thank you!');
       setEmail('');
       setFirstName('');
       setLastName('');
@@ -264,71 +386,119 @@ export function ProfileContactSection({ profile }: { profile: PublicProfileDTO }
               {s.label}
             </a>
           ))}
+          {hasBooking && (
+            <a
+              href={profile.bookingUrl!}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold reverent-hover"
+            >
+              Schedule a call
+            </a>
+          )}
         </div>
 
         {showSubscribe && (
-          <div className="text-left max-w-md mx-auto bg-muted/50 rounded-xl p-6 border border-border/30">
-            <h3 className="font-heading font-semibold text-lg mb-3 text-center">
-              {showContactForm ? 'Send a message' : 'Subscribe to updates'}
-            </h3>
-            <form
-              className="space-y-3"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!email.trim()) return;
-                submitAudience({
-                  email: email.trim(),
-                  firstName: firstName.trim() || undefined,
-                  lastName: lastName.trim() || undefined,
-                  message: showContactForm ? message.trim() || undefined : undefined,
-                });
-              }}
-            >
-              <input
-                type="email"
-                required
-                placeholder="Email *"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full border border-gray-400 rounded-xl px-4 py-3 text-base"
-              />
-              {(showContactForm || firstName || lastName) && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <input
-                    type="text"
-                    placeholder="First name"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full border border-gray-400 rounded-xl px-4 py-3 text-base"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Last name"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className="w-full border border-gray-400 rounded-xl px-4 py-3 text-base"
-                  />
-                </div>
-              )}
-              {showContactForm && (
-                <textarea
-                  placeholder="Your message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  rows={4}
+          <div className="space-y-8">
+            {/* Perspectives newsletter — always available when published */}
+            <div className="text-left max-w-md mx-auto bg-muted/50 rounded-xl p-6 border border-border/30">
+              <h3 className="font-heading font-semibold text-lg mb-1 text-center">Perspectives newsletter</h3>
+              <p className="text-sm text-muted-foreground text-center mb-4">
+                Occasional essays and notes. No spam.
+              </p>
+              <form
+                className="space-y-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!email.trim()) return;
+                  submitAudience({
+                    email: email.trim(),
+                    firstName: firstName.trim() || undefined,
+                    lastName: lastName.trim() || undefined,
+                  });
+                }}
+              >
+                <input
+                  type="email"
+                  required
+                  placeholder="Email *"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full border border-gray-400 rounded-xl px-4 py-3 text-base"
                 />
-              )}
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold disabled:opacity-50"
-              >
-                {submitting ? 'Sending…' : showContactForm ? 'Send message' : 'Subscribe'}
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold disabled:opacity-50"
+                >
+                  {submitting ? 'Sending…' : 'Subscribe'}
+                </button>
+              </form>
+            </div>
+
+            {showContactForm && (
+              <div className="text-left max-w-md mx-auto bg-muted/50 rounded-xl p-6 border border-border/30">
+                <h3 className="font-heading font-semibold text-lg mb-1 text-center">Collaboration inquiry</h3>
+                <p className="text-sm text-muted-foreground text-center mb-4">
+                  Prefer email? Send a short note — or use Book a call above.
+                </p>
+                <form
+                  className="space-y-3"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!email.trim()) return;
+                    submitAudience({
+                      email: email.trim(),
+                      firstName: firstName.trim() || undefined,
+                      lastName: lastName.trim() || undefined,
+                      message: message.trim() || undefined,
+                    });
+                  }}
+                >
+                  <input
+                    type="email"
+                    required
+                    placeholder="Email *"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full border border-gray-400 rounded-xl px-4 py-3 text-base"
+                  />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      placeholder="First name"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="w-full border border-gray-400 rounded-xl px-4 py-3 text-base"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Last name"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className="w-full border border-gray-400 rounded-xl px-4 py-3 text-base"
+                    />
+                  </div>
+                  <textarea
+                    placeholder="Your message"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    rows={4}
+                    className="w-full border border-gray-400 rounded-xl px-4 py-3 text-base"
+                  />
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold disabled:opacity-50"
+                  >
+                    {submitting ? 'Sending…' : 'Send message'}
+                  </button>
+                </form>
+              </div>
+            )}
+
             {feedback && (
-              <p className={`mt-3 text-sm text-center ${feedbackError ? 'text-destructive' : 'text-success'}`}>{feedback}</p>
+              <p className={`text-sm text-center ${feedbackError ? 'text-destructive' : 'text-success'}`}>{feedback}</p>
             )}
           </div>
         )}
@@ -349,6 +519,11 @@ export function ProfileAboutSection({ profile }: { profile: PublicProfileDTO }) 
             {[profile.location, profile.languages].filter(Boolean).join(' · ')}
           </p>
         )}
+        <p className="mt-8 text-center">
+          <Link href="/about" className="text-primary font-semibold hover:underline">
+            Full about page →
+          </Link>
+        </p>
       </div>
     </section>
   );
@@ -362,6 +537,7 @@ export default function ProfileHomeSections() {
     showProfileAffiliations,
     showProfileDownloads,
     showProfileContact,
+    showProfileProjects,
     loading: settingsLoading,
   } = useTenantSettings();
 
@@ -370,6 +546,7 @@ export default function ProfileHomeSections() {
   const [achievements, setAchievements] = useState<ProfileAchievementDTO[]>([]);
   const [affiliations, setAffiliations] = useState<ProfileAffiliationDTO[]>([]);
   const [assets, setAssets] = useState<ProfileMediaAssetDTO[]>([]);
+  const [projects, setProjects] = useState<ProfileProjectDTO[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -377,12 +554,15 @@ export default function ProfileHomeSections() {
     async function load() {
       setLoading(true);
       try {
-        const [p, w, a, af, m] = await Promise.all([
-          showProfileHero || showProfileContact ? fetchPublicProfile() : Promise.resolve(null),
-          showProfileWritings ? fetchProxyList<ProfileWritingDTO>('profile-writings', true) : Promise.resolve([]),
-          showProfileAchievements ? fetchProxyList<ProfileAchievementDTO>('profile-achievements') : Promise.resolve([]),
-          showProfileAffiliations ? fetchProxyList<ProfileAffiliationDTO>('profile-affiliations') : Promise.resolve([]),
-          showProfileDownloads ? fetchProxyList<ProfileMediaAssetDTO>('profile-media-assets') : Promise.resolve([]),
+        const needProfile = showProfileHero || showProfileContact;
+        const needAchievementsOrTalks = showProfileAchievements || showProfileDownloads;
+        const [p, w, a, af, m, proj] = await Promise.all([
+          needProfile ? fetchPublishedPublicProfileClient() : Promise.resolve(null),
+          showProfileWritings ? fetchPublishedWritingsClient() : Promise.resolve([]),
+          needAchievementsOrTalks ? fetchAchievementsClient() : Promise.resolve([]),
+          showProfileAffiliations ? fetchAffiliationsClient() : Promise.resolve([]),
+          showProfileDownloads || showProfileAchievements ? fetchMediaAssetsClient() : Promise.resolve([]),
+          showProfileProjects ? fetchProjectsClient() : Promise.resolve([]),
         ]);
         if (!cancelled) {
           setProfile(p);
@@ -390,6 +570,7 @@ export default function ProfileHomeSections() {
           setAchievements(a);
           setAffiliations(af);
           setAssets(m);
+          setProjects(proj);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -405,16 +586,24 @@ export default function ProfileHomeSections() {
     showProfileAffiliations,
     showProfileDownloads,
     showProfileContact,
+    showProfileProjects,
   ]);
 
   if (settingsLoading || loading) return null;
-  if (!profile && writings.length === 0 && achievements.length === 0) return null;
+  if (!profile && writings.length === 0 && achievements.length === 0 && projects.length === 0) return null;
+
+  const speaking = achievements.filter((a) => a.category === 'SPEAKING');
+  const talksMedia = assets.filter(isTalksMediaAsset);
 
   return (
     <>
       {showProfileHero && profile && <ProfileHeroSection profile={profile} />}
       {profile && <ProfileAboutSection profile={profile} />}
       {showProfileWritings && <ProfileWritingsSection writings={writings} />}
+      {showProfileProjects && <ProfileProjectsSection projects={projects} />}
+      {(showProfileAchievements || showProfileDownloads) && (
+        <ProfileTalksSection speaking={speaking} media={talksMedia} />
+      )}
       {showProfileAchievements && <ProfileAchievementsSection items={achievements} />}
       {showProfileAffiliations && <ProfileAffiliationsSection items={affiliations} />}
       {showProfileDownloads && <ProfileDownloadsSection assets={assets} />}

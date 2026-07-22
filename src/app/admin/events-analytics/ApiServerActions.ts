@@ -1,6 +1,9 @@
 import { EventCalendarEntryDTO, EventTypeDetailsDTO } from '@/types';
 import { getTenantId, getAppUrl } from '@/lib/env';
 
+// NOTE: currently unused (no importers). The size=1000 fetch is tenant-bounded and does not
+// enrich a paginated list; if it gains a list consumer, scope it via repeated eventId.in params
+// like fetchCalendarEventsServer in src/app/admin/ApiServerActions.ts.
 export async function fetchCalendarEventsServer(): Promise<EventCalendarEntryDTO[]> {
   const baseUrl = getAppUrl();
   const tenantId = getTenantId();

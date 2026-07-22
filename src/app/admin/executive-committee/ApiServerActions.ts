@@ -39,6 +39,54 @@ export async function fetchExecutiveCommitteeMembers(): Promise<ExecutiveCommitt
   }
 }
 
+/**
+ * Paginated admin list driven by backend criteria + X-Total-Count.
+ * JHipster criteria AND across fields, so the single search box is emulated
+ * with per-field `.contains` fallbacks (`id.equals` when the term is numeric).
+ */
+export async function fetchExecutiveCommitteeMembersPage(
+  page: number,
+  pageSize: number,
+  search?: string
+): Promise<{ members: ExecutiveCommitteeTeamMemberDTO[]; totalCount: number }> {
+  const runQuery = async (apply?: (params: URLSearchParams) => void) => {
+    const params = new URLSearchParams({
+      'isActive.equals': 'true',
+      sort: 'priorityOrder,asc',
+      page: String(Math.max(0, page)),
+      size: String(Math.max(1, pageSize)),
+      'tenantId.equals': getTenantId(),
+    });
+    if (apply) apply(params);
+    const response = await fetchWithJwtRetry(
+      `${getApiBase()}/api/executive-committee-team-members?${params.toString()}`,
+      { cache: 'no-store', timeout: 15000 }
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to fetch executive committee members: ${response.status}`);
+    }
+    const members = parseExecutiveCommitteeTeamMembersResponse(await response.json());
+    const parsed = parseInt(response.headers.get('x-total-count') ?? '', 10);
+    return { members, totalCount: Number.isFinite(parsed) ? parsed : members.length };
+  };
+
+  try {
+    const term = search?.trim();
+    if (!term) return await runQuery();
+    if (/^\d+$/.test(term)) {
+      return await runQuery((params) => params.append('id.equals', term));
+    }
+    for (const field of ['firstName', 'lastName', 'title', 'designation', 'department']) {
+      const result = await runQuery((params) => params.append(`${field}.contains`, term));
+      if (result.totalCount > 0) return result;
+    }
+    return { members: [], totalCount: 0 };
+  } catch (error) {
+    console.error('Error fetching executive committee members page:', error);
+    return { members: [], totalCount: 0 };
+  }
+}
+
 export async function createExecutiveCommitteeMember(
   memberData: Omit<ExecutiveCommitteeTeamMemberDTO, 'id'>
 ): Promise<ExecutiveCommitteeTeamMemberDTO | null> {

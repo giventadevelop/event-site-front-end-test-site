@@ -5,6 +5,7 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getParishByDocumentId } from '../getParishesData';
 import SyroPageBanner from '../../../components/SyroPageBanner';
+import DirectoryBackLink from '../../components/DirectoryBackLink';
 
 type PageProps = { params: Promise<{ documentId: string }> };
 
@@ -31,36 +32,37 @@ export default async function ParishDetailPage({ params }: PageProps) {
       <SyroPageBanner title={parish.name} breadcrumbFrom="directory" />
       <section className="relative bg-syro-bg-gray py-8 lg:py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link
-            href="/mosc-redesign/directory/parishes"
-            className="inline-block no-underline font-light text-white bg-[#dc3545] py-2.5 px-5 border-r-[7px] border-r-[#be1929] mb-4 transition-[1s] hover:bg-[#be1929] hover:border-r-[6px] hover:border-r-[#dc3545] hover:text-white"
-          >
-            ← Back to Parishes
-          </Link>
-          {parish.dioceseName && <p className="font-body text-syro-dark-gray mt-1">{parish.dioceseName}</p>}
-          {parish.vicarName && (
-            <p className="font-body text-syro-dark-gray mt-2">
-              Vicar: <span className="font-medium text-syro-blue">{parish.vicarName}</span>
-            </p>
-          )}
+          <DirectoryBackLink href="/mosc-redesign/parishes-cms" label="Back to Parishes" />
+          <div className="flex flex-col sm:flex-row gap-6 items-start">
+            {parish.imageUrl ? (
+              <div className="relative w-40 h-40 flex-shrink-0 rounded-xl overflow-hidden bg-syro-bg-gray sacred-shadow">
+                <Image
+                  src={parish.imageUrl}
+                  alt={parish.imageAlt ?? parish.name}
+                  fill
+                  className="object-contain"
+                  sizes="160px"
+                  priority
+                  unoptimized={parish.imageUrl.startsWith('http')}
+                />
+              </div>
+            ) : null}
+            <div className="min-w-0 flex-1">
+              <h1 className="font-heading font-semibold text-2xl lg:text-3xl text-syro-blue">
+                {parish.name}
+              </h1>
+              {parish.dioceseName ? (
+                <p className="font-body text-syro-dark-gray mt-1">{parish.dioceseName}</p>
+              ) : null}
+              {parish.vicarName ? (
+                <p className="font-body text-syro-dark-gray mt-2">
+                  Vicar: <span className="font-medium text-syro-blue">{parish.vicarName}</span>
+                </p>
+              ) : null}
+            </div>
+          </div>
         </div>
       </section>
-
-      {parish.imageUrl && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 mb-8">
-          <div className="relative w-full h-auto min-h-[200px] sm:min-h-[280px] rounded-2xl overflow-hidden bg-syro-bg-gray">
-            <Image
-              src={parish.imageUrl}
-              alt={parish.imageAlt ?? parish.name}
-              width={1200}
-              height={400}
-              className="w-full h-auto object-contain sm:object-cover min-h-[200px] sm:min-h-[280px]"
-              style={{ backgroundColor: 'transparent', borderRadius: '1rem' }}
-              priority
-            />
-          </div>
-        </section>
-      )}
 
       <section className="py-12 bg-syro-bg-gray">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -83,14 +85,6 @@ export default async function ParishDetailPage({ params }: PageProps) {
                 <p className="font-body text-syro-dark-gray">{[parish.phones, parish.phoneSecondary].filter(Boolean).join(' / ')}</p>
               </div>
             )}
-          </div>
-          <div className="mt-8">
-            <Link
-            href="/mosc-redesign/directory/parishes"
-            className="inline-block no-underline font-light text-white bg-[#dc3545] py-2.5 px-5 border-r-[7px] border-r-[#be1929] mt-4 transition-[1s] hover:bg-[#be1929] hover:border-r-[6px] hover:border-r-[#dc3545] hover:text-white"
-          >
-            ← Back to Parishes
-          </Link>
           </div>
         </div>
       </section>

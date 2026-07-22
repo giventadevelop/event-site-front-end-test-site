@@ -174,62 +174,47 @@ export async function fetchAvailablePerformersServer(eventId: number, page = 0, 
   try {
     console.log('🔍 Fetching available performers for event ID:', eventId, { page, size, searchTerm });
 
-    // Step 1: Get all performers assigned to the current event
+    // Step 1: Get performers assigned to the current event (event-scoped, small set)
     const assignedPerformers = await fetchEventFeaturedPerformersServer(eventId);
-    const assignedPerformerIds = new Set((Array.isArray(assignedPerformers) ? assignedPerformers : [assignedPerformers]).map((performer: any) => performer.id).filter(Boolean));
-    console.log('🔍 Performer IDs assigned to current event:', Array.from(assignedPerformerIds));
+    const assignedPerformerIds = Array.from(new Set(
+      (Array.isArray(assignedPerformers) ? assignedPerformers : [assignedPerformers])
+        .map((performer: any) => performer.id)
+        .filter(Boolean)
+    ));
+    console.log('🔍 Performer IDs assigned to current event:', assignedPerformerIds);
 
-    // Step 2: Get all tenant-level performers (fetch without eventId filter)
-    console.log('🔄 Fetching all tenant-level performers...');
-    let allPerformers: EventFeaturedPerformersDTO[] = [];
-    try {
-      // Fetch all performers for the tenant (no eventId filter)
-      const params = new URLSearchParams();
-      const response = await fetchWithJwtRetry(`${getApiBase()}/api/event-featured-performers?${params.toString()}`, {
-        cache: 'no-store',
-      });
+    // Step 2: Fetch ONE server page of tenant performers via JHipster criteria,
+    // excluding assigned ids (repeated id.notIn) and searching server-side (name.contains)
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('size', String(size));
+    params.append('sort', 'name,asc');
+    if (searchTerm) {
+      params.append('name.contains', searchTerm);
+    }
+    assignedPerformerIds.forEach((id) => params.append('id.notIn', String(id)));
 
-      if (response.ok) {
-        const data = await response.json();
-        allPerformers = Array.isArray(data) ? data : [data];
-        console.log('✅ Fetched', allPerformers.length, 'total tenant-level performers');
-      } else {
-        console.warn('⚠️ Failed to fetch all performers:', response.status, response.statusText);
-      }
-    } catch (error) {
-      console.warn('⚠️ Error fetching all performers:', error instanceof Error ? error.message : String(error));
+    const response = await fetchWithJwtRetry(`${getApiBase()}/api/event-featured-performers?${params.toString()}`, {
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      console.warn('⚠️ Failed to fetch available performers:', response.status, response.statusText);
+      return { content: [], totalElements: 0, totalPages: 0, assignedCount: assignedPerformerIds.length, totalPerformers: 0 };
     }
 
-    // Step 3: Filter out performers that are assigned to the current event
-    const availablePerformers = allPerformers.filter((performer: any) =>
-      !assignedPerformerIds.has(performer.id)
-    );
-
-    console.log('🔍 Available performers (not assigned to current event):', availablePerformers.length);
-
-    // Step 4: Apply search filter if provided
-    const filteredPerformers = searchTerm
-      ? availablePerformers.filter((performer: any) =>
-          performer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          performer.stageName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          performer.role?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          performer.email?.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      : availablePerformers;
-
-    console.log('✅ Available performers after search filtering:', filteredPerformers.length);
-
-    // Step 5: Apply pagination to the filtered results
-    const startIndex = page * size;
-    const endIndex = startIndex + size;
-    const paginatedPerformers = filteredPerformers.slice(startIndex, endIndex);
+    const data = await response.json();
+    const content: EventFeaturedPerformersDTO[] = Array.isArray(data) ? data : [data];
+    // Total available performers comes from the X-Total-Count response header
+    const totalElements = parseInt(response.headers.get('x-total-count') || '0', 10) || content.length;
+    console.log('✅ Available performers page:', content.length, 'of', totalElements);
 
     return {
-      content: paginatedPerformers,
-      totalElements: filteredPerformers.length,
-      totalPages: Math.ceil(filteredPerformers.length / size),
-      assignedCount: assignedPerformerIds.size,
-      totalPerformers: allPerformers.length
+      content,
+      totalElements,
+      totalPages: Math.ceil(totalElements / size),
+      assignedCount: assignedPerformerIds.length,
+      totalPerformers: totalElements + assignedPerformerIds.length
     };
   } catch (error) {
     console.warn('❌ Error fetching available performers:', error);

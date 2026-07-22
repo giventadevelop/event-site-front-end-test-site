@@ -11,7 +11,7 @@ export interface SyroPageBannerProps {
   /** When true, center the title and breadcrumb text (e.g. on saints subpages) */
   centerText?: boolean;
   /** Breadcrumb path: 'home' = Home / Title, 'gallery' = Gallery / Title, 'news' = News / Title, 'directory' = Directory / Title, etc. */
-  breadcrumbFrom?: 'home' | 'gallery' | 'downloads' | 'calendar' | 'liturgical-calendar' | 'mosc-calendar' | 'kalpana-cms' | 'holy-synod' | 'holy-synod-cms' | 'catholicate' | 'catholicate-cms' | 'saints' | 'saints-cms' | 'the-church' | 'administration' | 'ecumenical' | 'ecumenical-cms' | 'dioceses' | 'spiritual-organizations' | 'spiritual-organizations-cms' | 'publications' | 'publications-cms' | 'institutions' | 'institutions-cms' | 'training' | 'training-cms' | 'theological-seminaries' | 'theological-seminaries-cms' | 'lectionary' | 'news' | 'directory';
+  breadcrumbFrom?: 'home' | 'gallery' | 'downloads' | 'calendar' | 'liturgical-calendar' | 'mosc-calendar' | 'kalpana-cms' | 'holy-synod' | 'holy-synod-cms' | 'catholicate' | 'catholicate-cms' | 'saints' | 'saints-cms' | 'the-church' | 'administration' | 'ecumenical' | 'ecumenical-cms' | 'dioceses' | 'dioceses-cms' | 'spiritual-organizations' | 'spiritual-organizations-cms' | 'publications' | 'publications-cms' | 'institutions' | 'institutions-cms' | 'training' | 'training-cms' | 'theological-seminaries' | 'theological-seminaries-cms' | 'lectionary' | 'news' | 'directory';
   /** Optional middle segment for 3-level breadcrumb (e.g. The Church / Theology / Christology). Used on the-church subpages under Theology, Spirituality, History, Liturgy. */
   breadcrumbParent?: { label: string; href: string };
   /** When true, omit the breadcrumb nav. Title stays in the heading. */
@@ -45,7 +45,8 @@ const BREADCRUMB_CONFIG = {
   administration: { href: '/mosc-redesign/administration', label: 'Administration' },
   ecumenical: { href: '/mosc-redesign/ecumenical', label: 'Ecumenical' },
   'ecumenical-cms': { href: '/mosc-redesign/ecumenical-cms', label: 'Ecumenical' },
-  dioceses: { href: '/mosc-redesign/dioceses', label: 'Dioceses' },
+  dioceses: { href: '/mosc-redesign/dioceses-cms', label: 'Dioceses' },
+  'dioceses-cms': { href: '/mosc-redesign/dioceses-cms', label: 'Dioceses' },
   'spiritual-organizations': { href: '/mosc-redesign/spiritual-organizations-cms', label: 'Spiritual Organizations' },
   'spiritual-organizations-cms': { href: '/mosc-redesign/spiritual-organizations-cms', label: 'Spiritual Organizations' },
   publications: { href: '/mosc-redesign/publications', label: 'Publications' },

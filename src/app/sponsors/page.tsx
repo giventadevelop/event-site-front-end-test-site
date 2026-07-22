@@ -19,7 +19,7 @@ export default function SponsorsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const pageSize = 10; // Standard page size
+  const pageSize = 20;
 
   useEffect(() => {
     fetchSponsors();

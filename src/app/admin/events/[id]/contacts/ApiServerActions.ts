@@ -1,5 +1,5 @@
 import { fetchWithJwtRetry } from '@/lib/proxyHandler';
-import { getAppUrl, getApiBaseUrl } from '@/lib/env';
+import { getAppUrl, getApiBaseUrl, getTenantId } from '@/lib/env';
 import { withTenantId } from '@/lib/withTenantId';
 import type { EventContactsDTO } from '@/types';
 
@@ -12,6 +12,7 @@ const baseUrl = getAppUrl();
 export async function fetchEventContactsServer(eventId: number) {
   const params = new URLSearchParams();
   params.append('eventId.equals', eventId.toString());
+  params.append('size', '200');
 
   const response = await fetchWithJwtRetry(`${getApiBase()}/api/event-contacts?${params.toString()}`, {
     cache: 'no-store',
@@ -149,56 +150,38 @@ export async function fetchAvailableContactsServer(eventId: number, page = 0, si
     const assignedContactIds = new Set((Array.isArray(assignedContacts) ? assignedContacts : [assignedContacts]).map((contact: any) => contact.id).filter(Boolean));
     console.log('🔍 Contact IDs assigned to current event:', Array.from(assignedContactIds));
 
-    // Step 2: Get all tenant-level contacts (fetch without eventId filter)
-    console.log('🔄 Fetching all tenant-level contacts...');
-    let allContacts: EventContactsDTO[] = [];
-    try {
-      // Fetch all contacts for the tenant (no eventId filter)
-      const params = new URLSearchParams();
-      const response = await fetchWithJwtRetry(`${getApiBase()}/api/event-contacts?${params.toString()}`, {
-        cache: 'no-store',
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        allContacts = Array.isArray(data) ? data : [data];
-        console.log('✅ Fetched', allContacts.length, 'total tenant-level contacts');
-      } else {
-        console.warn('⚠️ Failed to fetch all contacts:', response.status, response.statusText);
-      }
-    } catch (error) {
-      console.warn('⚠️ Error fetching all contacts:', error instanceof Error ? error.message : String(error));
+    // Step 2: Fetch one page of tenant-level contacts, excluding assigned ones server-side
+    const params = new URLSearchParams();
+    params.append('tenantId.equals', getTenantId());
+    params.append('page', page.toString());
+    params.append('size', size.toString());
+    params.append('sort', 'name,asc');
+    assignedContactIds.forEach((id) => params.append('id.notIn', String(id)));
+    if (searchTerm.trim()) {
+      params.append('name.contains', searchTerm.trim());
     }
 
-    // Step 3: Filter out contacts that are assigned to the current event
-    const availableContacts = allContacts.filter((contact: any) =>
-      !assignedContactIds.has(contact.id)
-    );
+    const response = await fetchWithJwtRetry(`${getApiBase()}/api/event-contacts?${params.toString()}`, {
+      cache: 'no-store',
+    });
 
-    console.log('🔍 Available contacts (not assigned to current event):', availableContacts.length);
+    if (!response.ok) {
+      console.warn('⚠️ Failed to fetch available contacts:', response.status, response.statusText);
+      return { content: [], totalElements: 0, totalPages: 0, assignedCount: assignedContactIds.size, totalContacts: 0 };
+    }
 
-    // Step 4: Apply search filter if provided
-    const filteredContacts = searchTerm
-      ? availableContacts.filter((contact: any) =>
-          contact.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          contact.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          contact.email?.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      : availableContacts;
+    const data = await response.json();
+    const availableContacts: EventContactsDTO[] = Array.isArray(data) ? data : [data];
+    const totalElements = parseInt(response.headers.get('x-total-count') || `${availableContacts.length}`, 10);
 
-    console.log('✅ Available contacts after search filtering:', filteredContacts.length);
-
-    // Step 5: Apply pagination to the filtered results
-    const startIndex = page * size;
-    const endIndex = startIndex + size;
-    const paginatedContacts = filteredContacts.slice(startIndex, endIndex);
+    console.log('✅ Available contacts (not assigned to current event):', totalElements);
 
     return {
-      content: paginatedContacts,
-      totalElements: filteredContacts.length,
-      totalPages: Math.ceil(filteredContacts.length / size),
+      content: availableContacts,
+      totalElements,
+      totalPages: Math.ceil(totalElements / size),
       assignedCount: assignedContactIds.size,
-      totalContacts: allContacts.length
+      totalContacts: totalElements + assignedContactIds.size
     };
   } catch (error) {
     console.warn('❌ Error fetching available contacts:', error);

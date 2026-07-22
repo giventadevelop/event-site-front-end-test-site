@@ -55,7 +55,7 @@ export async function searchEventsServer(
   }
 }
 
-const DEFAULT_LINKED_PAGE_SIZE = 10;
+const DEFAULT_LINKED_PAGE_SIZE = 20;
 
 /**
  * Fetch linked events for a focus group with pagination.

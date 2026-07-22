@@ -334,7 +334,9 @@ export async function getNewsHomePageData(): Promise<NewsHomePageData> {
           fetchStrapi<unknown[]>(buildArticleQuery(buildCategorySlugFilter(STRAPI_NEWS_CATEGORY_SLUGS.featuredNews), 'publishedAt:desc', 6, activeTenantFilter)),
           fetchStrapi<unknown[]>(buildArticleQuery(buildCategorySlugFilter(STRAPI_NEWS_CATEGORY_SLUGS.mainNews), 'publishedAt:desc', 10, activeTenantFilter)),
           fetchStrapi<unknown[]>(buildArticleQuery(buildCategorySlugFilter(STRAPI_NEWS_CATEGORY_SLUGS.pressRelease), 'publishedAt:desc', 10, activeTenantFilter)),
-          fetchStrapi<unknown[]>(buildArticleQuery('', 'views:desc', 5, activeTenantFilter)),
+          // Prefer Most Read category (imported cards with covers). views:desc is unused
+          // because views stay 0 after clone, which surfaces coverless articles first.
+          fetchStrapi<unknown[]>(buildArticleQuery(buildCategorySlugFilter(STRAPI_NEWS_CATEGORY_SLUGS.mostRead), 'publishedAt:desc', 5, activeTenantFilter)),
           fetchStrapi<{ id?: number; attributes?: Record<string, unknown> }>('/sidebar-promotional-block?populate=*'),
           fetchStrapi<unknown[]>(adsPath),
         ]);

@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { FaPlus } from 'react-icons/fa';
 import { useAuth } from '@clerk/nextjs';
 import AdminNavigation from '@/components/AdminNavigation';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 import DataTable, { type Column } from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
 import type { TenantEmailAddressDTO } from '@/types';
@@ -46,7 +47,7 @@ export default function TenantEmailAddressesPage() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const [currentPage, setCurrentPage] = useState(0); // Zero-based page index
-  const [pageSize] = useState(10); // Items per page
+  const [pageSize] = useState(20); // Items per page
 
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [createFormMessage, setCreateFormMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -402,12 +403,16 @@ export default function TenantEmailAddressesPage() {
         {/* Search */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
-          <input
-            type="text"
+          <AdminListSearchCombobox
+            items={items}
+            committedValue={searchTerm}
+            onCommit={setSearchTerm}
             placeholder="Search by email, display name, or type..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            inputClassName="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            getSearchFields={(item) => [item.emailAddress, item.displayName, item.emailType, item.id]}
+            getCommitValue={(item) => item.emailAddress || item.displayName || item.emailType || ''}
+            formatPrimary={(item) => item.emailAddress || item.displayName || 'Email address'}
+            formatSecondary={(item) => [item.displayName, item.emailType, item.id != null ? `ID: ${item.id}` : null].filter(Boolean).join(' · ')}
           />
         </div>
 

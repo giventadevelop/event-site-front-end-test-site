@@ -92,6 +92,73 @@ export async function fetchUsersServer({ search, searchField, status, role, page
   return { data, totalCount: totalCount ? parseInt(totalCount, 10) : 0 };
 }
 
+const TYPEAHEAD_FIELDS = ['firstName', 'lastName', 'email', 'userId', 'phone'] as const;
+const TYPEAHEAD_LIMIT = 20;
+
+function mergeUsersById(...lists: UserProfileDTO[][]): UserProfileDTO[] {
+  const byId = new Map<string, UserProfileDTO>();
+  for (const list of lists) {
+    for (const user of list) {
+      const key =
+        user.id != null
+          ? `id:${user.id}`
+          : user.userId
+            ? `userId:${user.userId}`
+            : user.email
+              ? `email:${user.email}`
+              : null;
+      if (!key || byId.has(key)) continue;
+      byId.set(key, user);
+    }
+  }
+  return Array.from(byId.values());
+}
+
+function normalizeUserList(data: unknown): UserProfileDTO[] {
+  if (Array.isArray(data)) return data as UserProfileDTO[];
+  if (
+    data &&
+    typeof data === 'object' &&
+    'content' in data &&
+    Array.isArray((data as { content: unknown }).content)
+  ) {
+    return (data as { content: UserProfileDTO[] }).content;
+  }
+  return [];
+}
+
+/**
+ * Multi-field typeahead for Manage Usage:
+ * matches firstName, lastName, email, userId, and phone (parallel contains queries).
+ */
+export async function searchUsersForTypeaheadServer(
+  query: string,
+  options?: { status?: string; role?: string },
+): Promise<UserProfileDTO[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  const tenantId = getTenantId();
+  const results = await Promise.all(
+    TYPEAHEAD_FIELDS.map(async (field) => {
+      const params = new URLSearchParams();
+      params.append(`${field}.contains`, trimmed);
+      if (options?.status) params.append('userStatus.equals', options.status);
+      if (options?.role) params.append('userRole.equals', options.role);
+      params.append('tenantId.equals', tenantId);
+      params.append('page', '0');
+      params.append('size', String(TYPEAHEAD_LIMIT));
+      const res = await fetchWithJwtRetry(`${getApiBase()}/api/user-profiles?${params.toString()}`, {
+        cache: 'no-store',
+      });
+      if (!res.ok) return [] as UserProfileDTO[];
+      return normalizeUserList(await res.json());
+    }),
+  );
+
+  return mergeUsersById(...results).slice(0, TYPEAHEAD_LIMIT);
+}
+
 export async function patchUserProfileServer(userId: number, payload: Partial<UserProfileDTO>) {
   const url = `${getApiBase()}/api/user-profiles/${userId}`;
 

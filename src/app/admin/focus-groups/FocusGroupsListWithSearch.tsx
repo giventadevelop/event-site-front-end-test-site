@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 
 interface FocusGroupRow {
   id: number;
@@ -17,7 +18,7 @@ interface FocusGroupsListWithSearchProps {
 export default function FocusGroupsListWithSearch({ groups, total }: FocusGroupsListWithSearchProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(0);
-  const pageSize = 10;
+  const pageSize = 20;
 
   const filteredGroups = searchTerm.trim()
     ? groups.filter((g) => {
@@ -49,14 +50,19 @@ export default function FocusGroupsListWithSearch({ groups, total }: FocusGroups
         <label htmlFor="focus-groups-search" className="sr-only">
           Search focus groups
         </label>
-        <input
-          id="focus-groups-search"
-          type="search"
+        <AdminListSearchCombobox
+          items={groups}
+          committedValue={searchTerm}
+          onCommit={setSearchTerm}
+          inputId="focus-groups-search"
+          ariaLabel="Search focus groups by name or slug"
           placeholder="Search by name or slug..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full max-w-xl px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-          aria-label="Search focus groups by name or slug"
+          className="relative w-full max-w-xl"
+          inputClassName="w-full max-w-xl px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+          getSearchFields={(g) => [g.name, g.slug, g.id]}
+          getCommitValue={(g) => g.name || g.slug || ''}
+          formatPrimary={(g) => g.name || g.slug || 'Focus group'}
+          formatSecondary={(g) => [g.slug, g.id != null ? `ID: ${g.id}` : null].filter(Boolean).join(' · ')}
         />
         {searchTerm.trim() && (
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">

@@ -285,6 +285,55 @@ function formatDuration(ms) {
 }
 
 /**
+ * Format an ISO timestamp in the local machine timezone for HTML reports.
+ * Example: "Jul 15, 2026, 9:15:35 PM EDT (America/New_York, UTC-04:00)"
+ */
+function formatLocalDateTime(isoOrDate) {
+  if (!isoOrDate) return '';
+  const date = isoOrDate instanceof Date ? isoOrDate : new Date(isoOrDate);
+  if (Number.isNaN(date.getTime())) return String(isoOrDate);
+
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'local';
+  const localStamp = new Intl.DateTimeFormat(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+    timeZoneName: 'short',
+  }).format(date);
+
+  const offsetParts = new Intl.DateTimeFormat('en-US', {
+    timeZoneName: 'longOffset',
+  }).formatToParts(date);
+  const utcOffset =
+    offsetParts.find((p) => p.type === 'timeZoneName')?.value ||
+    (() => {
+      const mins = -date.getTimezoneOffset();
+      const sign = mins >= 0 ? '+' : '-';
+      const abs = Math.abs(mins);
+      const hh = String(Math.floor(abs / 60)).padStart(2, '0');
+      const mm = String(abs % 60).padStart(2, '0');
+      return `UTC${sign}${hh}:${mm}`;
+    })();
+
+  return `${localStamp} (${timeZone}, ${utcOffset})`;
+}
+
+function getLocalTimezoneLabel() {
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'local';
+  const now = new Date();
+  const offsetParts = new Intl.DateTimeFormat('en-US', {
+    timeZoneName: 'longOffset',
+  }).formatToParts(now);
+  const utcOffset =
+    offsetParts.find((p) => p.type === 'timeZoneName')?.value || 'local offset';
+  return `${timeZone} (${utcOffset})`;
+}
+
+/**
  * Build module (kind) rollups from coverage results.
  */
 export function buildModuleStats(results = []) {
@@ -401,8 +450,9 @@ export function writeCoverageHtmlReport(payload, suiteName, stamp) {
     <h1>E2E Coverage Report</h1>
     <div class="meta">
       <div><strong>Suite:</strong> <code>${escapeHtml(suiteName)}</code></div>
-      <div><strong>Started:</strong> ${escapeHtml(payload.startedAt || '')}</div>
-      <div><strong>Finished:</strong> ${escapeHtml(payload.finishedAt || '')}</div>
+      <div><strong>Timezone:</strong> ${escapeHtml(getLocalTimezoneLabel())} <span class="muted">(machine local)</span></div>
+      <div><strong>Started:</strong> ${escapeHtml(formatLocalDateTime(payload.startedAt))}</div>
+      <div><strong>Finished:</strong> ${escapeHtml(formatLocalDateTime(payload.finishedAt))}</div>
       <div><strong>Wall clock:</strong> ${formatDuration(wallMs)} · <strong>Sum of step durations:</strong> ${formatDuration(totalDurationMs)}</div>
     </div>
 
@@ -670,6 +720,8 @@ export function writeConsolidatedCoverageReport(options = {}) {
 
 /**
  * Regenerate HTML from an existing coverage-*.json file.
+ * For global-consolidated payloads, also restores the suite rollup banner
+ * and refreshes coverage-global-latest.html.
  */
 export function writeHtmlFromCoverageJson(jsonPath) {
   const abs = path.isAbsolute(jsonPath) ? jsonPath : path.join(ROOT, jsonPath);
@@ -681,7 +733,65 @@ export function writeHtmlFromCoverageJson(jsonPath) {
   const match = base.match(/^coverage-(.+)-(\d{4}-\d{2}-\d{2}T.+)$/);
   const suite = match ? match[1] : suiteName;
   const fileStamp = match ? match[2] : stamp;
-  return writeCoverageHtmlReport(payload, suite, fileStamp);
+  const htmlPath = writeCoverageHtmlReport(payload, suite, fileStamp);
+
+  const isGlobal =
+    payload.reportType === 'global-consolidated' || suite === 'global-consolidated';
+  if (isGlobal && Array.isArray(payload.suites) && payload.suites.length > 0) {
+    const suitePayloads = payload.suites;
+    const totals = payload.summary || { pass: 0, fail: 0, skip: 0, todo: 0 };
+    const overallOk = payload.overallSuccess !== false && (totals.fail || 0) === 0;
+    const suiteRows = suitePayloads
+      .map(
+        (sp) => `<tr>
+      <td><span class="badge ${sp.ok ? 'pass' : 'fail'}">${sp.ok ? 'pass' : 'fail'}</span></td>
+      <td><code>${escapeHtml(sp.suite)}</code></td>
+      <td class="pass">${sp.summary?.pass || 0}</td>
+      <td class="fail">${sp.summary?.fail || 0}</td>
+      <td>${sp.summary?.skip || 0}</td>
+      <td>${formatDuration(sp.durationMs)}</td>
+      <td>${
+        sp.sourceHtml
+          ? `<a href="${escapeHtml(path.basename(sp.sourceHtml))}">module HTML</a>`
+          : '—'
+      }</td>
+    </tr>`
+      )
+      .join('\n');
+
+    const overallBanner = `<div class="meta" style="border-left-color:${overallOk ? '#28a745' : '#dc3545'};background:${overallOk ? '#dcfce7' : '#fee2e2'}">
+      <div style="font-size:1.25em;font-weight:700">${
+        overallOk ? 'OVERALL SUCCESS' : 'OVERALL FAILED'
+      }</div>
+      <div class="muted">Global rollup of ${suitePayloads.length} suite(s) · fail=${totals.fail || 0}</div>
+    </div>
+    <h2>Suites in this run</h2>
+    <p class="muted">Individual harness modules included in this consolidated report.</p>
+    <table>
+      <thead>
+        <tr><th>Status</th><th>Suite / module</th><th>Pass</th><th>Fail</th><th>Skip</th><th>Duration</th><th>Detail</th></tr>
+      </thead>
+      <tbody>
+        ${suiteRows}
+      </tbody>
+    </table>`;
+
+    let html = fs.readFileSync(htmlPath, 'utf8');
+    html = html
+      .replace(
+        '<title>E2E Coverage — global-consolidated</title>',
+        '<title>E2E Global Consolidated Coverage</title>'
+      )
+      .replace('<h1>E2E Coverage Report</h1>', '<h1>E2E Global Consolidated Report</h1>')
+      .replace('<div class="meta">', `${overallBanner}\n    <div class="meta">`);
+    fs.writeFileSync(htmlPath, html, 'utf8');
+
+    const latestPath = path.join(REPORTS_DIR, 'coverage-global-latest.html');
+    fs.writeFileSync(latestPath, html, 'utf8');
+    console.log(`[harness] Regenerated global latest: ${latestPath}`);
+  }
+
+  return htmlPath;
 }
 
 /**
@@ -798,6 +908,29 @@ export function resolveDynamicPath(routePath, ids = {}) {
 }
 
 /**
+ * page.evaluate has NO built-in timeout — a navigation/HMR reload racing the call
+ * can drop the CDP response and hang the await forever (observed as a suite stuck
+ * for hours with an idle renderer). Always race page evaluations with a cap.
+ */
+async function evaluateWithTimeout(page, fn, timeoutMs) {
+  let timer;
+  const timedOut = Symbol('evaluate-timeout');
+  try {
+    const result = await Promise.race([
+      page.evaluate(fn),
+      new Promise((resolve) => {
+        timer = setTimeout(() => resolve(timedOut), timeoutMs);
+      }),
+    ]);
+    return result === timedOut ? { timedOut: true } : { value: result };
+  } catch (err) {
+    return { error: err };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
  * Standard smoke check on an already-open Playwright page after goto.
  */
 export async function smokeCheckPage(page, { allowSignInRedirect = false, urlHint = '' } = {}) {
@@ -806,19 +939,30 @@ export async function smokeCheckPage(page, { allowSignInRedirect = false, urlHin
     return { ok: false, message: `Redirected to sign-in: ${finalUrl}` };
   }
 
-  const hasContent = await page.evaluate(() => {
-    const body = document.body;
-    if (!body) return false;
-    const text = (body.innerText || '').trim();
-    return !!(
-      document.querySelector('main') ||
-      document.querySelector('h1') ||
-      document.querySelector('h2') ||
-      document.querySelector('[class*="container"]') ||
-      document.querySelector('nav') ||
-      text.length > 40
-    );
-  });
+  const contentCheck = await evaluateWithTimeout(
+    page,
+    () => {
+      const body = document.body;
+      if (!body) return false;
+      const text = (body.innerText || '').trim();
+      return !!(
+        document.querySelector('main') ||
+        document.querySelector('h1') ||
+        document.querySelector('h2') ||
+        document.querySelector('[class*="container"]') ||
+        document.querySelector('nav') ||
+        text.length > 40
+      );
+    },
+    15000
+  );
+  if (contentCheck.timedOut) {
+    return { ok: false, message: 'Content check timed out after 15s (page unresponsive or mid-reload)' };
+  }
+  if (contentCheck.error) {
+    return { ok: false, message: `Content check failed: ${contentCheck.error.message}` };
+  }
+  const hasContent = contentCheck.value;
 
   if (!hasContent) {
     return { ok: false, message: 'Page appears empty / no content' };
@@ -888,5 +1032,22 @@ export const ADMIN_HOME_BUTTONS = [
   { label: 'Official Documents', href: '/admin/official-documents' },
   { label: 'Document categories', href: '/admin/official-document-categories' },
 ];
+
+/** Paths that must not be inventory-smoked (redirect loops / intentional navigations). */
+export const SMOKE_SKIP_PATH_PREFIXES = [
+  '/auth/signout-redirect',
+];
+
+/**
+ * Whether an inventory / smoke path should be skipped (prefix match, query stripped).
+ * @param {string} routePath
+ */
+export function shouldSkipSmokePath(routePath) {
+  const p = String(routePath || '').split('?')[0].replace(/\/$/, '') || '/';
+  return SMOKE_SKIP_PATH_PREFIXES.some((prefix) => {
+    const norm = prefix.replace(/\/$/, '');
+    return p === norm || p.startsWith(`${norm}/`);
+  });
+}
 
 export const E2E_PREFIX = '[E2E]';

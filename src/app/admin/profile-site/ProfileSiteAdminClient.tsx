@@ -8,9 +8,11 @@ import type {
   ProfileAchievementDTO,
   ProfileAffiliationDTO,
   ProfileMediaAssetDTO,
+  ProfileProjectDTO,
   ProfileWritingType,
   ProfileWritingStatus,
   ProfileAchievementCategory,
+  ProfileMediaKind,
 } from '@/types/profileSite';
 import {
   upsertPublicProfileServer,
@@ -26,13 +28,16 @@ import {
   createProfileMediaAssetServer,
   updateProfileMediaAssetServer,
   deleteProfileMediaAssetServer,
+  createProfileProjectServer,
+  updateProfileProjectServer,
+  deleteProfileProjectServer,
   applySiteTypePresetsForTenant,
 } from '@/app/admin/profile-site/ApiServerActions';
 import ProfileAudiencePanel from '@/app/admin/profile-site/ProfileAudiencePanel';
 import { getTenantId } from '@/lib/env';
 import { ensureProfileWritingSlug } from '@/lib/profileSlug';
 
-type Tab = 'profile' | 'writings' | 'achievements' | 'affiliations' | 'downloads' | 'audience' | 'presets';
+type Tab = 'profile' | 'writings' | 'achievements' | 'affiliations' | 'projects' | 'downloads' | 'audience' | 'presets';
 
 interface Props {
   initialProfile: PublicProfileDTO | null;
@@ -40,6 +45,7 @@ interface Props {
   initialAchievements: ProfileAchievementDTO[];
   initialAffiliations: ProfileAffiliationDTO[];
   initialAssets: ProfileMediaAssetDTO[];
+  initialProjects: ProfileProjectDTO[];
 }
 
 export default function ProfileSiteAdminClient({
@@ -48,6 +54,7 @@ export default function ProfileSiteAdminClient({
   initialAchievements,
   initialAffiliations,
   initialAssets,
+  initialProjects,
 }: Props) {
   const [tab, setTab] = useState<Tab>('profile');
   const [profile, setProfile] = useState<Partial<PublicProfileDTO>>(
@@ -57,12 +64,14 @@ export default function ProfileSiteAdminClient({
   const [achievements, setAchievements] = useState(initialAchievements);
   const [affiliations, setAffiliations] = useState(initialAffiliations);
   const [assets, setAssets] = useState(initialAssets);
+  const [projects, setProjects] = useState(initialProjects);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'profile', label: 'Public profile' },
     { id: 'writings', label: 'Writings' },
+    { id: 'projects', label: 'Projects' },
     { id: 'achievements', label: 'Achievements' },
     { id: 'affiliations', label: 'Affiliations' },
     { id: 'downloads', label: 'Downloads' },
@@ -89,7 +98,7 @@ export default function ProfileSiteAdminClient({
       publicSlug: profile.publicSlug ?? '',
       contactEmail: profile.contactEmail ?? '',
       contactFormEnabled: profile.contactFormEnabled ?? false,
-      contactFormEnabled: profile.contactFormEnabled ?? false,
+      bookingUrl: profile.bookingUrl ?? '',
       linkedinUrl: profile.linkedinUrl ?? '',
       twitterUrl: profile.twitterUrl ?? '',
       facebookUrl: profile.facebookUrl ?? '',
@@ -119,10 +128,24 @@ export default function ProfileSiteAdminClient({
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8" style={{ paddingTop: '160px' }}>
-      <div className="mb-6">
-        <Link href="/admin" className="text-blue-600 hover:underline text-sm">← Admin home</Link>
-        <h1 className="text-3xl font-bold mt-2">Profile site management</h1>
-        <p className="text-gray-600 mt-1">Manage public portfolio content for this tenant.</p>
+      <div className="flex items-center gap-2 sm:gap-3 md:gap-4 mb-6">
+        <Link
+          href="/admin"
+          className="flex-shrink-0 h-14 rounded-xl bg-indigo-100 hover:bg-indigo-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-6"
+          title="Back to Admin"
+          aria-label="Back to Admin"
+        >
+          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-indigo-200 flex items-center justify-center">
+            <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+          </div>
+          <span className="font-semibold text-indigo-700">Back to Admin</span>
+        </Link>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-3xl font-bold">Profile site management</h1>
+          <p className="text-gray-600 mt-1">Manage public portfolio content for this tenant.</p>
+        </div>
       </div>
 
       {message && (
@@ -161,6 +184,7 @@ export default function ProfileSiteAdminClient({
           <ProfileField label="Profile image URL" value={profile.profileImageUrl ?? ''} onChange={(v) => setProfile((p) => ({ ...p, profileImageUrl: v }))} />
           <ProfileField label="Cover image URL" value={profile.coverImageUrl ?? ''} onChange={(v) => setProfile((p) => ({ ...p, coverImageUrl: v }))} />
           <ProfileField label="Contact email" value={profile.contactEmail ?? ''} onChange={(v) => setProfile((p) => ({ ...p, contactEmail: v }))} />
+          <ProfileField label="Booking URL (Calendly)" value={profile.bookingUrl ?? ''} onChange={(v) => setProfile((p) => ({ ...p, bookingUrl: v }))} />
           <ProfileField label="CV document URL" value={profile.cvDocumentUrl ?? ''} onChange={(v) => setProfile((p) => ({ ...p, cvDocumentUrl: v }))} />
           <ProfileField label="LinkedIn URL" value={profile.linkedinUrl ?? ''} onChange={(v) => setProfile((p) => ({ ...p, linkedinUrl: v }))} />
           <ProfileField label="Website URL" value={profile.websiteUrl ?? ''} onChange={(v) => setProfile((p) => ({ ...p, websiteUrl: v }))} />
@@ -170,7 +194,7 @@ export default function ProfileSiteAdminClient({
               checked={profile.contactFormEnabled ?? false}
               onChange={(e) => setProfile((p) => ({ ...p, contactFormEnabled: e.target.checked }))}
             />
-            <span className="text-sm font-medium">Enable contact form on public site</span>
+            <span className="text-sm font-medium">Enable collaboration contact form on public site</span>
           </label>
           <label className="flex items-center gap-2">
             <input
@@ -188,6 +212,9 @@ export default function ProfileSiteAdminClient({
 
       {tab === 'writings' && (
         <WritingsAdmin writings={writings} setWritings={setWritings} setMessage={setMessage} />
+      )}
+      {tab === 'projects' && (
+        <ProjectsAdmin items={projects} setItems={setProjects} setMessage={setMessage} />
       )}
       {tab === 'achievements' && (
         <AchievementsAdmin items={achievements} setItems={setAchievements} setMessage={setMessage} />
@@ -510,7 +537,13 @@ function DownloadsAdmin({
   setItems: React.Dispatch<React.SetStateAction<ProfileMediaAssetDTO[]>>;
   setMessage: (m: string | null) => void;
 }) {
-  const [form, setForm] = useState<Partial<ProfileMediaAssetDTO>>({ title: '', fileUrl: '', isDownloadable: true, displayOrder: items.length });
+  const [form, setForm] = useState<Partial<ProfileMediaAssetDTO>>({
+    title: '',
+    fileUrl: '',
+    isDownloadable: true,
+    mediaKind: 'DOCUMENT',
+    displayOrder: items.length,
+  });
   const [editingId, setEditingId] = useState<number | null>(null);
 
   async function save() {
@@ -523,24 +556,37 @@ function DownloadsAdmin({
           description: form.description ?? '',
           coverImageUrl: form.coverImageUrl ?? '',
           fileType: form.fileType,
+          mediaKind: form.mediaKind ?? 'DOCUMENT',
           isDownloadable: form.isDownloadable ?? true,
           displayOrder: form.displayOrder,
         });
     if (!result) { setMessage('Failed to save download.'); return; }
     if (editingId) setItems((p) => p.map((a) => (a.id === editingId ? result : a)));
     else setItems((p) => [...p, result]);
-    setForm({ title: '', fileUrl: '', isDownloadable: true });
+    setForm({ title: '', fileUrl: '', isDownloadable: true, mediaKind: 'DOCUMENT' });
     setEditingId(null);
     setMessage('Download saved.');
   }
 
   return (
-    <AdminListShell title="Downloadable assets">
+    <AdminListShell title="Downloadable assets & media">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
         <ProfileField label="Title *" value={form.title ?? ''} onChange={(v) => setForm((f) => ({ ...f, title: v }))} />
-        <ProfileField label="File URL *" value={form.fileUrl ?? ''} onChange={(v) => setForm((f) => ({ ...f, fileUrl: v }))} />
+        <ProfileField label="File / media URL *" value={form.fileUrl ?? ''} onChange={(v) => setForm((f) => ({ ...f, fileUrl: v }))} />
         <ProfileField label="Cover image URL" value={form.coverImageUrl ?? ''} onChange={(v) => setForm((f) => ({ ...f, coverImageUrl: v }))} />
         <ProfileField label="File type" value={form.fileType ?? ''} onChange={(v) => setForm((f) => ({ ...f, fileType: v }))} />
+        <label className="block">
+          <span className="text-sm font-medium text-gray-700">Media kind</span>
+          <select
+            value={form.mediaKind ?? 'DOCUMENT'}
+            onChange={(e) => setForm((f) => ({ ...f, mediaKind: e.target.value as ProfileMediaKind }))}
+            className="mt-1 block w-full border border-gray-400 rounded-xl px-4 py-3"
+          >
+            {(['DOCUMENT', 'VIDEO', 'PODCAST', 'PRESS', 'OTHER'] as ProfileMediaKind[]).map((k) => (
+              <option key={k} value={k}>{k}</option>
+            ))}
+          </select>
+        </label>
         <ProfileTextArea
           label="Description (max 2000 characters)"
           value={form.description ?? ''}
@@ -552,10 +598,96 @@ function DownloadsAdmin({
       <button type="button" onClick={save} className="mb-4 px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold">{editingId ? 'Update' : 'Add'}</button>
       <ul className="space-y-2">{items.map((a) => (
         <li key={a.id} className="flex justify-between border rounded-lg px-4 py-3">
-          <span>{a.title}</span>
+          <span>{a.title}{a.mediaKind ? ` · ${a.mediaKind}` : ''}</span>
           <div className="flex gap-2">
             <button type="button" className="text-blue-600 text-sm" onClick={() => { setEditingId(a.id!); setForm(a); }}>Edit</button>
             <button type="button" className="text-red-600 text-sm" onClick={async () => { if (a.id && await deleteProfileMediaAssetServer(a.id)) setItems((p) => p.filter((x) => x.id !== a.id)); }}>Delete</button>
+          </div>
+        </li>
+      ))}</ul>
+    </AdminListShell>
+  );
+}
+
+function ProjectsAdmin({
+  items,
+  setItems,
+  setMessage,
+}: {
+  items: ProfileProjectDTO[];
+  setItems: React.Dispatch<React.SetStateAction<ProfileProjectDTO[]>>;
+  setMessage: (m: string | null) => void;
+}) {
+  const [form, setForm] = useState<Partial<ProfileProjectDTO>>({
+    title: '',
+    isFeatured: false,
+    displayOrder: items.length,
+    outcomeMetricsJson: '[{"label":"Metric","value":"0"}]',
+  });
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  async function save() {
+    if (!form.title?.trim()) return;
+    const payload: Partial<ProfileProjectDTO> = {
+      title: form.title.trim(),
+      slug: form.slug ?? '',
+      summary: form.summary ?? '',
+      coverImageUrl: form.coverImageUrl ?? '',
+      role: form.role ?? '',
+      outcomeMetricsJson: form.outcomeMetricsJson ?? '',
+      projectUrl: form.projectUrl ?? '',
+      displayOrder: form.displayOrder,
+      isFeatured: form.isFeatured ?? false,
+    };
+    const result = editingId
+      ? await updateProfileProjectServer(editingId, payload)
+      : await createProfileProjectServer(payload as Omit<ProfileProjectDTO, 'id' | 'tenantId'>);
+    if (!result) { setMessage('Failed to save project. Ensure backend API supports profile-projects.'); return; }
+    if (editingId) setItems((p) => p.map((a) => (a.id === editingId ? result : a)));
+    else setItems((p) => [...p, result]);
+    setForm({ title: '', isFeatured: false, outcomeMetricsJson: '[{"label":"Metric","value":"0"}]' });
+    setEditingId(null);
+    setMessage('Project saved.');
+  }
+
+  return (
+    <AdminListShell title="Projects / case studies">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+        <ProfileField label="Title *" value={form.title ?? ''} onChange={(v) => setForm((f) => ({ ...f, title: v }))} />
+        <ProfileField label="Slug" value={form.slug ?? ''} onChange={(v) => setForm((f) => ({ ...f, slug: v }))} />
+        <ProfileField label="Role" value={form.role ?? ''} onChange={(v) => setForm((f) => ({ ...f, role: v }))} />
+        <ProfileField label="Project URL" value={form.projectUrl ?? ''} onChange={(v) => setForm((f) => ({ ...f, projectUrl: v }))} />
+        <ProfileField label="Cover image URL" value={form.coverImageUrl ?? ''} onChange={(v) => setForm((f) => ({ ...f, coverImageUrl: v }))} />
+        <ProfileTextArea
+          label="Summary"
+          value={form.summary ?? ''}
+          onChange={(v) => setForm((f) => ({ ...f, summary: v }))}
+          rows={3}
+          className="md:col-span-2"
+        />
+        <ProfileTextArea
+          label='Outcome metrics JSON (e.g. [{"label":"Users","value":"10k"}])'
+          value={form.outcomeMetricsJson ?? ''}
+          onChange={(v) => setForm((f) => ({ ...f, outcomeMetricsJson: v }))}
+          rows={3}
+          className="md:col-span-2"
+        />
+        <label className="flex items-center gap-2 md:col-span-2">
+          <input
+            type="checkbox"
+            checked={form.isFeatured ?? false}
+            onChange={(e) => setForm((f) => ({ ...f, isFeatured: e.target.checked }))}
+          />
+          <span className="text-sm font-medium">Featured on homepage</span>
+        </label>
+      </div>
+      <button type="button" onClick={save} className="mb-4 px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold">{editingId ? 'Update' : 'Add'}</button>
+      <ul className="space-y-2">{items.map((a) => (
+        <li key={a.id} className="flex justify-between border rounded-lg px-4 py-3">
+          <span>{a.title}{a.isFeatured ? ' · featured' : ''}</span>
+          <div className="flex gap-2">
+            <button type="button" className="text-blue-600 text-sm" onClick={() => { setEditingId(a.id!); setForm(a); }}>Edit</button>
+            <button type="button" className="text-red-600 text-sm" onClick={async () => { if (a.id && await deleteProfileProjectServer(a.id)) setItems((p) => p.filter((x) => x.id !== a.id)); }}>Delete</button>
           </div>
         </li>
       ))}</ul>
@@ -571,3 +703,4 @@ function AdminListShell({ title, children }: { title: string; children: React.Re
     </div>
   );
 }
+

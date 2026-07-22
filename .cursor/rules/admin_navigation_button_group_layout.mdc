@@ -1,0 +1,59 @@
+---
+description: Keeps admin navigation button groups consistently sized, aligned, and stable after hydration.
+globs: src/components/AdminNavigation.tsx, src/app/admin/**/*.tsx, src/app/globals.css
+alwaysApply: false
+---
+
+# Admin Navigation Button Group Layout
+
+- **Use the shared navigation**
+  - Use [`AdminNavigation.tsx`](mdc:src/components/AdminNavigation.tsx) for reusable admin navigation groups.
+  - Treat `/admin/manage-events` as the reference for the compact button-group width.
+
+- **Keep the group constrained**
+  - The navigation container must use `w-full max-w-5xl mx-auto`.
+  - Preserve an explicit `maxWidth: '64rem'` because `.admin-navigation-container` in [`globals.css`](mdc:src/app/globals.css) sets `max-width: 100%`.
+  - Full-width page wrappers are allowed, but the navigation group itself must not stretch across the viewport.
+
+```tsx
+// ✅ DO
+<div
+  className="w-full max-w-5xl mx-auto admin-navigation-container"
+  style={{ width: '100%', maxWidth: '64rem' }}
+>
+  {/* navigation grid */}
+</div>
+```
+
+- **Prevent hydration expansion**
+  - Any mount effect that writes container dimensions must preserve `maxWidth = '64rem'`.
+  - Never reset the shared navigation container to `maxWidth = '100%'` after hydration.
+
+```tsx
+// ❌ DON'T
+containerRef.current.style.maxWidth = '100%';
+
+// ✅ DO
+containerRef.current.style.maxWidth = '64rem';
+```
+
+- **Maintain vertical alignment**
+  - On `/admin/manage-events`, keep the Back to Admin button aligned with the navigation cards using responsive left spacing matching the navigation panel padding.
+  - On `/admin/events/registrations`, place the Back to Admin button and page title above the shared navigation inside the same `max-w-5xl` alignment frame.
+  - Add `pt-4 sm:pt-6` to the registrations header/navigation wrapper so the fixed site header does not clip the top of the Back button or title.
+  - On `/admin`, retain top padding on the title in both loading and authenticated render branches so the fixed header does not clip it.
+
+```tsx
+// ✅ DO — protect the registrations header from the fixed site header
+<div className="w-full pt-4 sm:pt-6 px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8">
+  <div className="max-w-5xl mx-auto px-2.5 sm:px-3 md:px-4 lg:px-6 xl:px-8">
+    {/* Back button and title */}
+  </div>
+  <AdminNavigation currentPage="event-registrations" />
+</div>
+```
+
+- **Verify**
+  - Check width immediately after initial render and again after hydration completes.
+  - Confirm `/admin/manage-events` and `/admin/events/registrations` display the same navigation-group width.
+  - Confirm the registrations Back button and title remain fully visible below the fixed site header at mobile and desktop widths.

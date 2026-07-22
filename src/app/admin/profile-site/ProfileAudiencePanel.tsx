@@ -6,6 +6,7 @@ import type {
   ProfileAudienceContactOptInStatus,
   ProfileAudienceContactSource,
 } from '@/types/profileSite';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 import {
   fetchProfileAudienceContactsServer,
   createProfileAudienceContactServer,
@@ -138,12 +139,16 @@ export default function ProfileAudiencePanel({ setMessage }: Props) {
           Contacts captured from subscribe forms, contact forms, and CSV import. Separate from tenant member email subscriptions.
         </p>
         <div className="flex flex-wrap gap-3 mb-4">
-          <input
-            type="search"
+          <AdminListSearchCombobox
+            items={contacts}
+            committedValue={search}
+            onCommit={(value) => { setSearch(value); setPage(0); }}
+            getSearchFields={(c) => [c.email, c.id]}
+            getCommitValue={(c) => c.email || String(c.id ?? '')}
+            formatPrimary={(c) => c.email || 'Unknown'}
             placeholder="Search email…"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-            className="border border-gray-400 rounded-lg px-3 py-2 text-sm flex-1 min-w-[200px]"
+            className="flex-1 min-w-[200px]"
+            inputClassName="border border-gray-400 rounded-lg px-3 py-2 text-sm w-full"
           />
           <button
             type="button"

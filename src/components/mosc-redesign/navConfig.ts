@@ -26,15 +26,24 @@ export const MOSC_REDESIGN_NAV_LINKS = [
   { label: "The Church", href: "/mosc-redesign/the-church" },
   { label: "Holy Synod", href: "/mosc-redesign/holy-synod-cms" },
   { label: "Ecumenical", href: "/mosc-redesign/ecumenical-cms" },
-  { label: "Dioceses", href: "/mosc-redesign/dioceses" },
+  { label: "Dioceses", href: "/mosc-redesign/dioceses-cms" },
   { label: "News", href: "/mosc-redesign/news" },
   { label: "Saints", href: "/mosc-redesign/saints-cms" },
 ] as const;
 
+/**
+ * Downloads runs the full public-official-documents pagination loop server-side;
+ * prefetching it from nav/menus floods the server. Returns false for that route,
+ * undefined (Next default) otherwise.
+ */
+export function moscRedesignNavPrefetch(href: string): false | undefined {
+  return href.startsWith('/mosc-redesign/downloads') ? false : undefined;
+}
+
 export const MOSC_REDESIGN_FOOTER_QUICK_LINKS = [
   { label: "Catholicate News", href: "/mosc-redesign/news" },
   { label: "Downloads", href: "/mosc-redesign/downloads" },
-  { label: "E-Mail", href: "/mosc-redesign/contact-form-email" },
+  // { label: "E-Mail", href: "/mosc-redesign/contact-form-email" },
   { label: "Gallery", href: "/mosc-redesign/gallery" },
   { label: "Contact Info", href: "/mosc-redesign/contact-info" },
 ] as const;

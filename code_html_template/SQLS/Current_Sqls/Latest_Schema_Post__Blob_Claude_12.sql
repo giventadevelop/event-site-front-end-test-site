@@ -891,6 +891,13 @@ CREATE SEQUENCE IF NOT EXISTS public.profile_media_asset_id_seq
     START WITH 1
     CACHE 1;
 
+CREATE SEQUENCE IF NOT EXISTS public.profile_project_id_seq
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    START WITH 1
+    CACHE 1;
+
 CREATE SEQUENCE IF NOT EXISTS public.gas_station_location_id_seq
     INCREMENT BY 1
     NO MINVALUE
@@ -3121,6 +3128,7 @@ CREATE TABLE public.tenant_settings (
                                         show_profile_affiliations_section boolean DEFAULT false NOT NULL,
                                         show_profile_media_downloads_section boolean DEFAULT false NOT NULL,
                                         show_profile_contact_section boolean DEFAULT false NOT NULL,
+                                        show_profile_projects_section boolean DEFAULT false NOT NULL,
                                         enable_gas_station_module boolean DEFAULT false NOT NULL,
                                         gas_ai_engine_base_url character varying(1024),
                                         gas_ai_engine_api_key_ref character varying(512),
@@ -3185,6 +3193,7 @@ COMMENT ON COLUMN public.tenant_settings.show_profile_achievements_section IS 'W
 COMMENT ON COLUMN public.tenant_settings.show_profile_affiliations_section IS 'When true, homepage shows the profile affiliations section.';
 COMMENT ON COLUMN public.tenant_settings.show_profile_media_downloads_section IS 'When true, homepage shows the profile downloadable media section.';
 COMMENT ON COLUMN public.tenant_settings.show_profile_contact_section IS 'When true, homepage shows the profile contact section.';
+COMMENT ON COLUMN public.tenant_settings.show_profile_projects_section IS 'When true, homepage shows profile project / case-study cards.';
 COMMENT ON COLUMN public.tenant_settings.enable_gas_station_module IS 'Master on/off for the gas station COO admin module for this tenant (GAS_STATION site type).';
 COMMENT ON COLUMN public.tenant_settings.gas_ai_engine_base_url IS 'Base URL of the external AI engine deployment serving this tenant (invoked server-side only).';
 COMMENT ON COLUMN public.tenant_settings.gas_ai_engine_api_key_ref IS 'Secrets-manager reference to the API key for calling the AI engine. Never store the raw key.';
@@ -3217,6 +3226,7 @@ CREATE TABLE IF NOT EXISTS public.public_profile (
   youtube_url character varying(500),
   website_url character varying(500),
   cv_document_url character varying(1024),
+  booking_url character varying(1024),
   meta_title character varying(255),
   meta_description character varying(500),
   is_published boolean DEFAULT false NOT NULL,
@@ -3334,6 +3344,7 @@ CREATE TABLE IF NOT EXISTS public.profile_media_asset (
   cover_image_url character varying(1024),
   file_url character varying(1024) NOT NULL,
   file_type character varying(64),
+  media_kind character varying(32) NOT NULL DEFAULT 'DOCUMENT',
   file_size_bytes bigint,
   display_order integer,
   is_downloadable boolean DEFAULT true NOT NULL,
@@ -3341,10 +3352,40 @@ CREATE TABLE IF NOT EXISTS public.profile_media_asset (
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
   CONSTRAINT profile_media_asset_pkey PRIMARY KEY (id),
+  CONSTRAINT chk_profile_media_asset__media_kind CHECK (
+    media_kind IN ('DOCUMENT', 'VIDEO', 'PODCAST', 'PRESS', 'OTHER')
+  ),
   CONSTRAINT fk_profile_media_asset__tenant_id FOREIGN KEY (tenant_id) REFERENCES public.tenant_organization(tenant_id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_profile_media_asset_tenant ON public.profile_media_asset (tenant_id);
+CREATE INDEX IF NOT EXISTS idx_profile_media_asset_tenant_kind ON public.profile_media_asset (tenant_id, media_kind);
+
+CREATE TABLE IF NOT EXISTS public.profile_project (
+  id bigint DEFAULT nextval('public.profile_project_id_seq'::regclass) NOT NULL,
+  tenant_id character varying(255) NOT NULL,
+  title character varying(500) NOT NULL,
+  slug character varying(150),
+  summary character varying(2000),
+  cover_image_url character varying(1024),
+  role character varying(255),
+  outcome_metrics_json text,
+  project_url character varying(1024),
+  display_order integer,
+  is_featured boolean DEFAULT false NOT NULL,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  CONSTRAINT profile_project_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_profile_project__tenant_id FOREIGN KEY (tenant_id) REFERENCES public.tenant_organization(tenant_id) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_profile_project__tenant_slug ON public.profile_project (tenant_id, slug) WHERE slug IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_profile_project_tenant ON public.profile_project (tenant_id);
+
+COMMENT ON TABLE public.profile_project IS 'Case-study / project cards for PERSONAL_PROFILE and HYBRID tenants.';
+COMMENT ON COLUMN public.public_profile.booking_url IS 'Calendly or external booking URL shown on contact / hero CTAs.';
+COMMENT ON COLUMN public.profile_media_asset.media_kind IS 'Semantic kind for talks strip vs downloads: DOCUMENT, VIDEO, PODCAST, PRESS, OTHER.';
+COMMENT ON COLUMN public.profile_project.outcome_metrics_json IS 'JSON array of {label,value} metrics shown on project cards.';
 
 
 --
@@ -7138,6 +7179,12 @@ SELECT pg_catalog.setval(
 SELECT pg_catalog.setval(
     'public.profile_media_asset_id_seq',
     GREATEST(COALESCE((SELECT MAX(id) FROM public.profile_media_asset), 1), 1),
+    true
+);
+-- profile_project
+SELECT pg_catalog.setval(
+    'public.profile_project_id_seq',
+    GREATEST(COALESCE((SELECT MAX(id) FROM public.profile_project), 1), 1),
     true
 );
 -- gas_station_location

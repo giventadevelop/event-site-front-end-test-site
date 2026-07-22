@@ -5,6 +5,7 @@ import { FaPlus, FaSearch, FaArrowLeft, FaHome, FaUsers, FaCalendarAlt, FaPhotoV
 import { useAuth } from '@clerk/nextjs';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Modal, { ConfirmModal } from '@/components/ui/Modal';
 import type { EventContactsDTO, EventDetailsDTO } from '@/types';
@@ -379,12 +380,16 @@ export default function EventContactsPage() {
           <div className="flex-1 min-w-64">
             <div className="relative">
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
+              <AdminListSearchCombobox
+                items={contacts}
+                committedValue={searchTerm}
+                onCommit={setSearchTerm}
+                getSearchFields={(c) => [c.name, c.phone, c.email, c.id]}
+                getCommitValue={(c) => c.name || String(c.id ?? '')}
+                formatPrimary={(c) => c.name || 'Unknown'}
+                formatSecondary={(c) => [c.email, c.phone].filter(Boolean).join(' · ')}
                 placeholder="🔍 Search contacts..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-3 w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 text-base"
+                inputClassName="pl-10 pr-4 py-3 w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 text-base"
               />
             </div>
           </div>

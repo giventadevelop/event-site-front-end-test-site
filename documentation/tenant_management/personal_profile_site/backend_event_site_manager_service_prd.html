@@ -244,9 +244,32 @@ fileType, fileSizeBytes, isDownloadable, requiresEmail</pre>
         <li>Public homepage for <code>PERSONAL_PROFILE</code> tenant shows data from proxy GETs.</li>
     </ol>
 
-    <h2>9. Out of scope (v1)</h2>
+    <h2>9. Phase B (implemented) — booking, projects, media kind</h2>
+    <div class="info-box">
+        <p><strong>Status (2026-07-19):</strong> Landed in <code>event-site-manager-service</code>. Frontend (<code>mosc-temp</code>) already calls these fields/endpoints.</p>
+        <p><strong>Liquibase:</strong> <code>config/liquibase/changelog/20260719120000_profile_booking_projects_media_kind.xml</code> (included from <code>master.xml</code>)</p>
+        <p><strong>Manual SQL:</strong> <code>migrations/003_profile_booking_projects_media_kind.sql</code></p>
+    </div>
+    <table>
+        <thead><tr><th>Change</th><th>API / field</th></tr></thead>
+        <tbody>
+            <tr><td><code>public_profile.booking_url</code></td><td><code>bookingUrl</code> on <code>/api/public-profiles</code></td></tr>
+            <tr><td><code>profile_media_asset.media_kind</code></td><td><code>mediaKind</code> enum (<code>DOCUMENT|VIDEO|PODCAST|PRESS|OTHER</code>) on <code>/api/profile-media-assets</code>; default <code>DOCUMENT</code></td></tr>
+            <tr><td><code>tenant_settings.show_profile_projects_section</code></td><td><code>showProfileProjectsSection</code> on <code>/api/tenant-settings</code></td></tr>
+            <tr><td>New table <code>profile_project</code></td><td>Full CRUD at <code>/api/profile-projects</code> (clone of achievements stack)</td></tr>
+        </tbody>
+    </table>
+    <h3>9.1 Deploy checklist</h3>
+    <ol>
+        <li>Deploy / restart <code>event-site-manager-service</code> so Liquibase applies 003.</li>
+        <li>Confirm <code>GET /api/profile-projects?tenantId.equals=…</code> returns 200 (empty list OK).</li>
+        <li>Confirm <code>PATCH</code> public profile with <code>bookingUrl</code> and media asset with <code>mediaKind</code>.</li>
+        <li>Re-test admin Profile site → Projects tab + Booking URL in mosc-temp.</li>
+    </ol>
+
+    <h2>10. Out of scope (v1)</h2>
     <ul>
-        <li>Batch jobs reading profile tables (see batch-jobs PRD — not required)</li>
+        <li>Batch jobs reading profile tables (see batch-jobs PRD — not required for Phase B content)</li>
         <li>Merge with <code>news_article</code> table</li>
         <li>Multi-profile per tenant (multiple <code>public_profile</code> rows)</li>
         <li>Public unauthenticated backend endpoints (proxy + JWT is sufficient)</li>

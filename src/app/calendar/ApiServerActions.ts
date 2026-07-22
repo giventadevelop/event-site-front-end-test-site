@@ -35,7 +35,7 @@ export async function fetchEventsForMonthServer(year: number, month: number, foc
     + `endDate.lessThanOrEqual=${endDate}&`
     + `isActive.equals=true&`
     + `tenantId.equals=${encodeURIComponent(tenantId)}&`
-    + `sort=startDate,asc&page=0&size=200`;
+    + `sort=startDate,asc&page=0&size=100`;
   if (focusGroupSlug) {
     // backend to resolve slug→id; if not available, a proxy convenience can handle this
     url += `&focusGroupSlug.equals=${encodeURIComponent(focusGroupSlug)}`;
@@ -59,7 +59,7 @@ export async function fetchEventsForRangeServer(startDate: string, endDate: stri
     + `endDate.lessThanOrEqual=${endDate}&`
     + `isActive.equals=true&`
     + `tenantId.equals=${encodeURIComponent(tenantId)}&`
-    + `sort=startDate,asc&page=0&size=200`;
+    + `sort=startDate,asc&page=0&size=100`;
   try {
     const res = await fetchWithJwtRetry(url, { cache: 'no-store' }, 'calendar-fetch-range');
     if (!res.ok) return [];

@@ -1,4 +1,5 @@
 import { formatAddressBlock } from '@/lib/formatAddress';
+import { getPublicEmailBaseUrl, toPublicEmailUrl } from '@/lib/publicEmailLinks';
 import type { TenantOrganizationDTO, TenantSettingsDTO } from '@/types';
 import type { TenantOrganizationIdentity } from '@/lib/resolveTenantOrganizationIdentity';
 
@@ -40,8 +41,11 @@ export function buildSiteFooterEmailHtml(options: SiteFooterEmailOptions = {}): 
   const orgName = options.organizationName?.trim() || DEFAULT_ORG_NAME;
   const description = options.description?.trim() || DEFAULT_DESCRIPTION;
   const logoUrl = options.logoUrl?.trim() || DEFAULT_LOGO_URL;
-  const baseUrl = (options.homeUrl || '').replace(/\/$/, '') || 'https://www.example.com';
-  const charityHome = `${baseUrl}/charity-theme`;
+  const baseUrl = getPublicEmailBaseUrl(options.homeUrl);
+  const charityHome = baseUrl.endsWith('/charity-theme') ? baseUrl : `${baseUrl}/charity-theme`;
+  const charityEvents = toPublicEmailUrl('/events', baseUrl);
+  const charitySectionUrl = (section: string) =>
+    `${charityHome}?scrollTo=${encodeURIComponent(section)}`;
 
   const addressBlock = options.address?.trim()
     ? options.address
@@ -99,20 +103,20 @@ export function buildSiteFooterEmailHtml(options: SiteFooterEmailOptions = {}): 
             <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;">Quick Links</p>
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
               ${linkRow(charityHome, 'Home')}
-              ${linkRow(`${charityHome}#about`, 'About Us')}
-              ${linkRow(`${charityHome}#causes`, 'Our Causes')}
-              ${linkRow(`${charityHome}#events`, 'Events')}
-              ${linkRow(`${charityHome}#contact`, 'Contact')}
+              ${linkRow(charitySectionUrl('about-us'), 'About Us')}
+              ${linkRow(charitySectionUrl('causes'), 'Our Causes')}
+              ${linkRow(charityEvents, 'Events')}
+              ${linkRow(charitySectionUrl('contact'), 'Contact')}
             </table>
           </td>
           <td width="50%" valign="top" style="padding:8px 0 0 8px;">
             <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;">Ways to Help</p>
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-              ${linkRow(`${charityHome}#donate`, 'Make a Donation', '#93c5fd')}
-              ${linkRow(`${charityHome}#volunteer`, 'Become a Volunteer', '#93c5fd')}
-              ${linkRow(`${charityHome}#fundraise`, 'Start a Fundraiser', '#93c5fd')}
-              ${linkRow(`${charityHome}#sponsor`, 'Corporate Sponsorship', '#93c5fd')}
-              ${linkRow(`${charityHome}#newsletter`, 'Newsletter Signup', '#93c5fd')}
+              ${linkRow(charitySectionUrl('donate'), 'Make a Donation', '#93c5fd')}
+              ${linkRow(charitySectionUrl('volunteer'), 'Become a Volunteer', '#93c5fd')}
+              ${linkRow(charitySectionUrl('fundraise'), 'Start a Fundraiser', '#93c5fd')}
+              ${linkRow(charitySectionUrl('sponsor'), 'Corporate Sponsorship', '#93c5fd')}
+              ${linkRow(charitySectionUrl('newsletter'), 'Newsletter Signup', '#93c5fd')}
             </table>
           </td>
         </tr>
@@ -129,9 +133,9 @@ export function buildSiteFooterEmailHtml(options: SiteFooterEmailOptions = {}): 
         </tr>
         <tr>
           <td style="padding-top:8px;font-family:Arial,Helvetica,sans-serif;font-size:12px;text-align:center;">
-            <a href="${escapeHtml(`${charityHome}#privacy`)}" style="color:#9ca3af;text-decoration:none;margin:0 8px;">Privacy Policy</a>
-            <a href="${escapeHtml(`${charityHome}#terms`)}" style="color:#9ca3af;text-decoration:none;margin:0 8px;">Terms of Service</a>
-            <a href="${escapeHtml(`${charityHome}#accessibility`)}" style="color:#9ca3af;text-decoration:none;margin:0 8px;">Accessibility</a>
+            <a href="${escapeHtml(charityHome)}" style="color:#9ca3af;text-decoration:none;margin:0 8px;">Privacy Policy</a>
+            <a href="${escapeHtml(charityHome)}" style="color:#9ca3af;text-decoration:none;margin:0 8px;">Terms of Service</a>
+            <a href="${escapeHtml(charityHome)}" style="color:#9ca3af;text-decoration:none;margin:0 8px;">Accessibility</a>
           </td>
         </tr>
       </table>

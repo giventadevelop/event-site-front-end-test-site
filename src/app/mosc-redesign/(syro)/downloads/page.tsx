@@ -1,7 +1,17 @@
+import type { Metadata } from 'next';
 import DownloadsPageClient from './DownloadsPageClient';
 import {
   fetchPublicOfficialDocumentsTreeServer,
 } from './ApiServerActions';
+
+export const metadata: Metadata = {
+  title: {
+    absolute: 'Downloads | Malankara Orthodox Syrian Church',
+  },
+  description:
+    'Official documents, Kalpana, prayer books, PDFs, and downloadable resources of the Malankara Orthodox Syrian Church.',
+  keywords: ['Downloads', 'official documents', 'Kalpana', 'Malankara Orthodox Syrian Church'],
+};
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +38,7 @@ export default async function DownloadsPage(props: {
     totalElements: 0,
     totalPages: 0,
     page: 0,
-    size: 24,
+    size: 20,
     categoryOptions: [] as any[],
     yearOptions: [] as number[],
     allYearOptions: [] as number[],
@@ -37,7 +47,7 @@ export default async function DownloadsPage(props: {
   try {
     officialTreePage = await fetchPublicOfficialDocumentsTreeServer({
       page,
-      size: 24,
+      size: 20,
       categoryId: Number.isFinite(categoryId) && categoryId > 0 ? categoryId : undefined,
       year: Number.isFinite(year) && year > 0 ? year : undefined,
       search: search || undefined,

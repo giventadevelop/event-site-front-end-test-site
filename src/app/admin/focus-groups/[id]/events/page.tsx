@@ -3,7 +3,7 @@ import { fetchRecentEventsServer, fetchLinkedEventsPaginatedServer } from './Api
 import ManageGroupEventsClient from './ManageGroupEventsClient';
 import type { EventDetailsDTO } from '@/types';
 
-const LINKED_PAGE_SIZE = 10;
+const LINKED_PAGE_SIZE = 20;
 
 async function fetchGroup(baseUrl: string, id: string) {
   try {

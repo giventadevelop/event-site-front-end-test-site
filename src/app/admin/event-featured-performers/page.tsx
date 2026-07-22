@@ -5,9 +5,11 @@ import { FaPlus, FaSearch, FaFilter, FaChevronLeft, FaChevronRight } from 'react
 import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import DataTable, { Column } from '@/components/ui/DataTable';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 import Modal, { ConfirmModal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import AdminNavigation from '@/components/AdminNavigation';
+import EventTypeaheadSelect from '@/components/admin/EventTypeaheadSelect';
 import type { EventFeaturedPerformersDTO, EventDetailsDTO } from '@/types';
 import {
   fetchEventFeaturedPerformersServer,
@@ -15,7 +17,6 @@ import {
   updateEventFeaturedPerformerServer,
   deleteEventFeaturedPerformerServer,
 } from './ApiServerActions';
-import { fetchEventsFilteredServer } from '../ApiServerActions';
 
 export default function EventFeaturedPerformersPage() {
   const { userId } = useAuth();
@@ -23,14 +24,13 @@ export default function EventFeaturedPerformersPage() {
   const { toasts, showSuccess, showError, removeToast } = useToast();
 
   const [performers, setPerformers] = useState<EventFeaturedPerformersDTO[]>([]);
-  const [events, setEvents] = useState<EventDetailsDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [eventFilter, setEventFilter] = useState<string>('');
+  const [eventFilter, setEventFilter] = useState<EventDetailsDTO | null>(null);
 
   // Pagination state
   const [page, setPage] = useState(0);
-  const [pageSize] = useState(10);
+  const [pageSize] = useState(20);
   const [totalCount, setTotalCount] = useState(0);
 
   // Modal states
@@ -64,21 +64,8 @@ export default function EventFeaturedPerformersPage() {
   useEffect(() => {
     if (userId) {
       loadPerformers();
-      loadEvents();
     }
   }, [userId, page]);
-
-  const loadEvents = async () => {
-    try {
-      const result = await fetchEventsFilteredServer({
-        pageSize: 1000, // Load all events for dropdown
-        sort: 'startDate,desc'
-      });
-      setEvents(result.events);
-    } catch (err: any) {
-      console.error('Failed to load events:', err);
-    }
-  };
 
   const loadPerformers = async () => {
     try {
@@ -205,11 +192,15 @@ export default function EventFeaturedPerformersPage() {
   };
 
   const filteredPerformers = performers.filter(performer => {
-    const matchesSearch = performer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      performer.stageName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      performer.role?.toLowerCase().includes(searchTerm.toLowerCase());
+    const q = searchTerm.toLowerCase();
+    const matchesSearch = !searchTerm ||
+      performer.name.toLowerCase().includes(q) ||
+      performer.stageName?.toLowerCase().includes(q) ||
+      performer.role?.toLowerCase().includes(q) ||
+      performer.email?.toLowerCase().includes(q) ||
+      String(performer.id ?? '').toLowerCase().includes(q);
 
-    const matchesEventFilter = !eventFilter || performer.event?.id?.toString() === eventFilter;
+    const matchesEventFilter = !eventFilter || performer.event?.id === eventFilter.id;
 
     return matchesSearch && matchesEventFilter;
   });
@@ -290,31 +281,32 @@ export default function EventFeaturedPerformersPage() {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center">
             <div className="flex-1 min-w-0">
               <div className="relative">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-                <input
-                  type="text"
+                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 z-10 pointer-events-none" />
+                <AdminListSearchCombobox<EventFeaturedPerformersDTO & Record<string, unknown>>
+                  items={performers as (EventFeaturedPerformersDTO & Record<string, unknown>)[]}
+                  committedValue={searchTerm}
+                  onCommit={setSearchTerm}
                   placeholder="Search performers..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                  className="relative w-full"
+                  inputClassName="pl-10 pr-10 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                  getSearchFields={(p) => [p.name, p.stageName, p.role, p.email, p.id]}
+                  getCommitValue={(p) => p.name || p.stageName || ''}
+                  formatPrimary={(p) => p.name || p.stageName || 'Unnamed performer'}
+                  formatSecondary={(p) => [p.stageName, p.role, p.email].filter(Boolean).join(' · ')}
                 />
               </div>
             </div>
             <div className="min-w-0 sm:min-w-48">
               <div className="relative">
-                <FaFilter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-                <select
-                  value={eventFilter}
-                  onChange={(e) => setEventFilter(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
-                >
-                  <option value="">All Events</option>
-                  {events.map(event => (
-                    <option key={event.id} value={event.id?.toString()}>
-                      {event.title}
-                    </option>
-                  ))}
-                </select>
+                <FaFilter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 z-10 pointer-events-none" />
+                <EventTypeaheadSelect
+                  selectedEvent={eventFilter}
+                  onSelect={setEventFilter}
+                  clearLabel="All Events"
+                  placeholder="All Events"
+                  className="relative w-full"
+                  inputClassName="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                />
               </div>
             </div>
             <button
@@ -428,7 +420,6 @@ export default function EventFeaturedPerformersPage() {
           onSubmit={handleCreate}
           loading={loading}
           submitText="Create Performer"
-          events={events}
         />
       </Modal>
 
@@ -449,7 +440,6 @@ export default function EventFeaturedPerformersPage() {
           onSubmit={handleEdit}
           loading={loading}
           submitText="Update Performer"
-          events={events}
         />
       </Modal>
 
@@ -499,10 +489,9 @@ interface PerformerFormProps {
   onSubmit: () => void;
   loading: boolean;
   submitText: string;
-  events: EventDetailsDTO[];
 }
 
-function PerformerForm({ formData, setFormData, onSubmit, loading, submitText, events }: PerformerFormProps) {
+function PerformerForm({ formData, setFormData, onSubmit, loading, submitText }: PerformerFormProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
 
@@ -528,25 +517,12 @@ function PerformerForm({ formData, setFormData, onSubmit, loading, submitText, e
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Event (Optional)
           </label>
-          <select
-            name="event"
-            value={formData.event?.id?.toString() || ''}
-            onChange={(e) => {
-              const eventId = e.target.value ? parseInt(e.target.value) : undefined;
-              setFormData(prev => ({
-                ...prev,
-                event: eventId ? { id: eventId } as EventDetailsDTO : undefined
-              }));
-            }}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">No Event (Global)</option>
-            {events.map(event => (
-              <option key={event.id} value={event.id?.toString()}>
-                {event.title} {event.startDate ? `(${event.startDate})` : ''}
-              </option>
-            ))}
-          </select>
+          <EventTypeaheadSelect
+            selectedEvent={formData.event ?? null}
+            onSelect={(event) => setFormData(prev => ({ ...prev, event: event ?? undefined }))}
+            clearLabel="No Event (Global)"
+            placeholder="No Event (Global)"
+          />
         </div>
 
         <div>

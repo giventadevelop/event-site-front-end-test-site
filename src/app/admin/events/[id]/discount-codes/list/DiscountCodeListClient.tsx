@@ -26,7 +26,7 @@ export default function DiscountCodeListClient({
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [page, setPage] = useState(0); // 0-based for calculations
-  const pageSize = 10;
+  const pageSize = 20;
 
   const handleAddNewClick = () => {
     setEditingCode(null);

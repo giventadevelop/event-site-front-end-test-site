@@ -196,30 +196,130 @@ export async function createAlbumServer(
   }
 }
 
+/** Optional filters for admin album list. */
+export type GalleryAlbumListFilters = {
+  title?: string;
+  description?: string;
+  id?: string;
+  isPublic?: boolean;
+  sort?: string;
+};
+
+const ALBUM_TYPEAHEAD_LIMIT = 20;
+
+function normalizeAlbumList(data: unknown): GalleryAlbumDTO[] {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object' && Array.isArray((data as { content?: unknown }).content)) {
+    return (data as { content: GalleryAlbumDTO[] }).content;
+  }
+  return [];
+}
+
+function mergeAlbumsById(...lists: GalleryAlbumDTO[][]): GalleryAlbumDTO[] {
+  const byKey = new Map<string, GalleryAlbumDTO>();
+  for (const list of lists) {
+    for (const album of list) {
+      const key =
+        album.id != null
+          ? `id:${album.id}`
+          : album.title
+            ? `title:${album.title}`
+            : null;
+      if (!key || byKey.has(key)) continue;
+      byKey.set(key, album);
+    }
+  }
+  return Array.from(byKey.values());
+}
+
 /**
- * Fetch albums with pagination and filtering
+ * Multi-field typeahead for Gallery Albums:
+ * matches title, description, and numeric id (parallel criteria queries).
+ */
+export async function searchAlbumsForTypeaheadServer(
+  query: string,
+): Promise<GalleryAlbumDTO[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  const tenantId = getTenantId();
+  const baseParams = () => {
+    const params = new URLSearchParams();
+    params.append('tenantId.equals', tenantId);
+    params.append('page', '0');
+    params.append('size', String(ALBUM_TYPEAHEAD_LIMIT));
+    params.append('sort', 'displayOrder,asc');
+    return params;
+  };
+
+  const fetchBy = async (apply: (params: URLSearchParams) => void) => {
+    const params = baseParams();
+    apply(params);
+    const res = await fetchWithJwtRetry(
+      `${getApiBase()}/api/gallery-albums?${params.toString()}`,
+      { cache: 'no-store' },
+    );
+    if (!res.ok) return [] as GalleryAlbumDTO[];
+    return normalizeAlbumList(await res.json());
+  };
+
+  const jobs: Promise<GalleryAlbumDTO[]>[] = [
+    fetchBy((p) => p.append('title.contains', trimmed)),
+    fetchBy((p) => p.append('description.contains', trimmed)),
+  ];
+
+  if (!Number.isNaN(Number(trimmed))) {
+    jobs.push(fetchBy((p) => p.append('id.equals', String(Number(trimmed)))));
+  }
+
+  const results = await Promise.all(jobs);
+  return mergeAlbumsById(...results).slice(0, ALBUM_TYPEAHEAD_LIMIT);
+}
+
+/**
+ * Fetch albums with pagination and filtering.
+ * Accepts either a legacy searchTerm string or a GalleryAlbumListFilters object.
  */
 export async function fetchAlbumsServer(
   page: number = 0,
   size: number = 12,
-  searchTerm?: string,
+  searchTermOrFilters?: string | GalleryAlbumListFilters,
   isPublic?: boolean
 ): Promise<{ albums: GalleryAlbumDTO[]; totalCount: number }> {
   try {
+    const filters: GalleryAlbumListFilters =
+      typeof searchTermOrFilters === 'string'
+        ? {
+            title: searchTermOrFilters || undefined,
+            isPublic,
+          }
+        : searchTermOrFilters ?? { isPublic };
+
     const tenantId = getTenantId();
     const params = new URLSearchParams();
     params.append('tenantId.equals', tenantId);
     params.append('page', page.toString());
     params.append('size', size.toString());
-    params.append('sort', 'displayOrder,asc');
-    params.append('sort', 'createdAt,desc');
 
-    if (searchTerm) {
-      params.append('title.contains', searchTerm);
+    const titleQ = filters.title?.trim();
+    if (titleQ) params.append('title.contains', titleQ);
+
+    const descQ = filters.description?.trim();
+    if (descQ) params.append('description.contains', descQ);
+
+    const idQ = filters.id?.trim();
+    if (idQ && !Number.isNaN(Number(idQ))) {
+      params.append('id.equals', String(Number(idQ)));
     }
 
-    if (typeof isPublic === 'boolean') {
-      params.append('isPublic.equals', isPublic.toString());
+    if (typeof filters.isPublic === 'boolean') {
+      params.append('isPublic.equals', filters.isPublic.toString());
+    }
+
+    const sort = filters.sort?.trim() || 'displayOrder,asc';
+    params.append('sort', sort);
+    if (!sort.startsWith('createdAt')) {
+      params.append('sort', 'createdAt,desc');
     }
 
     const url = `${getApiBase()}/api/gallery-albums?${params.toString()}`;

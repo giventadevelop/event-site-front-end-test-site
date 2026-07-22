@@ -101,6 +101,7 @@ export interface TenantSettingsDTO {
   showProfileAffiliationsSection?: boolean;
   showProfileMediaDownloadsSection?: boolean;
   showProfileContactSection?: boolean;
+  showProfileProjectsSection?: boolean;
   // Gas station COO module (GAS_STATION site type)
   enableGasStationModule?: boolean;
   gasAiEngineBaseUrl?: string;

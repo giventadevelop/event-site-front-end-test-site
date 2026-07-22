@@ -17,4 +17,21 @@ export interface HolySynodMember {
 
 export interface HolySynodMembersListResult {
   members: HolySynodMember[];
+  pagination: {
+    page: number;
+    pageCount: number;
+    pageSize: number;
+    total: number;
+  };
+}
+
+export type HolySynodCategoryFilter = 'all' | HolySynodMemberType;
+
+export interface HolySynodMembersListOptions {
+  nameSearch?: string;
+  /** Filter by memberType; omit or `all` for every member. */
+  memberType?: HolySynodMemberType;
+  page?: number;
+  pageSize?: number;
+  loadAll?: boolean;
 }

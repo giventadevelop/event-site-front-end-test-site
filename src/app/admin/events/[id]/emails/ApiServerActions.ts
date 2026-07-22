@@ -1,5 +1,5 @@
 import { fetchWithJwtRetry } from '@/lib/proxyHandler';
-import { getAppUrl, getApiBaseUrl } from '@/lib/env';
+import { getAppUrl, getApiBaseUrl, getTenantId } from '@/lib/env';
 import { withTenantId } from '@/lib/withTenantId';
 import type { EventEmailsDTO } from '@/types';
 
@@ -12,6 +12,7 @@ const baseUrl = getAppUrl();
 export async function fetchEventEmailsServer(eventId: number) {
   const params = new URLSearchParams();
   params.append('eventId.equals', eventId.toString());
+  params.append('size', '200');
 
   const response = await fetchWithJwtRetry(`${getApiBase()}/api/event-emails?${params.toString()}`, {
     cache: 'no-store',
@@ -141,54 +142,38 @@ export async function fetchAvailableEmailsServer(eventId: number, page = 0, size
     const assignedEmailIds = new Set((Array.isArray(assignedEmails) ? assignedEmails : [assignedEmails]).map((email: any) => email.id).filter(Boolean));
     console.log('🔍 Email IDs assigned to current event:', Array.from(assignedEmailIds));
 
-    // Step 2: Get all tenant-level emails (fetch without eventId filter)
-    console.log('🔄 Fetching all tenant-level emails...');
-    let allEmails: EventEmailsDTO[] = [];
-    try {
-      // Fetch all emails for the tenant (no eventId filter)
-      const params = new URLSearchParams();
-      const response = await fetchWithJwtRetry(`${getApiBase()}/api/event-emails?${params.toString()}`, {
-        cache: 'no-store',
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        allEmails = Array.isArray(data) ? data : [data];
-        console.log('✅ Fetched', allEmails.length, 'total tenant-level emails');
-      } else {
-        console.warn('⚠️ Failed to fetch all emails:', response.status, response.statusText);
-      }
-    } catch (error) {
-      console.warn('⚠️ Error fetching all emails:', error instanceof Error ? error.message : String(error));
+    // Step 2: Fetch one page of tenant-level emails, excluding assigned ones server-side
+    const params = new URLSearchParams();
+    params.append('tenantId.equals', getTenantId());
+    params.append('page', page.toString());
+    params.append('size', size.toString());
+    params.append('sort', 'email,asc');
+    assignedEmailIds.forEach((id) => params.append('id.notIn', String(id)));
+    if (searchTerm.trim()) {
+      params.append('email.contains', searchTerm.trim());
     }
 
-    // Step 3: Filter out emails that are assigned to the current event
-    const availableEmails = allEmails.filter((email: any) =>
-      !assignedEmailIds.has(email.id)
-    );
+    const response = await fetchWithJwtRetry(`${getApiBase()}/api/event-emails?${params.toString()}`, {
+      cache: 'no-store',
+    });
 
-    console.log('🔍 Available emails (not assigned to current event):', availableEmails.length);
+    if (!response.ok) {
+      console.warn('⚠️ Failed to fetch available emails:', response.status, response.statusText);
+      return { content: [], totalElements: 0, totalPages: 0, assignedCount: assignedEmailIds.size, totalEmails: 0 };
+    }
 
-    // Step 4: Apply search filter if provided
-    const filteredEmails = searchTerm
-      ? availableEmails.filter((email: any) =>
-          email.email?.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      : availableEmails;
+    const data = await response.json();
+    const availableEmails: EventEmailsDTO[] = Array.isArray(data) ? data : [data];
+    const totalElements = parseInt(response.headers.get('x-total-count') || `${availableEmails.length}`, 10);
 
-    console.log('✅ Available emails after search filtering:', filteredEmails.length);
-
-    // Step 5: Apply pagination to the filtered results
-    const startIndex = page * size;
-    const endIndex = startIndex + size;
-    const paginatedEmails = filteredEmails.slice(startIndex, endIndex);
+    console.log('✅ Available emails (not assigned to current event):', totalElements);
 
     return {
-      content: paginatedEmails,
-      totalElements: filteredEmails.length,
-      totalPages: Math.ceil(filteredEmails.length / size),
+      content: availableEmails,
+      totalElements,
+      totalPages: Math.ceil(totalElements / size),
       assignedCount: assignedEmailIds.size,
-      totalEmails: allEmails.length
+      totalEmails: totalElements + assignedEmailIds.size
     };
   } catch (error) {
     console.warn('❌ Error fetching available emails:', error);

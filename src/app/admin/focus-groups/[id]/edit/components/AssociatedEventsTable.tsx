@@ -32,7 +32,7 @@ export default function AssociatedEventsTable({
   const [events, setEvents] = useState<EventDetailsDTO[]>(initialEvents);
   const [totalCount, setTotalCount] = useState(initialTotalCount);
   const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize] = useState(10);
+  const [pageSize] = useState(20);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPastEvents, setShowPastEvents] = useState(false);

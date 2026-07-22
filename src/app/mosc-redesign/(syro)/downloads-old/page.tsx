@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import DownloadsOldPageClient, { type DownloadCard } from './DownloadsOldPageClient';
 import { downloadsOldStaticItems } from './downloadsOldStaticItems';
 import {
@@ -5,6 +6,12 @@ import {
   fetchPublicOfficialDocumentsTreeServer,
 } from './ApiServerActions';
 import type { EventMediaDTO } from '@/types';
+
+export const metadata: Metadata = {
+  title: 'Downloads (Legacy)',
+  description: 'Legacy downloads page for the Malankara Orthodox Syrian Church.',
+  keywords: ['Downloads', 'Legacy', 'Malankara Orthodox Syrian Church', 'MOSC'],
+};
 
 function mapOfficialDocsToCards(docs: EventMediaDTO[]): DownloadCard[] {
   return docs.map((d) => {
@@ -51,7 +58,7 @@ export default async function DownloadsOldPage(props: {
     totalElements: 0,
     totalPages: 0,
     page: 0,
-    size: 24,
+    size: 20,
     categoryOptions: [],
   };
   if (dataDriven) {
@@ -60,7 +67,7 @@ export default async function DownloadsOldPage(props: {
       officialLibraryCards = mapOfficialDocsToCards(docs);
       officialTreePage = await fetchPublicOfficialDocumentsTreeServer({
         page,
-        size: 24,
+        size: 20,
         categoryId: Number.isFinite(categoryId) && categoryId > 0 ? categoryId : undefined,
         year: Number.isFinite(year) && year > 0 ? year : undefined,
       });

@@ -3,27 +3,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { formatPhoneNumbers } from '../../institutions/lib/formatPhone';
 import type { InstitutionEntry } from '../types';
+import SearchInputWithClear from '../../components/SearchInputWithClear';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
-function entrySearchText(entry: InstitutionEntry): string {
-  return [
-    entry.name,
-    entry.description,
-    entry.address,
-    entry.email,
-    entry.phones,
-    entry.website,
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-}
-
+/** Category subpage search: match card titles only (not description/contact). */
 function filterEntries(entries: InstitutionEntry[], query: string): InstitutionEntry[] {
   const q = query.trim().toLowerCase();
   if (!q) return entries;
-  return entries.filter((entry) => entrySearchText(entry).includes(q));
+  return entries.filter((entry) => entry.name.toLowerCase().includes(q));
 }
 
 function formatWebsiteHref(website: string): string {
@@ -186,6 +174,14 @@ export default function InstitutionCategoryList({
   const isPrevDisabled = safePage === 0;
   const isNextDisabled = safePage >= totalPages - 1;
 
+  // Match DownloadsPagination (mosc-redesign/downloads) red footer style
+  const paginationButtonBase =
+    'px-5 py-2.5 font-semibold rounded-lg shadow-sm border-2 flex items-center gap-2 transition-all duration-300';
+  const paginationButtonEnabled =
+    'bg-red-50 hover:bg-red-100 text-red-700 border-red-300 hover:border-red-400 hover:scale-105 hover:shadow-md';
+  const paginationButtonDisabled =
+    'bg-red-50 text-red-400 border-red-200 cursor-not-allowed opacity-60';
+
   const isSearching = searchQuery.trim().length > 0;
   const itemLabel = categoryTitle.toLowerCase();
 
@@ -210,7 +206,7 @@ export default function InstitutionCategoryList({
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative min-w-[220px] flex-1">
             <svg
-              className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-burgundy/60"
+              className="pointer-events-none absolute left-3 top-1/2 z-[1] h-5 w-5 -translate-y-1/2 text-burgundy/60"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -218,13 +214,14 @@ export default function InstitutionCategoryList({
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <input
+            <SearchInputWithClear
               id="institution-category-search"
-              type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={`Search ${itemLabel} by name, location, or contact…`}
-              className="font-syro-primary w-full rounded-lg border border-burgundy/25 bg-parchment/30 py-2.5 pl-10 pr-4 text-syro-dark-gray placeholder:text-warmBrown/60 focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/30"
+              onClear={() => setSearchQuery('')}
+              placeholder={`Search ${itemLabel} by title…`}
+              wrapperClassName="w-full"
+              className="font-syro-primary w-full rounded-lg border border-burgundy/25 bg-parchment/30 py-2.5 pl-10 text-syro-dark-gray placeholder:text-warmBrown/60 focus:border-burgundy focus:outline-none focus:ring-2 focus:ring-burgundy/30"
             />
           </div>
           {isSearching ? (
@@ -270,51 +267,75 @@ export default function InstitutionCategoryList({
         </ul>
       )}
 
-      {totalCount > 0 && totalPages > 1 ? (
-        <div className="mt-8">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-              disabled={isPrevDisabled}
-              className="flex items-center gap-2 rounded-lg border-2 border-blue-400 bg-blue-100 px-5 py-2.5 font-semibold text-blue-700 shadow-sm transition-all duration-300 hover:scale-105 hover:border-blue-500 hover:bg-blue-200 hover:shadow-md disabled:cursor-not-allowed disabled:border-blue-300 disabled:bg-blue-100 disabled:text-blue-500 disabled:hover:scale-100"
-              title="Previous Page"
-              aria-label="Previous Page"
-              type="button"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-              </svg>
-              <span>Previous</span>
-            </button>
+      {totalCount > 0 ? (
+        <div className="mt-10">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            {isPrevDisabled ? (
+              <span
+                className={`${paginationButtonBase} ${paginationButtonDisabled}`}
+                aria-disabled="true"
+                title="Previous Page"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>Previous</span>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                className={`${paginationButtonBase} ${paginationButtonEnabled}`}
+                title="Previous Page"
+                aria-label="Previous Page"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>Previous</span>
+              </button>
+            )}
 
-            <div className="rounded-lg border-2 border-blue-300 bg-blue-50 px-4 py-2 shadow-sm">
-              <span className="text-sm font-bold text-blue-700">
-                Page <span className="text-blue-600">{displayPage}</span> of{' '}
-                <span className="text-blue-600">{totalPages}</span>
+            <div className="px-4 py-2 bg-red-50 border-2 border-red-200 rounded-lg shadow-sm">
+              <span className="text-sm font-bold text-red-800">
+                Page <span className="text-red-600">{displayPage}</span> of{' '}
+                <span className="text-red-600">{totalPages}</span>
               </span>
             </div>
 
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
-              disabled={isNextDisabled}
-              className="flex items-center gap-2 rounded-lg border-2 border-blue-400 bg-blue-100 px-5 py-2.5 font-semibold text-blue-700 shadow-sm transition-all duration-300 hover:scale-105 hover:border-blue-500 hover:bg-blue-200 hover:shadow-md disabled:cursor-not-allowed disabled:border-blue-300 disabled:bg-blue-100 disabled:text-blue-500 disabled:hover:scale-100"
-              title="Next Page"
-              aria-label="Next Page"
-              type="button"
-            >
-              <span>Next</span>
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
+            {isNextDisabled ? (
+              <span
+                className={`${paginationButtonBase} ${paginationButtonDisabled}`}
+                aria-disabled="true"
+                title="Next Page"
+              >
+                <span>Next</span>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                </svg>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+                className={`${paginationButtonBase} ${paginationButtonEnabled}`}
+                title="Next Page"
+                aria-label="Next Page"
+              >
+                <span>Next</span>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
           </div>
 
-          <div className="mt-3 text-center">
-            <div className="inline-flex items-center rounded-lg border-2 border-blue-300 bg-blue-50 px-4 py-2 shadow-sm">
+          <div className="text-center mt-3">
+            <div className="inline-flex items-center px-4 py-2 bg-red-50 border-2 border-red-200 rounded-lg shadow-sm">
               <span className="text-sm text-gray-700">
-                Showing <span className="font-bold text-blue-600">{startItem}</span> to{' '}
-                <span className="font-bold text-blue-600">{endItem}</span> of{' '}
-                <span className="font-bold text-blue-600">{totalCount}</span> {itemLabel}
+                Showing <span className="font-bold text-red-600">{startItem}</span> to{' '}
+                <span className="font-bold text-red-600">{endItem}</span> of{' '}
+                <span className="font-bold text-red-600">{totalCount}</span> {itemLabel}
               </span>
             </div>
           </div>

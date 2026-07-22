@@ -21,7 +21,7 @@ interface DashboardContentProps {
   userProfileId?: number;
 }
 
-const PAGE_SIZE = 3;
+const PAGE_SIZE = 20;
 
 export function DashboardContent({ tasks = [], stats, subscription, pendingSubscription = false, errorBanner, userProfileId }: DashboardContentProps) {
   const searchParams = useSearchParams();

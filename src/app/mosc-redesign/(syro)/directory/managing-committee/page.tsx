@@ -1,12 +1,17 @@
-import { Metadata } from 'next';
-import EntriesListPage from '../entries/EntriesListPage';
+import { redirect } from 'next/navigation';
+import { redirectQsFromSearchParams } from '../../lib/cmsListUrl';
 
-export const metadata: Metadata = {
-  title: 'The Managing Committee | Directory | Malankara Orthodox Syrian Church',
-  description: 'Directory of the Managing Committee of the Malankara Orthodox Syrian Church.',
-  keywords: ['MOSC Directory', 'Managing Committee'],
+export const dynamic = 'force-dynamic';
+
+type PageProps = {
+  searchParams: Promise<{ page?: string; q?: string }>;
 };
 
-export default function Page({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
-  return <EntriesListPage directoryType="managing-committee" searchParams={searchParams} />;
+/** Canonical list hub is /mosc-redesign/managing-committee-cms. */
+export default async function ManagingCommitteeDirectoryRedirect({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const query = redirectQsFromSearchParams(params);
+  redirect(
+    query ? `/mosc-redesign/managing-committee-cms?${query}` : '/mosc-redesign/managing-committee-cms'
+  );
 }

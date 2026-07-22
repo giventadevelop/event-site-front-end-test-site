@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 import { ConfirmModal } from '@/components/ui/Modal';
 import type { EventPollDTO } from '@/types';
 
@@ -142,12 +142,17 @@ export function PollList({
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-indigo-500 h-5 w-5" />
-        <Input
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-indigo-500 h-5 w-5 z-10 pointer-events-none" />
+        <AdminListSearchCombobox
+          items={polls}
+          committedValue={searchTerm}
+          onCommit={setSearchTerm}
           placeholder="Search polls..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-12 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-indigo-500 transition-all"
+          inputClassName="pl-12 pr-10 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-indigo-500 transition-all w-full"
+          getSearchFields={(poll) => [poll.title, poll.description, poll.id]}
+          getCommitValue={(poll) => poll.title || ''}
+          formatPrimary={(poll) => poll.title || 'Poll'}
+          formatSecondary={(poll) => [poll.description, poll.id != null ? `ID: ${poll.id}` : null].filter(Boolean).join(' · ')}
         />
       </div>
 

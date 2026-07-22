@@ -11,7 +11,7 @@ const navigationItems = [
   { name: 'THE CHURCH', href: '/mosc-redesign/the-church' },
   { name: 'HOLY SYNOD', href: '/mosc-redesign/holy-synod' },
   { name: 'ECUMENICAL', href: '/mosc-redesign/ecumenical' },
-  { name: 'DIOCESES', href: '/mosc-redesign/dioceses' },
+  { name: 'DIOCESES', href: '/mosc-redesign/dioceses-cms' },
   { name: 'NEWS', href: '/mosc-redesign/news' },
   { name: 'DIRECTORY', href: '/mosc-redesign/directory' },
   { name: 'SAINTS', href: '/mosc-redesign/saints' },

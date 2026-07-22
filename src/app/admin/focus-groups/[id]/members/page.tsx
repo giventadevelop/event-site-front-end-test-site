@@ -8,7 +8,7 @@ import {
   type UserProfileSummary,
 } from './ApiServerActions';
 
-const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 20;
 
 /** Always fetch fresh member list (no cache) so newly joined members appear. */
 export const dynamic = 'force-dynamic';

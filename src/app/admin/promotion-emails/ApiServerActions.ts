@@ -2,6 +2,7 @@
 import { fetchWithJwtRetry } from '@/lib/proxyHandler';
 import { getTenantId, getAppUrl, getApiBaseUrl } from '@/lib/env';
 import { withTenantId } from '@/lib/withTenantId';
+import { rewriteEmailHtmlLinksToPublic } from '@/lib/publicEmailLinks';
 import type {
   PromotionEmailTemplateDTO,
   PromotionEmailTemplateFormDTO,
@@ -12,6 +13,67 @@ import type {
 // Lazy getter — evaluated at call time, not module load time (critical for Lambda cold starts)
 function getApiBase() {
   return getApiBaseUrl();
+}
+
+function normalizeClearableString(value: string | null | undefined): string {
+  if (value == null) return '';
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : '';
+}
+
+function stripTemplateRelations(template: Record<string, unknown>): Record<string, unknown> {
+  const payload = { ...template };
+  delete payload.event;
+  delete payload.discountCode;
+  delete payload.createdBy;
+  return payload;
+}
+
+async function ensurePromotionFooterLinksArePublic(templateId: number): Promise<void> {
+  const templateUrl = `${getApiBase()}/api/promotion-email-templates/${templateId}`;
+
+  const getResponse = await fetchWithJwtRetry(
+    templateUrl,
+    { cache: 'no-store' },
+    'promotion-email-footer-link-fetch'
+  );
+  if (!getResponse.ok) {
+    const errorBody = await getResponse.text();
+    throw new Error(`Failed to load promotion template before sending. Status: ${getResponse.status}. ${errorBody}`);
+  }
+
+  const template = (await getResponse.json()) as PromotionEmailTemplateDTO;
+  const currentFooterHtml = normalizeClearableString(template.footerHtml);
+  const rewrittenFooterHtml = rewriteEmailHtmlLinksToPublic(currentFooterHtml);
+
+  if (currentFooterHtml === rewrittenFooterHtml) {
+    return;
+  }
+
+  const payload = stripTemplateRelations(
+    withTenantId({
+      ...template,
+      id: templateId,
+      footerHtml: rewrittenFooterHtml,
+      updatedAt: new Date().toISOString(),
+    }) as Record<string, unknown>
+  );
+
+  const putResponse = await fetchWithJwtRetry(
+    templateUrl,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    },
+    'promotion-email-footer-link-update'
+  );
+
+  if (!putResponse.ok) {
+    const errorBody = await putResponse.text();
+    throw new Error(`Failed to update promotion footer links before sending. Status: ${putResponse.status}. ${errorBody}`);
+  }
 }
 
 /**
@@ -233,6 +295,8 @@ export async function sendTestEmailServer(
   templateId: number,
   recipientEmail: string
 ): Promise<{ success: boolean; messageId?: string }> {
+  await ensurePromotionFooterLinksArePublic(templateId);
+
   const baseUrl = getAppUrl();
   const url = `${baseUrl}/api/proxy/promotion-email-templates/${templateId}/send-test`;
 
@@ -262,6 +326,8 @@ export async function sendBulkEmailServer(
   templateId: number,
   recipientEmails?: string[]
 ): Promise<{ success: boolean; sentCount: number; failedCount: number }> {
+  await ensurePromotionFooterLinksArePublic(templateId);
+
   const baseUrl = getAppUrl();
   const url = `${baseUrl}/api/proxy/promotion-email-templates/${templateId}/send-bulk`;
 
@@ -291,6 +357,8 @@ export async function sendBulkEmailServer(
 export async function sendBulkEmailToSubscribedMembersServer(
   templateId: number
 ): Promise<{ success: boolean; sentCount?: number; failedCount?: number }> {
+  await ensurePromotionFooterLinksArePublic(templateId);
+
   const baseUrl = getAppUrl();
   const url = `${baseUrl}/api/proxy/promotion-email-templates/${templateId}/send-to-subscribed`;
 

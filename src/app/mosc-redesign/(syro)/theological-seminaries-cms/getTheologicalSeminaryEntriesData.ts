@@ -12,9 +12,15 @@ import {
 } from '@/lib/strapi';
 import { unwrapStrapiRecord } from '@/lib/strapi/unwrapRecord';
 import { getMediaUrl, getMediaAlt } from '@/app/mosc-redesign/(syro)/directory/lib/strapiMedia';
+import {
+  EMPTY_DIRECTORY_PAGINATION,
+  DIRECTORY_PAGE_SIZE,
+  type DirectoryListPagination,
+} from '@/app/mosc-redesign/(syro)/directory/types/listPagination';
 import type {
   TheologicalSeminaryEntry,
   TheologicalSeminaryEntriesListResult,
+  TheologicalSeminaryListOptions,
 } from './types';
 
 function parseEntry(raw: Record<string, unknown>, baseUrl: string): TheologicalSeminaryEntry {
@@ -55,9 +61,28 @@ function parseEntry(raw: Record<string, unknown>, baseUrl: string): TheologicalS
   };
 }
 
-const EMPTY_LIST: TheologicalSeminaryEntriesListResult = { entries: [] };
+const EMPTY_LIST: TheologicalSeminaryEntriesListResult = {
+  entries: [],
+  pagination: EMPTY_DIRECTORY_PAGINATION,
+};
 
-export async function getTheologicalSeminaryEntriesData(): Promise<TheologicalSeminaryEntriesListResult> {
+const LOAD_ALL_PAGE_SIZE = 100;
+
+function buildBaseParams(tenantId: string, nameSearch?: string): URLSearchParams {
+  const params = new URLSearchParams();
+  params.set('filters[tenant][tenantId][$eq]', tenantId);
+  const nameQuery = nameSearch?.trim();
+  if (nameQuery) {
+    params.set('filters[name][$containsi]', nameQuery);
+  }
+  params.set('sort', 'order:asc,name:asc');
+  params.set('populate[0]', 'image');
+  return params;
+}
+
+export async function getTheologicalSeminaryEntriesData(
+  options?: TheologicalSeminaryListOptions
+): Promise<TheologicalSeminaryEntriesListResult> {
   const baseUrl = getStrapiUrl();
   const base = getStrapiApiBase();
   const tenantId = getStrapiTenantId();
@@ -65,28 +90,108 @@ export async function getTheologicalSeminaryEntriesData(): Promise<TheologicalSe
     return EMPTY_LIST;
   }
 
-  const params = new URLSearchParams();
-  params.set('filters[tenant][tenantId][$eq]', tenantId);
-  params.set('sort', 'order:asc,name:asc');
-  params.set('populate[0]', 'image');
-  params.set('pagination[pageSize]', '100');
-
-  const url = `${base}/theological-seminaries?${params.toString()}`;
+  const loadAll =
+    options?.loadAll === true ||
+    options == null ||
+    (options.page == null && options.pageSize == null && !options.nameSearch?.trim());
 
   try {
-    const res = await fetch(url, {
-      headers: getStrapiHeaders(),
-      cache: 'no-store',
-    });
-    if (!res.ok) {
-      return EMPTY_LIST;
+    if (!loadAll) {
+      const page = Math.max(1, options?.page ?? 1);
+      const pageSize = Math.min(
+        100,
+        Math.max(1, options?.pageSize ?? DIRECTORY_PAGE_SIZE)
+      );
+      const params = buildBaseParams(tenantId, options?.nameSearch);
+      params.set('pagination[page]', String(page));
+      params.set('pagination[pageSize]', String(pageSize));
+
+      const url = `${base}/theological-seminaries?${params.toString()}`;
+      const res = await fetch(url, {
+        headers: getStrapiHeaders(),
+        cache: 'no-store',
+      });
+      if (!res.ok) {
+        return EMPTY_LIST;
+      }
+      const json = (await res.json()) as {
+        data?: unknown[];
+        meta?: {
+          pagination?: {
+            page?: number;
+            pageCount?: number;
+            pageSize?: number;
+            total?: number;
+          };
+        };
+      };
+      const list = Array.isArray(json?.data) ? json.data : [];
+      const meta = json?.meta?.pagination;
+      const pagination: DirectoryListPagination = {
+        page: meta?.page ?? page,
+        pageCount: meta?.pageCount ?? 0,
+        pageSize: meta?.pageSize ?? pageSize,
+        total: meta?.total ?? 0,
+      };
+      const entries = list
+        .filter((item): item is Record<string, unknown> => item != null && typeof item === 'object')
+        .map((item) => parseEntry(item, baseUrl));
+      return { entries, pagination };
     }
-    const json = (await res.json()) as { data?: unknown[] };
-    const list = Array.isArray(json?.data) ? json.data : [];
-    const entries = list
-      .filter((item): item is Record<string, unknown> => item != null && typeof item === 'object')
-      .map((item) => parseEntry(item, baseUrl));
-    return { entries };
+
+    const params = buildBaseParams(tenantId);
+    params.set('pagination[pageSize]', String(LOAD_ALL_PAGE_SIZE));
+
+    const allRows: Record<string, unknown>[] = [];
+    let page = 1;
+    let pageCount = 1;
+    let total = 0;
+
+    while (page <= pageCount) {
+      params.set('pagination[page]', String(page));
+      const url = `${base}/theological-seminaries?${params.toString()}`;
+      const res = await fetch(url, {
+        headers: getStrapiHeaders(),
+        cache: 'no-store',
+      });
+      if (!res.ok) {
+        return page === 1
+          ? EMPTY_LIST
+          : {
+              entries: allRows.map((item) => parseEntry(item, baseUrl)),
+              pagination: {
+                page: 1,
+                pageCount: 1,
+                pageSize: allRows.length,
+                total: allRows.length,
+              },
+            };
+      }
+      const json = (await res.json()) as {
+        data?: unknown[];
+        meta?: { pagination?: { pageCount?: number; total?: number } };
+      };
+      const list = Array.isArray(json?.data) ? json.data : [];
+      for (const item of list) {
+        if (item != null && typeof item === 'object') {
+          allRows.push(item as Record<string, unknown>);
+        }
+      }
+      pageCount = json?.meta?.pagination?.pageCount ?? 1;
+      total = json?.meta?.pagination?.total ?? allRows.length;
+      page += 1;
+    }
+
+    const entries = allRows.map((item) => parseEntry(item, baseUrl));
+    return {
+      entries,
+      pagination: {
+        page: 1,
+        pageCount: 1,
+        pageSize: entries.length,
+        total,
+      },
+    };
   } catch {
     return EMPTY_LIST;
   }
@@ -110,7 +215,7 @@ export async function getTheologicalSeminaryEntryBySlug(
     tenantId,
     populate: ['image'],
     parse: parseEntry,
-    fetchList: async () => (await getTheologicalSeminaryEntriesData()).entries,
+    fetchList: async () => (await getTheologicalSeminaryEntriesData({ loadAll: true })).entries,
     isValid: (entry) => Boolean(entry.slug || entry.name),
   });
 }

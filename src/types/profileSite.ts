@@ -13,6 +13,7 @@ export type TenantSiteType =
 export type ProfileWritingType = 'ORIGINAL' | 'REPUBLISHED' | 'EXTERNAL_LINK';
 export type ProfileWritingStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 export type ProfileAchievementCategory = 'AWARD' | 'HONOR' | 'SPEAKING' | 'EDUCATION' | 'OTHER';
+export type ProfileMediaKind = 'DOCUMENT' | 'VIDEO' | 'PODCAST' | 'PRESS' | 'OTHER';
 
 export interface PublicProfileDTO {
   id?: number | null;
@@ -28,6 +29,8 @@ export interface PublicProfileDTO {
   publicSlug?: string;
   contactEmail?: string;
   contactFormEnabled?: boolean;
+  /** Calendly / booking page URL for collaboration CTA */
+  bookingUrl?: string;
   linkedinUrl?: string;
   twitterUrl?: string;
   facebookUrl?: string;
@@ -102,12 +105,37 @@ export interface ProfileMediaAssetDTO {
   coverImageUrl?: string;
   fileUrl: string;
   fileType?: string;
+  /** Semantic kind for talks strip vs downloads (DOCUMENT default) */
+  mediaKind?: ProfileMediaKind;
   fileSizeBytes?: number;
   displayOrder?: number;
   isDownloadable?: boolean;
   requiresEmail?: boolean;
   createdAt?: string;
   updatedAt?: string;
+}
+
+/** Case-study / project card for personal profile homepage */
+export interface ProfileProjectDTO {
+  id?: number | null;
+  tenantId: string;
+  title: string;
+  slug?: string;
+  summary?: string;
+  coverImageUrl?: string;
+  role?: string;
+  /** JSON object or array of metric labels/values, e.g. [{"label":"Users","value":"10k"}] */
+  outcomeMetricsJson?: string;
+  projectUrl?: string;
+  displayOrder?: number;
+  isFeatured?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ProfileOutcomeMetric {
+  label: string;
+  value: string;
 }
 
 export type ProfileAudienceContactSource =

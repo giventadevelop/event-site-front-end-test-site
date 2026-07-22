@@ -10,6 +10,7 @@ import {
   MOSC_REDESIGN_NAV_LINKS,
   MOSC_REDESIGN_QUICK_LINKS,
   MOSC_REDESIGN_SEARCH_DIRECTORY_NAV,
+  moscRedesignNavPrefetch,
 } from './navConfig';
 import { ADMINISTRATION_PAGE_CARDS } from './administrationCards';
 import {
@@ -555,6 +556,7 @@ export default function MoscRedesignHeader() {
                     <Link
                       key={ql.label}
                       href={ql.href}
+                      prefetch={moscRedesignNavPrefetch(ql.href)}
                       aria-current={quickActive ? 'page' : undefined}
                       className={`${MOBILE_NAV_LINK} border-b border-burgundy/10 ${
                         quickActive
@@ -613,6 +615,7 @@ export default function MoscRedesignHeader() {
               <Link
                 key={ql.label}
                 href={ql.href}
+                prefetch={moscRedesignNavPrefetch(ql.href)}
                 className={`${QUICK_LINK} group overflow-hidden ${QUICK_LINK_IDLE}`}
               >
                 <span className="absolute inset-0 bg-warmBrown/90 scale-y-0 group-hover:scale-y-100 transition-transform duration-200 origin-bottom" />

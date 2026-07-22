@@ -4,7 +4,9 @@ import Image from 'next/image';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getPriestByDocumentId } from '../getPriestsData';
+import { formatPriestDisplayName } from '../types';
 import SyroPageBanner from '../../../components/SyroPageBanner';
+import DirectoryBackLink from '../../components/DirectoryBackLink';
 
 type PageProps = { params: Promise<{ documentId: string }> };
 
@@ -12,9 +14,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { documentId } = await params;
   const priest = await getPriestByDocumentId(documentId);
   if (!priest) return { title: 'Priest Not Found | Directory | MOSC' };
+  const displayName = formatPriestDisplayName(priest.title, priest.name);
   return {
-    title: `${priest.name} | Priests | Directory | Malankara Orthodox Syrian Church`,
-    description: priest.dioceseName ? `${priest.name}, ${priest.dioceseName}.` : `Directory entry for ${priest.name}.`,
+    title: `${displayName} | Priests | Directory | Malankara Orthodox Syrian Church`,
+    description: priest.dioceseName ? `${displayName}, ${priest.dioceseName}.` : `Directory entry for ${displayName}.`,
   };
 }
 
@@ -23,18 +26,13 @@ export default async function PriestDetailPage({ params }: PageProps) {
   const priest = await getPriestByDocumentId(documentId);
   if (!priest) notFound();
 
-  const displayName = priest.title ? `${priest.title} ${priest.name}` : priest.name;
+  const displayName = formatPriestDisplayName(priest.title, priest.name);
   return (
     <div className="min-h-screen bg-syro-bg-gray">
       <SyroPageBanner title={displayName} breadcrumbFrom="directory" />
       <section className="relative bg-syro-bg-gray py-8 lg:py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link
-            href="/mosc-redesign/directory/priests"
-            className="inline-block no-underline font-light text-white bg-[#dc3545] py-2.5 px-5 border-r-[7px] border-r-[#be1929] mb-4 transition-[1s] hover:bg-[#be1929] hover:border-r-[6px] hover:border-r-[#dc3545] hover:text-white"
-          >
-            ← Back to Priests
-          </Link>
+          <DirectoryBackLink href="/mosc-redesign/priests-cms" label="Back to Priests" />
           <div className="flex flex-col sm:flex-row gap-6 items-start">
             {priest.imageUrl && (
               <div className="relative w-40 h-40 flex-shrink-0 rounded-xl overflow-hidden bg-syro-bg-gray sacred-shadow">
@@ -43,7 +41,7 @@ export default async function PriestDetailPage({ params }: PageProps) {
             )}
             <div className="min-w-0 flex-1">
               <h1 className="font-heading font-semibold text-2xl lg:text-3xl text-syro-blue">
-                {priest.title ? `${priest.title} ${priest.name}` : priest.name}
+                {displayName}
               </h1>
               {priest.dioceseName && <p className="font-body text-syro-dark-gray mt-1">{priest.dioceseName}</p>}
               {priest.parishName && <p className="font-body text-syro-dark-gray">Vicar, {priest.parishName}</p>}
@@ -73,14 +71,6 @@ export default async function PriestDetailPage({ params }: PageProps) {
                 <p className="font-body text-syro-dark-gray">{priest.phones}</p>
               </div>
             )}
-          </div>
-          <div className="mt-8">
-            <Link
-            href="/mosc-redesign/directory/priests"
-            className="inline-block no-underline font-light text-white bg-[#dc3545] py-2.5 px-5 border-r-[7px] border-r-[#be1929] mt-4 transition-[1s] hover:bg-[#be1929] hover:border-r-[6px] hover:border-r-[#dc3545] hover:text-white"
-          >
-            ← Back to Priests
-          </Link>
           </div>
         </div>
       </section>

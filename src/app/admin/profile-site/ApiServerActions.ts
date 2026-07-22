@@ -13,6 +13,7 @@ import type {
   ProfileAchievementDTO,
   ProfileAffiliationDTO,
   ProfileMediaAssetDTO,
+  ProfileProjectDTO,
   ProfileAudienceContactDTO,
   ProfileAudienceBulkImportResultDTO,
   TenantSiteType,
@@ -108,6 +109,10 @@ export async function fetchProfileMediaAssetsServer() {
   return fetchProfileList<ProfileMediaAssetDTO>('/api/profile-media-assets');
 }
 
+export async function fetchProfileProjectsServer() {
+  return fetchProfileList<ProfileProjectDTO>('/api/profile-projects');
+}
+
 export async function createProfileWritingServer(
   data: Omit<ProfileWritingDTO, 'id' | 'tenantId'>
 ): Promise<ProfileWritingDTO | null> {
@@ -179,6 +184,23 @@ export async function updateProfileMediaAssetServer(
 
 export async function deleteProfileMediaAssetServer(id: number): Promise<boolean> {
   return deleteProfileResource('/api/profile-media-assets', id);
+}
+
+export async function createProfileProjectServer(
+  data: Omit<ProfileProjectDTO, 'id' | 'tenantId'>
+): Promise<ProfileProjectDTO | null> {
+  return createProfileResource('/api/profile-projects', data);
+}
+
+export async function updateProfileProjectServer(
+  id: number,
+  data: Partial<ProfileProjectDTO>
+): Promise<ProfileProjectDTO | null> {
+  return patchProfileResource('/api/profile-projects', id, data);
+}
+
+export async function deleteProfileProjectServer(id: number): Promise<boolean> {
+  return deleteProfileResource('/api/profile-projects', id);
 }
 
 async function createProfileResource<T extends { id?: number | null }>(

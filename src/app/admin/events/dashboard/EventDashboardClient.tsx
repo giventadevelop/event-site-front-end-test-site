@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { EventDashboardData } from './ApiServerActions';
+import type { EventAttendeeDTO } from '@/types';
 // Icons removed - using inline SVGs instead
 import Link from 'next/link';
 
@@ -27,30 +28,56 @@ export default function EventDashboardClient({ data }: EventDashboardClientProps
     topEvents
   } = data;
 
-  // Calculate pagination values
-  const totalCount = recentRegistrations.length;
+  // Server-side pagination state: one page of registrations at a time
+  const [registrations, setRegistrations] = useState<EventAttendeeDTO[]>(recentRegistrations);
+  const [pageLoading, setPageLoading] = useState(false);
+
+  // Calculate pagination values (total driven by X-Total-Count via totalAttendees)
+  const totalCount = totalAttendees;
   const totalPages = Math.ceil(totalCount / pageSize) || 1;
   const displayPage = currentPage + 1; // Display as 1-based
   const startItem = totalCount > 0 ? currentPage * pageSize + 1 : 0;
-  const endItem = totalCount > 0 ? Math.min((currentPage + 1) * pageSize, totalCount) : 0;
-  const isPrevDisabled = currentPage === 0;
-  const isNextDisabled = currentPage >= totalPages - 1;
+  const endItem = totalCount > 0 ? currentPage * pageSize + registrations.length : 0;
+  const isPrevDisabled = currentPage === 0 || pageLoading;
+  const isNextDisabled = currentPage >= totalPages - 1 || pageLoading;
 
-  // Get paginated registrations
-  const paginatedRegistrations = recentRegistrations.slice(
-    currentPage * pageSize,
-    (currentPage + 1) * pageSize
-  );
+  // Current server page of registrations
+  const paginatedRegistrations = registrations;
+
+  // Fetch one server page of registrations (proxy injects tenant + JWT)
+  const loadRegistrationsPage = async (page: number) => {
+    setPageLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        size: String(pageSize),
+        sort: 'registrationDate,desc',
+      });
+      if (eventDetails?.id) {
+        params.append('eventId.equals', String(eventDetails.id));
+      }
+      const res = await fetch(`/api/proxy/event-attendees?${params.toString()}`, { cache: 'no-store' });
+      if (res.ok) {
+        const rows = await res.json();
+        setRegistrations(Array.isArray(rows) ? rows : []);
+        setCurrentPage(page);
+      }
+    } catch (err) {
+      console.error('Failed to load registrations page:', err);
+    } finally {
+      setPageLoading(false);
+    }
+  };
 
   const handlePrevPage = () => {
     if (!isPrevDisabled) {
-      setCurrentPage(currentPage - 1);
+      loadRegistrationsPage(currentPage - 1);
     }
   };
 
   const handleNextPage = () => {
     if (!isNextDisabled) {
-      setCurrentPage(currentPage + 1);
+      loadRegistrationsPage(currentPage + 1);
     }
   };
 

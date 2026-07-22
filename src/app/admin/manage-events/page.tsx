@@ -20,6 +20,7 @@ import {
   hardDeleteEventWithChildrenServer,
   activateEventWithChildrenServer,
 } from '../ApiServerActions';
+import ManageEventsSearchCombobox from './ManageEventsSearchCombobox';
 import { getHomepageCacheKey } from '@/lib/homepageCacheKeys';
 
 const MANAGE_EVENTS_CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes, same as homepage
@@ -34,7 +35,7 @@ export default function ManageEventsPage() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
-  const pageSize = 10;
+  const pageSize = 20;
   // Search/filter state
   const [searchTitle, setSearchTitle] = useState('');
   const [searchCaption, setSearchCaption] = useState('');
@@ -171,11 +172,14 @@ export default function ManageEventsPage() {
       else if (searchField === 'caption') filterParams.caption = searchCaption;
 
       // Parallel data fetches instead of sequential
-      const [eventsData, types, calendarEventsResult] = await Promise.all([
+      const [eventsData, types] = await Promise.all([
         fetchEventsFilteredServer(filterParams),
         fetchEventTypesServer(),
-        fetchCalendarEventsServer(),
       ]);
+      // Fetch calendar entries scoped to the events on this page only
+      const calendarEventsResult = await fetchCalendarEventsServer(
+        eventsData.events.map((e) => e.id).filter((id): id is number => id != null)
+      );
       setEvents(eventsData.events);
       setTotalCount(eventsData.totalCount);
       setEventTypes(types);
@@ -464,7 +468,7 @@ export default function ManageEventsPage() {
       <div className="flex items-center mb-8 gap-4">
         <Link
           href="/admin"
-          className="flex-shrink-0 h-14 rounded-xl bg-indigo-100 hover:bg-indigo-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-3 sm:px-6"
+          className="ml-2.5 sm:ml-3 md:ml-4 lg:ml-6 xl:ml-8 flex-shrink-0 h-14 rounded-xl bg-indigo-100 hover:bg-indigo-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-3 sm:px-6"
           title="Back to Admin"
           aria-label="Back to Admin"
         >
@@ -574,17 +578,26 @@ export default function ManageEventsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold mb-1">{searchField === 'id' ? 'Event ID' : searchField.charAt(0).toUpperCase() + searchField.slice(1)}</label>
-              <input
-                type={searchField === 'id' ? 'number' : 'text'}
-                className="border px-3 py-2 rounded w-48"
-                value={searchField === 'title' ? searchTitle : searchField === 'id' ? searchId : searchCaption}
-                onChange={e => {
-                  if (searchField === 'title') setSearchTitle(e.target.value);
-                  else if (searchField === 'id') setSearchId(e.target.value);
-                  else setSearchCaption(e.target.value);
+              <label htmlFor="manage-events-search" className="block text-xs font-semibold mb-1">
+                {searchField === 'id' ? 'Event ID' : searchField.charAt(0).toUpperCase() + searchField.slice(1)}
+              </label>
+              <ManageEventsSearchCombobox
+                searchField={searchField}
+                committedValue={
+                  searchField === 'title'
+                    ? searchTitle
+                    : searchField === 'id'
+                      ? searchId
+                      : searchCaption
+                }
+                onCommit={(value) => {
+                  if (searchField === 'title') setSearchTitle(value);
+                  else if (searchField === 'id') setSearchId(value);
+                  else setSearchCaption(value);
+                  setPage(0);
                 }}
-                placeholder={`Search by ${searchField}`}
+                localEvents={events}
+                disabled={loading}
               />
             </div>
             <div>

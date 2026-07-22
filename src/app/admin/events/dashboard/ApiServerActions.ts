@@ -78,10 +78,11 @@ export async function fetchEventDashboardData(eventId: number | null): Promise<E
     const events = await eventsResponse.json();
     const eventsArray = Array.isArray(events) ? events : [];
 
-    // Fetch attendees for the specific event or all events (limit to 500 for performance)
+    // Fetch ONE small page of recent attendees (server-side pagination);
+    // the total comes from the X-Total-Count header, not from counting rows
     const attendeeParams = eventId
-      ? `eventId.equals=${eventId}&sort=registrationDate,desc`
-      : 'sort=registrationDate,desc&size=500';
+      ? `eventId.equals=${eventId}&page=0&size=20&sort=registrationDate,desc`
+      : 'page=0&size=20&sort=registrationDate,desc';
 
     const attendeesController = new AbortController();
     const attendeesTimeout = setTimeout(() => attendeesController.abort(), 15000);
@@ -100,10 +101,11 @@ export async function fetchEventDashboardData(eventId: number | null): Promise<E
     const attendees = await attendeesResponse.json();
     const attendeesArray = Array.isArray(attendees) ? attendees : [];
 
-    // Fetch guests for attendees (limit to 500 for performance)
+    // Fetch ONE bounded page of guests for chart aggregation;
+    // the total comes from the X-Total-Count header, not from counting rows
     const guestParams = eventId
-      ? `eventAttendee.eventId.equals=${eventId}&size=500`
-      : 'size=500';
+      ? `eventAttendee.eventId.equals=${eventId}&page=0&size=200`
+      : 'page=0&size=200';
 
     const guestsController = new AbortController();
     const guestsTimeout = setTimeout(() => guestsController.abort(), 15000);
@@ -122,9 +124,9 @@ export async function fetchEventDashboardData(eventId: number | null): Promise<E
     const guests = await guestsResponse.json();
     const guestsArray = Array.isArray(guests) ? guests : [];
 
-    // Calculate statistics
-    const totalAttendees = attendeesArray.length;
-    const totalGuests = guestsArray.length;
+    // Calculate statistics — totals read from X-Total-Count response headers
+    const totalAttendees = parseInt(attendeesResponse.headers.get('x-total-count') || '0', 10) || attendeesArray.length;
+    const totalGuests = parseInt(guestsResponse.headers.get('x-total-count') || '0', 10) || guestsArray.length;
 
     const capacityUtilization = eventDetails && eventDetails.capacity
       ? Math.round((totalAttendees / eventDetails.capacity) * 100)
@@ -145,7 +147,7 @@ export async function fetchEventDashboardData(eventId: number | null): Promise<E
     // Special requirements
     const specialRequirements = calculateSpecialRequirements(attendeesArray, guestsArray);
 
-    // Recent registrations (all attendees, sorted by registration date descending)
+    // Recent registrations: first server page (size 20, sorted by registration date descending)
     const recentRegistrations = attendeesArray;
 
     // Top events by attendance

@@ -22,7 +22,7 @@ import { getHomepageCacheKey, HOMEPAGE_CACHE_INVALIDATE_CHANNEL } from '@/lib/ho
 import { ArrowRight, Heart, Play, Pause, ChevronLeft, ChevronRight } from 'lucide-react';
 import GivebutterDonateButton from '@/components/GivebutterDonateButton';
 
-/** Shown only after init when no event/tenant hero images are available. */
+/** Shown while hero data loads, and when no event/tenant hero images are available. */
 const HERO_FALLBACK_NO_EVENTS_IMAGE = '/images/hero_section/default_cloud_hero_image_1.webp';
 
 /** Crossfade duration — must match `.hero-crossfade-layer` opacity transition in globals.css. */
@@ -30,7 +30,69 @@ const HERO_SLIDESHOW_CROSSFADE_MS = 420;
 
 type HeroSlideCrossfade = { a: number; b: number; showA: boolean };
 
-/** Prefetch first slide(s) so the real hero URL paints instead of flashing the fallback. */
+type HeroSectionCachePayload = {
+  dynamicImages: string[];
+  upcomingEvents: EventWithMediaExtended[];
+  heroSlideEvents: (EventWithMediaExtended | null)[];
+  imageDurations: number[];
+};
+
+const HOMEPAGE_CACHE_TTL_MS = 5 * 60 * 1000;
+
+function readHeroSectionCache(cacheKey: string): HeroSectionCachePayload | null {
+  if (typeof sessionStorage === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(cacheKey);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as {
+      dynamicImages?: string[];
+      upcomingEvents?: EventWithMediaExtended[];
+      heroSlideEvents?: (EventWithMediaExtended | null)[];
+      imageDurations?: number[];
+      timestamp?: number;
+    };
+    if (
+      parsed.timestamp == null ||
+      Date.now() - parsed.timestamp >= HOMEPAGE_CACHE_TTL_MS ||
+      !Array.isArray(parsed.dynamicImages) ||
+      parsed.dynamicImages.length === 0 ||
+      !Array.isArray(parsed.imageDurations) ||
+      parsed.imageDurations.length !== parsed.dynamicImages.length
+    ) {
+      return null;
+    }
+    const slideEvents = Array.isArray(parsed.heroSlideEvents)
+      ? parsed.heroSlideEvents
+      : Array.isArray(parsed.upcomingEvents)
+        ? parsed.upcomingEvents.map((e) => e ?? null)
+        : [];
+    return {
+      dynamicImages: parsed.dynamicImages,
+      upcomingEvents: Array.isArray(parsed.upcomingEvents) ? parsed.upcomingEvents : [],
+      heroSlideEvents: slideEvents,
+      imageDurations: parsed.imageDurations,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Single fallback slide shown until hero data finishes loading. */
+function buildLoadingFallbackHeroState(): HeroSectionCachePayload {
+  return {
+    dynamicImages: [HERO_FALLBACK_NO_EVENTS_IMAGE],
+    imageDurations: [8000],
+    upcomingEvents: [],
+    heroSlideEvents: [null],
+  };
+}
+
+function heroImageUrlsEqual(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((url, index) => url === b[index]);
+}
+
+/** Prefetch first slide(s) in the background (never blocks first paint). */
 function preloadHeroImages(urls: string[], count = 2): Promise<void> {
   const targets = urls.filter((u) => typeof u === 'string' && u.trim().length > 0).slice(0, count);
   if (targets.length === 0 || typeof window === 'undefined') return Promise.resolve();
@@ -142,11 +204,14 @@ const DynamicHeroImage: React.FC<{
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   /** Two stacked slide indices for crossfade (only used when length ≥ 2). */
   const [slide, setSlide] = useState<HeroSlideCrossfade>({ a: 0, b: 1, showA: true });
-  const [dynamicImages, setDynamicImages] = useState<string[]>([]);
+  const [dynamicImages, setDynamicImages] = useState<string[]>([HERO_FALLBACK_NO_EVENTS_IMAGE]);
   const [upcomingEvents, setUpcomingEvents] = useState<EventWithMediaExtended[]>([]);
-  const [heroSlideEvents, setHeroSlideEvents] = useState<(EventWithMediaExtended | null)[]>([]);
-  const [imageDurations, setImageDurations] = useState<number[]>([]); // Duration in milliseconds for each image
+  const [heroSlideEvents, setHeroSlideEvents] = useState<(EventWithMediaExtended | null)[]>([null]);
+  const [imageDurations, setImageDurations] = useState<number[]>([8000]);
+  /** True only after hero fetch (or valid session cache) finishes — enables rotation/controls. */
   const [isInitialized, setIsInitialized] = useState(false);
+  /** False while page/hero data is still loading — UI shows fallback only. */
+  const [heroLoadComplete, setHeroLoadComplete] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isTouched, setIsTouched] = useState(false);
@@ -171,63 +236,45 @@ const DynamicHeroImage: React.FC<{
     slideRef.current = slide;
   }, [slide]);
 
-  // Start hero fetch ASAP so we do not sit on an empty/fallback frame while waiting.
-  const heroFetchEnabled = useDeferredFetch(0);
+  // Above-the-fold hero: defer network fetch per homepage_deferred_loading_pattern (placeholder paints first).
+  const heroFetchEnabled = useDeferredFetch(500);
   const [heroDataVersion, setHeroDataVersion] = useState(0);
 
   const CACHE_KEY = getHomepageCacheKey('homepage_hero_section_cache');
-  const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes (same as other homepage sections)
 
-  // Restore cached hero frames as soon as possible, but only reveal after preload.
-  useLayoutEffect(() => {
-    let cancelled = false;
-    try {
-      const raw = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(CACHE_KEY) : null;
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as {
-        dynamicImages?: string[];
-        upcomingEvents?: EventWithMediaExtended[];
-        heroSlideEvents?: (EventWithMediaExtended | null)[];
-        imageDurations?: number[];
-        timestamp?: number;
-      };
-      if (
-        parsed.timestamp != null &&
-        Date.now() - parsed.timestamp < CACHE_DURATION_MS &&
-        Array.isArray(parsed.dynamicImages) &&
-        parsed.dynamicImages.length > 0 &&
-        Array.isArray(parsed.imageDurations) &&
-        parsed.imageDurations.length === parsed.dynamicImages.length
-      ) {
-        const slideEvents = Array.isArray(parsed.heroSlideEvents)
-          ? parsed.heroSlideEvents
-          : Array.isArray(parsed.upcomingEvents)
-            ? parsed.upcomingEvents.map((e) => e ?? null)
-            : [];
-        const images = parsed.dynamicImages;
-        const durations = parsed.imageDurations;
-        const upcoming = Array.isArray(parsed.upcomingEvents) ? parsed.upcomingEvents : [];
-
-        void preloadHeroImages(images, Math.min(2, images.length)).then(() => {
-          if (cancelled) return;
-          setDynamicImages(images);
-          setUpcomingEvents(upcoming);
-          setHeroSlideEvents(slideEvents);
-          setImageDurations(durations);
-          dynamicImagesRef.current = images;
-          upcomingEventsRef.current = upcoming;
-          heroSlideEventsRef.current = slideEvents;
-          imageDurationsRef.current = durations;
-          setIsInitialized(true);
-        });
+  const applyHeroPayload = React.useCallback(
+    (payload: HeroSectionCachePayload, markLoadComplete: boolean) => {
+      setDynamicImages(payload.dynamicImages);
+      setUpcomingEvents(payload.upcomingEvents);
+      setHeroSlideEvents(payload.heroSlideEvents);
+      setImageDurations(payload.imageDurations);
+      dynamicImagesRef.current = payload.dynamicImages;
+      upcomingEventsRef.current = payload.upcomingEvents;
+      heroSlideEventsRef.current = payload.heroSlideEvents;
+      imageDurationsRef.current = payload.imageDurations;
+      if (markLoadComplete) {
+        setHeroLoadComplete(true);
+        setIsInitialized(true);
+      } else {
+        setHeroLoadComplete(false);
+        setIsInitialized(false);
       }
-    } catch (_) {
-      /* ignore */
+    },
+    []
+  );
+
+  // Paint fallback immediately; restore session cache only when it means load is already complete.
+  useLayoutEffect(() => {
+    const cached = readHeroSectionCache(CACHE_KEY);
+    if (cached) {
+      applyHeroPayload(cached, true);
+      void preloadHeroImages(cached.dynamicImages, Math.min(2, cached.dynamicImages.length));
+      return;
     }
-    return () => {
-      cancelled = true;
-    };
-  }, [CACHE_KEY]);
+
+    applyHeroPayload(buildLoadingFallbackHeroState(), false);
+    void preloadHeroImages([HERO_FALLBACK_NO_EVENTS_IMAGE], 1);
+  }, [CACHE_KEY, applyHeroPayload]);
 
   // Refetch hero slides when admin updates media (same tab or another tab via BroadcastChannel).
   useEffect(() => {
@@ -239,10 +286,11 @@ const DynamicHeroImage: React.FC<{
       } catch {
         /* ignore */
       }
+      applyHeroPayload(buildLoadingFallbackHeroState(), false);
       setHeroDataVersion((v) => v + 1);
     };
     return () => channel.close();
-  }, [CACHE_KEY]);
+  }, [CACHE_KEY, applyHeroPayload]);
 
   // Store onEventChange in a ref to avoid dependency issues in the rotation effect
   const onEventChangeRef = React.useRef(onEventChange);
@@ -351,22 +399,24 @@ const DynamicHeroImage: React.FC<{
           durations: durations.map((d) => `${d}ms (${d / 1000}s)`),
         });
 
-        // Wait for the first real slide(s) before revealing the slider (avoids fallback flash).
-        await preloadHeroImages(imageUrls, Math.min(2, imageUrls.length));
-
-        setUpcomingEvents(linkedUpcoming);
-        setHeroSlideEvents(slideEvents);
-        setDynamicImages(imageUrls);
-        setImageDurations(durations);
-        imageDurationsRef.current = durations;
-        dynamicImagesRef.current = imageUrls;
-        upcomingEventsRef.current = linkedUpcoming;
-        heroSlideEventsRef.current = slideEvents;
-        setIsInitialized(true);
+        const urlsChanged = !heroImageUrlsEqual(dynamicImagesRef.current, imageUrls);
+        applyHeroPayload(
+          {
+            dynamicImages: imageUrls,
+            upcomingEvents: linkedUpcoming,
+            heroSlideEvents: slideEvents,
+            imageDurations: durations,
+          },
+          true
+        );
 
         const firstEvent = slideEvents[0] ?? null;
         if (onEventChangeRef.current) {
           onEventChangeRef.current(firstEvent);
+        }
+
+        if (urlsChanged) {
+          void preloadHeroImages(imageUrls, Math.min(2, imageUrls.length));
         }
 
         try {
@@ -385,18 +435,13 @@ const DynamicHeroImage: React.FC<{
         }
       } catch (error) {
         console.error('Failed to initialize hero images:', error);
-        await preloadHeroImages([HERO_FALLBACK_NO_EVENTS_IMAGE], 1);
-        setDynamicImages([HERO_FALLBACK_NO_EVENTS_IMAGE]);
-        setImageDurations([8000]);
-        setUpcomingEvents([]);
-        setHeroSlideEvents([null]);
-        heroSlideEventsRef.current = [null];
-        setIsInitialized(true);
+        applyHeroPayload(buildLoadingFallbackHeroState(), true);
+        void preloadHeroImages([HERO_FALLBACK_NO_EVENTS_IMAGE], 1);
       }
     };
 
     initializeHeroImages();
-  }, [heroFetchEnabled, CACHE_KEY, heroDataVersion, tenantSettings, tenantSettingsLoading]);
+  }, [heroFetchEnabled, CACHE_KEY, heroDataVersion, tenantSettings, tenantSettingsLoading, applyHeroPayload]);
 
   // Update refs whenever state changes to avoid stale closures
   useEffect(() => {
@@ -718,29 +763,30 @@ const DynamicHeroImage: React.FC<{
   }, [finalizeInterruptedCrossfade]);
 
   const showControls = isHovered || isTouched;
-  const hasMultipleImages = dynamicImages.length > 1;
+  const hasMultipleImages = heroLoadComplete && dynamicImages.length > 1;
 
   const kenBurnsDurationMs = (index: number) =>
     imageDurations[index] ?? imageDurations[0] ?? 8000;
 
-  // Hold a neutral frame until hero URLs are resolved and preloaded — never flash the fallback.
-  if (!isInitialized || dynamicImages.length === 0) {
+  // While page/hero data is loading: always show the fallback image (no spinner).
+  if (!heroLoadComplete) {
     return (
-      <div
-        className="relative w-full h-full flex items-center justify-center bg-[#1a0a2e]"
-        aria-busy="true"
-        aria-label="Loading hero images"
-      >
-        <div
-          className="h-10 w-10 rounded-full border-2 border-cyan-300/40 border-t-cyan-200 animate-spin"
-          role="status"
+      <div className="relative w-full h-full flex items-center justify-center">
+        <HeroKenBurnsSlide
+          src={HERO_FALLBACK_NO_EVENTS_IMAGE}
+          alt="Default Hero Image"
+          priority
+          durationMs={8000}
+          slideKey="hero-loading-fallback"
+          isActive
+          solo
         />
-        <span className="sr-only">Loading hero slideshow</span>
       </div>
     );
   }
 
-  const currentImage = dynamicImages[currentImageIndex];
+  const currentImage =
+    dynamicImages[currentImageIndex] ?? dynamicImages[0] ?? HERO_FALLBACK_NO_EVENTS_IMAGE;
 
   return (
     <div

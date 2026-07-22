@@ -403,16 +403,19 @@ function HeaderNavDropdown({
 
   const isAboutActive =
     item.name === 'About' &&
-    item.dropdown.some(
-      (subItem) =>
-        subItem.href === pathname ||
-        (subItem.href === '/#about-us' && pathname === '/' && locationHash === '#about-us') ||
-        (subItem.href === '/team' && pathname === '/team') ||
-        (subItem.href === '/sponsors' && pathname === '/sponsors')
-    );
+    (pathname === '/about' ||
+      (Array.isArray(item.dropdown) &&
+        item.dropdown.some(
+          (subItem) =>
+            subItem.href === pathname ||
+            (subItem.href === '/#about-us' && pathname === '/' && locationHash === '#about-us') ||
+            (subItem.href === '/team' && pathname === '/team') ||
+            (subItem.href === '/sponsors' && pathname === '/sponsors')
+        )));
 
   const isFeaturesActive =
     item.name === 'Features' &&
+    Array.isArray(item.dropdown) &&
     item.dropdown.some(
       (subItem) =>
         subItem.href === pathname ||
@@ -653,14 +656,25 @@ export default function Header({ hideMenuItems = false, variant = 'charity', isT
   const { userId, isLoaded } = useAuth();
   const { user } = useUser();
   const { signOut } = useClerk();
-  const { settings, showTeamSection, loading: settingsLoading } = useTenantSettings();
+  const {
+    settings,
+    showTeamSection,
+    showProfileHero,
+    showProfileWritings,
+    showProfileContact,
+    loading: settingsLoading,
+  } = useTenantSettings();
+  const mounted = useMounted();
+  const locationHash = useLocationHash();
+  const isProfileNav =
+    mounted &&
+    !settingsLoading &&
+    (showProfileHero || showProfileWritings || showProfileContact);
   const [isAdmin, setIsAdmin] = useState(!!isTenantAdmin);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [openMobileDropdowns, setOpenMobileDropdowns] = useState<Record<string, boolean>>({});
   const [headerScrolled, setHeaderScrolled] = useState(false);
-  const mounted = useMounted();
-  const locationHash = useLocationHash();
   // CRITICAL: Check for sign-out flag and call signOut() on satellite domain.
   // Just clearing localStorage is NOT enough — Clerk stores session in HTTP-only cookies
   // that can only be cleared via signOut(). Without this, the avatar/admin menu persist.
@@ -984,32 +998,47 @@ export default function Header({ hideMenuItems = false, variant = 'charity', isT
   }, [pathname]);
 
   // Build About dropdown dynamically based on tenant settings
-  // Only show Team when settings are loaded AND showTeamSection is explicitly true.
-  const aboutDropdown = [
-    { name: 'About Us', href: '/#about-us' }
-  ];
-  if (mounted && !settingsLoading && settings && showTeamSection) {
+  // Profile sites use dedicated /about; event/church sites keep hash + Team/Sponsors.
+  const aboutDropdown = isProfileNav
+    ? [{ name: 'About', href: '/about' }]
+    : [{ name: 'About Us', href: '/#about-us' }];
+  if (!isProfileNav && mounted && !settingsLoading && settings && showTeamSection) {
     aboutDropdown.push({ name: 'Team', href: '/team' });
   }
-  // Always add Sponsors menu item
-  aboutDropdown.push({ name: 'Sponsors', href: '/sponsors' });
+  if (!isProfileNav) {
+    aboutDropdown.push({ name: 'Sponsors', href: '/sponsors' });
+  }
 
-  // Update nav items with dynamic About dropdown
-  // About always has a dropdown now (at minimum "About Us")
-  const navItemsWithDropdown = navItems.map(item => {
+  // Update nav items with dynamic About dropdown and profile-oriented links
+  const navItemsWithDropdown = navItems.flatMap((item) => {
     if (item.name === 'About') {
-      return {
+      const aboutItem = {
         ...item,
-        dropdown: aboutDropdown
+        href: isProfileNav ? '/about' : item.href,
+        dropdown: isProfileNav ? undefined : aboutDropdown,
       };
+      if (isProfileNav && showProfileWritings) {
+        return [
+          aboutItem,
+          { name: 'Perspectives', href: '/#profile-writings', active: false },
+        ];
+      }
+      return [aboutItem];
     }
-    return item;
+    if (item.name === 'Contact') {
+      return [{ ...item, href: isProfileNav ? '/contact' : item.href }];
+    }
+    return [item];
   });
 
   // Update active state based on current route
   const updatedNavItems = navItemsWithDropdown.map(item => ({
     ...item,
-    active: item.href === pathname || (item.href === '/' && (pathname === '/charity-theme' || pathname === '/'))
+    active:
+      item.href === pathname ||
+      (item.href === '/' && (pathname === '/charity-theme' || pathname === '/')) ||
+      (item.href === '/about' && pathname === '/about') ||
+      (item.href === '/contact' && pathname === '/contact'),
   }));
 
   return (

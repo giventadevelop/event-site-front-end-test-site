@@ -7,6 +7,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import ReactDOM from 'react-dom';
 import { getApiBaseUrl } from '@/lib/env';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Modal, { ConfirmModal } from '@/components/ui/Modal';
 import ImageUpload from '@/components/ui/ImageUpload';
@@ -1172,12 +1173,16 @@ export default function EventSponsorsPage() {
           <div className="flex-1 min-w-64">
             <div className="relative">
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
+              <AdminListSearchCombobox
+                items={eventSponsors}
+                committedValue={searchTerm}
+                onCommit={setSearchTerm}
+                getSearchFields={(s) => [s.sponsor?.name, s.sponsor?.companyName, s.sponsor?.type, s.sponsor?.id, s.id]}
+                getCommitValue={(s) => s.sponsor?.name || String(s.sponsor?.id ?? s.id ?? '')}
+                formatPrimary={(s) => s.sponsor?.name || 'Unknown'}
+                formatSecondary={(s) => [s.sponsor?.companyName, s.sponsor?.type].filter(Boolean).join(' · ')}
                 placeholder="Search event sponsors..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                inputClassName="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
@@ -1345,12 +1350,16 @@ export default function EventSponsorsPage() {
             <div className="flex-1 min-w-64">
               <div className="relative">
                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
+                <AdminListSearchCombobox
+                  items={availableSponsors}
+                  committedValue={availableSponsorsSearchTerm}
+                  onCommit={handleAvailableSponsorsSearch}
+                  getSearchFields={(s) => [s.name, s.companyName, s.type, s.id]}
+                  getCommitValue={(s) => s.name || String(s.id ?? '')}
+                  formatPrimary={(s) => s.name || 'Unknown'}
+                  formatSecondary={(s) => [s.companyName, s.type].filter(Boolean).join(' · ')}
                   placeholder="Search available sponsors..."
-                  value={availableSponsorsSearchTerm}
-                  onChange={(e) => handleAvailableSponsorsSearch(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  inputClassName="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>

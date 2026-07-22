@@ -8,6 +8,7 @@ import {
   AdminHoverTooltipPortal,
   useAdminHoverTooltip,
 } from '@/components/admin/AdminHoverTooltip';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 
 interface TenantOrganizationListProps {
   initialData?: TenantOrganizationDTO[];
@@ -96,7 +97,7 @@ export default function TenantOrganizationList({
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(20);
 
   // Filter state
   const [filters, setFilters] = useState<TenantOrganizationFilters>({
@@ -278,12 +279,16 @@ export default function TenantOrganizationList({
           <div className="flex-1">
             <div className="relative">
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-              <input
-                type="text"
+              <AdminListSearchCombobox
+                items={organizations}
+                committedValue={filters.search || ''}
+                onCommit={handleSearch}
                 placeholder="Search by organization name or domain..."
-                value={filters.search || ''}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-xs sm:text-sm"
+                inputClassName="pl-10 pr-10 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-xs sm:text-sm"
+                getSearchFields={(org) => [org.organizationName, org.domain, org.tenantId, org.id]}
+                getCommitValue={(org) => org.organizationName || org.domain || org.tenantId || ''}
+                formatPrimary={(org) => org.organizationName || 'Organization'}
+                formatSecondary={(org) => [org.domain, org.tenantId, org.id != null ? `ID: ${org.id}` : null].filter(Boolean).join(' · ')}
               />
             </div>
           </div>

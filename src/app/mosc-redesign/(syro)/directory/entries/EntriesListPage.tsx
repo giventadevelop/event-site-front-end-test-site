@@ -5,6 +5,9 @@ import { getDirectoryEntriesData } from './getDirectoryEntriesData';
 import type { DirectoryEntry, DirectoryEntryType } from './types';
 import { DIRECTORY_ENTRY_TYPE_LABELS } from './types';
 import SyroPageBanner from '../../components/SyroPageBanner';
+import LiveUrlSearch from '../../components/LiveUrlSearch';
+import DirectoryPagination from '../components/DirectoryPagination';
+import DirectoryBackLink from '../components/DirectoryBackLink';
 
 const PAGE_SIZE = 20;
 
@@ -54,26 +57,12 @@ export default async function EntriesListPage({ directoryType, searchParams }: P
 
       <section className="py-12 bg-syro-bg-gray">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-6" role="search" aria-label={`Search ${title.toLowerCase()} by name`}>
-            <form method="get" action={basePath} className="flex flex-wrap gap-2 items-center">
-              <label htmlFor="entries-name-search" className="sr-only">Search by name</label>
-              <input
-                id="entries-name-search"
-                type="search"
-                name="q"
-                defaultValue={nameSearch ?? ''}
-                placeholder="Search by name..."
-                className="font-body flex-1 min-w-[200px] px-4 py-2 border border-syro-table-border rounded-lg bg-white text-syro-blue placeholder:text-syro-dark-gray focus:outline-none focus:ring-2 focus:ring-syro-red focus:ring-offset-2"
-              />
-              <button type="submit" className="syro-primary-button inline-flex items-center gap-2 px-4 py-2">
-                Search
-              </button>
-              {hasSearch && (
-                <Link href={basePath} className="font-body text-sm text-syro-dark-gray hover:text-syro-red hover:underline">
-                  Clear search
-                </Link>
-              )}
-            </form>
+          <div className="mb-6">
+            <LiveUrlSearch
+              id="entries-name-search"
+              ariaLabel={`Search ${title.toLowerCase()} by name`}
+              placeholder="Search by name..."
+            />
           </div>
 
           {entries.length === 0 ? (
@@ -81,9 +70,7 @@ export default async function EntriesListPage({ directoryType, searchParams }: P
               <p className="font-body text-syro-dark-gray">
                 No entries in this section yet. Data is loaded from the directory API.
               </p>
-              <Link href="/mosc-redesign/directory" className="inline-block no-underline font-light text-white bg-[#dc3545] py-2.5 px-5 border-r-[7px] border-r-[#be1929] mt-4 transition-[1s] hover:bg-[#be1929] hover:border-r-[6px] hover:border-r-[#dc3545] hover:text-white">
-                ← Back to Directory
-              </Link>
+              <DirectoryBackLink href="/mosc-redesign/directory" label="Back to Directory" className="mt-4" />
             </div>
           ) : (
             <>
@@ -92,31 +79,16 @@ export default async function EntriesListPage({ directoryType, searchParams }: P
                   <EntryCard key={entry.documentId} entry={entry} />
                 ))}
               </ul>
-              {pagination.pageCount > 1 && (
-                <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
-                  <span className="font-body text-sm text-syro-dark-gray">
-                    Page {pagination.page} of {pagination.pageCount}
-                  </span>
-                  <div className="flex gap-3">
-                    {pagination.page > 1 && (
-                      <Link
-                        href={buildUrl(directoryType, pagination.page - 1, nameSearch)}
-                        className="px-4 py-2 bg-syro-red/10 text-syro-blue font-body font-medium rounded-lg hover:bg-syro-red/20 reverent-transition"
-                      >
-                        Previous
-                      </Link>
-                    )}
-                    {pagination.page < pagination.pageCount && (
-                      <Link
-                        href={buildUrl(directoryType, pagination.page + 1, nameSearch)}
-                        className="px-4 py-2 bg-syro-red/10 text-syro-blue font-body font-medium rounded-lg hover:bg-syro-red/20 reverent-transition"
-                      >
-                        Next
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              )}
+              <DirectoryPagination
+                page={pagination.page}
+                pageCount={pagination.pageCount}
+                total={pagination.total}
+                pageSize={PAGE_SIZE}
+                itemsOnPage={entries.length}
+                buildPageHref={(p) => buildUrl(directoryType, p, nameSearch)}
+                itemLabel="entries"
+                emptyLabel="No entries found"
+              />
             </>
           )}
         </div>
@@ -129,17 +101,22 @@ function EntryCard({ entry }: { entry: DirectoryEntry }) {
   return (
     <li className="h-full bg-white rounded-lg overflow-hidden sacred-shadow-sm border-l-4 border-syro-red hover:sacred-shadow reverent-transition shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px]">
       <Link href={`/mosc-redesign/directory/entry/${entry.documentId}`} className="flex gap-4 p-6 group h-full">
-        {entry.imageUrl && (
-          <div className="relative w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-syro-bg-gray">
+        <div className="relative w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-syro-bg-gray flex items-center justify-center">
+          {entry.imageUrl ? (
             <Image
               src={entry.imageUrl}
               alt={entry.imageAlt ?? entry.name}
               fill
               className="object-cover"
               sizes="96px"
+              unoptimized={entry.imageUrl.startsWith('http')}
             />
-          </div>
-        )}
+          ) : (
+            <svg className="w-10 h-10 text-syro-dark-gray/40" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          )}
+        </div>
         <div className="min-w-0 flex-1">
           <h2 className="font-heading font-semibold text-xl text-syro-blue group-hover:text-syro-red reverent-transition">
             {entry.name}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 // import {
 //   FaPlus,
 //   FaEdit,
@@ -190,14 +191,18 @@ export default function MessageTemplatesManager() {
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <span className="text-gray-400" role="img" aria-label="Search">🔍</span>
           </div>
-          <input
-            id="template-search"
-            type="text"
+          <AdminListSearchCombobox
+            items={templates}
+            committedValue={searchTerm}
+            onCommit={setSearchTerm}
+            getSearchFields={(t) => [t.name, t.category, t.id]}
+            getCommitValue={(t) => t.name || String(t.id ?? '')}
+            formatPrimary={(t) => t.name}
+            formatSecondary={(t) => t.category}
             placeholder="Search templates..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            aria-describedby="search-help"
+            inputId="template-search"
+            inputClassName="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            ariaLabel="Search message templates"
           />
           <span id="search-help" className="sr-only">
             Search by template name, category, or content

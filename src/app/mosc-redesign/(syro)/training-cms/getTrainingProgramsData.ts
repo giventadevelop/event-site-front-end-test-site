@@ -12,7 +12,16 @@ import {
 } from '@/lib/strapi';
 import { findByStrapiSlug, unwrapStrapiRecord } from '@/lib/strapi/unwrapRecord';
 import { getMediaUrl, getMediaAlt } from '@/app/mosc-redesign/(syro)/directory/lib/strapiMedia';
-import type { TrainingProgramEntry, TrainingProgramsListResult } from './types';
+import {
+  EMPTY_DIRECTORY_PAGINATION,
+  DIRECTORY_PAGE_SIZE,
+  type DirectoryListPagination,
+} from '@/app/mosc-redesign/(syro)/directory/types/listPagination';
+import type {
+  TrainingProgramEntry,
+  TrainingProgramsListOptions,
+  TrainingProgramsListResult,
+} from './types';
 
 const DEFAULT_IMAGE_BY_SLUG: Record<string, string> = {
   'sruti-school-of-liturgical-music': '/images/training/sruti.jpg',
@@ -100,39 +109,169 @@ function parseEntry(raw: Record<string, unknown>, baseUrl: string): TrainingProg
   };
 }
 
+function filterDefaultPrograms(nameSearch?: string): TrainingProgramEntry[] {
+  const q = nameSearch?.trim().toLowerCase();
+  if (!q) return DEFAULT_PROGRAMS;
+  return DEFAULT_PROGRAMS.filter((p) => p.name.toLowerCase().includes(q));
+}
 
-export async function getTrainingProgramsData(): Promise<TrainingProgramsListResult> {
+function paginateDefaults(
+  entries: TrainingProgramEntry[],
+  page: number,
+  pageSize: number
+): TrainingProgramsListResult {
+  const total = entries.length;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const safePage = Math.min(Math.max(1, page), pageCount);
+  const start = (safePage - 1) * pageSize;
+  const slice = entries.slice(start, start + pageSize);
+  return {
+    entries: slice,
+    pagination: {
+      page: safePage,
+      pageCount: total === 0 ? 0 : pageCount,
+      pageSize,
+      total,
+    },
+  };
+}
+
+const EMPTY_LIST: TrainingProgramsListResult = {
+  entries: [],
+  pagination: EMPTY_DIRECTORY_PAGINATION,
+};
+
+function buildBaseParams(tenantId: string, nameSearch?: string): URLSearchParams {
+  const params = new URLSearchParams();
+  params.set('filters[tenant][tenantId][$eq]', tenantId);
+  const nameQuery = nameSearch?.trim();
+  if (nameQuery) {
+    params.set('filters[name][$containsi]', nameQuery);
+  }
+  params.set('sort', 'order:asc,name:asc');
+  params.set('populate[0]', 'image');
+  return params;
+}
+
+export async function getTrainingProgramsData(
+  options?: TrainingProgramsListOptions
+): Promise<TrainingProgramsListResult> {
   const baseUrl = getStrapiUrl();
   const base = getStrapiApiBase();
   const tenantId = getStrapiTenantId();
+
+  const loadAll =
+    options?.loadAll === true ||
+    options == null ||
+    (options.page == null && options.pageSize == null && !options.nameSearch?.trim());
+
+  const page = Math.max(1, options?.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, options?.pageSize ?? DIRECTORY_PAGE_SIZE));
+
   if (!baseUrl || !base || !tenantId) {
-    return { entries: DEFAULT_PROGRAMS };
+    const filtered = filterDefaultPrograms(options?.nameSearch);
+    if (loadAll) {
+      return {
+        entries: filtered,
+        pagination: {
+          page: 1,
+          pageCount: 1,
+          pageSize: filtered.length,
+          total: filtered.length,
+        },
+      };
+    }
+    return paginateDefaults(filtered, page, pageSize);
   }
 
-  const params = new URLSearchParams();
-  params.set('filters[tenant][tenantId][$eq]', tenantId);
-  params.set('sort', 'order:asc,name:asc');
-  params.set('populate[0]', 'image');
-  params.set('pagination[pageSize]', '100');
-
-  const url = `${base}/training-programs?${params.toString()}`;
-
   try {
+    if (!loadAll) {
+      const params = buildBaseParams(tenantId, options?.nameSearch);
+      params.set('pagination[page]', String(page));
+      params.set('pagination[pageSize]', String(pageSize));
+
+      const url = `${base}/training-programs?${params.toString()}`;
+      const res = await fetch(url, {
+        headers: getStrapiHeaders(),
+        cache: 'no-store',
+      });
+      if (!res.ok) {
+        return paginateDefaults(filterDefaultPrograms(options?.nameSearch), page, pageSize);
+      }
+      const json = (await res.json()) as {
+        data?: unknown[];
+        meta?: {
+          pagination?: {
+            page?: number;
+            pageCount?: number;
+            pageSize?: number;
+            total?: number;
+          };
+        };
+      };
+      const list = Array.isArray(json?.data) ? json.data : [];
+      const entries = list
+        .filter((item): item is Record<string, unknown> => item != null && typeof item === 'object')
+        .map((item) => parseEntry(item, baseUrl));
+      if (entries.length === 0 && !options?.nameSearch?.trim()) {
+        return paginateDefaults(DEFAULT_PROGRAMS, page, pageSize);
+      }
+      const meta = json?.meta?.pagination;
+      const pagination: DirectoryListPagination = {
+        page: meta?.page ?? page,
+        pageCount: meta?.pageCount ?? 0,
+        pageSize: meta?.pageSize ?? pageSize,
+        total: meta?.total ?? 0,
+      };
+      return { entries, pagination };
+    }
+
+    const params = buildBaseParams(tenantId);
+    params.set('pagination[pageSize]', '100');
+    const url = `${base}/training-programs?${params.toString()}`;
     const res = await fetch(url, {
       headers: getStrapiHeaders(),
       cache: 'no-store',
     });
     if (!res.ok) {
-      return { entries: DEFAULT_PROGRAMS };
+      return {
+        entries: DEFAULT_PROGRAMS,
+        pagination: {
+          page: 1,
+          pageCount: 1,
+          pageSize: DEFAULT_PROGRAMS.length,
+          total: DEFAULT_PROGRAMS.length,
+        },
+      };
     }
     const json = (await res.json()) as { data?: unknown[] };
     const list = Array.isArray(json?.data) ? json.data : [];
     const entries = list
       .filter((item): item is Record<string, unknown> => item != null && typeof item === 'object')
       .map((item) => parseEntry(item, baseUrl));
-    return { entries: entries.length > 0 ? entries : DEFAULT_PROGRAMS };
+    const finalEntries = entries.length > 0 ? entries : DEFAULT_PROGRAMS;
+    return {
+      entries: finalEntries,
+      pagination: {
+        page: 1,
+        pageCount: 1,
+        pageSize: finalEntries.length,
+        total: finalEntries.length,
+      },
+    };
   } catch {
-    return { entries: DEFAULT_PROGRAMS };
+    if (loadAll) {
+      return {
+        entries: DEFAULT_PROGRAMS,
+        pagination: {
+          page: 1,
+          pageCount: 1,
+          pageSize: DEFAULT_PROGRAMS.length,
+          total: DEFAULT_PROGRAMS.length,
+        },
+      };
+    }
+    return paginateDefaults(filterDefaultPrograms(options?.nameSearch), page, pageSize);
   }
 }
 
@@ -152,7 +291,7 @@ export async function getTrainingProgramBySlug(slug: string): Promise<TrainingPr
     tenantId,
     populate: ['image'],
     parse: parseEntry,
-    fetchList: async () => (await getTrainingProgramsData()).entries,
+    fetchList: async () => (await getTrainingProgramsData({ loadAll: true })).entries,
     isValid: (entry) => Boolean(entry.slug || entry.name),
   });
 

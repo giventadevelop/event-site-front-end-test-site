@@ -514,16 +514,64 @@ export async function fetchGalleryCategoriesForGallery(): Promise<GalleryCategor
 }
 
 /**
+ * Slim album fetch for filter options — no per-album media requests.
+ * Bounded to 200 rows; if more public albums exist, options may be incomplete.
+ */
+async function fetchAlbumDtosForFilterOptions(): Promise<GalleryAlbumDTO[]> {
+  const tenantId = getTenantId();
+  const params = new URLSearchParams();
+  params.append('tenantId.equals', tenantId);
+  params.append('isPublic.equals', 'true');
+  params.append('page', '0');
+  params.append('size', '200');
+  params.append('sort', 'albumYear,desc');
+
+  const url = `${getApiBase()}/api/gallery-albums?${params.toString()}`;
+  const res = await fetchWithJwtRetry(url, { cache: 'no-store' });
+
+  if (!res.ok) {
+    console.error('Failed to fetch albums for filter options:', res.status, res.statusText);
+    return [];
+  }
+
+  const data: GalleryAlbumDTO[] = await res.json();
+  return Array.isArray(data) ? data : [];
+}
+
+/**
+ * Slim event fetch for filter options — no per-event media requests.
+ * Bounded to 200 rows; if more active events exist, options may be incomplete.
+ */
+async function fetchEventDtosForFilterOptions(): Promise<EventDetailsDTO[]> {
+  const tenantId = getTenantId();
+  const params = new URLSearchParams();
+  params.append('tenantId.equals', tenantId);
+  params.append('isActive.equals', 'true');
+  params.append('page', '0');
+  params.append('size', '200');
+  params.append('sort', 'startDate,desc');
+
+  const url = `${getApiBase()}/api/event-details?${params.toString()}`;
+  const res = await fetchWithJwtRetry(url, { cache: 'no-store' });
+
+  if (!res.ok) {
+    console.error('Failed to fetch events for filter options:', res.status, res.statusText);
+    return [];
+  }
+
+  const data: EventDetailsDTO[] = await res.json();
+  return Array.isArray(data) ? data : [];
+}
+
+/**
  * Distinct filter dropdown values from public gallery albums.
  */
 export async function fetchGalleryAlbumFilterOptions(): Promise<GalleryAlbumFilterOptions> {
   try {
-    const [categories, albumsResult] = await Promise.all([
+    const [categories, albums] = await Promise.all([
       fetchGalleryCategoriesForGallery(),
-      fetchAlbumsForGallery(0, 500),
+      fetchAlbumDtosForFilterOptions(),
     ]);
-
-    const albums = albumsResult.albumsWithMedia.map((item) => item.album);
 
     return {
       categories,
@@ -541,8 +589,7 @@ export async function fetchGalleryAlbumFilterOptions(): Promise<GalleryAlbumFilt
  */
 export async function fetchGalleryEventFilterOptions(): Promise<GalleryEventFilterOptions> {
   try {
-    const eventsResult = await fetchEventsForGallery(0, 500);
-    const events = eventsResult.eventsWithMedia.map((item) => item.event);
+    const events = await fetchEventDtosForFilterOptions();
 
     const eventTypeMap = new Map<number, string>();
     for (const event of events) {

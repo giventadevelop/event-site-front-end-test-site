@@ -1,3 +1,5 @@
+import type { DirectoryListPagination } from '@/app/mosc-redesign/(syro)/directory/types/listPagination';
+
 export interface TheologicalSeminaryEntry {
   documentId: string;
   name: string;
@@ -18,4 +20,12 @@ export interface TheologicalSeminaryEntry {
 
 export interface TheologicalSeminaryEntriesListResult {
   entries: TheologicalSeminaryEntry[];
+  pagination: DirectoryListPagination;
 }
+
+export type TheologicalSeminaryListOptions = {
+  nameSearch?: string;
+  page?: number;
+  pageSize?: number;
+  loadAll?: boolean;
+};

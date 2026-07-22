@@ -6,6 +6,7 @@ import DateRangeSelector, { type DateRange } from '@/components/admin/DateRangeS
 import EventSearchSelector from '@/components/admin/EventSearchSelector';
 import { fetchSalesDataServer, calculateSalesMetricsServer, triggerStripeFeesTaxUpdateServer, fetchEventDetailsForPaymentFlow, type SalesMetrics, type StripeFeesTaxUpdateRequest, type StripeFeesTaxUpdateResponse } from './ApiServerActions';
 import type { EventTicketTransactionDTO, EventDetailsDTO } from '@/types';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 import { FaDollarSign, FaChartLine, FaSpinner, FaDownload, FaSearch, FaPercent, FaMoneyBillWave, FaSync, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
 
 interface SalesAnalyticsClientProps {
@@ -1147,12 +1148,16 @@ export default function SalesAnalyticsClient({
               {/* Search */}
               <div className="relative">
                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                <AdminListSearchCombobox
+                  items={salesData}
+                  committedValue={searchQuery}
+                  onCommit={setSearchQuery}
                   placeholder="Search by name, email, or ID..."
-                  className="pl-10 pr-4 py-2 border border-gray-400 rounded-lg focus:border-blue-500 focus:ring-blue-500 w-full sm:w-64"
+                  inputClassName="pl-10 pr-10 py-2 border border-gray-400 rounded-lg focus:border-blue-500 focus:ring-blue-500 w-full sm:w-64"
+                  getSearchFields={(t) => [t.firstName, t.lastName, t.email, t.id]}
+                  getCommitValue={(t) => `${t.firstName ?? ''} ${t.lastName ?? ''}`.trim() || t.email || t.id?.toString() || ''}
+                  formatPrimary={(t) => `${t.firstName ?? ''} ${t.lastName ?? ''}`.trim() || t.email || (t.id != null ? `Transaction #${t.id}` : 'Transaction')}
+                  formatSecondary={(t) => [t.email, t.id != null ? `ID: ${t.id}` : null].filter(Boolean).join(' · ')}
                 />
               </div>
               {/* Export Buttons */}

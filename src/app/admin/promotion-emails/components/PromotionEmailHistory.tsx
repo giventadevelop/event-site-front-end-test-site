@@ -20,7 +20,7 @@ export default function PromotionEmailHistory({
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
-  const [pageSize] = useState(10);
+  const [pageSize] = useState(20);
   const [filters, setFilters] = useState({
     eventId: eventId,
     templateId: templateId,

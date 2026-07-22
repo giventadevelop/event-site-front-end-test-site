@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
@@ -8,6 +9,7 @@ import Footer from "../components/Footer";
 import ConditionalLayout from "../components/ConditionalLayout";
 import ClerkSyncUrlCleanup from "../components/ClerkSyncUrlCleanup";
 import ClerkSatelliteSyncGate from "../components/ClerkSatelliteSyncGate";
+import BrowserTabTitle from "../components/BrowserTabTitle";
 import MobileDebugConsole from "../components/MobileDebugConsole";
 import TenantIdInjector from "../components/TenantIdInjector";
 import { TenantSettingsProvider } from "../components/TenantSettingsProvider";
@@ -19,6 +21,16 @@ import { isAdminRole } from "@/lib/utils";
 import { resolveIsTenantAdmin } from "@/lib/resolveTenantAdminStatus";
 import { getClerkSatelliteHost, isSatelliteHostname } from "@/lib/clerkSatellite";
 import { getSharedAdsensePublisherIdForMeta } from "@/lib/adsense/sharedPublisherId";
+
+/** Default tab / SEO titles; pages may override. BrowserTabTitle fills unique titles per route. */
+export const metadata: Metadata = {
+  title: {
+    default: 'Home | Event Site Manager',
+    template: '%s | Event Site Manager',
+  },
+  description: 'Event management, ticketing, membership, and church website for your organization.',
+  applicationName: 'Event Site Manager',
+};
 
 const DEBUG_LAYOUT = process.env.NEXT_PUBLIC_DEBUG_LAYOUT === 'true';
 const debugLog = (...args: unknown[]) => { if (DEBUG_LAYOUT) console.log(...args); };
@@ -406,6 +418,7 @@ export default async function RootLayout({
           <ClerkProvider publishableKey={CLERK_KEY} {...clerkProps}>
           <ClerkSyncUrlCleanup />
           <ClerkSatelliteSyncGate />
+          <BrowserTabTitle />
           <TenantIdInjector />
           <TrpcProvider>
             <TenantSettingsProvider>
@@ -443,6 +456,7 @@ export default async function RootLayout({
           <>
           <ClerkSyncUrlCleanup />
           <ClerkSatelliteSyncGate />
+          <BrowserTabTitle />
           <TenantIdInjector />
           <TrpcProvider>
             <TenantSettingsProvider>

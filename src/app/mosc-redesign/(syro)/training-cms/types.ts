@@ -1,3 +1,5 @@
+import type { DirectoryListPagination } from '@/app/mosc-redesign/(syro)/directory/types/listPagination';
+
 export interface TrainingProgramEntry {
   documentId: string;
   name: string;
@@ -15,4 +17,12 @@ export interface TrainingProgramEntry {
 
 export interface TrainingProgramsListResult {
   entries: TrainingProgramEntry[];
+  pagination: DirectoryListPagination;
 }
+
+export type TrainingProgramsListOptions = {
+  nameSearch?: string;
+  page?: number;
+  pageSize?: number;
+  loadAll?: boolean;
+};

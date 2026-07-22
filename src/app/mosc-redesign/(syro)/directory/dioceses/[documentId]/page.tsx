@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { getDioceseByDocumentId } from '../getDiocesesData';
 import { getParishesData } from '../../parishes/getParishesData';
 import SyroPageBanner from '../../../components/SyroPageBanner';
+import DirectoryBackLink from '../../components/DirectoryBackLink';
 
 type PageProps = { params: Promise<{ documentId: string }> };
 
@@ -31,19 +32,14 @@ export default async function DioceseDetailPage({ params }: PageProps) {
   });
   const parishTotal = parishPagination.total;
   const hasParishes = parishTotal > 0;
-  const parishesListHref = `/mosc-redesign/directory/parishes?diocese=${encodeURIComponent(documentId)}`;
+  const parishesListHref = `/mosc-redesign/parishes-cms?diocese=${encodeURIComponent(documentId)}`;
 
   return (
     <div className="min-h-screen bg-syro-bg-gray">
       <SyroPageBanner title={diocese.name} breadcrumbFrom="directory" />
       <section className="relative bg-syro-bg-gray py-8 lg:py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link
-            href="/mosc-redesign/directory/dioceses"
-            className="inline-block no-underline font-light text-white bg-[#dc3545] py-2.5 px-5 border-r-[7px] border-r-[#be1929] mb-4 transition-[1s] hover:bg-[#be1929] hover:border-r-[6px] hover:border-r-[#dc3545] hover:text-white"
-          >
-            ← Back to Dioceses
-          </Link>
+          <DirectoryBackLink href="/mosc-redesign/dioceses-cms" label="Back to Dioceses" />
           <div className="flex flex-col sm:flex-row gap-6 items-start">
             {diocese.imageUrl && (
               <div className="relative w-40 h-40 flex-shrink-0 rounded-xl overflow-hidden bg-syro-bg-gray sacred-shadow">
@@ -113,23 +109,15 @@ export default async function DioceseDetailPage({ params }: PageProps) {
                 </p>
                 <Link
                   href={parishesListHref}
-                  className="inline-flex items-center gap-2 no-underline font-light text-white bg-[#dc3545] py-2.5 px-5 border-r-[7px] border-r-[#be1929] transition-[1s] hover:bg-[#be1929] hover:border-r-[6px] hover:border-r-[#dc3545] hover:text-white"
+                  className="syro-primary-button inline-flex items-center gap-2 w-fit"
                 >
-                  View paginated list of parishes
+                  <span>View paginated list of parishes</span>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
                 </Link>
               </div>
             )}
-          </div>
-          <div className="mt-8">
-            <Link
-            href="/mosc-redesign/directory/dioceses"
-            className="inline-block no-underline font-light text-white bg-[#dc3545] py-2.5 px-5 border-r-[7px] border-r-[#be1929] mt-4 transition-[1s] hover:bg-[#be1929] hover:border-r-[6px] hover:border-r-[#dc3545] hover:text-white inline-flex items-center gap-1"
-          >
-            ← Back to Dioceses
-          </Link>
           </div>
         </div>
       </section>

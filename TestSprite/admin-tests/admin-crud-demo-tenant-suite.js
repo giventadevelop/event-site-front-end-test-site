@@ -72,6 +72,38 @@ async function gotoOk(page, baseUrl, route, timeout) {
  * Generic: open list page, try create/new link, fill a name field, save, then try delete.
  * Soft-fails individual steps with skip/fail recorded — does not throw for missing UI.
  */
+/**
+ * Hard cap per module: Playwright calls like page.evaluate can hang forever when a
+ * reload races them; the watchdog fails the module, recreates the page, and moves on.
+ */
+const MODULE_WATCHDOG_MS = 120000;
+
+async function crudModuleGuarded(pageRef, baseUrl, timeout, tracker, opts) {
+  const guard = { cancelled: false };
+  let timer;
+  const watchdog = new Promise((resolve) => {
+    timer = setTimeout(() => resolve('watchdog'), MODULE_WATCHDOG_MS);
+  });
+  const outcome = await Promise.race([
+    crudModule(pageRef.page, baseUrl, timeout, tracker, opts, guard).then(() => 'done'),
+    watchdog,
+  ]);
+  clearTimeout(timer);
+  if (outcome === 'watchdog') {
+    guard.cancelled = true;
+    tracker.record({
+      path: opts.listPath,
+      status: 'fail',
+      kind: 'crud',
+      message: `${opts.id}: watchdog timeout after ${MODULE_WATCHDOG_MS / 1000}s (page hang) — page recreated`,
+      durationMs: MODULE_WATCHDOG_MS,
+    });
+    console.log(`  ✗ ${opts.id}: watchdog timeout (${MODULE_WATCHDOG_MS / 1000}s) — page recreated`);
+    await pageRef.page.close({ runBeforeUnload: false }).catch(() => {});
+    pageRef.page = await pageRef.context.newPage();
+  }
+}
+
 async function crudModule(page, baseUrl, timeout, tracker, {
   id,
   listPath,
@@ -95,7 +127,7 @@ async function crudModule(page, baseUrl, timeout, tracker, {
     'button:has-text("Delete")',
   ],
   readOnly = false,
-}) {
+}, guard = { cancelled: false }) {
   const start = Date.now();
   try {
     const { check } = await gotoOk(page, baseUrl, listPath, timeout);
@@ -199,6 +231,7 @@ async function crudModule(page, baseUrl, timeout, tracker, {
     ].join(', ');
 
     // Pass if list loaded; mark skip if UI lacked create form (still covered as smoke)
+    if (guard.cancelled) return;
     const status = check.ok && (filled || readOnly) ? 'pass' : check.ok ? 'skip' : 'fail';
     tracker.record({
       path: listPath,
@@ -210,6 +243,7 @@ async function crudModule(page, baseUrl, timeout, tracker, {
     });
     console.log(`  ${status === 'pass' ? '✓' : status === 'skip' ? '○' : '✗'} ${id}: ${msg}`);
   } catch (err) {
+    if (guard.cancelled) return;
     tracker.record({
       path: listPath,
       status: 'fail',
@@ -232,17 +266,17 @@ async function main() {
   let context;
   try {
     context = await getAuthContext(browser, config);
-    const page = await context.newPage();
+    const pageRef = { context, page: await context.newPage() };
 
     console.log('\n[crud] Running demo-tenant CRUD modules…');
 
-    await crudModule(page, config.baseUrl, config.timeout, tracker, {
+    await crudModuleGuarded(pageRef, config.baseUrl, config.timeout, tracker, {
       id: 'manage-usage',
       listPath: '/admin/manage-usage',
       readOnly: true,
     });
 
-    await crudModule(page, config.baseUrl, config.timeout, tracker, {
+    await crudModuleGuarded(pageRef, config.baseUrl, config.timeout, tracker, {
       id: 'manage-events',
       listPath: '/admin/manage-events',
       createPath: '/admin/events/new',
@@ -250,11 +284,11 @@ async function main() {
     });
 
     if (ids.eventId) {
-      await crudModule(page, config.baseUrl, config.timeout, tracker, {
+      await crudModuleGuarded(pageRef, config.baseUrl, config.timeout, tracker, {
         id: 'ticket-types',
         listPath: `/admin/events/${ids.eventId}/ticket-types/list`,
       });
-      await crudModule(page, config.baseUrl, config.timeout, tracker, {
+      await crudModuleGuarded(pageRef, config.baseUrl, config.timeout, tracker, {
         id: 'discount-codes',
         listPath: `/admin/events/${ids.eventId}/discount-codes/list`,
       });
@@ -267,78 +301,78 @@ async function main() {
       });
     }
 
-    await crudModule(page, config.baseUrl, config.timeout, tracker, {
+    await crudModuleGuarded(pageRef, config.baseUrl, config.timeout, tracker, {
       id: 'membership-plans',
       listPath: '/admin/membership/plans',
       nameSelectors: ['input[name="name"]', 'input[name="title"]', 'input[id*="name" i]'],
     });
 
-    await crudModule(page, config.baseUrl, config.timeout, tracker, {
+    await crudModuleGuarded(pageRef, config.baseUrl, config.timeout, tracker, {
       id: 'focus-groups',
       listPath: '/admin/focus-groups',
       createPath: '/admin/focus-groups/new',
     });
 
-    await crudModule(page, config.baseUrl, config.timeout, tracker, {
+    await crudModuleGuarded(pageRef, config.baseUrl, config.timeout, tracker, {
       id: 'gallery-albums',
       listPath: '/admin/gallery/albums',
     });
 
-    await crudModule(page, config.baseUrl, config.timeout, tracker, {
+    await crudModuleGuarded(pageRef, config.baseUrl, config.timeout, tracker, {
       id: 'event-sponsors',
       listPath: '/admin/event-sponsors',
     });
 
-    await crudModule(page, config.baseUrl, config.timeout, tracker, {
+    await crudModuleGuarded(pageRef, config.baseUrl, config.timeout, tracker, {
       id: 'event-featured-performers',
       listPath: '/admin/event-featured-performers',
     });
 
-    await crudModule(page, config.baseUrl, config.timeout, tracker, {
+    await crudModuleGuarded(pageRef, config.baseUrl, config.timeout, tracker, {
       id: 'event-contacts',
       listPath: '/admin/event-contacts',
     });
 
-    await crudModule(page, config.baseUrl, config.timeout, tracker, {
+    await crudModuleGuarded(pageRef, config.baseUrl, config.timeout, tracker, {
       id: 'event-program-directors',
       listPath: '/admin/event-program-directors',
     });
 
-    await crudModule(page, config.baseUrl, config.timeout, tracker, {
+    await crudModuleGuarded(pageRef, config.baseUrl, config.timeout, tracker, {
       id: 'tenant-organizations',
       listPath: '/admin/tenant-management/organizations',
       createPath: '/admin/tenant-management/organizations/new',
     });
 
-    await crudModule(page, config.baseUrl, config.timeout, tracker, {
+    await crudModuleGuarded(pageRef, config.baseUrl, config.timeout, tracker, {
       id: 'tenant-settings',
       listPath: '/admin/tenant-management/settings',
       createPath: '/admin/tenant-management/settings/new',
     });
 
-    await crudModule(page, config.baseUrl, config.timeout, tracker, {
+    await crudModuleGuarded(pageRef, config.baseUrl, config.timeout, tracker, {
       id: 'polls',
       listPath: '/admin/polls',
     });
 
-    await crudModule(page, config.baseUrl, config.timeout, tracker, {
+    await crudModuleGuarded(pageRef, config.baseUrl, config.timeout, tracker, {
       id: 'official-documents',
       listPath: '/admin/official-documents',
     });
 
-    await crudModule(page, config.baseUrl, config.timeout, tracker, {
+    await crudModuleGuarded(pageRef, config.baseUrl, config.timeout, tracker, {
       id: 'official-document-categories',
       listPath: '/admin/official-document-categories',
     });
 
     // Test Stripe — smoke only
-    await crudModule(page, config.baseUrl, config.timeout, tracker, {
+    await crudModuleGuarded(pageRef, config.baseUrl, config.timeout, tracker, {
       id: 'test-stripe',
       listPath: '/admin/test-stripe',
       readOnly: true,
     });
 
-    await page.close();
+    await pageRef.page.close();
   } finally {
     if (context) await context.close();
     await browser.close();

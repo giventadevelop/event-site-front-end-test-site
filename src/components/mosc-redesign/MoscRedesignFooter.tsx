@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useTenantSettings } from '@/components/TenantSettingsProvider';
-import { MOSC_REDESIGN_FOOTER_QUICK_LINKS } from './navConfig';
+import { MOSC_REDESIGN_FOOTER_QUICK_LINKS, moscRedesignNavPrefetch } from './navConfig';
 import { InstagramIcon } from '@/components/icons/InstagramIcon';
 import { buildContactFormPayload } from '@/lib/contactForm';
 
@@ -180,8 +180,10 @@ export default function MoscRedesignFooter() {
             <ul className="space-y-2">
               {MOSC_REDESIGN_FOOTER_QUICK_LINKS.map((link) => (
                 <li key={link.label}>
+                  {/* Same-origin app routes — do not use toPublicEmailUrl (rewrites to production host). */}
                   <Link
                     href={link.href}
+                    prefetch={moscRedesignNavPrefetch(link.href)}
                     className="text-warmGray-dark hover:text-burgundy-dark text-sm transition-colors"
                   >
                     {link.label}

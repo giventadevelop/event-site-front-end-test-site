@@ -45,16 +45,12 @@ async function fetchMyMembership(baseUrl: string, focusGroupId: number, userProf
 async function fetchCommitteeMembers(baseUrl: string, focusGroupId: number) {
   try {
     const res = await fetch(
-      `${baseUrl}/api/proxy/focus-group-members?focusGroupId.equals=${focusGroupId}&size=200`,
+      `${baseUrl}/api/proxy/focus-group-members?focusGroupId.equals=${focusGroupId}&role.in=EXECUTIVE&role.in=ORGANISER&size=50`,
       { cache: 'no-store' }
     );
     if (!res.ok) return [];
     const data = await res.json();
-    const list = Array.isArray(data) ? data : [];
-    const committee = list.filter(
-      (m: { role?: string }) => m?.role === 'EXECUTIVE' || m?.role === 'ORGANISER'
-    );
-    return committee;
+    return Array.isArray(data) ? data : [];
   } catch {
     return [];
   }

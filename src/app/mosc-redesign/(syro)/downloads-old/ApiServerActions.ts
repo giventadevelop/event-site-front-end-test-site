@@ -57,7 +57,7 @@ export async function fetchPublicOfficialDocumentsTreeServer(input?: {
   year?: number;
 }): Promise<PublicOfficialDocumentTreePage> {
   const page = Math.max(0, input?.page ?? 0);
-  const size = Math.min(Math.max(1, input?.size ?? 24), 100);
+  const size = Math.min(Math.max(1, input?.size ?? 20), 100);
 
   try {
     const baseParams = new globalThis.URLSearchParams();

@@ -33,17 +33,14 @@ export async function fetchEventSponsorsServer(page = 0, size = 10, searchTerm =
     const data = await response.json();
     console.log('✅ Fetched available sponsors:', data);
 
-    // According to Swagger, /api/event-sponsors returns a simple array, not paginated object
+    // Backend returns one page as an array; the total lives in the X-Total-Count header
     if (Array.isArray(data)) {
-      // Apply client-side pagination since backend returns all records
-      const startIndex = page * size;
-      const endIndex = startIndex + size;
-      const paginatedData = data.slice(startIndex, endIndex);
+      const totalElements = parseInt(response.headers.get('x-total-count') || `${data.length}`, 10);
 
       return {
-        content: paginatedData,
-        totalElements: data.length,
-        totalPages: Math.ceil(data.length / size),
+        content: data,
+        totalElements,
+        totalPages: Math.ceil(totalElements / size),
         currentPage: page,
         pageSize: size
       };
@@ -223,6 +220,7 @@ export async function fetchEventSponsorsJoinServer(eventId: number) {
     console.log('🔄 Trying fallback with generic endpoint...');
     const params = new URLSearchParams();
     params.append('eventId.equals', eventId.toString());
+    params.append('size', '200');
 
     const fallbackResponse = await fetch(`${baseUrl}/api/proxy/event-sponsors-join?${params.toString()}`, {
       cache: 'no-store',
@@ -386,64 +384,39 @@ export async function fetchAvailableSponsorsServer(eventId: number, page = 0, si
     const assignedSponsorIds = new Set(assignedSponsors.map((join: any) => join.sponsor?.id).filter(Boolean));
     console.log('🔍 Sponsor IDs assigned to current event:', Array.from(assignedSponsorIds));
 
-    // Step 2: Get all sponsors from the master sponsors table
-    console.log('🔄 Fetching all sponsors from master table...');
-
-    // Try to fetch from the API first
-    let allSponsors = [];
-    try {
-      const allSponsorsResponse = await fetchEventSponsorsServer(0, 20, ''); // Fetch sponsors with pagination
-      allSponsors = allSponsorsResponse.content || [];
-      console.log('✅ Fetched', allSponsors.length, 'total sponsors from master table via API');
-    } catch (error) {
-      console.warn('⚠️ API fetch failed, using mock data:', error instanceof Error ? error.message : String(error));
-      // Fallback to mock data if API fails
-      allSponsors = [
-        { id: 1, name: 'Kerala Tourism Development Corporation', type: 'Title Sponsor', companyName: 'KTDC' },
-        { id: 2, name: 'Tata Consultancy Services', type: 'Platinum Sponsor', companyName: 'TCS' },
-        { id: 3, name: 'Federal Bank', type: 'Gold Sponsor', companyName: 'Federal Bank' },
-        { id: 4, name: 'Wipro Technologies', type: 'Silver Sponsor', companyName: 'Wipro' },
-        { id: 5, name: 'Infosys Limited', type: 'Bronze Sponsor', companyName: 'Infosys' },
-        { id: 6, name: 'HCL Technologies', type: 'Bronze Sponsor', companyName: 'HCL' },
-        { id: 7, name: 'Tech Mahindra', type: 'Bronze Sponsor', companyName: 'Tech Mahindra' },
-        { id: 8, name: 'Cognizant', type: 'Bronze Sponsor', companyName: 'Cognizant' },
-        { id: 9, name: 'Accenture', type: 'Bronze Sponsor', companyName: 'Accenture' },
-        { id: 4801, name: 'Gain Joseph', type: 'Gold', companyName: null },
-        { id: 4802, name: 'GAIN JOSEPH', type: 'Silver', companyName: 'Giventa Inc.' }
-      ];
-      console.log('✅ Using mock data with', allSponsors.length, 'sponsors');
+    // Step 2: Fetch one page of sponsors, excluding assigned ones server-side
+    const baseUrl = getAppUrl();
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: size.toString(),
+      sort: 'name,asc'
+    });
+    assignedSponsorIds.forEach((id) => params.append('id.notIn', String(id)));
+    if (searchTerm.trim()) {
+      params.append('name.contains', searchTerm.trim());
     }
 
-    // Step 3: Filter out sponsors that are assigned to the current event
-    const availableSponsors = allSponsors.filter((sponsor: any) =>
-      !assignedSponsorIds.has(sponsor.id)
-    );
+    const response = await fetch(`${baseUrl}/api/proxy/event-sponsors?${params.toString()}`, {
+      cache: 'no-store',
+    });
 
-    console.log('🔍 Available sponsors (not assigned to current event):', availableSponsors.length);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch available sponsors: ${response.status} ${response.statusText}`);
+    }
 
-    // Step 4: Apply search filter if provided
-    const filteredSponsors = searchTerm
-      ? availableSponsors.filter((sponsor: any) =>
-          sponsor.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          sponsor.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          sponsor.type?.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      : availableSponsors;
+    const data = await response.json();
+    const availableSponsors = Array.isArray(data) ? data : (data.content || data.data || data.results || []);
+    const totalElements = parseInt(response.headers.get('x-total-count') || `${availableSponsors.length}`, 10);
 
-    console.log('✅ Available sponsors after search filtering:', filteredSponsors.length);
-    console.log('🔍 Available sponsor IDs:', filteredSponsors.map((sponsor: any) => sponsor.id));
-
-    // Step 5: Apply pagination to the filtered results
-    const startIndex = page * size;
-    const endIndex = startIndex + size;
-    const paginatedSponsors = filteredSponsors.slice(startIndex, endIndex);
+    console.log('✅ Available sponsors (not assigned to current event):', totalElements);
+    console.log('🔍 Available sponsor IDs:', availableSponsors.map((sponsor: any) => sponsor.id));
 
     return {
-      content: paginatedSponsors,
-      totalElements: filteredSponsors.length,
-      totalPages: Math.ceil(filteredSponsors.length / size),
+      content: availableSponsors,
+      totalElements,
+      totalPages: Math.ceil(totalElements / size),
       assignedCount: assignedSponsorIds.size,
-      totalSponsors: allSponsors.length
+      totalSponsors: totalElements + assignedSponsorIds.size
     };
   } catch (error) {
     console.warn('❌ Error fetching available sponsors:', error);

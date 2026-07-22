@@ -2,6 +2,7 @@
 import React, { useRef, useState, useEffect, useCallback, useTransition } from "react";
 import { EventMediaDTO, EventDetailsDTO, EventFocusGroupDTO } from "@/types";
 import { FaUsers, FaPhotoVideo, FaCalendarAlt, FaTimes, FaTicketAlt, FaTags, FaHome } from 'react-icons/fa';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 import { deleteMediaServer, editMediaServer, fetchMediaFilteredServer, fetchEventFocusGroupsWithNamesServer } from '../ApiServerActions';
 import { fetchEventDetailsServer } from '@/app/admin/ApiServerActions';
 import { createPortal } from "react-dom";
@@ -490,7 +491,7 @@ export default function EventMediaListPage() {
   const [isPending, startTransition] = useTransition();
 
   const [page, setPage] = useState(0);
-  const [pageSize] = useState(12);
+  const [pageSize] = useState(20);
   const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [eventFlyerOnly, setEventFlyerOnly] = useState(false);
@@ -824,13 +825,17 @@ export default function EventMediaListPage() {
             <label htmlFor="search-input" className="block text-sm font-medium text-gray-700 mb-1">
               Search by Title
             </label>
-            <input
-              id="search-input"
-              type="text"
+            <AdminListSearchCombobox
+              items={media}
+              committedValue={searchTerm}
+              onCommit={setSearchTerm}
+              getSearchFields={(m) => [m.title, m.id, m.eventMediaType]}
+              getCommitValue={(m) => m.title || String(m.id ?? '')}
+              formatPrimary={(m) => m.title || `Media #${m.id}`}
+              formatSecondary={(m) => m.eventMediaType || undefined}
               placeholder="Enter media title to search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              inputId="search-input"
+              inputClassName="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 

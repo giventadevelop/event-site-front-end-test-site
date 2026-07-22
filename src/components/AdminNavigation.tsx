@@ -16,7 +16,7 @@ export default function AdminNavigation({ currentPage, showHome = true }: AdminN
     if (containerRef.current) {
       // Force layout recalculation to prevent shifts
       containerRef.current.style.width = '100%';
-      containerRef.current.style.maxWidth = '100%';
+      containerRef.current.style.maxWidth = '64rem';
     }
   }, []);
 
@@ -279,7 +279,11 @@ export default function AdminNavigation({ currentPage, showHome = true }: AdminN
   };
 
   return (
-    <div ref={containerRef} className="w-full overflow-hidden box-border admin-navigation-container" style={{ maxWidth: '100%', width: '100%' }}>
+    <div
+      ref={containerRef}
+      className="w-full max-w-5xl mx-auto overflow-hidden box-border admin-navigation-container"
+      style={{ maxWidth: '64rem', width: '100%' }}
+    >
       <div className="bg-white rounded-xl shadow-lg p-2.5 sm:p-3 md:p-4 lg:p-6 xl:p-8 overflow-hidden box-border" style={{ maxWidth: '100%', width: '100%' }}>
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6 w-full box-border" style={{ maxWidth: '100%', width: '100%' }}>
           {buttons.filter((b) => b.key !== excludeKeyWhenActive).map((button) => {

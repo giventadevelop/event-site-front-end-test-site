@@ -5,6 +5,7 @@ import { FaSearch, FaMicrophone, FaAddressBook, FaHandshake, FaEnvelope, FaUserT
 import { useAuth } from '@clerk/nextjs';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Modal, { ConfirmModal } from '@/components/ui/Modal';
 import type { EventEmailsDTO, EventDetailsDTO } from '@/types';
@@ -666,12 +667,15 @@ export default function EventEmailsPage() {
             <div className="flex-1 min-w-0">
               <div className="relative">
                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
+                <AdminListSearchCombobox
+                  items={emails}
+                  committedValue={searchTerm}
+                  onCommit={setSearchTerm}
+                  getSearchFields={(e) => [e.email, e.id]}
+                  getCommitValue={(e) => e.email || String(e.id ?? '')}
+                  formatPrimary={(e) => e.email || 'Unknown'}
                   placeholder="🔍 Search emails..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 sm:py-3 w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 text-sm sm:text-base"
+                  inputClassName="pl-10 pr-4 py-2.5 sm:py-3 w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 text-sm sm:text-base"
                 />
               </div>
             </div>
@@ -793,12 +797,15 @@ export default function EventEmailsPage() {
             <div className="flex-1 min-w-0">
               <div className="relative">
                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
+                <AdminListSearchCombobox
+                  items={availableEmails}
+                  committedValue={availableEmailsSearchTerm}
+                  onCommit={handleAvailableEmailsSearch}
+                  getSearchFields={(e) => [e.email, e.id]}
+                  getCommitValue={(e) => e.email || String(e.id ?? '')}
+                  formatPrimary={(e) => e.email || 'Unknown'}
                   placeholder="Search available emails..."
-                  value={availableEmailsSearchTerm}
-                  onChange={(e) => handleAvailableEmailsSearch(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 sm:py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                  inputClassName="pl-10 pr-4 py-2.5 sm:py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
                 />
               </div>
             </div>

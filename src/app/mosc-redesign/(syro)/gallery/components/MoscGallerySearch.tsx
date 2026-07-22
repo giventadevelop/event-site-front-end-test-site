@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type {
   GalleryAlbumFilterOptions,
   GalleryEventFilterOptions,
 } from '@/app/gallery/ApiServerActions';
+import SearchInputWithClear from '../../components/SearchInputWithClear';
 
 export type MoscGalleryAlbumSearchFilters = {
   searchTerm: string;
@@ -41,6 +42,33 @@ type MoscGallerySearchProps = {
 const selectClassName =
   'font-body w-full border border-syro-table-border rounded-lg bg-white text-syro-blue px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-syro-red focus:ring-offset-2 disabled:opacity-50';
 
+const SEARCH_DEBOUNCE_MS = 300;
+
+function filtersEqualAlbum(
+  a: MoscGalleryAlbumSearchFilters,
+  b: MoscGalleryAlbumSearchFilters
+): boolean {
+  return (
+    a.searchTerm === b.searchTerm &&
+    a.categoryId === b.categoryId &&
+    a.categoryName === b.categoryName &&
+    a.albumYear === b.albumYear &&
+    a.eventLocation === b.eventLocation
+  );
+}
+
+function filtersEqualEvent(
+  a: MoscGalleryEventSearchFilters,
+  b: MoscGalleryEventSearchFilters
+): boolean {
+  return (
+    a.searchTerm === b.searchTerm &&
+    a.year === b.year &&
+    a.location === b.location &&
+    a.eventTypeId === b.eventTypeId
+  );
+}
+
 export function MoscGallerySearch({
   activeTab,
   loading = false,
@@ -57,14 +85,51 @@ export function MoscGallerySearch({
 }: MoscGallerySearchProps) {
   const [albumFilters, setAlbumFilters] = useState(initialAlbumFilters);
   const [eventFilters, setEventFilters] = useState(initialEventFilters);
+  const skipAlbumEmit = useRef(true);
+  const skipEventEmit = useRef(true);
+  const lastAlbumEmitted = useRef(initialAlbumFilters);
+  const lastEventEmitted = useRef(initialEventFilters);
 
   useEffect(() => {
     setAlbumFilters(initialAlbumFilters);
+    lastAlbumEmitted.current = initialAlbumFilters;
+    skipAlbumEmit.current = true;
   }, [initialAlbumFilters]);
 
   useEffect(() => {
     setEventFilters(initialEventFilters);
+    lastEventEmitted.current = initialEventFilters;
+    skipEventEmit.current = true;
   }, [initialEventFilters]);
+
+  // Live album search (debounce text; selects still go through same state).
+  useEffect(() => {
+    if (activeTab !== 'albums') return;
+    if (skipAlbumEmit.current) {
+      skipAlbumEmit.current = false;
+      return;
+    }
+    const handle = window.setTimeout(() => {
+      if (filtersEqualAlbum(albumFilters, lastAlbumEmitted.current)) return;
+      lastAlbumEmitted.current = albumFilters;
+      onAlbumSearch(albumFilters);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(handle);
+  }, [albumFilters, activeTab, onAlbumSearch]);
+
+  useEffect(() => {
+    if (activeTab !== 'events') return;
+    if (skipEventEmit.current) {
+      skipEventEmit.current = false;
+      return;
+    }
+    const handle = window.setTimeout(() => {
+      if (filtersEqualEvent(eventFilters, lastEventEmitted.current)) return;
+      lastEventEmitted.current = eventFilters;
+      onEventSearch(eventFilters);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(handle);
+  }, [eventFilters, activeTab, onEventSearch]);
 
   const albumCategories =
     !preferStaticAlbumOptions && albumOptions.categories.length > 0
@@ -86,25 +151,19 @@ export function MoscGallerySearch({
       ? String(albumFilters.categoryId)
       : albumFilters.categoryName ?? '';
 
-  const handleAlbumSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onAlbumSearch(albumFilters);
-  };
-
-  const handleEventSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onEventSearch(eventFilters);
-  };
-
   const clearAlbumFilters = () => {
     const cleared: MoscGalleryAlbumSearchFilters = { searchTerm: '' };
     setAlbumFilters(cleared);
+    lastAlbumEmitted.current = cleared;
+    skipAlbumEmit.current = true;
     onAlbumSearch(cleared);
   };
 
   const clearEventFilters = () => {
     const cleared: MoscGalleryEventSearchFilters = { searchTerm: '' };
     setEventFilters(cleared);
+    lastEventEmitted.current = cleared;
+    skipEventEmit.current = true;
     onEventSearch(cleared);
   };
 
@@ -128,12 +187,12 @@ export function MoscGallerySearch({
           Search Albums
         </h4>
         <p className="font-body text-sm text-syro-dark-gray mb-4">
-          Filter by title, category, year, or location.
+          Filter by title, category, year, or location — results update as you type.
         </p>
 
-        <form onSubmit={handleAlbumSubmit} className="space-y-4" role="search" aria-label="Search albums">
+        <div className="space-y-4" role="search" aria-label="Search albums">
           <div className="relative">
-            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-syro-dark-gray">
+            <span className="pointer-events-none absolute inset-y-0 left-3 z-[1] flex items-center text-syro-dark-gray">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -143,13 +202,14 @@ export function MoscGallerySearch({
                 />
               </svg>
             </span>
-            <input
-              type="search"
+            <SearchInputWithClear
               value={albumFilters.searchTerm}
               onChange={(e) => setAlbumFilters((prev) => ({ ...prev, searchTerm: e.target.value }))}
+              onClear={() => setAlbumFilters((prev) => ({ ...prev, searchTerm: '' }))}
               placeholder="Search albums by title..."
               disabled={loading}
-              className="font-body w-full pl-10 pr-4 py-2.5 border border-syro-table-border rounded-lg bg-white text-syro-blue placeholder:text-syro-dark-gray focus:outline-none focus:ring-2 focus:ring-syro-red focus:ring-offset-2"
+              wrapperClassName="w-full"
+              className="font-body w-full pl-10 py-2.5 border border-syro-table-border rounded-lg bg-white text-syro-blue placeholder:text-syro-dark-gray focus:outline-none focus:ring-2 focus:ring-syro-red focus:ring-offset-2"
             />
           </div>
 
@@ -253,15 +313,8 @@ export function MoscGallerySearch({
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="submit"
-              disabled={loading}
-              className="syro-primary-button inline-flex items-center gap-2 px-5 py-2.5 disabled:opacity-50"
-            >
-              Search
-            </button>
-            {hasAlbumFilters && (
+          {hasAlbumFilters ? (
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={clearAlbumFilters}
@@ -270,9 +323,9 @@ export function MoscGallerySearch({
               >
                 Clear filters
               </button>
-            )}
-          </div>
-        </form>
+            </div>
+          ) : null}
+        </div>
       </div>
     );
   }
@@ -283,12 +336,12 @@ export function MoscGallerySearch({
         Search Event Galleries
       </h4>
       <p className="font-body text-sm text-syro-dark-gray mb-4">
-        Filter by title, year, location, or event type.
+        Filter by title, year, location, or event type — results update as you type.
       </p>
 
-      <form onSubmit={handleEventSubmit} className="space-y-4" role="search" aria-label="Search event galleries">
+      <div className="space-y-4" role="search" aria-label="Search event galleries">
         <div className="relative">
-          <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-syro-dark-gray">
+          <span className="pointer-events-none absolute inset-y-0 left-3 z-[1] flex items-center text-syro-dark-gray">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -298,13 +351,14 @@ export function MoscGallerySearch({
               />
             </svg>
           </span>
-          <input
-            type="search"
+          <SearchInputWithClear
             value={eventFilters.searchTerm}
             onChange={(e) => setEventFilters((prev) => ({ ...prev, searchTerm: e.target.value }))}
+            onClear={() => setEventFilters((prev) => ({ ...prev, searchTerm: '' }))}
             placeholder="Search events by title..."
             disabled={loading}
-            className="font-body w-full pl-10 pr-4 py-2.5 border border-syro-table-border rounded-lg bg-white text-syro-blue placeholder:text-syro-dark-gray focus:outline-none focus:ring-2 focus:ring-syro-red focus:ring-offset-2"
+            wrapperClassName="w-full"
+            className="font-body w-full pl-10 py-2.5 border border-syro-table-border rounded-lg bg-white text-syro-blue placeholder:text-syro-dark-gray focus:outline-none focus:ring-2 focus:ring-syro-red focus:ring-offset-2"
           />
         </div>
 
@@ -387,15 +441,8 @@ export function MoscGallerySearch({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="submit"
-            disabled={loading}
-            className="syro-primary-button inline-flex items-center gap-2 px-5 py-2.5 disabled:opacity-50"
-          >
-            Search
-          </button>
-          {hasEventFilters && (
+        {hasEventFilters ? (
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={clearEventFilters}
@@ -404,9 +451,9 @@ export function MoscGallerySearch({
             >
               Clear filters
             </button>
-          )}
-        </div>
-      </form>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

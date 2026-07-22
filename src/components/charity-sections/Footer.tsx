@@ -62,7 +62,7 @@ const BackToTopButton = () => {
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-gray-300 footer-edge-to-edge mt-20">
+    <footer id="contact" className="bg-gray-900 text-gray-300 footer-edge-to-edge mt-20">
       {/* Main Footer Content */}
       <div className="w-full bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12">

@@ -19,7 +19,7 @@ interface FocusGroupsGridWithSearchProps {
 export default function FocusGroupsGridWithSearch({ groups, total }: FocusGroupsGridWithSearchProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(0);
-  const pageSize = 8;
+  const pageSize = 20;
 
   const filteredGroups = searchTerm.trim()
     ? groups.filter((g) => {

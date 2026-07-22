@@ -1,3 +1,5 @@
+import type { DirectoryListPagination } from '@/app/mosc-redesign/(syro)/directory/types/listPagination';
+
 export interface SpiritualOrganisationEntry {
   documentId: string;
   name: string;
@@ -14,4 +16,12 @@ export interface SpiritualOrganisationEntry {
 
 export interface SpiritualOrganisationsListResult {
   entries: SpiritualOrganisationEntry[];
+  pagination: DirectoryListPagination;
 }
+
+export type SpiritualOrganisationsListOptions = {
+  nameSearch?: string;
+  page?: number;
+  pageSize?: number;
+  loadAll?: boolean;
+};

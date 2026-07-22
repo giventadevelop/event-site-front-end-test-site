@@ -6,6 +6,7 @@ import DateRangeSelector, { DateRange } from '@/components/admin/DateRangeSelect
 import EventSearchSelector from '@/components/admin/EventSearchSelector';
 import { fetchCheckInHistoryServer, fetchCheckInAnalyticsServer, type CheckInAnalytics } from './ApiServerActions';
 import type { EventTicketTransactionDTO } from '@/types';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 import { FaCheckCircle, FaUsers, FaChartLine, FaSpinner, FaDownload, FaSearch } from 'react-icons/fa';
 import Link from 'next/link';
 
@@ -273,12 +274,16 @@ export default function CheckInAnalyticsClient({
               {/* Search */}
               <div className="relative">
                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500 h-5 w-5" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                <AdminListSearchCombobox
+                  items={history}
+                  committedValue={searchQuery}
+                  onCommit={setSearchQuery}
                   placeholder="Search by name, email, or ID..."
-                  className="pl-12 pr-4 py-3 border-2 border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 w-full sm:w-64 text-base transition-all"
+                  inputClassName="pl-12 pr-10 py-3 border-2 border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 w-full sm:w-64 text-base transition-all"
+                  getSearchFields={(t) => [t.firstName, t.lastName, t.email, t.id]}
+                  getCommitValue={(t) => `${t.firstName ?? ''} ${t.lastName ?? ''}`.trim() || t.email || t.id?.toString() || ''}
+                  formatPrimary={(t) => `${t.firstName ?? ''} ${t.lastName ?? ''}`.trim() || t.email || (t.id != null ? `Transaction #${t.id}` : 'Transaction')}
+                  formatSecondary={(t) => [t.email, t.id != null ? `ID: ${t.id}` : null].filter(Boolean).join(' · ')}
                 />
               </div>
               {/* Export Button */}

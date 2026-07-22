@@ -8,14 +8,12 @@ import { getAppUrl } from '@/lib/env';
 export async function uploadEmailFooterHtmlClient(
   file: File
 ): Promise<{ url: string }> {
-  const baseUrl = getAppUrl();
   const formData = new FormData();
 
   formData.append('file', file);
 
-  const url = `${baseUrl}/api/proxy/tenant-settings/upload/email-footer-html`;
-
-  const response = await fetch(url, {
+  // Same-origin relative URL — avoid getAppUrl() host/port mismatch in the browser
+  const response = await fetch('/api/proxy/tenant-settings/upload/email-footer-html', {
     method: 'POST',
     body: formData,
   });

@@ -153,60 +153,47 @@ export async function fetchAvailableProgramDirectorsServer(eventId: number, page
   try {
     console.log('🔍 Fetching available program directors for event ID:', eventId, { page, size, searchTerm });
 
-    // Step 1: Get all program directors assigned to the current event
+    // Step 1: Get program directors assigned to the current event (event-scoped, small set)
     const assignedDirectors = await fetchEventProgramDirectorsServer(eventId);
-    const assignedDirectorIds = new Set((Array.isArray(assignedDirectors) ? assignedDirectors : [assignedDirectors]).map((director: any) => director.id).filter(Boolean));
-    console.log('🔍 Program director IDs assigned to current event:', Array.from(assignedDirectorIds));
+    const assignedDirectorIds = Array.from(new Set(
+      (Array.isArray(assignedDirectors) ? assignedDirectors : [assignedDirectors])
+        .map((director: any) => director.id)
+        .filter(Boolean)
+    ));
+    console.log('🔍 Program director IDs assigned to current event:', assignedDirectorIds);
 
-    // Step 2: Get all tenant-level program directors (fetch without eventId filter)
-    console.log('🔄 Fetching all tenant-level program directors...');
-    let allDirectors: EventProgramDirectorsDTO[] = [];
-    try {
-      // Fetch all program directors for the tenant (no eventId filter)
-      const params = new URLSearchParams();
-      const response = await fetchWithJwtRetry(`${getApiBase()}/api/event-program-directors?${params.toString()}`, {
-        cache: 'no-store',
-      });
+    // Step 2: Fetch ONE server page of tenant program directors via JHipster criteria,
+    // excluding assigned ids (repeated id.notIn) and searching server-side (name.contains)
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('size', String(size));
+    params.append('sort', 'name,asc');
+    if (searchTerm) {
+      params.append('name.contains', searchTerm);
+    }
+    assignedDirectorIds.forEach((id) => params.append('id.notIn', String(id)));
 
-      if (response.ok) {
-        const data = await response.json();
-        allDirectors = Array.isArray(data) ? data : [data];
-        console.log('✅ Fetched', allDirectors.length, 'total tenant-level program directors');
-      } else {
-        console.warn('⚠️ Failed to fetch all program directors:', response.status, response.statusText);
-      }
-    } catch (error) {
-      console.warn('⚠️ Error fetching all program directors:', error instanceof Error ? error.message : String(error));
+    const response = await fetchWithJwtRetry(`${getApiBase()}/api/event-program-directors?${params.toString()}`, {
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      console.warn('⚠️ Failed to fetch available program directors:', response.status, response.statusText);
+      return { content: [], totalElements: 0, totalPages: 0, assignedCount: assignedDirectorIds.length, totalDirectors: 0 };
     }
 
-    // Step 3: Filter out program directors that are assigned to the current event
-    const availableDirectors = allDirectors.filter((director: any) =>
-      !assignedDirectorIds.has(director.id)
-    );
-
-    console.log('🔍 Available program directors (not assigned to current event):', availableDirectors.length);
-
-    // Step 4: Apply search filter if provided
-    const filteredDirectors = searchTerm
-      ? availableDirectors.filter((director: any) =>
-          director.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          director.bio?.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      : availableDirectors;
-
-    console.log('✅ Available program directors after search filtering:', filteredDirectors.length);
-
-    // Step 5: Apply pagination to the filtered results
-    const startIndex = page * size;
-    const endIndex = startIndex + size;
-    const paginatedDirectors = filteredDirectors.slice(startIndex, endIndex);
+    const data = await response.json();
+    const content: EventProgramDirectorsDTO[] = Array.isArray(data) ? data : [data];
+    // Total available directors comes from the X-Total-Count response header
+    const totalElements = parseInt(response.headers.get('x-total-count') || '0', 10) || content.length;
+    console.log('✅ Available program directors page:', content.length, 'of', totalElements);
 
     return {
-      content: paginatedDirectors,
-      totalElements: filteredDirectors.length,
-      totalPages: Math.ceil(filteredDirectors.length / size),
-      assignedCount: assignedDirectorIds.size,
-      totalDirectors: allDirectors.length
+      content,
+      totalElements,
+      totalPages: Math.ceil(totalElements / size),
+      assignedCount: assignedDirectorIds.length,
+      totalDirectors: totalElements + assignedDirectorIds.length
     };
   } catch (error) {
     console.warn('❌ Error fetching available program directors:', error);

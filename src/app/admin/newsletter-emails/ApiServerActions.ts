@@ -2,6 +2,7 @@
 import { fetchWithJwtRetry } from '@/lib/proxyHandler';
 import { getAppUrlFromRequestHeaders, getTenantId, getApiBaseUrl } from '@/lib/env';
 import { withTenantId } from '@/lib/withTenantId';
+import { rewriteEmailHtmlLinksToPublic } from '@/lib/publicEmailLinks';
 import type {
   PromotionEmailTemplateDTO,
   PromotionEmailTemplateFormDTO,
@@ -47,7 +48,7 @@ function buildNewsletterTemplatePutPayload(
   });
 
   if (formData.footerHtml !== undefined) {
-    payload.footerHtml = normalizeClearableString(formData.footerHtml);
+    payload.footerHtml = rewriteEmailHtmlLinksToPublic(normalizeClearableString(formData.footerHtml));
   }
   if (formData.headerImageUrl !== undefined) {
     payload.headerImageUrl = normalizeClearableString(formData.headerImageUrl);
@@ -61,6 +62,49 @@ function buildNewsletterTemplatePutPayload(
   delete payload.createdBy;
 
   return payload;
+}
+
+async function ensureNewsletterFooterLinksArePublic(templateId: number): Promise<void> {
+  const apiBase = getApiBaseUrl();
+  const templateUrl = `${apiBase}/api/promotion-email-templates/${templateId}`;
+
+  const getResponse = await fetchWithJwtRetry(
+    templateUrl,
+    { cache: 'no-store' },
+    'newsletter-email-footer-link-fetch'
+  );
+  if (!getResponse.ok) {
+    const errorBody = await getResponse.text();
+    throw new Error(`Failed to load newsletter template before sending. Status: ${getResponse.status}. ${errorBody}`);
+  }
+
+  const template = (await getResponse.json()) as PromotionEmailTemplateDTO;
+  const currentFooterHtml = normalizeClearableString(template.footerHtml);
+  const rewrittenFooterHtml = rewriteEmailHtmlLinksToPublic(currentFooterHtml);
+
+  if (currentFooterHtml === rewrittenFooterHtml) {
+    return;
+  }
+
+  const payload = buildNewsletterTemplatePutPayload(templateId, template, {
+    footerHtml: rewrittenFooterHtml,
+  });
+
+  const putResponse = await fetchWithJwtRetry(
+    templateUrl,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    },
+    'newsletter-email-footer-link-update'
+  );
+
+  if (!putResponse.ok) {
+    const errorBody = await putResponse.text();
+    throw new Error(`Failed to update newsletter footer links before sending. Status: ${putResponse.status}. ${errorBody}`);
+  }
 }
 
 /**
@@ -176,7 +220,9 @@ export async function createNewsletterEmailTemplateServer(
     subject: formData.subject,
     fromEmail: formData.fromEmail.trim(),
     bodyHtml: formData.bodyHtml,
-    footerHtml: formData.footerHtml?.trim() ? formData.footerHtml : null,
+    footerHtml: formData.footerHtml?.trim()
+      ? rewriteEmailHtmlLinksToPublic(formData.footerHtml)
+      : null,
     headerImageUrl: formData.headerImageUrl || '',
     footerImageUrl: formData.footerImageUrl || '',
     discountCodeId: formData.discountCodeId,
@@ -274,6 +320,8 @@ export async function sendTestNewsletterEmailServer(
   templateId: number,
   recipientEmail: string
 ): Promise<{ success: boolean; messageId?: string }> {
+  await ensureNewsletterFooterLinksArePublic(templateId);
+
   const baseUrl = await getAppUrlFromRequestHeaders();
   // Use the same backend resource as promotional emails
   const url = `${baseUrl}/api/proxy/promotion-email-templates/${templateId}/send-test`;
@@ -304,12 +352,18 @@ export async function sendBulkNewsletterEmailServer(
   templateId: number,
   recipientEmails?: string[]
 ): Promise<{ success: boolean; sentCount: number; failedCount: number }> {
+  await ensureNewsletterFooterLinksArePublic(templateId);
+
   const baseUrl = await getAppUrlFromRequestHeaders();
-  // Use the same backend resource as promotional emails
-  const url = `${baseUrl}/api/proxy/promotion-email-templates/${templateId}/send-bulk`;
+  const hasExplicitRecipients = Array.isArray(recipientEmails) && recipientEmails.length > 0;
+  // The send-bulk endpoint requires explicit recipients. The page-level bulk
+  // button does not collect recipients, so default it to the subscribed list.
+  const url = `${baseUrl}/api/proxy/promotion-email-templates/${templateId}/${
+    hasExplicitRecipients ? 'send-bulk' : 'send-to-subscribed'
+  }`;
 
   const payload: any = {};
-  if (recipientEmails && recipientEmails.length > 0) {
+  if (hasExplicitRecipients) {
     payload.recipientEmails = recipientEmails;
   }
 
@@ -325,7 +379,12 @@ export async function sendBulkNewsletterEmailServer(
     throw new Error(`Failed to send bulk newsletter email. Status: ${response.status}`);
   }
 
-  return await response.json();
+  const result = await response.json();
+  return {
+    success: Boolean(result.success ?? true),
+    sentCount: Number(result.sentCount ?? 0),
+    failedCount: Number(result.failedCount ?? 0),
+  };
 }
 
 /**
@@ -334,6 +393,8 @@ export async function sendBulkNewsletterEmailServer(
 export async function sendBulkNewsletterEmailToSubscribedMembersServer(
   templateId: number
 ): Promise<{ success: boolean; sentCount?: number; failedCount?: number }> {
+  await ensureNewsletterFooterLinksArePublic(templateId);
+
   const baseUrl = await getAppUrlFromRequestHeaders();
   // Use the same backend resource as promotional emails
   const url = `${baseUrl}/api/proxy/promotion-email-templates/${templateId}/send-to-subscribed`;

@@ -25,7 +25,7 @@ export default async function AdminMembershipPlansPage(props: {
 
   // Parse page from search params (default to 0 for zero-based indexing)
   const page = resolvedSearchParams.page ? parseInt(resolvedSearchParams.page, 10) : 0;
-  const pageSize = 10; // Default page size
+  const pageSize = 20; // Default page size
 
   let plans: MembershipPlanDTO[] = [];
   let totalCount = 0;

@@ -1,3 +1,5 @@
+import type { DirectoryListPagination } from '@/app/mosc-redesign/(syro)/directory/types/listPagination';
+
 export interface PublicationEntry {
   documentId: string;
   name: string;
@@ -15,4 +17,12 @@ export interface PublicationEntry {
 
 export interface PublicationEntriesListResult {
   entries: PublicationEntry[];
+  pagination: DirectoryListPagination;
 }
+
+export type PublicationEntriesListOptions = {
+  nameSearch?: string;
+  page?: number;
+  pageSize?: number;
+  loadAll?: boolean;
+};

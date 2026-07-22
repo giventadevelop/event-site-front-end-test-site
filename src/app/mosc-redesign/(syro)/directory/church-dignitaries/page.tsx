@@ -1,12 +1,17 @@
-import { Metadata } from 'next';
-import EntriesListPage from '../entries/EntriesListPage';
+import { redirect } from 'next/navigation';
+import { redirectQsFromSearchParams } from '../../lib/cmsListUrl';
 
-export const metadata: Metadata = {
-  title: 'Church Dignitaries | Directory | Malankara Orthodox Syrian Church',
-  description: 'Directory of church dignitaries of the Malankara Orthodox Syrian Church.',
-  keywords: ['MOSC Directory', 'Church Dignitaries'],
+export const dynamic = 'force-dynamic';
+
+type PageProps = {
+  searchParams: Promise<{ page?: string; q?: string }>;
 };
 
-export default function Page({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
-  return <EntriesListPage directoryType="church-dignitaries" searchParams={searchParams} />;
+/** Canonical list hub is /mosc-redesign/church-dignitaries-cms. */
+export default async function ChurchDignitariesDirectoryRedirect({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const query = redirectQsFromSearchParams(params);
+  redirect(
+    query ? `/mosc-redesign/church-dignitaries-cms?${query}` : '/mosc-redesign/church-dignitaries-cms'
+  );
 }

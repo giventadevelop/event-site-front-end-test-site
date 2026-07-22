@@ -1,12 +1,63 @@
 'use server';
 
 import { fetchWithJwtRetry } from '@/lib/proxyHandler';
-import { getApiBaseUrl } from '@/lib/env';
+import { getApiBaseUrl, getTenantId } from '@/lib/env';
 import { parseProfileSiteListResponse } from '@/lib/parseProfileSiteResponses';
-import type { ProfileWritingDTO, ProfileMediaAssetDTO } from '@/types/profileSite';
+import type { PublicProfileDTO, ProfileWritingDTO, ProfileMediaAssetDTO } from '@/types/profileSite';
+import type { TenantOrganizationDTO } from '@/types';
 
 function getApiBase() {
   return getApiBaseUrl();
+}
+
+/**
+ * Published public profile for the current tenant (About / Contact pages).
+ */
+export async function fetchPublishedPublicProfileForPagesServer(): Promise<PublicProfileDTO | null> {
+  try {
+    const params = new URLSearchParams({
+      'tenantId.equals': getTenantId(),
+      size: '1',
+    });
+    const res = await fetchWithJwtRetry(`${getApiBase()}/api/public-profiles?${params}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const list = parseProfileSiteListResponse<PublicProfileDTO>(data);
+    const profile = list[0] ?? null;
+    if (!profile || profile.isPublished === false) return null;
+    return profile;
+  } catch (error) {
+    console.error('[fetchPublishedPublicProfileForPagesServer]', error);
+    return null;
+  }
+}
+
+/**
+ * Tenant organization address fields for Contact page footer block.
+ */
+export async function fetchTenantOrganizationForProfilePagesServer(): Promise<TenantOrganizationDTO | null> {
+  try {
+    const params = new URLSearchParams({
+      'tenantId.equals': getTenantId(),
+      size: '1',
+    });
+    const res = await fetchWithJwtRetry(`${getApiBase()}/api/tenant-organizations?${params}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const list = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.content)
+        ? data.content
+        : [];
+    return (list[0] as TenantOrganizationDTO) ?? null;
+  } catch (error) {
+    console.error('[fetchTenantOrganizationForProfilePagesServer]', error);
+    return null;
+  }
 }
 
 /**

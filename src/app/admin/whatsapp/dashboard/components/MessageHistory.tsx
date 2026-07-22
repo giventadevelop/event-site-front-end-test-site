@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import AdminListSearchCombobox from '@/components/admin/AdminListSearchCombobox';
 // import { FaHistory, FaSearch, FaFilter, FaDownload } from 'react-icons/fa';
 
 interface DateRange {
@@ -166,12 +167,16 @@ export default function MessageHistory({
           <div className="flex-1">
             <div className="relative">
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
-              <input
-                type="text"
+              <AdminListSearchCombobox
+                items={messages}
+                committedValue={searchTerm}
+                onCommit={setSearchTerm}
+                getSearchFields={(m) => [m.recipient.name, m.recipient.phone, m.content, m.id]}
+                getCommitValue={(m) => m.recipient.name || m.content || m.id}
+                formatPrimary={(m) => m.recipient.name || m.id}
+                formatSecondary={(m) => m.content}
                 placeholder="Search messages by content, recipient, or ID..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                inputClassName="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
               />
             </div>
           </div>

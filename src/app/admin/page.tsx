@@ -425,7 +425,7 @@ export default function AdminPage() {
   if (!userId) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8" style={{ paddingTop: '120px' }}>
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-800 mb-4 sm:mb-8 flex flex-wrap items-center justify-center gap-2 text-center">
+        <h1 className="pt-4 text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-800 mb-4 sm:mb-8 flex flex-wrap items-center justify-center gap-2 text-center">
           Admin [
           <span className="flex items-center gap-1 text-blue-600">
             <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -446,7 +446,7 @@ export default function AdminPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8" style={{ paddingTop: '120px' }}>
-      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-800 mb-4 sm:mb-8 flex flex-wrap items-center justify-center gap-2 text-center">
+      <h1 className="pt-4 text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-800 mb-4 sm:mb-8 flex flex-wrap items-center justify-center gap-2 text-center">
         Admin [
         <span className="flex items-center gap-1 text-blue-600">
           <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

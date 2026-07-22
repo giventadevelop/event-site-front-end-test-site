@@ -13,7 +13,7 @@ interface SearchParams {
   name?: string;
 }
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 function buildQueryString(query: Record<string, any>) {
   const params = new URLSearchParams();

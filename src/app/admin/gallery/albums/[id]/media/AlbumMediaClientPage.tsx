@@ -30,7 +30,7 @@ export default function AlbumMediaClientPage({
   const [settingCoverMediaId, setSettingCoverMediaId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
-  const [pageSize] = useState(12);
+  const [pageSize] = useState(20);
   const [totalCount, setTotalCount] = useState(initialMediaList.length);
   const [isPublic, setIsPublic] = useState(true);
   const [altText, setAltText] = useState('');

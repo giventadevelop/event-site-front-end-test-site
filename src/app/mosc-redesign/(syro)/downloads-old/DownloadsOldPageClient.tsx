@@ -5,6 +5,7 @@ import Link from 'next/link';
 import QuickLinks from '../components/QuickLinks';
 import SyroPageBanner from '../components/SyroPageBanner';
 import { MoscHubCardMedia, MoscHubCardMediaPlaceholder } from '../components/MoscHubCardMedia';
+import DownloadsPagination from '../downloads/DownloadsPagination';
 import type { PublicOfficialDocumentTreePage } from './ApiServerActions';
 
 export type DownloadCard = {
@@ -204,11 +205,6 @@ export default function DownloadsOldPageClient({
           </h3>
           <div className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] p-6 mb-12">
             <div className="flex flex-wrap gap-3 items-center justify-between mb-5">
-              <div className="text-sm text-gray-600">
-                Showing page <span className="font-semibold">{currentPage}</span> of{' '}
-                <span className="font-semibold">{totalPages}</span> (
-                <span className="font-semibold">{officialTreePage.totalElements}</span> files). Lower priority values are shown first.
-              </div>
               <div className="flex flex-wrap gap-2">
                 <Link
                   href={queryWithFilter(null, currentFilters.year)}
@@ -238,21 +234,16 @@ export default function DownloadsOldPageClient({
               <TreeNode node={tree} />
             )}
 
-            <div className="mt-6 flex items-center justify-between">
-              {currentPage > 1 ? (
-                <Link href={queryWithPage(currentPage - 1)} className="syro-primary-button inline-flex items-center gap-2">
-                  Previous
-                </Link>
-              ) : (
-                <span className="text-sm text-gray-400">Previous</span>
-              )}
-              {currentPage < totalPages ? (
-                <Link href={queryWithPage(currentPage + 1)} className="syro-primary-button inline-flex items-center gap-2">
-                  Next
-                </Link>
-              ) : (
-                <span className="text-sm text-gray-400">Next</span>
-              )}
+            <div className="mt-6">
+              <DownloadsPagination
+                currentPage={currentPage - 1}
+                totalPages={totalPages}
+                totalCount={officialTreePage.totalElements}
+                pageSize={officialTreePage.size}
+                itemsOnPage={officialTreePage.content.length}
+                buildPageHref={queryWithPage}
+                itemLabel="files"
+              />
             </div>
           </div>
 

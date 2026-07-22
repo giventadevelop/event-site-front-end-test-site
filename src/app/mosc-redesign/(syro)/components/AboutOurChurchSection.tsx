@@ -13,7 +13,7 @@ const AboutOurChurchSection = () => {
     { label: 'THE CHURCH', href: '/mosc-redesign/the-church', icon: 'Church', isInternal: true },
     { label: 'HOLY SYNOD', href: '/mosc-redesign/holy-synod', icon: 'Users', isInternal: true },
     { label: 'ECUMENICAL', href: '/mosc-redesign/ecumenical', icon: 'Globe', isInternal: true },
-    { label: 'DIOCESES', href: '/mosc-redesign/dioceses', icon: 'MapPin', isInternal: true },
+    { label: 'DIOCESES', href: '/mosc-redesign/dioceses-cms', icon: 'MapPin', isInternal: true },
     { label: 'SAINTS', href: '/mosc-redesign/saints', icon: 'Star', isInternal: true }
   ];
 

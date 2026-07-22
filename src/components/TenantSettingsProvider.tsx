@@ -37,6 +37,7 @@ interface TenantSettingsContextType {
   showProfileAffiliations: boolean;
   showProfileDownloads: boolean;
   showProfileContact: boolean;
+  showProfileProjects: boolean;
   /** When true and publisher ID is set, public pages may render AdSense regions */
   showGoogleAdsense: boolean;
   adsensePublisherId: string | null;
@@ -68,6 +69,7 @@ const TenantSettingsContext = React.createContext<TenantSettingsContextType>({
   showProfileAffiliations: false,
   showProfileDownloads: false,
   showProfileContact: false,
+  showProfileProjects: false,
   showGoogleAdsense: false,
   adsensePublisherId: null,
   adsensePlacements: {},
@@ -302,6 +304,7 @@ export const TenantSettingsProvider: React.FC<TenantSettingsProviderProps> = ({ 
   const showProfileAffiliations = settings?.showProfileAffiliationsSection ?? false;
   const showProfileDownloads = settings?.showProfileMediaDownloadsSection ?? false;
   const showProfileContact = settings?.showProfileContactSection ?? false;
+  const showProfileProjects = settings?.showProfileProjectsSection ?? false;
   const showGoogleAdsense =
     settings?.enableGoogleAdsense === true && Boolean(settings?.googleAdsensePublisherId?.trim());
   const adsensePublisherId = settings?.googleAdsensePublisherId?.trim() || null;
@@ -325,6 +328,7 @@ export const TenantSettingsProvider: React.FC<TenantSettingsProviderProps> = ({ 
     showProfileAffiliations,
     showProfileDownloads,
     showProfileContact,
+    showProfileProjects,
     showGoogleAdsense,
     adsensePublisherId,
     adsensePlacements,

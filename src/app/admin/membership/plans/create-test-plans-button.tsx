@@ -103,10 +103,26 @@ export function CreateTestPlansButton() {
         <button
           onClick={handleCreateTestPlans}
           disabled={isCreating}
-          className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 disabled:bg-yellow-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
+          className="flex-shrink-0 h-14 rounded-xl bg-orange-100 hover:bg-orange-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-6 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          title="Create Test Plans"
+          aria-label="Create Test Plans"
           type="button"
         >
-          {isCreating ? 'Creating...' : 'Create Test Plans'}
+          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-orange-200 flex items-center justify-center">
+            {isCreating ? (
+              <svg className="animate-spin w-6 h-6 text-orange-600" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            )}
+          </div>
+          <span className="font-semibold text-orange-700">
+            {isCreating ? 'Creating...' : 'Create Test Plans'}
+          </span>
         </button>
       </div>
     </div>

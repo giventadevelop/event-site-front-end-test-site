@@ -579,6 +579,9 @@ export default function TenantSettingsViewClient({ settings, settingsId, organiz
 
           {/* Email Header Image */}
           <div className="border-t border-gray-200 pt-6">
+            <p className="mb-2 inline-flex rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-900">
+              [This could also be the header and footer for the contact us email used from the contact forms]
+            </p>
             <h4 className="text-md font-medium text-gray-900 mb-4">Email Header Image</h4>
             {settings?.emailHeaderImageUrl ? (
               <div className="p-4 bg-gray-50 border border-gray-300 rounded-lg">
@@ -611,6 +614,9 @@ export default function TenantSettingsViewClient({ settings, settingsId, organiz
 
           {/* Email Footer HTML */}
           <div className="border-t border-gray-200 pt-6">
+            <p className="mb-2 inline-flex rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-900">
+              [This could also be the header and footer for the contact us email used from the contact forms]
+            </p>
             <h4 className="text-md font-medium text-gray-900 mb-4">Email Footer HTML</h4>
             {settings?.emailFooterHtmlUrl ? (
               <div className="p-4 bg-gray-50 border border-gray-300 rounded-lg">

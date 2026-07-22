@@ -1,6 +1,13 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import SyroPageBanner from '../../components/SyroPageBanner';
 import { fetchPublicOfficialDocumentCategoriesServer } from '../ApiServerActions';
+
+export const metadata: Metadata = {
+  title: 'Download Categories',
+  description: 'Browse download categories for official church documents and resources.',
+  keywords: ['Download Categories', 'Downloads', 'Malankara Orthodox Syrian Church', 'MOSC'],
+};
 
 export const dynamic = 'force-dynamic';
 

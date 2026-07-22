@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import InteractiveWorldMap from "@/components/ui/InteractiveWorldMap";
 import MoscRedesignHeader from "@/components/mosc-redesign/MoscRedesignHeader";
+import { moscRedesignNavPrefetch } from "@/components/mosc-redesign/navConfig";
 import MoscRedesignFooter from "@/components/mosc-redesign/MoscRedesignFooter";
 import ZohoSalesIqWidget from "@/components/mosc-redesign/ZohoSalesIqWidget";
 import MoscRedesignSaintsCarousel, {
@@ -32,14 +33,18 @@ function formatLiturgyDisplayDate(liturgyDate: string | null): string {
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 }
 
+/**
+ * Hero slides must use web-sized assets (~1920px, <500 KB). images.unoptimized is on,
+ * so the originals (9 MB JPEG / 7 MB 8k PNG) decode full-size and freeze the renderer.
+ */
 const slides = [
   {
-    image: "/mosc/assets/images/mosc_images/bava_hero_slider_church_scene-5.jpeg",
+    image: "/mosc/assets/images/mosc_images/bava_hero_slider_church_scene-5-web.jpg",
     alt: "Malankara Orthodox Syrian Church worship scene",
     objectPosition: "center",
   },
   {
-    image: "/mosc/assets/images/mosc_images/Banner-image-of-Aramana-Slider_8k.png",
+    image: "/mosc/assets/images/mosc_images/Banner-image-of-Aramana-Slider-web.jpg",
     alt: "Banner image of Aramana, Malankara Orthodox Syrian Church",
     /** Anchor toward top so cross + Catholicate Aramana signage stay in frame (object-cover). */
     objectPosition: "center 18%",
@@ -326,6 +331,7 @@ export default function MoscRedesignHomeClient({
             <Link
               key={item.label}
               href={item.href}
+              prefetch={moscRedesignNavPrefetch(item.href)}
               className="flex flex-col items-center gap-2 py-4 px-2 transition-all duration-300 group hover:bg-burgundy hover:-translate-y-0.5 hover:shadow-md hover:shadow-burgundy/30">
               <span className="text-burgundy group-hover:text-white transition-colors duration-300 group-hover:scale-110 transform">{item.icon}</span>
               <span className="text-warmBrown group-hover:text-white text-xs font-medium text-center leading-tight transition-colors duration-300">

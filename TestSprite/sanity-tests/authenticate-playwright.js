@@ -143,30 +143,37 @@ async function authenticatePage(page, baseUrl, credentials) {
       'input[aria-label*="password" i]'
     ];
 
+    // CRITICAL: "Continue"-style selectors also match Clerk's "Continue with Google"
+    // social buttons — clicking one starts an OAuth redirect and the run dies.
+    // Every text-based selector must exclude social buttons, and Clerk's primary
+    // form button (cl-formButtonPrimary) is tried first.
+    const NOT_SOCIAL =
+      ':not([class*="social" i]):not([data-localization-key*="social"])' +
+      ':not(:has-text("Google")):not(:has-text("Facebook")):not(:has-text("GitHub"))' +
+      ':not(:has-text("Apple")):not(:has-text("Microsoft"))';
     const submitSelectors = [
+      'button.cl-formButtonPrimary',
+      'form button[type="submit"]',
       'button[type="submit"]',
-      'button:has-text("Sign in")',
-      'button:has-text("Continue")',
-      'button:has-text("Sign In")',
-      'button:has-text("Sign In with Email")',
+      `button:has-text("Sign in")${NOT_SOCIAL}`,
+      `button:has-text("Sign In")${NOT_SOCIAL}`,
+      `button:has-text("Sign In with Email")${NOT_SOCIAL}`,
+      `button:has-text("Continue")${NOT_SOCIAL}`,
       'button[data-testid*="submit"]',
       'button[data-testid*="sign-in"]',
-      'button[data-testid*="continue"]',
-      'form button[type="submit"]',
-      'button.cl-button',
-      'button[class*="button"]',
-      'button[class*="submit"]',
-      'button[class*="continue"]',
-      'button[aria-label*="sign" i]',
-      'button[aria-label*="continue" i]',
-      'button[aria-label*="submit" i]',
+      `button[data-testid*="continue"]${NOT_SOCIAL}`,
+      `button.cl-button${NOT_SOCIAL}`,
+      `button[class*="submit"]${NOT_SOCIAL}`,
+      `button[class*="continue"]${NOT_SOCIAL}`,
+      `button[aria-label*="sign" i]${NOT_SOCIAL}`,
+      `button[aria-label*="continue" i]${NOT_SOCIAL}`,
+      `button[aria-label*="submit" i]${NOT_SOCIAL}`,
       // Clerk-specific selectors
       'button[data-localization-key*="signIn"]',
-      'button[data-localization-key*="continue"]',
+      `button[data-localization-key*="continue"]${NOT_SOCIAL}`,
       'button[data-localization-key*="submit"]',
       // More generic fallbacks
-      'form button:not([type="button"])',
-      'button:not([disabled]):not([type="button"])'
+      `form button:not([type="button"])${NOT_SOCIAL}`
     ];
 
     // Try to find email input with multiple selectors
@@ -281,10 +288,13 @@ async function authenticatePage(page, baseUrl, credentials) {
 
           console.log(`   🔍 Button ${i + 1}: text="${text?.trim()}", visible=${isVisible}, enabled=${isEnabled}`);
 
-          if (isVisible && isEnabled && (
-            text?.toLowerCase().includes('sign') ||
-            text?.toLowerCase().includes('continue') ||
-            text?.toLowerCase().includes('submit')
+          const lowerText = (text || '').toLowerCase();
+          // Never click social-login buttons ("Continue with Google" contains "continue")
+          const isSocial = /google|facebook|github|apple|microsoft/.test(lowerText);
+          if (isVisible && isEnabled && !isSocial && (
+            lowerText.includes('sign') ||
+            lowerText.includes('continue') ||
+            lowerText.includes('submit')
           )) {
             console.log(`   ✅ Found submit button by text content: "${text?.trim()}"`);
             await button.click();

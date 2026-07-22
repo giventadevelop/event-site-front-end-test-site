@@ -11,7 +11,8 @@ function getApiBase() {
 
 export async function fetchDiscountCodesForEvent(eventId: string): Promise<DiscountCodeDTO[]> {
   const tenantId = getTenantId();
-  const url = `${getApiBase()}/api/discount-codes?eventId.equals=${eventId}&tenantId.equals=${tenantId}`;
+  // Event-scoped bounded set: explicit size keeps the request bounded; client paginates locally
+  const url = `${getApiBase()}/api/discount-codes?eventId.equals=${eventId}&tenantId.equals=${tenantId}&size=200`;
 
   const response = await fetchWithJwtRetry(url, {
       next: { revalidate: 0 },

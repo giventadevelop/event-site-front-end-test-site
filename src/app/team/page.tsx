@@ -21,7 +21,7 @@ export default function TeamPage() {
   const [showImages, setShowImages] = useState(false);
   const [page, setPage] = useState(0); // 0-based for calculations
   const [profileModalMember, setProfileModalMember] = useState<ExecutiveCommitteeTeamMemberDTO | null>(null);
-  const pageSize = 9; // Display 9 team members per page
+  const pageSize = 20;
 
   // Cache key for sessionStorage (env-prefixed so local/dev/prod are separate)
   const CACHE_KEY = getHomepageCacheKey('team_page_cache');

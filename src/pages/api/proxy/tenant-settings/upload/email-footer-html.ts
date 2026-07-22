@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getCachedApiJwt, generateApiJwt } from '@/lib/api/jwt';
 import { getTenantId, getApiBaseUrl } from '@/lib/env';
+import { getRawBody } from '@/lib/getRawBody';
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -23,69 +24,53 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
-    // Get JWT token
     let token = await getCachedApiJwt();
     if (!token) {
       token = await generateApiJwt();
     }
 
     const tenantId = getTenantId();
-    const url = `${API_BASE_URL}/api/tenant-settings/upload/email-footer-html`;
+    const url = `${API_BASE_URL}/api/tenant-settings/upload/email-footer-html?tenantId=${encodeURIComponent(tenantId)}`;
 
-    // Use node-fetch for proper multipart form handling
-    const fetch = (await import('node-fetch')).default;
+    // Buffer multipart body — streaming IncomingMessage via node-fetch causes
+    // ERR_STREAM_PREMATURE_CLOSE / "Invalid response body ... Premature close".
+    const rawBody = await getRawBody(req);
 
-    // Copy headers from request
     const headers: Record<string, string> = {
       Authorization: `Bearer ${token}`,
       'X-Tenant-ID': tenantId,
+      'content-length': String(rawBody.length),
     };
+
     if (req.headers['content-type']) {
-      headers['content-type'] = req.headers['content-type'];
-    }
-    if (req.headers['content-length']) {
-      headers['content-length'] = req.headers['content-length'];
+      headers['content-type'] = Array.isArray(req.headers['content-type'])
+        ? req.headers['content-type'][0]
+        : req.headers['content-type'];
     }
 
-    // Forward the request to the backend
     const apiRes = await fetch(url, {
       method: 'POST',
-      headers: headers,
-      body: req, // Forward the raw request stream
-      duplex: 'half', // Required for streaming body in Node.js fetch
+      headers,
+      body: rawBody,
     });
 
-    // Check response status and handle accordingly
-    if (apiRes.status >= 200 && apiRes.status < 300) {
-      // Success - pipe the response
-      const data = await apiRes.text();
-      res.status(apiRes.status).send(data);
-    } else if (apiRes.status === 401) {
-      // Retry with new token
+    if (apiRes.status === 401) {
       token = await generateApiJwt();
       headers.Authorization = `Bearer ${token}`;
       const retryRes = await fetch(url, {
         method: 'POST',
-        headers: headers,
-        body: req,
-        duplex: 'half',
+        headers,
+        body: rawBody,
       });
       const data = await retryRes.text();
       res.status(retryRes.status).send(data);
-    } else {
-      // Error - forward error response
-      const errorText = await apiRes.text();
-      res.status(apiRes.status).json({ error: errorText });
+      return;
     }
-  } catch (err) {
-    console.error('Upload error:', err);
+
+    const data = await apiRes.text();
+    res.status(apiRes.status).send(data);
+  } catch (err: unknown) {
+    console.error('[Proxy] Error uploading email footer HTML:', err);
     res.status(500).json({ error: 'Internal server error', details: String(err) });
   }
 }
-
-
-
-
-
-
-
