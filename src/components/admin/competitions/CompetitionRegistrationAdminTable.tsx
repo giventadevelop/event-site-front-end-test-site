@@ -7,7 +7,36 @@ interface Props {
   registrations: EventCompetitionRegistrationDTO[];
 }
 
+function isFreeRegistration(reg: EventCompetitionRegistrationDTO): boolean {
+  return !(Number(reg.feeAmount) > 0);
+}
+
+function statusLabel(reg: EventCompetitionRegistrationDTO): string {
+  if (isFreeRegistration(reg)) {
+    if (
+      reg.registrationStatus === 'PENDING_PAYMENT' ||
+      reg.registrationStatus === 'CONFIRMED' ||
+      reg.registrationStatus?.includes('PAYMENT')
+    ) {
+      return 'Registered';
+    }
+    return reg.registrationStatus || 'Registered';
+  }
+  if (reg.registrationStatus === 'PENDING_PAYMENT') return 'Pending payment';
+  if (reg.registrationStatus === 'CONFIRMED') return 'Confirmed';
+  return reg.registrationStatus || '—';
+}
+
 export default function CompetitionRegistrationAdminTable({ registrations }: Props) {
+  const participantLabel = (r: EventCompetitionRegistrationDTO) => {
+    const p = r.participantProfile;
+    if (!p) return '—';
+    const name =
+      p.displayName?.trim() ||
+      `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim();
+    return name || '—';
+  };
+
   const sorted = [...registrations].sort((a, b) => {
     const compA = a.competition?.name ?? '';
     const compB = b.competition?.name ?? '';
@@ -19,9 +48,9 @@ export default function CompetitionRegistrationAdminTable({ registrations }: Pro
     const headers = ['Competition', 'Participant', 'Team Name', 'Status', 'Fee', 'Category', 'Created', 'ID'];
     const rows = sorted.map((r) => [
       r.competition?.name ?? '',
-      r.participantProfile?.displayName || `${r.participantProfile?.firstName ?? ''} ${r.participantProfile?.lastName ?? ''}`.trim(),
+      participantLabel(r) === '—' ? '' : participantLabel(r),
       r.teamDisplayName || r.teamName || '',
-      r.registrationStatus,
+      statusLabel(r),
       r.feeAmount,
       r.effectiveCategory ?? '',
       r.createdAt ?? '',
@@ -68,12 +97,9 @@ export default function CompetitionRegistrationAdminTable({ registrations }: Pro
               sorted.map((r) => (
                 <tr key={r.id} className="border-b border-gray-100">
                   <td className="px-4 py-3">{r.competition?.name ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    {r.participantProfile?.displayName ||
-                      `${r.participantProfile?.firstName ?? ''} ${r.participantProfile?.lastName ?? ''}`.trim()}
-                  </td>
+                  <td className="px-4 py-3">{participantLabel(r)}</td>
                   <td className="px-4 py-3">{r.teamDisplayName || r.teamName || '—'}</td>
-                  <td className="px-4 py-3">{r.registrationStatus}</td>
+                  <td className="px-4 py-3">{statusLabel(r)}</td>
                   <td className="px-4 py-3">{formatCurrency(Number(r.feeAmount) || 0)}</td>
                   <td className="px-4 py-3">{r.createdAt ? new Date(r.createdAt).toLocaleString() : '—'}</td>
                 </tr>

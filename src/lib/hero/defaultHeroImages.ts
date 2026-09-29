@@ -11,6 +11,11 @@ export interface DefaultHeroSlide {
   fileName?: string;
 }
 
+/**
+ * Platform emergency homepage hero. Tenants replace this file in `public/`;
+ * do not hardcode a different path in hero components.
+ * Path: `/images/hero_section/hero_images/fallback/default-hero.webp`
+ */
 export const BUNDLED_EMERGENCY_HERO_IMAGE =
   '/images/hero_section/hero_images/fallback/default-hero.webp';
 
@@ -343,6 +348,10 @@ export interface ResolveHeroImagesResult {
 /**
  * Homepage hero slideshow: event hero media → optional tenant default slides → fallback image.
  * Tenant defaults are included only when defaultHeroIncludeWithEvents is true (active slides only).
+ *
+ * If there is at least one upcoming-event hero slide but the combined list is still a
+ * single image (no tenant default / additional slides uploaded), append the same
+ * fallback used when there are no events so the hero can loop (event ↔ default).
  */
 export function resolveHeroImages(input: ResolveHeroImagesInput): ResolveHeroImagesResult {
   const fallback =
@@ -371,13 +380,19 @@ export function resolveHeroImages(input: ResolveHeroImagesInput): ResolveHeroIma
     const imageUrls = includeDefaults ? [...eventUrls, ...tenantUrls] : [...eventUrls];
     const durationsMs = [
       ...eventDurations,
-      ...tenantUrls.map(() => TENANT_HERO_SLIDE_DURATION_MS),
+      ...(includeDefaults ? tenantUrls.map(() => TENANT_HERO_SLIDE_DURATION_MS) : []),
     ];
+
+    if (imageUrls.length < 2 && fallback && !imageUrls.includes(fallback)) {
+      imageUrls.push(fallback);
+      durationsMs.push(TENANT_HERO_SLIDE_DURATION_MS);
+    }
+
     return {
       imageUrls,
       durationsMs,
       eventSlideCount: eventUrls.length,
-      defaultSlideCount: tenantUrls.length,
+      defaultSlideCount: imageUrls.length - eventUrls.length,
     };
   }
 

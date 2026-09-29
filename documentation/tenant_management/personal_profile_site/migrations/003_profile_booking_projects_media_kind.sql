@@ -1,5 +1,5 @@
 -- Personal profile Phase B — booking_url, media_kind, profile_project, projects section flag
--- Apply via Liquibase in event-site-manager-service; canonical DDL in Latest_Schema_Post__Blob_Claude_12.sql
+-- Apply via Liquibase in event-site-manager-service; canonical DDL in Event_Site_Manager_Latest_Schema.sql
 
 ALTER TABLE public.public_profile
   ADD COLUMN IF NOT EXISTS booking_url character varying(1024);

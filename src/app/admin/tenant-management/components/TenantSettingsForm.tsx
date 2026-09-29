@@ -25,6 +25,8 @@ import {
   normalizeDefaultHeroImageUrlsJsonForApi,
   type DefaultHeroDisplayMode,
 } from '@/lib/hero/defaultHeroImages';
+import { tenantSettingsTabQuery, type TenantSettingsTab } from '@/lib/tenantSettingsTabs';
+import { usePathname, useRouter } from 'next/navigation';
 import GoogleAdsensePlacementsFields from '@/app/admin/tenant-management/components/GoogleAdsensePlacementsFields';
 import {
   adsensePlacementFieldsFromJson,
@@ -48,6 +50,7 @@ interface TenantSettingsFormProps {
   mode: 'create' | 'edit';
   availableOrganizations?: TenantOrganizationDTO[];
   settingsId?: number; // Pass settingsId explicitly for uploads
+  initialTab?: TenantSettingsTab;
 }
 
 export default function TenantSettingsForm({
@@ -57,11 +60,20 @@ export default function TenantSettingsForm({
   loading = false,
   mode,
   availableOrganizations = [],
-  settingsId: propSettingsId
+  settingsId: propSettingsId,
+  initialTab = 'general',
 }: TenantSettingsFormProps) {
-  const [activeTab, setActiveTab] = useState<
-    'general' | 'integrations' | 'limits' | 'homepageHero' | 'customization'
-  >('general');
+  const router = useRouter();
+  const pathname = usePathname();
+  const [activeTab, setActiveTab] = useState<TenantSettingsTab>(initialTab);
+  const selectTab = useCallback(
+    (tab: TenantSettingsTab) => {
+      setActiveTab(tab);
+      if (!pathname) return;
+      router.replace(`${pathname}${tenantSettingsTabQuery(tab)}`, { scroll: false });
+    },
+    [pathname, router]
+  );
   const [uploadingFooterHtml, setUploadingFooterHtml] = useState(false);
   const [addSiteFooter, setAddSiteFooter] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -73,6 +85,7 @@ export default function TenantSettingsForm({
   const [footerHtmlUploadMessage, setFooterHtmlUploadMessage] = useState<string>('');
   const [logoUploadStatus, setLogoUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [logoUploadMessage, setLogoUploadMessage] = useState<string>('');
+  const [logoUrlCopyFeedback, setLogoUrlCopyFeedback] = useState<string | null>(null);
   const [headerImageUploadStatus, setHeaderImageUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [headerImageUploadMessage, setHeaderImageUploadMessage] = useState<string>('');
   const [heroSaveStatus, setHeroSaveStatus] = useState<SaveStatus>('idle');
@@ -149,6 +162,17 @@ export default function TenantSettingsForm({
       showProfileMediaDownloadsSection: initialData?.showProfileMediaDownloadsSection ?? false,
       showProfileContactSection: initialData?.showProfileContactSection ?? false,
       showProfileProjectsSection: initialData?.showProfileProjectsSection ?? false,
+      // Header menu (null/undefined → form defaults match app null-safe defaults)
+      showHeaderHome: initialData?.showHeaderHome ?? true,
+      showHeaderAbout: initialData?.showHeaderAbout ?? true,
+      showHeaderEvents: initialData?.showHeaderEvents ?? true,
+      showHeaderFeatures: initialData?.showHeaderFeatures ?? true,
+      showHeaderCalendar: initialData?.showHeaderCalendar ?? true,
+      showHeaderGallery: initialData?.showHeaderGallery ?? true,
+      showHeaderContact: initialData?.showHeaderContact ?? true,
+      showHeaderNews: initialData?.showHeaderNews ?? false,
+      showHeaderDownloads: initialData?.showHeaderDownloads ?? false,
+      showHeaderLinks: initialData?.showHeaderLinks ?? false,
       // Gas station COO module (GAS_STATION site type)
       enableGasStationModule: initialData?.enableGasStationModule ?? false,
       gasAiEngineBaseUrl: initialData?.gasAiEngineBaseUrl || '',
@@ -330,7 +354,7 @@ export default function TenantSettingsForm({
         twilioAuthToken: data.twilioAuthToken,
       });
       if (!whatsappValidation.valid) {
-        setActiveTab('integrations');
+        selectTab('integrations');
         for (const [field, message] of Object.entries(whatsappValidation.fieldErrors)) {
           setError(field as WhatsappIntegrationField, { type: 'manual', message });
         }
@@ -344,7 +368,7 @@ export default function TenantSettingsForm({
         adsensePlacements
       );
       if (!adsenseValidation.valid) {
-        setActiveTab('integrations');
+        selectTab('integrations');
         if (adsenseValidation.field === 'googleAdsensePublisherId') {
           setError('googleAdsensePublisherId', {
             type: 'manual',
@@ -361,7 +385,7 @@ export default function TenantSettingsForm({
 
       const placementsJson = serializeAdsensePlacementFields(adsensePlacements);
       if (placementsJson.length > 8192) {
-        setActiveTab('integrations');
+        selectTab('integrations');
         setAdsensePlacementsFormError('Combined placements exceed the maximum allowed size.');
         showIntegrationSaveValidationError('Ad placement configuration is too large.', [
           'Remove unused slot IDs or shorten values, then try again.',
@@ -895,7 +919,7 @@ export default function TenantSettingsForm({
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => selectTab(tab.id as TenantSettingsTab)}
                 className={`py-2.5 px-3 sm:px-4 border-2 font-semibold text-sm sm:text-base flex items-center gap-2 sm:gap-3 rounded-lg transition-all duration-300 flex-[1_1_calc(50%-0.25rem)] md:flex-[1_1_calc(33.333%-0.34rem)] min-w-[10rem] max-w-full ${
                   isActive ? colors.active : colors.inactive
                 }`}
@@ -1129,6 +1153,48 @@ export default function TenantSettingsForm({
                   onChange={(checked) => setValue('isMembershipSubscriptionEnabled', checked)}
                 />
               </div>
+            </div>
+
+            {/* Header menu visibility */}
+            <div className="space-y-4">
+              <h4 className="text-md font-medium text-gray-900">Header Menu</h4>
+              <p className="text-sm text-gray-600">
+                Choose which items appear in the top site header. News, Downloads, and Links reuse content managed under{' '}
+                <a href="/admin/profile-site" className="text-blue-600 hover:underline font-medium">
+                  Admin → Profile Site
+                </a>
+                .
+              </p>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+                Manage News (writings), Downloads (media assets), and external-link writings under Profile Site. Social URLs on
+                the public profile also appear on the Links page.
+              </div>
+
+              {(
+                [
+                  ['showHeaderHome', 'Home', 'Show Home in the header'],
+                  ['showHeaderAbout', 'About', 'Show About in the header'],
+                  ['showHeaderEvents', 'Events', 'Show Events in the header'],
+                  ['showHeaderFeatures', 'Features', 'Show Features dropdown in the header'],
+                  ['showHeaderCalendar', 'Calendar', 'Show Calendar in the header'],
+                  ['showHeaderGallery', 'Gallery', 'Show Gallery in the header'],
+                  ['showHeaderContact', 'Contact', 'Show Contact in the header'],
+                  ['showHeaderNews', 'News', 'Show News / Perspectives (profile writings list)'],
+                  ['showHeaderDownloads', 'Downloads', 'Show Downloads (profile media assets list)'],
+                  ['showHeaderLinks', 'Links', 'Show Links (social URLs + external-link writings)'],
+                ] as const
+              ).map(([name, label, description]) => (
+                <div key={name} className="bg-gray-50 p-4 rounded-lg">
+                  <ToggleSwitch
+                    name={name}
+                    label={label}
+                    description={description}
+                    checked={!!watchedValues[name]}
+                    onChange={(checked) => setValue(name, checked)}
+                  />
+                </div>
+              ))}
             </div>
 
             {/* Personal Profile Homepage Sections */}
@@ -2167,7 +2233,47 @@ export default function TenantSettingsForm({
 
             {/* Tenant Logo Upload */}
             <div className="border-t border-gray-200 pt-6">
-              <h4 className="text-md font-medium text-gray-900 mb-4">Tenant Logo</h4>
+              <h4 className="text-md font-medium text-gray-900 mb-2">Tenant Logo</h4>
+              <p className="text-sm text-gray-600 mb-3">
+                Copy this URL for satellite domain branding or other apps. It updates when you upload or remove the logo.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 sm:items-stretch mb-4">
+                <input
+                  type="text"
+                  readOnly
+                  value={logoImageUrl || ''}
+                  placeholder="No logo URL yet — upload an image below"
+                  className="flex-1 min-w-0 text-xs sm:text-sm font-mono border border-gray-300 rounded-lg px-3 py-2.5 bg-gray-50 text-gray-800"
+                  title={logoImageUrl || undefined}
+                  aria-label="Current tenant logo URL"
+                />
+                <button
+                  type="button"
+                  disabled={!logoImageUrl?.trim()}
+                  onClick={async () => {
+                    if (!logoImageUrl?.trim()) return;
+                    try {
+                      await navigator.clipboard.writeText(logoImageUrl.trim());
+                      setLogoUrlCopyFeedback('Copied to clipboard');
+                      setTimeout(() => setLogoUrlCopyFeedback(null), 2500);
+                    } catch {
+                      setLogoUrlCopyFeedback('Could not copy');
+                      setTimeout(() => setLogoUrlCopyFeedback(null), 2500);
+                    }
+                  }}
+                  className="flex-shrink-0 h-11 sm:h-auto sm:min-w-[7rem] px-4 rounded-xl bg-blue-100 hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105"
+                  title="Copy logo URL"
+                  aria-label="Copy logo URL"
+                >
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  <span className="font-semibold text-blue-700">Copy URL</span>
+                </button>
+              </div>
+              {logoUrlCopyFeedback && (
+                <p className="text-xs text-green-700 font-medium mb-3">{logoUrlCopyFeedback}</p>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Logo Image

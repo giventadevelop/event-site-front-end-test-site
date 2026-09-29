@@ -63,7 +63,7 @@ export default function DiocesesCmsSearchGrid({ dioceses }: { dioceses: Diocese[
                 </div>
               )}
             </div>
-            <div className="p-8 flex flex-col flex-1">
+            <div className="px-4 py-8 md:p-8 flex flex-col flex-1">
               <h3 className="font-syro-display text-xl font-semibold text-syro-blue mb-4 leading-snug">
                 {card.name}
               </h3>

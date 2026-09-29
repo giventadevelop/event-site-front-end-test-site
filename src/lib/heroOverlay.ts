@@ -1,17 +1,25 @@
 import type { EventDetailsDTO } from '@/types';
+import {
+  isExternalTicketedEvent,
+  isTicketedEventCube,
+  resolveBuyTicketsTarget,
+} from '@/lib/eventcube/utils';
 import { isTicketedFundraiserEvent } from '@/lib/donation/utils';
-import { isTicketedEventCube } from '@/lib/eventcube/utils';
 
 export interface HeroOverlayInfo {
   image: string;
   href: string;
   alt: string;
+  /** When true, open href in a new tab (external vendor). */
+  external?: boolean;
 }
 
 /**
  * Returns overlay info for "Buy Tickets" / "Fundraiser" / "Register Here" CTA
  * shown at bottom-right of hero or featured event image.
  * Only returns a value for upcoming (today or future) events: ticketed, ticketed fundraiser, or registration-required.
+ *
+ * Buy Tickets priority: Event Cube → external ticket URL → Givebutter fundraiser → internal.
  */
 export function getOverlayInfo(event: EventDetailsDTO | null): HeroOverlayInfo | null {
   if (!event || !event.id) return null;
@@ -28,36 +36,19 @@ export function getOverlayInfo(event: EventDetailsDTO | null): HeroOverlayInfo |
 
   if (!isUpcomingLocal) return null;
 
-  const isTicketedFundraiser = isTicketedFundraiserEvent(event);
-
-  if (isTicketedFundraiser) {
-    return {
-      image: '/images/buy_tickets_click_here_fundraiser.png',
-      href: `/events/${event.id}/givebutter-checkout`,
-      alt: 'Buy Tickets',
-    };
-  }
-
-  if (isTicketedEventCube(event)) {
-    return {
-      image: '/images/buy_tickets_click_here_red.webp',
-      href: `/events/${event.id}/eventcube-checkout`,
-      alt: 'Buy Tickets',
-    };
-  }
-
-  if (event.admissionType?.toUpperCase() === 'TICKETED') {
-    const checkoutRoute =
-      event.manualPaymentEnabled === true &&
-      (event.paymentFlowMode === 'MANUAL_ONLY' || event.paymentFlowMode === 'HYBRID')
-        ? `/events/${event.id}/manual-checkout`
-        : `/events/${event.id}/checkout`;
-
-    return {
-      image: '/images/buy_tickets_click_here_red.webp',
-      href: checkoutRoute,
-      alt: 'Buy Tickets',
-    };
+  if (isTicketedEventCube(event) || isExternalTicketedEvent(event) || isTicketedFundraiserEvent(event) || event.admissionType?.toUpperCase() === 'TICKETED') {
+    const target = resolveBuyTicketsTarget(event);
+    if (target) {
+      const isFundraiserImage = isTicketedFundraiserEvent(event) && !isTicketedEventCube(event) && !isExternalTicketedEvent(event);
+      return {
+        image: isFundraiserImage
+          ? '/images/buy_tickets_click_here_fundraiser.png'
+          : '/images/buy_tickets_click_here_red.webp',
+        href: target.href,
+        alt: 'Buy Tickets',
+        external: target.kind === 'external',
+      };
+    }
   }
 
   if (event.isRegistrationRequired === true) {

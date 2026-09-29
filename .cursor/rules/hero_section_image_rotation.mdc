@@ -277,20 +277,27 @@ const handleTouchStart = () => {
 
 ### **Image Array Construction**
 ```typescript
-// Build dynamic images array
-const imageUrls: string[] = [];
+// Build dynamic images array via resolveHeroImages()
+// Event hero slides first, then tenant default slides (when include-with-events is on).
+```
 
-// Add filtered upcoming events (only next occurrence for recurring events)
-processedEvents.forEach((event) => {
-  if (event.thumbnailUrl) {
-    imageUrls.push(event.thumbnailUrl);
-  }
+**Minimum 2-slide loop (single upcoming event):**
+- If there is **one upcoming event** with a hero image and **no** tenant default / additional hero slides are uploaded, `resolveHeroImages` **appends** `BUNDLED_EMERGENCY_HERO_IMAGE` (`/images/hero_section/hero_images/fallback/default-hero.webp`).
+- Result: `[event hero, default hero]` so auto-rotation and prev/next controls run. Overlay stays on the event slide only (`eventId` is null on the default slide).
+- Do **not** append this fallback when the combined list already has 2+ slides (multiple events or uploaded tenant defaults). Do **not** change two-panel containment (`mh-poster-hero-*`) or overlay rules.
+- Do **not** hardcode a tenant-specific fallback path. Per-tenant branding is this same filename in that tenant’s `public/` folder, or tenant default slides in admin.
+
+```typescript
+// ✅ DO: omit noImagesFallbackUrl so the resolver uses BUNDLED_EMERGENCY_HERO_IMAGE
+const resolved = resolveHeroImages({
+  eventImageUrls,
+  eventDurationsMs,
+  tenantSettings,
 });
+// 1 event, no tenant defaults → imageUrls.length === 2 (event + BUNDLED_EMERGENCY_HERO_IMAGE)
 
-// Add fallback image at the end
-imageUrls.push("https://cdn.builder.io/api/v1/image/assets%2Fa70a28525f6f491aaa751610252a199c%2F67c8b636de774dd2bb5d7097f5fcc176?format=webp&width=800");
-
-setDynamicImages(imageUrls);
+// ❌ DON'T: skip rotation when there is only one future event and no extra uploads
+// ❌ DON'T: show Buy Tickets overlay on the appended default slide
 ```
 
 ### **Rotation Timing**

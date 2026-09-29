@@ -37,14 +37,18 @@ export default async function NewsArticlePage({ params }: PageProps) {
 
   const [flashData, recentArticles, previousArticle] = await Promise.all([
     getFlashNewsForNewsPages(),
-    getRecentArticles(5),
+    getRecentArticles(5, {
+      excludeSlug: article.slug,
+      excludeDocumentId: article.documentId,
+      excludeTitle: article.title,
+    }),
     article.publishedAt ? getPreviousArticle(article.publishedAt) : Promise.resolve(null),
   ]);
 
   const articleUrl = `${getAppUrl()}/mosc-redesign/news/${article.slug}`;
   const postedDate =
     article.publishedAt &&
-    new Date(article.publishedAt).toLocaleDateString('en-IN', {
+    new Date(article.publishedAt).toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -72,7 +76,7 @@ export default async function NewsArticlePage({ params }: PageProps) {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-syro-xl min-w-0">
             {/* Main content - white card like other MOSC content pages */}
-            <article className="lg:col-span-2 min-w-0 overflow-x-hidden max-w-full bg-white rounded-xl shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] p-8">
+            <article className="lg:col-span-2 min-w-0 overflow-x-hidden max-w-full bg-white rounded-xl shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] px-4 py-8 md:p-8">
               <header className="mb-6">
               <h1 className="font-syro-display text-[2.2rem] font-bold text-black leading-tight">
                 {article.title}
@@ -157,18 +161,19 @@ export default async function NewsArticlePage({ params }: PageProps) {
                   Recent Posts
                 </h3>
                 <ul className="space-y-3">
-                  {recentArticles.map((item) => (
-                    <li key={item.id}>
+                  {recentArticles.map((item) => {
+                    const itemKey = item.documentId || item.slug || String(item.id);
+                    return (
+                    <li key={itemKey}>
                       <Link
-                        href={`/mosc-redesign/news/${item.slug}`}
-                        className={`font-body text-sm leading-snug focus:outline-none focus-visible:ring-2 focus-visible:ring-syro-red block text-syro-blue hover:text-syro-red transition-colors duration-300 ${
-                          item.slug === article.slug ? 'font-semibold' : ''
-                        }`}
+                        href={`/mosc-redesign/news/${item.documentId || item.slug || String(item.id)}`}
+                        className="font-body text-sm leading-snug focus:outline-none focus-visible:ring-2 focus-visible:ring-syro-red block text-syro-blue hover:text-syro-red transition-colors duration-300"
                       >
                         <span className="line-clamp-2">{item.title}</span>
                       </Link>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               </div>
             </aside>

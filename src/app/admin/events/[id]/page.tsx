@@ -247,7 +247,7 @@ export default function EventOverviewPage() {
 
               {event.isCompetitionEvent && (
                 <Link
-                  href={`/admin/events/${eventId}/competitions/settings`}
+                  href={`/admin/events/${eventId}/competitions/list`}
                   className="flex flex-col items-center justify-center bg-rose-50 hover:bg-rose-100 text-rose-800 rounded-lg shadow-md p-4 text-xs transition-all group"
                   title="Competitions"
                   aria-label="Competitions"

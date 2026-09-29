@@ -10,6 +10,8 @@ alwaysApply: false
   - **Also use** when pushing frontend repos so **AWS Amplify production builds** trigger on the correct branch.
   - When the user asks to commit/push the **core trio** (mosc-temp + batch-jobs + service together), also follow [git_commit_push_core_repos.mdc](mdc:.cursor/rules/git_commit_push_core_repos.mdc).
   - **One-shot prompt** (commit + unstaged files + release deploy): [git_commit_push_release_deploy.mdc](mdc:.cursor/rules/git_commit_push_release_deploy.mdc).
+  - **Pull only** (no commit/push): [git_pull.mdc](mdc:.cursor/rules/git_pull.mdc).
+  - **Robocopy sync** mosc-temp → test-site + template: [git_robocopy_mosc_sync.mdc](mdc:.cursor/rules/git_robocopy_mosc_sync.mdc).
   - **Deploy to Amplify/ECS** (after commit, push release + verify builds): [deploy_apps_to_amplify_ecs.mdc](mdc:.cursor/rules/deploy_apps_to_amplify_ecs.mdc).
 
 - **Pre-checks**
@@ -35,6 +37,8 @@ alwaysApply: false
 ---
 
 ## **Phase 0 — Pull remote FIRST (before commit or release merge)**
+
+**Pull-only requests** (user says "git pull" with no commit/push): follow [git_pull.mdc](mdc:.cursor/rules/git_pull.mdc) instead of continuing to Phase 1 below.
 
 **Always `fetch` + `pull` the current work branch** before staging, committing, or merging to release. Do **not** commit on a branch that is behind `origin` without pulling first.
 
@@ -156,6 +160,25 @@ When the user asks to **commit and push** a project and `git status` shows **any
 
 **Mandatory condition:** If `git status --porcelain` shows **` M` (modified, unstaged)**, **`MM` (staged + unstaged)**, or **`??` (untracked)**, run **`git add -A`** and commit every path that passes the secret filter below. Unstaged tracked files **must not** be left behind when the user requests commit/push — they are first-class commit candidates, same as untracked files.
 
+**User trigger phrases (always enable unstaged + untracked staging):**
+
+- "unstaged files hurt them" / "add unstaged files"
+- "commit and push these project(s)" (multi-repo batch)
+- Any commit/push request where porcelain shows ` M`, `MM`, or `??`
+
+**Decision rule (unstaged / untracked → commit only if not secrets/keys):**
+
+| Porcelain | Action |
+|-----------|--------|
+| ` M` or `MM` on tracked files | **Stage** with `git add -A` **if and only if** path passes secret filter |
+| `??` untracked files | **Stage** **if and only if** not on blocklist (`__pycache__/`, `.env*`, `auth.json`, keys, credentials) |
+| Blocklisted path (secrets/keys) | **Never stage** — unstage after `git add -A` even when user says "add unstaged files" |
+| Safe path still dirty after commit | **Workflow incomplete** — re-run staging before push |
+
+**Condition (user request):** When the user says unstaged files hurt them / add unstaged files — stage **all** ` M` / `??` that are **not** secrets or keys (filename blocklist + content spot-check). Do **not** leave safe app/docs/test/SQL changes uncommitted.
+
+**Agent rule (explicit):** On any commit/push request — including multi-repo batches (`mosc-temp`, `event-site-manager-service`, `event-site-manager`, `event-site-manager-batch-jobs`, front-end templates, `tasks_automation`, etc.) — treat **unstaged (` M`)** and **untracked (`??`)** safe files the same as staged changes. Stage with `git add -A`, then **unstage only** paths on the blocklist (secrets, keys, env files, build artifacts, `__pycache__/`, `*.pyc`). If the user says unstaged files hurt them or asks to add unstaged files, this is the **default behavior — not optional**.
+
 ```powershell
 git status -sb
 git status --porcelain
@@ -173,7 +196,7 @@ git diff --cached --name-only
    git restore --staged tsconfig.tsbuildinfo 2>$null
    git restore --staged code_html_template/SQLS/corrected_event_media_inserts.ordered_PROD.sql 2>$null
    git diff --cached --name-only | Select-String -Pattern `
-     'prod\.env$|\.env\.local|\.env\.production|auth\.json$|\.auth-state|secrets|\.pem$|\.key$|credentials|ordered_PROD\.sql|tsconfig\.tsbuildinfo$' `
+     'prod\.env$|\.env\.local|\.env\.production|auth\.json$|\.auth-state|secrets|\.pem$|\.key$|credentials|ordered_PROD\.sql|tsconfig\.tsbuildinfo$|__pycache__|\.pyc$' `
      -CaseSensitive:$false | ForEach-Object { git restore --staged $_.Line.Trim() }
    ```
 4. **Secret filename check** (below) — empty output required before commit.

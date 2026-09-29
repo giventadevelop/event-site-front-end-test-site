@@ -28,15 +28,15 @@ export default async function MalankaraOrthodoxSyrianChurchPage({
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             {/* Main Content */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] p-8">
+              <div className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] px-4 py-8 md:p-8">
                 {/* Featured Image - same style as administration/administration */}
                 <div className="mb-8 flex justify-center">
                   <Image
                     src="/images/logos/Current_Edits/MOSC-Logo-only.png"
                     alt="Malankara Orthodox Syrian Church"
-                    width={125}
-                    height={125}
-                    className="rounded-lg w-full max-w-[125px] max-h-[125px] object-contain"
+                    width={188}
+                    height={188}
+                    className="rounded-lg w-full max-w-[188px] max-h-[188px] object-contain"
                     priority
                   />
                 </div>

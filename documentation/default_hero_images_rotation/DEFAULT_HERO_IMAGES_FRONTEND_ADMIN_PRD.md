@@ -236,7 +236,7 @@ Admins need on-demand help without leaving Tenant Settings. Mirror the **event f
 7. **Zero active fallback** — If no slides are marked active but library is non-empty, homepage shows **3 random** images from the library on each resolve.
 8. **Display mode** — `slideshow` (rotate all selected URLs), `random` (one per page load), `single` (first URL only) — applied **after** active/random-3 resolution.
 9. **Include with events** — When checked, tenant default slides append after upcoming event hero images.
-10. **Homepage fallback chain** — Event hero media → tenant defaults (rules above) → bundled `/images/hero_section/hero_images/fallback/default-hero.webp`.
+10. **Homepage fallback chain** — Event hero media → tenant defaults (rules above) → bundled `/images/hero_section/hero_images/fallback/default-hero.webp` (`BUNDLED_EMERGENCY_HERO_IMAGE` in `src/lib/hero/defaultHeroImages.ts`). Live homepage (`ModernistPosterHero`) must omit `noImagesFallbackUrl`. Cloned projects replace that WebP file; they do not change the path.
 11. **Legacy data** — Plain URL JSON arrays (`["https://..."]`) keep showing **all** URLs on the homepage until an admin saves from this UI (migrates to enriched `[{ url, active }]`).
 12. **Manual URLs (advanced)** — HTTPS one per line; merged as **inactive**; dedupe by URL.
 13. **Verify** — Save settings → open homepage in new tab; test with/without upcoming events.

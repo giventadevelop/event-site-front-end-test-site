@@ -4,7 +4,7 @@
 -- Seed / import / backfill / verify:
 --   documentation/gallery_album_category_year_enhancements/migrations/
 -- Canonical greenfield schema:
---   code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql
+--   code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql
 -- =============================================
 
 -- 1. gallery_category lookup table

@@ -15,7 +15,14 @@ import {
   unwrapStrapiRecord,
 } from '@/lib/strapi/unwrapRecord';
 import { getMediaUrl, getMediaAlt } from '@/app/mosc-redesign/(syro)/directory/lib/strapiMedia';
-import type { KalpanaCmsData, KalpanaEdition, KalpanaPageContent } from './types';
+import { DIRECTORY_PAGE_SIZE } from '@/app/mosc-redesign/(syro)/directory/types/listPagination';
+import type {
+  KalpanaCmsData,
+  KalpanaEdition,
+  KalpanaEditionsListOptions,
+  KalpanaEditionsListResult,
+  KalpanaPageContent,
+} from './types';
 
 const DEFAULT_HERO_IMAGE = '/images/downloads/kalpana.png';
 const DEFAULT_CARD_IMAGE = '/images/downloads/kalapana_card_logo.png';
@@ -247,6 +254,56 @@ async function fetchKalpanaPage(baseUrl: string, base: string, tenantId: string)
   }
 }
 
+function editionMatchesSearch(edition: KalpanaEdition, nameSearch?: string): boolean {
+  const q = nameSearch?.trim().toLowerCase();
+  if (!q) return true;
+  return (
+    edition.title.toLowerCase().includes(q) ||
+    edition.year.toLowerCase().includes(q) ||
+    edition.slug.toLowerCase().includes(q)
+  );
+}
+
+function paginateEditions(
+  editions: KalpanaEdition[],
+  options?: KalpanaEditionsListOptions
+): KalpanaEditionsListResult {
+  const filtered = editions.filter((edition) => editionMatchesSearch(edition, options?.nameSearch));
+  const loadAll =
+    options?.loadAll === true ||
+    options == null ||
+    (options.page == null && options.pageSize == null);
+
+  if (loadAll) {
+    return {
+      editions: filtered,
+      pagination: {
+        page: 1,
+        pageCount: 1,
+        pageSize: filtered.length || DIRECTORY_PAGE_SIZE,
+        total: filtered.length,
+      },
+    };
+  }
+
+  const page = Math.max(1, options?.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, options?.pageSize ?? DIRECTORY_PAGE_SIZE));
+  const total = filtered.length;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize) || 1);
+  const safePage = Math.min(page, pageCount);
+  const start = (safePage - 1) * pageSize;
+
+  return {
+    editions: filtered.slice(start, start + pageSize),
+    pagination: {
+      page: safePage,
+      pageCount,
+      pageSize,
+      total,
+    },
+  };
+}
+
 async function fetchKalpanaEditions(baseUrl: string, base: string, tenantId: string): Promise<KalpanaEdition[]> {
   const params = new URLSearchParams();
   params.set('filters[tenant][tenantId][$eq]', tenantId);
@@ -275,21 +332,33 @@ async function fetchKalpanaEditions(baseUrl: string, base: string, tenantId: str
   }
 }
 
-export async function getKalpanaCmsData(): Promise<KalpanaCmsData> {
+export async function getKalpanaCmsData(
+  options?: KalpanaEditionsListOptions
+): Promise<KalpanaCmsData & KalpanaEditionsListResult> {
   const baseUrl = getStrapiUrl();
   const base = getStrapiApiBase();
   const tenantId = getStrapiTenantId();
 
   if (!baseUrl || !base || !tenantId) {
-    return { page: DEFAULT_PAGE, editions: DEFAULT_EDITIONS };
+    const { editions, pagination } = paginateEditions(DEFAULT_EDITIONS, options);
+    return { page: DEFAULT_PAGE, editions, pagination };
   }
 
-  const [page, editions] = await Promise.all([
+  const [page, allEditions] = await Promise.all([
     fetchKalpanaPage(baseUrl, base, tenantId),
     fetchKalpanaEditions(baseUrl, base, tenantId),
   ]);
 
-  return { page, editions };
+  const { editions, pagination } = paginateEditions(allEditions, options);
+  return { page, editions, pagination };
+}
+
+/** Hub list with search + pagination (same options as other CMS hubs). */
+export async function getKalpanaEditionsData(
+  options?: KalpanaEditionsListOptions
+): Promise<KalpanaEditionsListResult> {
+  const { editions, pagination } = await getKalpanaCmsData(options);
+  return { editions, pagination };
 }
 
 export { DEFAULT_CARD_IMAGE, DEFAULT_EDITIONS, findEditionBySlug, fetchKalpanaEditionBySlugDirect };

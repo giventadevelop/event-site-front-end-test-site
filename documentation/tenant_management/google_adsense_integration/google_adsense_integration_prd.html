@@ -30,7 +30,7 @@
         <strong>Frontend repo:</strong> mosc-temp (satellite sites) &nbsp;|&nbsp;
         <strong>Admin repo:</strong> event-site-manager (multi-tenant settings UI) &nbsp;|&nbsp;
         <strong>Backend repo:</strong> event-site-manager-service &nbsp;|&nbsp;
-        <strong>Schema baseline:</strong> <code>Latest_Schema_Post__Blob_Claude_12.sql</code> &nbsp;|&nbsp;
+        <strong>Schema baseline:</strong> <code>Event_Site_Manager_Latest_Schema.sql</code> &nbsp;|&nbsp;
         <strong>Owner guide:</strong> <a href="google_adsense_owner_setup_guide.html">google_adsense_owner_setup_guide.html</a> &nbsp;|&nbsp;
         <strong>Shared ID (giventa.com):</strong> <a href="google_adsense_shared_publisher_giventa.html">google_adsense_shared_publisher_giventa.html</a>
     </p>
@@ -40,7 +40,7 @@
     </div>
 
     <h2>1. Database (PostgreSQL)</h2>
-    <p>Per <code>database_schema_guidelines</code>: add columns in the canonical <code>CREATE TABLE public.tenant_settings</code> block in <code>Latest_Schema_Post__Blob_Claude_12.sql</code> — do not use standalone <code>ALTER TABLE</code> scripts in the schema repo.</p>
+    <p>Per <code>database_schema_guidelines</code>: add columns in the canonical <code>CREATE TABLE public.tenant_settings</code> block in <code>Event_Site_Manager_Latest_Schema.sql</code> — do not use standalone <code>ALTER TABLE</code> scripts in the schema repo.</p>
     <pre>-- Inside CREATE TABLE public.tenant_settings ( ... )
   enable_google_adsense boolean DEFAULT false NOT NULL,
   google_adsense_publisher_id character varying(32),
@@ -145,7 +145,7 @@
 
     <h2>10. Batch jobs repo (<code>event-site-manager-batch-jobs</code>)</h2>
     <div class="info-box">
-        <p><strong>Canonical schema:</strong> Mirror the three columns in <code>database/Latest_Schema_Post__Blob_Claude_12.sql</code> (CREATE TABLE block + COMMENT ON COLUMN). No standalone ALTER migration SQL in batch-jobs.</p>
+        <p><strong>Canonical schema:</strong> Mirror the three columns in <code>database/Event_Site_Manager_Latest_Schema.sql</code> (CREATE TABLE block + COMMENT ON COLUMN). No standalone ALTER migration SQL in batch-jobs.</p>
         <p><strong>Runtime migration:</strong> Liquibase in <code>event-site-manager-service</code> only (shared PostgreSQL database).</p>
         <p><strong>Entity sync required:</strong> <code>com.eventmanager.batch.domain.TenantSettings</code> must map the three JPA fields so production <code>ddl-auto: validate</code> stays aligned.</p>
         <p><strong>No batch logic changes</strong> for AdSense MVP — jobs only read tenant settings for email branding.</p>
@@ -153,10 +153,10 @@
     <table>
         <thead><tr><th>Repo / file</th><th>Action</th></tr></thead>
         <tbody>
-            <tr><td><code>mosc-temp/.../Latest_Schema_Post__Blob_Claude_12.sql</code></td><td>Source of truth — columns in CREATE TABLE</td></tr>
+            <tr><td><code>mosc-temp/.../Event_Site_Manager_Latest_Schema.sql</code></td><td>Source of truth — columns in CREATE TABLE</td></tr>
             <tr><td><code>event-site-manager-service/.../TenantSettings.java</code></td><td>JPA entity + DTO + validator</td></tr>
             <tr><td><code>event-site-manager-batch-jobs/.../TenantSettings.java</code></td><td>JPA entity fields only (schema parity)</td></tr>
-            <tr><td><code>event-site-manager-batch-jobs/database/Latest_Schema_Post__Blob_Claude_12.sql</code></td><td>Keep in sync with mosc-temp canonical schema</td></tr>
+            <tr><td><code>event-site-manager-batch-jobs/database/Event_Site_Manager_Latest_Schema.sql</code></td><td>Keep in sync with mosc-temp canonical schema</td></tr>
         </tbody>
     </table>
 

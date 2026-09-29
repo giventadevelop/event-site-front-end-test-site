@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import type { EventCompetitionDTO, EventCompetitionDayDTO, EventCompetitionParticipantDTO } from '@/types';
-import { formatCurrency } from '@/lib/formatCurrency';
-import { DISCIPLINE_LABELS } from '@/lib/competitionEligibility';
+import { formatCompetitionFee } from '@/lib/formatCurrency';
+import { checkParticipantEligibility, DISCIPLINE_LABELS } from '@/lib/competitionEligibility';
 import CompetitionEligibilityBadge from './CompetitionEligibilityBadge';
 
 interface Props {
@@ -48,7 +48,9 @@ export default function CompetitionCatalog({
             <ul className="space-y-3">
               {items.map((comp) => {
                 const id = comp.id!;
-                const checked = selectedIds.includes(id);
+                const { eligible } = checkParticipantEligibility(comp, activeParticipant);
+                const canSelect = !activeParticipant || eligible;
+                const checked = selectedIds.includes(id) && canSelect;
                 const discipline = comp.disciplineCode
                   ? DISCIPLINE_LABELS[comp.disciplineCode] ?? comp.disciplineCode
                   : null;
@@ -56,14 +58,24 @@ export default function CompetitionCatalog({
                   <li
                     key={id}
                     className={`flex items-start gap-3 p-3 rounded-lg border-2 transition-colors ${
-                      checked ? 'border-primary bg-primary/5' : 'border-border'
+                      checked
+                        ? 'border-primary bg-primary/5'
+                        : canSelect
+                          ? 'border-border'
+                          : 'border-border opacity-75'
                     }`}
                   >
                     <input
                       type="checkbox"
                       checked={checked}
-                      onChange={() => onToggle(id, Number(comp.feeAmount) || 0)}
-                      className="mt-1"
+                      disabled={!canSelect}
+                      onChange={() => {
+                        if (!canSelect) return;
+                        onToggle(id, Number(comp.feeAmount) || 0);
+                      }}
+                      className="mt-1 disabled:cursor-not-allowed"
+                      title={canSelect ? undefined : 'Not eligible for this competition'}
+                      aria-label={canSelect ? undefined : 'Not eligible for this competition'}
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap justify-between gap-2 items-start">
@@ -88,7 +100,7 @@ export default function CompetitionCatalog({
                           </div>
                         </div>
                         <span className="font-semibold text-primary">
-                          {formatCurrency(Number(comp.feeAmount) || 0)}
+                          {formatCompetitionFee(Number(comp.feeAmount) || 0)}
                         </span>
                       </div>
                       {comp.divisionLabel && (
@@ -99,8 +111,8 @@ export default function CompetitionCatalog({
                       )}
                       {eventId && comp.id && (
                         <Link
-                          href={`/events/${eventId}/competitions/${comp.id}`}
-                          className="text-xs text-primary hover:underline mt-1 inline-block"
+                          href={`/events/${eventId}/competitions/${comp.id}?from=register`}
+                          className="inline-flex items-center mt-2 px-3 py-1.5 text-xs font-semibold border-2 border-border rounded-lg text-primary hover:border-primary hover:bg-primary/5 reverent-transition"
                           onClick={(e) => e.stopPropagation()}
                         >
                           View details

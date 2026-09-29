@@ -7,19 +7,21 @@ interface ErrorDialogProps {
   onClose: () => void;
   title: string;
   message: string;
+  detail?: string;
 }
 
 export default function ErrorDialog({
   isOpen,
   onClose,
   title,
-  message
+  message,
+  detail,
 }: ErrorDialogProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 transform transition-all duration-300 scale-100">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
@@ -37,8 +39,18 @@ export default function ErrorDialog({
         </div>
 
         {/* Content */}
-        <div className="p-6">
-          <p className="text-gray-700 leading-relaxed">{message}</p>
+        <div className="p-6 space-y-3 max-h-[60vh] overflow-y-auto">
+          <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{message}</p>
+          {detail && detail !== message && (
+            <details className="rounded-lg border border-red-200 bg-red-50 p-3">
+              <summary className="cursor-pointer text-sm font-medium text-red-800">
+                Technical details
+              </summary>
+              <pre className="mt-2 whitespace-pre-wrap break-words text-xs text-red-900">
+                {detail}
+              </pre>
+            </details>
+          )}
         </div>
 
         {/* Footer */}

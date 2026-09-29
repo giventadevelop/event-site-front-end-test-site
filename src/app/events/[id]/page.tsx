@@ -13,7 +13,8 @@ import cardGridStyles from './CenteredCardGrid.module.css';
 import { SponsorCard } from '@/components/sponsors/SponsorCard';
 import { InstagramIcon } from '@/components/icons/InstagramIcon';
 import { isDonationBasedEvent, isTicketedFundraiserEvent } from '@/lib/donation/utils';
-import { isTicketedEventCube } from '@/lib/eventcube/utils';
+import { resolveBuyTicketsTarget } from '@/lib/eventcube/utils';
+import EventCardResultsPanel from '@/components/competitions/EventCardResultsPanel';
 
 // Helper function to get initials from a name
 function getInitials(name: string): string {
@@ -122,6 +123,7 @@ export default function EventDetailsPage() {
   const eventId = params?.id;
   const [event, setEvent] = useState<EventDetailsDTO | null>(null);
   const [media, setMedia] = useState<EventMediaDTO[]>([]);
+  const [agendaFlyer, setAgendaFlyer] = useState<EventMediaDTO | null>(null);
   const [featuredPerformers, setFeaturedPerformers] = useState<EventFeaturedPerformersDTO[]>([]);
   const [contacts, setContacts] = useState<EventContactsDTO[]>([]);
   const [programDirectors, setProgramDirectors] = useState<EventProgramDirectorsDTO[]>([]);
@@ -129,6 +131,7 @@ export default function EventDetailsPage() {
   const [sponsorBannerImages, setSponsorBannerImages] = useState<Map<number, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [showSlideshow, setShowSlideshow] = useState(false);
+  const [showAgendaFlyerSlideshow, setShowAgendaFlyerSlideshow] = useState(false);
   const [slideshowInitialIndex, setSlideshowInitialIndex] = useState(0);
   // Track failed images for placeholder fallback
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
@@ -136,6 +139,7 @@ export default function EventDetailsPage() {
   const [eventFocusGroupIdFilter, setEventFocusGroupIdFilter] = useState<number | null>(null);
   const [eventFocusGroupOptions, setEventFocusGroupOptions] = useState<{ id: number; name: string }[]>([]);
   const [focusGroupNameByAssociationId, setFocusGroupNameByAssociationId] = useState<Record<number, string>>({});
+  const [resultsOpen, setResultsOpen] = useState(false);
 
   useEffect(() => {
     async function fetchEventDetails() {
@@ -388,6 +392,8 @@ export default function EventDetailsPage() {
       const params = new URLSearchParams({
         'eventId.equals': eventId.toString(),
         'isEventManagementOfficialDocument.equals': 'false',
+        'isPublic.equals': 'true',
+        size: '100',
         sort: 'updatedAt,desc',
       });
       if (eventFocusGroupIdFilter != null) {
@@ -396,6 +402,22 @@ export default function EventDetailsPage() {
       const mediaRes = await fetch(`/api/proxy/event-medias?${params.toString()}`);
       const mediaData = await mediaRes.json();
       setMedia(Array.isArray(mediaData) ? mediaData : [mediaData]);
+
+      const flyerParams = new URLSearchParams({
+        'eventId.equals': eventId.toString(),
+        'isAgendaFlyer.equals': 'true',
+        'isPublic.equals': 'true',
+        size: '1',
+      });
+      const flyerRes = await fetch(`/api/proxy/event-medias?${flyerParams.toString()}`);
+      if (flyerRes.ok) {
+        const flyerData = await flyerRes.json();
+        const flyerList = Array.isArray(flyerData) ? flyerData : flyerData ? [flyerData] : [];
+        const first = flyerList[0] as EventMediaDTO | undefined;
+        setAgendaFlyer(first?.fileUrl || first?.preSignedUrl ? first : null);
+      } else {
+        setAgendaFlyer(null);
+      }
     }
     fetchMedia();
   }, [eventId, eventFocusGroupIdFilter]);
@@ -404,12 +426,49 @@ export default function EventDetailsPage() {
   if (!event) return <div className="p-8 text-center text-red-500">Event not found.</div>;
 
   // Find hero image - Prioritize isHomePageHeroImage, then fallback to eventFlyer
-  const heroImage = media.find((m) => m.isHomePageHeroImage && m.fileUrl) ||
-                    media.find((m) => m.eventFlyer && m.fileUrl) ||
-                    media.find((m) => m.fileUrl);
+  const isAgendaItemThumbnail = (m: EventMediaDTO) =>
+    /\bagenda thumbnail\b/i.test(m.title || '');
+  const isWrongEventMediaPath = (m: EventMediaDTO) => {
+    const match = (m.fileUrl || '').match(/\/event-id\/(\d+)\//i);
+    return Boolean(match && eventId && String(match[1]) !== String(eventId));
+  };
+  const galleryPriority = (m: EventMediaDTO) => {
+    if (m.isHomePageHeroImage || m.isActiveHeroImage) return 100;
+    if (m.isFeaturedEventImage || m.isHeroImage) return 90;
+    if (m.eventFlyer) return 80;
+    if (m.isAgendaFlyer) return 70;
+    if (m.isLiveEventImage) return 60;
+    return 0;
+  };
+
+  const heroImage = media.find((m) => m.isHomePageHeroImage && m.fileUrl && !m.isAgendaFlyer) ||
+                    media.find((m) => m.eventFlyer && m.fileUrl && !m.isAgendaFlyer) ||
+                    media.find((m) => m.fileUrl && !m.isAgendaFlyer && !isAgendaItemThumbnail(m));
   // Use default hero image if no hero image found (same as events page)
   const heroImageUrl = heroImage?.fileUrl || "/images/default_placeholder_hero_image.jpeg";
-  const gallery = media.filter((m) => m.fileUrl && (!heroImage || m.id !== heroImage.id));
+
+  // Bottom gallery: include hero / cover / agenda flyer and other current event images.
+  // Exclude per-row agenda thumbnails and stale S3 paths from a different event-id.
+  const gallerySources = [...media];
+  if (agendaFlyer?.id && !gallerySources.some((m) => m.id === agendaFlyer.id)) {
+    gallerySources.push(agendaFlyer);
+  }
+  const gallery = gallerySources
+    .filter((m) =>
+      Boolean(m.fileUrl || m.preSignedUrl) &&
+      !isAgendaItemThumbnail(m) &&
+      !isWrongEventMediaPath(m) &&
+      m.isPublic !== false
+    )
+    .slice()
+    .sort((a, b) => {
+      const byPriority = galleryPriority(b) - galleryPriority(a);
+      if (byPriority !== 0) return byPriority;
+      const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      return bTime - aTime;
+    });
+  const agendaFlyerUrl = agendaFlyer?.fileUrl || agendaFlyer?.preSignedUrl || null;
 
   // Get preview images (first 12 media items for grid display)
   const previewMedia = gallery.slice(0, 12);
@@ -578,26 +637,20 @@ export default function EventDetailsPage() {
 
                 // Determine which buttons to show
                 const showRegisterButton = event.isRegistrationRequired === true && isUpcomingLocal;
-                // Event Cube ticketed: link to eventcube-checkout (priority over Givebutter)
-                const isTicketedEventCubeEvent = isTicketedEventCube(event) && isUpcomingLocal;
-                // Check if event is ticketed fundraiser/charity (shows special fundraiser image)
-                const isTicketedFundraiser = isTicketedFundraiserEvent(event) && isUpcomingLocal;
-                // Only show Buy Tickets button for TICKETED events (case-insensitive check)
-                // BUT NOT if Event Cube or ticketed fundraiser (use their dedicated links instead)
-                const showBuyTicketsButton = event.admissionType?.toUpperCase() === 'TICKETED' && isUpcomingLocal && !isTicketedFundraiser && !isTicketedEventCubeEvent;
+                const buyTicketsTarget = isUpcomingLocal ? resolveBuyTicketsTarget(event, { internalPath: 'tickets' }) : null;
                 // Show Make a Donation button for donation-based events
                 // BUT NOT if it's a ticketed fundraiser (use fundraiser image instead)
-                const showDonationButton = isDonationBasedEvent(event) && isUpcomingLocal && !isTicketedFundraiser;
+                const showDonationButton = isDonationBasedEvent(event) && isUpcomingLocal && !isTicketedFundraiserEvent(event);
                 const showCompetitionLinks = event.isCompetitionEvent === true;
+                const showResultsButton = event.isCompetitionEvent === true && isPast;
 
                 // Don't render if no buttons should be shown
                 if (
                   !showRegisterButton &&
-                  !showBuyTicketsButton &&
+                  !buyTicketsTarget &&
                   !showDonationButton &&
-                  !isTicketedFundraiser &&
-                  !isTicketedEventCubeEvent &&
-                  !showCompetitionLinks
+                  !showCompetitionLinks &&
+                  !showResultsButton
                 )
                   return null;
 
@@ -620,53 +673,33 @@ export default function EventDetailsPage() {
                       </Link>
                     )}
 
-                    {/* Event Cube: Buy Tickets → eventcube-checkout */}
-                    {isTicketedEventCubeEvent && (
+                    {buyTicketsTarget && (() => {
+                      const useFundraiserImage =
+                        isTicketedFundraiserEvent(event) &&
+                        buyTicketsTarget.kind === 'internal' &&
+                        buyTicketsTarget.href.includes('givebutter');
+                      return (
                     <Link
-                      href={`/events/${event.id}/eventcube-checkout`}
+                      href={buyTicketsTarget.href}
                       className={`transition-transform hover:scale-105 ${isPast ? 'opacity-50 cursor-not-allowed' : ''}`}
                       title="Buy Tickets"
                       aria-label="Buy Tickets"
+                      {...(buyTicketsTarget.kind === 'external'
+                        ? { target: '_blank', rel: 'noopener noreferrer' }
+                        : {})}
                     >
                       <img
                         alt="Buy Tickets"
                         className="object-contain w-[150px] h-[52px] sm:w-[200px] sm:h-[70px]"
-                        src="/images/buy_tickets_click_here_red.webp"
+                        src={
+                          useFundraiserImage
+                            ? '/images/buy_tickets_click_here_fundraiser.png'
+                            : '/images/buy_tickets_click_here_red.webp'
+                        }
                       />
                     </Link>
-                    )}
-
-                    {/* Fundraiser Image - Show for ticketed fundraiser/charity events (replaces both Buy Tickets and Make a Donation buttons) */}
-                    {isTicketedFundraiser && (
-                    <Link
-                      href={`/events/${event.id}/givebutter-checkout`}
-                      className={`transition-transform hover:scale-105 ${isPast ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      title="Buy Tickets"
-                      aria-label="Buy Tickets"
-                    >
-                      <img
-                        alt="Buy Tickets"
-                        className="object-contain w-[150px] h-[52px] sm:w-[200px] sm:h-[70px]"
-                        src="/images/buy_tickets_click_here_fundraiser.png"
-                      />
-                    </Link>
-                    )}
-
-                    {/* Buy Tickets Image - Show only for TICKETED events (not fundraiser) */}
-                    {showBuyTicketsButton && (
-                    <Link
-                      href={`/events/${event.id}/tickets`}
-                      className={`transition-transform hover:scale-105 ${isPast ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      title="Buy Tickets"
-                      aria-label="Buy Tickets"
-                    >
-                      <img
-                        alt="Buy Tickets"
-                        className="object-contain w-[150px] h-[52px] sm:w-[200px] sm:h-[70px]"
-                        src="/images/buy_tickets_click_here_red.webp"
-                      />
-                    </Link>
-                    )}
+                      );
+                    })()}
 
                     {/* Make a Donation Button - Show for donation-based events (not ticketed fundraiser) */}
                     {showDonationButton && (
@@ -700,6 +733,25 @@ export default function EventDetailsPage() {
                         <span className="font-semibold text-rose-700">Competitions</span>
                       </Link>
                     )}
+
+                    {showResultsButton && (
+                      <button
+                        type="button"
+                        className="flex-shrink-0 h-14 rounded-xl bg-amber-100 hover:bg-amber-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-6"
+                        title={resultsOpen ? 'Hide Result' : 'Show Result'}
+                        aria-label={resultsOpen ? 'Hide Result' : 'Show Result'}
+                        aria-expanded={resultsOpen}
+                        aria-controls={`event-results-${event.id}`}
+                        onClick={() => setResultsOpen((open) => !open)}
+                      >
+                        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-amber-200 flex items-center justify-center">
+                          <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4zm-2 4h14" />
+                          </svg>
+                        </div>
+                        <span className="font-semibold text-amber-700">{resultsOpen ? 'Hide Result' : 'Result'}</span>
+                      </button>
+                    )}
                   </div>
                 );
               })()}
@@ -714,6 +766,12 @@ export default function EventDetailsPage() {
                 <p className="text-gray-600 text-lg mb-4 sm:pr-48 lg:pr-56">
                   {event.caption}
                 </p>
+              )}
+
+              {resultsOpen && event.id && (
+                <div className="mt-6 mb-4">
+                  <EventCardResultsPanel eventId={event.id} eventTitle={event.title} />
+                </div>
               )}
 
               {/* Event Details - Centered flexbox layout */}
@@ -1116,6 +1174,70 @@ export default function EventDetailsPage() {
                 </div>
               )}
 
+              {/* Agenda Flyer — one event-level schedule image */}
+              {agendaFlyer && agendaFlyerUrl && (
+                <div className="mb-10">
+                  <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-3">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-sky-100 flex items-center justify-center">
+                      <svg className="w-8 h-8 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    Agenda Flyer
+                  </h2>
+                  <div className="group relative overflow-hidden rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-white shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col sm:flex-row sm:items-center gap-4 p-4">
+                    <div className="relative flex-shrink-0 w-full sm:w-40 h-40 rounded-xl overflow-hidden bg-white border border-sky-100">
+                      <Image
+                        src={agendaFlyerUrl}
+                        alt={agendaFlyer.title || 'Agenda Flyer'}
+                        fill
+                        className="object-contain"
+                        sizes="160px"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-heading text-lg font-semibold text-gray-900">
+                        {agendaFlyer.title || 'Agenda Flyer'}
+                      </h3>
+                      <p className="text-sm text-gray-700 mt-1">
+                        View or download the full-day event schedule.
+                      </p>
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setShowAgendaFlyerSlideshow(true)}
+                          className="flex-shrink-0 h-14 rounded-xl bg-sky-100 hover:bg-sky-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-6"
+                          title="View Agenda Flyer"
+                          aria-label="View Agenda Flyer"
+                        >
+                          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-sky-200 flex items-center justify-center">
+                            <svg className="w-6 h-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          </div>
+                          <span className="font-semibold text-sky-700">View</span>
+                        </button>
+                        <a
+                          href={agendaFlyerUrl}
+                          download={agendaFlyer.title || 'agenda-flyer'}
+                          className="flex-shrink-0 h-14 rounded-xl bg-teal-100 hover:bg-teal-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-6"
+                          title="Download Agenda Flyer"
+                          aria-label="Download Agenda Flyer"
+                        >
+                          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-teal-200 flex items-center justify-center">
+                            <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                          </div>
+                          <span className="font-semibold text-teal-700">Download</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Program Directors Section */}
               {programDirectors.length > 0 && (
                 <div className="mb-6">
@@ -1236,63 +1358,40 @@ export default function EventDetailsPage() {
                   const isFuture = eventDateStr > todayStr;
                   const isUpcomingLocal = isToday || isFuture;
 
-                  // Event Cube ticketed: link to eventcube-checkout (priority over Givebutter)
-                  const isTicketedEventCubeEvent = isTicketedEventCube(event) && isUpcomingLocal;
-                  // Ticketed fundraiser: both Buy Tickets (center) and Fundraiser badge (top right) point to givebutter-checkout
-                  const isTicketedFundraiser = isTicketedFundraiserEvent(event) && isUpcomingLocal;
-                  // Only show red Buy Tickets for TICKETED events that are NOT Event Cube or ticketed fundraiser
-                  const showBuyTicketsButton = event.admissionType?.toUpperCase() === 'TICKETED' && isUpcomingLocal && !isTicketedFundraiser && !isTicketedEventCubeEvent;
-                  // Show Make a Donation for donation-based events that are NOT ticketed fundraiser
-                  const showDonationButton = isDonationBasedEvent(event) && isUpcomingLocal && !isTicketedFundraiser;
+                  const buyTicketsTarget = isUpcomingLocal ? resolveBuyTicketsTarget(event, { internalPath: 'tickets' }) : null;
+                  const showDonationButton = isDonationBasedEvent(event) && isUpcomingLocal && !isTicketedFundraiserEvent(event);
 
-                  if (!showBuyTicketsButton && !showDonationButton && !isTicketedFundraiser && !isTicketedEventCubeEvent) return null;
+                  if (!buyTicketsTarget && !showDonationButton) return null;
 
                   return (
                     <div className="flex flex-col gap-2">
-                      {/* Event Cube: Buy Tickets → eventcube-checkout (red image) */}
-                      {isTicketedEventCubeEvent && (
+                      {buyTicketsTarget && (() => {
+                        const useFundraiserImage =
+                          isTicketedFundraiserEvent(event) &&
+                          buyTicketsTarget.kind === 'internal' &&
+                          buyTicketsTarget.href.includes('givebutter');
+                        return (
                         <Link
-                          href={`/events/${event.id}/eventcube-checkout`}
+                          href={buyTicketsTarget.href}
                           className="transition-transform hover:scale-105"
                           title="Buy Tickets"
                           aria-label="Buy Tickets"
+                          {...(buyTicketsTarget.kind === 'external'
+                            ? { target: '_blank', rel: 'noopener noreferrer' }
+                            : {})}
                         >
                           <img
                             alt="Buy Tickets"
                             className="object-contain w-[150px] h-[52px] sm:w-[200px] sm:h-[70px]"
-                            src="/images/buy_tickets_click_here_red.webp"
+                            src={
+                              useFundraiserImage
+                                ? '/images/buy_tickets_click_here_fundraiser.png'
+                                : '/images/buy_tickets_click_here_red.webp'
+                            }
                           />
                         </Link>
-                      )}
-                      {/* Fundraiser: same image and URL as top-right badge → givebutter-checkout */}
-                      {isTicketedFundraiser && (
-                        <Link
-                          href={`/events/${event.id}/givebutter-checkout`}
-                          className="transition-transform hover:scale-105"
-                          title="Buy Tickets"
-                          aria-label="Buy Tickets"
-                        >
-                          <img
-                            alt="Buy Tickets"
-                            className="object-contain w-[150px] h-[52px] sm:w-[200px] sm:h-[70px]"
-                            src="/images/buy_tickets_click_here_fundraiser.png"
-                          />
-                        </Link>
-                      )}
-                      {showBuyTicketsButton && (
-                        <Link
-                          href={`/events/${event.id}/tickets`}
-                          className="transition-transform hover:scale-105"
-                          title="Buy Tickets"
-                          aria-label="Buy Tickets"
-                        >
-                          <img
-                            alt="Buy Tickets"
-                            className="object-contain w-[150px] h-[52px] sm:w-[200px] sm:h-[70px]"
-                            src="/images/buy_tickets_click_here_red.webp"
-                          />
-                        </Link>
-                      )}
+                        );
+                      })()}
                       {showDonationButton && (
                         <Link
                           href={`/events/${event.id}/donation`}
@@ -1449,9 +1548,9 @@ export default function EventDetailsPage() {
                           }}
                           className={`${styles.galleryThumbnail} relative overflow-hidden cursor-pointer group`}
                         >
-                          {mediaItem.fileUrl ? (
+                          {(mediaItem.fileUrl || mediaItem.preSignedUrl) ? (
                             <Image
-                              src={mediaItem.fileUrl}
+                              src={mediaItem.fileUrl || mediaItem.preSignedUrl || ''}
                               alt={mediaItem.altText || mediaItem.title}
                               fill
                               className="object-cover transition-transform duration-500 group-hover:scale-110"
@@ -1501,6 +1600,14 @@ export default function EventDetailsPage() {
             media={gallery}
             onClose={() => setShowSlideshow(false)}
             initialIndex={slideshowInitialIndex}
+          />
+        )}
+        {showAgendaFlyerSlideshow && event && agendaFlyer && (
+          <EventMediaSlideshow
+            event={event}
+            media={[agendaFlyer]}
+            onClose={() => setShowAgendaFlyerSlideshow(false)}
+            initialIndex={0}
           />
         )}
         <div className="mt-8 text-center">

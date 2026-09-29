@@ -127,7 +127,7 @@ Use this prompt to integrate the new **home page hero display duration** field i
    - Use the same migration as the backend (see “Migration SQL” in the Backend section above), **or**
    - Add a migration file under `database/migrations/` (e.g. `add_home_page_hero_display_duration.sql`) with that DDL, then run it in your migration process.
 
-2. **Schema copy** (`database/Latest_Schema_Post__Blob_Claude_12.sql` or equivalent):
+2. **Schema copy** (`database/Event_Site_Manager_Latest_Schema.sql` or equivalent):
    - **Table `event_media`**: Add the new column and constraint so your schema file matches the DB.
    - Add **after** `is_home_page_hero_image`:
      ```sql
@@ -157,7 +157,7 @@ Use this prompt to integrate the new **home page hero display duration** field i
 **Verification**
 
 - Run your migration (or apply the DDL manually) and confirm the column exists and the check constraint is present.
-- Confirm `database/Latest_Schema_Post__Blob_Claude_12.sql` (or your canonical schema) matches the migrated database.
+- Confirm `database/Event_Site_Manager_Latest_Schema.sql` (or your canonical schema) matches the migrated database.
 
 ---
 
@@ -175,7 +175,7 @@ Use the **Backend** prompt in `malayalees-us-site-boot` and the **Batch** prompt
 | Project | Path | Files |
 |--------|------|-------|
 | **Backend** | `E:\project_workspace\malayalees-us-site-boot` | `domain/EventMedia.java`, `service/dto/EventMediaDTO.java`, `service/criteria/EventMediaCriteria.java`, `service/EventMediaQueryService.java`, `service/mapper/EventMediaMapper.java`; optionally `EventMediaResource` upload params, `EventMediaServiceImpl.uploadFile` |
-| **Batch** | `E:\project_workspace\event-site-manager-batch-jobs` | `database/migrations/` (add or run migration), `database/Latest_Schema_Post__Blob_Claude_12.sql` (or your canonical schema) |
+| **Batch** | `E:\project_workspace\event-site-manager-batch-jobs` | `database/migrations/` (add or run migration), `database/Event_Site_Manager_Latest_Schema.sql` (or your canonical schema) |
 | **Frontend** | `E:\project_workspace\mosc-temp` | Already done: `src/types/index.ts` (EventMediaDTO), `documentation/HOME_PAGE_HERO_DISPLAY_DURATION.md`, migration and schema |
 
 **Migration source**: `E:\project_workspace\mosc-temp\code_html_template\SQLS\migration_add_home_page_hero_display_duration.sql`

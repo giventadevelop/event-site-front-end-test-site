@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const SQL_FILE = process.argv[2] || path.join(__dirname, 'corrected_event_media_inserts.renumbered.sql');
-const SCHEMA_FILE = path.join(__dirname, '..', 'Current_Sqls', 'Latest_Schema_Post__Blob_Claude_12.sql');
+const SCHEMA_FILE = path.join(__dirname, '..', 'Current_Sqls', 'Event_Site_Manager_Latest_Schema.sql');
 
 /** table -> column -> max length (null = text/unlimited) */
 function parseSchemaLimits(schemaSql) {

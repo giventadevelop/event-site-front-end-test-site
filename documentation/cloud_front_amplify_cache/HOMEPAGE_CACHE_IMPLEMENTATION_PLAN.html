@@ -226,7 +226,7 @@
                 <li><strong>Frontend:</strong> Current repo (mosc-temp) – Next.js 15, App Router, admin under <code>src/app/admin/</code>.</li>
                 <li><strong>Backend:</strong> E:\project_workspace\malayalees-us-site-boot – REST API; Swagger in <code>documentation/Swagger_API_Docs/api-docs.json</code>.</li>
                 <li><strong>Batch jobs:</strong> E:\project_workspace\event-site-manager-batch-jobs – optional cache warming.</li>
-                <li><strong>DB schema:</strong> <code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code>.</li>
+                <li><strong>DB schema:</strong> <code>code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql</code>.</li>
             </ul>
         </div>
     </div>
@@ -260,7 +260,7 @@
         <ul>
             <li>Column: <code class="code-highlight">homepage_cache_version bigint DEFAULT 0 NOT NULL</code> (or <code class="code-highlight">varchar(32)</code> for a timestamp string, if preferred).</li>
             <li>The backend must expose this in the tenant-settings DTO and allow PATCH to update it (or expose a dedicated “bump” endpoint that updates this column).</li>
-            <li>Schema file to update: <code class="code-highlight">code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code>. New columns may be added via ALTER in a migration; document the ALTER and ensure the canonical schema file is updated when the migration is applied.</li>
+            <li>Schema file to update: <code class="code-highlight">code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql</code>. New columns may be added via ALTER in a migration; document the ALTER and ensure the canonical schema file is updated when the migration is applied.</li>
         </ul>
         <p><strong>Option B – New table:</strong> Create <code class="code-highlight">homepage_cache_meta</code> with <code class="code-highlight">id</code> (bigint, <code class="code-highlight">sequence_generator</code>), <code class="code-highlight">tenant_id</code> (varchar 255, FK to <code class="code-highlight">tenant_organization.tenant_id</code>), <code class="code-highlight">version</code> (bigint or varchar), <code class="code-highlight">updated_at</code> (timestamp). Follow <code class="code-highlight">.cursor/rules/database_schema_guidelines.mdc</code>: add DROP TABLE in reverse dependency order at the top of the schema file, CREATE TABLE in dependency order, and add the table to the <code class="code-highlight">sequence_generator</code> setval GREATEST block.</p>
         <p><strong>Migrations:</strong> Document whether the backend (e.g. Flyway/Liquibase in malayalees-us-site-boot) runs migrations or a separate process applies schema changes.</p>
@@ -324,7 +324,7 @@
             <li><strong>Admin home button groups:</strong> <code class="code-highlight">.cursor/rules/admin_home_button_groups_styling.mdc</code> – grid layout, unique colors, card-style buttons.</li>
             <li><strong>Admin action buttons:</strong> <code class="code-highlight">.cursor/rules/admin_action_buttons_styling.mdc</code> – full-width action button styling.</li>
             <li><strong>API schema:</strong> <code class="code-highlight">documentation/Swagger_API_Docs/api-docs.json</code> – tenant-settings and other REST endpoints.</li>
-            <li><strong>Database schema:</strong> <code class="code-highlight">code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code> – canonical schema; <code class="code-highlight">.cursor/rules/database_schema_guidelines.mdc</code> – new tables, sequence_generator.</li>
+            <li><strong>Database schema:</strong> <code class="code-highlight">code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql</code> – canonical schema; <code class="code-highlight">.cursor/rules/database_schema_guidelines.mdc</code> – new tables, sequence_generator.</li>
         </ul>
     </div>
 </body>

@@ -2,7 +2,7 @@
 
 Incremental scripts for **M1–M5** from [data_migration_enhancements_prd.html](../data_migration_enhancements_prd.html).
 
-Canonical full schema (greenfield): `code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql`
+Canonical full schema (greenfield): `code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql`
 
 ## Apply order
 

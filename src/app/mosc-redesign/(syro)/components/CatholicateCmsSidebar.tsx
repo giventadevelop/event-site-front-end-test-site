@@ -6,8 +6,6 @@ import { usePathname } from 'next/navigation';
 export interface CatholicateCmsSidebarEntry {
   name: string;
   href: string;
-  period?: string | null;
-  description?: string | null;
 }
 
 interface CatholicateCmsSidebarProps {
@@ -38,24 +36,6 @@ export default function CatholicateCmsSidebar({ entries }: CatholicateCmsSidebar
               <span className={`font-syro-display font-medium ${isActive ? 'text-white' : ''}`}>
                 {entry.name}
               </span>
-              {entry.period ? (
-                <p
-                  className={`font-syro-primary text-xs font-medium mt-0 mb-0 ${
-                    isActive ? '!text-white' : 'text-syro-blue'
-                  }`}
-                >
-                  {entry.period}
-                </p>
-              ) : null}
-              {entry.description ? (
-                <p
-                  className={`font-syro-primary text-xs leading-tight mt-0 mb-0 ${
-                    isActive ? '!text-white' : 'text-[#798daf]'
-                  }`}
-                >
-                  {entry.description}
-                </p>
-              ) : null}
             </Link>
           );
         })}

@@ -131,6 +131,8 @@ export interface EventDetailsDTO {
   donationMetadata?: string;
   /** Event Cube embed URL - iframe src for event page (when admission is TICKETED) */
   eventcubeEmbedUrl?: string;
+  /** External vendor Buy Tickets URL (Zeffy, Eventbrite, etc.); opens in a new tab when set */
+  externalTicketUrl?: string;
   /** Event Cube order/checkout URL - when set, can be loaded in same iframe so checkout stays embedded (workaround when event page opens order in new tab) */
   eventcubeOrderUrl?: string;
   /** Event recurrence metadata - For recurrence configuration (JSON string) */
@@ -190,6 +192,7 @@ export interface EventMediaDTO {
   fileSize?: number;
   isPublic?: boolean;
   eventFlyer?: boolean;
+  isAgendaFlyer?: boolean;
   isEventManagementOfficialDocument?: boolean;
   preSignedUrl?: string;
   preSignedUrlExpiresAt?: string;
@@ -754,6 +757,17 @@ export interface TenantSettingsDTO {
   showProfileMediaDownloadsSection?: boolean;
   showProfileContactSection?: boolean;
   showProfileProjectsSection?: boolean;
+  // Header menu visibility (null = app default: legacy items ON; news/downloads/links OFF)
+  showHeaderHome?: boolean | null;
+  showHeaderAbout?: boolean | null;
+  showHeaderEvents?: boolean | null;
+  showHeaderFeatures?: boolean | null;
+  showHeaderCalendar?: boolean | null;
+  showHeaderGallery?: boolean | null;
+  showHeaderContact?: boolean | null;
+  showHeaderNews?: boolean | null;
+  showHeaderDownloads?: boolean | null;
+  showHeaderLinks?: boolean | null;
   // Gas station COO module (GAS_STATION site type)
   /** Master on/off for the gas station admin module for this tenant */
   enableGasStationModule?: boolean;
@@ -1213,6 +1227,28 @@ export interface EventProgramDirectorsDTO {
   createdAt: string;
   updatedAt: string;
   event?: EventDetailsDTO;
+}
+
+
+/**
+ * Timed event-day program item (Onam-style agenda). Overlapping times are allowed.
+ * `scheduleDate` null means inherit the event start date / single-day list.
+ */
+export interface EventAgendaItemDTO {
+  id?: number;
+  tenantId?: string;
+  scheduleDate?: string | null;
+  startTime: string;
+  endTime?: string | null;
+  title: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  sortOrder: number;
+  isPublished: boolean;
+  createdAt: string;
+  updatedAt: string;
+  event?: EventDetailsDTO;
+  eventMedia?: EventMediaDTO | null;
 }
 
 // WhatsApp Integration Types
@@ -1927,6 +1963,7 @@ export interface EventCompetitionResultDTO {
   prizeDetails?: string | null;
   pointsAwarded: number;
   winnerPhotoUrl?: string | null;
+  workPhotoUrl?: string | null;
   notes?: string | null;
   isPublished: boolean;
   publishedAt?: string | null;
@@ -1937,6 +1974,7 @@ export interface EventCompetitionResultDTO {
   participantProfile?: EventCompetitionParticipantDTO;
   registration?: EventCompetitionRegistrationDTO;
   winnerMedia?: EventMediaDTO;
+  workMedia?: EventMediaDTO;
 }
 
 export interface EventCompetitionContentBlockDTO {

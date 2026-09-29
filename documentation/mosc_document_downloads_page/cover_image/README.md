@@ -8,7 +8,7 @@ This folder documents the **`official_document_year_bundle`** table and the end-
 | [frontend.md](./frontend.md) | Next.js app (`/admin/official-documents`, public downloads) |
 
 **Canonical schema (full rebuild):**  
-`code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql` — includes `CREATE TABLE public.official_document_year_bundle` and `DROP` / `sequence_generator` updates.
+`code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql` — includes `CREATE TABLE public.official_document_year_bundle` and `DROP` / `sequence_generator` updates.
 
 **Incremental migration (existing database):**  
 Use [migration_official_document_year_bundle.sql](./migration_official_document_year_bundle.sql) once per environment (review before apply).

@@ -1,5 +1,5 @@
 -- Gas Station AI COO site type — incremental migration for existing deployments
--- Written against code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql
+-- Written against code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql
 -- Composes with documentation/tenant_management/personal_profile_site/migrations/001_personal_profile_site.sql:
 --   both add tenant_organization.site_type idempotently; this migration recreates the CHECK
 --   constraint with the superset enum, so apply order does not matter.

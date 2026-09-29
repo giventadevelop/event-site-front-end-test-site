@@ -27,18 +27,27 @@ export async function fetchEventSponsorsServer(page: number = 0, pageSize: numbe
     throw new Error(`Failed to fetch event sponsors: ${response.statusText}`);
   }
 
+  // Prefer backend-provided total count header for correct pagination.
+  // Some backend responses return a plain array; in that case JSON body length
+  // is only the page size, which breaks pagination.
+  const totalCountHeader = response.headers.get('x-total-count');
+  const parsedHeaderTotalCount =
+    totalCountHeader && !Number.isNaN(Number(totalCountHeader))
+      ? Number(totalCountHeader)
+      : null;
+
   const data = await response.json();
 
   // Handle paginated response (Spring Data REST format)
   if (data && typeof data === 'object' && '_embedded' in data && 'eventSponsors' in data._embedded) {
     const sponsors = Array.isArray(data._embedded.eventSponsors) ? data._embedded.eventSponsors : [];
-    const totalCount = data.page?.totalElements || sponsors.length;
+    const totalCount = parsedHeaderTotalCount ?? Number(data.page?.totalElements ?? sponsors.length);
     return { data: sponsors, totalCount };
   }
 
   // Handle direct array response (fallback)
   const sponsors = Array.isArray(data) ? data : [data];
-  return { data: sponsors, totalCount: sponsors.length };
+  return { data: sponsors, totalCount: parsedHeaderTotalCount ?? sponsors.length };
 }
 
 export async function fetchEventSponsorServer(id: number) {

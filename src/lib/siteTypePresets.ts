@@ -13,6 +13,16 @@ export interface SiteTypePresetSettings {
   showProfileMediaDownloadsSection?: boolean;
   showProfileContactSection?: boolean;
   showProfileProjectsSection?: boolean;
+  showHeaderHome?: boolean;
+  showHeaderAbout?: boolean;
+  showHeaderEvents?: boolean;
+  showHeaderFeatures?: boolean;
+  showHeaderCalendar?: boolean;
+  showHeaderGallery?: boolean;
+  showHeaderContact?: boolean;
+  showHeaderNews?: boolean;
+  showHeaderDownloads?: boolean;
+  showHeaderLinks?: boolean;
 }
 
 const EVENT_ORG_PRESET: SiteTypePresetSettings = {
@@ -27,6 +37,16 @@ const EVENT_ORG_PRESET: SiteTypePresetSettings = {
   showProfileMediaDownloadsSection: false,
   showProfileContactSection: false,
   showProfileProjectsSection: false,
+  showHeaderHome: true,
+  showHeaderAbout: true,
+  showHeaderEvents: true,
+  showHeaderFeatures: true,
+  showHeaderCalendar: true,
+  showHeaderGallery: true,
+  showHeaderContact: true,
+  showHeaderNews: false,
+  showHeaderDownloads: false,
+  showHeaderLinks: false,
 };
 
 const SPORTS_PRESET: SiteTypePresetSettings = {
@@ -52,12 +72,25 @@ const PERSONAL_PROFILE_PRESET: SiteTypePresetSettings = {
   showProfileMediaDownloadsSection: true,
   showProfileContactSection: true,
   showProfileProjectsSection: true,
+  showHeaderHome: true,
+  showHeaderAbout: true,
+  showHeaderEvents: false,
+  showHeaderFeatures: false,
+  showHeaderCalendar: false,
+  showHeaderGallery: true,
+  showHeaderContact: true,
+  showHeaderNews: true,
+  showHeaderDownloads: true,
+  showHeaderLinks: true,
 };
 
 const HYBRID_PRESET: SiteTypePresetSettings = {
   ...PERSONAL_PROFILE_PRESET,
   showEventsSectionInHomePage: true,
   showSponsorsSectionInHomePage: true,
+  showHeaderEvents: true,
+  showHeaderFeatures: true,
+  showHeaderCalendar: true,
 };
 
 // GAS_STATION tenants are dashboard-first: no public homepage sections.
@@ -73,6 +106,16 @@ const GAS_STATION_PRESET: SiteTypePresetSettings = {
   showProfileMediaDownloadsSection: false,
   showProfileContactSection: false,
   showProfileProjectsSection: false,
+  showHeaderHome: true,
+  showHeaderAbout: false,
+  showHeaderEvents: false,
+  showHeaderFeatures: false,
+  showHeaderCalendar: false,
+  showHeaderGallery: false,
+  showHeaderContact: false,
+  showHeaderNews: false,
+  showHeaderDownloads: false,
+  showHeaderLinks: false,
 };
 
 export function getSiteTypePresetSettings(siteType: TenantSiteType): SiteTypePresetSettings {

@@ -55,7 +55,7 @@ const TheologicalSeminariesPage = () => {
                 className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] hover:shadow-[rgba(0,0,0,0.35)_0px_5px_15px] transition-shadow duration-300 overflow-hidden flex flex-col h-full"
               >
                 <MoscHubCardMedia src={seminary.image} alt={seminary.title} />
-                <div className="p-8 pt-0 flex flex-col flex-1">
+                <div className="px-4 pb-8 pt-0 md:p-8 md:pt-0 flex flex-col flex-1">
                   <h3 className="font-syro-display text-xl font-semibold text-syro-blue mb-2 leading-snug">
                     {seminary.title}
                   </h3>

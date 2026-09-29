@@ -1,7 +1,7 @@
 'use client';
 
 import type { EventCompetitionDTO } from '@/types';
-import { formatCurrency } from '@/lib/formatCurrency';
+import { formatCompetitionFee } from '@/lib/formatCurrency';
 import CompetitionStripeCheckout from './CompetitionStripeCheckout';
 
 interface CartLine {
@@ -40,14 +40,14 @@ export default function RegistrationCart({
           return (
             <li key={line.competitionId} className="flex justify-between gap-4">
               <span>{comp?.name ?? `Competition #${line.competitionId}`}</span>
-              <span className="font-semibold">{formatCurrency(line.feeAmount)}</span>
+              <span className="font-semibold">{formatCompetitionFee(line.feeAmount)}</span>
             </li>
           );
         })}
       </ul>
       <div className="flex justify-between border-t pt-3 font-semibold text-lg">
         <span>Total</span>
-        <span className="text-primary">{formatCurrency(total)}</span>
+        <span className="text-primary">{formatCompetitionFee(total)}</span>
       </div>
       {showCheckout && registrationIds.length > 0 && total > 0 && (
         <CompetitionStripeCheckout

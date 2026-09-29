@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { GalleryAlbumDTO, GalleryCategoryDTO } from '@/types';
@@ -8,6 +8,12 @@ import { updateAlbumServer, deleteAlbumServer, resolveGalleryCategoryIdForSaveSe
 import { GalleryCategoryTypeahead } from '@/components/admin/gallery/GalleryCategoryTypeahead';
 import GalleryAlbumCoverImageUpload from '@/components/admin/gallery/GalleryAlbumCoverImageUpload';
 import { Modal } from '@/components/Modal';
+import ErrorDialog from '@/components/ErrorDialog';
+import { FormApiErrorBanner } from '@/components/FormApiErrorBanner';
+import {
+  formatUnknownError,
+  type FormattedBackendError,
+} from '@/lib/api/formatBackendError';
 
 interface AdminAlbumEditClientProps {
   initialAlbum: GalleryAlbumDTO;
@@ -21,8 +27,11 @@ export default function AdminAlbumEditClient({ initialAlbum, categories }: Admin
   const [loading, setLoading] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
   const [showAdvancedCoverUrl, setShowAdvancedCoverUrl] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<FormattedBackendError | null>(null);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteError, setDeleteError] = useState<FormattedBackendError | null>(null);
+  const categoryFieldRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState({
     title: initialAlbum.title || '',
     description: initialAlbum.description || '',
@@ -58,10 +67,17 @@ export default function AdminAlbumEditClient({ initialAlbum, categories }: Admin
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setShowErrorDialog(false);
 
     const dateError = validateEventDates();
     if (dateError) {
-      setError(dateError);
+      const formatted: FormattedBackendError = {
+        title: 'Check event dates',
+        message: dateError,
+        field: 'eventDateStart',
+      };
+      setError(formatted);
+      setShowErrorDialog(true);
       setLoading(false);
       return;
     }
@@ -86,7 +102,12 @@ export default function AdminAlbumEditClient({ initialAlbum, categories }: Admin
       // Redirect to album list
       router.push('/admin/gallery/albums');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update album');
+      const formatted = formatUnknownError(err, 'Failed to update album');
+      setError(formatted);
+      setShowErrorDialog(true);
+      if (formatted.field === 'galleryCategoryId') {
+        categoryFieldRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     } finally {
       setLoading(false);
     }
@@ -99,7 +120,7 @@ export default function AdminAlbumEditClient({ initialAlbum, categories }: Admin
       await deleteAlbumServer(initialAlbum.id);
       router.push('/admin/gallery/albums');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete album');
+      setDeleteError(formatUnknownError(err, 'Failed to delete album'));
     }
   };
 
@@ -152,24 +173,7 @@ export default function AdminAlbumEditClient({ initialAlbum, categories }: Admin
         </p>
       </div>
 
-      {/* Error State */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Error updating album</h3>
-              <div className="mt-2 text-sm text-red-700">
-                <p>{error}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {error && <FormApiErrorBanner error={error} heading="Error updating album" />}
 
       {/* Edit Form */}
       <div className="bg-white rounded-lg shadow-md p-6">
@@ -248,7 +252,14 @@ export default function AdminAlbumEditClient({ initialAlbum, categories }: Admin
             )}
           </div>
 
-          <div>
+          <div
+            ref={categoryFieldRef}
+            className={
+              error?.field === 'galleryCategoryId'
+                ? 'rounded-lg border-2 border-red-500 p-3'
+                : undefined
+            }
+          >
             <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="galleryCategoryId">
               Category
             </label>
@@ -256,13 +267,20 @@ export default function AdminAlbumEditClient({ initialAlbum, categories }: Admin
               id="galleryCategoryId"
               categories={categoryList}
               value={formData.galleryCategoryId}
-              onChange={(galleryCategoryId) => setFormData((prev) => ({ ...prev, galleryCategoryId }))}
+              onChange={(galleryCategoryId) => {
+                setFormData((prev) => ({ ...prev, galleryCategoryId }));
+                if (error?.field === 'galleryCategoryId') {
+                  setError(null);
+                  setShowErrorDialog(false);
+                }
+              }}
               onCategoryCreated={(category) =>
                 setCategoryList((prev) =>
                   prev.some((c) => c.id === category.id) ? prev : [...prev, category]
                 )
               }
               onPendingDisplayNameChange={setPendingCategoryName}
+              error={error?.field === 'galleryCategoryId' ? error.message : undefined}
             />
           </div>
 
@@ -439,6 +457,21 @@ export default function AdminAlbumEditClient({ initialAlbum, categories }: Admin
           </div>
         </div>
       </Modal>
+
+      <ErrorDialog
+        isOpen={showErrorDialog && !!error}
+        onClose={() => setShowErrorDialog(false)}
+        title={error?.title || 'Error updating album'}
+        message={error?.message || ''}
+        detail={error?.detail}
+      />
+      <ErrorDialog
+        isOpen={!!deleteError}
+        onClose={() => setDeleteError(null)}
+        title={deleteError?.title || 'Error deleting album'}
+        message={deleteError?.message || ''}
+        detail={deleteError?.detail}
+      />
     </div>
   );
 }

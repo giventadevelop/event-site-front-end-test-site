@@ -3,6 +3,7 @@
 import { fetchWithJwtRetry } from '@/lib/proxyHandler';
 import { getTenantId, getApiBaseUrl } from '@/lib/env';
 import { withTenantId } from '@/lib/withTenantId';
+import { throwFormattedBackendError } from '@/lib/api/formatBackendError';
 import type { GalleryAlbumDTO, GalleryCategoryDTO, EventMediaDTO } from '@/types';
 
 /** URL-safe slug for gallery_category (matches DB check: ^[a-z0-9]+(-[a-z0-9]+)*$). */
@@ -79,17 +80,19 @@ export async function createGalleryCategoryServer(displayName: string): Promise<
 
     const errorText = await res.text();
     lastError = errorText || lastError;
-    const isDuplicate =
-      res.status === 409 ||
-      /duplicate|unique|already exists|constraint/i.test(errorText);
+    const isPrimaryKeyClash =
+      /_pkey/i.test(errorText) && /duplicate key|already exists/i.test(errorText);
+    const isSlugDuplicate =
+      !isPrimaryKeyClash &&
+      (res.status === 409 || /duplicate|unique|already exists|constraint/i.test(errorText));
 
-    if (!isDuplicate) {
+    if (!isSlugDuplicate) {
       console.error('Failed to create gallery category:', res.status, errorText);
-      throw new Error(`Failed to create gallery category: ${errorText}`);
+      throwFormattedBackendError(errorText, 'Failed to create gallery category');
     }
   }
 
-  throw new Error(`Failed to create gallery category: ${lastError}`);
+  throwFormattedBackendError(lastError, 'Failed to create gallery category');
 }
 
 /**
@@ -186,7 +189,7 @@ export async function createAlbumServer(
     if (!res.ok) {
       const errorText = await res.text();
       console.error('Failed to create album:', res.status, errorText);
-      throw new Error(`Failed to create album: ${errorText}`);
+      throwFormattedBackendError(errorText, 'Failed to create album');
     }
 
     return await res.json();
@@ -402,7 +405,7 @@ export async function updateAlbumServer(
     if (!res.ok) {
       const errorText = await res.text();
       console.error('Failed to update album:', res.status, errorText);
-      throw new Error(`Failed to update album: ${errorText}`);
+      throwFormattedBackendError(errorText, 'Failed to update album');
     }
 
     return await res.json();
@@ -426,7 +429,7 @@ export async function deleteAlbumServer(albumId: number): Promise<void> {
     if (!res.ok) {
       const errorText = await res.text();
       console.error('Failed to delete album:', res.status, errorText);
-      throw new Error(`Failed to delete album: ${errorText}`);
+      throwFormattedBackendError(errorText, 'Failed to delete album');
     }
   } catch (error) {
     console.error('Error deleting album:', error);

@@ -221,7 +221,7 @@ function DownloadCard({
         </div>
       </header>
 
-      <div className="download-entry-card__media h-[10.5rem] shrink-0 border-b border-burgundy/10 bg-syro-bg-gray/30 px-4 py-3">
+      <div className="download-entry-card__media h-[10.5rem] shrink-0 border-b border-burgundy/10 bg-syro-bg-gray/30 px-2 py-3 sm:px-4">
         <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-lg bg-syro-bg-gray/20">
           {showThumbnail ? (
             <img
@@ -246,7 +246,7 @@ function DownloadCard({
         </div>
       </div>
 
-      <div className="download-entry-card__details flex min-h-[4.75rem] flex-col justify-start px-4 py-2.5">
+      <div className="download-entry-card__details flex min-h-[4.75rem] flex-col justify-start px-2 py-2.5 sm:px-4">
         {metaLine ? (
           <p className="font-syro-primary text-xs font-semibold uppercase tracking-wide leading-snug text-syro-blue line-clamp-2 break-words">
             {metaLine}
@@ -1130,11 +1130,11 @@ export default function DownloadsPageClient({
       />
 
       <section className="py-16 bg-syro-bg-gray">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
           <h3 className="text-2xl font-light text-[#798daf] mb-6 pl-8 border-l-[7px] border-syro-red">
             Official Library Explorer
           </h3>
-          <div className="bg-white rounded-xl border border-syro-gold/25 shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] p-6 md:p-8 mb-12">
+          <div className="bg-white rounded-xl border border-syro-gold/25 shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] px-3 py-6 sm:p-6 md:p-8 mb-12">
             <div className="mb-6 space-y-4">
               <div className="text-sm text-gray-600">
                 {hasActiveFilters || isSearching ? (

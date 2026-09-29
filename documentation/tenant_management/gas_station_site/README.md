@@ -5,7 +5,7 @@ Feasibility assessment and database design for onboarding gas-station / convenie
 | Document | Contents |
 |---|---|
 | [`gas_station_site_feasibility.md`](gas_station_site_feasibility.md) | Verdict, architecture split (platform vs external AI engine), two-layer site-type mapping, schema summary, **multi-station (chain) design** (section 4.4), backend/frontend plan, iterative loops, risks |
-| [`migrations/001_gas_station_site.sql`](migrations/001_gas_station_site.sql) | Incremental DDL against `Latest_Schema_Post__Blob_Claude_12.sql`: `GAS_STATION` in `site_type` enum, `tenant_settings` engine-config columns, and 4 new tables (`gas_station_location`, `gas_station_integration`, `gas_station_daily_metrics`, `gas_station_recommendation`) |
+| [`migrations/001_gas_station_site.sql`](migrations/001_gas_station_site.sql) | Incremental DDL against `Event_Site_Manager_Latest_Schema.sql`: `GAS_STATION` in `site_type` enum, `tenant_settings` engine-config columns, and 4 new tables (`gas_station_location`, `gas_station_integration`, `gas_station_daily_metrics`, `gas_station_recommendation`) |
 | [`gas_station_subscription_billing.md`](gas_station_subscription_billing.md) | Per-location subscription requirement (graduated volume tiers, location selection), Stripe vs Zoho/Chargebee/Paddle analysis, ACH support, billing dashboard spec |
 | [`gas_station_ai_engine_prd.html`](gas_station_ai_engine_prd.html) | **External AI engine PRD** — connectors, ML training, LLM agent, service JWT write-back, implementation phases & effort estimates |
 | [`gas_station_ai_engine_workflow.excalidraw`](gas_station_ai_engine_workflow.excalidraw) | High-level Excalidraw diagram: store systems → AI engine → platform API → owner dashboard |
@@ -24,7 +24,7 @@ Feasibility assessment and database design for onboarding gas-station / convenie
 
 | Layer | Status |
 |---|---|
-| Canonical schema (`Latest_Schema_Post__Blob_Claude_12.sql`) | ✅ site_type incl. GAS_STATION, tenant_settings gas + profile columns, 4 gas tables + 5 profile tables, sequences + setvals folded in |
+| Canonical schema (`Event_Site_Manager_Latest_Schema.sql`) | ✅ site_type incl. GAS_STATION, tenant_settings gas + profile columns, 4 gas tables + 5 profile tables, sequences + setvals folded in |
 | Backend (`event-site-manager-service`) | ✅ SiteType enum, TenantSettings gas fields, 4 vertical slices (entity/repo/service/criteria/queryService/DTO/mapper/resource), Liquibase `20260703130000_gas_station_module.xml` |
 | Frontend types + proxy | ✅ `src/types/gasStation.ts`, GAS_STATION in `TenantSiteType`, 4 proxy route pairs under `src/pages/api/proxy/gas-station-*` |
 | Tenant-management UI | ✅ Site Type dropdown on org form (presets auto-applied on change), profile section toggles + Gas Station AI Engine config in settings form |

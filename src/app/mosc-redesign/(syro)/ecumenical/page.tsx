@@ -52,11 +52,20 @@ const EcumenicalPage = () => {
                 className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] hover:shadow-[rgba(0,0,0,0.35)_0px_5px_15px] transition-shadow duration-300 overflow-hidden flex flex-col h-full"
               >
                 {article.image ? (
-                  <MoscHubCardMedia src={article.image} alt={article.title} />
+                  <MoscHubCardMedia
+                    src={article.image}
+                    alt={article.title}
+                    frame="landscape"
+                    frameClassName="max-w-[calc(100%-2rem)] md:max-w-[280px]"
+                    sizes="(max-width: 768px) calc(100vw - 4rem), 280px"
+                  />
                 ) : (
-                  <MoscHubCardMediaPlaceholder />
+                  <MoscHubCardMediaPlaceholder
+                    frame="landscape"
+                    frameClassName="max-w-[calc(100%-2rem)] md:max-w-[280px]"
+                  />
                 )}
-                <div className="p-8 pt-0 flex flex-col flex-1">
+                <div className="px-4 pb-8 pt-0 md:p-8 md:pt-0 flex flex-col flex-1">
                   <h3 className="font-syro-display text-xl font-semibold text-syro-blue mb-4 leading-snug line-clamp-3">
                     {article.title}
                   </h3>

@@ -23,11 +23,14 @@ export default function RetiredBishopsGrid({ bishops }: { bishops: Bishop[] }) {
             <MoscHubCardMedia
               src={imageSrc}
               alt={bishop.imageAlt ?? bishop.name}
+              frame="portraitUniform"
               objectPosition="top"
-              frameClassName="bg-white"
+              padded={false}
+              frameClassName="max-w-none md:max-w-[220px] bg-white"
+              sizes="(max-width: 767px) 100vw, 220px"
               unoptimized={Boolean(bishop.imageUrl?.startsWith('http'))}
             />
-            <div className="p-8 pt-0 flex flex-col flex-1">
+            <div className="px-4 pb-8 pt-0 md:p-8 md:pt-0 flex flex-col flex-1">
               <h3 className="font-syro-display text-xl font-semibold text-syro-blue mb-2 leading-snug">
                 {bishop.name}
               </h3>

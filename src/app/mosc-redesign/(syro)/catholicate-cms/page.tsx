@@ -11,7 +11,6 @@ import { buildCmsListUrl } from '../lib/cmsListUrl';
 import {
   MOSC_REDESIGN_CARD,
   MOSC_REDESIGN_CARD_HOVER,
-  MOSC_REDESIGN_CONTAINER,
   MOSC_REDESIGN_PAGE_SECTION,
   MOSC_REDESIGN_PRIMARY_BUTTON,
 } from '@/lib/mosc-redesign-design-tokens';
@@ -74,7 +73,7 @@ export default async function CatholicateCmsPage({
       <SyroPageBanner title="The Catholicate" breadcrumbFrom="home" />
 
       <section className={MOSC_REDESIGN_PAGE_SECTION}>
-        <div className={MOSC_REDESIGN_CONTAINER}>
+        <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-16">
           <div className={`${MOSC_REDESIGN_CARD} ${MOSC_REDESIGN_CARD_HOVER} p-6 md:p-10 mb-12 md:mb-16`}>
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
               <div className="lg:col-span-4 flex justify-center">
@@ -143,16 +142,18 @@ export default async function CatholicateCmsPage({
                   return (
                     <article
                       key={entry.documentId || entry.slug}
-                      className="group flex flex-col h-full rounded-xl border border-burgundy/20 bg-parchment-light p-6 shadow-[0_2px_8px_rgba(61,13,13,0.08)] transition-all duration-300 hover:border-burgundy/50 hover:shadow-[0_8px_24px_rgba(192,40,74,0.16)] hover:-translate-y-1"
+                      className="group flex flex-col h-full rounded-xl border border-burgundy/20 bg-parchment-light px-3 py-6 md:p-6 shadow-[0_2px_8px_rgba(61,13,13,0.08)] transition-all duration-300 hover:border-burgundy/50 hover:shadow-[0_8px_24px_rgba(192,40,74,0.16)] hover:-translate-y-1"
                     >
                       <MoscHubCardMedia
                         src={imageSrc}
                         alt={entry.imageAlt ?? entry.name}
+                        frame="portraitUniform"
                         objectPosition="top"
                         unoptimized={Boolean(entry.imageUrl?.startsWith('http'))}
                         padded={false}
                         outerClassName="-mx-1"
-                        frameClassName="bg-parchment-light ring-0"
+                        frameClassName="max-w-none md:max-w-[220px] bg-parchment-light ring-0"
+                        sizes="(max-width: 767px) 100vw, 220px"
                       />
                       <h3 className="text-lg font-semibold mb-3 leading-snug transition-colors">
                         {cardTitle}

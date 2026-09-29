@@ -6,7 +6,8 @@ import Link from 'next/link';
 import type { EventDetailsDTO } from '@/types';
 import { proxyApiPath } from '@/lib/proxyApiPath';
 import { isTicketedFundraiserEvent } from '@/lib/donation/utils';
-import { isTicketedEventCube } from '@/lib/eventcube/utils';
+import { getOverlayInfo } from '@/lib/heroOverlay';
+import { BUNDLED_EMERGENCY_HERO_IMAGE } from '@/lib/hero/defaultHeroImages';
 
 // Add EventWithMedia type for local use
 interface EventWithMedia extends EventDetailsDTO {
@@ -24,7 +25,7 @@ const DynamicHeroImage: React.FC = () => {
   const [hasTicketedEvents, setHasTicketedEvents] = useState(false);
 
   // Default image path
-  const defaultImage = "/images/hero_section/default_hero_section_second_column_poster.jpeg";
+  const defaultImage = BUNDLED_EMERGENCY_HERO_IMAGE;
 
   // Fetch events with media function
   const fetchEventsWithMedia = async (): Promise<EventWithMedia[]> => {
@@ -400,29 +401,32 @@ const DynamicHeroImage: React.FC = () => {
         </Link>
 
         {/* Buy Tickets Overlay - Show only for event flyers, not fallback image */}
-        {hasTicketedEvents && currentEvent && isShowingEventFlyer && currentEvent.id && (
+        {hasTicketedEvents && currentEvent && isShowingEventFlyer && currentEvent.id && (() => {
+          const overlay = getOverlayInfo(currentEvent);
+          if (!overlay) return null;
+          return (
           <div className="absolute bottom-4 right-4 z-10">
             <Link
-              href={
-                isTicketedEventCube(currentEvent)
-                  ? `/events/${currentEvent.id}/eventcube-checkout`
-                  : isTicketedFundraiserEvent(currentEvent)
-                    ? `/events/${currentEvent.id}/givebutter-checkout`
-                    : `/events/${currentEvent.id}/checkout`
-              }
+              href={overlay.href}
               className="block cursor-pointer hover:scale-105 transition-transform duration-300"
               onClick={(e) => e.stopPropagation()}
+              title={overlay.alt}
+              aria-label={overlay.alt}
+              {...(overlay.external
+                ? { target: '_blank', rel: 'noopener noreferrer' }
+                : {})}
             >
               <Image
-                src="/images/buy_tickets_click_here_red.webp"
-                alt="Buy Tickets Click Here"
+                src={overlay.image}
+                alt={overlay.alt}
                 width={180}
                 height={90}
                 className="cursor-pointer hover:scale-105 transition-transform duration-300"
               />
             </Link>
           </div>
-        )}
+          );
+        })()}
       </div>
     );
   }

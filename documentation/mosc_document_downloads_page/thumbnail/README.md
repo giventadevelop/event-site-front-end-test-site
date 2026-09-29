@@ -14,7 +14,7 @@
 psql -f documentation/mosc_document_downloads_page/thumbnail/migration_event_media_thumbnail.sql
 ```
 
-**Canonical schema:** columns are in `CREATE TABLE public.event_media` in [`Latest_Schema_Post__Blob_Claude_12.sql`](../../../code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql). Follow [database_schema_guidelines.mdc](../../../.cursor/rules/database_schema_guidelines.mdc): incremental `ALTER` for existing DBs, `CREATE TABLE` update for canonical dump.
+**Canonical schema:** columns are in `CREATE TABLE public.event_media` in [`Event_Site_Manager_Latest_Schema.sql`](../../../code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql). Follow [database_schema_guidelines.mdc](../../../.cursor/rules/database_schema_guidelines.mdc): incremental `ALTER` for existing DBs, `CREATE TABLE` update for canonical dump.
 
 **Liquibase (Spring):** `malayalees-us-site-boot` → `20260530120000_add_event_media_thumbnail_columns.xml`
 

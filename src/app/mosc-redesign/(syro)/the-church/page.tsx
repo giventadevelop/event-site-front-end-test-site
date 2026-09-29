@@ -105,7 +105,7 @@ const TheChurchPage = () => {
       />
 
       <section className="py-16 bg-syro-bg-gray">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8">
           <h3 className="text-2xl font-light text-syro-dark-gray mb-10 pl-8 border-l-4 border-syro-red">
             The Malankara Orthodox Syrian Church
           </h3>
@@ -115,10 +115,17 @@ const TheChurchPage = () => {
               return (
                 <div
                   key={item.title}
-                  className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 p-8 flex flex-col h-full"
+                  className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 px-4 py-8 md:p-8 flex flex-col h-full"
                   style={{ boxShadow: cardShadow }}
                 >
-                  <MoscHubCardMedia src={item.image} alt={item.title} padded={false} frameClassName="bg-white" />
+                  <MoscHubCardMedia
+                    src={item.image}
+                    alt={item.title}
+                    padded={false}
+                    outerClassName="-mx-1"
+                    frameClassName="max-w-none md:max-w-[220px] bg-white"
+                    sizes="(max-width: 767px) 100vw, 220px"
+                  />
                   <h3 className="font-syro-display text-xl font-semibold text-syro-blue mb-4 leading-snug">
                     {item.title}
                   </h3>

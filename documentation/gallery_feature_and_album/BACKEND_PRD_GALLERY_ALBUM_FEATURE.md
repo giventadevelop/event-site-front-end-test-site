@@ -1246,7 +1246,7 @@ All functionality can be implemented using existing Spring Boot/JHipster stack.
 
 ## 17. References
 
-- **Database Schema**: `code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql`
+- **Database Schema**: `code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql`
 - **API Documentation**: `documentation/Swagger_API_Docs/api-docs.json`
 - **Backend Project**: `E:\project_workspace\malayalees-us-site-boot`
 - **Batch Job Project**: `E:\project_workspace\event-site-manager-batch-jobs`

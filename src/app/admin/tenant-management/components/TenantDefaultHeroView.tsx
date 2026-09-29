@@ -69,7 +69,7 @@ export default function TenantDefaultHeroView({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-lg font-medium text-gray-900">Homepage Hero</h3>
         <Link
-          href={`/admin/tenant-management/settings/${settingsId}/edit`}
+          href={`/admin/tenant-management/settings/${settingsId}/edit?tab=homepageHero`}
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-100 hover:bg-teal-200 px-4 py-2 text-sm font-semibold text-teal-700 transition-all duration-300 hover:scale-105"
           title="Edit homepage hero settings"
           aria-label="Edit homepage hero settings"

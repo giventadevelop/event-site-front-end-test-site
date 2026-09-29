@@ -34,7 +34,7 @@ The `event_media` table includes an optional field that controls **how long** a 
 
 ### Schema Reference
 
-- **Schema file**: `code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql`
+- **Schema file**: `code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql`
 - **Migration**: `code_html_template/SQLS/migration_add_home_page_hero_display_duration.sql`
 
 ## Representation (UI / Config)
@@ -114,5 +114,5 @@ homePageHeroDisplayDurationSeconds?: number | null;
 | **Default** | `NULL` → app uses 8 seconds                                           |
 | **Range**   | 1–600 seconds when not `NULL`                                         |
 | **Config**  | Configure in minutes + seconds; store as seconds                       |
-| **Schema**  | `Latest_Schema_Post__Blob_Claude_12.sql`                              |
+| **Schema**  | `Event_Site_Manager_Latest_Schema.sql`                              |
 | **Migration** | `migration_add_home_page_hero_display_duration.sql`                 |

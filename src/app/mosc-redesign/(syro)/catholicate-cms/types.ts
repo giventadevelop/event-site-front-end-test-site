@@ -29,17 +29,30 @@ export interface CatholicateEntriesListResult {
 /** Slugs reserved for hub intro content (excluded from the card grid). */
 export const CATHOLICATE_INTRO_SLUGS = new Set([
   'catholicate-intro',
+  'catholicate-intro-mo2',
   'catholicate',
   'introduction',
   'the-catholicate-introduction',
 ]);
 
+/** Strip env suffix (e.g. `-mo2`) so local/prod slug variants share the same order key. */
+export function normalizeCatholicateSlug(slug: string): string {
+  return slug.replace(/-mo2$/, '');
+}
+
 export function isCatholicateIntroEntry(entry: CatholicateEntry): boolean {
-  return CATHOLICATE_INTRO_SLUGS.has(entry.slug);
+  if (CATHOLICATE_INTRO_SLUGS.has(entry.slug)) return true;
+  const base = normalizeCatholicateSlug(entry.slug);
+  return (
+    CATHOLICATE_INTRO_SLUGS.has(base) ||
+    base === 'catholicate-intro' ||
+    base.startsWith('catholicate-intro-')
+  );
 }
 
 /**
  * Hub card order — matches static `/mosc-redesign/catholicate` (catholicosCards array).
+ * Keys are base slugs (without `-mo2`); see normalizeCatholicateSlug.
  */
 export const CATHOLICATE_HUB_CARD_SLUG_ORDER: readonly string[] = [
   'his-holiness-baselios-paulos-i-1st-catholicos-of-the-east-in-malankara',
@@ -52,12 +65,27 @@ export const CATHOLICATE_HUB_CARD_SLUG_ORDER: readonly string[] = [
   'h-h-baselios-marthoma-paulose-ii',
 ];
 
+function catholicateHubOrderIndex(slug: string): number {
+  const orderBySlug = new Map(CATHOLICATE_HUB_CARD_SLUG_ORDER.map((s, index) => [s, index]));
+  return (
+    orderBySlug.get(slug) ??
+    orderBySlug.get(normalizeCatholicateSlug(slug)) ??
+    Number.MAX_SAFE_INTEGER
+  );
+}
+
 export function sortCatholicateHubEntries(entries: CatholicateEntry[]): CatholicateEntry[] {
-  const orderBySlug = new Map(CATHOLICATE_HUB_CARD_SLUG_ORDER.map((slug, index) => [slug, index]));
   return [...entries].sort((a, b) => {
-    const aIndex = orderBySlug.get(a.slug) ?? Number.MAX_SAFE_INTEGER;
-    const bIndex = orderBySlug.get(b.slug) ?? Number.MAX_SAFE_INTEGER;
+    const aIndex = catholicateHubOrderIndex(a.slug);
+    const bIndex = catholicateHubOrderIndex(b.slug);
     if (aIndex !== bIndex) return aIndex - bIndex;
     return a.order - b.order || a.name.localeCompare(b.name);
   });
+}
+
+/** Sidebar / detail nav: intro first, then Catholicoi in chronological hub order. */
+export function sortCatholicateSidebarEntries(entries: CatholicateEntry[]): CatholicateEntry[] {
+  const intros = entries.filter(isCatholicateIntroEntry);
+  const rest = sortCatholicateHubEntries(entries.filter((e) => !isCatholicateIntroEntry(e)));
+  return [...intros, ...rest];
 }

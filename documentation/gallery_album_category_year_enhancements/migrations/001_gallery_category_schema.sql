@@ -2,7 +2,7 @@
 -- Migration: Gallery Category + Album Year (v1.0)
 -- Date: 2026-06-17
 -- PRD: documentation/gallery_album_category_year_enhancements/data_migration_enhancements_prd.html
--- Canonical sync: code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql
+-- Canonical sync: code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql
 -- Apply order: 001 → 002 → (003 optional) → 004 → 005
 -- =============================================
 

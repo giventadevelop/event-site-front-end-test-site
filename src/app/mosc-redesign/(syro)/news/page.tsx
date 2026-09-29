@@ -78,7 +78,7 @@ export default async function NewsPage() {
 
       {/* Main content - no top padding so Main News title aligns at top like Featured News */}
       <section className="pt-0 pb-syro-lg bg-syro-bg-gray">
-        <div className="max-w-[1200px] mx-auto px-[15px]">
+        <div className="max-w-[1200px] mx-auto px-0 sm:px-[15px]">
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-syro-xl">
             {/* Main column - tighter vertical spacing between sections */}
             <div className="space-y-syro-xl">
@@ -111,9 +111,7 @@ export default async function NewsPage() {
                 title="Most Read"
                 articles={data.mostRead}
                 baseHref="/mosc-redesign/news"
-                compact
-              />
-            </div>
+              />            </div>
 
             {/* Sidebar - design system component spacing */}
             <aside className="space-y-syro-xl">

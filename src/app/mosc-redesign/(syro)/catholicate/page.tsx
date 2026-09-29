@@ -166,7 +166,7 @@ const CatholicatePage = () => {
             {catholicosCards.map((card) => (
               <article
                 key={card.title}
-                className="group flex flex-col h-full rounded-xl border border-burgundy/20 bg-parchment-light p-6 shadow-[0_2px_8px_rgba(61,13,13,0.08)] transition-all duration-300 hover:border-burgundy/50 hover:shadow-[0_8px_24px_rgba(192,40,74,0.16)] hover:-translate-y-1"
+                className="group flex flex-col h-full rounded-xl border border-burgundy/20 bg-parchment-light px-3 py-6 md:p-6 shadow-[0_2px_8px_rgba(61,13,13,0.08)] transition-all duration-300 hover:border-burgundy/50 hover:shadow-[0_8px_24px_rgba(192,40,74,0.16)] hover:-translate-y-1"
               >
                 <MoscHubCardMedia
                   src={card.image}

@@ -6,7 +6,7 @@ import { searchEventsForTypeaheadServer } from '../ApiServerActions';
 
 const SUGGESTION_LIMIT = 20;
 
-export type ManageEventsSearchField = 'title' | 'id' | 'caption';
+export type ManageEventsSearchField = 'title' | 'caption';
 
 function formatEventSuggestion(event: EventDetailsDTO): string {
   const title = event.title?.trim() || 'Untitled event';
@@ -18,7 +18,6 @@ function commitValueForField(
   event: EventDetailsDTO,
   searchField: ManageEventsSearchField,
 ): string {
-  if (searchField === 'id' && event.id != null) return String(event.id);
   if (searchField === 'caption' && event.caption?.trim()) {
     return event.caption.trim();
   }
@@ -82,7 +81,7 @@ export default function ManageEventsSearchCombobox({
   const [cachedEvents, setCachedEvents] = useState<EventDetailsDTO[]>(localEvents);
 
   const fieldLabel =
-    searchField === 'id' ? 'Event ID' : searchField.charAt(0).toUpperCase() + searchField.slice(1);
+    searchField === 'caption' ? 'Caption' : 'Title';
 
   useEffect(() => {
     setInputValue(committedValue);
@@ -189,7 +188,7 @@ export default function ManageEventsSearchCombobox({
       <div className="relative">
         <input
           id={inputId}
-          type={searchField === 'id' ? 'number' : 'text'}
+          type="text"
           role="combobox"
           aria-expanded={open}
           aria-controls={listboxId}

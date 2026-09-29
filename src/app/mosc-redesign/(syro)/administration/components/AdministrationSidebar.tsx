@@ -5,7 +5,7 @@ const ADMIN_LINKS: { slug: string; label: string }[] = [
   { slug: 'he-canon-law-of-the-malankara-orthodox-church', label: 'The Canon Law of the Malankara Orthodox Church' },
   { slug: 'the-holy-episcopal-synod', label: 'The Holy Episcopal Synod' },
   { slug: 'malankara-association', label: 'Malankara Association' },
-  { slug: 'the-managing-committee', label: 'The Managing Committee' },
+  { slug: 'the-managing-committee-cms', label: 'The Managing Committee' },
   { slug: 'the-working-committee', label: 'The Working Committee' },
   { slug: 'the-diocesan-general-body', label: 'The Diocesan General Body' },
   { slug: 'the-parish-managing-committee', label: 'The Parish Managing Committee' },

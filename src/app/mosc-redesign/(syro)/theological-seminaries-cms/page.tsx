@@ -121,7 +121,7 @@ function SeminaryCard({ entry }: { entry: TheologicalSeminaryEntry }) {
         alt={entry.imageAlt ?? entry.name}
         unoptimized={Boolean(entry.imageUrl?.startsWith('http'))}
       />
-      <div className="p-8 pt-0 flex flex-col flex-1">
+      <div className="px-4 pb-8 pt-0 md:p-8 md:pt-0 flex flex-col flex-1">
         <h3 className="font-syro-display text-xl font-semibold text-syro-blue mb-2 leading-snug">
           {entry.name}
         </h3>

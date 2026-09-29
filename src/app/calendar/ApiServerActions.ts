@@ -22,20 +22,46 @@ export interface CalendarEventDTO {
   tenantId?: string;
 }
 
+/** Normalize list responses (plain array or Spring page `{ content: [] }`). */
+function parseCalendarEventList(data: unknown): CalendarEventDTO[] {
+  if (Array.isArray(data)) return data as CalendarEventDTO[];
+  if (
+    data &&
+    typeof data === 'object' &&
+    'content' in data &&
+    Array.isArray((data as { content: unknown }).content)
+  ) {
+    return (data as { content: CalendarEventDTO[] }).content;
+  }
+  return [];
+}
+
+/**
+ * Events that overlap [rangeStart, rangeEnd] (inclusive).
+ * An event overlaps when startDate <= rangeEnd AND endDate >= rangeStart.
+ * Do NOT require both dates to fall inside the range — multi-month events
+ * (e.g. Aug 29–Sep 27) must still appear on August and September.
+ */
+function buildOverlapEventDetailsUrl(rangeStart: string, rangeEnd: string, tenantId: string) {
+  return (
+    `${getApiBase()}/api/event-details?` +
+    `startDate.lessThanOrEqual=${rangeEnd}&` +
+    `endDate.greaterThanOrEqual=${rangeStart}&` +
+    `isActive.equals=true&` +
+    `tenantId.equals=${encodeURIComponent(tenantId)}&` +
+    `sort=startDate,asc&page=0&size=100`
+  );
+}
+
 export async function fetchEventsForMonthServer(year: number, month: number, focusGroupSlug?: string) {
   if (!getApiBase()) return [];
   const tenantId = getTenantId();
   const start = new Date(Date.UTC(year, month - 1, 1));
   const end = new Date(Date.UTC(year, month, 0));
-  const startDate = start.toISOString().slice(0, 10);
-  const endDate = end.toISOString().slice(0, 10);
+  const monthStart = start.toISOString().slice(0, 10);
+  const monthEnd = end.toISOString().slice(0, 10);
 
-  let url = `${getApiBase()}/api/event-details?`
-    + `startDate.greaterThanOrEqual=${startDate}&`
-    + `endDate.lessThanOrEqual=${endDate}&`
-    + `isActive.equals=true&`
-    + `tenantId.equals=${encodeURIComponent(tenantId)}&`
-    + `sort=startDate,asc&page=0&size=100`;
+  let url = buildOverlapEventDetailsUrl(monthStart, monthEnd, tenantId);
   if (focusGroupSlug) {
     // backend to resolve slug→id; if not available, a proxy convenience can handle this
     url += `&focusGroupSlug.equals=${encodeURIComponent(focusGroupSlug)}`;
@@ -44,8 +70,7 @@ export async function fetchEventsForMonthServer(year: number, month: number, foc
   try {
     const res = await fetchWithJwtRetry(url, { cache: 'no-store' }, 'calendar-fetch-month');
     if (!res.ok) return [];
-    const data = await res.json();
-    return Array.isArray(data) ? (data as CalendarEventDTO[]) : [];
+    return parseCalendarEventList(await res.json());
   } catch {
     return [];
   }
@@ -54,20 +79,12 @@ export async function fetchEventsForMonthServer(year: number, month: number, foc
 export async function fetchEventsForRangeServer(startDate: string, endDate: string) {
   if (!getApiBase()) return [];
   const tenantId = getTenantId();
-  const url = `${getApiBase()}/api/event-details?`
-    + `startDate.greaterThanOrEqual=${startDate}&`
-    + `endDate.lessThanOrEqual=${endDate}&`
-    + `isActive.equals=true&`
-    + `tenantId.equals=${encodeURIComponent(tenantId)}&`
-    + `sort=startDate,asc&page=0&size=100`;
+  const url = buildOverlapEventDetailsUrl(startDate, endDate, tenantId);
   try {
     const res = await fetchWithJwtRetry(url, { cache: 'no-store' }, 'calendar-fetch-range');
     if (!res.ok) return [];
-    const data = await res.json();
-    return Array.isArray(data) ? (data as CalendarEventDTO[]) : [];
+    return parseCalendarEventList(await res.json());
   } catch {
     return [];
   }
 }
-
-

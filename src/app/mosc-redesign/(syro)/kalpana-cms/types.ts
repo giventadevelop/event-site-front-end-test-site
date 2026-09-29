@@ -34,3 +34,22 @@ export interface KalpanaCmsData {
   page: KalpanaPageContent;
   editions: KalpanaEdition[];
 }
+
+export interface KalpanaEditionsListOptions {
+  /** Search title / year / slug (`?q=`). */
+  nameSearch?: string;
+  page?: number;
+  pageSize?: number;
+  /** When true, return all matching editions (no page slice). */
+  loadAll?: boolean;
+}
+
+export interface KalpanaEditionsListResult {
+  editions: KalpanaEdition[];
+  pagination: {
+    page: number;
+    pageCount: number;
+    pageSize: number;
+    total: number;
+  };
+}

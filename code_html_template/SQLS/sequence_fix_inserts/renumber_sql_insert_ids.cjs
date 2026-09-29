@@ -15,7 +15,7 @@ const SCRIPT_DIR = __dirname;
 /** Canonical import file (batch import uses SQLS/corrected_event_media_inserts.ordered.sql). */
 const DEFAULT_INPUT = path.join(SCRIPT_DIR, '..', 'corrected_event_media_inserts.ordered.sql');
 const DEFAULT_OUTPUT = path.join(SCRIPT_DIR, 'corrected_event_media_inserts.renumbered.sql');
-const SCHEMA_FILE = path.join(SCRIPT_DIR, '..', 'Current_Sqls', 'Latest_Schema_Post__Blob_Claude_12.sql');
+const SCHEMA_FILE = path.join(SCRIPT_DIR, '..', 'Current_Sqls', 'Event_Site_Manager_Latest_Schema.sql');
 
 const MANUAL_FK = {
   event_live_update: { event_id: 'event_details' },

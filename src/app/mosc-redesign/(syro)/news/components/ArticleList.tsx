@@ -25,41 +25,48 @@ function CalendarIcon({ className }: { className?: string }) {
 
 /**
  * Renders a section of news articles: image on top, title/date/description below.
- * Grid layout (2 cols) for non-compact; compact uses 1 col. Click navigates to detail page with hero image.
- * Image aspect 4:3 for list cards; detail page uses 16:9 hero.
+ * Uniform card size (fixed 4:3 media frame + equal body) for Press Release / Most Read / etc.
+ * Click navigates to detail page with hero image.
  */
 export function ArticleList({ title, articles, baseHref, compact, id }: ArticleListProps) {
   return (
     <section id={id} className="syro-news-article-section scroll-mt-24 rounded-[5px] bg-white overflow-hidden shadow-syro-card transition-shadow duration-500 hover:shadow-syro-card-hover">
       {/* Design system section title: h3 1.8rem/600 #0b2848, red accent bar ::after → use border-l */}
-      {/* Design system: table/chart title 1.8rem/600 #0b2848, red accent bar 7px left */}
       <h2 className="syro-news-section-title text-syro-h3 font-semibold text-syro-blue pl-5 pt-syro-lg pb-2 border-b border-syro-table-border bg-white border-l-[7px] border-l-[#c0284a]">
         {title}
       </h2>
       {articles.length > 0 ? (
-        <ul className={`grid gap-4 px-syro-lg pt-1.5 pb-1.5 ${compact ? 'grid-cols-1 max-w-2xl' : 'grid-cols-1 md:grid-cols-2'}`}>
-          {articles.map((article) => (
-            <li key={article.id} className="min-h-0">
+        <ul className={`grid gap-4 px-syro-lg pt-1.5 pb-1.5 items-stretch ${compact ? 'grid-cols-1 max-w-2xl' : 'grid-cols-1 md:grid-cols-2'}`}>
+          {articles.map((article) => {
+            const listKey = article.documentId || article.slug || String(article.id);
+            const publishedLabel = article.publishedAt
+              ? new Date(article.publishedAt).toLocaleDateString('en-GB', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })
+              : null;
+            const cardDescription = article.excerpt?.trim() || '';
+            return (
+            <li key={listKey} className="min-h-0 h-full">
               <Link
                 href={`${baseHref}/${article.documentId || article.slug || String(article.id)}`}
                 className="flex flex-col h-full group rounded-[5px] overflow-hidden border border-syro-table-border hover:shadow-syro-card-hover transition-shadow duration-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-syro-red focus-visible:ring-offset-2 bg-white"
               >
-                {/* Image on top — rounded-xl frame hugs the image (matches holy-synod hub card media): full image, no crop, rounded on all sides */}
+                {/* Fixed 4:3 media frame — same size across Press Release / Most Read cards */}
                 <div className="px-4 pt-4">
-                  <div className="relative w-full overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/5 flex items-center justify-center">
+                  <div className="relative w-full aspect-[4/3] overflow-hidden rounded-xl bg-syro-bg-gray/40 shadow-sm ring-1 ring-black/5">
                     {article.coverUrl ? (
                       <Image
                         src={article.coverUrl}
                         alt={article.coverAlt || article.title}
-                        width={400}
-                        height={300}
-                        className="w-full h-auto !rounded-xl group-hover:scale-105 transition-transform duration-300"
+                        fill
+                        className="object-cover object-center !rounded-xl group-hover:scale-105 transition-transform duration-300"
                         sizes={compact ? '(max-width: 768px) 100vw, 672px' : '(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 400px'}
                         unoptimized
-                        style={{ backgroundColor: 'transparent', width: '100%', height: 'auto' }}
                       />
                     ) : (
-                      <div className="w-full aspect-[4/3] flex items-center justify-center text-syro-dark-gray/50" aria-hidden>
+                      <div className="absolute inset-0 flex items-center justify-center text-syro-dark-gray/50" aria-hidden>
                         <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14" />
                         </svg>
@@ -67,31 +74,32 @@ export function ArticleList({ title, articles, baseHref, compact, id }: ArticleL
                     )}
                   </div>
                 </div>
-                {/* Title, date, description - minimal top padding so less white space below image */}
+                {/* Title, date, description — reserved description height for uniform cards */}
                 <div className="flex flex-col flex-1 min-h-0 pt-1.5 px-syro-lg pb-syro-lg">
-                  <h3 className="syro-article-card-title line-clamp-2 reverent-transition">
+                  <h3 className="syro-article-card-title line-clamp-2 min-h-[2.7em] reverent-transition">
                     {article.title}
                   </h3>
-                  {article.publishedAt && (
+                  {publishedLabel && article.publishedAt ? (
                     <time
                       className="syro-article-card-meta mt-2 flex items-center gap-1.5 flex-shrink-0"
                       dateTime={article.publishedAt}
                     >
                       <CalendarIcon className="w-4 h-4 flex-shrink-0" />
-                      {new Date(article.publishedAt).toLocaleDateString('en-IN', {
-                        dateStyle: 'long',
-                      })}
+                      <span>{publishedLabel}</span>
                     </time>
+                  ) : (
+                    <div className="mt-2 h-5 flex-shrink-0" aria-hidden />
                   )}
-                  {!compact && article.excerpt && (
-                    <p className="syro-article-card-desc mt-2 line-clamp-3 flex-1 min-h-0">
-                      {article.excerpt}
+                  {!compact && (
+                    <p className="syro-article-card-desc mt-2 line-clamp-3 min-h-[4.2em] flex-1">
+                      {cardDescription || '\u00A0'}
                     </p>
                   )}
                 </div>
               </Link>
             </li>
-          ))}
+            );
+          })}
         </ul>
       ) : (
         <div className="px-syro-xxl py-8 text-center">

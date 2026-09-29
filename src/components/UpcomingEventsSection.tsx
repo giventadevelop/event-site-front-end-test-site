@@ -9,7 +9,7 @@ import type { EventWithMedia, EventDetailsDTO } from "@/types";
 import { formatInTimeZone } from 'date-fns-tz';
 import { isRecurringEvent, getNextOccurrenceDate } from '@/lib/eventUtils';
 import { isDonationBasedEvent, isTicketedFundraiserEvent } from '@/lib/donation/utils';
-import { isTicketedEventCube } from '@/lib/eventcube/utils';
+import { resolveBuyTicketsTarget } from '@/lib/eventcube/utils';
 import { getTenantId } from '@/lib/env';
 import { useDeferredFetch } from '@/hooks/usePageReady';
 import { getHomepageCacheKey } from '@/lib/homepageCacheKeys';
@@ -254,67 +254,36 @@ function UpcomingEventGlassCard({
                   </Link>
                 )}
 
-                {isUpcomingEvents && isTicketedFundraiserEvent(event) && (
-                  <Link
-                    href={`/events/${event.id}/givebutter-checkout`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-block transition-transform hover:scale-105"
-                    title="Buy Tickets"
-                    aria-label="Buy Tickets"
-                  >
-                    <img
-                      src="/images/buy_tickets_click_here_fundraiser.png"
-                      alt="Buy Tickets"
-                      className="h-[70px] w-[200px] max-w-full object-contain"
-                      width={200}
-                      height={70}
-                    />
-                  </Link>
-                )}
-
-                {isUpcomingEvents && isTicketedEventCube(event) && (
-                  <Link
-                    href={`/events/${event.id}/eventcube-checkout`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-block transition-transform hover:scale-105"
-                    title="Buy Tickets"
-                    aria-label="Buy Tickets"
-                  >
-                    <img
-                      src="/images/buy_tickets_click_here_red.webp"
-                      alt="Buy Tickets"
-                      className="h-[70px] w-[200px] max-w-full object-contain"
-                      width={200}
-                      height={70}
-                    />
-                  </Link>
-                )}
-
-                {isUpcomingEvents &&
-                  event.admissionType?.toUpperCase() === 'TICKETED' &&
-                  !isTicketedFundraiserEvent(event) &&
-                  !isTicketedEventCube(event) && (
+                {isUpcomingEvents && (() => {
+                  const buyTarget = resolveBuyTicketsTarget(event);
+                  if (!buyTarget) return null;
+                  const useFundraiserImage =
+                    isTicketedFundraiserEvent(event) && buyTarget.kind === 'internal' && buyTarget.href.includes('givebutter');
+                  return (
                     <Link
-                      href={
-                        event.manualPaymentEnabled === true &&
-                        (event.paymentFlowMode === 'MANUAL_ONLY' || event.paymentFlowMode === 'HYBRID')
-                          ? `/events/${event.id}/manual-checkout`
-                          : `/events/${event.id}/checkout`
-                      }
+                      href={buyTarget.href}
                       onClick={(e) => e.stopPropagation()}
                       className="inline-block transition-transform hover:scale-105"
                       title="Buy Tickets"
                       aria-label="Buy Tickets"
+                      {...(buyTarget.kind === 'external'
+                        ? { target: '_blank', rel: 'noopener noreferrer' }
+                        : {})}
                     >
                       <img
-                        src="/images/buy_tickets_click_here_red.webp"
+                        src={
+                          useFundraiserImage
+                            ? '/images/buy_tickets_click_here_fundraiser.png'
+                            : '/images/buy_tickets_click_here_red.webp'
+                        }
                         alt="Buy Tickets"
                         className="h-[70px] w-[200px] max-w-full object-contain"
                         width={200}
                         height={70}
                       />
                     </Link>
-                  )}
+                  );
+                })()}
 
                 {isUpcomingEvents && isDonationBasedEvent(event) && !isTicketedFundraiserEvent(event) && (
                   <Link

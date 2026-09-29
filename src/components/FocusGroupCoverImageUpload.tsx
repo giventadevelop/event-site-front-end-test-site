@@ -5,12 +5,20 @@ import { FaUpload, FaImage, FaTimes, FaSpinner, FaCheck, FaUsers } from 'react-i
 import ErrorDialog from '@/components/ErrorDialog';
 
 interface FocusGroupCoverImageUploadProps {
-  focusGroupId: number;
+  /** Required for immediate upload; omit when deferUpload is true (create form). */
+  focusGroupId?: number;
   currentImageUrl?: string;
   onImageUploaded: (imageUrl: string) => void;
   onError: (error: string) => void;
   disabled?: boolean;
   className?: string;
+  /**
+   * When true, only validate + preview locally and call onFileSelected.
+   * Upload happens later after the focus group exists.
+   */
+  deferUpload?: boolean;
+  onFileSelected?: (file: File, previewUrl: string) => void;
+  onFileCleared?: () => void;
 }
 
 export default function FocusGroupCoverImageUpload({
@@ -19,7 +27,10 @@ export default function FocusGroupCoverImageUpload({
   onImageUploaded,
   onError,
   disabled = false,
-  className = ''
+  className = '',
+  deferUpload = false,
+  onFileSelected,
+  onFileCleared,
 }: FocusGroupCoverImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -63,6 +74,26 @@ export default function FocusGroupCoverImageUpload({
         isOpen: true,
         title: 'File Too Large',
         message: errorMessage
+      });
+      onError(errorMessage);
+      return;
+    }
+
+    // Create flow: keep file locally until focus group is saved
+    if (deferUpload) {
+      const previewUrl = URL.createObjectURL(file);
+      onFileSelected?.(file, previewUrl);
+      onImageUploaded(previewUrl);
+      setShowSuccess(true);
+      return;
+    }
+
+    if (!focusGroupId) {
+      const errorMessage = 'Focus group ID is required to upload a cover image.';
+      setErrorDialog({
+        isOpen: true,
+        title: 'Upload Failed',
+        message: errorMessage,
       });
       onError(errorMessage);
       return;
@@ -305,6 +336,21 @@ export default function FocusGroupCoverImageUpload({
                 className="w-full max-w-md h-auto object-contain rounded-lg border border-gray-200 shadow-sm"
                 style={{ maxHeight: '200px' }}
               />
+              {deferUpload && onFileCleared && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onFileCleared();
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
+                  className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-red-100 hover:bg-red-200 flex items-center justify-center"
+                  title="Remove image"
+                  aria-label="Remove image"
+                >
+                  <FaTimes className="w-3 h-3 text-red-600" />
+                </button>
+              )}
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <FaUsers className="text-blue-500" />

@@ -52,7 +52,7 @@ export default async function EcumenicalCmsPage({
       />
 
       <section className="py-16 bg-syro-bg-gray">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8">
           <h3 className="text-2xl font-light text-[#798daf] mb-4 pl-8 border-l-[7px] border-syro-red">
             Ecumenical Relations &amp; Dialogue
           </h3>
@@ -87,12 +87,18 @@ export default async function EcumenicalCmsPage({
                         <MoscHubCardMedia
                           src={article.imageUrl}
                           alt={article.imageAlt ?? article.name}
+                          frame="landscape"
+                          frameClassName="max-w-[calc(100%-2rem)] md:max-w-[280px]"
+                          sizes="(max-width: 768px) calc(100vw - 4rem), 280px"
                           unoptimized={Boolean(article.imageUrl.startsWith('http'))}
                         />
                       ) : (
-                        <MoscHubCardMediaPlaceholder />
+                        <MoscHubCardMediaPlaceholder
+                          frame="landscape"
+                          frameClassName="max-w-[calc(100%-2rem)] md:max-w-[280px]"
+                        />
                       )}
-                      <div className="p-8 pt-0 flex flex-col flex-1">
+                      <div className="px-4 pb-8 pt-0 md:p-8 md:pt-0 flex flex-col flex-1">
                         <h3 className="font-syro-display text-xl font-semibold text-syro-blue mb-4 leading-snug line-clamp-3">
                           {article.name}
                         </h3>

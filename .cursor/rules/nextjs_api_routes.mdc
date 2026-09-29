@@ -504,23 +504,27 @@ alwaysApply: true
   - See `src/pages/api/proxy/discount-codes/[...slug].ts` for the required fix.
 
 - **App URL and fetch targets (client vs server) — use the right base**
+  - **Local `NEXT_PUBLIC_APP_URL` ports are stale.** `.env.local` may be `http://localhost:3002` while you run `npm run dev:clean -- -p 3003`. [getAppUrl](mdc:src/lib/env.ts) **ignores** that localhost port. See [port_agnostic_app_url.mdc](mdc:.cursor/rules/port_agnostic_app_url.mdc).
   - **Browser / `'use client'` calling `/api/proxy/*` (public data): use same-origin relative URLs**
     - **DO:** `fetch('/api/proxy/executive-committee-team-members?isActive.equals=true&sort=priorityOrder,asc', { ... })`
     - **DON'T:** `const baseUrl = getAppUrl(); fetch(\`${baseUrl}/api/proxy/...\`)` from the browser.
-    - **Why:** `getAppUrl()` often resolves to `http://localhost:3000` while the tab may be `http://127.0.0.1:3001` (or another host/port). Browsers treat those as **different origins** → CORS / `TypeError: Failed to fetch` even though the proxy works. Relative paths always hit the current tab’s origin.
+    - **DON'T:** `process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'`
+    - **Why:** Relative paths always hit the current tab’s origin (any port).
     - **Do NOT add `tenantId.equals` in the query** when calling the proxy; `createProxyHandler` injects it for list GETs (see rule above).
     - **References:** `src/components/TeamSection.tsx`, `src/components/OurSponsorsSection.tsx`, `src/components/TenantSettingsProvider.tsx`
   - **Server code calling the backend API directly (server components, server actions, `ApiServerActions.ts`): use `getApiBaseUrl()` + `fetchWithJwtRetry`**
     - **DO:** `await fetchWithJwtRetry(\`${getApiBaseUrl()}/api/resource?tenantId.equals=${getTenantId()}&...\`, { cache: 'no-store' })` (add `tenantId.equals` when the backend criteria require it; `fetchWithJwtRetry` adds `Authorization` and `X-Tenant-ID`).
     - **DON'T:** Loop through the Next app with `getAppUrl() + '/api/proxy/...'` from server code unless you have a specific reason (extra hop, wrong port if env is stale).
     - **References:** `src/app/admin/executive-committee/ApiServerActions.ts`, `src/app/admin/event-sponsors/ApiServerActions.ts`, `src/lib/proxyHandler.ts`
-  - **Server code that must call this Next app (e.g. multipart upload to a Pages API route): prefer request host, then env**
-    - **DO:** `import { headers } from 'next/headers'` → build `proto://host` from `x-forwarded-host` / `host` and `x-forwarded-proto` when possible (matches actual dev port and deployment host).
-    - **Fallback:** `getAppUrl()` from `@/lib/env` when not in a request context — never hardcode `http://localhost:3000` in application code.
-  - **Legacy `getAppUrl()` note**
-    - `getAppUrl()` remains correct for **absolute links**, emails, QR bases, and **server→Next** when `headers()` is unavailable — not for **browser→proxy** fetches.
+  - **Server code that must call this Next app (e.g. multipart upload to a Pages API route): prefer request host**
+    - **DO:** `await getAppUrlFromRequestHeaders()` from `@/lib/env` (uses `x-forwarded-host` / `host`).
+    - **Fallback:** `getAppUrl()` when `headers()` is unavailable — never hardcode `http://localhost:3000`.
+  - **`getAppUrl()` in local dev**
+    - Browser: `window.location.origin`.
+    - Server: live listen port (`PORT`, `next dev -p 3003`, `__NEXT_PRIVATE_ORIGIN`) — **not** the port in `NEXT_PUBLIC_APP_URL`.
+    - Production: real domain from `AMPLIFY_NEXT_PUBLIC_APP_URL` / `NEXT_PUBLIC_APP_URL`.
   - **References:**
-    - See `src/lib/env.ts` for `getAppUrl()` and `getApiBaseUrl()`
+    - See `src/lib/env.ts` for `getAppUrl()`, `getAppUrlFromRequestHeaders()`, and `getApiBaseUrl()`
 
 - **Graceful API Failure Handling**
   - Always handle API fetch failures gracefully in server components to prevent page crashes.

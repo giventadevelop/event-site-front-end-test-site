@@ -4,8 +4,9 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { flushSync } from 'react-dom';
 import Link from 'next/link';
-import { getAppUrl } from '@/lib/env';
 import AdminNavigation from '@/components/AdminNavigation';
+import FocusGroupCoverImageUpload from '@/components/FocusGroupCoverImageUpload';
+import { createFocusGroupServer } from '../ApiServerActions';
 
 interface FormData {
   name: string;
@@ -34,6 +35,8 @@ export default function NewFocusGroupPage() {
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [showErrors, setShowErrors] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | undefined>(undefined);
 
   const fieldRefs = useRef<Record<string, HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>>({});
 
@@ -45,7 +48,7 @@ export default function NewFocusGroupPage() {
       field.scrollIntoView({
         behavior: 'smooth',
         block: 'center',
-        inline: 'nearest'
+        inline: 'nearest',
       });
       setTimeout(() => {
         if (fieldRefs.current[firstErrorField]) {
@@ -91,7 +94,7 @@ export default function NewFocusGroupPage() {
     const checked = (e.target as HTMLInputElement).checked;
 
     if (errors[name as keyof ValidationErrors]) {
-      setErrors(prev => {
+      setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[name as keyof ValidationErrors];
         return newErrors;
@@ -100,7 +103,7 @@ export default function NewFocusGroupPage() {
 
     setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : (value || ''),
+      [name]: type === 'checkbox' ? checked : value || '',
     }));
   };
 
@@ -129,28 +132,47 @@ export default function NewFocusGroupPage() {
       }
 
       case 'description': {
-        // Description is optional, so no validation needed
         delete newErrors.description;
         break;
       }
 
       case 'coverImageUrl': {
-        // Cover image URL is optional, but validate format if provided
-        if (formData.coverImageUrl && formData.coverImageUrl.trim() !== '') {
-          try {
-            new URL(formData.coverImageUrl);
-            delete newErrors.coverImageUrl;
-          } catch {
-            newErrors.coverImageUrl = 'Please enter a valid URL.';
-          }
-        } else {
-          delete newErrors.coverImageUrl;
-        }
+        delete newErrors.coverImageUrl;
         break;
       }
     }
 
     setErrors(newErrors);
+  };
+
+  const clearPendingImage = () => {
+    if (imagePreviewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreviewUrl);
+    }
+    setPendingImageFile(null);
+    setImagePreviewUrl(undefined);
+    setFormData((prev) => ({ ...prev, coverImageUrl: '' }));
+  };
+
+  const uploadCoverAfterCreate = async (focusGroupId: number, file: File): Promise<void> => {
+    const uploadForm = new FormData();
+    uploadForm.append('file', file);
+    const apiUrl =
+      `/api/proxy/event-medias/upload/focus-group-cover-image` +
+      `?focusGroupId=${focusGroupId}` +
+      `&title=Focus Group Cover Image` +
+      `&description=Cover image for focus group` +
+      `&isPublic=true`;
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      body: uploadForm,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || `Cover image upload failed (${response.status})`);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -170,50 +192,47 @@ export default function NewFocusGroupPage() {
     setLoading(true);
 
     try {
-      const baseUrl = getAppUrl();
-      const payload = {
+      const result = await createFocusGroupServer({
         name: formData.name.trim(),
         slug: formData.slug.trim(),
         description: formData.description || '',
-        coverImageUrl: formData.coverImageUrl || '',
+        coverImageUrl: '',
         isActive: formData.isActive,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const response = await fetch(`${baseUrl}/api/proxy/focus-groups`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        cache: 'no-store',
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Failed to create focus group:', response.status, errorText);
-        throw new Error(`Failed to create focus group: ${response.status} ${errorText}`);
+      if (!result.ok) {
+        throw new Error(result.error);
       }
 
-      // Success - redirect to list page
+      const createdId = result.group?.id;
+      if (pendingImageFile && createdId) {
+        try {
+          await uploadCoverAfterCreate(createdId, pendingImageFile);
+        } catch (uploadError) {
+          console.error('[NewFocusGroupPage] Cover upload failed after create:', uploadError);
+          alert(
+            'Focus group created, but cover image upload failed. You can upload the image on the edit page.'
+          );
+          router.push(`/admin/focus-groups/${createdId}/edit`);
+          return;
+        }
+      }
+
       router.push('/admin/focus-groups');
     } catch (error) {
       console.error('Error creating focus group:', error);
       setLoading(false);
-      // Show error to user
       alert(`Error creating focus group: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   return (
     <div className="w-full overflow-x-hidden box-border" style={{ paddingTop: '120px' }}>
-      {/* Navigation Section - Full Width, Separate Responsive Container */}
       <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 mb-6 sm:mb-8">
         <AdminNavigation />
       </div>
 
-      {/* Main Content Section - Constrained Width */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
-        {/* Page Header */}
         <div className="mb-4 sm:mb-6 md:mb-8">
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 text-center sm:text-left">
             Create Focus Group
@@ -223,16 +242,16 @@ export default function NewFocusGroupPage() {
           </p>
         </div>
 
-        {/* Form Container */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Name Field */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                 Name *
               </label>
               <input
-                ref={(el) => { if (el) fieldRefs.current.name = el; }}
+                ref={(el) => {
+                  if (el) fieldRefs.current.name = el;
+                }}
                 type="text"
                 id="name"
                 name="name"
@@ -246,18 +265,17 @@ export default function NewFocusGroupPage() {
                 }`}
                 placeholder="Enter focus group name"
               />
-              {errors.name && (
-                <div className="text-red-500 text-sm mt-1">{errors.name}</div>
-              )}
+              {errors.name && <div className="text-red-500 text-sm mt-1">{errors.name}</div>}
             </div>
 
-            {/* Slug Field */}
             <div>
               <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
                 Slug *
               </label>
               <input
-                ref={(el) => { if (el) fieldRefs.current.slug = el; }}
+                ref={(el) => {
+                  if (el) fieldRefs.current.slug = el;
+                }}
                 type="text"
                 id="slug"
                 name="slug"
@@ -273,18 +291,17 @@ export default function NewFocusGroupPage() {
                 pattern="[a-z0-9-]+"
                 title="lowercase letters, numbers, hyphens only"
               />
-              {errors.slug && (
-                <div className="text-red-500 text-sm mt-1">{errors.slug}</div>
-              )}
+              {errors.slug && <div className="text-red-500 text-sm mt-1">{errors.slug}</div>}
             </div>
 
-            {/* Description Field */}
             <div className="md:col-span-2">
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
                 Description
               </label>
               <textarea
-                ref={(el) => { if (el) fieldRefs.current.description = el; }}
+                ref={(el) => {
+                  if (el) fieldRefs.current.description = el;
+                }}
                 id="description"
                 name="description"
                 rows={4}
@@ -303,32 +320,33 @@ export default function NewFocusGroupPage() {
               )}
             </div>
 
-            {/* Cover Image URL Field */}
-            <div>
-              <label htmlFor="coverImageUrl" className="block text-sm font-medium text-gray-700 mb-1">
-                Cover Image URL
-              </label>
-              <input
-                ref={(el) => { if (el) fieldRefs.current.coverImageUrl = el; }}
-                type="url"
-                id="coverImageUrl"
-                name="coverImageUrl"
-                value={formData.coverImageUrl}
-                onChange={handleChange}
-                onBlur={() => validateField('coverImageUrl')}
-                className={`mt-1 block w-full border rounded-xl focus:ring-blue-500 px-4 py-3 text-base ${
-                  errors.coverImageUrl
-                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                    : 'border-gray-400 focus:border-blue-500'
-                }`}
-                placeholder="https://example.com/image.jpg"
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Cover Image</label>
+              <FocusGroupCoverImageUpload
+                deferUpload
+                currentImageUrl={imagePreviewUrl}
+                onImageUploaded={(url) => {
+                  setImagePreviewUrl(url);
+                  setFormData((prev) => ({ ...prev, coverImageUrl: url }));
+                }}
+                onFileSelected={(file, previewUrl) => {
+                  if (imagePreviewUrl?.startsWith('blob:')) {
+                    URL.revokeObjectURL(imagePreviewUrl);
+                  }
+                  setPendingImageFile(file);
+                  setImagePreviewUrl(previewUrl);
+                }}
+                onFileCleared={clearPendingImage}
+                onError={(error) => {
+                  console.error('[NewFocusGroupPage] Cover image error:', error);
+                }}
+                disabled={loading}
               />
               {errors.coverImageUrl && (
                 <div className="text-red-500 text-sm mt-1">{errors.coverImageUrl}</div>
               )}
             </div>
 
-            {/* Active Checkbox */}
             <div className="flex items-center gap-3">
               <label htmlFor="isActive" className="flex items-center gap-3 cursor-pointer">
                 <span className="relative flex items-center justify-center">
@@ -343,7 +361,13 @@ export default function NewFocusGroupPage() {
                   />
                   <span className="custom-checkbox-tick">
                     {formData.isActive && (
-                      <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
+                      <svg
+                        className="w-6 h-6 text-black"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        viewBox="0 0 24 24"
+                      >
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l5 5L19 7" />
                       </svg>
                     )}
@@ -353,24 +377,31 @@ export default function NewFocusGroupPage() {
               </label>
             </div>
 
-            {/* Error Summary Box */}
             {showErrors && getErrorCount() > 0 && (
               <div className="md:col-span-2 bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
                     <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </div>
                   <div className="ml-3">
                     <h3 className="text-sm font-medium text-red-800">
-                      Please fix the following {getErrorCount()} error{getErrorCount() !== 1 ? 's' : ''}:
+                      Please fix the following {getErrorCount()} error
+                      {getErrorCount() !== 1 ? 's' : ''}:
                     </h3>
                     <div className="mt-2 text-sm text-red-700">
                       <ul className="list-disc pl-5 space-y-1">
                         {Object.entries(errors).map(([fieldName, errorMessage]) => (
                           <li key={fieldName}>
-                            <span className="font-medium capitalize">{fieldName.replace(/([A-Z])/g, ' $1').trim()}:</span> {errorMessage}
+                            <span className="font-medium capitalize">
+                              {fieldName.replace(/([A-Z])/g, ' $1').trim()}:
+                            </span>{' '}
+                            {errorMessage}
                           </li>
                         ))}
                       </ul>
@@ -380,7 +411,6 @@ export default function NewFocusGroupPage() {
               </div>
             )}
 
-            {/* Form Actions */}
             <div className="md:col-span-2 flex flex-row gap-2 sm:gap-3 mt-4">
               <Link
                 href="/admin/focus-groups"
@@ -406,8 +436,19 @@ export default function NewFocusGroupPage() {
                 <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-green-200 flex items-center justify-center">
                   {loading ? (
                     <svg className="animate-spin w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                   ) : (
                     <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -415,7 +456,9 @@ export default function NewFocusGroupPage() {
                     </svg>
                   )}
                 </div>
-                <span className="font-semibold text-green-700 hidden sm:inline">{loading ? 'Creating...' : 'Create Focus Group'}</span>
+                <span className="font-semibold text-green-700 hidden sm:inline">
+                  {loading ? 'Creating...' : 'Create Focus Group'}
+                </span>
               </button>
             </div>
           </form>

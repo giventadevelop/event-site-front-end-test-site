@@ -117,22 +117,47 @@ export default function EventCompetitionSettingsForm({ eventId, initialSettings 
         </label>
       </div>
 
-      <div className="flex flex-wrap gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
         {[
           { key: 'registrationOpen', label: 'Registration open' },
           { key: 'allowTicketSales', label: 'Allow ticket sales' },
           { key: 'championEnabled', label: 'Champion enabled' },
           { key: 'championExcludeGroupPoints', label: 'Champion excludes group points' },
-        ].map(({ key, label }) => (
-          <label key={key} className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={!!(form as Record<string, boolean>)[key]}
-              onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.checked }))}
-            />
-            {label}
-          </label>
-        ))}
+        ].map(({ key, label }) => {
+          const checked = !!(form as Record<string, boolean>)[key];
+          return (
+            <div key={key} className="custom-grid-cell">
+              <label className="flex flex-col items-center">
+                <span className="relative flex items-center justify-center">
+                  <input
+                    type="checkbox"
+                    name={key}
+                    checked={checked}
+                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.checked }))}
+                    onClick={(e) => e.stopPropagation()}
+                    className="custom-checkbox custom-checkbox--yellow"
+                  />
+                  <span className="custom-checkbox-tick">
+                    {checked && (
+                      <svg
+                        className="w-6 h-6 text-gray-800"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l5 5L19 7" />
+                      </svg>
+                    )}
+                  </span>
+                </span>
+                <span className="mt-2 text-sm font-semibold text-center select-none break-words max-w-[8rem]">
+                  {label}
+                </span>
+              </label>
+            </div>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

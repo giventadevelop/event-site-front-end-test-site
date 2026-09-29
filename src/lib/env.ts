@@ -61,37 +61,120 @@ export function getPaymentMethodDomainId() {
   return paymentMethodDomainId;
 }
 
-/**
- * Get the app URL for port-agnostic configuration
- * This is used for server-side API calls to ensure the application works on any port
- * Returns the full URL including protocol (e.g., "http://localhost:3000" or "https://mcefee.org")
- *
- * IMPORTANT: This function should NOT have hardcoded fallbacks. The actual host should be
- * determined from the request context or environment variables to avoid hardcoding issues.
- *
- * CRITICAL: In AWS Amplify production, environment variables are prefixed with AMPLIFY_
- * This function prioritizes AMPLIFY_NEXT_PUBLIC_APP_URL for production compatibility.
- */
-export function getAppUrl(): string {
-  // Prioritize AMPLIFY_ prefix for AWS Amplify production (matches next.config.mjs pattern)
-  const appUrl =
-    process.env.AMPLIFY_NEXT_PUBLIC_APP_URL ||
-    process.env.NEXT_PUBLIC_APP_URL;
+function isLoopbackHostname(hostname: string): boolean {
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '[::1]' ||
+    hostname === '::1' ||
+    hostname === '0.0.0.0'
+  );
+}
 
-  // In production, use the actual domain from environment variable
-  if (process.env.NODE_ENV === 'production') {
-    if (!appUrl) {
-      console.error('[getAppUrl] CRITICAL: NEXT_PUBLIC_APP_URL not set in production. Check AMPLIFY_NEXT_PUBLIC_APP_URL or NEXT_PUBLIC_APP_URL environment variable.');
-    }
-    return appUrl || '';
+function hostnameFromHostHeader(host: string): string {
+  if (host.startsWith('[')) {
+    const end = host.indexOf(']');
+    return end > 0 ? host.slice(1, end) : host;
   }
-  // In development, use localhost with dynamic port detection
-  return appUrl || 'http://localhost:3000';
+  return host.split(':')[0] || host;
+}
+
+function parsePortFromProcessArgs(argv: readonly string[]): string | undefined {
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if ((arg === '-p' || arg === '--port') && argv[i + 1] && /^\d+$/.test(argv[i + 1])) {
+      return argv[i + 1];
+    }
+    const matched = arg.match(/^--port=(\d+)$/);
+    if (matched) return matched[1];
+  }
+  return undefined;
+}
+
+function configuredPublicAppUrl(): string | undefined {
+  return process.env.AMPLIFY_NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL || undefined;
 }
 
 /**
- * Base URL of this Next.js app for server-side fetches to same-origin routes (e.g. `/api/proxy/*`).
- * Uses the incoming request host/port when available so dev servers on non-default ports work.
+ * Port this Next.js process is listening on.
+ * Never read from NEXT_PUBLIC_APP_URL — that value is a stale snapshot (e.g. 3002)
+ * while `npm run dev:clean -- -p 3003` binds a different port.
+ */
+export function getDevListenPort(): string {
+  if (process.env.PORT && /^\d+$/.test(process.env.PORT)) {
+    return process.env.PORT;
+  }
+  const argvPort = parsePortFromProcessArgs(process.argv);
+  if (argvPort) return argvPort;
+  if (process.env.npm_config_port && /^\d+$/.test(process.env.npm_config_port)) {
+    return process.env.npm_config_port;
+  }
+  return '3000';
+}
+
+/** Build `http(s)://host[:port]` from a request Host header. */
+export function originFromRequestHost(host: string, forwardedProto?: string | null): string {
+  const hostname = hostnameFromHostHeader(host);
+  const proto =
+    forwardedProto?.split(',')[0]?.trim() ||
+    (isLoopbackHostname(hostname) || hostname.startsWith('127.') ? 'http' : 'https');
+  return `${proto}://${host}`;
+}
+
+function getLocalDevAppOrigin(): string {
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin.replace(/\/$/, '');
+  }
+  const nextPrivateOrigin = process.env['__NEXT_PRIVATE_ORIGIN'];
+  if (nextPrivateOrigin) {
+    return nextPrivateOrigin.replace(/\/$/, '');
+  }
+  return `http://localhost:${getDevListenPort()}`;
+}
+
+/**
+ * Origin of this Next.js app.
+ *
+ * Local development never uses the port from NEXT_PUBLIC_APP_URL (it is ignored
+ * when the host is localhost / 127.0.0.1). Resolution order:
+ * 1. Browser tab origin (`window.location.origin`)
+ * 2. Live listen port (`PORT`, `next dev -p`, or `__NEXT_PRIVATE_ORIGIN`)
+ * Production still uses AMPLIFY_NEXT_PUBLIC_APP_URL / NEXT_PUBLIC_APP_URL (real domain).
+ *
+ * Prefer {@link getAppUrlFromRequestHeaders} in server request context — that
+ * follows the Host header (correct even when Next auto-picks 3001 because 3000 is busy).
+ */
+export function getAppUrl(): string {
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin.replace(/\/$/, '');
+  }
+
+  const configured = configuredPublicAppUrl();
+
+  if (process.env.NODE_ENV === 'production') {
+    if (!configured) {
+      console.error('[getAppUrl] CRITICAL: NEXT_PUBLIC_APP_URL not set in production. Check AMPLIFY_NEXT_PUBLIC_APP_URL or NEXT_PUBLIC_APP_URL environment variable.');
+    }
+    return configured?.replace(/\/$/, '') || '';
+  }
+
+  if (!configured) {
+    return getLocalDevAppOrigin();
+  }
+  try {
+    const parsed = new URL(configured);
+    if (isLoopbackHostname(parsed.hostname)) {
+      return getLocalDevAppOrigin();
+    }
+    return configured.replace(/\/$/, '');
+  } catch {
+    return getLocalDevAppOrigin();
+  }
+}
+
+/**
+ * Same-origin base for server fetches to this Next app (`/api/proxy/*`, emails, Clerk).
+ * Uses the incoming request host/port so `next dev -p 3003` works regardless of .env.
  * Falls back to {@link getAppUrl} when `headers()` is not available.
  */
 export async function getAppUrlFromRequestHeaders(): Promise<string> {
@@ -100,11 +183,7 @@ export async function getAppUrlFromRequestHeaders(): Promise<string> {
     const headersList = await headers();
     const host = headersList.get('x-forwarded-host') ?? headersList.get('host');
     if (host) {
-      const forwardedProto = headersList.get('x-forwarded-proto')?.split(',')[0]?.trim();
-      const proto =
-        forwardedProto ||
-        (host.includes('localhost') || host.startsWith('127.') ? 'http' : 'https');
-      return `${proto}://${host}`;
+      return originFromRequestHost(host, headersList.get('x-forwarded-proto'));
     }
   } catch {
     // headers() unavailable outside a request (e.g. static generation)
@@ -113,31 +192,10 @@ export async function getAppUrlFromRequestHeaders(): Promise<string> {
 }
 
 /**
- * Get the email host URL prefix for QR code generation
- * This is used to ensure QR codes work properly in email contexts
- * Returns the full URL including protocol (e.g., "http://localhost:3000" or "https://mcefee.org")
- *
- * IMPORTANT: This function should NOT have hardcoded fallbacks. The actual host should be
- * determined from the request context or environment variables to avoid hardcoding issues.
- *
- * CRITICAL: In AWS Amplify production, environment variables are prefixed with AMPLIFY_
- * This function prioritizes AMPLIFY_NEXT_PUBLIC_APP_URL for production compatibility.
+ * Email / QR host prefix. Same resolution as {@link getAppUrl} so local ports stay live.
  */
 export function getEmailHostUrlPrefix(): string {
-  // Prioritize AMPLIFY_ prefix for AWS Amplify production (matches next.config.mjs pattern)
-  const appUrl =
-    process.env.AMPLIFY_NEXT_PUBLIC_APP_URL ||
-    process.env.NEXT_PUBLIC_APP_URL;
-
-  // In production, use the actual domain from environment variable
-  if (process.env.NODE_ENV === 'production') {
-    if (!appUrl) {
-      console.error('[getEmailHostUrlPrefix] CRITICAL: NEXT_PUBLIC_APP_URL not set in production. Check AMPLIFY_NEXT_PUBLIC_APP_URL or NEXT_PUBLIC_APP_URL environment variable.');
-    }
-    return appUrl || '';
-  }
-  // In development, use localhost with dynamic port detection
-  return appUrl || 'http://localhost:3000';
+  return getAppUrl();
 }
 
 /**

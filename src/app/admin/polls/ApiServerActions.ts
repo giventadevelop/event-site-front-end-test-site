@@ -2,7 +2,11 @@ import { getAppUrl } from '@/lib/env';
 import { withTenantId } from '@/lib/withTenantId';
 import type { EventPollDTO, EventPollOptionDTO, EventPollResponseDTO } from '@/types';
 
-const baseUrl = getAppUrl();
+// This module is imported by client components as well as server code, so in the
+// browser the proxy calls must be same-origin: getAppUrl() reads a build-time env
+// value that can name a different port or host, which fails CORS.
+const baseUrl = typeof window === 'undefined' ? getAppUrl() : '';
+
 
 // Event Polls API calls
 export async function fetchEventPollsServer(filters?: Record<string, any>) {

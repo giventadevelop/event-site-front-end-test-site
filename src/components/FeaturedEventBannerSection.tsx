@@ -57,6 +57,9 @@ const FeaturedEventBannerSection: React.FC = () => {
                 onClick={(e) => e.stopPropagation()}
                 title={overlayInfo.alt}
                 aria-label={overlayInfo.alt}
+                {...(overlayInfo.external
+                  ? { target: '_blank', rel: 'noopener noreferrer' }
+                  : {})}
               >
                 <img
                   src={overlayInfo.image}

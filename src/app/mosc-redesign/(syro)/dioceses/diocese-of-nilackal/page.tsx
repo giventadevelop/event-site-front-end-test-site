@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import QuickLinks from '../../components/QuickLinks';
@@ -21,14 +21,14 @@ const dioceseofnilackalPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             {/* Main Content */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] p-8">
+              <div className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] px-4 py-8 md:p-8">
                 {/* Featured Image - centered, contained (administration style) */}
                 <div className="mb-8 flex justify-center">
                   <Image
                     src="/images/dioceses/diocese-of-nilackal.jpg"
                     alt="Diocese of Nilackal"
                     width={175} height={175}
-                    className="rounded-lg object-contain" style={{ width: '175px', height: '175px' }}
+                    className="rounded-lg object-contain w-full max-w-[290px] md:max-w-[175px] h-auto"
                     priority
                   />
                 </div>
@@ -40,10 +40,10 @@ const dioceseofnilackalPage = () => {
                   </h2>
 
                   <p className="font-syro-primary text-syro-dark-gray leading-relaxed mb-6">
-                      The Diocese of Nilackal came in to being on August 15, 2010 under the order issued by H.H Baselios Mar Thoma Didymos I, The Catholicos cum MalankaraÂ  Metropolitan. H.G.Dr Joshua Mar Nicodimos is the Ist Metropolitan of the Diocese.
-The name Nilackal is associated with the Christian Community founded by St.Thomas, the Apostle of India during the Ist century itself. Comprising the revenue Â  Â  districts of Pathanamthitta andÂ  Kottayam, the newly formed diocese consist of 39 Â  Â  parishes ranging from 13 to 200 families. The parishes are dividedÂ  in to 5 ecclesiastical districts namely Ayroor, Vayalathala, Ranni, Nilackal & Kanakappalam. The total families of the diocese is 2953.
-All the spiritual organizations of Malankara Orthodox Church and the movements like Ecology Commission, Sushrushaka Sangam, Lehari Virudha Sangam, Dasamsadayaka Sangam,Â  INAMS are also performing at its best.
-The Diocese purchased a building of about 12000 Sq.feet in Ranni Town andÂ  made it the head quarters of the diocese with the name St.Thomas Aramana. Many majorÂ  projects like construction of a Convention Centre at Catholicate Centre Ranni, Completion of the Catholicate Centre at Angamoozhi, Nilackal, beginning of St.Gregorios Mission Centre at Vellayil, Ayroor and starting of anÂ  Education Institution are under serious consideration. The new diocese also made initiative in various charitable activities by supporting the poor and the needy of the diocese as well as the society around.
+                      The Diocese of Nilackal came in to being on August 15, 2010 under the order issued by H.H Baselios Mar Thoma Didymos I, The Catholicos cum Malankara  Metropolitan. H.G.Dr Joshua Mar Nicodimos is the Ist Metropolitan of the Diocese.
+The name Nilackal is associated with the Christian Community founded by St.Thomas, the Apostle of India during the Ist century itself. Comprising the revenue     districts of Pathanamthitta and  Kottayam, the newly formed diocese consist of 39     parishes ranging from 13 to 200 families. The parishes are divided  in to 5 ecclesiastical districts namely Ayroor, Vayalathala, Ranni, Nilackal & Kanakappalam. The total families of the diocese is 2953.
+All the spiritual organizations of Malankara Orthodox Church and the movements like Ecology Commission, Sushrushaka Sangam, Lehari Virudha Sangam, Dasamsadayaka Sangam,  INAMS are also performing at its best.
+The Diocese purchased a building of about 12000 Sq.feet in Ranni Town and  made it the head quarters of the diocese with the name St.Thomas Aramana. Many major  projects like construction of a Convention Centre at Catholicate Centre Ranni, Completion of the Catholicate Centre at Angamoozhi, Nilackal, beginning of St.Gregorios Mission Centre at Vellayil, Ayroor and starting of an  Education Institution are under serious consideration. The new diocese also made initiative in various charitable activities by supporting the poor and the needy of the diocese as well as the society around.
                     </p>
                   <div className="mt-8 flex max-w-xl overflow-hidden rounded-lg border border-syro-table-border bg-syro-bg-gray shadow-syro-card">
                     <div className="w-[7px] flex-shrink-0 bg-syro-red" aria-hidden="true" />
@@ -79,7 +79,6 @@ The Diocese purchased a building of about 12000 Sq.feet in Ranni Town andÂ  ma
                       </p>
                 </div>
               </div>
- Â
                 </div>
               </div>
               {/* Quick Links - below content (desktop, same as administration) */}

@@ -24,8 +24,8 @@ export default async function WritingIdPage({ params }: WritingIdPageProps) {
       <SubpageHomeDesignBackground />
       <main className="min-h-screen py-24 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="max-w-4xl mx-auto mb-8">
-          <Link href="/#profile-writings" className="text-primary font-semibold hover:underline text-sm">
-            ← Back to selected works
+          <Link href="/news" className="text-primary font-semibold hover:underline text-sm">
+            ← Back to news
           </Link>
         </div>
         <ProfileWritingDetailView writing={writing} />

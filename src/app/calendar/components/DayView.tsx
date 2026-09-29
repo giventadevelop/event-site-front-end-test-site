@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import type { CalendarEvent } from '../types/calendar.types';
 import { EventTooltip } from './EventTooltip';
+import { eventOccursOnDate, toLocalYmd } from '../utils/eventFormatters';
 
 export function DayView({
   events,
@@ -18,9 +19,8 @@ export function DayView({
   const [tooltipAnchor, setTooltipAnchor] = useState<DOMRect | null>(null);
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Format date as YYYY-MM-DD for comparison
-  const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  const todays = events.filter(e => e.startDate === dateStr);
+  const dateStr = toLocalYmd(date);
+  const todays = events.filter((e) => eventOccursOnDate(e, dateStr));
 
   // Cleanup timeout on unmount
   useEffect(() => {

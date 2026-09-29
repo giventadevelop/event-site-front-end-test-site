@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
+import CompetitionSubpageLayout from '@/components/competitions/CompetitionSubpageLayout';
 import RegistrationWizard from '@/components/competitions/RegistrationWizard';
 import {
   fetchMyParticipantsServer,
@@ -13,7 +14,7 @@ import {
 
 export default async function CompetitionRegisterPage(props: {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<{ competitionId?: string }>;
+  searchParams?: Promise<{ competitionId?: string; step?: string }>;
 }) {
   const params = await props.params;
   const searchParams = props.searchParams ? await props.searchParams : {};
@@ -21,6 +22,7 @@ export default async function CompetitionRegisterPage(props: {
   const preselectedCompetitionId = searchParams.competitionId
     ? parseInt(searchParams.competitionId, 10)
     : undefined;
+  const initialStep = searchParams.step;
 
   const clerkUserId = await getAuthenticatedClerkUserId();
   const registerPath = preselectedCompetitionId
@@ -53,17 +55,18 @@ export default async function CompetitionRegisterPage(props: {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <Link href={`/events/${eventId}/competitions`} className="text-sm text-primary hover:underline">
-        ← Competitions
-      </Link>
-      <h1 className="font-heading font-semibold text-3xl mt-2 mb-2">Register</h1>
+    <CompetitionSubpageLayout
+      eventId={eventId}
+      title="Register"
+      active="register"
+      registrationOpen={settings.registrationOpen ?? false}
+      contentClassName="max-w-4xl"
+    >
       {preselectedCompetition && (
         <p className="text-muted-foreground mb-8">
           Registering for: <span className="font-semibold text-foreground">{preselectedCompetition.name}</span>
         </p>
       )}
-      {!preselectedCompetition && <div className="mb-8" />}
       <RegistrationWizard
         eventId={eventId}
         settings={settings}
@@ -77,7 +80,8 @@ export default async function CompetitionRegisterPage(props: {
             ? preselectedCompetition.id
             : undefined
         }
+        initialStep={initialStep}
       />
-    </div>
+    </CompetitionSubpageLayout>
   );
 }

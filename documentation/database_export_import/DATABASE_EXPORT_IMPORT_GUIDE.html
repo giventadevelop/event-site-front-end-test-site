@@ -414,7 +414,7 @@
             <tr><td>2</td><td><code>node reorder_sql_inserts_final.cjs</code></td><td><code>corrected_event_media_inserts.ordered.sql</code></td></tr>
             <tr><td>3</td><td><code>node scripts/replace-user-profile-ids-in-sql.mjs</code></td><td><code>corrected_event_media_inserts.ordered_PROD.sql</code></td></tr>
             <tr><td>4</td><td>Comment lines starting with <code>pg_dump</code> in the import file</td><td>Import SQL patched</td></tr>
-            <tr><td>5</td><td>Apply <code>Latest_Schema_Post__Blob_Claude_12.sql</code></td><td><code>event_site_manager_db</code> schema rebuilt</td></tr>
+            <tr><td>5</td><td>Apply <code>Event_Site_Manager_Latest_Schema.sql</code></td><td><code>event_site_manager_db</code> schema rebuilt</td></tr>
             <tr><td>6</td><td>Import ordered (or PROD) INSERT file</td><td>Data loaded</td></tr>
             <tr><td>7</td><td>Run <code>sync_sequence_after_inserts.sql</code></td><td>Primary-key sequence synced</td></tr>
             <tr><td>7b</td><td>Run <code>sync_spring_batch_sequences.sql</code></td><td>Spring Batch sequences synced</td></tr>
@@ -635,6 +635,17 @@
           <code class="code-highlight">/SKIP-EXPORT /REMOTE</code> (no local Docker needed for step 0–1 when combined
           with <code class="code-highlight">/REMOTE</code>—the script skips container detection in that case).
         </p>
+        <div class="warning">
+          <strong>Agenda / event media URLs:</strong> Images are stored as S3 URL strings
+          (<code class="code-highlight">event_agenda_item.image_url</code>,
+          <code class="code-highlight">event_media.file_url</code>)—not as blobs in the dump.
+          After uploading or replacing agenda images, <strong>re-export before</strong>
+          <code class="code-highlight">/SKIP-EXPORT</code> or copying SQL to another machine.
+          Guardrails (<code class="script-name">sql_export_import_guardrails.cjs</code>) fail the batch if published
+          agenda rows lack <code class="code-highlight">image_url</code>, or if
+          <code class="code-highlight">export.sql</code> fingerprints do not match live Docker
+          (<code class="code-highlight">id|image_url</code> when a container is available.
+        </div>
 
         <h3><code>/REMOTE</code> — target production Postgres instead of local Docker</h3>
         <p>
@@ -668,7 +679,7 @@
 
         <h3><code>/SCHEMA-ONLY</code> — rebuild schema without importing data</h3>
         <p>
-          Applies <code class="code-highlight">Latest_Schema_Post__Blob_Claude_12.sql</code> (step 5) and skips export
+          Applies <code class="code-highlight">Event_Site_Manager_Latest_Schema.sql</code> (step 5) and skips export
           (steps 1–4), data import (step 6), and sequence sync (step 7). Use when you only need DDL changes applied to
           an empty or disposable database, or when data is already loaded and you want a schema refresh without touching
           INSERT files.
@@ -1125,7 +1136,7 @@ python scripts\extract_dup_tenant_sql.py code_html_template\SQLS\corrected_event
             <tr><td><code>sequence_fix_inserts/renumber_sql_insert_ids.cjs</code></td><td>Renumber + FK rewrite + batch trim script</td></tr>
             <tr><td><code>sequence_fix_inserts/corrected_event_media_inserts.renumbered.sql</code></td><td><strong>Output</strong> — use for import when you want IDs 1…N</td></tr>
             <tr><td><code>sequence_fix_inserts/id-mapping-report.json</code></td><td>Per-table old→new ID map and FK warning count</td></tr>
-            <tr><td><code>Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></td><td>FK metadata for column-aware rewrites</td></tr>
+            <tr><td><code>Current_Sqls/Event_Site_Manager_Latest_Schema.sql</code></td><td>FK metadata for column-aware rewrites</td></tr>
             <tr><td><code>Current_Sqls/sync_sequence_after_inserts.sql</code></td><td>Run after import (Step 7)</td></tr>
             <tr><td><code>Current_Sqls/sync_spring_batch_sequences.sql</code></td><td>Run after import (Step 7b)</td></tr>
             <tr><td><code>reorder_sql_inserts_final.cjs</code></td><td>Upstream reorder script (<code>TABLE_ORDER</code>)</td></tr>
@@ -1562,7 +1573,7 @@ Written: ...\corrected_event_media_inserts.renumbered.sql (1705 INSERTs)</pre>
             <tr><td>Import SQL (canonical)</td><td><code>code_html_template/SQLS/corrected_event_media_inserts.ordered.sql</code></td><td>Default batch import target</td></tr>
             <tr><td>Import SQL (renumbered)</td><td><code>code_html_template/SQLS/sequence_fix_inserts/corrected_event_media_inserts.renumbered.sql</code></td><td>Optional; IDs from 1 per table</td></tr>
             <tr><td>ID report</td><td><code>code_html_template/SQLS/sequence_fix_inserts/id-mapping-report.json</code></td><td>Audit old→new maps; <code>fkWarningCount</code> should be 0</td></tr>
-            <tr><td>Schema</td><td><code>code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql</code></td><td>FK definitions for renumber script</td></tr>
+            <tr><td>Schema</td><td><code>code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql</code></td><td>FK definitions for renumber script</td></tr>
             <tr><td>Sequences</td><td><code>code_html_template/SQLS/Current_Sqls/sync_sequence_after_inserts.sql</code></td><td><code>sequence_generator</code> after import</td></tr>
             <tr><td>Sequences</td><td><code>code_html_template/SQLS/Current_Sqls/sync_spring_batch_sequences.sql</code></td><td>Spring Batch sequences after import</td></tr>
             <tr><td>Sequences (copy)</td><td><code>code_html_template/SQLS/INSERTS/sync_sequence_after_inserts.sql</code></td><td>Duplicate/alternate copy</td></tr>

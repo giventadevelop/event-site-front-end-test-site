@@ -19,6 +19,7 @@ REM   /REGEN-MOSC    Regenerate mosc_malankara_orthodox_2 SQL from ordered sourc
 REM   /PRE-CLEAN-MOSC  Run delete_mosc_tenant.sql before import (auto for MOSC files)
 REM   /IMPORT-DUP-ONLY Import mosc_dup_only.sql (implies /PRE-CLEAN-MOSC, use with /DATA-ONLY)
 REM   /DATA-ONLY     Skip schema rebuild (step 5); import + sequence sync only
+REM   /SKIP-GUARDRAILS  Skip SQL size/table/schema sync guardrails (emergency only)
 REM ============================================================
 
 set "CONTAINER_ID="
@@ -32,6 +33,7 @@ set "REGEN_MOSC=0"
 set "PRE_CLEAN_MOSC=0"
 set "DATA_ONLY=0"
 set "IMPORT_DUP_ONLY=0"
+set "SKIP_GUARDRAILS=0"
 set "FINAL_EXIT=0"
 set "RUN_MODE=FULL"
 set "PSQL_MODE="
@@ -108,6 +110,11 @@ if /i "!ARG!"=="/DATA-ONLY" (
   shift
   goto :parse_loop
 )
+if /i "!ARG!"=="/SKIP-GUARDRAILS" (
+  set "SKIP_GUARDRAILS=1"
+  shift
+  goto :parse_loop
+)
 if /i "!ARG:~0,13!"=="/IMPORT-FILE=" (
   set "CUSTOM_IMPORT_FILE=!ARG:~13!"
   shift
@@ -155,7 +162,7 @@ if "%USE_REMOTE%"=="1" (
 
 set "MOSC_TEMP=%WORKSPACE_ROOT%\mosc-temp"
 set "SQLS_DIR=%MOSC_TEMP%\code_html_template\SQLS"
-set "SCHEMA_FILE=%SQLS_DIR%\Current_Sqls\Latest_Schema_Post__Blob_Claude_12.sql"
+set "SCHEMA_FILE=%SQLS_DIR%\Current_Sqls\Event_Site_Manager_Latest_Schema.sql"
 set "EXPORT_FILE=%SQLS_DIR%\export.sql"
 set "ORDERED_FILE=%SQLS_DIR%\corrected_event_media_inserts.ordered.sql"
 set "RENUMBERED_FILE=%SQLS_DIR%\sequence_fix_inserts\corrected_event_media_inserts.renumbered.sql"
@@ -166,6 +173,7 @@ set "SYNC_BATCH_MOSC=%SQLS_DIR%\Current_Sqls\sync_spring_batch_sequences.sql"
 set "DELETE_MOSC_FILE=%SQLS_DIR%\delete_mosc_tenant.sql"
 set "MOSC_DUP_FILE=%SQLS_DIR%\mosc_dup_only.sql"
 set "MOSC_FULL_FILE=%SQLS_DIR%\corrected_event_media_inserts.ordered.mosc_malankara_orthodox_2.sql"
+set "GUARDRAIL_SCRIPT=%MOSC_TEMP%\scripts\sql_export_import_guardrails.cjs"
 
 if "%IMPORT_DUP_ONLY%"=="1" (
   set "CUSTOM_IMPORT_FILE=%MOSC_DUP_FILE%"
@@ -217,6 +225,9 @@ if "%REGEN_MOSC%"=="1" (
 )
 if "%DATA_ONLY%"=="1" (
   call :log_info "/DATA-ONLY enabled - step 5 schema rebuild will be skipped."
+)
+if "%SKIP_GUARDRAILS%"=="1" (
+  call :log_warn "/SKIP-GUARDRAILS enabled - export/import SQL size/table/schema checks will be skipped (emergency only)."
 )
 
 where node >nul 2>&1
@@ -293,6 +304,9 @@ REM --- STEP 1: pg_dump export ---
 :step1
 call :log_step "1" "Export data-only INSERTs from local Docker"
 if "%SKIP_EXPORT%"=="1" goto :step1_skip
+REM Backup previous export/ordered/renumbered/PROD before overwrite (keep last 5)
+call :run_guardrails backup
+if errorlevel 1 goto :fail
 pushd "%SQLS_DIR%"
 docker exec -i !CONTAINER_ID! pg_dump -U %DB_USER% -d %DB_NAME% --data-only --column-inserts > "%EXPORT_FILE%"
 set "DUMP_ERR=!errorlevel!"
@@ -310,6 +324,8 @@ if not exist "%EXPORT_FILE%" (
 set "S1=OK"
 call :log_ok "Step 1 complete - wrote export file"
 call :log_info "File: %EXPORT_FILE%"
+call :run_guardrails post-export
+if errorlevel 1 goto :fail
 goto :step2
 
 :step1_skip
@@ -390,6 +406,8 @@ if not exist "%PROD_FILE%" (
 set "S3=OK"
 call :log_ok "Step 3 complete - PROD copy created"
 call :log_info "File: %PROD_FILE%"
+call :run_guardrails post-prepare
+if errorlevel 1 goto :fail
 goto :step4_setup
 
 :step3_skip
@@ -413,6 +431,9 @@ if "%USE_PROD%"=="1" (
   set "S3=SKIP"
   call :log_ok "Step 3 skipped (/SKIP-EXPORT) - PROD copy not regenerated"
 )
+REM Validate existing SQL files before schema/import when skipping export
+call :run_guardrails post-prepare
+if errorlevel 1 goto :fail
 
 REM --- STEP 4: Comment pg_dump lines ---
 :step4_setup
@@ -461,6 +482,14 @@ if "%REGEN_MOSC%"=="1" (
 )
 
 :before_confirm
+REM Guardrails must pass before schema rebuild / data import
+if "%SCHEMA_ONLY%"=="1" (
+  call :run_guardrails pre-import
+) else (
+  call :run_guardrails pre-import "!IMPORT_FILE!"
+)
+if errorlevel 1 goto :fail
+
 REM --- Confirm destructive steps ---
 if "%DATA_ONLY%"=="1" (
   call :log_banner "WARNING: /DATA-ONLY - import and sequence sync only (schema unchanged)"
@@ -759,6 +788,7 @@ echo(   /REGEN-MOSC     Regenerate mosc_malankara_orthodox_2 SQL before import
 echo(   /PRE-CLEAN-MOSC Run delete_mosc_tenant.sql before import (auto for MOSC files)
 echo(   /IMPORT-DUP-ONLY Import mosc_dup_only.sql only (fast MOSC tenant refresh)
 echo(   /DATA-ONLY      Skip schema rebuild; import + sequence sync only
+echo(   /SKIP-GUARDRAILS Skip SQL size/table/schema-sync guardrails (emergency only)
 echo(
 echo( MOSC examples:
 echo(   %~nx0 F:\project_workspace /REGEN-MOSC /SKIP-EXPORT /IMPORT-FILE "...\mosc_malankara_orthodox_2.sql" /FORCE
@@ -906,6 +936,47 @@ goto :eof
 :log_info
 echo(          %~1
 goto :eof
+
+REM --- Guardrails: size/table/schema sync validation + rotating backups ---
+REM Usage: call :run_guardrails backup|post-export|post-prepare|pre-import [optional-import-file]
+:run_guardrails
+if "%SKIP_GUARDRAILS%"=="1" (
+  call :log_warn "Guardrails skipped (/SKIP-GUARDRAILS): %~1"
+  exit /b 0
+)
+if not exist "%GUARDRAIL_SCRIPT%" (
+  call :log_err "Guardrail script not found: %GUARDRAIL_SCRIPT%"
+  exit /b 1
+)
+set "GR_PHASE=%~1"
+set "GR_IMPORT=%~2"
+call :log_step "G" "SQL guardrails (%GR_PHASE%)"
+REM Optional live Docker agenda URL compare (catches stale dumps exported before re-upload).
+REM Skip for backup phase and when no local container (e.g. /REMOTE + /SKIP-EXPORT with no Docker).
+set "GR_DOCKER_ARGS="
+if /i not "%GR_PHASE%"=="backup" (
+  if defined CONTAINER_ID (
+    set "GR_DOCKER_ARGS=--docker-container !CONTAINER_ID! --db-user %DB_USER% --db-name %DB_NAME%"
+  )
+)
+REM NOTE: Do NOT nest "if A if B (...) else (...)" — CMD binds else to the inner if,
+REM so backup/post-export/post-prepare never ran node and still reported OK.
+if /i "%GR_PHASE%"=="pre-import" (
+  if not "%GR_IMPORT%"=="" (
+    node "%GUARDRAIL_SCRIPT%" pre-import --sqls-dir "%SQLS_DIR%" --import-file "%GR_IMPORT%" !GR_DOCKER_ARGS!
+  ) else (
+    node "%GUARDRAIL_SCRIPT%" pre-import --sqls-dir "%SQLS_DIR%" !GR_DOCKER_ARGS!
+  )
+) else (
+  node "%GUARDRAIL_SCRIPT%" %GR_PHASE% --sqls-dir "%SQLS_DIR%" !GR_DOCKER_ARGS!
+)
+set "GR_ERR=!errorlevel!"
+if !GR_ERR! neq 0 (
+  call :log_err "Guardrails failed during %GR_PHASE% (exit !GR_ERR!). Fix export.sql / ordered SQL / Event_Site_Manager_Latest_Schema.sql, or restore from SQLS\guardrails\backups. If agenda image_url mismatch vs live DB: re-export after media uploads. Emergency: /SKIP-GUARDRAILS"
+  exit /b 1
+)
+call :log_ok "Guardrails passed (%GR_PHASE%)"
+exit /b 0
 
 REM --- Step 2b: Renumber INSERT PKs to local 1..N (replaces legacy 600k MOSC patch) ---
 :renumber_import_sql

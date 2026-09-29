@@ -1,0 +1,153 @@
+---
+description: Generic page-header ribbon background spec — copyable prompt, sizes, JPEG optimization, left text-safe / right motif layout
+globs: public/images/**/page_header/**, public/images/**/header_ribbon/**
+alwaysApply: false
+---
+
+# Page-Header Ribbon Background Images
+
+## **Overview**
+Page-header / ribbon images are **full-bleed background plates only**. HTML overlays the title, breadcrumbs, and short description on the **LEFT**. The image must never contain text, wordmarks, UI chrome, or faces (unless the user explicitly requests faces).
+
+Use this rule whenever the user asks to create, restyle, export, or optimize a **header ribbon**, **page header background**, or **inner-page banner strip**.
+
+## **Input Parameters (user fills these)**
+
+Ask for or extract these before generating. Leave unused fields blank.
+
+| Parameter | What to fill | Example (KCNJ) |
+|-----------|--------------|----------------|
+| `{{THEME}}` | Motif on the **right** 25–30% | Kerala / New Jersey community / Statue of Liberty |
+| `{{LOGO_OR_STYLE_REF}}` | Path or attached image used as **style** only (no wordmark in the ribbon) | [logo_latest.jpeg](mdc:public/images/kcnj/new_logo/logo_latest.jpeg) |
+| `{{DESIGN_SYSTEM_REF}}` | Homepage screenshot or palette | Cream `#F2E7D5` / `#F3E8D6`, forest-green headings, terracotta accents |
+| `{{FIELD_COLOR}}` | Calm left-side field (hex) | `#F2E7D5` |
+| `{{DEST_DIR}}` | Output folder | `public/images/kcnj/page_header/` |
+| `{{ASSET_SLUG}}` | File basename | `header_ribbon` |
+| `{{FACES}}` | `no` (default) or `yes` | `no` |
+
+## **Copyable Generation Prompt**
+
+Fill the `{{...}}` fields, then send as-is to the image model (or to the agent). Do not add extra UI, frames, or letterboxing.
+
+```text
+Create a full-bleed website page-header / ribbon background image.
+
+THEME / MOTIF (RIGHT SIDE ONLY)
+- {{THEME}}
+- Style reference (visual language only, do not place a logo or wordmark in the image): {{LOGO_OR_STYLE_REF}}
+- Match this design-system field color and mood: {{DESIGN_SYSTEM_REF}}
+- Left-side field color: {{FIELD_COLOR}}
+- Faces: {{FACES}}
+
+PURPOSE
+- Background plate only for a site header ribbon.
+- HTML will overlay title, breadcrumbs, and short description on the LEFT.
+- Do NOT render any text, letters, numbers, logos-with-words, UI chrome, buttons, cards, or mock device frames.
+
+LAYOUT (fixed)
+- Ultra-wide horizontal banner strip.
+- LEFT ~70–75% width: calm negative space / soft field for text overlay (keep this side quieter and less detailed).
+- RIGHT ~25–30% width: optional visual interest (abstract motif, brand-friendly ornament, soft emblem shape, or atmospheric detail) that fades toward the left.
+- Keep critical visual detail out of the left text-safe zone.
+- Keep top/bottom edges relatively clean (thin header rules may sit there).
+
+DIMENSIONS / RESPONSIVENESS
+Provide (or design for) these exports:
+1) Desktop / primary: 3360 × 800 px (21:5), 2x retina-ready
+2) Desktop fallback: 2100 × 500 px (21:5)
+3) Tablet: 1600 × 560 px (~20:7)
+4) Mobile: 1200 × 720 px (5:3) — same composition logic, slightly taller crop is OK if needed for readability, but keep left text-safe area and right visual zone
+
+COMPOSITION RULES FOR ALL SIZES
+- Subject/weight stays on the RIGHT.
+- LEFT remains open for overlay text.
+- Soft vignette or gentle left-to-right depth is allowed.
+- Edge-to-edge (no mock device frame, no letterboxing inside the canvas).
+
+OUTPUT
+- Clean wide banner background, high resolution, web-ready.
+- No people faces unless Faces is yes.
+- No readable text of any kind.
+```
+
+## **Responsive Export Sizes**
+
+| Use | Filename token | Size (px) | Ratio | Role |
+|-----|----------------|-----------|-------|------|
+| Desktop 2x retina | `desktop_retina` | **3360 × 800** | 21:5 | Primary `srcset` / high-DPI |
+| Desktop fallback | `desktop_fallback` | **2100 × 500** | 21:5 | 1x / CSS `cover` fallback |
+| Tablet | `tablet` | **1600 × 560** | ~20:7 | Mid-width viewports |
+| Mobile | `mobile` | **1200 × 720** | 5:3 | Taller crop OK; keep left safe zone |
+
+Generate (or composite) at the **widest** size first, then crop/resize down. Do **not** invent a new composition per breakpoint — only change crop height.
+
+## **Optimization**
+
+- **Web delivery: JPEG** (quality ~82–88). Ribbons have no transparency; JPEG is much smaller than PNG on mobile.
+- **Masters: PNG** (lossless) in the parent folder only. Do not ship PNG as the live CSS background.
+- **sRGB**, no ICC surprises. Flatten to `{{FIELD_COLOR}}` (no checkerboard, no alpha).
+- Prefer one web folder of four JPGs over a pile of duplicate PNG+JPG pairs.
+
+### **Folder layout**
+
+```
+{{DEST_DIR}}
+  {{ASSET_SLUG}}_source_*.png|jpg     # optional generation master
+  {{ASSET_SLUG}}_{WxH}.png            # lossless size masters (optional)
+  header_ribbon/                      # web-optimized JPGs only
+    {{ASSET_SLUG}}_desktop_retina_3360x800.jpg
+    {{ASSET_SLUG}}_desktop_fallback_2100x500.jpg
+    {{ASSET_SLUG}}_tablet_1600x560.jpg
+    {{ASSET_SLUG}}_mobile_1200x720.jpg
+```
+
+Naming: `{{ASSET_SLUG}}_{use}_{WxH}.jpg`
+
+## **CSS / HTML usage**
+
+HTML owns the title on the left. CSS should **cover** the strip and pin the motif to the right so `cover` cropping eats the right, not the text-safe left.
+
+```css
+.page-header-ribbon {
+  background-image: url("/images/.../header_ribbon_desktop_fallback_2100x500.jpg");
+  background-size: cover;
+  background-position: right center;
+  background-repeat: no-repeat;
+}
+```
+
+```html
+<picture>
+  <source media="(max-width: 767px)" srcset="/images/.../header_ribbon_mobile_1200x720.jpg" />
+  <source media="(max-width: 1023px)" srcset="/images/.../header_ribbon_tablet_1600x560.jpg" />
+  <source media="(min-width: 1600px)" srcset="/images/.../header_ribbon_desktop_retina_3360x800.jpg" />
+  <img src="/images/.../header_ribbon_desktop_fallback_2100x500.jpg" alt="" />
+</picture>
+```
+
+Decorative ribbon: empty `alt`. Real heading stays in HTML.
+
+## **DO / DON'T**
+
+### **DO**
+- Keep left **70–75%** quiet and matching `{{FIELD_COLOR}}`.
+- Fade the right motif into the field (no hard vertical seam).
+- Export all four sizes from one composition.
+- Use JPEG for web; PNG only as masters.
+- Treat logos as **style references**, not as pasted badges.
+
+### **DON'T**
+- Put title, breadcrumbs, org name, or any letters in the bitmap.
+- Center the motif (HTML text would sit on top of it).
+- Use `object-contain` / letterboxing for this strip (use `cover` + `right center`).
+- Ship uncompressed PNG as the live header background.
+- Crop into the left text-safe zone when making the mobile 5:3 variant.
+
+## **Worked example (KCNJ)**
+
+- Theme: Kerala houseboat / palms, Kerala + NJ maps, Statue of Liberty — **no wordmark**.
+- Field: `#F2E7D5` / `#F3E8D6`.
+- Style ref: [logo_latest.jpeg](mdc:public/images/kcnj/new_logo/logo_latest.jpeg)
+- Web JPGs: `public/images/kcnj/page_header/header_ribbon/`
+
+Related: [image_containment_prevention_hero_images_cards.mdc](mdc:.cursor/rules/image_containment_prevention_hero_images_cards.mdc) is for hero/cards (`object-contain`). Header ribbons use **`cover` + `right center`** instead.

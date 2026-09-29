@@ -72,8 +72,6 @@ const THE_CHURCH_LINKS: SidebarItem[] = [
       { href: '/mosc-redesign/the-church/liturgy/sacraments', label: 'Sacraments' },
     ],
   },
-  { href: '/mosc-redesign/the-church/church-calendar', label: 'Church Calendar' },
-  { href: '/mosc-redesign/the-church/sacraments', label: 'Sacraments' },
 ];
 
 function isItemWithChildren(item: SidebarItem): item is SidebarItem & { children: { href: string; label: string }[] } {

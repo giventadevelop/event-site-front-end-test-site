@@ -147,6 +147,7 @@ const TABLE_ORDER = [
   'event_live_update',
   'event_live_update_attachment',
   'event_media',              // Depends on events
+  'event_agenda_item',        // Depends on event_details + event_media
   'event_organizer',
   'event_poll',
   'event_poll_option',

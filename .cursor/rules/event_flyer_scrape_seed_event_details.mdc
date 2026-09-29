@@ -1,0 +1,111 @@
+---
+description: Scrape event flyers (vision/OCR), POST event_details, and upload hero/flyer media via one-off Node scripts. Prefer scripts over admin UI for bulk seed.
+globs: scripts/seed-*-event-from-flyer.mjs, scripts/seed-*-events-from-*.mjs, scripts/mosc-in-migration/migration-api-lib.mjs
+alwaysApply: false
+---
+
+# Event Flyer Scrape → Event Details + Media Upload
+
+## Overview
+
+When the user provides **local flyer images** and asks to create events, **do not** hand-enter them in the admin UI. Use a **one-off Node script** that:
+
+1. **Scrapes** title, date, time, venue, caption, contacts, and admission from the image (vision + Tesseract OCR).
+2. **POSTs** a row to backend `event_details` (`/api/event-details`).
+3. **Uploads** the flyer as event media (`POST /api/event-medias/upload`) with flyer + hero flags.
+
+This is **append-only** by default (skip create if the same title already exists; still upload media). Do **not** change app server actions or proxy handlers for one-off tenant seeds.
+
+## Canonical Scripts
+
+| Script | Behavior |
+|--------|----------|
+| [`scripts/seed-kcnj-event-from-flyer.mjs`](mdc:scripts/seed-kcnj-event-from-flyer.mjs) | **Preferred.** Append-only. Scrape flyers → create missing events → upload hero/flyer. |
+| [`scripts/seed-mcefee-events-from-charity-site.mjs`](mdc:scripts/seed-mcefee-events-from-charity-site.mjs) | **Destructive.** Deletes all tenant events + media, then recreates from a hardcoded list. Use only when the user asks to replace the whole catalog. |
+| [`scripts/mosc-in-migration/migration-api-lib.mjs`](mdc:scripts/mosc-in-migration/migration-api-lib.mjs) | Service JWT, `apiFetch`, `API_BASE_URL`, `TENANT_ID` from `.env.local`. |
+
+```bash
+# Current tenant from .env.local (backend must be up)
+node scripts/seed-kcnj-event-from-flyer.mjs
+
+# Single extra flyer (reuses first EVENTS spec unless path already listed)
+IMAGE_PATH="F:/path/to/flyer.png" node scripts/seed-kcnj-event-from-flyer.mjs
+```
+
+Requires `.env.local`: `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_TENANT_ID`, `API_JWT_USER` / `API_JWT_PASS`. Optional: `EVENT_TYPE_ID` (default `13` = Cultural Festival).
+
+## Process (agent checklist)
+
+1. **Confirm images exist** on disk.
+2. **Scrape pixels** — read the image in-chat (vision) **and** run Tesseract when installed:
+   ```powershell
+   & "C:\Program Files\Tesseract-OCR\tesseract.exe" "<image>" stdout -l eng --psm 6
+   ```
+   Override binary with `TESSERACT_PATH`. OCR is noisy on illustrated flyers — prefer vision for title/date/venue; use OCR to confirm phones, schedule boxes, age groups.
+3. **Map into `EVENTS[]`** in the seed script (do not invent dates). If the flyer has only a month range, follow the MCEFEE last-weekend-of-month convention in the charity-site script.
+4. **Copy** the flyer under `public/images/<tenant>/events/` for a local reference.
+5. **Create** via `POST /api/event-details` with service JWT + `X-Tenant-ID` (`apiFetch` from migration-api-lib). Include required timestamps (`createdAt`, `updatedAt`), `eventType: { id }`, `tenantId`, `timezone: 'America/New_York'`.
+6. **Upload** multipart to `{API_BASE_URL}/api/event-medias/upload?...` (direct backend, not `/api/proxy`). Use `node:buffer` `File`. ASCII-safe filename/title (S3 signing fails on unicode).
+7. **Idempotency:** `GET /api/event-details?title.equals=...&size=5`. If found, **skip POST**; still upload media.
+
+## Field mapping from flyer
+
+| Flyer text | `event_details` field | Notes |
+|------------|----------------------|--------|
+| Event name | `title` | Exact wording from flyer |
+| Tagline | `caption` | Short |
+| Body + sponsors + contacts | `description` | One string; include schedule/rules/phones |
+| Date | `startDate` / `endDate` | `YYYY-MM-DD` |
+| Door / start–end | `startTime` / `endTime` | Prefer `HH:mm:ss` |
+| Address | `location` | Full venue + street + city |
+| Tickets vs free | `admissionType` | `'ticketed'` or `'free'` only |
+| Contest / age groups | `isCompetitionEvent` | `true` for competitions |
+| “Register by …” | `isRegistrationRequired` | `true` when flyer requires signup |
+| Homepage promo | `isFeaturedEvent` + `featuredEventPriorityRanking` | Lower number = higher rank |
+
+Also set: `isActive: true`, `paymentFlowMode: 'STRIPE_ONLY'`, `donationMetadata` JSON (`isFundraiserEvent` / `isCharityEvent`), `fromEmail` for the tenant (e.g. `contactus@keralacenter.org`).
+
+## Media upload query flags
+
+```javascript
+eventFlyer: 'true',
+isHeroImage: 'true',
+isActiveHeroImage: 'true',
+isHomePageHeroImage: 'true',
+isFeaturedEventImage: String(!!spec.isFeaturedEvent),
+isFeaturedImage: String(!!spec.isFeaturedEvent),
+isPublic: 'true',
+isEventManagementOfficialDocument: 'false',
+displayOrder: '0',
+tenantId: TENANT_ID,
+eventId: String(eventId),
+```
+
+Headers: `Authorization: Bearer <jwt>`, `X-Tenant-ID: <tenant>`. Body: `FormData` with `file`.
+
+## DO / DON'T
+
+```javascript
+// ✅ DO: append-only seed; JWT + X-Tenant-ID; scrape before inventing fields
+const existing = await findExistingByTitle(spec.title, token);
+if (existing.length) { await uploadHeroImage(existing[0].id, spec.imagePath, spec, token); return; }
+await createEvent(spec, token);
+
+// ❌ DON'T: wipe the tenant catalog unless the user asked for a full replace
+// ❌ DON'T: POST event_details from a client component or /api/proxy from this script
+// ❌ DON'T: skip OCR/vision and guess dates
+// ❌ DON'T: send unicode in S3 upload filenames
+```
+
+- ✅ Prefer scripts over UI for bulk flyer ingest.
+- ✅ Keep `EVENTS[]` as the scraped source of truth (comment which image each row came from).
+- ❌ Do not use `seed-mcefee-events-from-charity-site.mjs` for a single new flyer (it deletes everything).
+
+## Tenant reuse
+
+Copy this rule + [`scripts/seed-kcnj-event-from-flyer.mjs`](mdc:scripts/seed-kcnj-event-from-flyer.mjs) + [`scripts/mosc-in-migration/migration-api-lib.mjs`](mdc:scripts/mosc-in-migration/migration-api-lib.mjs) into satellite/primary frontends if missing. Then edit `FLYER_DIR`, `EVENTS[]`, `fromEmail`, and `EVENT_TYPE_ID` for that tenant’s `.env.local`. The script name can stay; the data must match the tenant.
+
+## Related
+
+- Gallery OCR/filter (albums, not event_details): [gallery_album_seed_ocr_filter.mdc](mdc:.cursor/rules/gallery_album_seed_ocr_filter.mdc)
+- Proxy vs direct backend / JWT: [nextjs_api_routes.mdc](mdc:.cursor/rules/nextjs_api_routes.mdc)

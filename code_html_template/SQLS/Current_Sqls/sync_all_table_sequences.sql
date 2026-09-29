@@ -22,6 +22,7 @@ DECLARE
         'focus_group',
         'focus_group_members',
         'event_focus_groups',
+        'last_matches',
         'event_guest_pricing',
         'event_live_update',
         'event_live_update_attachment',

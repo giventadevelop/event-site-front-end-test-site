@@ -50,7 +50,7 @@ export default async function AdministrationPage({
       <SyroPageBanner title="Administration" />
 
       <section className="py-16 bg-syro-bg-gray">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8">
           <div className="bg-syro-red/5 p-10 rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] mb-16 border-l-4 border-syro-red">
             <p className="font-syro-primary text-xl text-syro-dark-gray leading-relaxed">
               The Malankara Orthodox Syrian Church is administered according to its Constitution,
@@ -87,7 +87,7 @@ export default async function AdministrationPage({
                   return (
                     <div
                       key={card.title}
-                      className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] hover:shadow-[rgba(0,0,0,0.35)_0px_5px_15px] transition-shadow duration-300 p-8 flex flex-col h-full"
+                      className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] hover:shadow-[rgba(0,0,0,0.35)_0px_5px_15px] transition-shadow duration-300 px-4 py-8 md:p-8 flex flex-col h-full"
                     >
                       {absoluteIndex === 0 && !hasSearch ? (
                         <div className="mb-5 flex justify-center">
@@ -104,6 +104,10 @@ export default async function AdministrationPage({
                           src={card.image}
                           alt={card.imageAlt ?? card.title}
                           objectPosition="top"
+                          padded={false}
+                          outerClassName="-mx-1"
+                          frameClassName="max-w-none md:max-w-[220px]"
+                          sizes="(max-width: 767px) 100vw, 220px"
                         />
                       ) : null}
                       <h3 className="font-syro-display text-xl font-semibold text-syro-blue mb-4 leading-snug">

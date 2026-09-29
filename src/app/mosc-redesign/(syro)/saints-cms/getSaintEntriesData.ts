@@ -17,7 +17,6 @@ import { getMediaUrl, getMediaAlt } from '@/app/mosc-redesign/(syro)/directory/l
 import {
   EMPTY_DIRECTORY_PAGINATION,
   DIRECTORY_PAGE_SIZE,
-  type DirectoryListPagination,
 } from '@/app/mosc-redesign/(syro)/directory/types/listPagination';
 import type {
   SaintEntry,
@@ -54,14 +53,29 @@ function sortSaintEntriesByDisplayOrder(entries: SaintEntry[]): void {
   });
 }
 
+/**
+ * Prefer tenantId-only. Combining tenantId + documentId in `$or` can duplicate
+ * rows via Strapi/Knex relation joins (seen on production saints-cms).
+ */
 async function applyTenantFilter(params: URLSearchParams, tenantId: string): Promise<void> {
-  const tenantDocumentId = await getStrapiTenantDocumentId();
-  if (tenantDocumentId) {
-    params.set('filters[$or][0][tenant][tenantId][$eq]', tenantId);
-    params.set('filters[$or][1][tenant][documentId][$eq]', tenantDocumentId);
-  } else {
-    params.set('filters[tenant][tenantId][$eq]', tenantId);
+  params.set('filters[tenant][tenantId][$eq]', tenantId);
+}
+
+/** Collapse duplicate Strapi rows (same documentId or same slug). Keeps first after sort. */
+function dedupeSaintEntries(entries: SaintEntry[]): SaintEntry[] {
+  const seenDoc = new Set<string>();
+  const seenSlug = new Set<string>();
+  const out: SaintEntry[] = [];
+  for (const entry of entries) {
+    const docKey = entry.documentId?.trim();
+    const slugKey = entry.slug?.trim().toLowerCase();
+    if (docKey && seenDoc.has(docKey)) continue;
+    if (slugKey && seenSlug.has(slugKey)) continue;
+    if (docKey) seenDoc.add(docKey);
+    if (slugKey) seenSlug.add(slugKey);
+    out.push(entry);
   }
+  return out;
 }
 
 function parseEntry(raw: Record<string, unknown>, baseUrl: string): SaintEntry {
@@ -88,36 +102,10 @@ function parseEntry(raw: Record<string, unknown>, baseUrl: string): SaintEntry {
   };
 }
 
-function parsePagination(
-  meta: { page?: number; pageCount?: number; pageSize?: number; total?: number } | undefined,
-  page: number,
-  pageSize: number
-): DirectoryListPagination {
-  return {
-    page: meta?.page ?? page,
-    pageCount: meta?.pageCount ?? 0,
-    pageSize: meta?.pageSize ?? pageSize,
-    total: meta?.total ?? 0,
-  };
-}
-
 const EMPTY_LIST: SaintEntriesListResult = {
   entries: [],
   pagination: EMPTY_DIRECTORY_PAGINATION,
 };
-
-async function buildBaseParams(tenantId: string, nameSearch?: string): Promise<URLSearchParams> {
-  const params = new URLSearchParams();
-  await applyTenantFilter(params, tenantId);
-  const nameQuery = nameSearch?.trim();
-  if (nameQuery) {
-    params.set('filters[name][$containsi]', nameQuery);
-  }
-  params.set('sort[0]', 'order:asc');
-  params.set('sort[1]', 'name:asc');
-  params.set('populate[0]', 'image');
-  return params;
-}
 
 async function fetchSaintEntryBySlugFromStrapi(
   slug: string,
@@ -198,6 +186,8 @@ export async function getHomepageSaintCarouselEntries(
 /**
  * Fetches saint entries for the current tenant.
  * Pass page/pageSize for paginated list+search; omit (or loadAll) for full list.
+ * Always load → dedupe → sort by Strapi Display Order, then slice for pagination
+ * so production never shows JOIN duplicates or out-of-order cards.
  */
 export async function getSaintEntriesData(
   options?: SaintEntriesListOptions
@@ -213,52 +203,67 @@ export async function getSaintEntriesData(
   const loadAll =
     options?.loadAll === true ||
     options == null ||
-    (options.page == null && options.pageSize == null && !options.nameSearch?.trim());
+    (options.page == null && options.pageSize == null);
 
   try {
-    if (!loadAll) {
-      const page = Math.max(1, options?.page ?? 1);
-      const pageSize = Math.min(100, Math.max(1, options?.pageSize ?? DIRECTORY_PAGE_SIZE));
-      const params = await buildBaseParams(tenantId, options?.nameSearch);
-      params.set('pagination[page]', String(page));
-      params.set('pagination[pageSize]', String(pageSize));
+    const allEntries = await fetchAllSaintEntries(baseUrl, base, tenantId, options?.nameSearch);
+    sortSaintEntriesByDisplayOrder(allEntries);
+    const unique = dedupeSaintEntries(allEntries);
 
-      const res = await fetch(`${base}/saint-entries?${params.toString()}`, {
-        headers: getStrapiHeaders(),
-        ...STRAPI_LIST_FETCH,
-      });
-      if (!res.ok) {
-        return EMPTY_LIST;
-      }
-      const json = (await res.json()) as {
-        data?: unknown[];
-        meta?: {
-          pagination?: {
-            page?: number;
-            pageCount?: number;
-            pageSize?: number;
-            total?: number;
-          };
-        };
-      };
-      const list = Array.isArray(json?.data) ? json.data : [];
-      const entries = list
-        .filter((item): item is Record<string, unknown> => item != null && typeof item === 'object')
-        .map((item) => parseEntry(item, baseUrl));
-      sortSaintEntriesByDisplayOrder(entries);
+    if (loadAll) {
       return {
-        entries,
-        pagination: parsePagination(json?.meta?.pagination, page, pageSize),
+        entries: unique,
+        pagination: {
+          page: 1,
+          pageCount: 1,
+          pageSize: unique.length || DIRECTORY_PAGE_SIZE,
+          total: unique.length,
+        },
       };
     }
 
-    const allEntries: SaintEntry[] = [];
+    const page = Math.max(1, options?.page ?? 1);
+    const pageSize = Math.min(100, Math.max(1, options?.pageSize ?? DIRECTORY_PAGE_SIZE));
+    const total = unique.length;
+    const pageCount = Math.max(1, Math.ceil(total / pageSize) || 1);
+    const safePage = Math.min(page, pageCount);
+    const start = (safePage - 1) * pageSize;
+
+    return {
+      entries: unique.slice(start, start + pageSize),
+      pagination: {
+        page: safePage,
+        pageCount,
+        pageSize,
+        total,
+      },
+    };
+  } catch {
+    return EMPTY_LIST;
+  }
+}
+
+async function fetchAllSaintEntries(
+  baseUrl: string,
+  base: string,
+  tenantId: string,
+  nameSearch?: string
+): Promise<SaintEntry[]> {
+  const tryWithFilter = async (applyFilter: (params: URLSearchParams) => Promise<void>) => {
+    const collected: SaintEntry[] = [];
     let page = 1;
     let pageCount = 1;
-    let total = 0;
 
     while (page <= pageCount) {
-      const params = await buildBaseParams(tenantId, options?.nameSearch);
+      const params = new URLSearchParams();
+      await applyFilter(params);
+      const nameQuery = nameSearch?.trim();
+      if (nameQuery) {
+        params.set('filters[name][$containsi]', nameQuery);
+      }
+      params.set('sort[0]', 'order:asc');
+      params.set('sort[1]', 'name:asc');
+      params.set('populate[0]', 'image');
       params.set('pagination[page]', String(page));
       params.set('pagination[pageSize]', String(LOAD_ALL_PAGE_SIZE));
 
@@ -267,45 +272,43 @@ export async function getSaintEntriesData(
         ...STRAPI_LIST_FETCH,
       });
       if (!res.ok) {
-        return EMPTY_LIST;
+        return null;
       }
       const json = (await res.json()) as {
         data?: unknown[];
-        meta?: {
-          pagination?: {
-            page?: number;
-            pageCount?: number;
-            pageSize?: number;
-            total?: number;
-          };
-        };
+        meta?: { pagination?: { pageCount?: number } };
       };
       const list = Array.isArray(json?.data) ? json.data : [];
-      allEntries.push(
+      collected.push(
         ...list
           .filter((item): item is Record<string, unknown> => item != null && typeof item === 'object')
           .map((item) => parseEntry(item, baseUrl))
       );
-      const meta = json?.meta?.pagination;
-      pageCount = meta?.pageCount ?? 1;
-      total = meta?.total ?? allEntries.length;
+      pageCount = json?.meta?.pagination?.pageCount ?? 1;
       page += 1;
       if (list.length === 0) break;
     }
+    return collected;
+  };
 
-    sortSaintEntriesByDisplayOrder(allEntries);
-    return {
-      entries: allEntries,
-      pagination: {
-        page: 1,
-        pageCount: 1,
-        pageSize: allEntries.length || DIRECTORY_PAGE_SIZE,
-        total: total || allEntries.length,
-      },
-    };
-  } catch {
-    return EMPTY_LIST;
+  const primary = await tryWithFilter(async (params) => {
+    params.set('filters[tenant][tenantId][$eq]', tenantId);
+  });
+  if (primary && primary.length > 0) {
+    return primary;
   }
+
+  const tenantDocumentId = await getStrapiTenantDocumentId();
+  if (tenantDocumentId) {
+    const fallback = await tryWithFilter(async (params) => {
+      params.set('filters[tenant][documentId][$eq]', tenantDocumentId);
+    });
+    if (fallback && fallback.length > 0) {
+      return fallback;
+    }
+  }
+
+  return primary ?? [];
 }
 
 /**

@@ -1,6 +1,6 @@
 ---
-description: Clerk authentication middleware configuration, admin role lookup, and satellite/primary sign-in and sign-out patterns for Next.js App Router
-globs: src/middleware.ts, src/app/layout.tsx, src/app/**/layout.tsx, src/app/(auth)/sign-in/[[...sign-in]]/page.tsx, src/app/auth/signout-redirect/page.tsx, src/components/Header.tsx, src/components/ClerkSyncUrlCleanup.tsx, src/components/ClerkSatelliteSyncGate.tsx
+description: Clerk authentication middleware configuration, admin role lookup, Header admin race-condition fix, and satellite/primary sign-in and sign-out patterns for Next.js App Router
+globs: src/middleware.ts, src/app/layout.tsx, src/app/**/layout.tsx, src/app/(auth)/sign-in/[[...sign-in]]/page.tsx, src/app/auth/signout-redirect/page.tsx, src/app/api/auth/admin-status/route.ts, src/lib/resolveTenantAdminStatus.ts, src/components/Header.tsx, src/components/header/useHeaderAuth.ts, src/components/ClerkSyncUrlCleanup.tsx, src/components/ClerkSatelliteSyncGate.tsx
 alwaysApply: true
 ---
 
@@ -12,6 +12,7 @@ This rule defines the correct pattern for configuring Clerk middleware to enable
 ## **Problem Solved**
 - **Admin Menu Not Appearing**: Ensures admin role lookup works correctly after user login
 - **Admin Menu on Public Pages**: Ensures the Admin menu appears when a logged-in admin visits **any** page (homepage, events, gallery, pricing, etc.), not only `/admin` and sub-pages
+- **Admin Menu Flicker After Sign-In**: Prevents the Admin menu from briefly appearing then disappearing due to `useAuth`/`useUser` race and false-negative `/api/auth/admin-status` responses
 - **Clerk auth() Errors**: Prevents "Clerk can't detect usage of authMiddleware()" errors
 - **Next.js 15+ Compatibility**: Properly handles async `headers()` calls
 - **Route Configuration**: Clarifies when routes need Clerk middleware vs when they can be ignored
@@ -269,52 +270,96 @@ WHERE user_id = 'user_2vVLxhPnsIPGYf6qpfozk383Slr'
 
 The Admin menu in the Header must be shown whenever the user is an admin (**`isAdmin` true**), on **every page** that uses the main layout—including public pages (homepage, `/events`, `/gallery`, `/pricing`, etc.). The Header does **not** hide the Admin menu based on the current path; it only checks `isAdmin`. Ensuring the root layout runs the admin check on all routes (see above) guarantees `isTenantAdmin` is set correctly for every page, so the Admin menu appears consistently.
 
-### **Client-Side Admin Check in `src/components/Header.tsx`**
+### **Client-Side Admin Check in `src/components/Header.tsx` (Race-Condition Safe)**
 
-**Pattern**:
+After SSR sets `isTenantAdmin`, the Header re-checks admin status client-side (needed after sign-in and on satellite sync when SSR may have skipped auth). **Do not clear admin when `useUser().user` is briefly undefined** — that race causes the Admin menu to flicker off after sign-in even when the DB role is `ADMIN`.
+
+**Required pattern** (also apply in `src/components/header/useHeaderAuth.ts` when that hook owns admin state):
+
 ```typescript
-export default function Header({ isTenantAdmin }: HeaderProps) {
-  const [isAdmin, setIsAdmin] = useState(!!isTenantAdmin);
+const { userId, isLoaded } = useAuth();
+const { user } = useUser();
+const [isAdmin, setIsAdmin] = useState(!!isTenantAdmin);
 
-  // Prefer server-verified tenant admin flag when provided
-  useEffect(() => {
+useEffect(() => {
+  if (!isLoaded) {
+    setIsAdmin(!!isTenantAdmin);
+    return;
+  }
+
+  // Clear admin ONLY when there is no Clerk userId (signed out).
+  // ❌ DON'T: if (!userId || !user) { setIsAdmin(false); return; }
+  // useUser() can load a tick after useAuth() — clearing here flickers the Admin menu off.
+  if (!userId) {
+    setIsAdmin(false);
+    return;
+  }
+
+  // If this effect needs `user` (email fallback / Clerk metadata), wait without clearing:
+  // if (!user) { setIsAdmin(!!isTenantAdmin); return; }
+
+  let cancelled = false;
+
+  const applyAdminFallback = () => {
     if (typeof isTenantAdmin === 'boolean') {
       setIsAdmin(isTenantAdmin);
       return;
     }
-
-    // Fallback to Clerk metadata if server flag not provided
-    if (isLoaded && user) {
-      const publicRole = user.publicMetadata?.role as string;
-      const orgRole = user.organizationMemberships?.[0]?.role;
-      const isAdminUser =
-        publicRole === 'admin' ||
+    const publicRole = user?.publicMetadata?.role as string | undefined;
+    const orgRole = user?.organizationMemberships?.[0]?.role;
+    setIsAdmin(
+      publicRole === 'admin' ||
         publicRole === 'administrator' ||
         orgRole === 'admin' ||
-        orgRole === 'org:admin';
-      setIsAdmin(isAdminUser);
-    } else {
-      setIsAdmin(false);
-    }
-  }, [isLoaded, user, isTenantAdmin]);
+        orgRole === 'org:admin'
+    );
+  };
 
-  return (
-    <nav>
-      {/* ... */}
-      {isAdmin && (
-        <Link href="/admin">Admin Panel</Link>
-      )}
-    </nav>
-  );
-}
+  const checkAdminStatus = async (attempt = 1): Promise<void> => {
+    const resp = await fetch('/api/auth/admin-status', {
+      cache: 'no-store',
+      credentials: 'include',
+    });
+    if (!resp.ok) {
+      if (attempt < 2) { /* retry once */ return checkAdminStatus(attempt + 1); }
+      if (!cancelled) applyAdminFallback();
+      return;
+    }
+    const data = await resp.json();
+    // lookupFailed = transient profile lookup error — keep SSR admin flag, do NOT treat as non-admin
+    if (data?.lookupFailed === true) {
+      if (attempt < 2) { /* retry once */ return checkAdminStatus(attempt + 1); }
+      if (!cancelled) applyAdminFallback();
+      return;
+    }
+    if (!cancelled) setIsAdmin(data?.isAdmin === true);
+  };
+
+  checkAdminStatus();
+  return () => { cancelled = true; };
+  // Prefer omitting `user` from deps when admin-status does not need the client user object.
+}, [isLoaded, userId, isTenantAdmin]);
 ```
 
+### **`/api/auth/admin-status` + `resolveTenantAdminStatus` (Avoid False-Negative Clears)**
+
+- **DO**: Resolve admin via criteria list: `GET /api/user-profiles?userId.equals=...&tenantId.equals=...&size=1` (same conversion the user-profiles proxy uses for `/by-user/`).
+- **DON'T**: Call hanging backend path `/api/user-profiles/by-user/{id}` from `resolveTenantAdminStatus` — timeouts were treated as non-admin and wiped the SSR flag.
+- **DO**: On lookup throw/timeout, return `{ isAdmin: false, lookupFailed: true }` (and surface `lookupFailed` from the route).
+- **DON'T**: Return bare `{ isAdmin: false }` with HTTP 200 on lookup failure — Header will clear a true SSR admin flag (flicker).
+- Use a short fetch timeout (e.g. 8s) on profile lookups.
+
+**References**: [`src/lib/resolveTenantAdminStatus.ts`](mdc:src/lib/resolveTenantAdminStatus.ts), [`src/app/api/auth/admin-status/route.ts`](mdc:src/app/api/auth/admin-status/route.ts), [`src/components/Header.tsx`](mdc:src/components/Header.tsx)
+
 ### **Priority Order**:
-1. ✅ **Server-verified flag** (`isTenantAdmin` prop) - Most reliable, tenant-scoped
-2. ✅ **Clerk metadata fallback** - Used if server flag not available
-3. ❌ **Never rely solely on Clerk metadata** - Not tenant-aware
+1. ✅ **Server-verified flag** (`isTenantAdmin` prop) - Most reliable, tenant-scoped; keep it on `lookupFailed`
+2. ✅ **Client `/api/auth/admin-status`** - Re-check after sign-in / satellite sync; only overwrite when lookup succeeded
+3. ✅ **Clerk metadata fallback** - Used if server flag not available and lookup failed
+4. ❌ **Never rely solely on Clerk metadata** - Not tenant-aware
+5. ❌ **Never clear admin on missing `user` while `userId` is present** - Race with `useUser()`
 
 ---
+
 
 ## **User Profile Avatar Dropdown Pattern**
 
@@ -982,6 +1027,7 @@ Does the route call auth() or currentUser() in server components?
 7. ✅ Is `isTenantAdmin` prop being passed to Header?
 8. ✅ Has the user logged out and logged back in after role change?
 9. ✅ **Does the Clerk `userId` match the `user_id` in the `user_profile` table?** (CRITICAL — Clerk can assign a **new userId** after re-login if the Clerk application was recreated, the Clerk environment changed (dev→prod), or the user was deleted and re-provisioned in Clerk Dashboard. The old `user_id` in the database will no longer match. Check browser console for `[Header] Checking admin status ... userId=XXX` and compare against the DB. If mismatched, update the DB: `UPDATE user_profile SET user_id = '<new_clerk_userId>', clerk_user_id = '<new_clerk_userId>' WHERE email = '...' AND tenant_id = '...';`)
+10. ✅ **Is `NEXT_PUBLIC_TENANT_ID` (or `AMPLIFY_NEXT_PUBLIC_TENANT_ID`) the tenant where you set `ADMIN`?** Restart Next after changing tenant env — a stale process can query a different tenant’s profile.
 
 **Common Causes**:
 - `user_role` is not set to `'ADMIN'` or `'SUPER_ADMIN'` in the database. This must be changed manually:
@@ -989,6 +1035,18 @@ Does the route call auth() or currentUser() in server components?
   - **Via Database**: `UPDATE user_profile SET user_role = 'ADMIN' WHERE user_id = '...' AND tenant_id = '...'`
 - **Clerk userId mismatch**: The `user_id` in the `user_profile` table does not match the Clerk userId. This happens when Clerk issues a new userId (e.g., after Clerk app recreation, environment change, or user re-provisioning). The layout.tsx has email-based fallback logic to auto-update the userId, but it is skipped during satellite sync (`__clerk_synced`). Fix by updating the DB manually:
   - `UPDATE user_profile SET user_id = '<new_clerk_userId>', clerk_user_id = '<new_clerk_userId>' WHERE email = '<user_email>' AND tenant_id = '<tenant_id>';`
+
+---
+
+### **Admin Menu Flickers Then Disappears After Sign-In**
+**Symptoms**: User is logged in; Admin menu appears briefly then vanishes. DB has `user_role = 'ADMIN'` for the correct `tenant_id`.
+
+**Causes & fixes**:
+1. **`!userId || !user` clear** — Header/`useHeaderAuth` cleared admin while `useAuth` had `userId` but `useUser` had not hydrated `user` yet. **Fix**: clear only on `!userId`; if `user` is required, wait with `setIsAdmin(!!isTenantAdmin)` instead of clearing.
+2. **False-negative admin-status** — `/api/auth/admin-status` returned `{ isAdmin: false }` on profile lookup timeout/error (often from hanging `/api/user-profiles/by-user/{id}`). Header treated HTTP 200 as confirmed non-admin and overwrote SSR `true`. **Fix**: use list criteria lookup + return `lookupFailed: true`; Header must call `applyAdminFallback()` (keep SSR flag) when `lookupFailed`.
+3. **Wrong tenant in running process** — env updated to a new tenant but Next not restarted; client lookup misses the row you updated. **Fix**: restart after tenant env changes; confirm console log `tenantId=` matches the DB row.
+
+**Verify**: Console should show `[Header] Admin status API: isAdmin=true, lookupFailed=false, tenantId=<expected>`.
 
 ---
 
@@ -1010,7 +1068,10 @@ Does the route call auth() or currentUser() in server components?
 
 - **Middleware Config**: [`src/middleware.ts`](mdc:src/middleware.ts) - Lines 29-99
 - **Root Layout**: [`src/app/layout.tsx`](mdc:src/app/layout.tsx) - Lines 57-212
-- **Header Component**: [`src/components/Header.tsx`](mdc:src/components/Header.tsx) - Lines 256-420 (UserAvatarDropdown), Lines 872-995 (desktop integration), Lines 1223-1280 (mobile integration), `handleSignOut` (satellite/primary sign-out)
+- **Header Component**: [`src/components/Header.tsx`](mdc:src/components/Header.tsx) - Admin race-safe re-check, UserAvatarDropdown, `handleSignOut` (satellite/primary sign-out)
+- **Header Auth Hook** (when used): [`src/components/header/useHeaderAuth.ts`](mdc:src/components/header/useHeaderAuth.ts) - Same `!userId`-only clear / wait-for-`user` pattern
+- **Admin Status API**: [`src/app/api/auth/admin-status/route.ts`](mdc:src/app/api/auth/admin-status/route.ts) - Returns `lookupFailed` on transient errors
+- **Admin Resolve Helper**: [`src/lib/resolveTenantAdminStatus.ts`](mdc:src/lib/resolveTenantAdminStatus.ts) - List criteria lookup (not hanging `/by-user/{id}`)
 - **Sign-In Page**: [`src/app/(auth)/sign-in/[[...sign-in]]/page.tsx`](mdc:src/app/(auth)/sign-in/[[...sign-in]]/page.tsx) - Satellite/primary sign-in (primary-first detection)
 - **Sign-Out Redirect Page**: [`src/app/auth/signout-redirect/page.tsx`](mdc:src/app/auth/signout-redirect/page.tsx) - Primary sign-out redirect for satellite users
 - **Admin Layout**: [`src/app/admin/layout.tsx`](mdc:src/app/admin/layout.tsx) - Admin route protection pattern
@@ -1035,6 +1096,7 @@ Does the route call auth() or currentUser() in server components?
 6. Check admin role using `isAdminRole()` from `@/lib/utils` — accepts both `'ADMIN'` and `'SUPER_ADMIN'`
 7. Pass `isTenantAdmin` to Header component
 8. **Verify Clerk userId matches DB `user_id`** — Clerk can assign new userIds after app recreation or environment changes. If mismatched, update DB or rely on email-based fallback in layout.tsx
+9. **Header client re-check must be race-safe** — clear admin only on `!userId` (never on missing `user`); treat `lookupFailed` as keep-SSR, not as non-admin; prefer list criteria profile lookup over `/by-user/{id}`
 
 **User Profile Avatar Pattern**:
 1. Use Clerk's `useUser()` hook to get `user.imageUrl`, `user.firstName`, `user.emailAddresses`

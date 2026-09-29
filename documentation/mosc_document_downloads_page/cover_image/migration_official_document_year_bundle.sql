@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Incremental migration: official_document_year_bundle (option B cover image)
 -- Run ONCE per database that already exists and does not include this table yet.
--- Do NOT run on a DB created from Latest_Schema_Post__Blob_Claude_12.sql after
+-- Do NOT run on a DB created from Event_Site_Manager_Latest_Schema.sql after
 -- the table was added to that file (would fail: relation already exists).
 --
 -- Prerequisite: PostgreSQL requires FK targets to have PRIMARY KEY or UNIQUE.

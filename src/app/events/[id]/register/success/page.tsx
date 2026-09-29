@@ -9,6 +9,26 @@ import { formatInTimeZone } from 'date-fns-tz';
 import LocationDisplay from '@/components/LocationDisplay';
 import { FaCheckCircle, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaUser, FaUsers, FaEnvelope, FaPhone, FaPaperclip } from 'react-icons/fa';
 
+function attendeeStatusBadge(status: string): { label: string; className: string } {
+  const normalized = status.trim().toUpperCase();
+  if (normalized === 'PENDING' || normalized === 'PENDING_APPROVAL') {
+    return {
+      label: 'Submitted — pending review',
+      className: 'bg-amber-100 text-amber-800 border border-amber-200',
+    };
+  }
+  if (normalized === 'REGISTERED' || normalized === 'CONFIRMED' || normalized === 'APPROVED') {
+    return {
+      label: normalized === 'REGISTERED' ? 'Registered' : status,
+      className: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+    };
+  }
+  return {
+    label: status,
+    className: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+  };
+}
+
 export default function RegistrationSuccessPage({
   params
 }: {
@@ -201,9 +221,16 @@ export default function RegistrationSuccessPage({
                 <div>
                   <label className="block text-sm font-semibold text-blue-700 mb-1">Registration Status</label>
                   <p className="text-lg">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                      {attendee.registrationStatus}
-                    </span>
+                    {(() => {
+                      const badge = attendeeStatusBadge(attendee.registrationStatus);
+                      return (
+                        <span
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${badge.className}`}
+                        >
+                          {badge.label}
+                        </span>
+                      );
+                    })()}
                   </p>
                 </div>
               )}

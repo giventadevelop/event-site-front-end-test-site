@@ -1,10 +1,11 @@
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import CompetitionSubpageLayout from '@/components/competitions/CompetitionSubpageLayout';
 import MyRegistrationsList from '@/components/competitions/MyRegistrationsList';
 import {
   fetchMyRegistrationsForEventServer,
+  fetchPublicCompetitionSettingsServer,
   getAuthenticatedClerkUserId,
 } from '../ApiServerActions';
+import { redirect } from 'next/navigation';
 
 export default async function MyCompetitionRegistrationsPage(props: {
   params: Promise<{ id: string }> | { id: string };
@@ -23,18 +24,21 @@ export default async function MyCompetitionRegistrationsPage(props: {
   }
 
   const registrations = await fetchMyRegistrationsForEventServer(eventId, clerkUserId);
+  const settings = await fetchPublicCompetitionSettingsServer(eventId);
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <Link href={`/events/${eventId}/competitions`} className="text-sm text-primary hover:underline">
-        ← Competitions
-      </Link>
-      <h1 className="font-heading font-semibold text-3xl mt-2 mb-8">My registrations</h1>
+    <CompetitionSubpageLayout
+      eventId={eventId}
+      title="My registrations"
+      active="my-registrations"
+      registrationOpen={settings?.registrationOpen ?? false}
+      contentClassName="max-w-3xl"
+    >
       <MyRegistrationsList
         eventId={eventId}
         registrations={registrations}
         paymentSuccess={searchParams.payment === 'success'}
       />
-    </div>
+    </CompetitionSubpageLayout>
   );
 }

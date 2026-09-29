@@ -38,6 +38,17 @@ interface TenantSettingsContextType {
   showProfileDownloads: boolean;
   showProfileContact: boolean;
   showProfileProjects: boolean;
+  // Header menu visibility (null-safe defaults applied)
+  showHeaderHome: boolean;
+  showHeaderAbout: boolean;
+  showHeaderEvents: boolean;
+  showHeaderFeatures: boolean;
+  showHeaderCalendar: boolean;
+  showHeaderGallery: boolean;
+  showHeaderContact: boolean;
+  showHeaderNews: boolean;
+  showHeaderDownloads: boolean;
+  showHeaderLinks: boolean;
   /** When true and publisher ID is set, public pages may render AdSense regions */
   showGoogleAdsense: boolean;
   adsensePublisherId: string | null;
@@ -70,6 +81,16 @@ const TenantSettingsContext = React.createContext<TenantSettingsContextType>({
   showProfileDownloads: false,
   showProfileContact: false,
   showProfileProjects: false,
+  showHeaderHome: true,
+  showHeaderAbout: true,
+  showHeaderEvents: true,
+  showHeaderFeatures: true,
+  showHeaderCalendar: true,
+  showHeaderGallery: true,
+  showHeaderContact: true,
+  showHeaderNews: false,
+  showHeaderDownloads: false,
+  showHeaderLinks: false,
   showGoogleAdsense: false,
   adsensePublisherId: null,
   adsensePlacements: {},
@@ -305,6 +326,17 @@ export const TenantSettingsProvider: React.FC<TenantSettingsProviderProps> = ({ 
   const showProfileDownloads = settings?.showProfileMediaDownloadsSection ?? false;
   const showProfileContact = settings?.showProfileContactSection ?? false;
   const showProfileProjects = settings?.showProfileProjectsSection ?? false;
+  // Header menu: legacy items default ON; news/downloads/links default OFF
+  const showHeaderHome = settings?.showHeaderHome ?? true;
+  const showHeaderAbout = settings?.showHeaderAbout ?? true;
+  const showHeaderEvents = settings?.showHeaderEvents ?? true;
+  const showHeaderFeatures = settings?.showHeaderFeatures ?? true;
+  const showHeaderCalendar = settings?.showHeaderCalendar ?? true;
+  const showHeaderGallery = settings?.showHeaderGallery ?? true;
+  const showHeaderContact = settings?.showHeaderContact ?? true;
+  const showHeaderNews = settings?.showHeaderNews ?? false;
+  const showHeaderDownloads = settings?.showHeaderDownloads ?? false;
+  const showHeaderLinks = settings?.showHeaderLinks ?? false;
   const showGoogleAdsense =
     settings?.enableGoogleAdsense === true && Boolean(settings?.googleAdsensePublisherId?.trim());
   const adsensePublisherId = settings?.googleAdsensePublisherId?.trim() || null;
@@ -329,6 +361,16 @@ export const TenantSettingsProvider: React.FC<TenantSettingsProviderProps> = ({ 
     showProfileDownloads,
     showProfileContact,
     showProfileProjects,
+    showHeaderHome,
+    showHeaderAbout,
+    showHeaderEvents,
+    showHeaderFeatures,
+    showHeaderCalendar,
+    showHeaderGallery,
+    showHeaderContact,
+    showHeaderNews,
+    showHeaderDownloads,
+    showHeaderLinks,
     showGoogleAdsense,
     adsensePublisherId,
     adsensePlacements,

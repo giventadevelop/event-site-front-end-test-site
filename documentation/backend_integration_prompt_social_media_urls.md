@@ -83,7 +83,7 @@ For **tenant_settings**, **event_sponsors**, and **event_featured_performers**:
 
 ## Context
 
-- **Frontend project (schema source):** `E:\project_workspace\mosc-temp` — `code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql` and `migration_tenant_settings_social_media_urls.sql`.
+- **Frontend project (schema source):** `E:\project_workspace\mosc-temp` — `code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql` and `migration_tenant_settings_social_media_urls.sql`.
 - **Backend project:** `E:\project_workspace\malayalees-us-site-boot` (this project).
 - **Batch job project:** Apply the same entity/DTO/criteria and migration rules wherever it uses or persists tenant_settings, event_sponsors, or event_featured_performers.
 ```
@@ -93,7 +93,7 @@ For **tenant_settings**, **event_sponsors**, and **event_featured_performers**:
 ## Short version (if you prefer a minimal prompt)
 
 ```
-Sync backend and batch job with schema: tenant_settings, event_sponsors, and event_featured_performers now have six social URL fields (all varchar(1024) NULL): facebook_url, instagram_url, twitter_url, linkedin_url, youtube_url, tiktok_url. Add any missing fields to Entity, DTO, criteria/query, MapStruct, and add a DB migration (Liquibase/Flyway) for new columns. Ensure REST API request/response JSON includes all six. Frontend schema is in E:\project_workspace\mosc-temp (Latest_Schema_Post__Blob_Claude_12.sql).
+Sync backend and batch job with schema: tenant_settings, event_sponsors, and event_featured_performers now have six social URL fields (all varchar(1024) NULL): facebook_url, instagram_url, twitter_url, linkedin_url, youtube_url, tiktok_url. Add any missing fields to Entity, DTO, criteria/query, MapStruct, and add a DB migration (Liquibase/Flyway) for new columns. Ensure REST API request/response JSON includes all six. Frontend schema is in E:\project_workspace\mosc-temp (Event_Site_Manager_Latest_Schema.sql).
 ```
 
 ---

@@ -1,5 +1,5 @@
 ---
-description: Standard commit-and-push workflow for the three core backend/frontend repos (mosc-temp, event-site-manager-batch-jobs, event-site-manager-service) on Windows
+description: Standard commit-and-push workflow for core backend/frontend repos (mosc-temp, batch-jobs, service, manager, templates, tasks_automation) on Windows — always stage unstaged safe files
 globs: **/*
 alwaysApply: false
 ---
@@ -11,20 +11,39 @@ alwaysApply: false
 When the user asks to **commit and push** (or "commit push these projects") for the **backend core trio** below, run the **same workflow** for all three repositories unless they name a subset. Only commit when the user **explicitly** requests it.
 
 **Related rules:**
+- [git_pull.mdc](mdc:.cursor/rules/git_pull.mdc) — **pull-only** workflow (fetch, pull, conflicts, stash, force-incoming file)
 - [git_local_push.mdc](mdc:.cursor/rules/git_local_push.mdc) — PowerShell syntax, **secret filtering**, SSL workaround, unstaged/untracked staging
 - [git_commit_push_release_deploy.mdc](mdc:.cursor/rules/git_commit_push_release_deploy.mdc) — **one-shot** commit + push + merge to release/deploy branch (copy-paste prompt)
 
-This rule covers the **three-repo batch** workflow for batch-jobs and service (and mosc-temp when named in the trio).
+This rule covers the **core multi-repo batch** workflow (batch-jobs, service, mosc-temp, and related frontends when named together).
 
-**Single-repo requests** (e.g. only `event-site-manager-service`) use the same **Step 0 pull → Step 2 `git add -A` + secret scan → commit → push** workflow; stage all **` M` / `??`** paths that pass the filter — including unstaged `src/main/java/**` and `src/test/java/**`.
+**Single-repo requests** (e.g. only `event-site-manager-service`) use the same **Step 0 pull → Step 2 `git add -A` + secret scan → commit → push** workflow; stage all **` M` / `??`** paths that pass the filter — including unstaged `src/main/java/**`, `src/test/java/**`, `src/app/**`, docs, SQL, and scripts.
+
+### **Unstaged files — mandatory on every commit/push request**
+
+When the user asks to **commit and push** (including *"unstaged files hurt them — add them if no secrets"*) and `git status --porcelain` shows **` M` (unstaged modified)**, **`MM`**, or **`??` (untracked)**:
+
+1. **DO** run `git add -A` — never commit only the paths the user named while other safe files stay unstaged.
+2. **DO** unstage blocklisted paths (secrets, keys, `tsconfig.tsbuildinfo`, `ordered_PROD.sql`, `__pycache__/`, `*.pyc`, runtime logs) per [git_local_push.mdc](mdc:.cursor/rules/git_local_push.mdc).
+3. **DO** run the staged-path secret filename check — **empty output required** before `git commit`.
+4. **DO** content spot-check new env-like or credential-shaped untracked files (`sk_live_`, `AKIA…`, real `DB_PASSWORD=`, etc.).
+5. **DO** include all four core repos when user lists them: `mosc-temp`, `event-site-manager-service`, `event-site-manager`, `event-site-manager-batch-jobs` — report **local branch** for each before push.
+6. **DON'T** push if porcelain still shows commit-eligible **` M` / `??`** on safe paths after commit (workflow incomplete).
+7. **DON'T** stage or commit paths matching the secret blocklist even when the user says "add everything" or "add unstaged files."
+
+**Condition summary:** When the user says unstaged files hurt them / add unstaged files — stage **all** ` M` / `??` **if and only if** they pass the secret filename blocklist and content spot-check in [git_local_push.mdc](mdc:.cursor/rules/git_local_push.mdc). Secrets and keys (`auth.json`, `.env*`, `*.pem`, credentials) are **never** committed regardless of user request. Safe TestSprite/docs/SQL/app changes **must** be included.
 
 ## **Repositories (canonical paths & branches)**
 
 | Repo | Path | Default branch | Remote |
 |------|------|----------------|--------|
 | **mosc-temp** | `F:\project_workspace\mosc-temp` | `MOSC-redesign-sub-poc-2` | `origin` |
-| **event-site-manager-batch-jobs** | `F:\project_workspace\event-site-manager-batch-jobs` | `main` | `origin` |
+| **event-site-manager-batch-jobs** | `F:\project_workspace\event-site-manager-batch-jobs` | `main` (work) / `release/v1.0.0` (deploy) | `origin` |
 | **event-site-manager-service** | `F:\project_workspace\event-site-manager-service` | `feature_Freelance_Work` | `origin` |
+| **event-site-manager** | `F:\project_workspace\event-site-manager` | `release/v1.0.0` (verify) / `main` | `origin` |
+| **event-site-front-end-template** | `F:\project_workspace\event-site-front-end-template` | `main` | `origin` |
+| **event-site-front-end-test-site** | `F:\project_workspace\event-site-front-end-test-site` | `release/v1.0.0` | `origin` |
+| **tasks_automation** | `F:\project_workspace\tasks_automation` | `main` | `origin` |
 
 - **DO** verify `git branch --show-current` before push; branch names above are defaults, not assumptions.
 - **DO NOT** change `git config` (no global credential or SSL config edits).

@@ -3,6 +3,11 @@
 import { useRouter } from 'next/navigation';
 import TenantSettingsForm from './TenantSettingsForm';
 import type { TenantSettingsDTO, TenantSettingsFormDTO, TenantOrganizationDTO } from '@/app/admin/tenant-management/types';
+import {
+  parseTenantSettingsTab,
+  tenantSettingsTabQuery,
+  type TenantSettingsTab,
+} from '@/lib/tenantSettingsTabs';
 
 interface TenantSettingsFormWrapperProps {
   initialData?: TenantSettingsDTO;
@@ -11,6 +16,7 @@ interface TenantSettingsFormWrapperProps {
   mode: 'create' | 'edit';
   settingsId: number;
   organizations?: TenantOrganizationDTO[];
+  initialTab?: TenantSettingsTab;
 }
 
 export default function TenantSettingsFormWrapper({
@@ -19,12 +25,18 @@ export default function TenantSettingsFormWrapper({
   loading = false,
   mode,
   settingsId,
-  organizations = []
+  organizations = [],
+  initialTab = 'general',
 }: TenantSettingsFormWrapperProps) {
   const router = useRouter();
 
   const handleCancel = () => {
-    router.push(`/admin/tenant-management/settings/${settingsId}`);
+    const tab = parseTenantSettingsTab(
+      typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).get('tab')
+        : initialTab
+    );
+    router.push(`/admin/tenant-management/settings/${settingsId}${tenantSettingsTabQuery(tab)}`);
   };
 
   return (
@@ -36,7 +48,7 @@ export default function TenantSettingsFormWrapper({
       mode={mode}
       availableOrganizations={organizations}
       settingsId={settingsId}
+      initialTab={initialTab}
     />
   );
 }
-

@@ -1,8 +1,9 @@
 import type { TenantSettingsDTO } from '@/types';
-import { getAppUrl } from '@/lib/env';
+import { getApiBaseUrl, getTenantId } from '@/lib/env';
+import { fetchWithJwtRetry } from '@/lib/proxyHandler';
+import { logServerFetchFailure } from '@/lib/logServerFetchFailure';
 
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
-const API_BASE_URL = getAppUrl();
 
 interface TenantSettingsCacheEntry {
   settings: TenantSettingsDTO | null;
@@ -17,16 +18,21 @@ export async function getTenantSettings(tenantId: string): Promise<TenantSetting
   if (cacheEntry && now - cacheEntry.fetchedAt < CACHE_DURATION_MS) {
     return cacheEntry.settings;
   }
-  // Fetch from proxy API
-  const url = `${API_BASE_URL}/api/proxy/tenant-settings?tenantId.equals=${encodeURIComponent(tenantId)}`;
-  const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) {
-    console.error(`[tenantSettingsCache] Failed to fetch tenant settings for tenantId=${tenantId}:`, res.status, await res.text());
+  try {
+    const apiBase = getApiBaseUrl();
+    const scopedTenantId = tenantId || getTenantId();
+    const url = `${apiBase}/api/tenant-settings?tenantId.equals=${encodeURIComponent(scopedTenantId)}`;
+    const res = await fetchWithJwtRetry(url, { cache: 'no-store' });
+    if (!res.ok) {
+      console.warn(`[tenantSettingsCache] Failed to fetch tenant settings for tenantId=${scopedTenantId}: ${res.status}`);
+      return null;
+    }
+    const data = await res.json();
+    const settings: TenantSettingsDTO | null = Array.isArray(data) ? data[0] : data;
+    tenantSettingsCache[tenantId] = { settings, fetchedAt: now };
+    return settings;
+  } catch (error) {
+    logServerFetchFailure('tenantSettingsCache', error);
     return null;
   }
-  const data = await res.json();
-  // API may return an array or object
-  const settings: TenantSettingsDTO | null = Array.isArray(data) ? data[0] : data;
-  tenantSettingsCache[tenantId] = { settings, fetchedAt: now };
-  return settings;
 }

@@ -95,19 +95,85 @@ function buildArticleQuery(filters: string, sort: string, pageSize: number, tena
 }
 
 /**
- * Builds a tenant filter that works across Strapi relation shapes:
- * - local: filters[tenant][tenantId][$eq]=tenant_demo_002
- * - some prod datasets: filters[tenant][documentId][$eq]=<tenant_document_id>
+ * Primary tenant filter: tenantId only.
+ * Do NOT combine tenantId + documentId in a single `$or` — Strapi/Knex relation
+ * joins can return each article twice (seen on /mosc-redesign/news in production).
+ * documentId-only is used as a separate fallback in getNewsHomePageData().
  */
 async function buildTenantFilterQuery(tenantId: string): Promise<string> {
-  const tenantDocumentId = await getStrapiTenantDocumentId();
-  if (tenantDocumentId) {
-    return [
-      `filters[$or][0][tenant][tenantId][$eq]=${encodeURIComponent(tenantId)}`,
-      `filters[$or][1][tenant][documentId][$eq]=${encodeURIComponent(tenantDocumentId)}`,
-    ].join('&');
-  }
   return `filters[tenant][tenantId][$eq]=${encodeURIComponent(tenantId)}`;
+}
+
+/** Collapse duplicate rows from Strapi (same documentId / slug / id). */
+function dedupeArticles(articles: NewsArticle[]): NewsArticle[] {
+  const seen = new Set<string>();
+  const out: NewsArticle[] = [];
+  for (const article of articles) {
+    const key =
+      (article.documentId ? `d:${article.documentId}` : null) ||
+      (article.slug ? `s:${article.slug}` : null) ||
+      (article.id != null && article.id !== 0 ? `i:${article.id}` : null) ||
+      `t:${(article.title || '').trim().toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(article);
+  }
+  return out;
+}
+
+/**
+ * Most Read category often has imported stub cards (cover + title, empty description).
+ * Copy excerpts from peer sections (Main News / Press Release / Featured) by matching title.
+ */
+function enrichMissingExcerpts(articles: NewsArticle[], peers: NewsArticle[]): NewsArticle[] {
+  const byTitle = new Map<string, string>();
+  for (const peer of peers) {
+    const excerpt = peer.excerpt?.trim();
+    const titleKey = peer.title ? normalizeFlashTitleKey(peer.title) : '';
+    if (!excerpt || !titleKey || byTitle.has(titleKey)) continue;
+    byTitle.set(titleKey, excerpt);
+  }
+  if (byTitle.size === 0) return articles;
+  return articles.map((article) => {
+    if (article.excerpt?.trim()) return article;
+    const titleKey = article.title ? normalizeFlashTitleKey(article.title) : '';
+    const excerpt = titleKey ? byTitle.get(titleKey) : undefined;
+    return excerpt ? { ...article, excerpt } : article;
+  });
+}
+
+/** Prefer the fuller article when the same headline exists in multiple categories. */
+function recentArticleQualityScore(article: NewsArticle): number {
+  let score = 0;
+  if (article.excerpt?.trim()) score += 3;
+  if (typeof article.body === 'string' && article.body.trim()) score += 2;
+  if (article.coverUrl) score += 1;
+  if (article.categorySlug && article.categorySlug !== 'most-read') score += 2;
+  return score;
+}
+
+/**
+ * Collapse same-title articles for Recent Posts only (homepage section lists stay unchanged).
+ * Keeps published order; when titles collide, keeps the higher-quality copy.
+ */
+function dedupeRecentArticlesByTitle(articles: NewsArticle[]): NewsArticle[] {
+  const byTitle = new Map<string, NewsArticle>();
+  const order: string[] = [];
+  for (const article of articles) {
+    const titleKey = article.title?.trim()
+      ? normalizeFlashTitleKey(article.title)
+      : `fallback:${article.documentId || article.slug || article.id}`;
+    const existing = byTitle.get(titleKey);
+    if (!existing) {
+      byTitle.set(titleKey, article);
+      order.push(titleKey);
+      continue;
+    }
+    if (recentArticleQualityScore(article) > recentArticleQualityScore(existing)) {
+      byTitle.set(titleKey, article);
+    }
+  }
+  return order.map((key) => byTitle.get(key)!);
 }
 
 function getArticleCountFromResult(result: NewsHomePageData): number {
@@ -117,6 +183,29 @@ function getArticleCountFromResult(result: NewsHomePageData): number {
     result.pressRelease.length +
     result.mostRead.length
   );
+}
+
+/** Flatten Strapi Blocks rich text to plain text for card excerpts. */
+function blocksToPlainText(blocks: unknown): string {
+  if (!Array.isArray(blocks)) return '';
+  const parts: string[] = [];
+  const walk = (nodes: unknown[]) => {
+    for (const node of nodes) {
+      if (!node || typeof node !== 'object') continue;
+      const n = node as { type?: string; text?: string; children?: unknown[] };
+      if (typeof n.text === 'string') parts.push(n.text);
+      if (Array.isArray(n.children)) walk(n.children);
+    }
+  };
+  walk(blocks);
+  return parts.join(' ').replace(/\s+/g, ' ').trim();
+}
+
+function truncateExcerpt(text: string, max = 220): string {
+  const t = text.trim();
+  if (!t) return '';
+  if (t.length <= max) return t;
+  return `${t.slice(0, max).trimEnd()}…`;
 }
 
 function normalizeArticle(raw: { id?: number; documentId?: string; attributes?: Record<string, unknown> }): NewsArticle {
@@ -144,18 +233,22 @@ function normalizeArticle(raw: { id?: number; documentId?: string; attributes?: 
   const descStr = typeof descRaw === 'string' ? (descRaw as string).trim() : '';
   const descriptionBlocks: BlocksContent | undefined =
     Array.isArray(descRaw) && descRaw.length > 0 ? (descRaw as BlocksContent) : undefined;
+  const descFromBlocks = descriptionBlocks ? blocksToPlainText(descriptionBlocks) : '';
   const bodyRaw = attrs?.body;
   const bodyStr = typeof bodyRaw === 'string' ? bodyRaw.trim() : '';
+  const bodyFromBlocks = Array.isArray(bodyRaw) ? blocksToPlainText(bodyRaw) : '';
   const excerptStr = typeof attrs?.excerpt === 'string' ? (attrs.excerpt as string).trim() : '';
+  const excerptSource = excerptStr || descStr || descFromBlocks || bodyStr || bodyFromBlocks;
   return {
     id: (raw?.id ?? attrs?.id ?? 0) as number,
     documentId: raw?.documentId as string | undefined,
     title: (attrs?.title ?? '') as string,
     slug: (attrs?.slug ?? '') as string,
-    excerpt: excerptStr || (descStr ? descStr.slice(0, 300) + (descStr.length > 300 ? '…' : '') : undefined),
+    excerpt: excerptSource ? truncateExcerpt(excerptSource) : undefined,
     description: descriptionBlocks,
     body: bodyStr || descStr || undefined,
-    publishedAt: (attrs?.publishedAt ?? undefined) as string | undefined,
+    // Prefer Strapi draft-and-publish publishedAt; fall back to createdAt so cards always show a date
+    publishedAt: (attrs?.publishedAt ?? attrs?.createdAt ?? undefined) as string | undefined,
     views: (attrs?.views ?? undefined) as number | undefined,
     coverUrl,
     coverAlt,
@@ -221,28 +314,83 @@ interface RawFlashNewsItem {
   article?: { slug?: string; id?: number; documentId?: string } | { data?: { attributes?: { slug?: string }; slug?: string } } | null;
 }
 
+function flashNewsInternalPath(slug: string): string {
+  return `/mosc-redesign/news/${encodeURIComponent(slug)}`;
+}
+
+function normalizeFlashTitleKey(value: string): string {
+  return value.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+/**
+ * Prefer related Strapi article (same-domain detail) over externalUrl.
+ * Matches Strapi schema: externalUrl is only for items with no article.
+ */
+function resolveFlashNewsLink(articleSlug?: string | null, externalUrl?: string | null): string | null {
+  const slug = articleSlug?.trim();
+  if (slug) return flashNewsInternalPath(slug);
+  const ext = externalUrl?.trim();
+  return ext || null;
+}
+
+function extractArticleSlugFromFlash(article: RawFlashNewsItem['article']): string | undefined {
+  if (!article || typeof article !== 'object') return undefined;
+  return (
+    (article as { slug?: string }).slug ??
+    (article as { data?: { attributes?: { slug?: string }; slug?: string } })?.data?.attributes?.slug ??
+    (article as { data?: { slug?: string } })?.data?.slug
+  );
+}
+
 function normalizeFlashNewsItem(raw: RawFlashNewsItem): FlashNewsItemUI {
   const attrs = (raw?.attributes ?? raw) as Record<string, unknown>;
   const content = (attrs?.content ?? raw?.content ?? '') as string;
+  const title = (raw?.title ?? attrs?.title ?? '') as string;
   const externalUrl = (attrs?.externalUrl ?? raw?.externalUrl ?? null) as string | null | undefined;
   const article = (attrs?.article ?? raw?.article) as RawFlashNewsItem['article'];
-  const slug =
-    article && typeof article === 'object'
-      ? (article as { slug?: string }).slug ?? (article as { data?: { attributes?: { slug?: string }; slug?: string } })?.data?.attributes?.slug ?? (article as { data?: { slug?: string } })?.data?.slug
-      : undefined;
-  const link =
-    externalUrl && externalUrl.trim()
-      ? externalUrl
-      : slug
-        ? `/mosc-redesign/news/${encodeURIComponent(slug)}`
-        : undefined;
+  const slug = extractArticleSlugFromFlash(article);
   return {
     id: (raw?.id ?? attrs?.id ?? 0) as number,
-    content: content.trim() || (raw?.title ?? attrs?.title ?? '') as string,
-    link: link ?? null,
+    content: (content.trim() || title) as string,
+    link: resolveFlashNewsLink(slug, externalUrl),
     startDate: (attrs?.startDate ?? raw?.startDate ?? null) as string | null | undefined,
     endDate: (attrs?.endDate ?? raw?.endDate ?? null) as string | null | undefined,
   };
+}
+
+/**
+ * When flash items were imported with externalUrl but no article relation,
+ * remap to same-domain detail by matching flash title/content to article titles.
+ */
+function enrichFlashNewsWithArticles(
+  items: FlashNewsItemUI[],
+  articles: Array<{ title: string; slug: string }>,
+): FlashNewsItemUI[] {
+  const normalized = articles
+    .filter((a) => a.title?.trim() && a.slug?.trim())
+    .map((a) => ({
+      key: normalizeFlashTitleKey(a.title),
+      slug: a.slug.trim(),
+    }));
+  if (normalized.length === 0) return items;
+
+  const byTitle = new Map(normalized.map((a) => [a.key, a.slug] as const));
+
+  return items.map((item) => {
+    if (item.link?.startsWith('/mosc-redesign/news/')) return item;
+    const key = normalizeFlashTitleKey(item.content);
+    let matchedSlug = byTitle.get(key);
+    if (!matchedSlug) {
+      const prefix = key.slice(0, 25);
+      if (prefix.length >= 12) {
+        matchedSlug = normalized.find(
+          (a) => a.key.startsWith(prefix) || key.startsWith(a.key.slice(0, 25)),
+        )?.slug;
+      }
+    }
+    if (!matchedSlug) return item;
+    return { ...item, link: flashNewsInternalPath(matchedSlug) };
+  });
 }
 
 function filterFlashNewsByDate(items: FlashNewsItemUI[]): FlashNewsItemUI[] {
@@ -319,6 +467,7 @@ export async function getNewsHomePageData(): Promise<NewsHomePageData> {
         const flashNewsPath = `/flash-news-items?${activeTenantFilter}&filters[publishedAt][$notNull]=true&sort=order:asc,publishedAt:desc&populate[0]=article&pagination[limit]=20`;
         const adsPath = `/advertisement-slots?filters[$or][0][position][$eq]=sidebar&filters[$or][1][position][$eq]=top&filters[$or][2][position][$eq]=between_sections&${activeTenantFilter}&populate=media`;
 
+        const articleTitleSlugPath = `/articles?${activeTenantFilter}&filters[publishedAt][$notNull]=true&fields[0]=title&fields[1]=slug&pagination[page]=1&pagination[pageSize]=100`;
         const [
           homepageRes,
           flashRes,
@@ -328,6 +477,7 @@ export async function getNewsHomePageData(): Promise<NewsHomePageData> {
           mostReadRes,
           sidebarRes,
           adsRes,
+          articleTitlesRes,
         ] = await Promise.all([
           fetchStrapi<{ id?: number; attributes?: Record<string, unknown> }>('/homepage?populate=*'),
           fetchStrapi<unknown[]>(flashNewsPath),
@@ -339,6 +489,7 @@ export async function getNewsHomePageData(): Promise<NewsHomePageData> {
           fetchStrapi<unknown[]>(buildArticleQuery(buildCategorySlugFilter(STRAPI_NEWS_CATEGORY_SLUGS.mostRead), 'publishedAt:desc', 5, activeTenantFilter)),
           fetchStrapi<{ id?: number; attributes?: Record<string, unknown> }>('/sidebar-promotional-block?populate=*'),
           fetchStrapi<unknown[]>(adsPath),
+          fetchStrapi<unknown[]>(articleTitleSlugPath),
         ]);
 
         const featuredList = Array.isArray(featuredRes?.data) ? featuredRes.data : [];
@@ -358,23 +509,59 @@ export async function getNewsHomePageData(): Promise<NewsHomePageData> {
         const flashList = Array.isArray(flashRes?.data) ? flashRes.data : [];
         const adsList = Array.isArray(adsRes?.data) ? adsRes.data : [];
 
+        const articleTitleSlugList = Array.isArray(articleTitlesRes?.data) ? articleTitlesRes.data : [];
+        const articleTitleSlugs = articleTitleSlugList
+          .map((raw) => {
+            const row = raw as { title?: string; slug?: string; attributes?: { title?: string; slug?: string } };
+            return {
+              title: (row.title ?? row.attributes?.title ?? '').trim(),
+              slug: (row.slug ?? row.attributes?.slug ?? '').trim(),
+            };
+          })
+          .filter((a) => a.title && a.slug);
+
         const allFlashItems = (flashList ?? [])
           .map((f) => normalizeFlashNewsItem(f as RawFlashNewsItem))
           .filter((f) => f.content && f.content.length > 0);
-        const flashNewsItems = filterFlashNewsByDate(allFlashItems);
+        const flashNewsItems = enrichFlashNewsWithArticles(
+          filterFlashNewsByDate(allFlashItems),
+          articleTitleSlugs,
+        );
 
         const allAds = (adsList ?? []).map((a) => normalizeAdSlot(a as { id?: number; attributes?: Record<string, unknown> }));
         const sidebarSlots = allAds.filter((a) => (a.position ?? '').toLowerCase() === 'sidebar');
         const topSlots = allAds.filter((a) => (a.position ?? '').toLowerCase() === 'top');
         const betweenSectionsSlots = allAds.filter((a) => (a.position ?? '').toLowerCase().replace(/-/g, '_') === 'between_sections');
 
+        const featured = dedupeArticles(
+          (featuredList ?? []).map((a) =>
+            normalizeArticle(a as { id?: number; documentId?: string; attributes?: Record<string, unknown> })
+          )
+        );
+        const mainNews = dedupeArticles(
+          (mainList ?? []).map((a) =>
+            normalizeArticle(a as { id?: number; documentId?: string; attributes?: Record<string, unknown> })
+          )
+        );
+        const pressRelease = dedupeArticles(
+          (pressList ?? []).map((a) =>
+            normalizeArticle(a as { id?: number; documentId?: string; attributes?: Record<string, unknown> })
+          )
+        );
+        const mostReadRaw = dedupeArticles(
+          (mostReadList ?? []).map((a) =>
+            normalizeArticle(a as { id?: number; documentId?: string; attributes?: Record<string, unknown> })
+          )
+        );
+
         const result: NewsHomePageData = {
           flash: normalizeHomepage(homepageRes?.data ?? null),
           flashNewsItems,
-          featured: (featuredList ?? []).map((a) => normalizeArticle(a as { id?: number; documentId?: string; attributes?: Record<string, unknown> })),
-          mainNews: (mainList ?? []).map((a) => normalizeArticle(a as { id?: number; documentId?: string; attributes?: Record<string, unknown> })),
-          pressRelease: (pressList ?? []).map((a) => normalizeArticle(a as { id?: number; documentId?: string; attributes?: Record<string, unknown> })),
-          mostRead: (mostReadList ?? []).map((a) => normalizeArticle(a as { id?: number; documentId?: string; attributes?: Record<string, unknown> })),
+          featured,
+          mainNews,
+          pressRelease,
+          // Stub Most Read rows often lack description; reuse peer excerpts by title
+          mostRead: enrichMissingExcerpts(mostReadRaw, [...featured, ...mainNews, ...pressRelease]),
           sidebarPromo: normalizeSidebarPromo(sidebarRes?.data ?? null),
           adSlots: sidebarSlots,
           topAdSlots: topSlots,
@@ -469,15 +656,29 @@ export async function getFlashNewsForNewsPages(): Promise<FlashNewsForPage> {
   try {
     const tenantFilterQuery = await buildTenantFilterQuery(tenantId);
     const flashNewsPath = `/flash-news-items?${tenantFilterQuery}&filters[publishedAt][$notNull]=true&sort=order:asc,publishedAt:desc&populate[0]=article&pagination[limit]=20`;
-    const [homepageRes, flashRes] = await Promise.all([
+    const articleTitleSlugPath = `/articles?${tenantFilterQuery}&filters[publishedAt][$notNull]=true&fields[0]=title&fields[1]=slug&pagination[page]=1&pagination[pageSize]=100`;
+    const [homepageRes, flashRes, articleTitlesRes] = await Promise.all([
       fetchStrapi<{ id?: number; attributes?: Record<string, unknown> }>('/homepage?populate=*'),
       fetchStrapi<unknown[]>(flashNewsPath),
+      fetchStrapi<unknown[]>(articleTitleSlugPath),
     ]);
     const flashList = Array.isArray(flashRes?.data) ? flashRes.data : [];
+    const articleTitleSlugs = (Array.isArray(articleTitlesRes?.data) ? articleTitlesRes.data : [])
+      .map((raw) => {
+        const row = raw as { title?: string; slug?: string; attributes?: { title?: string; slug?: string } };
+        return {
+          title: (row.title ?? row.attributes?.title ?? '').trim(),
+          slug: (row.slug ?? row.attributes?.slug ?? '').trim(),
+        };
+      })
+      .filter((a) => a.title && a.slug);
     const allFlashItems = (flashList ?? [])
       .map((f) => normalizeFlashNewsItem(f as RawFlashNewsItem))
       .filter((f) => f.content && f.content.length > 0);
-    const flashNewsItems = filterFlashNewsByDate(allFlashItems);
+    const flashNewsItems = enrichFlashNewsWithArticles(
+      filterFlashNewsByDate(allFlashItems),
+      articleTitleSlugs,
+    );
     return {
       flashNewsItems,
       flash: normalizeHomepage(homepageRes?.data ?? null),
@@ -550,16 +751,39 @@ export async function getArticleBySlug(slugOrId: string): Promise<NewsArticle | 
 /**
  * Fetches recent articles (by publishedAt desc) for sidebar "Recent Posts".
  * Uses same pattern as bishops: filters[tenant][tenantId][$eq], pagination[pageSize].
+ * Collapses same-title rows (e.g. Main News + Most Read stubs) so the sidebar never
+ * lists the same headline twice. Does not change the news homepage section lists.
  */
-export async function getRecentArticles(limit: number = 5): Promise<NewsArticle[]> {
+export async function getRecentArticles(
+  limit: number = 5,
+  options?: { excludeSlug?: string; excludeDocumentId?: string; excludeTitle?: string },
+): Promise<NewsArticle[]> {
   if (!getStrapiUrl()) return [];
   try {
     const tenantId = getStrapiTenantId();
     const tenantFilterQuery = await buildTenantFilterQuery(tenantId);
-    const path = `/articles?${tenantFilterQuery}&filters[publishedAt][$notNull]=true&${POPULATE}&sort=publishedAt:desc&pagination[page]=1&pagination[pageSize]=${limit}`;
+    // Over-fetch so title duplicates across categories can be collapsed and still fill `limit`
+    const fetchSize = Math.min(Math.max(limit * 6, 24), 50);
+    const path = `/articles?${tenantFilterQuery}&filters[publishedAt][$notNull]=true&${POPULATE}&sort=publishedAt:desc&pagination[page]=1&pagination[pageSize]=${fetchSize}`;
     const res = await fetchStrapi<unknown[]>(path);
     const list = Array.isArray(res?.data) ? res.data : [];
-    return list.map((raw) => normalizeArticle(raw as { id?: number; documentId?: string; attributes?: Record<string, unknown> }));
+    const normalized = list.map((raw) =>
+      normalizeArticle(raw as { id?: number; documentId?: string; attributes?: Record<string, unknown> }),
+    );
+
+    const excludeSlug = options?.excludeSlug?.trim();
+    const excludeDocumentId = options?.excludeDocumentId?.trim();
+    const excludeTitleKey = options?.excludeTitle?.trim()
+      ? normalizeFlashTitleKey(options.excludeTitle)
+      : '';
+    const filtered = normalized.filter((a) => {
+      if (excludeDocumentId && a.documentId && a.documentId === excludeDocumentId) return false;
+      if (excludeSlug && a.slug && a.slug === excludeSlug) return false;
+      if (excludeTitleKey && a.title && normalizeFlashTitleKey(a.title) === excludeTitleKey) return false;
+      return true;
+    });
+
+    return dedupeRecentArticlesByTitle(dedupeArticles(filtered)).slice(0, limit);
   } catch {
     return [];
   }

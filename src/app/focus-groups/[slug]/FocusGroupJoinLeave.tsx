@@ -61,20 +61,36 @@ export default function FocusGroupJoinLeave({
   };
 
   if (!isLoggedIn) {
+    const encodedRedirect = encodeURIComponent(redirectUrl);
     return (
-      <Link
-        href={`/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`}
-        className="inline-flex items-center justify-center gap-2 h-12 px-5 rounded-xl bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-semibold transition-all duration-300 hover:scale-105 border-2 border-indigo-300 hover:border-indigo-400"
-        title="Sign in to join"
-        aria-label="Sign in to join this focus group"
-      >
-        <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-indigo-200 flex items-center justify-center">
-          <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-          </svg>
-        </span>
-        <span>Sign in to join</span>
-      </Link>
+      <div className="flex flex-wrap items-center gap-3">
+        <Link
+          href={`/sign-in?redirect_url=${encodedRedirect}`}
+          className="inline-flex items-center justify-center gap-2 h-12 px-5 rounded-xl bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-semibold transition-all duration-300 hover:scale-105 border-2 border-indigo-300 hover:border-indigo-400"
+          title="Sign in to join"
+          aria-label="Sign in to join this focus group"
+        >
+          <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-indigo-200 flex items-center justify-center">
+            <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+            </svg>
+          </span>
+          <span>Sign in to join</span>
+        </Link>
+        <Link
+          href={`/sign-up?redirect_url=${encodedRedirect}`}
+          className="inline-flex items-center justify-center gap-2 h-12 px-5 rounded-xl bg-green-100 hover:bg-green-200 text-green-800 font-semibold transition-all duration-300 hover:scale-105 border-2 border-green-300 hover:border-green-400"
+          title="Sign up to join"
+          aria-label="Sign up to join this focus group"
+        >
+          <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-green-200 flex items-center justify-center">
+            <svg className="w-5 h-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+          </span>
+          <span>Sign up</span>
+        </Link>
+      </div>
     );
   }
 
@@ -86,16 +102,14 @@ export default function FocusGroupJoinLeave({
         type="button"
         onClick={handleLeave}
         disabled={loading || isPending}
-        className="inline-flex items-center justify-center gap-2 h-12 px-5 rounded-xl bg-red-100 hover:bg-red-200 text-red-700 font-semibold transition-all duration-300 hover:scale-105 border-2 border-red-300 hover:border-red-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+        className="mh-btn mh-btn-details disabled:opacity-50 disabled:cursor-not-allowed"
         title={isPending ? 'Request pending' : 'Leave focus group'}
         aria-label={isPending ? 'Request pending' : 'Leave this focus group'}
       >
-        <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-red-200 flex items-center justify-center">
-          <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
-        </span>
-        <span>{label}</span>
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+        {label}
       </button>
     );
   }
@@ -105,16 +119,14 @@ export default function FocusGroupJoinLeave({
       type="button"
       onClick={handleJoin}
       disabled={loading}
-      className="inline-flex items-center justify-center gap-2 h-12 px-5 rounded-xl bg-green-100 hover:bg-green-200 text-green-700 font-semibold transition-all duration-300 hover:scale-105 border-2 border-green-300 hover:border-green-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+      className="mh-btn mh-btn-details disabled:opacity-50 disabled:cursor-not-allowed"
       title="Join focus group"
       aria-label={`Join ${groupName}`}
     >
-      <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-green-200 flex items-center justify-center">
-        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-        </svg>
-      </span>
-      <span>{loading ? 'Joining...' : 'Join'}</span>
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+      </svg>
+      {loading ? 'Joining...' : 'Join'}
     </button>
   );
 }

@@ -21,7 +21,7 @@ GET /api/profile-projects?tenantId.equals=YOUR_TENANT&size=20
 GET /api/public-profiles?tenantId.equals=YOUR_TENANT&size=1
 ```
 
-Canonical DDL: `code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql`
+Canonical DDL: `code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql`
 
 ## Batch jobs — no runtime change for Phase B
 

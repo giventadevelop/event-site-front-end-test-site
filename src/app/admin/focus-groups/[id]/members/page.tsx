@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { getAppUrl } from '@/lib/env';
 import RemoveMemberButton from './RemoveMemberButton';
+import AddMemberForm from './AddMemberForm';
+import UpdateMemberForm from './UpdateMemberForm';
 import {
   fetchFocusGroupByIdServer,
   fetchFocusGroupMembersServer,
@@ -35,8 +36,8 @@ export default async function ManageGroupMembersPage(
       : (rawSearch as { page?: string; size?: string }) ?? {};
   const page = Math.max(0, parseInt(searchParams.page ?? '0', 10) || 0);
   const pageSize = Math.min(100, Math.max(1, parseInt(searchParams?.size ?? String(DEFAULT_PAGE_SIZE), 10) || DEFAULT_PAGE_SIZE));
+  const focusGroupId = Number(params.id);
 
-  const baseUrl = getAppUrl();
   const group = await fetchFocusGroupByIdServer(params.id);
   const { members, totalCount } = await fetchFocusGroupMembersServer(params.id, page, pageSize);
 
@@ -60,69 +61,21 @@ export default async function ManageGroupMembersPage(
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8" style={{ paddingTop: '120px' }}>
-      {/* Page Header - design system: pageHeader */}
       <div className="mb-4 sm:mb-6 md:mb-8">
         <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 text-center sm:text-left">
           Manage Members for: {group?.name ?? 'Focus Group'}
         </h1>
         <p className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
-          Add or update member roles and statuses (UPPERCASE enforced).
+          Search for an existing user by name or email, then set role and status.
+          Use ORGANISER or EXECUTIVE for Contact Organisers on the public page. Status ACTIVE means they count as current members.
         </p>
       </div>
 
-      {/* Add Member card - design system: tabContent */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
         <h2 className="text-lg font-medium text-gray-900 mb-4">Add Member</h2>
-        <form action={`${baseUrl}/api/proxy/focus-group-members`} method="post" className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-          <input type="hidden" name="focusGroupId" value={params.id} />
-          <div>
-            <label htmlFor="userProfileId" className="block text-sm font-medium text-gray-700 mb-1">User Profile ID</label>
-            <input
-              type="text"
-              id="userProfileId"
-              name="userProfileId"
-              placeholder="User Profile ID"
-              className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base"
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-            <input
-              type="text"
-              id="role"
-              name="role"
-              placeholder="MEMBER/LEAD/ADMIN"
-              className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base"
-            />
-          </div>
-          <div>
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-            <input
-              type="text"
-              id="status"
-              name="status"
-              placeholder="ACTIVE/INACTIVE/PENDING"
-              className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base"
-            />
-          </div>
-          <button
-            type="submit"
-            className="flex-shrink-0 h-14 rounded-xl bg-green-100 hover:bg-green-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-4"
-            title="Add member"
-            aria-label="Add member"
-          >
-            <span className="flex-shrink-0 w-10 h-10 rounded-lg bg-green-200 flex items-center justify-center">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-            </span>
-            <span className="font-semibold text-green-700 hidden sm:inline">Add</span>
-          </button>
-        </form>
+        <AddMemberForm focusGroupId={focusGroupId} />
       </div>
 
-      {/* Members table card - design system: tabContent */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <h2 className="text-lg font-medium text-gray-900">Members</h2>
@@ -149,6 +102,7 @@ export default async function ManageGroupMembersPage(
               {members.map((m: Record<string, unknown>) => {
                 const profileId = getProfileId(m);
                 const profile = profileId != null ? profileMap.get(profileId) : null;
+                const memberId = Number(m.id);
                 return (
                   <tr key={String(m.id)} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-sm text-gray-900">{profile?.firstName ?? '—'}</td>
@@ -169,37 +123,15 @@ export default async function ManageGroupMembersPage(
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
                         </Link>
-                        <form action={`${baseUrl}/api/proxy/focus-group-members/${m.id}`} method="post" className="inline-flex flex-wrap items-center gap-2">
-                          <input type="hidden" name="_method" value="PATCH" />
-                          <input
-                            type="text"
-                            name="role"
-                            placeholder="MEMBER/LEAD/ADMIN"
-                            className="block w-28 border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm"
-                            defaultValue={String(m.role || '').toUpperCase()}
+                        {memberId > 0 && (
+                          <UpdateMemberForm
+                            memberId={memberId}
+                            focusGroupId={focusGroupId}
+                            initialRole={String(m.role || 'MEMBER')}
+                            initialStatus={String(m.status || 'ACTIVE')}
                           />
-                          <input
-                            type="text"
-                            name="status"
-                            placeholder="ACTIVE/INACTIVE/PENDING"
-                            className="block w-28 border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-3 py-2 text-sm"
-                            defaultValue={String(m.status || '').toUpperCase()}
-                          />
-                          <button
-                            type="submit"
-                            className="flex-shrink-0 h-10 rounded-xl bg-blue-100 hover:bg-blue-200 flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 px-3"
-                            title="Update member"
-                            aria-label="Update member"
-                          >
-                            <span className="w-8 h-8 rounded-lg bg-blue-200 flex items-center justify-center">
-                              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                              </svg>
-                            </span>
-                            <span className="font-semibold text-blue-700 text-sm hidden sm:inline">Update</span>
-                          </button>
-                        </form>
-                        <RemoveMemberButton memberId={m.id as number} />
+                        )}
+                        {memberId > 0 && <RemoveMemberButton memberId={memberId} />}
                       </div>
                     </td>
                   </tr>
@@ -212,7 +144,6 @@ export default async function ManageGroupMembersPage(
           </table>
         </div>
 
-        {/* Pagination Controls - per pagination_footer_styling.mdc */}
         <div className="mt-8">
           <div className="flex justify-between items-center">
             <Link

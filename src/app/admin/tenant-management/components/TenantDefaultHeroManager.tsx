@@ -507,8 +507,12 @@ export default function TenantDefaultHeroManager({
                   }}
                   onDragEnd={() => setDragIndex(null)}
                   className={`relative bg-white rounded-lg border-2 shadow-sm overflow-hidden transition-opacity ${
-                    dragIndex === index ? 'border-teal-500 opacity-70' : 'border-gray-200'
-                  } ${slide.active ? '' : 'opacity-60'}`}
+                    dragIndex === index
+                      ? 'border-teal-500 opacity-70'
+                      : slide.active
+                        ? 'border-green-200'
+                        : 'border-orange-300'
+                  }`}
                 >
                   {activeOrder != null && (
                     <span className="absolute top-1 left-1 z-10 bg-teal-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
@@ -516,7 +520,10 @@ export default function TenantDefaultHeroManager({
                     </span>
                   )}
                   {!slide.active && (
-                    <span className="absolute top-1 right-1 z-10 bg-gray-600 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded">
+                    <span className="absolute top-1 right-1 z-10 inline-flex items-center gap-0.5 bg-orange-500 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
                       Inactive
                     </span>
                   )}
@@ -542,15 +549,29 @@ export default function TenantDefaultHeroManager({
                       <button
                         type="button"
                         onClick={() => void handleToggleActive(index)}
-                        className={`flex-1 text-xs font-semibold py-1.5 px-2 rounded-lg transition-all ${
+                        className={`flex-1 flex-shrink-0 h-10 rounded-lg flex items-center justify-center gap-1.5 px-2 transition-all duration-300 hover:scale-105 ${
                           slide.active
-                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            ? 'bg-green-100 hover:bg-green-200'
+                            : 'bg-orange-100 hover:bg-orange-200'
                         }`}
                         title={slide.active ? 'Mark inactive' : 'Mark active'}
                         aria-label={slide.active ? 'Mark slide inactive' : 'Mark slide active'}
                       >
-                        {slide.active ? 'Active' : 'Inactive'}
+                        {slide.active ? (
+                          <>
+                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span className="font-semibold text-xs text-green-700">Active</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            <span className="font-semibold text-xs text-orange-700">Inactive</span>
+                          </>
+                        )}
                       </button>
                       <button
                         type="button"

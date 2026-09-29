@@ -286,6 +286,16 @@ export default function MoscRedesignFooter() {
                 Giventa Inc., USA
               </a>
             </p>
+            <p className="text-warmGray-dark/65 text-[11px] text-center">
+              <a
+                href="https://www.giventa.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-burgundy-dark/90 hover:text-warmGold transition-colors underline-offset-2 hover:underline"
+              >
+                www.giventa.com
+              </a>
+            </p>
             <div className="flex flex-wrap justify-center gap-3 text-xs pt-1">
               <Link href="/mosc-redesign/privacy-policy" className="text-warmGray-dark/85 hover:text-burgundy-dark transition-colors">
                 Privacy Policy

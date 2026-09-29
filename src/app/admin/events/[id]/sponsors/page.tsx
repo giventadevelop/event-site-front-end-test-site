@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { FaPlus, FaSearch, FaArrowLeft, FaUserPlus, FaHandshake, FaImage, FaImages, FaUpload, FaUnlink, FaHome, FaUsers, FaCalendarAlt, FaPhotoVideo, FaTags, FaTicketAlt, FaPercent, FaMicrophone, FaAddressBook, FaEnvelope, FaUserTie } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaArrowLeft, FaUserPlus, FaHandshake, FaImage, FaImages, FaUpload, FaUnlink, FaHome, FaUsers, FaCalendarAlt, FaPhotoVideo, FaTags, FaTicketAlt, FaPercent, FaMicrophone, FaAddressBook, FaEnvelope, FaUserTie, FaClock } from 'react-icons/fa';
 import { useAuth } from '@clerk/nextjs';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -1105,9 +1105,9 @@ export default function EventSponsorsPage() {
         <div className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl shadow-lg p-6 w-full max-w-4xl">
           <div className="text-center mb-4">
             <h2 className="text-xl font-bold text-purple-800 mb-2">🎭 Event Management Features</h2>
-            <p className="text-sm text-purple-600">Manage performers, contacts, sponsors, emails, and program directors for this event</p>
+            <p className="text-sm text-purple-600">Manage performers, contacts, sponsors, emails, program directors, and agenda for this event</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <Link
               href={`/admin/events/${eventId}/performers`}
               className="flex flex-col items-center justify-center bg-pink-50 hover:bg-pink-100 text-pink-800 rounded-lg shadow-md p-3 text-xs transition-all group"
@@ -1162,6 +1162,17 @@ export default function EventSponsorsPage() {
                 <FaUserTie className="w-8 h-8 text-indigo-500" />
               </div>
               <span className="font-semibold text-center leading-tight">Program Directors</span>
+            </Link>
+            <Link
+              href={`/admin/events/${eventId}/agenda`}
+              className="flex flex-col items-center justify-center bg-cyan-50 hover:bg-cyan-100 text-cyan-800 rounded-lg shadow-md p-3 text-xs transition-all group"
+              title="Event Day Agenda"
+              aria-label="Event Day Agenda"
+            >
+              <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-cyan-100 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300">
+                <FaClock className="w-8 h-8 text-cyan-500" />
+              </div>
+              <span className="font-semibold text-center leading-tight">Event Day Agenda</span>
             </Link>
           </div>
         </div>

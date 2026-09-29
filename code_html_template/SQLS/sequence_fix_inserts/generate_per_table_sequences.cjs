@@ -2,7 +2,7 @@
 /**
  * Per-table sequence migration tooling.
  *
- * Parses Latest_Schema_Post__Blob_Claude_12.sql for tables using sequence_generator,
+ * Parses Event_Site_Manager_Latest_Schema.sql for tables using sequence_generator,
  * emits sync_all_table_sequences.sql, entity-patch-map.json, and optionally patches schema + Java entities.
  *
  * Usage:
@@ -16,7 +16,7 @@ const fs = require('fs');
 const path = require('path');
 
 const SCRIPT_DIR = __dirname;
-const SCHEMA_FILE = path.join(SCRIPT_DIR, '..', 'Current_Sqls', 'Latest_Schema_Post__Blob_Claude_12.sql');
+const SCHEMA_FILE = path.join(SCRIPT_DIR, '..', 'Current_Sqls', 'Event_Site_Manager_Latest_Schema.sql');
 const SYNC_OUT = path.join(SCRIPT_DIR, '..', 'Current_Sqls', 'sync_all_table_sequences.sql');
 const PATCH_MAP_OUT = path.join(SCRIPT_DIR, 'entity-patch-map.json');
 const DOMAIN_DIR = path.join(

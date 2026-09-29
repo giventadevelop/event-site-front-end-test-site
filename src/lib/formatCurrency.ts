@@ -6,3 +6,9 @@ export function formatCurrency(amount: number, currency = 'USD'): string {
     maximumFractionDigits: 2,
   }).format(amount);
 }
+
+/** Display competition / registration fees; zero amounts show as Free. */
+export function formatCompetitionFee(amount: number, currency = 'USD'): string {
+  if (!Number.isFinite(amount) || amount <= 0) return 'Free';
+  return formatCurrency(amount, currency);
+}

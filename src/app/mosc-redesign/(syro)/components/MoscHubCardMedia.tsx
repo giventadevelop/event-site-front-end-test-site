@@ -8,20 +8,25 @@ import { cn } from '@/lib/utils';
  * Portrait (default): intrinsic height — container hugs the image (no fixed aspect),
  * overflow:hidden + rounded-xl clips all four corners.
  *
+ * Portrait uniform: fixed 2:3 tile + object-cover for equal-height grids (Holy Synod).
+ *
  * Landscape: fixed 280×168 + object-cover for directory banners.
  */
 const HUB_FRAME_BASE =
   'mosc-hub-card-media relative w-full rounded-xl overflow-hidden bg-white shadow-sm ring-1 ring-black/5';
 
-/** Portrait photos — height follows image (no bottom letterbox gap). */
-export const HUB_FRAME_PORTRAIT = `${HUB_FRAME_BASE} max-w-[220px] mosc-hub-card-media--portrait mosc-hub-card-media--intrinsic`;
+/** Portrait photos — taller/wider on mobile; desktop keeps 220px. */
+export const HUB_FRAME_PORTRAIT = `${HUB_FRAME_BASE} max-w-[290px] md:max-w-[220px] mosc-hub-card-media--portrait mosc-hub-card-media--intrinsic`;
+
+/** Equal-height portrait tiles for multi-column grids (same size regardless of source ratio). */
+export const HUB_FRAME_PORTRAIT_UNIFORM = `${HUB_FRAME_BASE} max-w-[290px] md:max-w-[220px] aspect-[2/3] mosc-hub-card-media--portrait`;
 
 /** Placeholder / empty state — fixed ratio when no image. */
-export const HUB_FRAME_PORTRAIT_PLACEHOLDER = `${HUB_FRAME_BASE} max-w-[220px] aspect-[2/3] mosc-hub-card-media--portrait`;
+export const HUB_FRAME_PORTRAIT_PLACEHOLDER = `${HUB_FRAME_BASE} max-w-[290px] md:max-w-[220px] aspect-[2/3] mosc-hub-card-media--portrait`;
 
-export const HUB_FRAME_LANDSCAPE = `${HUB_FRAME_BASE} max-w-[280px] aspect-[280/168] mosc-hub-card-media--landscape`;
+export const HUB_FRAME_LANDSCAPE = `${HUB_FRAME_BASE} max-w-[calc(100%-2rem)] md:max-w-[280px] aspect-[280/168] mosc-hub-card-media--landscape`;
 
-export type MoscHubCardFrame = 'portrait' | 'landscape';
+export type MoscHubCardFrame = 'portrait' | 'portraitUniform' | 'landscape';
 
 /** Default width/height for Next/Image layout hint (actual display is w-full h-auto). */
 const PORTRAIT_IMAGE_LAYOUT = { width: 440, height: 660 };
@@ -39,7 +44,9 @@ type MoscHubCardMediaProps = {
 };
 
 function frameClasses(frame: MoscHubCardFrame) {
-  return frame === 'landscape' ? HUB_FRAME_LANDSCAPE : HUB_FRAME_PORTRAIT;
+  if (frame === 'landscape') return HUB_FRAME_LANDSCAPE;
+  if (frame === 'portraitUniform') return HUB_FRAME_PORTRAIT_UNIFORM;
+  return HUB_FRAME_PORTRAIT;
 }
 
 export function MoscHubCardMedia({
@@ -53,9 +60,12 @@ export function MoscHubCardMedia({
   outerClassName,
   frameClassName,
 }: MoscHubCardMediaProps) {
-  const isLandscape = frame === 'landscape';
+  const usesFillCover = frame === 'landscape' || frame === 'portraitUniform';
   const resolvedSizes =
-    sizes ?? (isLandscape ? '(max-width: 768px) 100vw, 280px' : '(max-width: 768px) 50vw, 220px');
+    sizes ??
+    (frame === 'landscape'
+      ? '(max-width: 768px) calc(100vw - 4rem), 280px'
+      : '(max-width: 768px) 290px, 220px');
 
   const positionClass =
     objectPosition === 'top'
@@ -65,7 +75,7 @@ export function MoscHubCardMedia({
   return (
     <div className={cn('mb-5 flex justify-center', padded && 'pt-8', outerClassName)}>
       <div className={cn(frameClasses(frame), frameClassName)}>
-        {isLandscape ? (
+        {usesFillCover ? (
           <Image
             src={src}
             alt={alt}
@@ -111,7 +121,11 @@ export function MoscHubCardMediaPlaceholder({
   icon = <span className="text-4xl text-syro-red/40" role="img" aria-hidden>⛪</span>,
 }: MoscHubCardMediaPlaceholderProps) {
   const frameClass =
-    frame === 'landscape' ? HUB_FRAME_LANDSCAPE : HUB_FRAME_PORTRAIT_PLACEHOLDER;
+    frame === 'landscape'
+      ? HUB_FRAME_LANDSCAPE
+      : frame === 'portraitUniform'
+        ? HUB_FRAME_PORTRAIT_UNIFORM
+        : HUB_FRAME_PORTRAIT_PLACEHOLDER;
 
   return (
     <div className={cn('mb-5 flex justify-center', padded && 'pt-8', outerClassName)}>

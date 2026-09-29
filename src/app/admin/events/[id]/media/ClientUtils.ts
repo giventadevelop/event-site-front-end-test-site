@@ -7,6 +7,7 @@ export async function uploadMediaClient(params: {
   title: string;
   description: string;
   eventFlyer: boolean;
+  isAgendaFlyer?: boolean;
   isEventManagementOfficialDocument: boolean;
   isHeroImage: boolean;
   isActiveHeroImage: boolean;
@@ -36,6 +37,7 @@ export async function uploadMediaClient(params: {
   // Append other parameters as form data
   formData.append('eventId', eventId);
   formData.append('eventFlyer', String(rest.eventFlyer));
+  formData.append('isAgendaFlyer', String(Boolean(rest.isAgendaFlyer)));
   formData.append('isEventManagementOfficialDocument', String(rest.isEventManagementOfficialDocument));
   formData.append('isHeroImage', String(rest.isHeroImage));
   formData.append('isActiveHeroImage', String(rest.isActiveHeroImage));

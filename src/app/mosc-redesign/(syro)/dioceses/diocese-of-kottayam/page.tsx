@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import QuickLinks from '../../components/QuickLinks';
@@ -21,14 +21,14 @@ const dioceseofkottayamPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             {/* Main Content */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] p-8">
+              <div className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] px-4 py-8 md:p-8">
                 {/* Featured Image - centered, contained (administration style) */}
                 <div className="mb-8 flex justify-center">
                   <Image
                     src="/images/dioceses/diocese-of-kottayam.jpg"
                     alt="Diocese of Kottayam"
                     width={175} height={175}
-                    className="rounded-lg object-contain" style={{ width: '175px', height: '175px' }}
+                    className="rounded-lg object-contain w-full max-w-[290px] md:max-w-[175px] h-auto"
                     priority
                   />
                 </div>
@@ -40,7 +40,7 @@ const dioceseofkottayamPage = () => {
                   </h2>
 
                   <p className="font-syro-primary text-syro-dark-gray leading-relaxed mb-6">
-                      As per the decisions of the Mulamthuruthy Synod, Kottayam Diocese was formed initially with 20 churches altogether from Kottayam and nearby places. The first diocesan metropolitan was His Grace Kadavil Â Paulose Mar Athanasios. After his demise, H.G Paulose Mar Ivanios (First Catholicos), H.G. Geevarghese Mar Philoxenos (Second Catholicos), H.G. Vattasseril Geevarghese mar Dionysios, H.G.Kuriakose Mar Gregorios (Pampadi ThirumeniÂ  1929-1965) and Â H.G Paret Mathews Mar Ivanios (1965-1985) held the office Â in respective period of time. During the time of H.G Kuriakose Mar Gregorios, the Pampady Dayara became the office of the Diocese.
+                      As per the decisions of the Mulamthuruthy Synod, Kottayam Diocese was formed initially with 20 churches altogether from Kottayam and nearby places. The first diocesan metropolitan was His Grace Kadavil  Paulose Mar Athanasios. After his demise, H.G Paulose Mar Ivanios (First Catholicos), H.G. Geevarghese Mar Philoxenos (Second Catholicos), H.G. Vattasseril Geevarghese mar Dionysios, H.G.Kuriakose Mar Gregorios (Pampadi Thirumeni  1929-1965) and  H.G Paret Mathews Mar Ivanios (1965-1985) held the office  in respective period of time. During the time of H.G Kuriakose Mar Gregorios, the Pampady Dayara became the office of the Diocese.
                     </p>
                   <p className="font-syro-primary text-syro-dark-gray leading-relaxed mb-6">
                       On 1982 April 21, the then Kottayam Diocese was divided into Kottayam, Kottayam Central, and Idukki. H.G Geevarghese Mar Ivanios took charge as the first Diocesan head of the newly re-organised Kottayam Diocese. After 28 years of fruitful administration of Kottayam Diocese, His Grace Geevarghese Mar Ivanios Metropolitan entered into Heavenly Abode on 12th April 2013.

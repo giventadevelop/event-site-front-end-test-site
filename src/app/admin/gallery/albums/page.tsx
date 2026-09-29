@@ -6,11 +6,17 @@ import Link from 'next/link';
 export default async function AdminAlbumsPage({
   searchParams,
 }: {
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams?:
+    | Promise<{ [key: string]: string | string[] | undefined }>
+    | { [key: string]: string | string[] | undefined };
 }) {
+  const resolvedSearchParams =
+    searchParams && typeof (searchParams as Promise<unknown>).then === 'function'
+      ? await searchParams
+      : searchParams;
   // Initial SSR load; client re-fetches with full filters (search field, visibility, sort).
-  const page = typeof searchParams?.page === 'string' ? parseInt(searchParams.page, 10) : 0;
-  const searchTerm = typeof searchParams?.search === 'string' ? searchParams.search : '';
+  const page = typeof resolvedSearchParams?.page === 'string' ? parseInt(resolvedSearchParams.page, 10) : 0;
+  const searchTerm = typeof resolvedSearchParams?.search === 'string' ? resolvedSearchParams.search : '';
 
   const { albums, totalCount } = await fetchAlbumsServer(page, 12, searchTerm || undefined);
   const categories = await fetchGalleryCategoriesForAdminServer();

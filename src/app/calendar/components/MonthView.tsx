@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { CalendarEvent } from '../types/calendar.types';
 import { EventTooltip } from './EventTooltip';
+import { eventOccursOnDate, toLocalYmd } from '../utils/eventFormatters';
 
 function getDays(year: number, month: number) {
   const first = new Date(year, month - 1, 1);
@@ -35,15 +36,14 @@ export function MonthView({
   const cells = useMemo(() => getDays(year, month), [year, month]);
   const eventsByDay = useMemo(() => {
     const map = new Map<number, CalendarEvent[]>();
-    for (const ev of events) {
-      const day = Number(ev.startDate.split('-')[2]);
-      if (!Number.isFinite(day)) continue;
-      const arr = map.get(day) || [];
-      arr.push(ev);
-      map.set(day, arr);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    for (let day = 1; day <= daysInMonth; day++) {
+      const ymd = toLocalYmd(new Date(year, month - 1, day));
+      const dayEvents = events.filter((ev) => eventOccursOnDate(ev, ymd));
+      if (dayEvents.length > 0) map.set(day, dayEvents);
     }
     return map;
-  }, [events]);
+  }, [events, year, month]);
 
   const handleEventMouseEnter = (event: CalendarEvent, e: React.MouseEvent<HTMLDivElement>) => {
     setHoveredEvent(event);

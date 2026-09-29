@@ -1,4 +1,6 @@
-import { getAppUrlFromRequestHeaders, getTenantId } from '@/lib/env';
+import { getApiBaseUrl, getTenantId } from '@/lib/env';
+import { fetchWithJwtRetry } from '@/lib/proxyHandler';
+import { logServerFetchFailure } from '@/lib/logServerFetchFailure';
 import type { EventDetailsDTO } from '@/types';
 import {
   computeFeaturedEventsFromMedia,
@@ -6,6 +8,11 @@ import {
   type EventWithMedia,
   type FeaturedEventWithMedia,
 } from '@/lib/homepage/featuredEvents';
+import {
+  isTruthyApiFlag,
+  normalizeEventDetailsList,
+  normalizeEventMediasList,
+} from '@/lib/homepage/homepageApiNormalize';
 
 function isEventInNextYear(eventDate: string, today: Date): boolean {
   const oneYearFromNow = new Date();
@@ -17,23 +24,29 @@ function isEventInNextYear(eventDate: string, today: Date): boolean {
   return eventStartDate >= today && eventStartDate <= oneYearFromNow;
 }
 
+function eventIsFeatured(event: EventDetailsDTO): boolean {
+  const row = event as EventDetailsDTO & Record<string, unknown>;
+  return isTruthyApiFlag(row.isFeaturedEvent) || isTruthyApiFlag(row.is_featured_event);
+}
+
 /**
- * Server-only: same pipeline as `useEventsData` + featured filter, for SSR first paint.
- * Fails closed to [] so the home page still renders if the API is down.
+ * Server-only: featured events for homepage SSR / later UI wiring.
+ * Prefers upcoming active featured; falls back to any active featured (incl. past).
+ * Fails closed to [].
  */
 export async function fetchFeaturedEventsForHomepageServer(): Promise<FeaturedEventWithMedia[]> {
   try {
-    const baseUrl = await getAppUrlFromRequestHeaders();
+    const apiBase = getApiBaseUrl();
     const tenantId = getTenantId();
 
-    let eventsResponse = await fetch(
-      `${baseUrl}/api/proxy/event-details?tenantId.equals=${encodeURIComponent(tenantId)}&sort=startDate,asc`,
+    let eventsResponse = await fetchWithJwtRetry(
+      `${apiBase}/api/event-details?tenantId.equals=${encodeURIComponent(tenantId)}&sort=startDate,asc`,
       { cache: 'no-store' }
     );
 
     if (!eventsResponse.ok) {
-      eventsResponse = await fetch(
-        `${baseUrl}/api/proxy/event-details?tenantId.equals=${encodeURIComponent(tenantId)}&sort=startDate,desc`,
+      eventsResponse = await fetchWithJwtRetry(
+        `${apiBase}/api/event-details?tenantId.equals=${encodeURIComponent(tenantId)}&sort=startDate,desc`,
         { cache: 'no-store' }
       );
     }
@@ -43,30 +56,62 @@ export async function fetchFeaturedEventsForHomepageServer(): Promise<FeaturedEv
       return [];
     }
 
-    const events: EventDetailsDTO[] = await eventsResponse.json();
+    const events = normalizeEventDetailsList(await eventsResponse.json());
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const upcomingEvents = events.filter(
-      (event) => event.startDate && isEventInNextYear(event.startDate, today) && event.isActive
+      (event) => event.startDate && isEventInNextYear(event.startDate, today) && event.isActive !== false
     );
+
+    const featuredCandidates = upcomingEvents.filter(eventIsFeatured);
+    const anyFeaturedActive = events.filter(
+      (event) => event.isActive !== false && eventIsFeatured(event)
+    );
+
+    // Prefer upcoming featured → any featured (incl. past) → all upcoming (legacy media-flag path)
+    const eventsToLoad =
+      featuredCandidates.length > 0
+        ? featuredCandidates
+        : anyFeaturedActive.length > 0
+          ? anyFeaturedActive
+          : upcomingEvents;
 
     const eventsWithMedia: EventWithMedia[] = [];
 
-    for (const event of upcomingEvents) {
+    for (const event of eventsToLoad) {
       try {
-        const mediaResponse = await fetch(
-          `${baseUrl}/api/proxy/event-medias?tenantId.equals=${encodeURIComponent(tenantId)}&eventId.equals=${event.id}`,
+        let mediaResponse = await fetchWithJwtRetry(
+          `${apiBase}/api/event-medias?tenantId.equals=${encodeURIComponent(tenantId)}&eventId.equals=${event.id}&isFeaturedEventImage.equals=true`,
           { cache: 'no-store' }
         );
+        let mediaArray = mediaResponse.ok ? normalizeEventMediasList(await mediaResponse.json()) : [];
 
-        if (mediaResponse.ok) {
-          const mediaData = await mediaResponse.json();
-          const mediaArray = Array.isArray(mediaData) ? mediaData : mediaData ? [mediaData] : [];
-          eventsWithMedia.push({ event, media: mediaArray });
-        } else {
-          eventsWithMedia.push({ event, media: [] });
+        if (mediaArray.length === 0) {
+          mediaResponse = await fetchWithJwtRetry(
+            `${apiBase}/api/event-medias?tenantId.equals=${encodeURIComponent(tenantId)}&eventId.equals=${event.id}&isHomePageHeroImage.equals=true`,
+            { cache: 'no-store' }
+          );
+          mediaArray = mediaResponse.ok ? normalizeEventMediasList(await mediaResponse.json()) : [];
         }
+
+        if (mediaArray.length === 0) {
+          mediaResponse = await fetchWithJwtRetry(
+            `${apiBase}/api/event-medias?tenantId.equals=${encodeURIComponent(tenantId)}&eventId.equals=${event.id}&isHeroImage.equals=true`,
+            { cache: 'no-store' }
+          );
+          mediaArray = mediaResponse.ok ? normalizeEventMediasList(await mediaResponse.json()) : [];
+        }
+
+        if (mediaArray.length === 0) {
+          mediaResponse = await fetchWithJwtRetry(
+            `${apiBase}/api/event-medias?tenantId.equals=${encodeURIComponent(tenantId)}&eventId.equals=${event.id}&size=50`,
+            { cache: 'no-store' }
+          );
+          mediaArray = mediaResponse.ok ? normalizeEventMediasList(await mediaResponse.json()) : [];
+        }
+
+        eventsWithMedia.push({ event, media: mediaArray });
       } catch {
         eventsWithMedia.push({ event, media: [] });
       }
@@ -75,7 +120,7 @@ export async function fetchFeaturedEventsForHomepageServer(): Promise<FeaturedEv
     const featured = computeFeaturedEventsFromMedia(eventsWithMedia);
     return featured.slice(0, MAX_FEATURED_EVENTS_HOMEPAGE);
   } catch (e) {
-    console.warn('[fetchFeaturedEventsForHomepageServer]', e);
+    logServerFetchFailure('fetchFeaturedEventsForHomepageServer', e);
     return [];
   }
 }

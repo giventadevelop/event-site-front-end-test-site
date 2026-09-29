@@ -12,6 +12,8 @@ import MoscRedesignSaintsCarousel, {
 } from "@/components/mosc-redesign/MoscRedesignSaintsCarousel";
 import type { LiturgyReading } from "@/app/mosc/components/SyroLiturgySection";
 import type { CurrentCatholicosProfile } from "@/app/mosc-redesign/types/currentCatholicos";
+import MoscRedesignYoutubeLiveSection from "@/components/mosc-redesign/MoscRedesignYoutubeLiveSection";
+import type { DevalokamAramanaStream } from "@/lib/youtube/devalokamAramanaLive";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Region {
@@ -139,9 +141,11 @@ const aboutUsHeritageById = Object.fromEntries(
 export default function MoscRedesignHomeClient({
   saints,
   currentCatholicos,
+  youtubeLive,
 }: {
   saints: MoscRedesignSaint[];
   currentCatholicos: CurrentCatholicosProfile;
+  youtubeLive: DevalokamAramanaStream | null;
 }) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [activeRegion, setActiveRegion] = useState("india");
@@ -414,8 +418,16 @@ export default function MoscRedesignHomeClient({
           }}
         />
 
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
+        <div className="max-w-7xl mx-auto px-6 lg:px-16 relative z-10">
           <div className="grid lg:grid-cols-5 gap-10 items-center">
+            {/* Mobile: badge + role above portrait for clear section context */}
+            <div className="lg:hidden text-center">
+              <span className="inline-block text-warmGold-dark text-xs font-bold tracking-widest uppercase mb-3 border border-warmGold/50 px-3 py-1 rounded-full bg-warmGold/10">
+                {currentCatholicos.badge}
+              </span>
+              <p className="text-burgundy text-sm font-medium">{currentCatholicos.roleTitle}</p>
+            </div>
+
             {/* Images — single portrait */}
             <div className="lg:col-span-2 flex justify-center lg:justify-start">
               <div className="w-full max-w-[320px] rounded-2xl overflow-hidden aspect-[3/4] relative shadow-xl border border-burgundy/30 hover:border-burgundy/60 transition-all duration-300 hover:shadow-burgundy/30">
@@ -429,12 +441,12 @@ export default function MoscRedesignHomeClient({
               </div>
             </div>
 
-            {/* Text */}
+            {/* Text — badge/role hidden on mobile (shown above image) */}
             <div className="lg:col-span-3">
-              <span className="inline-block text-warmGold-dark text-xs font-bold tracking-widest uppercase mb-3 border border-warmGold/50 px-3 py-1 rounded-full bg-warmGold/10">
+              <span className="hidden lg:inline-block text-warmGold-dark text-xs font-bold tracking-widest uppercase mb-3 border border-warmGold/50 px-3 py-1 rounded-full bg-warmGold/10">
                 {currentCatholicos.badge}
               </span>
-              <p className="text-burgundy text-sm font-medium mb-2">{currentCatholicos.roleTitle}</p>
+              <p className="hidden lg:block text-burgundy text-sm font-medium mb-2">{currentCatholicos.roleTitle}</p>
               <h2 className="text-3xl md:text-4xl font-bold text-warmBrown-dark mb-6 leading-tight">
                 {currentCatholicos.headingPrimary}
                 {currentCatholicos.headingAccent ? (
@@ -466,14 +478,14 @@ export default function MoscRedesignHomeClient({
         <div className="pointer-events-none absolute -bottom-16 -right-10 w-72 h-72 rounded-full bg-warmGold/20 blur-3xl" />
         <div className="max-w-7xl mx-auto px-6 lg:px-16 relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-stretch">
-            {/* Calendar image */}
-            <div className="relative w-[85%] mx-auto h-72 md:h-96 lg:h-full rounded-2xl overflow-hidden transition-all duration-300 group">
+            {/* Calendar image — mobile matches metropolitan portrait width (max-w-[320px]); desktop unchanged */}
+            <div className="relative w-full max-w-[320px] mx-auto h-auto md:w-[85%] md:max-w-none md:h-96 lg:h-full rounded-2xl overflow-hidden transition-all duration-300 group">
               <Image
                 src="/images/logos/Liturgical-Calendar-Image.jpg"
                 alt="Malankara Orthodox Syrian Church liturgical calendar showing feast days and holy seasons"
                 width={1200}
                 height={900}
-                className="w-[80%] h-auto mx-auto rounded-2xl object-center shadow-xl shadow-burgundy/25 group-hover:scale-[1.04] transition-transform duration-500" />
+                className="w-full h-auto md:w-[80%] mx-auto rounded-2xl object-center shadow-xl shadow-burgundy/25 group-hover:scale-[1.04] transition-transform duration-500" />
             </div>
 
             {/* Calendar content */}
@@ -612,14 +624,16 @@ export default function MoscRedesignHomeClient({
               More Locations
             </Link>
           </div>
+        </div>
 
-          {/* Map */}
-          <div className="relative rounded-2xl overflow-hidden h-72 md:h-96 shadow-xl shadow-burgundy/15 border-2 border-burgundy/25 hover:border-burgundy/45 hover:shadow-burgundy/25 transition-all duration-300 group">
-            <InteractiveWorldMap activeRegion={activeRegion} hoveredRegion={hoveredRegion} />
-            <div className="absolute inset-0 bg-parchment/5" />
-          </div>
+        {/* Map — full viewport width; heading/buttons stay in content shell above */}
+        <div className="relative w-full overflow-hidden h-72 md:h-96 border-y-2 border-burgundy/25 shadow-xl shadow-burgundy/15 hover:border-burgundy/45 hover:shadow-burgundy/25 transition-all duration-300 group">
+          <InteractiveWorldMap activeRegion={activeRegion} hoveredRegion={hoveredRegion} />
+          <div className="absolute inset-0 bg-parchment/5 pointer-events-none" />
         </div>
       </section>
+
+      {youtubeLive ? <MoscRedesignYoutubeLiveSection stream={youtubeLive} /> : null}
 
       </main>
       <MoscRedesignFooter />

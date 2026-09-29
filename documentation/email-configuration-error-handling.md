@@ -286,6 +286,6 @@ catch (err: any) {
 
 - **Frontend Implementation**: `src/app/admin/email-configuration/page.tsx`
 - **Backend Entity** (needs fix): `E:\project_workspace\malayalees-us-site-boot\src\main\java\com\nextjstemplate\domain\TenantEmailAddress.java`
-- **Database Schema**: `code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql`
+- **Database Schema**: `code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql`
 
 

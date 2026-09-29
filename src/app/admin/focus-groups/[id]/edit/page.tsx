@@ -2,6 +2,7 @@ import { getAppUrl } from '@/lib/env';
 import { redirect } from 'next/navigation';
 import FocusGroupEditForm from './FocusGroupEditForm';
 import { fetchAssociatedEvents } from './ApiServerActions';
+import { composeFocusGroupDescription } from '@/lib/focusGroupExtras';
 import type { FocusGroupDTO, EventDetailsDTO } from '@/types';
 
 async function fetchGroup(baseUrl: string, id: string): Promise<FocusGroupDTO | null> {
@@ -32,11 +33,22 @@ export default async function EditFocusGroupPage({ params }: { params: { id: str
 
   async function updateFocusGroup(formData: FormData) {
     'use server';
+    const description = composeFocusGroupDescription(
+      formData.get('description')?.toString() || '',
+      {
+        announcements: formData.get('announcements')?.toString() || '',
+        meetingSchedule: formData.get('meetingSchedule')?.toString() || '',
+        showMemberGalleryPublic:
+          formData.getAll('showMemberGalleryPublic').some(
+            (v) => String(v).toLowerCase() === 'true' || String(v).toLowerCase() === 'on'
+          ),
+      }
+    );
     const payload = {
       id: focusGroupId,
       name: formData.get('name')?.toString().trim() || undefined,
       slug: formData.get('slug')?.toString().trim() || undefined,
-      description: formData.get('description')?.toString() || undefined,
+      description,
       coverImageUrl: formData.get('coverImageUrl')?.toString() || undefined,
       isActive: formData.getAll('isActive').some(v => String(v).toLowerCase() === 'true' || String(v).toLowerCase() === 'on'),
       updatedAt: new Date().toISOString(),

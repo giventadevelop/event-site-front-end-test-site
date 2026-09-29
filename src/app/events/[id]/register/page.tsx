@@ -41,7 +41,7 @@ export default function EventRegisterPage({ params }: { params: Promise<{ id: st
   const [attendee, setAttendee] = useState<EventAttendeeDTO>({
     tenantId: getTenantId(),
     eventId,
-    registrationStatus: "PENDING",
+    registrationStatus: "REGISTERED",
     registrationDate: new Date().toISOString(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

@@ -15,7 +15,7 @@ import {
   isUpcomingEventForHero,
   type HeroMediaRow,
 } from '@/lib/hero/heroSliderMedia';
-import { resolveHeroImages } from '@/lib/hero/defaultHeroImages';
+import { BUNDLED_EMERGENCY_HERO_IMAGE, resolveHeroImages } from '@/lib/hero/defaultHeroImages';
 import { useTenantSettings } from '@/components/TenantSettingsProvider';
 import { useDeferredFetch } from '@/hooks/usePageReady';
 import { getHomepageCacheKey, HOMEPAGE_CACHE_INVALIDATE_CHANNEL } from '@/lib/homepageCacheKeys';
@@ -23,7 +23,7 @@ import { ArrowRight, Heart, Play, Pause, ChevronLeft, ChevronRight } from 'lucid
 import GivebutterDonateButton from '@/components/GivebutterDonateButton';
 
 /** Shown while hero data loads, and when no event/tenant hero images are available. */
-const HERO_FALLBACK_NO_EVENTS_IMAGE = '/images/hero_section/default_cloud_hero_image_1.webp';
+const HERO_FALLBACK_NO_EVENTS_IMAGE = BUNDLED_EMERGENCY_HERO_IMAGE;
 
 /** Crossfade duration — must match `.hero-crossfade-layer` opacity transition in globals.css. */
 const HERO_SLIDESHOW_CROSSFADE_MS = 420;
@@ -936,6 +936,9 @@ const HeroSection: React.FC = () => {
                   onClick={(e) => e.stopPropagation()}
                   title={overlayInfo.alt}
                   aria-label={overlayInfo.alt}
+                  {...(overlayInfo.external
+                    ? { target: '_blank', rel: 'noopener noreferrer' }
+                    : {})}
                 >
                   <img
                     src={overlayInfo.image}

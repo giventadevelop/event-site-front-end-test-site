@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search } from 'lucide-react';
+import { Menu, Search } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
@@ -19,16 +19,18 @@ import {
   isCalendarNavActive,
 } from './calendarNav';
 import MoscRedesignHeaderAuth from './MoscRedesignHeaderAuth';
+import MoscRedesignHeaderSocialLinks from './MoscRedesignHeaderSocialLinks';
 const ADMINISTRATION_NAV_LABEL = 'Administration';
 const ADMINISTRATION_BASE_HREF = '/mosc-redesign/administration';
 const ADMIN_MENU_CLOSE_MS = 200;
-const CALENDAR_MENU_CLOSE_MS = 200;
+const QUICK_LINKS_MENU_CLOSE_MS = 200;
 const SEARCH_DIRECTORY_ICON_SIZE = 24;
+const QUICK_LINKS_MENU_MIN_WIDTH = 240;
 
 /** Desktop main nav — crisp, slightly larger type on burgundy bar */
 const DESKTOP_NAV_LINK =
   'mosc-header-nav-link relative font-semibold text-sm tracking-[0.03em] antialiased px-3.5 py-2 transition-all duration-200 whitespace-nowrap overflow-visible no-underline visited:no-underline';
-/** Match lower quick-links bar: parchment-light idle, white on hover/active */
+/** Match parchment-light idle, white on hover/active */
 const DESKTOP_NAV_IDLE =
   'text-parchment-light visited:text-parchment-light hover:text-white';
 const DESKTOP_NAV_ACTIVE = 'text-white visited:text-white mosc-header-nav-link--active';
@@ -43,12 +45,6 @@ const DESKTOP_SUBMENU_ACTIVE =
 
 const DESKTOP_DROPDOWN_PANEL =
   'mosc-header-dropdown-panel fixed z-[10000] min-w-[15rem] rounded-lg border border-white/20 bg-burgundy-dark shadow-[0_12px_40px_rgba(0,0,0,0.45)]';
-
-/** Quick links bar + Calendar trigger */
-const QUICK_LINK =
-  'mosc-header-quick-link relative font-semibold text-[13px] tracking-[0.04em] antialiased px-3.5 py-2.5 whitespace-nowrap border-r border-white/12 no-underline visited:no-underline transition-all duration-200';
-const QUICK_LINK_IDLE = 'text-parchment-light visited:text-parchment-light hover:text-white';
-const QUICK_LINK_ACTIVE = 'text-white mosc-header-quick-link--active';
 
 /** Mobile nav */
 const MOBILE_NAV_LINK =
@@ -74,7 +70,17 @@ function isTopNavActive(pathname: string, navHref: string): boolean {
   return pathname === navHref || pathname.startsWith(`${navHref}/`);
 }
 
+function isQuickLinkActive(pathname: string, href: string): boolean {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 type AdminMenuPos = { top: number; left: number };
+
+function menuLeftAlignedToTriggerRight(triggerRight: number, menuWidth: number): number {
+  const pad = 8;
+  const preferred = triggerRight - menuWidth;
+  return Math.min(Math.max(pad, preferred), window.innerWidth - menuWidth - pad);
+}
 
 export default function MoscRedesignHeader() {
   const pathname = normalizePath(usePathname());
@@ -85,15 +91,15 @@ export default function MoscRedesignHeader() {
   const adminNavActive = isTopNavActive(pathname, ADMINISTRATION_BASE_HREF);
 
   const adminTriggerRef = useRef<HTMLDivElement>(null);
-  const calendarTriggerRef = useRef<HTMLDivElement>(null);
+  const quickLinksTriggerRef = useRef<HTMLDivElement>(null);
   const mobileHeaderChromeRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const calendarCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const quickLinksCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [mounted, setMounted] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   /** Desktop: portal menu (escapes html overflow:hidden on .syro-layout pages). */
   const [adminMenu, setAdminMenu] = useState<(AdminMenuPos & { open: true }) | null>(null);
-  const [calendarMenu, setCalendarMenu] = useState<(AdminMenuPos & { open: true }) | null>(null);
+  const [quickLinksMenu, setQuickLinksMenu] = useState<(AdminMenuPos & { open: true }) | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -137,35 +143,45 @@ export default function MoscRedesignHeader() {
     setAdminMenu({ open: true, top: r.bottom + 4, left: r.left });
   }, [isDesktop, cancelCloseAdminMenu]);
 
-  const cancelCloseCalendarMenu = useCallback(() => {
-    if (calendarCloseTimerRef.current) {
-      clearTimeout(calendarCloseTimerRef.current);
-      calendarCloseTimerRef.current = null;
+  const cancelCloseQuickLinksMenu = useCallback(() => {
+    if (quickLinksCloseTimerRef.current) {
+      clearTimeout(quickLinksCloseTimerRef.current);
+      quickLinksCloseTimerRef.current = null;
     }
   }, []);
 
-  const updateCalendarMenuPosition = useCallback(() => {
-    if (!calendarTriggerRef.current) return;
-    const r = calendarTriggerRef.current.getBoundingClientRect();
-    setCalendarMenu((m) =>
-      m?.open ? { open: true, top: r.bottom + 4, left: r.left } : m
+  const updateQuickLinksMenuPosition = useCallback(() => {
+    if (!quickLinksTriggerRef.current) return;
+    const r = quickLinksTriggerRef.current.getBoundingClientRect();
+    setQuickLinksMenu((m) =>
+      m?.open
+        ? {
+            open: true,
+            top: r.bottom + 4,
+            left: menuLeftAlignedToTriggerRight(r.right, QUICK_LINKS_MENU_MIN_WIDTH),
+          }
+        : m
     );
   }, []);
 
-  const scheduleCloseCalendarMenu = useCallback(() => {
-    if (calendarCloseTimerRef.current) clearTimeout(calendarCloseTimerRef.current);
-    calendarCloseTimerRef.current = setTimeout(() => {
-      setCalendarMenu(null);
-      calendarCloseTimerRef.current = null;
-    }, CALENDAR_MENU_CLOSE_MS);
+  const scheduleCloseQuickLinksMenu = useCallback(() => {
+    if (quickLinksCloseTimerRef.current) clearTimeout(quickLinksCloseTimerRef.current);
+    quickLinksCloseTimerRef.current = setTimeout(() => {
+      setQuickLinksMenu(null);
+      quickLinksCloseTimerRef.current = null;
+    }, QUICK_LINKS_MENU_CLOSE_MS);
   }, []);
 
-  const openCalendarDesktopMenu = useCallback(() => {
-    if (!isDesktop || !calendarTriggerRef.current) return;
-    cancelCloseCalendarMenu();
-    const r = calendarTriggerRef.current.getBoundingClientRect();
-    setCalendarMenu({ open: true, top: r.bottom + 4, left: r.left });
-  }, [isDesktop, cancelCloseCalendarMenu]);
+  const openQuickLinksDesktopMenu = useCallback(() => {
+    if (!isDesktop || !quickLinksTriggerRef.current) return;
+    cancelCloseQuickLinksMenu();
+    const r = quickLinksTriggerRef.current.getBoundingClientRect();
+    setQuickLinksMenu({
+      open: true,
+      top: r.bottom + 4,
+      left: menuLeftAlignedToTriggerRight(r.right, QUICK_LINKS_MENU_MIN_WIDTH),
+    });
+  }, [isDesktop, cancelCloseQuickLinksMenu]);
 
   useEffect(() => {
     if (!adminMenu?.open) return;
@@ -179,26 +195,26 @@ export default function MoscRedesignHeader() {
   }, [adminMenu?.open, updateAdminMenuPosition]);
 
   useEffect(() => {
-    if (!calendarMenu?.open) return;
-    const onScrollOrResize = () => updateCalendarMenuPosition();
+    if (!quickLinksMenu?.open) return;
+    const onScrollOrResize = () => updateQuickLinksMenuPosition();
     window.addEventListener('scroll', onScrollOrResize, true);
     window.addEventListener('resize', onScrollOrResize);
     return () => {
       window.removeEventListener('scroll', onScrollOrResize, true);
       window.removeEventListener('resize', onScrollOrResize);
     };
-  }, [calendarMenu?.open, updateCalendarMenuPosition]);
+  }, [quickLinksMenu?.open, updateQuickLinksMenuPosition]);
 
   useEffect(() => {
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
-      if (calendarCloseTimerRef.current) clearTimeout(calendarCloseTimerRef.current);
+      if (quickLinksCloseTimerRef.current) clearTimeout(quickLinksCloseTimerRef.current);
     };
   }, []);
 
   useEffect(() => {
     setAdminMenu(null);
-    setCalendarMenu(null);
+    setQuickLinksMenu(null);
   }, [pathname]);
 
   useLayoutEffect(() => {
@@ -245,29 +261,81 @@ export default function MoscRedesignHeader() {
   const adminMenuOpen = !!adminMenu?.open;
   const adminHoverOrOpen = adminNavActive || adminMenuOpen;
   const calendarNavActive = isCalendarNavActive(pathname);
-  const calendarMenuOpen = !!calendarMenu?.open;
-  const calendarHoverOrOpen = calendarNavActive || calendarMenuOpen;
+  const quickLinksMenuOpen = !!quickLinksMenu?.open;
+  const anyQuickLinkActive =
+    calendarNavActive ||
+    MOSC_REDESIGN_QUICK_LINKS.some((ql) => isQuickLinkActive(pathname, ql.href));
+  const quickLinksHoverOrOpen = anyQuickLinkActive || quickLinksMenuOpen;
   const searchDirectoryActive = isTopNavActive(pathname, MOSC_REDESIGN_SEARCH_DIRECTORY_NAV.href);
 
-  const calendarDropdownPanel = (
-    <ul className="py-2" role="none">
-      {CALENDAR_MENU_ITEMS.map((item) => {
-        const subActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+  const quickLinksDropdownPanel = (
+    <ul className="overflow-visible py-2" role="none">
+      {MOSC_REDESIGN_QUICK_LINKS.map((ql) => {
+        const subActive = isQuickLinkActive(pathname, ql.href);
         return (
-          <li key={item.href} role="none">
+          <li key={ql.href} role="none">
             <Link
-              href={item.href}
+              href={ql.href}
+              prefetch={moscRedesignNavPrefetch(ql.href)}
               role="menuitem"
               aria-current={subActive ? 'page' : undefined}
               className={`${DESKTOP_SUBMENU_LINK} whitespace-nowrap ${
                 subActive ? DESKTOP_SUBMENU_ACTIVE : DESKTOP_SUBMENU_IDLE
               }`}
             >
-              {item.label}
+              {ql.label}
             </Link>
           </li>
         );
       })}
+      <li
+        role="none"
+        className="group/calendar relative mt-1 border-t border-white/15 pt-1"
+      >
+        <button
+          type="button"
+          role="menuitem"
+          aria-haspopup="menu"
+          aria-expanded={calendarNavActive ? true : undefined}
+          className={`${DESKTOP_SUBMENU_LINK} flex w-full items-center justify-between gap-3 whitespace-nowrap ${
+            calendarNavActive ? DESKTOP_SUBMENU_ACTIVE : DESKTOP_SUBMENU_IDLE
+          }`}
+        >
+          <span>{CALENDAR_QUICK_LINK_LABEL}</span>
+          <svg
+            className="h-3.5 w-3.5 shrink-0 opacity-80"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <ul
+          role="menu"
+          aria-label="Calendar sections"
+          className="invisible absolute right-[calc(100%-2px)] top-0 z-[10001] min-w-[13.5rem] rounded-lg border border-white/20 bg-burgundy-dark py-2 opacity-0 shadow-[0_12px_40px_rgba(0,0,0,0.45)] transition-opacity duration-150 group-hover/calendar:visible group-hover/calendar:opacity-100"
+        >
+          {CALENDAR_MENU_ITEMS.map((item) => {
+            const subActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            return (
+              <li key={item.href} role="none">
+                <Link
+                  href={item.href}
+                  role="menuitem"
+                  aria-current={subActive ? 'page' : undefined}
+                  className={`${DESKTOP_SUBMENU_LINK} whitespace-nowrap ${
+                    subActive ? DESKTOP_SUBMENU_ACTIVE : DESKTOP_SUBMENU_IDLE
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </li>
     </ul>
   );
 
@@ -293,13 +361,13 @@ export default function MoscRedesignHeader() {
 
   return (
     <header className="sticky top-0 z-[1000] w-full shrink-0 overflow-visible shadow-md border-b-2 border-burgundy/40">
-      {/* Row 1: Logo + hamburger (mobile); part of one sticky block with nav + quick links (desktop) */}
+      {/* Row 1: Logo + hamburger (mobile); sticky with main nav (desktop) */}
       <div ref={mobileHeaderChromeRef} className="mosc-redesign-header-logo-row bg-parchment-deep border-b border-burgundy/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2">
-          <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-4">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-2">
+          <div className="flex w-full min-w-0 items-center justify-between gap-2 sm:gap-4">
             <Link
               href="/mosc-redesign"
-              className="group inline-flex min-w-0 max-w-[calc(100%-3rem)] flex-1 items-center sm:max-w-[calc(100%-3.5rem)] lg:max-w-none lg:flex-none"
+              className="group inline-flex min-w-0 max-w-[calc(100%-3rem)] shrink items-center sm:max-w-[calc(100%-3.5rem)] lg:max-w-none"
               aria-label="Malankara Orthodox Syrian Church — Home"
             >
               <Image
@@ -307,7 +375,7 @@ export default function MoscRedesignHeader() {
                 alt=""
                 width={800}
                 height={200}
-                className="h-12 w-auto max-w-full object-contain object-left sm:h-14 md:h-16 lg:h-20"
+                className="h-14 w-auto max-w-full object-contain object-left sm:h-14 md:h-16 lg:h-20"
                 priority
                 sizes="(max-width: 1023px) min(calc(100vw - 5rem), 480px), 600px"
                 style={{ width: 'auto' }}
@@ -315,7 +383,8 @@ export default function MoscRedesignHeader() {
             </Link>
 
             <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-              <div className="hidden lg:block">
+              <div className="hidden lg:flex shrink-0 flex-nowrap items-center gap-2 sm:gap-3">
+                <MoscRedesignHeaderSocialLinks />
                 <MoscRedesignHeaderAuth layout="desktop" />
               </div>
               <button
@@ -337,17 +406,17 @@ export default function MoscRedesignHeader() {
         </div>
       </div>
 
-      {/* Row 2: Main Nav */}
+      {/* Row 2: Main Nav — links spread left→search; Search Directory + menu flush right */}
       <div className="mosc-redesign-header-main-nav relative z-20 overflow-visible bg-burgundy-dark hidden lg:block">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-16">
+        <div className="w-full pl-4 sm:pl-6 lg:pl-8 pr-0">
           <nav className="flex w-full items-center gap-0">
-            <div className="flex min-w-0 flex-1 items-center justify-end gap-0">
+            <div className="flex min-w-0 flex-1 items-center justify-between gap-0 border-r border-white/25 pr-3">
             {MOSC_REDESIGN_NAV_LINKS.map((link) =>
               link.label === ADMINISTRATION_NAV_LABEL ? (
                 <div
                   key={link.label}
                   ref={adminTriggerRef}
-                  className="relative"
+                  className="relative min-w-0 shrink"
                   onMouseEnter={openAdminDesktopMenu}
                   onMouseLeave={scheduleCloseAdminMenu}
                 >
@@ -384,7 +453,7 @@ export default function MoscRedesignHeader() {
                       key={link.label}
                       href={link.href}
                       aria-current={navActive ? 'page' : undefined}
-                      className={`${DESKTOP_NAV_LINK} group ${
+                      className={`${DESKTOP_NAV_LINK} group min-w-0 shrink ${
                         navActive ? DESKTOP_NAV_ACTIVE : DESKTOP_NAV_IDLE
                       }`}
                     >
@@ -400,7 +469,7 @@ export default function MoscRedesignHeader() {
               )
             )}
             </div>
-            <div className="ml-3 flex shrink-0 items-center border-l border-white/25 pl-3">
+            <div className="flex shrink-0 items-center justify-end gap-1 pl-3">
               <Link
                 href={MOSC_REDESIGN_SEARCH_DIRECTORY_NAV.href}
                 aria-current={searchDirectoryActive ? 'page' : undefined}
@@ -421,6 +490,34 @@ export default function MoscRedesignHeader() {
                 />
                 <span className="relative z-10">{MOSC_REDESIGN_SEARCH_DIRECTORY_NAV.label}</span>
               </Link>
+              <div
+                ref={quickLinksTriggerRef}
+                className="relative"
+                onMouseEnter={openQuickLinksDesktopMenu}
+                onMouseLeave={scheduleCloseQuickLinksMenu}
+              >
+                <button
+                  type="button"
+                  aria-label="Quick links"
+                  aria-expanded={quickLinksMenuOpen}
+                  aria-haspopup="menu"
+                  className={`${DESKTOP_NAV_LINK} group flex items-center justify-center px-2.5 ${
+                    quickLinksHoverOrOpen ? DESKTOP_NAV_ACTIVE : DESKTOP_NAV_IDLE
+                  }`}
+                >
+                  <span
+                    className={`absolute inset-0 rounded-sm bg-warmBrown/90 transition-transform duration-200 origin-bottom ${
+                      quickLinksHoverOrOpen ? 'scale-y-100' : 'scale-y-0 group-hover:scale-y-100'
+                    }`}
+                  />
+                  <Menu
+                    size={SEARCH_DIRECTORY_ICON_SIZE}
+                    strokeWidth={2.25}
+                    className="relative z-10 shrink-0 text-current"
+                    aria-hidden
+                  />
+                </button>
+              </div>
             </div>
           </nav>
         </div>
@@ -445,17 +542,17 @@ export default function MoscRedesignHeader() {
 
       {mounted &&
         isDesktop &&
-        calendarMenu?.open &&
+        quickLinksMenu?.open &&
         createPortal(
           <div
             role="menu"
-            aria-label="Calendar sections"
-            className={DESKTOP_DROPDOWN_PANEL}
-            style={{ top: calendarMenu.top, left: calendarMenu.left }}
-            onMouseEnter={cancelCloseCalendarMenu}
-            onMouseLeave={scheduleCloseCalendarMenu}
+            aria-label="Quick links"
+            className={`${DESKTOP_DROPDOWN_PANEL} w-[15rem] overflow-visible`}
+            style={{ top: quickLinksMenu.top, left: quickLinksMenu.left }}
+            onMouseEnter={cancelCloseQuickLinksMenu}
+            onMouseLeave={scheduleCloseQuickLinksMenu}
           >
-            {calendarDropdownPanel}
+            {quickLinksDropdownPanel}
           </div>,
           document.body
         )}
@@ -606,56 +703,6 @@ export default function MoscRedesignHeader() {
           </div>
         </div>
       )}
-
-      {/* Row 3: Quick Links Bar (desktop only — mobile: inside hamburger above) */}
-      <div className="mosc-redesign-header-quick-nav relative z-10 bg-burgundy overflow-x-auto border-t border-white/10 hidden lg:block">
-        <div className="max-w-7xl mx-auto px-4 lg:px-16">
-          <div className="flex items-center gap-0 min-w-max justify-end ml-auto">
-            {MOSC_REDESIGN_QUICK_LINKS.map((ql) => (
-              <Link
-                key={ql.label}
-                href={ql.href}
-                prefetch={moscRedesignNavPrefetch(ql.href)}
-                className={`${QUICK_LINK} group overflow-hidden ${QUICK_LINK_IDLE}`}
-              >
-                <span className="absolute inset-0 bg-warmBrown/90 scale-y-0 group-hover:scale-y-100 transition-transform duration-200 origin-bottom" />
-                <span className="relative z-10">{ql.label}</span>
-              </Link>
-            ))}
-            <div
-              ref={calendarTriggerRef}
-              className="relative border-r border-white/10 last:border-r-0"
-              onMouseEnter={openCalendarDesktopMenu}
-              onMouseLeave={scheduleCloseCalendarMenu}
-            >
-              <button
-                type="button"
-                aria-expanded={calendarMenuOpen}
-                aria-haspopup="menu"
-                className={`${QUICK_LINK} group overflow-hidden flex items-center gap-1 ${
-                  calendarHoverOrOpen ? QUICK_LINK_ACTIVE : QUICK_LINK_IDLE
-                }`}
-              >
-                <span
-                  className={`absolute inset-0 bg-warmBrown/90 transition-transform duration-200 origin-bottom ${
-                    calendarHoverOrOpen ? 'scale-y-100' : 'scale-y-0 group-hover:scale-y-100'
-                  }`}
-                />
-                <span className="relative z-10">{CALENDAR_QUICK_LINK_LABEL}</span>
-                <svg
-                  className={`relative z-10 w-3 h-3 ${calendarHoverOrOpen ? 'opacity-100' : 'opacity-80'}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
     </header>
   );
 }

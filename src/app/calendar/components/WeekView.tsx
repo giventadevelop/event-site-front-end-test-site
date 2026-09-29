@@ -1,8 +1,9 @@
 "use client";
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { CalendarEvent } from '../types/calendar.types';
 import { EventTooltip } from './EventTooltip';
+import { eventOccursOnDate, toLocalYmd } from '../utils/eventFormatters';
 
 function startOfWeek(d: Date) {
   const date = new Date(d);
@@ -28,13 +29,17 @@ export function WeekView({
 
   const start = startOfWeek(anchorDate);
   const days = Array.from({ length: 7 }, (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
-  const eventsByDay = new Map<number, CalendarEvent[]>();
-  for (const ev of events) {
-    const dayNum = Number(ev.startDate.split('-')[2]);
-    const arr = eventsByDay.get(dayNum) || [];
-    arr.push(ev);
-    eventsByDay.set(dayNum, arr);
-  }
+  const eventsByYmd = useMemo(() => {
+    const map = new Map<string, CalendarEvent[]>();
+    for (const d of days) {
+      const ymd = toLocalYmd(d);
+      map.set(
+        ymd,
+        events.filter((ev) => eventOccursOnDate(ev, ymd))
+      );
+    }
+    return map;
+  }, [events, anchorDate]);
 
   const handleEventMouseEnter = (event: CalendarEvent, e: React.MouseEvent<HTMLDivElement>) => {
     setHoveredEvent(event);
@@ -59,8 +64,8 @@ export function WeekView({
       <div className="grid grid-cols-7 gap-px bg-gray-200">
         {days.map((d, idx) => {
           const day = d.getDate();
-          const evs = eventsByDay.get(day) || [];
-          const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const dateStr = toLocalYmd(d);
+          const evs = eventsByYmd.get(dateStr) || [];
           const isTodayCell = isToday(d);
 
           return (

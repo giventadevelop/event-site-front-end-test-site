@@ -70,12 +70,6 @@ const NewspaperIcon = () => (
   </svg>
 );
 
-const GlobeIcon = () => (
-  <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-  </svg>
-);
-
 const PhotoIcon = () => (
   <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -85,12 +79,6 @@ const PhotoIcon = () => (
 const MailIcon = () => (
   <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-  </svg>
-);
-
-const QuestionIcon = () => (
-  <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 );
 
@@ -105,10 +93,8 @@ const quickLinks: QuickLink[] = [
   { name: 'Calendar', href: '/mosc-redesign/liturgical-calendar', icon: <CalendarIcon /> },
   { name: 'Lectionary', href: '/mosc-redesign/lectionary', icon: <BookOpenIcon /> },
   { name: 'News & Events', href: 'https://www.facebook.com/catholicatenews.in', icon: <NewspaperIcon />, external: true },
-  { name: 'Online Resources', href: '/mosc-redesign/online-resources', icon: <GlobeIcon /> },
   { name: 'Gallery', href: '/mosc-redesign/gallery', icon: <PhotoIcon /> },
   { name: 'Contact Info', href: '/mosc-redesign/contact-info', icon: <MailIcon /> },
-  { name: 'FAQs', href: '/mosc-redesign/faqs', icon: <QuestionIcon /> },
 ];
 
 const chipClass =
@@ -120,9 +106,11 @@ const labelClass =
 interface QuickLinksProps {
   /** `sidebar` — compact nav for two-column layouts; default = full-width footer strip (design system) */
   variant?: 'default' | 'sidebar' | 'designSystem';
+  /** No horizontal padding on mobile (keeps sm/lg padding). */
+  flushMobile?: boolean;
 }
 
-export default function QuickLinks({ variant = 'default' }: QuickLinksProps) {
+export default function QuickLinks({ variant = 'default', flushMobile = false }: QuickLinksProps) {
   if (variant === 'sidebar') {
     return (
       <div className="bg-parchment-light rounded-xl border border-burgundy/20 shadow-[0_2px_8px_rgba(61,13,13,0.08)] p-6">
@@ -159,7 +147,13 @@ export default function QuickLinks({ variant = 'default' }: QuickLinksProps) {
   /* default + designSystem: same MOSC footer quick-links strip */
   const strip = (
     <section className="py-12 md:py-16 bg-parchment-deep border-t-2 border-burgundy/20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-16">
+      <div
+        className={
+          flushMobile
+            ? 'max-w-7xl mx-auto px-0 sm:px-6 lg:px-16'
+            : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-16'
+        }
+      >
         <nav className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
           {quickLinks.map((link) => {
             const linkContent = (

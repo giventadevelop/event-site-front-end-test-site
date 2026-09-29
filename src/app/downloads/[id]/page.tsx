@@ -24,8 +24,8 @@ export default async function DownloadDetailPage({ params }: DownloadDetailPageP
       <SubpageHomeDesignBackground />
       <main className="min-h-screen py-24 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="max-w-3xl mx-auto">
-          <Link href="/" className="text-primary font-semibold hover:underline text-sm">
-            ← Back to home
+          <Link href="/downloads" className="text-primary font-semibold hover:underline text-sm">
+            ← Back to downloads
           </Link>
 
           {asset.coverImageUrl && (

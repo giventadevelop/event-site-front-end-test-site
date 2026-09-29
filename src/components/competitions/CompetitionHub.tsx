@@ -4,8 +4,8 @@ import type {
   EventCompetitionDayDTO,
   EventCompetitionSettingsDTO,
 } from '@/types';
-import { formatCurrency } from '@/lib/formatCurrency';
-import { DISCIPLINE_LABELS } from '@/lib/competitionEligibility';
+import CompetitionBackLink from './CompetitionBackLink';
+import CompetitionNav from './CompetitionNav';
 
 interface Props {
   eventId: string;
@@ -20,46 +20,20 @@ export default function CompetitionHub({
   eventId,
   eventTitle,
   settings,
-  competitions,
   days,
   registrationOpen,
 }: Props) {
-  const base = `/events/${eventId}/competitions`;
-
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-[calc(var(--header-bar-height,6.5rem)+1.5rem)] pb-12 space-y-10">
       <div>
-        <Link href={`/events/${eventId}`} className="text-sm text-primary hover:underline">
-          ← Back to {eventTitle}
-        </Link>
-        <h1 className="font-heading font-semibold text-3xl text-foreground mt-2">Competitions</h1>
+        <CompetitionBackLink href={`/events/${eventId}`}>← Back to {eventTitle}</CompetitionBackLink>
+        <h1 className="font-heading font-semibold text-3xl text-foreground mt-4">Competitions</h1>
         {settings?.eligibilityText && (
           <p className="font-body text-muted-foreground mt-2 max-w-3xl">{settings.eligibilityText}</p>
         )}
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        {registrationOpen && (
-          <Link
-            href={`${base}/register`}
-            className="px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-xl reverent-hover"
-          >
-            Register for competitions
-          </Link>
-        )}
-        <Link
-          href={`${base}/winners`}
-          className="px-6 py-3 bg-secondary text-secondary-foreground font-semibold rounded-xl"
-        >
-          View winners
-        </Link>
-        <Link href={`${base}/rules`} className="px-6 py-3 border-2 border-border rounded-xl font-semibold">
-          Rules & info
-        </Link>
-        <Link href={`${base}/my-registrations`} className="px-6 py-3 border-2 border-border rounded-xl font-semibold">
-          My registrations
-        </Link>
-      </div>
+      <CompetitionNav eventId={eventId} active="hub" registrationOpen={registrationOpen} />
 
       {days.length > 0 && (
         <section className="bg-card rounded-lg sacred-shadow p-6">
@@ -79,47 +53,26 @@ export default function CompetitionHub({
       )}
 
       <section className="bg-card rounded-lg sacred-shadow p-6">
-        <h2 className="font-heading font-semibold text-xl mb-4">Competition catalog</h2>
-        {competitions.length === 0 ? (
-          <p className="text-muted-foreground">Competitions will be listed here soon.</p>
-        ) : (
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {competitions.map((c) => {
-              const discipline = c.disciplineCode
-                ? DISCIPLINE_LABELS[c.disciplineCode] ?? c.disciplineCode
-                : c.track || null;
-              return (
-                <li key={c.id}>
-                  <Link
-                    href={`${base}/${c.id}`}
-                    className="block p-4 border border-border rounded-lg hover:border-primary hover:bg-primary/5 reverent-transition group"
-                  >
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {discipline && (
-                        <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                          {discipline}
-                        </span>
-                      )}
-                      <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs">
-                        {c.competitionType === 'GROUP' ? 'Team' : 'Individual'}
-                      </span>
-                    </div>
-                    <p className="font-semibold group-hover:text-primary">{c.name}</p>
-                    {c.divisionLabel && <p className="text-sm text-muted-foreground">{c.divisionLabel}</p>}
-                    <p className="text-sm font-medium text-primary mt-2">
-                      {formatCurrency(Number(c.feeAmount) || 0)}
-                    </p>
-                    {registrationOpen && (
-                      <span className="inline-block mt-3 text-sm font-semibold text-primary">
-                        View details & register →
-                      </span>
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <h2 className="font-heading font-semibold text-xl mb-2">Browse the catalog</h2>
+        <p className="text-muted-foreground mb-4">
+          See every competition, eligibility details, and fees on the Catalogs page.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href={`/events/${eventId}/competitions/catalog`}
+            className="inline-flex px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-xl reverent-hover"
+          >
+            Open catalogs
+          </Link>
+          {registrationOpen && (
+            <Link
+              href={`/events/${eventId}/competitions/register`}
+              className="inline-flex px-6 py-3 border-2 border-border rounded-xl font-semibold reverent-hover"
+            >
+              Register here
+            </Link>
+          )}
+        </div>
       </section>
     </div>
   );

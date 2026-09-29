@@ -50,7 +50,7 @@ export default async function SaintsCmsPage({
       <SyroPageBanner title="Saints" breadcrumbFrom="home" description={BANNER_DESCRIPTION} />
 
       <section className="py-16 bg-syro-bg-gray">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8">
           <h3 className="text-2xl font-light text-[#798daf] mb-4 pl-8 border-l-[7px] border-syro-red">
             Saints &amp; Holy Figures
           </h3>
@@ -85,11 +85,15 @@ export default async function SaintsCmsPage({
                       <MoscHubCardMedia
                         src={imageSrc}
                         alt={entry.imageAlt ?? entry.name}
+                        frame="portraitUniform"
                         objectPosition="top"
-                        frameClassName="bg-white"
+                        padded={false}
+                        outerClassName="-mx-1 md:mx-0 md:pt-6"
+                        frameClassName="max-w-none md:max-w-[280px] aspect-[4/3] bg-white"
+                        sizes="(max-width: 767px) 100vw, 280px"
                         unoptimized={Boolean(entry.imageUrl?.startsWith('http'))}
                       />
-                      <div className="p-8 pt-0 flex flex-col flex-1">
+                      <div className="px-4 pb-8 pt-0 md:p-8 md:pt-0 flex flex-col flex-1">
                         <h3 className="font-syro-display text-xl font-semibold text-syro-blue mb-4 leading-snug">
                           {entry.name}
                         </h3>

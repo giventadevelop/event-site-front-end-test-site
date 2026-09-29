@@ -109,7 +109,7 @@ export default async function InstitutionsCmsPage({
                       alt={category.title}
                       unoptimized={Boolean(category.imageSrc.startsWith('http'))}
                     />
-                    <div className="p-8 pt-0 flex flex-col flex-1">
+                    <div className="px-4 pb-8 pt-0 md:p-8 md:pt-0 flex flex-col flex-1">
                       <h3 className="font-syro-display text-xl font-semibold text-syro-blue mb-4 leading-snug">
                         {category.title}
                       </h3>

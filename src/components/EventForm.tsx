@@ -12,6 +12,7 @@ import RecurrencePreview from '@/components/RecurrencePreview';
 import type { RecurrencePattern, RecurrenceEndType } from '@/lib/recurrenceUtils';
 import { validateRecurrenceEndDate, generateOccurrenceDates } from '@/lib/recurrenceUtils';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import FromEmailSelect from '@/components/FromEmailSelect';
 import { fetchTenantEmailAddressesServer } from '@/app/admin/tenant-email-addresses/ApiServerActions';
 import EventFormHelpTooltip from '@/components/EventFormHelpTooltip';
@@ -58,9 +59,79 @@ export const defaultEvent: EventDetailsDTO = {
   updatedAt: '',
 };
 
+/** Convert stored / display times to HH:mm for Date parsing and <input type="time">. */
+function convertTo24Hour(timeStr: string): string {
+  if (!timeStr) return '';
+  const trimmed = timeStr.trim();
+  // Already 24-hour from backend (HH:mm or HH:mm:ss) — no AM/PM suffix
+  if (!/\b(AM|PM)\b/i.test(trimmed)) {
+    const [hours, minutes] = trimmed.split(':');
+    return `${String(hours ?? '00').padStart(2, '0')}:${String(minutes ?? '00').padStart(2, '0')}`;
+  }
+  // 12-hour with AM/PM
+  const [time, ampm] = trimmed.split(/\s+/);
+  let [hour, minute] = time.split(':');
+  let h = parseInt(hour, 10);
+  if (Number.isNaN(h)) return '';
+  if (ampm.toUpperCase() === 'PM' && h !== 12) h += 12;
+  if (ampm.toUpperCase() === 'AM' && h === 12) h = 0;
+  return `${String(h).padStart(2, '0')}:${String(minute ?? '00').padStart(2, '0')}`;
+}
+
+/** Convert 'HH:mm' / 'HH:mm:ss' (backend or time input) to 'hh:mm AM/PM'. */
+function to12HourFormat(time24: string): string {
+  if (!time24) return '';
+  if (/\b(AM|PM)\b/i.test(time24)) return time24.trim();
+  const [hour, minute] = time24.split(':');
+  let h = parseInt(hour, 10);
+  if (Number.isNaN(h)) return '';
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12;
+  if (h === 0) h = 12;
+  return `${String(h).padStart(2, '0')}:${String(minute ?? '00').padStart(2, '0')} ${ampm}`;
+}
+
+function to24HourFormat(time12: string): string {
+  if (!time12) return '';
+  return convertTo24Hour(time12);
+}
+
+/** Local calendar day as YYYY-MM-DD (no UTC off-by-one). */
+function toLocalYmdFromDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * Normalize backend/form dates to YYYY-MM-DD.
+ * Accepts YYYY-MM-DD, MM/DD/YYYY, and ISO datetimes without shifting the day.
+ */
+function toDateOnlyYmd(dateStr: string | undefined | null): string {
+  if (!dateStr) return '';
+  const trimmed = dateStr.trim();
+  if (!trimmed) return '';
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+    const [month, day, year] = trimmed.split('/');
+    return `${year}-${month}-${day}`;
+  }
+  const ymd = trimmed.split('T')[0].split(' ')[0];
+  if (/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return ymd;
+  return '';
+}
+
 export function EventForm({ event, eventTypes, onSubmit, loading, onCancel }: EventFormProps) {
   const router = useRouter();
-  const [form, setForm] = useState<EventDetailsDTO>({ ...defaultEvent, ...event });
+  const [form, setForm] = useState<EventDetailsDTO>(() => ({
+    ...defaultEvent,
+    ...event,
+    startTime: event?.startTime ? to12HourFormat(event.startTime) : (event?.startTime ?? ''),
+    endTime: event?.endTime ? to12HourFormat(event.endTime) : (event?.endTime ?? ''),
+    startDate: event?.startDate ? (toDateOnlyYmd(event.startDate) || event.startDate) : (event?.startDate ?? ''),
+    endDate: event?.endDate ? (toDateOnlyYmd(event.endDate) || event.endDate) : (event?.endDate ?? ''),
+    promotionStartDate: event?.promotionStartDate ? (toDateOnlyYmd(event.promotionStartDate) || event.promotionStartDate) : (event?.promotionStartDate ?? ''),
+  }));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showErrors, setShowErrors] = useState(false);
   const [isEmailListEmpty, setIsEmailListEmpty] = useState(false);
@@ -77,6 +148,10 @@ export function EventForm({ event, eventTypes, onSubmit, loading, onCancel }: Ev
   const [useEventCube, setUseEventCube] = useState(false);
   const [eventcubeEmbedUrl, setEventcubeEmbedUrl] = useState<string>('');
   const [eventcubeOrderUrl, setEventcubeOrderUrl] = useState<string>('');
+
+  // External vendor ticket URL (Zeffy, etc.) — mutually exclusive with Event Cube
+  const [useExternalTicketUrl, setUseExternalTicketUrl] = useState(false);
+  const [externalTicketUrl, setExternalTicketUrl] = useState<string>('');
 
   // Recurrence configuration state
   const [isRecurring, setIsRecurring] = useState(false);
@@ -127,11 +202,17 @@ export function EventForm({ event, eventTypes, onSubmit, loading, onCancel }: Ev
         }
 
         // Set form with validated fromEmail; cap corrupt/oversized descriptions so the page stays responsive
+        // Normalize backend HH:mm:ss times to 12h so validation/display stay consistent
         const formData = {
           ...defaultEvent,
           ...event,
           fromEmail: validFromEmail,
           description: sanitizeEventDescriptionForForm(event.description),
+          startTime: event.startTime ? to12HourFormat(event.startTime) : '',
+          endTime: event.endTime ? to12HourFormat(event.endTime) : '',
+          startDate: toDateOnlyYmd(event.startDate) || event.startDate || '',
+          endDate: toDateOnlyYmd(event.endDate) || event.endDate || '',
+          promotionStartDate: toDateOnlyYmd(event.promotionStartDate) || event.promotionStartDate || '',
         };
         setForm(formData);
 
@@ -157,6 +238,10 @@ export function EventForm({ event, eventTypes, onSubmit, loading, onCancel }: Ev
         if (event.eventcubeOrderUrl?.trim()) {
           setEventcubeOrderUrl(event.eventcubeOrderUrl.trim());
         }
+        if (event.externalTicketUrl?.trim()) {
+          setUseExternalTicketUrl(true);
+          setExternalTicketUrl(event.externalTicketUrl.trim());
+        }
 
         // Fallback: Load from old metadata field (backward compatibility)
         else if (event.metadata) {
@@ -181,7 +266,7 @@ export function EventForm({ event, eventTypes, onSubmit, loading, onCancel }: Ev
             setRecurrencePattern((recurrenceConfig.pattern as RecurrencePattern) || '');
             setRecurrenceInterval(recurrenceConfig.interval || 1);
             setRecurrenceEndType((recurrenceConfig.endType as RecurrenceEndType) || 'END_DATE');
-            setRecurrenceEndDate(recurrenceConfig.endDate || '');
+            setRecurrenceEndDate(toDateOnlyYmd(recurrenceConfig.endDate) || recurrenceConfig.endDate || '');
             setRecurrenceOccurrences(recurrenceConfig.occurrences || 1);
             setRecurrenceWeeklyDays(recurrenceConfig.weeklyDays || []);
             if (recurrenceConfig.monthlyDay === 'LAST') {
@@ -205,7 +290,7 @@ export function EventForm({ event, eventTypes, onSubmit, loading, onCancel }: Ev
               setRecurrencePattern((recurrenceConfig.pattern as RecurrencePattern) || '');
               setRecurrenceInterval(recurrenceConfig.interval || 1);
               setRecurrenceEndType((recurrenceConfig.endType as RecurrenceEndType) || 'END_DATE');
-              setRecurrenceEndDate(recurrenceConfig.endDate || '');
+              setRecurrenceEndDate(toDateOnlyYmd(recurrenceConfig.endDate) || recurrenceConfig.endDate || '');
               setRecurrenceOccurrences(recurrenceConfig.occurrences || 1);
               setRecurrenceWeeklyDays(recurrenceConfig.weeklyDays || []);
               if (recurrenceConfig.monthlyDay === 'LAST') {
@@ -374,6 +459,17 @@ export function EventForm({ event, eventTypes, onSubmit, loading, onCancel }: Ev
       }
     }
 
+    // Validate external ticket URL (mutual exclusion with Event Cube)
+    if (useEventCube && useExternalTicketUrl && externalTicketUrl?.trim()) {
+      errs.externalTicketUrl = 'Cannot use both Event Cube and an external ticket URL. Choose one.';
+    } else if (useExternalTicketUrl) {
+      if (!externalTicketUrl?.trim()) {
+        errs.externalTicketUrl = 'External ticket URL is required when enabled';
+      } else if (!/^https?:\/\//i.test(externalTicketUrl.trim())) {
+        errs.externalTicketUrl = 'Enter a valid URL starting with http:// or https://';
+      }
+    }
+
     // Validate Givebutter configuration
     if (useZeroFeeProvider) {
       if (!zeroFeeProvider) {
@@ -504,62 +600,20 @@ export function EventForm({ event, eventTypes, onSubmit, loading, onCancel }: Ev
     return !hasErrors;
   }
 
-  // Helper to convert '06:00 PM' to '18:00' for Date parsing
-  function convertTo24Hour(time12h: string): string {
-    if (!time12h) return '';
-    const [time, modifier] = time12h.split(' ');
-    let [hours, minutes] = time.split(':');
-    if (hours === '12') hours = '00';
-    if (modifier && modifier.toUpperCase() === 'PM') hours = String(parseInt(hours, 10) + 12);
-    return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
-  }
-
-  // Helper to convert 'HH:mm' (from <input type="time">) to 'hh:mm AM/PM'
-  function to12HourFormat(time24: string): string {
-    if (!time24) return '';
-    let [hour, minute] = time24.split(':');
-    let h = parseInt(hour, 10);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12;
-    if (h === 0) h = 12;
-    return `${String(h).padStart(2, '0')}:${minute} ${ampm}`;
-  }
-
-  // Helper to convert 'hh:mm AM/PM' to 'HH:mm' for <input type="time"> value
-  function to24HourFormat(time12: string): string {
-    if (!time12) return '';
-    const [time, ampm] = time12.split(' ');
-    let [hour, minute] = time.split(':');
-    let h = parseInt(hour, 10);
-    if (ampm && ampm.toUpperCase() === 'PM' && h !== 12) h += 12;
-    if (ampm && ampm.toUpperCase() === 'AM' && h === 12) h = 0;
-    return `${String(h).padStart(2, '0')}:${minute}`;
-  }
-
   // Helper to convert YYYY-MM-DD to MM/DD/YYYY for display
   function formatDateForDisplay(dateStr: string): string {
     if (!dateStr) return '';
-    // If already in MM/DD/YYYY format, return as is
     if (dateStr.match(/^\d{2}\/\d{2}\/\d{4}$/)) return dateStr;
-    // Convert from YYYY-MM-DD to MM/DD/YYYY
-    const [year, month, day] = dateStr.split('-');
-    if (year && month && day) {
-      return `${month}/${day}/${year}`;
-    }
-    return dateStr;
+    const ymd = toDateOnlyYmd(dateStr);
+    if (!ymd) return dateStr;
+    const [year, month, day] = ymd.split('-');
+    return `${month}/${day}/${year}`;
   }
 
   // Helper to convert MM/DD/YYYY to YYYY-MM-DD for storage
   function formatDateForStorage(dateStr: string): string {
     if (!dateStr) return '';
-    // If already in YYYY-MM-DD format, return as is
-    if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) return dateStr;
-    // Convert from MM/DD/YYYY to YYYY-MM-DD
-    const [month, day, year] = dateStr.split('/');
-    if (year && month && day && year.length === 4 && month.length === 2 && day.length === 2) {
-      return `${year}-${month}-${day}`;
-    }
-    return dateStr;
+    return toDateOnlyYmd(dateStr) || dateStr;
   }
 
   // Helper to validate MM/DD/YYYY format (exactly 2 digits for month and day)
@@ -933,7 +987,7 @@ export function EventForm({ event, eventTypes, onSubmit, loading, onCancel }: Ev
         if (occurrenceDates.length > 0) {
           const lastDate = occurrenceDates[occurrenceDates.length - 1];
           // Format as YYYY-MM-DD
-          calculatedEndDate = lastDate.toISOString().split('T')[0];
+          calculatedEndDate = toLocalYmdFromDate(lastDate);
         }
       } catch (e) {
         console.error('Failed to calculate recurrence end date', e);
@@ -1028,6 +1082,7 @@ export function EventForm({ event, eventTypes, onSubmit, loading, onCancel }: Ev
       manualPaymentEnabled: !!form.manualPaymentEnabled,
       eventcubeEmbedUrl: useEventCube ? (eventcubeEmbedUrl?.trim() || undefined) : undefined,
       eventcubeOrderUrl: useEventCube ? (eventcubeOrderUrl?.trim() || undefined) : undefined,
+      externalTicketUrl: useExternalTicketUrl ? (externalTicketUrl?.trim() || undefined) : undefined,
     };
     onSubmit(sanitizedForm);
   }
@@ -1447,16 +1502,38 @@ export function EventForm({ event, eventTypes, onSubmit, loading, onCancel }: Ev
 
       {form.isCompetitionEvent && form.id && (
         <div className="p-4 bg-rose-50 border border-rose-200 rounded-lg">
-          <p className="text-sm text-rose-800 mb-2">
-            Competition mode is enabled. Configure settings, schedule, and catalog in the admin competitions section.
+          <p className="text-sm text-rose-800 mb-3">
+            Competition mode is enabled. Configure the catalog, settings, and results in the admin competitions section.
           </p>
-          <button
-            type="button"
-            onClick={() => router.push(`/admin/events/${form.id}/competitions/settings`)}
-            className="text-sm font-semibold text-rose-700 hover:text-rose-900 underline"
-          >
-            Open competition admin →
-          </button>
+          <div className="flex flex-col gap-3">
+            <Link
+              href={`/admin/events/${form.id}/competitions/list`}
+              className="w-full flex-shrink-0 h-14 rounded-xl bg-emerald-100 hover:bg-emerald-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105"
+              title="Competitions"
+              aria-label="Competitions"
+            >
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-200 flex items-center justify-center">
+                <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10M4 18h10" />
+                </svg>
+              </div>
+              <span className="font-semibold text-emerald-700">Competitions</span>
+            </Link>
+            <Link
+              href={`/admin/events/${form.id}/competitions/settings`}
+              className="w-full flex-shrink-0 h-14 rounded-xl bg-violet-100 hover:bg-violet-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105"
+              title="Competition settings"
+              aria-label="Competition settings"
+            >
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-violet-200 flex items-center justify-center">
+                <svg className="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <span className="font-semibold text-violet-700">Competition settings</span>
+            </Link>
+          </div>
         </div>
       )}
 
@@ -1548,6 +1625,8 @@ export function EventForm({ event, eventTypes, onSubmit, loading, onCancel }: Ev
                   if (checked) {
                     setIsFundraiserEvent(false);
                     setIsCharityEvent(false);
+                    setUseExternalTicketUrl(false);
+                    setExternalTicketUrl('');
                   }
                 }}
                 onClick={(e) => e.stopPropagation()}
@@ -1606,6 +1685,75 @@ export function EventForm({ event, eventTypes, onSubmit, loading, onCancel }: Ev
               />
               <p className="text-xs text-gray-500 mt-1">
                 If Event Cube opens the order page in a new tab when users click &quot;Buy Tickets&quot;, add the order page URL here (with <code className="bg-white px-1 rounded">?embed=true</code> if supported). Users can then click &quot;Load checkout in this page&quot; on the checkout page to show the order step in the same embed.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* External ticket purchase URL (Zeffy, Eventbrite, etc.) */}
+      <div className="border-t border-gray-200 pt-6 mt-6 bg-gradient-to-br from-teal-50 via-cyan-50 to-sky-50 rounded-xl p-6 border border-teal-200/60 shadow-sm">
+        <h3 className="text-lg font-semibold mb-4 text-gray-800">External ticket purchase URL</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Send Buy Tickets to an external vendor (e.g. Zeffy) in a new tab. Set Admission type to &quot;Ticketed&quot;. Do not enable Event Cube at the same time.
+        </p>
+        <div className="space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer" htmlFor="useExternalTicketUrl">
+            <span className="relative flex items-center justify-center flex-shrink-0">
+              <input
+                type="checkbox"
+                id="useExternalTicketUrl"
+                checked={useExternalTicketUrl}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setUseExternalTicketUrl(checked);
+                  if (checked) {
+                    setUseEventCube(false);
+                    setEventcubeEmbedUrl('');
+                    setEventcubeOrderUrl('');
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+                className="custom-checkbox custom-checkbox--yellow"
+              />
+              <span className="custom-checkbox-tick">
+                {useExternalTicketUrl && (
+                  <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l5 5L19 7" />
+                  </svg>
+                )}
+              </span>
+            </span>
+            <span className="text-xl font-semibold text-gray-900">Use external ticket purchase URL</span>
+          </label>
+          {useExternalTicketUrl && (
+            <div>
+              <label htmlFor="externalTicketUrl" className="block font-medium mb-1 text-gray-700">
+                External ticket URL *
+              </label>
+              <input
+                ref={(el) => { if (el) fieldRefs.current.externalTicketUrl = el; }}
+                type="url"
+                id="externalTicketUrl"
+                value={externalTicketUrl}
+                onChange={(e) => {
+                  setExternalTicketUrl(e.target.value);
+                  if (errors.externalTicketUrl) {
+                    setErrors(prev => {
+                      const next = { ...prev };
+                      delete next.externalTicketUrl;
+                      return next;
+                    });
+                  }
+                }}
+                placeholder="https://www.zeffy.com/en-US/ticketing/…"
+                className={`w-full border rounded-xl focus:ring-blue-500 px-4 py-3 text-base ${errors.externalTicketUrl ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-400 focus:border-blue-500'}`}
+              />
+              {errors.externalTicketUrl && (
+                <div className="text-red-500 text-sm mt-1">{errors.externalTicketUrl}</div>
+              )}
+              <p className="text-xs text-gray-500 mt-1">
+                Full URL to the vendor ticketing page. Buy Tickets opens this link in a new browser tab.
               </p>
             </div>
           )}

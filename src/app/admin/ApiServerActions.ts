@@ -360,27 +360,78 @@ export async function fetchUserProfileByEmailServer(email: string): Promise<User
 }
 
 /**
- * Fetch all child events in a recurrence series
- * Uses recurrenceSeriesId to find all events in the series (parent + children)
+ * Fetch all events in a recurrence series (parent + children).
+ *
+ * IMPORTANT: Backend criteria on nullable fields (e.g. recurrenceSeriesId.equals=N)
+ * can return the entire tenant event list when values are null. Always filter
+ * client-side to the exact series id before using the result for delete/activate.
  */
 export async function fetchChildEventsBySeriesIdServer(recurrenceSeriesId: number): Promise<EventDetailsDTO[]> {
-  if (!recurrenceSeriesId) return [];
+  if (recurrenceSeriesId == null || Number.isNaN(Number(recurrenceSeriesId))) return [];
+  const seriesIdNum = Number(recurrenceSeriesId);
   const tenantId = getTenantId();
-  const url = `${getApiBase()}/api/event-details?recurrenceSeriesId.equals=${recurrenceSeriesId}&tenantId.equals=${tenantId}&size=1000`;
+  const url = `${getApiBase()}/api/event-details?recurrenceSeriesId.equals=${seriesIdNum}&tenantId.equals=${tenantId}&size=1000`;
   try {
     const res = await fetchWithJwtRetry(url, { cache: 'no-store' });
     if (!res.ok) {
-      console.error(`Failed to fetch child events for series ${recurrenceSeriesId}: ${res.status}`);
+      console.error(`Failed to fetch child events for series ${seriesIdNum}: ${res.status}`);
       return [];
     }
     const events = await res.json();
     const eventArray = Array.isArray(events) ? events : [];
-    console.log(`[fetchChildEventsBySeriesIdServer] Fetched ${eventArray.length} events for series ${recurrenceSeriesId}:`,
-      eventArray.map(e => ({ id: e.id, parentEventId: e.parentEventId, isActive: e.isActive, title: e.title })));
-    return eventArray;
+    // Guard against backend returning unfiltered tenant-wide lists for null criteria fields
+    const filtered = eventArray.filter(
+      (e) => e.recurrenceSeriesId != null && Number(e.recurrenceSeriesId) === seriesIdNum
+    );
+    console.log(
+      `[fetchChildEventsBySeriesIdServer] series=${seriesIdNum} raw=${eventArray.length} filtered=${filtered.length}`,
+      filtered.map((e) => ({ id: e.id, parentEventId: e.parentEventId, isActive: e.isActive, title: e.title }))
+    );
+    return filtered;
   } catch (error) {
-    console.error(`Error fetching child events for series ${recurrenceSeriesId}:`, error);
+    console.error(`Error fetching child events for series ${seriesIdNum}:`, error);
     return [];
+  }
+}
+
+/**
+ * Fetch child events whose parentEventId matches the given parent id.
+ * Client-side filter required — parentEventId.equals criteria can return all events.
+ */
+export async function fetchChildEventsByParentIdServer(parentEventId: number): Promise<EventDetailsDTO[]> {
+  if (parentEventId == null) return [];
+  const parentIdNum = Number(parentEventId);
+  const tenantId = getTenantId();
+  const url = `${getApiBase()}/api/event-details?parentEventId.equals=${parentIdNum}&tenantId.equals=${tenantId}&size=1000`;
+  try {
+    const res = await fetchWithJwtRetry(url, { cache: 'no-store' });
+    if (!res.ok) {
+      console.error(`Failed to fetch children for parent ${parentIdNum}: ${res.status}`);
+      return [];
+    }
+    const events = await res.json();
+    const eventArray = Array.isArray(events) ? events : [];
+    return eventArray.filter(
+      (e) => e.parentEventId != null && Number(e.parentEventId) === parentIdNum
+    );
+  } catch (error) {
+    console.error(`Error fetching children for parent ${parentIdNum}:`, error);
+    return [];
+  }
+}
+
+async function deleteSingleEventByIdServer(event: EventDetailsDTO): Promise<void> {
+  if (!event.id) return;
+  try {
+    await deleteCalendarEventForEventServer(event);
+  } catch (calendarErr) {
+    console.warn(`Failed to delete calendar event for event ${event.id}:`, calendarErr);
+  }
+  const url = `${getApiBase()}/api/event-details/${event.id}`;
+  const res = await fetchWithJwtRetry(url, { method: 'DELETE' });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Failed to delete event ${event.id}: ${err}`);
   }
 }
 
@@ -431,12 +482,19 @@ export async function softDeleteEventWithChildrenServer(event: EventDetailsDTO):
 
       console.log(`[softDeleteEventWithChildrenServer] Successfully deactivated parent event ${event.id} - backend should sync children automatically`);
 
-      // Delete calendar events for parent and all children (non-blocking)
-      // Fetch all events in series to delete their calendar events
-      const seriesId = event.recurrenceSeriesId || event.id;
-      const allEventsInSeries = await fetchChildEventsBySeriesIdServer(seriesId);
+      // Delete calendar events for parent + real children only (non-blocking)
+      const calendarTargets: EventDetailsDTO[] = [fullEvent];
+      if (event.recurrenceSeriesId != null) {
+        const seriesEvents = await fetchChildEventsBySeriesIdServer(event.recurrenceSeriesId);
+        for (const e of seriesEvents) {
+          if (e.id != null && e.id !== event.id) calendarTargets.push(e);
+        }
+      } else {
+        const children = await fetchChildEventsByParentIdServer(event.id);
+        calendarTargets.push(...children);
+      }
 
-      const calendarDeletionPromises = allEventsInSeries.map(async (e) => {
+      const calendarDeletionPromises = calendarTargets.map(async (e) => {
         if (!e.id) return;
         try {
           await deleteCalendarEventForEventServer(e);
@@ -568,74 +626,49 @@ export async function activateEventWithChildrenServer(event: EventDetailsDTO): P
 
 /**
  * Hard delete (permanently delete) an event
- * - If it's a parent event: deletes parent + all child events
- * - If it's a child event: deletes only that child event
+ * - Standalone event (no series / no children): deletes only that event id
+ * - Parent of a recurrence series: deletes parent + events that truly belong to that series
+ * - Child event: deletes only that child event
+ *
+ * Never use event.id as a fake recurrenceSeriesId — backend criteria on null
+ * recurrenceSeriesId can return every tenant event and wipe the list.
  */
 export async function hardDeleteEventWithChildrenServer(event: EventDetailsDTO): Promise<void> {
   if (!event.id) throw new Error('Event ID required for hard delete');
 
-  // Check if this is a parent event (parentEventId is null/undefined)
   const isParentEvent = event.parentEventId == null || event.parentEventId === undefined;
+  const eventsToDeleteById = new Map<number, EventDetailsDTO>();
+  eventsToDeleteById.set(event.id, event);
 
   if (isParentEvent) {
-    // Parent event: delete parent + all children
-    const seriesId = event.recurrenceSeriesId || event.id;
-    const allEventsInSeries = await fetchChildEventsBySeriesIdServer(seriesId);
-
-    // Delete all events in the series (delete children first, then parent)
-    // Sort so children (with parentEventId) are deleted before parent (without parentEventId)
-    const sortedEvents = allEventsInSeries.sort((a, b) => {
-      const aIsChild = a.parentEventId != null;
-      const bIsChild = b.parentEventId != null;
-      if (aIsChild && !bIsChild) return -1;
-      if (!aIsChild && bIsChild) return 1;
-      return 0;
-    });
-
-    const deletionPromises = sortedEvents.map(async (e) => {
-      if (!e.id) return;
-      try {
-        // Delete calendar events first
-        try {
-          await deleteCalendarEventForEventServer(e);
-        } catch (calendarErr) {
-          console.warn(`Failed to delete calendar event for event ${e.id}:`, calendarErr);
-        }
-
-        // Then delete the event
-        const url = `${getApiBase()}/api/event-details/${e.id}`;
-        const res = await fetchWithJwtRetry(url, { method: 'DELETE' });
-        if (!res.ok) {
-          const err = await res.text();
-          throw new Error(`Failed to delete event ${e.id}: ${err}`);
-        }
-      } catch (err) {
-        console.error(`Failed to delete event ${e.id}:`, err);
-        throw err;
+    if (event.recurrenceSeriesId != null) {
+      const seriesEvents = await fetchChildEventsBySeriesIdServer(event.recurrenceSeriesId);
+      for (const e of seriesEvents) {
+        if (e.id != null) eventsToDeleteById.set(e.id, e);
       }
-    });
-
-    await Promise.all(deletionPromises);
-  } else {
-    // Child event: delete only this child
-    try {
-      // Delete calendar event first
-      try {
-        await deleteCalendarEventForEventServer(event);
-      } catch (calendarErr) {
-        console.warn(`Failed to delete calendar event for event ${event.id}:`, calendarErr);
+    } else {
+      const children = await fetchChildEventsByParentIdServer(event.id);
+      for (const e of children) {
+        if (e.id != null) eventsToDeleteById.set(e.id, e);
       }
-
-      // Then delete the event
-      const url = `${getApiBase()}/api/event-details/${event.id}`;
-      const res = await fetchWithJwtRetry(url, { method: 'DELETE' });
-      if (!res.ok) {
-        const err = await res.text();
-        throw new Error(`Failed to delete child event ${event.id}: ${err}`);
-      }
-    } catch (err) {
-      console.error(`Failed to delete child event ${event.id}:`, err);
-      throw err;
     }
+  }
+
+  const sortedEvents = Array.from(eventsToDeleteById.values()).sort((a, b) => {
+    const aIsChild = a.parentEventId != null;
+    const bIsChild = b.parentEventId != null;
+    if (aIsChild && !bIsChild) return -1;
+    if (!aIsChild && bIsChild) return 1;
+    return 0;
+  });
+
+  console.log(
+    `[hardDeleteEventWithChildrenServer] Deleting ${sortedEvents.length} event(s) for target id=${event.id}:`,
+    sortedEvents.map((e) => e.id)
+  );
+
+  // Delete sequentially (children first) so a failure does not leave orphans mid-parallel fan-out
+  for (const e of sortedEvents) {
+    await deleteSingleEventByIdServer(e);
   }
 }

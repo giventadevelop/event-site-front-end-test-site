@@ -170,6 +170,9 @@ const FeaturedEventsSection: React.FC<FeaturedEventsSectionProps> = ({
                           onClick={(e) => e.stopPropagation()}
                           title={overlay.alt}
                           aria-label={overlay.alt}
+                          {...(overlay.external
+                            ? { target: '_blank', rel: 'noopener noreferrer' }
+                            : {})}
                         >
                           <img
                             src={overlay.image}

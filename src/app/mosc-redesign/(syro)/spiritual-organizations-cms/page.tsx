@@ -215,7 +215,7 @@ function OrgCard({ org }: { org: SpiritualOrganisationEntry }) {
         alt={org.imageAlt ?? org.name}
         unoptimized={Boolean(org.imageUrl?.startsWith('http'))}
       />
-      <div className="p-8 pt-0 flex flex-col flex-1">
+      <div className="px-4 pb-8 pt-0 md:p-8 md:pt-0 flex flex-col flex-1">
         <h3 className="font-syro-display text-xl font-semibold text-syro-blue mb-4 leading-snug">
           {org.name}
         </h3>

@@ -11,6 +11,7 @@ export const DISCIPLINE_LABELS: Record<string, string> = {
   MUSIC: 'Music',
   SPORTS: 'Sports',
   ART: 'Art',
+  PAINTING: 'Painting',
   OTHER: 'Other',
 };
 

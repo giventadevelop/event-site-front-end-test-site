@@ -474,12 +474,12 @@ export function createProxyHandler({ injectTenantId = true, allowedMethods = ['G
         res.status(apiRes.status).send(data);
       } catch (err) {
         const errorObj = err as Error;
-        console.error('[ProxyHandler ERROR]', err, errorObj.stack);
+        console.warn('[ProxyHandler ERROR]', errorObj.message);
         res.status(500).json({ error: 'Internal server error', details: String(err) });
       }
     } catch (err) {
       const errorObj = err as Error;
-      console.error('[ProxyHandler OUTER ERROR]', err, errorObj.stack);
+      console.warn('[ProxyHandler OUTER ERROR]', errorObj.message);
       res.status(500).json({ error: 'Internal server error', details: String(err) });
     }
   }

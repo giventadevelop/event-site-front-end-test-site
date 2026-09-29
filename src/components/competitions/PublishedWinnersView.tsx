@@ -74,6 +74,18 @@ export default function PublishedWinnersView({ results, championEnabled }: Props
                     </div>
                   )}
                 </div>
+                {result.workPhotoUrl && (
+                  <div className="relative w-full h-40 bg-muted border-t border-border">
+                    <Image
+                      src={result.workPhotoUrl}
+                      alt={`${result.displayName} winning work`}
+                      fill
+                      className="object-contain"
+                      sizes="(min-width: 1024px) 25vw, 100vw"
+                      unoptimized
+                    />
+                  </div>
+                )}
                 <div className="p-4">
                   <p className="text-xs font-caption text-primary uppercase tracking-wide">
                     {result.placementLabel ||

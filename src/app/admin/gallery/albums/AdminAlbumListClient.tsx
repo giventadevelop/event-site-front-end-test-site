@@ -15,6 +15,21 @@ import { GalleryCategoryTypeahead } from '@/components/admin/gallery/GalleryCate
 import { uploadGalleryAlbumCoverFile } from '@/lib/gallery/uploadGalleryAlbumCoverClient';
 import Image from 'next/image';
 import { Modal } from '@/components/Modal';
+import ErrorDialog from '@/components/ErrorDialog';
+import { FormApiErrorBanner } from '@/components/FormApiErrorBanner';
+import {
+  formatUnknownError,
+  type FormattedBackendError,
+} from '@/lib/api/formatBackendError';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
 
 type SearchField = 'title' | 'description' | 'id';
 type VisibilityFilter = 'all' | 'public' | 'private';
@@ -85,8 +100,13 @@ export default function AdminAlbumListClient({
   const [sort, setSort] = useState('displayOrder,asc');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<FormattedBackendError | null>(null);
+  const [showCreateErrorDialog, setShowCreateErrorDialog] = useState(false);
+  const categoryFieldRef = useRef<HTMLDivElement>(null);
   const [pendingCoverFile, setPendingCoverFile] = useState<File | null>(null);
+  const [albumToDelete, setAlbumToDelete] = useState<GalleryAlbumDTO | null>(null);
+  const [isDeletingAlbum, setIsDeletingAlbum] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -160,18 +180,33 @@ export default function AdminAlbumListClient({
     setCurrentPage(newPage);
   };
 
-  const handleDelete = async (albumId: number) => {
-    if (!confirm(`Are you sure you want to delete album "${albums.find(a => a.id === albumId)?.title}"? This action cannot be undone.`)) {
-      return;
-    }
+  const closeDeleteDialog = () => {
+    if (isDeletingAlbum) return;
+    setAlbumToDelete(null);
+    setDeleteError(null);
+  };
 
+  const handleDeleteClick = (album: GalleryAlbumDTO) => {
+    if (!album.id) return;
+    setDeleteError(null);
+    setAlbumToDelete(album);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!albumToDelete?.id || isDeletingAlbum) return;
+
+    setIsDeletingAlbum(true);
+    setDeleteError(null);
     try {
-      await deleteAlbumServer(albumId);
+      await deleteAlbumServer(albumToDelete.id);
+      setAlbumToDelete(null);
       const nextPage = albums.length <= 1 && currentPage > 0 ? currentPage - 1 : currentPage;
       if (nextPage !== currentPage) setCurrentPage(nextPage);
       else void loadAlbumsAt(currentPage);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete album');
+      setDeleteError(formatUnknownError(err, 'Failed to delete album').message);
+    } finally {
+      setIsDeletingAlbum(false);
     }
   };
 
@@ -184,10 +219,17 @@ export default function AdminAlbumListClient({
     e.preventDefault();
     setCreateLoading(true);
     setCreateError(null);
+    setShowCreateErrorDialog(false);
 
     const dateError = validateEventDates();
     if (dateError) {
-      setCreateError(dateError);
+      const formatted: FormattedBackendError = {
+        title: 'Check event dates',
+        message: dateError,
+        field: 'eventDateStart',
+      };
+      setCreateError(formatted);
+      setShowCreateErrorDialog(true);
       setCreateLoading(false);
       return;
     }
@@ -212,11 +254,10 @@ export default function AdminAlbumListClient({
         try {
           await uploadGalleryAlbumCoverFile(newAlbum.id, pendingCoverFile);
         } catch (uploadErr) {
-          setCreateError(
-            uploadErr instanceof Error
-              ? `Album created, but cover upload failed: ${uploadErr.message}`
-              : 'Album created, but cover upload failed.'
-          );
+          const formatted = formatUnknownError(uploadErr, 'Album created, but cover upload failed');
+          formatted.field = 'coverImage';
+          setCreateError(formatted);
+          setShowCreateErrorDialog(true);
           await loadAlbumsAt(currentPage);
           return;
         }
@@ -241,7 +282,12 @@ export default function AdminAlbumListClient({
       // Refresh the list
       await loadAlbumsAt(currentPage);
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : 'Failed to create album');
+      const formatted = formatUnknownError(err, 'Failed to create album');
+      setCreateError(formatted);
+      setShowCreateErrorDialog(true);
+      if (formatted.field === 'galleryCategoryId') {
+        categoryFieldRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     } finally {
       setCreateLoading(false);
     }
@@ -264,6 +310,7 @@ export default function AdminAlbumListClient({
     setPendingCoverFile(null);
     setPendingCategoryName(null);
     setCreateError(null);
+    setShowCreateErrorDialog(false);
   };
 
   // Calculate pagination
@@ -404,10 +451,26 @@ export default function AdminAlbumListClient({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
           <h3 className="mt-2 text-sm font-medium text-gray-900">No albums found</h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-500 max-w-lg mx-auto">
             {hasActiveFilters
               ? 'Try adjusting your search filters.'
-              : 'Get started by creating a new album.'}
+              : (
+                <>
+                  No gallery albums exist for tenant{' '}
+                  <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">
+                    {process.env.NEXT_PUBLIC_TENANT_ID || 'unknown'}
+                  </code>
+                  {' '}yet. The public{' '}
+                  <Link href="/gallery" className="text-blue-600 hover:underline">
+                    Gallery
+                  </Link>{' '}
+                  page can still show <strong>Event based albums</strong> (photos attached to events under{' '}
+                  <Link href="/admin/manage-events" className="text-blue-600 hover:underline">
+                    Manage Events
+                  </Link>
+                  ). Create a dedicated album here when you want a curated collection.
+                </>
+              )}
           </p>
         </div>
       ) : (
@@ -485,7 +548,7 @@ export default function AdminAlbumListClient({
                         </svg>
                       </Link>
                       <button
-                        onClick={() => album.id && handleDelete(album.id)}
+                        onClick={() => handleDeleteClick(album)}
                         className="flex-shrink-0 w-14 h-14 rounded-xl bg-red-100 hover:bg-red-200 flex items-center justify-center transition-all duration-300 hover:scale-110"
                         title="Delete Album"
                         aria-label="Delete Album"
@@ -554,6 +617,72 @@ export default function AdminAlbumListClient({
         </div>
       )}
 
+      <AlertDialog
+        open={!!albumToDelete}
+        onOpenChange={(open) => {
+          if (!open) closeDeleteDialog();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete album</AlertDialogTitle>
+            <AlertDialogDescription>
+              {albumToDelete ? (
+                <>
+                  Are you sure you want to delete album <strong>&quot;{albumToDelete.title}&quot;</strong>? This action cannot be undone.
+                  Media files associated with this album will not be deleted, but they will be removed from the album.
+                </>
+              ) : (
+                'Confirm delete'
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteError && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+              <p className="text-sm font-medium text-red-800">{deleteError}</p>
+            </div>
+          )}
+          <AlertDialogFooter className="flex flex-row gap-3 sm:gap-4">
+            <AlertDialogCancel
+              onClick={closeDeleteDialog}
+              disabled={isDeletingAlbum}
+              className="flex-1 flex-shrink-0 h-14 rounded-xl bg-blue-100 hover:bg-blue-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              title="Cancel"
+              aria-label="Cancel"
+            >
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-200 flex items-center justify-center">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <span className="font-semibold text-blue-700">Cancel</span>
+            </AlertDialogCancel>
+            <button
+              type="button"
+              onClick={() => void handleConfirmDelete()}
+              disabled={isDeletingAlbum}
+              className="flex-1 flex-shrink-0 h-14 rounded-xl bg-red-100 hover:bg-red-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              title="Delete Album"
+              aria-label="Delete Album"
+            >
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-red-200 flex items-center justify-center">
+                {isDeletingAlbum ? (
+                  <svg className="animate-spin w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                )}
+              </div>
+              <span className="font-semibold text-red-700">{isDeletingAlbum ? 'Deleting...' : 'Delete Album'}</span>
+            </button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Create Album Modal */}
       <Modal
         open={isCreateModalOpen}
@@ -562,21 +691,7 @@ export default function AdminAlbumListClient({
       >
         <form onSubmit={handleCreateAlbum} className="space-y-6">
           {createError && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">Error creating album</h3>
-                  <div className="mt-2 text-sm text-red-700">
-                    <p>{createError}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <FormApiErrorBanner error={createError} heading="Error creating album" />
           )}
 
           <div>
@@ -608,7 +723,14 @@ export default function AdminAlbumListClient({
             />
           </div>
 
-          <div>
+          <div
+            ref={categoryFieldRef}
+            className={
+              createError?.field === 'galleryCategoryId'
+                ? 'rounded-lg border-2 border-red-500 p-3'
+                : undefined
+            }
+          >
             <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="create-galleryCategoryId">
               Category
             </label>
@@ -616,13 +738,20 @@ export default function AdminAlbumListClient({
               id="create-galleryCategoryId"
               categories={categoryList}
               value={formData.galleryCategoryId}
-              onChange={(galleryCategoryId) => setFormData((prev) => ({ ...prev, galleryCategoryId }))}
+              onChange={(galleryCategoryId) => {
+                setFormData((prev) => ({ ...prev, galleryCategoryId }));
+                if (createError?.field === 'galleryCategoryId') {
+                  setCreateError(null);
+                  setShowCreateErrorDialog(false);
+                }
+              }}
               onCategoryCreated={(category) =>
                 setCategoryList((prev) =>
                   prev.some((c) => c.id === category.id) ? prev : [...prev, category]
                 )
               }
               onPendingDisplayNameChange={setPendingCategoryName}
+              error={createError?.field === 'galleryCategoryId' ? createError.message : undefined}
             />
           </div>
 
@@ -792,6 +921,14 @@ export default function AdminAlbumListClient({
           </div>
         </form>
       </Modal>
+
+      <ErrorDialog
+        isOpen={showCreateErrorDialog && !!createError}
+        onClose={() => setShowCreateErrorDialog(false)}
+        title={createError?.title || 'Error creating album'}
+        message={createError?.message || ''}
+        detail={createError?.detail}
+      />
     </div>
   );
 }

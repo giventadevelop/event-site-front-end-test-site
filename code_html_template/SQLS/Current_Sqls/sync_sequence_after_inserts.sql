@@ -4,11 +4,11 @@
 -- Purpose: Synchronize public.sequence_generator after manual INSERT statements
 --
 -- Usage:
---   1. Run schema file (Latest_Schema_Post__Blob_Claude_12.sql)
+--   1. Run schema file (Event_Site_Manager_Latest_Schema.sql)
 --   2. Run manual INSERT statements (corrected_event_media_inserts.ordered.sql)
 --   3. Run this script to sync the sequence
 --
--- Matches Latest_Schema_Post__Blob_Claude_12.sql and SequenceSynchronizationService.java.
+-- Matches Event_Site_Manager_Latest_Schema.sql and SequenceSynchronizationService.java.
 -- sequence_generator uses INCREMENT BY 1 (Hibernate allocationSize = 1).
 -- ===================================================
 

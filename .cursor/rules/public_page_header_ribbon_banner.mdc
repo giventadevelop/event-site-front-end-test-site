@@ -1,0 +1,175 @@
+---
+description: Public-page header ribbon/banner assets, breakpoints, full-bleed layout, and PageHeaderRibbonMedia usage (not homepage hero).
+globs: src/components/PageHeaderRibbonMedia.tsx, src/lib/headerRibbon.ts, src/styles/modernist-homepage.css, src/app/events/**/*.tsx, src/app/gallery/**/*.tsx, src/app/team/**/*.tsx, src/app/sponsors/**/*.tsx, src/app/calendar/**/*.tsx, src/app/polls/**/*.tsx, src/app/profile/**/*.tsx
+alwaysApply: false
+---
+
+# Public Page Header Ribbon / Banner
+
+## **Overview**
+
+Public list/shell pages (Events, Gallery, Team, Sponsors, Calendar, Polls) use a **full-bleed header ribbon** under the fixed site Header. This is **not** the homepage hero and **not** event-detail flyer heroes.
+
+## **Asset location**
+
+All ribbon images live under:
+
+`public/images/header_ribbons/`
+
+| Role | File | Pixel size | Public URL |
+|------|------|------------|------------|
+| Mobile | `header_ribbon_mobile_1200x720.jpg` | **1200 × 720** | `/images/header_ribbons/header_ribbon_mobile_1200x720.jpg` |
+| Tablet | `header_ribbon_tablet_1600x560.jpg` | **1600 × 560** | `/images/header_ribbons/header_ribbon_tablet_1600x560.jpg` |
+| Desktop | `header_ribbon_desktop_fallback_2100x500.jpg` | **2100 × 500** | `/images/header_ribbons/header_ribbon_desktop_fallback_2100x500.jpg` |
+| Desktop retina / wide | `header_ribbon_desktop_retina_3360x800.jpg` | **3360 × 800** | `/images/header_ribbons/header_ribbon_desktop_retina_3360x800.jpg` |
+
+Constants: [`src/lib/headerRibbon.ts`](mdc:src/lib/headerRibbon.ts) (`HEADER_RIBBON`, `DEFAULT_HEADER_RIBBON_IMAGE`).
+
+## **Image selection logic**
+
+Implemented by [`PageHeaderRibbonMedia`](mdc:src/components/PageHeaderRibbonMedia.tsx) via `<picture>`:
+
+| Viewport | Criteria | Asset |
+|----------|----------|--------|
+| ≤ **767px** | Mobile | `HEADER_RIBBON.mobile` (1200×720) |
+| **768–1023px** | Tablet | `HEADER_RIBBON.tablet` (1600×560) |
+| ≥ **1024px** | Desktop | `srcset`: `2100w` (desktop) + `3360w` (retina); `sizes="46rem"` — rendered width is band height × 21∶5, **not** `100vw` |
+| Fallback `<img>` | No match / older clients | Prefer `desktopRetina` (3360×800) |
+
+**Do not** invent new paths or hardcode `/images/default_placeholder_hero_image.jpeg` for these public shells.
+
+## **Where the ribbon is rendered**
+
+Shell pattern on each page:
+
+```tsx
+<section className="mh-events-hero" aria-label="…">
+  <PageHeaderRibbonMedia />
+  <div className="mh-events-hero-scrim" aria-hidden="true" />
+  <div className="mh-events-hero-content">
+    {/* kicker, h1, lede */}
+  </div>
+</section>
+```
+
+**Pages that use this ribbon:**
+
+- [`src/app/events/page.tsx`](mdc:src/app/events/page.tsx) — `/events`
+- [`src/app/gallery/page.tsx`](mdc:src/app/gallery/page.tsx) — `/gallery`
+- [`src/app/team/page.tsx`](mdc:src/app/team/page.tsx) — `/team`
+- [`src/app/sponsors/page.tsx`](mdc:src/app/sponsors/page.tsx) — `/sponsors`
+- [`src/app/sponsors/[id]/page.tsx`](mdc:src/app/sponsors/[id]/page.tsx) — sponsor detail shell
+- [`src/app/calendar/page.tsx`](mdc:src/app/calendar/page.tsx) — `/calendar`
+- [`src/app/polls/page.tsx`](mdc:src/app/polls/page.tsx) — `/polls`
+- [`src/app/profile/page.tsx`](mdc:src/app/profile/page.tsx) — `/profile`
+
+**Out of scope (do not replace with this ribbon):**
+
+- Homepage hero (`HeroSection` / homepage-only media)
+- Event detail flyer (`mh-event-detail-hero` on `/events/[id]`) — may use event media; fallback only may use `DEFAULT_HEADER_RIBBON_IMAGE`
+- Checkout / tickets / success / QR flows (event-specific heroes)
+
+### **Adding the ribbon to a glass-card page (e.g. `/profile`)**
+
+Pages built on the `SubpageHomeDesign` glass-card shell render their own centered
+`<h1>` and reserve `paddingTop: 120px` to clear the fixed header. The ribbon
+already carries the title and its own top margin clearing the fixed header, so
+when you add it:
+
+- Render `<section className="mh-events-hero">` **before** the content component,
+  as a sibling — it does not need a `<main className="mh-events-page">` wrapper
+  (the CSS is scoped to `body.modernist-home`, not the page class).
+- Suppress the component's own heading and drop its header clearance. On
+  [`ProfilePageWithLoading`](mdc:src/components/ProfilePageWithLoading.tsx) this is
+  the `hidePageHeader` prop: it returns `null` for the header block and uses
+  `paddingTop: 2.5rem` instead of `120px`.
+- `.mh-events-hero` sets `flex: 0 0 auto` so the band keeps its height when it is
+  a direct child of a flex column (ConditionalLayout wraps children in
+  `flex-1 flex flex-col`).
+
+## **Layout criteria (matched-canvas ribbon)**
+
+Styles in [`src/styles/modernist-homepage.css`](mdc:src/styles/modernist-homepage.css) under `.mh-events-hero`.
+
+### The key property of these assets
+
+Every ribbon JPG is a **flat `#f2e7d5` cream canvas with the KCNJ motif (palms, houseboat, Statue of Liberty, NJ map, wordmark) anchored to the right edge**. The left ~70% carries no artwork at all.
+
+That changes the containment problem. Stretching the file across a short, wide band — `object-fit: cover` — crops the motif top and bottom (you see only the tops of the palm leaves). `object-fit: contain` shows it whole but letterboxes the sides.
+
+### The technique: match the canvas, size by height
+
+Paint the band in the artwork's own cream, then size the image by **height only** and pin it **right**. The motif always renders at full height, and the empty cream to its left is indistinguishable from the band backdrop — so the ribbon still reads edge-to-edge at any width, 320px through 6K.
+
+| Concern | Technique |
+|---------|-----------|
+| Motif never cropped | `height: 100%; width: auto` — the image keeps its natural ratio at band height |
+| No visible letterbox | `.mh-events-hero` + `.mh-events-hero-media` background = `--mh-ribbon-canvas` (**must equal the JPG canvas colour**) |
+| Motif stays on the right | `.mh-events-hero-picture` is `position: absolute; right: 0; left: auto` |
+| Minimal height | `height: clamp(7rem, 9vw, 11rem)` — rem cap, never `vh` (huge on 6K) |
+| Gap under header | `margin-top: calc(var(--header-bar-height) + var(--mh-ribbon-header-gap))`; gap is `0.75rem`, `1.25rem` under 768px |
+| No seam where the JPG starts | Left-edge `mask-image: linear-gradient(to right, transparent 0%, #000 22%)` on the image, and **no scrim** |
+| Text legibility | Dark text on the cream band: `--mh-brand-green` h1, `--mh-text` kicker/lede — no wash needed |
+| Heading vs motif collision | `padding-right` on `.mh-events-hero-content` below 1280px (motif ≈ 1.1 × band height) |
+
+```css
+/* ✅ Matched canvas, height-anchored, right-pinned */
+.mh-events-hero {
+  --mh-ribbon-header-gap: 0.75rem;
+  width: 100%;
+  margin-top: calc(var(--header-bar-height) + var(--mh-ribbon-header-gap));
+  height: clamp(7rem, 9vw, 11rem);
+  background: var(--mh-ribbon-canvas, #f2e7d5);
+  overflow: hidden;
+}
+.mh-events-hero-media { background: var(--mh-ribbon-canvas, #f2e7d5); }
+.mh-events-hero-picture {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: auto;
+  width: auto; height: 100%;
+}
+.mh-events-hero-ribbon-img {
+  height: 100% !important;
+  width: auto !important;
+  max-width: none !important;
+  object-fit: contain !important;
+  object-position: right center !important;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 22%);
+  mask-image: linear-gradient(to right, transparent 0%, #000 22%);
+}
+.mh-events-hero-scrim { background: none; }  /* kept in markup, paints nothing */
+```
+
+```css
+/* ❌ DON'T */
+object-fit: cover;          /* crops the palms/houseboat top and bottom */
+object-position: top center;/* hides the wordmark at the motif's base */
+width: 100%; height: 100%;  /* forces the canvas to stretch — same crop */
+height: min(..., 42vh);     /* enormous band on 6K */
+aspect-ratio + max-height;  /* shrinks width into a centered card */
+background: #1a1816;        /* dark band exposes the image edge as a hard seam */
+/* Partial-width cream wash — the gradient's end stop lands mid-band and reads
+   as a smear/seam just left of the motif. This is why the scrim was dropped. */
+background: linear-gradient(to right, …70%, transparent 72%);
+```
+
+**Why overflow is safe:** on narrow viewports the image's natural width (band height × ratio) can exceed the viewport. Since it's right-pinned inside `overflow: hidden`, the only thing clipped is blank cream on the left.
+
+### Two ways a seam appears (both fixed, don't reintroduce them)
+
+1. **Colour drift** — `--mh-ribbon-canvas` must equal the JPG canvas exactly. All four current assets sample `#F2E7D5` at every blank point. Re-sample if you swap artwork.
+2. **Anything that paints only part of the band** — a gradient scrim ending at e.g. `72%` creates a visible vertical boundary in the flat cream. Even with a perfect colour match, JPEG block noise in the flat area can hint at the join, which is why the image also carries the left-edge mask fade. `22%` is safe: the motif never begins before ~62% in any asset.
+
+## **Adding a new public page ribbon**
+
+1. Import `PageHeaderRibbonMedia` — do not duplicate `<picture>` markup
+2. Use the `mh-events-hero` + scrim + content structure above
+3. Ensure page body classes include `modernist-home` (and `organic-home` if matching other public shells)
+4. If only a single URL is needed elsewhere, use `DEFAULT_HEADER_RIBBON_IMAGE` from `@/lib/headerRibbon`
+
+## **Replacing ribbon art**
+
+- Keep filenames/dimensions in the table above (or update **both** files on disk **and** [`headerRibbon.ts`](mdc:src/lib/headerRibbon.ts))
+- Export JPG (or same format as existing) optimized for each breakpoint
+- Keep the **flat canvas + right-anchored motif** composition, and re-sample the canvas colour into `--mh-ribbon-canvas`
+- After changing assets, hard-refresh; verify on a wide monitor (≥2560px / 6K) that the motif is uncropped and no seam shows on the left

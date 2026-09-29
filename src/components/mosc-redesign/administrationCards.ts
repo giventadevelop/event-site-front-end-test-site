@@ -51,9 +51,18 @@ export const ADMINISTRATION_PAGE_CARDS: AdministrationCard[] = [
     title: 'The Managing Committee',
     excerpt:
       'In the Mulamthuruthy synod which formulated the Malankara association had laid down the provision for the managing committee, a smaller body to look into the financial and other administrative matters....',
-    href: '/mosc-redesign/administration/the-managing-committee',
+    href: '/mosc-redesign/administration/the-managing-committee-cms',
     image: '/images/administration/managing-committee.jpg',
     imageAlt: 'The Managing Committee',
+  },
+  {
+    shortTitle: 'Current Managing Committee',
+    title: 'Current Managing Committee',
+    excerpt:
+      'Photo roster of the current Managing Committee — office bearers, metropolitans, and elected representatives for the Association term.',
+    href: '/mosc-redesign/administration/managing-committee-members',
+    image: '/images/administration/managing-committee.jpg',
+    imageAlt: 'Current Managing Committee',
   },
   {
     shortTitle: 'Working Committee',

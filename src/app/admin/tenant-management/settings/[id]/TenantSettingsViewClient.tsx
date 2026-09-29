@@ -3,18 +3,30 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname, useRouter } from 'next/navigation';
 import { FaCog, FaCode, FaImage } from 'react-icons/fa';
 import { TenantSettingsDTO, TenantOrganizationDTO } from '@/app/admin/tenant-management/types';
 import TenantDefaultHeroView from '@/app/admin/tenant-management/components/TenantDefaultHeroView';
+import { tenantSettingsTabQuery, type TenantSettingsTab } from '@/lib/tenantSettingsTabs';
 
 interface TenantSettingsViewClientProps {
   settings: TenantSettingsDTO;
   settingsId: number;
   organization?: TenantOrganizationDTO | null;
+  initialTab?: TenantSettingsTab;
 }
 
-export default function TenantSettingsViewClient({ settings, settingsId, organization }: TenantSettingsViewClientProps) {
-  const [activeTab, setActiveTab] = useState<'general' | 'integrations' | 'limits' | 'homepageHero' | 'customization'>('general');
+export default function TenantSettingsViewClient({ settings, settingsId, organization, initialTab = 'general' }: TenantSettingsViewClientProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [activeTab, setActiveTab] = useState<TenantSettingsTab>(initialTab);
+  const [logoUrlCopyFeedback, setLogoUrlCopyFeedback] = useState<string | null>(null);
+
+  const selectTab = (tab: TenantSettingsTab) => {
+    setActiveTab(tab);
+    if (!pathname) return;
+    router.replace(`${pathname}${tenantSettingsTabQuery(tab)}`, { scroll: false });
+  };
 
   // Tab navigation with colorful icons
   const tabs = [
@@ -96,7 +108,7 @@ export default function TenantSettingsViewClient({ settings, settingsId, organiz
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => selectTab(tab.id)}
                 className={`py-2.5 px-3 sm:px-4 border-2 font-semibold text-sm sm:text-base flex items-center gap-2 sm:gap-3 rounded-lg transition-all duration-300 flex-[1_1_calc(50%-0.25rem)] md:flex-[1_1_calc(33.333%-0.34rem)] min-w-[10rem] max-w-full ${
                   isActive ? colors.active : colors.inactive
                 }`}
@@ -643,7 +655,47 @@ export default function TenantSettingsViewClient({ settings, settingsId, organiz
 
           {/* Tenant Logo */}
           <div className="border-t border-gray-200 pt-6">
-            <h4 className="text-md font-medium text-gray-900 mb-4">Tenant Logo</h4>
+            <h4 className="text-md font-medium text-gray-900 mb-2">Tenant Logo</h4>
+            <p className="text-sm text-gray-600 mb-3">
+              Copy this URL for satellite domain branding or other apps. It updates when you upload or remove the logo.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2 sm:items-stretch mb-4">
+              <input
+                type="text"
+                readOnly
+                value={settings?.logoImageUrl || ''}
+                placeholder="No logo URL yet — upload an image on the edit page"
+                className="flex-1 min-w-0 text-xs sm:text-sm font-mono border border-gray-300 rounded-lg px-3 py-2.5 bg-gray-50 text-gray-800"
+                title={settings?.logoImageUrl || undefined}
+                aria-label="Current tenant logo URL"
+              />
+              <button
+                type="button"
+                disabled={!settings?.logoImageUrl?.trim()}
+                onClick={async () => {
+                  if (!settings?.logoImageUrl?.trim()) return;
+                  try {
+                    await navigator.clipboard.writeText(settings.logoImageUrl.trim());
+                    setLogoUrlCopyFeedback('Copied to clipboard');
+                    setTimeout(() => setLogoUrlCopyFeedback(null), 2500);
+                  } catch {
+                    setLogoUrlCopyFeedback('Could not copy');
+                    setTimeout(() => setLogoUrlCopyFeedback(null), 2500);
+                  }
+                }}
+                className="flex-shrink-0 h-11 sm:h-auto sm:min-w-[7rem] px-4 rounded-xl bg-blue-100 hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105"
+                title="Copy logo URL"
+                aria-label="Copy logo URL"
+              >
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <span className="font-semibold text-blue-700">Copy URL</span>
+              </button>
+            </div>
+            {logoUrlCopyFeedback && (
+              <p className="text-xs text-green-700 font-medium mb-3">{logoUrlCopyFeedback}</p>
+            )}
             {settings?.logoImageUrl ? (
               <div className="relative inline-block">
                 <Image

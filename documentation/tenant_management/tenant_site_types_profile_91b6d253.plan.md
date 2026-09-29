@@ -27,7 +27,7 @@ isProject: false
 
 ## Executive summary
 
-The application is **multi-tenant by `tenant_id`** but has **no first-class `siteType` / `tenantType`**. Differentiation today is **implicit**: homepage section toggles in [`tenant_settings`](code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql), sports/music rosters via [`team_groups.team_type`](code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql) (`SPORTS` | `MUSIC` | `OTHER`), leadership via [`executive_committee_team_members`](code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql), and alternate UIs by **route** (`/mosc`, `/charity-theme`)—not by stored tenant archetype.
+The application is **multi-tenant by `tenant_id`** but has **no first-class `siteType` / `tenantType`**. Differentiation today is **implicit**: homepage section toggles in [`tenant_settings`](code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql), sports/music rosters via [`team_groups.team_type`](code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql) (`SPORTS` | `MUSIC` | `OTHER`), leadership via [`executive_committee_team_members`](code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql), and alternate UIs by **route** (`/mosc`, `/charity-theme`)—not by stored tenant archetype.
 
 **Personal profile websites are not supported as a product archetype.** Reusable pieces exist (bios, social URLs on committee/team rows; `news_article` with `author_id`; org documents) but there is no public portfolio model, achievements, personal downloads, or profile-themed homepage.
 
@@ -92,7 +92,7 @@ flowchart TB
 | **Homepage template** | Event-centric hero, events, sponsors | No writer/portfolio layout preset |
 | **Admin** | Tenant settings, events, teams | No profile CMS module |
 
-**Closest pattern to copy**: [`executive_committee_team_members`](code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql) (bio, image, linkedin/twitter/website) — but it is **multi-person org roster**, not a **single-subject portfolio site**.
+**Closest pattern to copy**: [`executive_committee_team_members`](code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql) (bio, image, linkedin/twitter/website) — but it is **multi-person org roster**, not a **single-subject portfolio site**.
 
 ---
 
@@ -199,7 +199,7 @@ Add booleans (mirror existing pattern in [`documentation/HOMEPAGE_CONDITIONAL_SE
 
 ## Backend changes (`event-site-manager-service`)
 
-This repo’s DDL lives in [`code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql`](code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql); **runtime API is the sibling Rust/Spring service** (not in `mosc-temp`).
+This repo’s DDL lives in [`code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql`](code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql); **runtime API is the sibling Rust/Spring service** (not in `mosc-temp`).
 
 Per existing layered PRD pattern ([`documentation/team_member/generic_prd.html`](documentation/team_member/generic_prd.html)):
 

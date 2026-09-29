@@ -103,7 +103,7 @@ plus `'GAS_STATION'` added to `TenantSiteType` in [`src/types/profileSite.ts`](.
 
 ## 4. Database changes
 
-Full DDL: [`migrations/001_gas_station_site.sql`](migrations/001_gas_station_site.sql). Written against `code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql`; it composes with (and does not require) the in-flight personal-profile migration `001_personal_profile_site.sql` — both add `site_type` idempotently, and this one recreates the CHECK with the superset enum. Fold into the canonical `Latest_Schema_Post__Blob_Claude_12.sql` once approved, as was done for other modules.
+Full DDL: [`migrations/001_gas_station_site.sql`](migrations/001_gas_station_site.sql). Written against `code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql`; it composes with (and does not require) the in-flight personal-profile migration `001_personal_profile_site.sql` — both add `site_type` idempotently, and this one recreates the CHECK with the superset enum. Fold into the canonical `Event_Site_Manager_Latest_Schema.sql` once approved, as was done for other modules.
 
 ### 4.1 Existing tables — altered
 

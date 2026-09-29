@@ -67,7 +67,7 @@ node renumber_sql_insert_ids.cjs --batch-executions=3 --batch-logs=3
 
 ### Step 4 — Import
 
-Apply schema first: [Latest_Schema_Post__Blob_Claude_12.sql](mdc:code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql), then ordered or renumbered INSERT file.
+Apply schema first: [Event_Site_Manager_Latest_Schema.sql](mdc:code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql), then ordered or renumbered INSERT file.
 
 ### Step 5 — Sync sequences (mandatory on every machine that imported data)
 
@@ -121,7 +121,7 @@ All application domain entities use per-table `sequenceName` and `allocationSize
 
 When adding tables, run `generate_per_table_sequences.cjs` and update:
 
-1. `CREATE SEQUENCE public.{table}_id_seq` + column default in `Latest_Schema_Post__Blob_Claude_12.sql`
+1. `CREATE SEQUENCE public.{table}_id_seq` + column default in `Event_Site_Manager_Latest_Schema.sql`
 2. `sync_all_table_sequences.sql` table list (or regenerate via script)
 3. Java entity with unique `@SequenceGenerator` matching `{table}_id_seq`
 
@@ -197,7 +197,7 @@ After sync, each `{table}_id_seq.last_value` should be ≥ `MAX(id)` for that ta
 
 ## Checklist (new environment)
 
-- [ ] Schema applied from `Latest_Schema_Post__Blob_Claude_12.sql` (per-table `*_id_seq`)
+- [ ] Schema applied from `Event_Site_Manager_Latest_Schema.sql` (per-table `*_id_seq`)
 - [ ] INSERT file imported (ordered or renumbered)
 - [ ] `sync_all_table_sequences.sql` executed on **this** database
 - [ ] `sync_spring_batch_sequences.sql` executed if batch tables have rows

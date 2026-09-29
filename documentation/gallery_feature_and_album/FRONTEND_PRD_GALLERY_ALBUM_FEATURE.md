@@ -1102,7 +1102,7 @@ All functionality can be implemented using existing dependencies.
 ## 15. References
 
 - **Backend PRD**: `documentation/gallery_feature_and_album/BACKEND_PRD_GALLERY_ALBUM_FEATURE.md`
-- **Database Schema**: `code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql`
+- **Database Schema**: `code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql`
 - **API Documentation**: `documentation/Swagger_API_Docs/api-docs.json`
 - **UI Style Guide**: `shared-cursor-rules/ui_style_guide.mdc`
 - **Media Gallery Grid Style**: `.cursor/rules/media_gallery_grid_style.mdc`

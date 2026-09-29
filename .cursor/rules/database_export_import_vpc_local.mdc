@@ -1,170 +1,317 @@
 ---
-description: Local Docker PostgreSQL import only — schema rebuild, pre-built SQL import, sequence sync (no export, no VPC/RDS)
-globs: documentation/database_export_import/**/*, code_html_template/batch_files/database_export_import_refresh.bat, code_html_template/SQLS/**/*
+description: PostgreSQL export/import via database_export_import_refresh.bat — local Docker, VPC dev RDS, and VPC prod RDS (event_site_manager_db)
+globs: SQLS/**/*, batch/database_export_import_refresh.bat, scripts/sql_export_import_guardrails.cjs, documentation/DATABASE_EXPORT_IMPORT_GUIDE.html
 alwaysApply: false
 ---
 
-# Local Database Import (Docker Only)
+# Database Export, Reorder, and Import (Local + VPC Dev/Prod)
 
 ## **Overview**
 
-Use **`database_export_import_refresh.bat`** with **`/SKIP-EXPORT`** to import **pre-built SQL** into **local Docker Postgres** (`event_site_manager_db`). This rule covers **import only** — no `pg_dump`, no reorder/PROD pipeline, and **no VPC/RDS** (`/REMOTE`).
+Use the **`database_export_import_refresh.bat`** workflow to export `event_site_manager_db` from **local Docker Postgres**, prepare ordered INSERT SQL (with optional production Clerk user IDs), then apply **schema rebuild + data import + sequence sync** to:
 
-**Typical use:** Refresh a dev machine from committed SQL under `code_html_template/SQLS/` after someone else exported and prepared the files (or you already ran export once).
+- **Local Docker** (dev Clerk IDs, renumbered PKs)
+- **VPC dev RDS** (`event-site-manager-dev-postgres...`, via `mosc-temp\.env.local`)
+- **VPC prod RDS** (`event-site-manager-prod-postgres...`, credentials from AWS Secrets Manager)
 
-**Not in scope here:** Export/reorder (see [sequence_id_alignment_and_import.mdc](mdc:.cursor/rules/sequence_id_alignment_and_import.mdc)), VPC dev/prod RDS (`/REMOTE`), or liturgical **readings** (Strapi, not Postgres).
+**Canonical project:** `F:\project_workspace\event-site-manager-database` ([giventadeveloporg/event-site-manager-database](https://github.com/giventadeveloporg/event-site-manager-database)). Schema, export/import SQL, guardrails, the refresh batch, and the HTML runbook live there. Remote RDS credentials still come from `mosc-temp\.env.local`. Spring Batch sequence SQL still lives in `event-site-manager-service`.
+
+**Not in scope:** Liturgical calendar **readings** (`liturgy-days`) are in **Strapi**, not this Postgres export. Postgres includes `event_calendar_entry`, `official_document_category` (e.g. Panjangom/calendars), and the rest of `event_site_manager_db`.
+
+---
+
+## **Documentation and batch file locations**
+
+| Location | Path |
+|----------|------|
+| **Source of truth (project)** | `F:\project_workspace\event-site-manager-database` |
+| **HTML runbook** | `event-site-manager-database/documentation/DATABASE_EXPORT_IMPORT_GUIDE.html` |
+| **Sequence guide** | `event-site-manager-database/documentation/SEQUENCE_ID_ALIGNMENT_GUIDE.html` |
+| **Refresh batch** | `event-site-manager-database/batch/database_export_import_refresh.bat` |
+| **SQL + schema** | `event-site-manager-database/SQLS/` |
+| **Guardrails script** | `event-site-manager-database/scripts/sql_export_import_guardrails.cjs` |
+| **Remote credentials** | `mosc-temp\.env.local` (gitignored; not stored in the database repo) |
+
+Related: `event-site-manager-database/documentation/SEQUENCE_ID_ALIGNMENT_GUIDE.html`, and `application-deployments/documentation/aws-infrastructure/aws-environment-deployment-guide.html` (RDS hostnames).
 
 ---
 
 ## **Prerequisites**
 
-- **Docker Desktop** running with local Postgres (e.g. `event_site_manager_db-postgresql-1`)
-- **DB user/database:** `event_site_admin` / `event_site_manager_db` (batch defaults)
-- **Pre-built import SQL** already in repo:
-  - **Default (local):** `code_html_template/SQLS/sequence_fix_inserts/corrected_event_media_inserts.renumbered.sql`
-  - **Fallback:** `code_html_template/SQLS/corrected_event_media_inserts.ordered.sql` (if renumbered file missing)
-- **`WORKSPACE_ROOT`** = parent folder that contains **`mosc-temp`** (e.g. `F:\project_workspace` or `C:\project_workspace`)
-- **Node.js** not required for import-only (`/SKIP-EXPORT` skips reorder scripts)
+- **Docker Desktop** running with local Postgres container (e.g. `event_site_manager_db-postgresql-1`, user `event_site_admin`, DB `event_site_manager_db`)
+- **Node.js** on `PATH` (reorder + PROD user-ID scripts)
+- **`WORKSPACE_ROOT`** = parent folder containing **`event-site-manager-database`**, **`mosc-temp`**, and **`event-site-manager-service`** (typically `F:\project_workspace`)
+- **Remote dev:** `mosc-temp\.env.local` with `RDS_ENDPOINT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` (dev RDS host)
+- **Remote prod:** temporarily point remote config at prod RDS (see **Prod RDS** below) or use `database_target.local.env` fallback when `.env.local` is absent
+- **`psql`** on PATH **or** Docker (batch uses `postgres:16` image for remote `/REMOTE` steps)
 
 ---
 
 ## **⚠️ Destructive operation**
 
-Without **`/DATA-ONLY`**, steps **5–7** **drop and recreate schema**, import all data, and reset sequences on **local Docker**. Confirm the container ID before running.
+Steps **5–7** **drop and recreate schema**, import all data, and reset sequences on the **target** database. Always confirm you are targeting the correct environment.
 
-| Prompt | When |
-|--------|------|
-| Type **`Y`** or **`YES`** | Default confirmation (skipped with `/FORCE`) |
-| **`/DATA-ONLY`** | Skips schema rebuild; import + sequences only |
-
----
-
-## **Standard local import (skip export)**
-
-Replace `CONTAINER_ID` with output of `docker ps` (Postgres container), or omit it for auto-detect.
-
-### **Full schema rebuild + import + sequence sync**
-
-```powershell
-F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace CONTAINER_ID /SKIP-EXPORT /FORCE
-```
-
-**What runs:** Step 0 (container) → skip 1–4 → **5** schema → **6** import renumbered SQL → **7** + **7b** sequence sync.
-
-### **Auto-detect container**
-
-```powershell
-F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace /SKIP-EXPORT /FORCE
-```
+| Target | Confirmation prompt |
+|--------|---------------------|
+| Local Docker | Type `Y` or `YES` (skipped with `/FORCE`) |
+| `/REMOTE` (dev or prod RDS) | Type **`PRODUCTION`** (required even with `/FORCE`) |
 
 ---
 
-## **Import file selection**
+## **Standard three-target workflow (verified June 2026)**
 
-| Flag / condition | Import file |
-|------------------|-------------|
-| Default (local, no `/PROD`) | `sequence_fix_inserts/corrected_event_media_inserts.renumbered.sql` |
-| Renumbered missing | `corrected_event_media_inserts.ordered.sql` (warns: may include 600k+ IDs) |
-| `/PROD` | `corrected_event_media_inserts.ordered_PROD.sql` (production Clerk user IDs — usually **not** for local dev) |
-| `/IMPORT-FILE "path"` | Custom SQL (strict `ON_ERROR_STOP=1`) |
+Replace `CONTAINER_ID` with `docker ps` Postgres container ID (e.g. `143972c3c40c`).
 
-**Custom file example:**
+### **1. Local Docker — full export + import**
+
+Runs steps 0–7: `pg_dump` → reorder → PROD SQL copy → patch → schema → import (renumbered dev file) → sequence sync.
 
 ```powershell
-F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace CONTAINER_ID /SKIP-EXPORT /IMPORT-FILE "F:\project_workspace\mosc-temp\code_html_template\SQLS\sequence_fix_inserts\corrected_event_media_inserts.renumbered.sql" /FORCE
+F:\project_workspace\event-site-manager-database\batch\database_export_import_refresh.bat F:\project_workspace CONTAINER_ID /FORCE
 ```
+
+**Import file (local, no `/PROD`):** `event-site-manager-database\SQLS\sequence_fix_inserts\corrected_event_media_inserts.renumbered.sql` (low local IDs).
+
+### **2. VPC dev RDS — reuse prepared SQL**
+
+Requires `mosc-temp\.env.local` → **dev** host (`event-site-manager-dev-postgres.cwffi3ch4r75.us-east-1.rds.amazonaws.com`).
+
+`/REMOTE` auto-enables `/PROD` → imports `corrected_event_media_inserts.ordered_PROD.sql`.
+
+```powershell
+cmd /c "echo PRODUCTION| F:\project_workspace\event-site-manager-database\batch\database_export_import_refresh.bat F:\project_workspace /SKIP-EXPORT /REMOTE /FORCE"
+```
+
+### **3. VPC prod RDS — reuse prepared SQL**
+
+`.env.local` normally points at **dev**. For **prod**, temporarily swap RDS settings, run import, **restore dev settings**.
+
+```powershell
+# 1) Backup .env.local
+Copy-Item F:\project_workspace\mosc-temp\.env.local F:\project_workspace\mosc-temp\.env.local.dev-backup-import -Force
+
+# 2) Set prod RDS_ENDPOINT / DB_* from Secrets Manager (do not commit passwords)
+$secretJson = aws secretsmanager get-secret-value --secret-id "event-site-manager/prod/rds/postgres" --region us-east-1 --query SecretString --output text | ConvertFrom-Json
+# Update RDS_ENDPOINT, DB_USERNAME, DB_PASSWORD, DB_NAME in .env.local (PowerShell line replace)
+
+# 3) Import
+cmd /c "echo PRODUCTION| F:\project_workspace\event-site-manager-database\batch\database_export_import_refresh.bat F:\project_workspace /SKIP-EXPORT /REMOTE /FORCE"
+
+# 4) Restore dev .env.local
+Copy-Item F:\project_workspace\mosc-temp\.env.local.dev-backup-import F:\project_workspace\mosc-temp\.env.local -Force
+Remove-Item F:\project_workspace\mosc-temp\.env.local.dev-backup-import -Force
+```
+
+**Alternative:** Rename `.env.local` temporarily and create `event-site-manager-database/batch/database_target.local.env` from `batch/database_target.local.env.example` with the prod host (the batch reads that fallback only when `.env.local` is missing).
 
 ---
 
-## **Other local-only flags**
+## **Batch flags reference**
 
 | Flag | Purpose |
 |------|---------|
-| `/SKIP-EXPORT` | **Required** for import-only — reuse existing ordered/renumbered SQL |
-| `/FORCE` | Skip local `Y/YES` confirmation |
-| `/SCHEMA-ONLY` | Apply schema only (no import/sync) |
+| `WORKSPACE_ROOT` | Required — e.g. `F:\project_workspace` |
+| `CONTAINER_ID` | Local Docker Postgres for export (auto-detect if omitted) |
+| `/FORCE` | Skip local `Y/YES` prompt (does **not** skip remote `PRODUCTION`) |
+| `/PROD` | Import `corrected_event_media_inserts.ordered_PROD.sql` |
+| `/SKIP-EXPORT` | Skip steps 1–4; reuse existing `export.sql` / ordered / PROD files |
+| `/REMOTE` | Steps 5–7 on RDS from `.env.local` (auto `/PROD`) |
+| `/SCHEMA-ONLY` | Schema apply only (step 5) |
 | `/DATA-ONLY` | Skip schema rebuild; import + sequences only |
-| `/IMPORT-FILE "path"` | Override default import SQL |
-| `/REGEN-MOSC` | Regenerate `mosc_malankara_orthodox_2` tenant SQL before import |
-| `/IMPORT-DUP-ONLY` | Fast MOSC tenant refresh via `mosc_dup_only.sql` (use with `/DATA-ONLY`) |
+| `/IMPORT-FILE "path"` | Custom SQL import (strict `ON_ERROR_STOP=1`) |
+| `/REGEN-MOSC` | Regenerate `mosc_malankara_orthodox_2` tenant SQL |
+| `/IMPORT-DUP-ONLY` | Fast MOSC tenant refresh via `mosc_dup_only.sql` |
+| `/SKIP-GUARDRAILS` | Emergency only — skip size/table/schema-sync checks |
 
 Help: `database_export_import_refresh.bat --help`
 
-**Do not use for this rule:** `/REMOTE` (VPC RDS), export without `/SKIP-EXPORT` when you only want import.
-
 ---
 
-## **Pipeline steps (import-only path)**
+## **SQL guardrails (required — stop bad imports)**
 
-| Step | Action | Skipped with `/SKIP-EXPORT`? |
-|------|--------|------------------------------|
-| 0 | Resolve Docker Postgres container | No |
-| 1 | `pg_dump` export | **Yes** |
-| 2 | Reorder INSERTs | **Yes** |
-| 3 | PROD user ID copy | **Yes** |
-| 4 | Comment `pg_dump` header lines | **Yes** |
-| 5 | Apply `Latest_Schema_Post__Blob_Claude_12.sql` | No (unless `/DATA-ONLY`) |
-| 6 | Import ordered / renumbered / custom SQL | No |
-| 7 | `sync_all_table_sequences.sql` + Spring Batch sync | No |
+**Why:** A lagging `Event_Site_Manager_Latest_Schema.sql` (e.g. missing `show_header_*`) still “succeeded” overall while every `tenant_settings` INSERT failed → **0 rows**. Guardrails fail the batch **before** schema/data apply when dumps are too small, critical tables are under-count, or INSERT columns are missing from the canonical schema.
 
----
+### **Where it lives (`event-site-manager-database`)**
 
-## **MOSC tenant-only (local)**
+| Artifact | Path |
+|----------|------|
+| Validator + backup rotation | `event-site-manager-database/scripts/sql_export_import_guardrails.cjs` |
+| Baseline mins / tracked tables | `event-site-manager-database/SQLS/guardrails/sql_export_import_guardrails.manifest.json` |
+| Rotating backups (keep 5, gitignored) | `event-site-manager-database/SQLS/guardrails/backups/` |
+
+**CMD note:** `:run_guardrails` must not use nested `if A if B (...) else (...)` — CMD binds `else` to the **inner** `if`, which previously skipped `node` for `backup` / `post-export` / `post-prepare` while still logging OK. Use a top-level `if pre-import ( ... ) else ( node %GR_PHASE% ... )` instead.
+
+### **When the batch runs checks**
+
+| Phase | When | What |
+|-------|------|------|
+| `backup` | Before `pg_dump` overwrites files (not on `/SKIP-EXPORT`) | Copy `export.sql`, ordered, renumbered, PROD, **and** `Event_Site_Manager_Latest_Schema.sql` → `guardrails/backups/`; keep **5** newest per basename, delete older |
+| `post-export` | After step 1 | Size / INSERT count / critical tables / conflict markers on `export.sql` |
+| `post-prepare` | After step 3 (or `/SKIP-EXPORT` path) | Same for ordered + renumbered + PROD |
+| `pre-import` | **Before** confirm + step 5 schema apply | Re-validate dumps + **schema column sync** (`INSERT` cols ⊆ `CREATE TABLE` for `tenant_settings`, `tenant_organization`, `event_details`, `user_profile`) |
+
+Any **FAIL** stops the batch. Fix SQL/schema, restore from `guardrails/backups/`, or regenerate without `/SKIP-EXPORT`. Use `/SKIP-GUARDRAILS` only as an emergency.
+
+### **Manual commands**
 
 ```powershell
-# Full MOSC tenant block
-F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace CONTAINER_ID /REGEN-MOSC /SKIP-EXPORT /IMPORT-FILE "F:\project_workspace\mosc-temp\code_html_template\SQLS\corrected_event_media_inserts.ordered.mosc_malankara_orthodox_2.sql" /FORCE
+cd F:\project_workspace\event-site-manager-database
+node scripts\sql_export_import_guardrails.cjs backup
+node scripts\sql_export_import_guardrails.cjs post-export
+node scripts\sql_export_import_guardrails.cjs post-prepare
+node scripts\sql_export_import_guardrails.cjs pre-import --import-file "SQLS\sequence_fix_inserts\corrected_event_media_inserts.renumbered.sql"
 
-# Fast dup-only refresh (no schema rebuild)
-F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace CONTAINER_ID /REGEN-MOSC /SKIP-EXPORT /DATA-ONLY /IMPORT-DUP-ONLY /FORCE
+# After a known-good export that adds tables or grows critical row counts:
+node scripts\sql_export_import_guardrails.cjs update-manifest
 ```
 
-See §1c in [DATABASE_EXPORT_IMPORT_GUIDE.html](mdc:documentation/database_export_import/DATABASE_EXPORT_IMPORT_GUIDE.html).
+### **Critical / config tables**
+
+Manifest `criticalTables` (e.g. `tenant_settings`, `tenant_organization`, `event_type_details`, `membership_plan`, `event_agenda_item`, …) must meet **minimum INSERT counts**. Empty or truncated dumps fail here.
+
+### **Agenda / media image URLs (do not miss after re-upload)**
+
+Agenda thumbnails are **S3 URL strings** in Postgres (`event_agenda_item.image_url`, `event_media.file_url`) — **not** binary blobs in the SQL dump. `pg_dump` already exports them; a stale dump happens when you **export before re-uploading** images, then copy SQL to another machine.
+
+**Guardrails (required):**
+
+| Check | Where | Behavior |
+|-------|--------|----------|
+| `event_agenda_item` in `criticalTables` | post-export / post-prepare / pre-import | FAIL if too few agenda INSERTs |
+| `contentChecks.eventAgendaItemImageUrls` | same | FAIL if too few non-empty `image_url` values, or published rows missing URL |
+| `contentChecks.liveDockerCompare` | when batch passes `--docker-container` | FAIL if `export.sql` `id\|image_url` fingerprints ≠ live Docker DB |
+
+**Process:**
+
+1. Upload / change agenda images in admin UI.
+2. **Re-export** from local Docker (`database_export_import_refresh.bat` without `/SKIP-EXPORT`, or export-only then decline import).
+3. Only then copy/import SQL (`/SKIP-EXPORT` on another machine or `/REMOTE`).
+
+Do **not** ship an older `export.sql` / ordered / PROD file after media changes — live Docker compare will fail on the export machine if URLs drifted.
+
+### **All tracked tables (tightened)**
+
+- `failOnMissingTrackedTables: true` — every table in `trackedTables` must have **≥ 1 INSERT** or the run **FAILS** (not just a warning).
+- `schemaColumnSyncTables: ["*"]` — **every** table present in the export is checked: INSERT column list must be a subset of `CREATE TABLE` columns in `Event_Site_Manager_Latest_Schema.sql` (not limited to `tenant_settings`).
+
+### **New tables**
+
+- Tables present in `export.sql` but not in `trackedTables` → **WARN** (does not fail by default).
+- After confirming the export is good: run **`update-manifest`** to refresh `trackedTables` and critical mins, then commit the manifest.
+- Set `"failOnUnknownTables": true` in the manifest if you want unknown tables to fail hard.
+
+### **Canonical schema file**
+
+- **Active:** `event-site-manager-database/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql`
+- **Historical:** `Current_Sqls/archive/Latest_Schema_Post__Blob_Claude_*__yyyy-MM-dd_HHmmss.sql` (timestamped renames of prior versions)
+
+### **Canonical schema sync (best ongoing fix)**
+
+1. Ship Liquibase changelog in `event-site-manager-service`.
+2. **Same change set:** update `Event_Site_Manager_Latest_Schema.sql` (`CREATE TABLE` must include new columns — no lag).
+3. Export → guardrails → import. `pre-import` schema sync (`*`) catches the `show_header_*` class of bugs across all tables.
+
+### **DO / DON'T (guardrails)**
+
+- ✅ Treat `Event_Site_Manager_Latest_Schema.sql` as SoT for **import rebuilds**; keep it aligned with Liquibase
+- ✅ Commit manifest updates when critical row counts or table sets change intentionally
+- ✅ Use backups under `SQLS/guardrails/backups/` to recover a bad overwrite
+- ❌ Do not rely on batch “OVERALL SUCCESS” alone — insert errors can be non-fatal without guardrails
+- ❌ Do not habitually use `/SKIP-GUARDRAILS`
 
 ---
 
-## **Verification**
+## **Pipeline steps (summary)**
 
-```powershell
-docker exec CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -c "SELECT COUNT(*) FROM event_calendar_entry;"
-docker exec CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -c "SELECT MAX(id) FROM executive_committee_team_members; SELECT last_value FROM executive_committee_team_members_id_seq;"
+| Step | Action | Output / target |
+|------|--------|-----------------|
+| G | Guardrails `backup` / `post-export` / `post-prepare` / `pre-import` (+ agenda URL content + optional live Docker compare) | Fail fast if dumps/schema/media URLs invalid |
+| 0 | Resolve Docker container | Local export source |
+| 1 | `pg_dump --data-only --column-inserts` | `event-site-manager-database/SQLS/export.sql` |
+| 2 | `node reorder_sql_inserts_final.cjs` | `corrected_event_media_inserts.ordered.sql` |
+| 2b | `renumber_sql_insert_ids.cjs` + mojibake fix | `sequence_fix_inserts/corrected_event_media_inserts.renumbered.sql` |
+| 3 | `node scripts/replace-user-profile-ids-in-sql.mjs` | `corrected_event_media_inserts.ordered_PROD.sql` |
+| 4 | Comment `pg_dump` header lines in import file | Patched SQL |
+| 5 | Apply `Event_Site_Manager_Latest_Schema.sql` | Target DB schema |
+| 6 | Import ordered / PROD / custom SQL | Target DB data |
+| 7 | `sync_all_table_sequences.sql` + Spring Batch sync | Sequences |
+
+---
+
+## **Remote config keys (`mosc-temp\.env.local`)**
+
+```env
+RDS_ENDPOINT=event-site-manager-dev-postgres.cwffi3ch4r75.us-east-1.rds.amazonaws.com
+DB_NAME=event_site_manager_db
+DB_USERNAME=postgres
+DB_PASSWORD=<secret>
+# Optional: DB_PORT=5432, DB_SSLMODE=require
 ```
 
-After import, each `{table}_id_seq.last_value` should be ≥ `MAX(id)` for that table. Details: [sequence_id_alignment_and_import.mdc](mdc:.cursor/rules/sequence_id_alignment_and_import.mdc).
+Prod host: `event-site-manager-prod-postgres.cwffi3ch4r75.us-east-1.rds.amazonaws.com` (Secrets Manager: `event-site-manager/prod/rds/postgres`).
 
 ---
 
 ## **Logging**
 
+Save batch output for audits:
+
 ```powershell
-cmd /c "F:\project_workspace\mosc-temp\code_html_template\batch_files\database_export_import_refresh.bat F:\project_workspace CONTAINER_ID /SKIP-EXPORT /FORCE" 2>&1 | Tee-Object -FilePath "F:\project_workspace\mosc-temp\logs\db-import-local-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
+cmd /c "...database_export_import_refresh.bat ..." 2>&1 | Tee-Object -FilePath "F:\project_workspace\event-site-manager-database\logs\db-import-<target>-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
 ```
+
+---
+
+## **ECS / application redeploy**
+
+Database-only refresh **does not require ECS redeploy** — backend reads RDS directly. Redeploy ECS only when **application code or images** changed.
 
 ---
 
 ## **DO / DON'T**
 
 ### **DO:**
-- ✅ Use **`/SKIP-EXPORT`** when SQL files already exist in `code_html_template/SQLS/`
-- ✅ Prefer **renumbered** import for local dev (compact IDs, no 600k user_profile block)
-- ✅ Run **`/FORCE`** in scripts; type **`Y`/`YES`** when running interactively
-- ✅ Verify container ID with `docker ps` before destructive steps
-- ✅ Run sequence sync is automatic in step 7 — do not skip the batch after import
+- ✅ Use `WORKSPACE_ROOT=F:\project_workspace` so the batch finds `event-site-manager-database\SQLS`, `mosc-temp\.env.local`, and `event-site-manager-service`
+- ✅ Run **local export once**, then `/SKIP-EXPORT /REMOTE` for dev and prod
+- ✅ **Re-export after uploading or changing agenda/event media** before copying SQL or using `/SKIP-EXPORT`
+- ✅ Let guardrails run (do not use `/SKIP-GUARDRAILS` unless emergency)
+- ✅ Type **`PRODUCTION`** for any `/REMOTE` run
+- ✅ Restore `.env.local` to **dev** after prod import
+- ✅ After Liquibase column adds: update `Event_Site_Manager_Latest_Schema.sql` in the same change, then export/import
+- ✅ Verify calendar-related counts after local import if needed:
+  ```powershell
+  docker exec CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -c "SELECT COUNT(*) FROM event_calendar_entry;"
+  ```
 
 ### **DON'T:**
-- ❌ Use **`/REMOTE`** for local Docker (that targets VPC RDS — out of scope)
-- ❌ Commit logs or env files with passwords
-- ❌ Assume liturgical **readings** are in Postgres — they live in **Strapi**
-- ❌ Use **`/PROD`** for local dev unless you intentionally need production Clerk IDs
+- ❌ Commit `.env.local`, `database_target.local.env`, or logs with passwords
+- ❌ Run `/REMOTE` against prod without explicit intent and backup plan
+- ❌ Assume liturgical **readings** are included — they are in **Strapi**
+- ❌ Expect `/FORCE` to bypass remote **`PRODUCTION`** confirmation
+- ❌ Import when guardrails FAIL (fix schema/SQL or restore from `event-site-manager-database/SQLS/guardrails/backups/`)
+- ❌ Skip updating `Event_Site_Manager_Latest_Schema.sql` when Liquibase adds columns
+- ❌ Copy/import SQL after agenda image re-uploads **without** a fresh export (URLs in dump will be stale)
+
+---
+
+## **MOSC tenant-only paths**
+
+See §1c in `event-site-manager-database/documentation/DATABASE_EXPORT_IMPORT_GUIDE.html`:
+
+```powershell
+# Full MOSC tenant block
+... /REGEN-MOSC /SKIP-EXPORT /IMPORT-FILE "...\corrected_event_media_inserts.ordered.mosc_malankara_orthodox_2.sql" /FORCE
+
+# Fast dup-only refresh (no schema rebuild)
+... /REGEN-MOSC /SKIP-EXPORT /DATA-ONLY /IMPORT-DUP-ONLY /FORCE
+```
 
 ---
 
 ## **References**
 
-- Batch script: [code_html_template/batch_files/database_export_import_refresh.bat](mdc:code_html_template/batch_files/database_export_import_refresh.bat)
-- HTML runbook: [documentation/database_export_import/DATABASE_EXPORT_IMPORT_GUIDE.html](mdc:documentation/database_export_import/DATABASE_EXPORT_IMPORT_GUIDE.html)
-- Sequences / renumber pipeline: [sequence_id_alignment_and_import.mdc](mdc:.cursor/rules/sequence_id_alignment_and_import.mdc)
-- Schema DDL: [database_schema_guidelines.mdc](mdc:.cursor/rules/database_schema_guidelines.mdc)
-- Sequence HTML: [documentation/database_export_import/SEQUENCE_ID_ALIGNMENT_GUIDE.html](mdc:documentation/database_export_import/SEQUENCE_ID_ALIGNMENT_GUIDE.html)
-
-**VPC/RDS export and import:** Documented in `common_project_work` mirror at `documentation/database_export_import/` — not duplicated here.
+- Full HTML runbook: `event-site-manager-database/documentation/DATABASE_EXPORT_IMPORT_GUIDE.html`
+- Sequence alignment: `event-site-manager-database/documentation/SEQUENCE_ID_ALIGNMENT_GUIDE.html`
+- Reorder / pg_dump notes: `event-site-manager-database/documentation/INSERT_TABLE_BULK_SQL_REORDERING_AND_PG_DUMP_GUIDE.md`
+- Remote psql helper: `event-site-manager-database/batch/run_remote_psql.ps1`
+- AWS RDS inventory: `application-deployments/documentation/aws-infrastructure/aws-environment-deployment-guide.html`

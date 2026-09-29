@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FaSearch, FaMicrophone, FaAddressBook, FaHandshake, FaEnvelope, FaUserTie } from 'react-icons/fa';
+import { FaSearch, FaMicrophone, FaAddressBook, FaHandshake, FaEnvelope, FaUserTie, FaClock } from 'react-icons/fa';
 import { useAuth } from '@clerk/nextjs';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -599,9 +599,9 @@ export default function EventEmailsPage() {
         <div className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl shadow-lg p-6 w-full max-w-4xl">
           <div className="text-center mb-4">
             <h2 className="text-xl font-bold text-purple-800 mb-2">🎭 Event Management Features</h2>
-            <p className="text-sm text-purple-600">Manage performers, contacts, sponsors, emails, and program directors for this event</p>
+            <p className="text-sm text-purple-600">Manage performers, contacts, sponsors, emails, program directors, and agenda for this event</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <Link
               href={`/admin/events/${eventId}/performers`}
               className="flex flex-col items-center justify-center bg-pink-50 hover:bg-pink-100 text-pink-800 rounded-lg shadow-md p-4 text-xs transition-all group"
@@ -656,6 +656,17 @@ export default function EventEmailsPage() {
                 <FaUserTie className="w-10 h-10 text-indigo-500" />
               </div>
               <span className="font-semibold text-center leading-tight">Program Directors</span>
+            </Link>
+            <Link
+              href={`/admin/events/${eventId}/agenda`}
+              className="flex flex-col items-center justify-center bg-cyan-50 hover:bg-cyan-100 text-cyan-800 rounded-lg shadow-md p-4 text-xs transition-all group"
+              title="Event Day Agenda"
+              aria-label="Event Day Agenda"
+            >
+              <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-cyan-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
+                <FaClock className="w-10 h-10 text-cyan-500" />
+              </div>
+              <span className="font-semibold text-center leading-tight">Event Day Agenda</span>
             </Link>
           </div>
         </div>

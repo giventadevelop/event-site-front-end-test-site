@@ -61,20 +61,40 @@ export function useHeaderAuth({ isTenantAdmin, logPrefix = '[HeaderAuth]' }: Use
       return;
     }
 
-    if (!userId || !user) {
+    // Clear admin only when there is no Clerk userId.
+    if (!userId) {
       setIsAdmin(false);
+      return;
+    }
+
+    // Wait for useUser() without clearing — requiring `user` too early caused Admin menu flicker.
+    if (!user) {
+      setIsAdmin(!!isTenantAdmin);
       return;
     }
 
     let cancelled = false;
 
+    const applyAdminFallback = () => {
+      if (typeof isTenantAdmin === 'boolean') {
+        setIsAdmin(isTenantAdmin);
+        return;
+      }
+      const publicRole = user.publicMetadata?.role as string | undefined;
+      const orgRole = user.organizationMemberships?.[0]?.role;
+      setIsAdmin(
+        publicRole === 'admin' ||
+          publicRole === 'administrator' ||
+          orgRole === 'admin' ||
+          orgRole === 'org:admin'
+      );
+    };
+
     const checkAdminStatus = async (attempt = 1): Promise<void> => {
       try {
         const tenantId = process.env.NEXT_PUBLIC_TENANT_ID;
         if (!tenantId) {
-          if (!cancelled) {
-            setIsAdmin(typeof isTenantAdmin === 'boolean' ? isTenantAdmin : false);
-          }
+          if (!cancelled) applyAdminFallback();
           return;
         }
 
@@ -104,29 +124,14 @@ export function useHeaderAuth({ isTenantAdmin, logPrefix = '[HeaderAuth]' }: Use
             if (!cancelled) return checkAdminStatus(attempt + 1);
           }
 
-          if (!cancelled) {
-            if (typeof isTenantAdmin === 'boolean') {
-              setIsAdmin(isTenantAdmin);
-            } else {
-              const publicRole = user.publicMetadata?.role as string;
-              const orgRole = user.organizationMemberships?.[0]?.role;
-              setIsAdmin(
-                publicRole === 'admin' ||
-                  publicRole === 'administrator' ||
-                  orgRole === 'admin' ||
-                  orgRole === 'org:admin'
-              );
-            }
-          }
+          if (!cancelled) applyAdminFallback();
         }
       } catch {
         if (attempt < 2) {
           await new Promise((r) => setTimeout(r, 2000));
           if (!cancelled) return checkAdminStatus(attempt + 1);
         }
-        if (!cancelled) {
-          setIsAdmin(typeof isTenantAdmin === 'boolean' ? isTenantAdmin : false);
-        }
+        if (!cancelled) applyAdminFallback();
       }
     };
 

@@ -1,5 +1,5 @@
 -- Personal profile site + site_type — incremental migration for existing deployments
--- Apply via Liquibase in event-site-manager-service; canonical DDL in Latest_Schema_Post__Blob_Claude_12.sql
+-- Apply via Liquibase in event-site-manager-service; canonical DDL in Event_Site_Manager_Latest_Schema.sql
 
 -- tenant_organization.site_type
 ALTER TABLE public.tenant_organization

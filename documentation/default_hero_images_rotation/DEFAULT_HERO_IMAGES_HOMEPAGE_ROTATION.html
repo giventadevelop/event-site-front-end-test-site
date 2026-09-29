@@ -342,8 +342,9 @@
         <ol>
             <li><a href="#problem">Problem before the fix</a></li>
             <li><a href="#architecture">Hybrid architecture (cloud + bundled)</a></li>
+            <li><a href="#emergency-path">Emergency bundled path (required)</a></li>
             <li><a href="#resolver">Shared resolver &amp; fallback chain</a></li>
-            <li><a href="#homepage">Homepage hero rotation (<code>HeroSection.tsx</code>)</a></li>
+            <li><a href="#homepage">Homepage hero rotation</a></li>
             <li><a href="#charity">Charity hero section</a></li>
             <li><a href="#satellite">Satellite / multi-tenant behavior</a></li>
             <li><a href="#tenant-settings">Tenant settings fields</a></li>
@@ -360,7 +361,7 @@
     <div class="section-container">
         <div class="section-header">What was broken or inconsistent</div>
         <ul>
-            <li><strong>Single hardcoded default</strong> — Homepage used <code>/images/hero_section/default_hero_section_second_column_poster.webp</code> baked into <code class="code-highlight">src/components/HeroSection.tsx</code>. Every satellite deploy would need different files under <code>public/</code>, which does not scale for multi-tenant.</li>
+            <li><strong>Hardcoded per-component fallbacks</strong> — Homepage heroes used different files in different components (for example Kathakali PNG, <code>default_cloud_hero_image_1.webp</code>, or a JPEG poster). Cloned projects could not share one path.</li>
             <li><strong>Missing JPEG fallback</strong> — Event, checkout, and success pages referenced <code>/images/default_placeholder_hero_image.jpeg</code>, which was <strong>not in the repo</strong>, causing broken images on those surfaces.</li>
             <li><strong>Charity hero drift</strong> — <code class="code-highlight">src/components/charity-sections/HeroSection.tsx</code> used Builder.io CDN URLs as fallback instead of tenant-scoped settings.</li>
             <li><strong>No tenant defaults when events absent</strong> — When no upcoming event had <code>isHomePageHeroImage</code> media, rotation could show nothing useful or the wrong brand for a new satellite tenant.</li>
@@ -368,8 +369,12 @@
     </div>
 
     <div class="warning">
-        <strong>Do not bundle per-tenant hero images in <code>public/</code> per satellite deploy.</strong>
-        Use cloud URLs in <code>tenant_settings</code> (primary) plus <strong>one</strong> small emergency asset in the repo (safety net). Do not download S3 objects to server disk at runtime — serve HTTPS CDN URLs and let the browser cache them (same pattern as <code class="code-highlight">logoImageUrl</code>).
+        <strong>Do not hardcode a tenant-specific fallback path in hero components.</strong>
+        Rotating brand art belongs in <code>tenant_settings</code> (HTTPS CDN URLs). The only bundled file is
+        <code class="code-highlight">/images/hero_section/hero_images/fallback/default-hero.webp</code>.
+        Each cloned project replaces <em>that file</em> with its own art; it must not add a second constant or
+        pass <code>noImagesFallbackUrl</code>. Do not download S3 objects to server disk at runtime — serve HTTPS URLs
+        (same pattern as <code class="code-highlight">logoImageUrl</code>).
     </div>
 
     <h2 id="architecture">Hybrid architecture (cloud + bundled)</h2>
@@ -425,6 +430,56 @@
    onError on &lt;img&gt; --> bundled fallback</pre>
     </div>
 
+    <h2 id="emergency-path">Emergency bundled path (required)</h2>
+    <div class="section-intro">
+        <p>
+            When there is no event-loop hero and no tenant default slides, <strong>every homepage hero</strong>
+            (live modernist poster, unused split <code>HeroSection</code>, charity hero) must resolve to this
+            one public URL. Code shares the constant; each project supplies its own image bytes at the same path.
+        </p>
+    </div>
+    <div class="section-container usage">
+        <div class="section-header usage">Canonical path</div>
+        <ul>
+            <li><strong>Constant:</strong> <code class="code-highlight">BUNDLED_EMERGENCY_HERO_IMAGE</code> in
+                <code class="script-name">src/lib/hero/defaultHeroImages.ts</code></li>
+            <li><strong>Public URL:</strong> <code class="code-highlight">/images/hero_section/hero_images/fallback/default-hero.webp</code></li>
+            <li><strong>File on disk:</strong> <code class="code-highlight">public/images/hero_section/hero_images/fallback/default-hero.webp</code></li>
+            <li><strong>Format:</strong> WebP (extension must match the real file). Next.js can serve PNG too, but the standard filename is <code>default-hero.webp</code>.</li>
+        </ul>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Surface</th>
+                <th>Must use</th>
+                <th>Must not use</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Live homepage — <code>ModernistPosterHero.tsx</code></td>
+                <td><code>BUNDLED_EMERGENCY_HERO_IMAGE</code> (omit <code>noImagesFallbackUrl</code>)</td>
+                <td><code>/images/modernist/mcefee/kathakali_hero.png</code> or any local <code>DEFAULT_HERO_IMAGE</code></td>
+            </tr>
+            <tr>
+                <td><code>HeroSection.tsx</code></td>
+                <td>Same constant (alias <code>HERO_FALLBACK_NO_EVENTS_IMAGE</code> is fine)</td>
+                <td><code>/images/hero_section/default_cloud_hero_image_1.webp</code></td>
+            </tr>
+            <tr>
+                <td><code>charity-sections/HeroSection.tsx</code></td>
+                <td>Same constant as <code>defaultImage</code></td>
+                <td>JPEG poster or Builder.io CDN fallback</td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="info">
+        <strong>Cloned projects:</strong> keep the same path and constant. Replace only the WebP file in that
+        repo’s <code>public/</code> folder with that tenant’s emergency art. Do not copy another tenant’s
+        <code>default-hero.webp</code>. Rotating slides still come from Admin → tenant default hero images (HTTPS).
+    </div>
+
     <h2 id="resolver">Shared resolver &amp; fallback chain</h2>
     <div class="section-intro">
         <p>All hero surfaces use helpers in <code class="script-name">src/lib/hero/defaultHeroImages.ts</code>:</p>
@@ -440,7 +495,7 @@
         <tbody>
             <tr>
                 <td><code>BUNDLED_EMERGENCY_HERO_IMAGE</code></td>
-                <td><code>'/images/hero_section/hero_images/fallback/default-hero.webp'</code> — single platform-wide emergency asset</td>
+                <td><code>'/images/hero_section/hero_images/fallback/default-hero.webp'</code> — single shared path; each clone replaces the file, not this constant. Homepage heroes must not pass a different <code>noImagesFallbackUrl</code>.</td>
             </tr>
             <tr>
                 <td><code>parseTenantDefaultHeroUrls()</code></td>
@@ -470,10 +525,21 @@
         </ul>
     </div>
 
-    <h2 id="homepage">Homepage hero rotation (<code>HeroSection.tsx</code>)</h2>
+    <h2 id="homepage">Homepage hero rotation</h2>
     <div class="section-container">
-        <div class="section-header">Main homepage (<code>src/components/HeroSection.tsx</code>)</div>
-        <p><code>DynamicHeroImage</code> was updated to:</p>
+        <div class="section-header">Live homepage (<code>src/components/modernist/ModernistPosterHero.tsx</code>)</div>
+        <p>
+            The rendered homepage is <code>page.tsx</code> → <code>HomePageClient</code> → <code>ModernistHomePage</code> →
+            <code>ModernistPosterHero</code>. It calls <code>resolveHeroImages()</code> <strong>without</strong>
+            <code>noImagesFallbackUrl</code>, so the emergency slide is always
+            <code class="code-highlight">BUNDLED_EMERGENCY_HERO_IMAGE</code>
+            (<code>/images/hero_section/hero_images/fallback/default-hero.webp</code>).
+        </p>
+        <p>
+            <code class="code-highlight">src/components/HeroSection.tsx</code> is not imported on <code>/</code>.
+            Keep it on the same constant so unused or theme variants do not drift.
+        </p>
+        <p><code>HeroSection</code> / <code>DynamicHeroImage</code> still:</p>
         <ol>
             <li>Wait for both <code>useFilteredEvents('hero')</code> <strong>and</strong> <code>useTenantSettings()</code> before initializing slides (avoids flashing wrong defaults).</li>
             <li>Build <code>eventImageUrls</code> from upcoming events with hero media (existing recurrence / date logic preserved).</li>
@@ -508,8 +574,10 @@
             <code>defaultHeroImageUrls</code> for client components.
         </p>
         <p>
-            Hero URLs are <strong>not</strong> read from <code>config/satellites.json</code> or <code>public/images</code> per tenant.
-            Branding changes are a <strong>settings + S3 update</strong>, not a redeploy.
+            Rotating hero URLs are <strong>not</strong> read from <code>config/satellites.json</code>.
+            Branding changes for the slideshow are a <strong>settings + S3 update</strong>, not a redeploy.
+            The emergency file is the exception: same path in every clone
+            (<code>/images/hero_section/hero_images/fallback/default-hero.webp</code>); replace the file, not the code.
         </p>
     </div>
 
@@ -645,7 +713,8 @@
             <tr><td><code>src/lib/hero/defaultHeroImages.ts</code></td><td>Resolver, parse, serialize, display modes</td></tr>
             <tr><td><code>src/lib/hero/getTenantHeroFallback.ts</code></td><td>Server-side single fallback URL</td></tr>
             <tr><td><code>src/hooks/useHeroFallbackUrl.ts</code></td><td>Client hook via tenant settings</td></tr>
-            <tr><td><code>src/components/HeroSection.tsx</code></td><td>Main homepage slideshow</td></tr>
+            <tr><td><code>src/components/modernist/ModernistPosterHero.tsx</code></td><td>Live homepage slideshow (uses <code>BUNDLED_EMERGENCY_HERO_IMAGE</code>)</td></tr>
+            <tr><td><code>src/components/HeroSection.tsx</code></td><td>Unused split hero; same emergency path</td></tr>
             <tr><td><code>src/components/charity-sections/HeroSection.tsx</code></td><td>Charity homepage slideshow</td></tr>
             <tr><td><code>src/components/TenantSettingsProvider.tsx</code></td><td>Normalizes hero URL JSON</td></tr>
             <tr><td><code>public/images/hero_section/hero_images/fallback/default-hero.webp</code></td><td>Emergency bundled asset</td></tr>
@@ -680,7 +749,7 @@
         <div class="section-header output">Manual test plan</div>
         <ul>
             <li>Homepage with <strong>upcoming event hero media</strong> — event slides rotate; overlays match current event.</li>
-            <li>Homepage with <strong>no events</strong> — tenant default URLs rotate (or random/single per mode); else bundled webp.</li>
+            <li>Homepage with <strong>no events</strong> — tenant default URLs rotate (or random/single per mode); else <code>/images/hero_section/hero_images/fallback/default-hero.webp</code>.</li>
             <li><strong>New satellite tenant</strong> after onboarding script — settings contain URLs; homepage shows tenant branding without redeploy.</li>
             <li><strong>Broken S3 URL</strong> in pool — <code>onError</code> shows bundled fallback on homepage.</li>
             <li>Event checkout / success pages — no 404 for old <code>default_placeholder_hero_image.jpeg</code>; hero shows event or tenant or bundled image.</li>

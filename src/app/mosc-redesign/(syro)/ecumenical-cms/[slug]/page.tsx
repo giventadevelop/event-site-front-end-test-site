@@ -49,19 +49,18 @@ export default async function EcumenicalCmsArticlePage({ params }: PageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] p-8">
+              <div className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] px-4 py-8 md:p-8">
                 {article.imageUrl ? (
                   <div className="mb-8 flex justify-center">
                     <Image
                       src={article.imageUrl}
                       alt={article.imageAlt ?? article.name}
-                      width={175}
-                      height={175}
-                      className="rounded-lg object-contain"
-                      style={{ width: '175px', height: '175px' }}
+                      width={800}
+                      height={480}
+                      className="rounded-lg object-contain w-full md:max-w-[420px] h-auto"
                       priority
                       unoptimized={Boolean(article.imageUrl.startsWith('http'))}
-                      sizes="(max-width: 768px) 100vw, 50vw"
+                      sizes="(max-width: 768px) calc(100vw - 4rem), 420px"
                     />
                   </div>
                 ) : null}

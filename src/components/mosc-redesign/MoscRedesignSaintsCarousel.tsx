@@ -16,6 +16,8 @@ const GAP_PX = 20;
 const SLIDE_MS = 500;
 
 function itemsPerViewForWidth(viewportWidth: number): number {
+  if (viewportWidth >= 1400) return 5;
+  if (viewportWidth >= 1100) return 4;
   if (viewportWidth >= 768) return 3;
   if (viewportWidth >= 640) return 2;
   return 1;
@@ -39,7 +41,10 @@ export default function MoscRedesignSaintsCarousel({ saints }: MoscRedesignSaint
     if (!viewport) return;
 
     const viewportWidth = viewport.getBoundingClientRect().width;
-    const perView = itemsPerViewForWidth(viewportWidth);
+    const perView = Math.min(
+      itemsPerViewForWidth(viewportWidth),
+      Math.max(1, saints.length),
+    );
     const gaps = GAP_PX * Math.max(0, perView - 1);
     const cardWidth = Math.max(1, (viewportWidth - gaps) / perView);
 
@@ -65,6 +70,7 @@ export default function MoscRedesignSaintsCarousel({ saints }: MoscRedesignSaint
 
   const goPrev = () => setIndex((prev) => Math.max(0, prev - 1));
   const goNext = () => setIndex((prev) => Math.min(maxIndex, prev + 1));
+  const fitsWithoutScroll = saints.length <= itemsPerView;
 
   return (
     <div className="about-us-saints-section mt-20">
@@ -109,10 +115,10 @@ export default function MoscRedesignSaintsCarousel({ saints }: MoscRedesignSaint
         aria-label="Our Saints and Blesseds"
       >
         <div
-          className="about-us-saints-track flex gap-5"
+          className={`about-us-saints-track flex gap-5 ${fitsWithoutScroll ? 'justify-center' : ''}`}
           style={{
-            transform: `translate3d(-${index * slideStepPx}px, 0, 0)`,
-            transition: `transform ${SLIDE_MS}ms ease-in-out`,
+            transform: fitsWithoutScroll ? undefined : `translate3d(-${index * slideStepPx}px, 0, 0)`,
+            transition: fitsWithoutScroll ? undefined : `transform ${SLIDE_MS}ms ease-in-out`,
           }}
         >
           {saints.map((saint) => (

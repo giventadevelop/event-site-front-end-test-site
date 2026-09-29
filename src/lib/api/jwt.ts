@@ -1,4 +1,5 @@
 import { getApiJwtUser, getApiJwtPass, getApiBaseUrl } from '../env';
+import { isNetworkFetchFailure, logServerFetchFailure } from '../logServerFetchFailure';
 
 /**
  * Generates a JWT token for API authentication using env credentials.
@@ -73,11 +74,10 @@ export async function generateApiJwt() {
 
     return data.id_token;
   } catch (error) {
-    console.error('[JWT DEBUG] Error during fetch:', error);
+    logServerFetchFailure('JWT DEBUG', error);
 
     // Provide more specific error message based on error type
-    if (error instanceof TypeError && error.message === 'fetch failed') {
-      console.error('[JWT DEBUG] Network error - unable to reach authentication server');
+    if (isNetworkFetchFailure(error)) {
       throw new Error('Network error: Unable to reach authentication server. Please check your connection and try again.');
     }
 

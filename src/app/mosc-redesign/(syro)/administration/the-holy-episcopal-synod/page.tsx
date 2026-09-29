@@ -19,7 +19,7 @@ export default function HolyEpiscopalSynodPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] p-8">
+              <div className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] px-4 py-8 md:p-8">
                 <div className="mb-8 flex justify-center">
                   <Image
                     src="/images/administration/holy-episcopal-synod.jpg"
@@ -74,7 +74,7 @@ export default function HolyEpiscopalSynodPage() {
 
                   <div className="bg-syro-red/10 rounded-lg p-6">
                     <Link
-                      href="/mosc-redesign/holy-synod"
+                      href="/mosc-redesign/holy-synod-cms"
                       className="syro-primary-button inline-flex items-center gap-2"
                     >
                       View all Episcopal Synod Members

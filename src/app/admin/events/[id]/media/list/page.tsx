@@ -208,7 +208,7 @@ interface EditMediaModalProps {
   focusGroupOptions: { id: number; name: string }[];
 }
 
-type MediaCheckboxName = 'isPublic' | 'eventFlyer' | 'isEventManagementOfficialDocument' | 'isHeroImage' | 'isActiveHeroImage' | 'isFeaturedVideo' | 'isHomePageHeroImage' | 'isFeaturedEventImage' | 'isLiveEventImage';
+type MediaCheckboxName = 'isPublic' | 'eventFlyer' | 'isAgendaFlyer' | 'isEventManagementOfficialDocument' | 'isHeroImage' | 'isActiveHeroImage' | 'isFeaturedVideo' | 'isHomePageHeroImage' | 'isFeaturedEventImage' | 'isLiveEventImage';
 
 function EditMediaModal({ media, onClose, onSave, loading, focusGroupOptions }: EditMediaModalProps) {
   const [form, setForm] = useState<Partial<EventMediaDTO>>(() => ({
@@ -223,6 +223,7 @@ function EditMediaModal({ media, onClose, onSave, loading, focusGroupOptions }: 
     fileSize: media.fileSize,
     isPublic: Boolean(media.isPublic),
     eventFlyer: Boolean(media.eventFlyer),
+    isAgendaFlyer: Boolean(media.isAgendaFlyer),
     isEventManagementOfficialDocument: Boolean(media.isEventManagementOfficialDocument),
     preSignedUrl: media.preSignedUrl || '',
     preSignedUrlExpiresAt: media.preSignedUrlExpiresAt,
@@ -287,9 +288,15 @@ function EditMediaModal({ media, onClose, onSave, loading, focusGroupOptions }: 
       }
       if (name === 'isEventManagementOfficialDocument' && newValue) {
         updates.eventFlyer = false;
+        updates.isAgendaFlyer = false;
       }
       if (name === 'eventFlyer' && newValue) {
         updates.isEventManagementOfficialDocument = false;
+        updates.isAgendaFlyer = false;
+      }
+      if (name === 'isAgendaFlyer' && newValue) {
+        updates.isEventManagementOfficialDocument = false;
+        updates.eventFlyer = false;
       }
       if (name === 'isFeaturedVideo' && !newValue) {
         updates.featuredVideoUrl = '';
@@ -402,6 +409,7 @@ function EditMediaModal({ media, onClose, onSave, loading, focusGroupOptions }: 
               {[
                 { name: 'isPublic' as const, label: 'Public' },
                 { name: 'eventFlyer' as const, label: 'Event Flyer' },
+                { name: 'isAgendaFlyer' as const, label: 'Agenda Flyer' },
                 { name: 'isEventManagementOfficialDocument' as const, label: 'Official Doc' },
                 { name: 'isHeroImage' as const, label: 'Hero Image' },
                 { name: 'isActiveHeroImage' as const, label: 'Active Hero' },

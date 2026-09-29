@@ -163,7 +163,7 @@ POST /api/membership-plans
 
 - **Frontend Implementation**: `src/app/admin/membership/plans/ApiServerActions.ts`
 - **Backend PRD**: `documentation/domain_agnostic_payment/membership_susbscription/MEMBERSHIP_SUBSCRIPTION_BACKEND_PRD.html`
-- **Database Schema**: `code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql`
+- **Database Schema**: `code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql`
 - **Stripe Integration**: `src/lib/stripe/index.ts`, `src/lib/stripe/init.ts`
 - **Payment Success Fallback**: `src/app/membership/success/ApiServerActions.ts` (also creates Stripe IDs on-the-fly if missing)
 

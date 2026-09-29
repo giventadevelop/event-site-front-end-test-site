@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GalleryCategoryDTO } from '@/types';
 import { createGalleryCategoryServer } from '@/app/admin/gallery/albums/ApiServerActions';
+import { formatUnknownError } from '@/lib/api/formatBackendError';
+import ErrorDialog from '@/components/ErrorDialog';
 
 const SUGGESTION_LIMIT = 30;
 
@@ -15,6 +17,7 @@ interface GalleryCategoryTypeaheadProps {
   onPendingDisplayNameChange?: (displayName: string | null) => void;
   className?: string;
   disabled?: boolean;
+  error?: string;
 }
 
 function distinctCategories(categories: GalleryCategoryDTO[]): GalleryCategoryDTO[] {
@@ -50,6 +53,7 @@ export function GalleryCategoryTypeahead({
   onPendingDisplayNameChange,
   className = '',
   disabled = false,
+  error,
 }: GalleryCategoryTypeaheadProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -58,6 +62,8 @@ export function GalleryCategoryTypeahead({
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [createErrorDetail, setCreateErrorDetail] = useState<string | undefined>(undefined);
+  const [showCreateErrorDialog, setShowCreateErrorDialog] = useState(false);
 
   const distinctList = useMemo(() => distinctCategories(categories), [categories]);
   const quickPickList = useMemo(() => distinctList.slice(0, SUGGESTION_LIMIT), [distinctList]);
@@ -123,6 +129,8 @@ export function GalleryCategoryTypeahead({
     setIsOpen(false);
     setHighlightIndex(-1);
     setCreateError(null);
+    setCreateErrorDetail(undefined);
+    setShowCreateErrorDialog(false);
   };
 
   const handleCreate = async () => {
@@ -130,12 +138,17 @@ export function GalleryCategoryTypeahead({
 
     setCreating(true);
     setCreateError(null);
+    setCreateErrorDetail(undefined);
+    setShowCreateErrorDialog(false);
     try {
       const category = await createGalleryCategoryServer(trimmedTerm);
       onCategoryCreated?.(category);
       handleSelect(category);
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : 'Failed to create category');
+      const formatted = formatUnknownError(err, 'Failed to create category');
+      setCreateError(formatted.message);
+      setCreateErrorDetail(formatted.detail);
+      setShowCreateErrorDialog(true);
     } finally {
       setCreating(false);
     }
@@ -147,6 +160,8 @@ export function GalleryCategoryTypeahead({
     setIsOpen(false);
     setHighlightIndex(-1);
     setCreateError(null);
+    setCreateErrorDetail(undefined);
+    setShowCreateErrorDialog(false);
     inputRef.current?.focus();
   };
 
@@ -156,6 +171,8 @@ export function GalleryCategoryTypeahead({
     setIsOpen(true);
     setHighlightIndex(-1);
     setCreateError(null);
+    setCreateErrorDetail(undefined);
+    setShowCreateErrorDialog(false);
 
     if (!term.trim()) {
       onChange(null);
@@ -215,8 +232,10 @@ export function GalleryCategoryTypeahead({
     }
   };
 
-  const inputClassName =
-    'w-full border border-gray-300 rounded-lg px-3 py-2 pr-9 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
+  const fieldError = error || createError;
+  const inputClassName = fieldError
+    ? 'w-full border border-red-500 rounded-lg px-3 py-2 pr-9 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500'
+    : 'w-full border border-gray-300 rounded-lg px-3 py-2 pr-9 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
 
   return (
     <div ref={containerRef} className={`space-y-2 ${className}`}>
@@ -311,7 +330,15 @@ export function GalleryCategoryTypeahead({
         )}
       </div>
 
-      {createError && <p className="text-sm text-red-600">{createError}</p>}
+      {fieldError && <p className="text-sm text-red-600">{fieldError}</p>}
+
+      <ErrorDialog
+        isOpen={showCreateErrorDialog}
+        onClose={() => setShowCreateErrorDialog(false)}
+        title="Could not create category"
+        message={createError || 'Failed to create category'}
+        detail={createErrorDetail}
+      />
 
       {quickPickList.length > 0 && (
         <div>

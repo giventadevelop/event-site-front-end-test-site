@@ -8,10 +8,11 @@ import { formatInTimeZone } from 'date-fns-tz';
 import LocationDisplay from '@/components/LocationDisplay';
 import { isRecurringEvent, getNextOccurrenceDate } from '@/lib/eventUtils';
 import { isDonationBasedEvent, isTicketedFundraiserEvent } from '@/lib/donation/utils';
-import { isTicketedEventCube } from '@/lib/eventcube/utils';
+import { resolveBuyTicketsTarget } from '@/lib/eventcube/utils';
 import HomeParticleBackground from '@/components/HomeParticleBackground';
 import { HomeSectionEyebrow } from '@/components/HomeSectionEyebrow';
 import { HomeSectionTitle } from '@/components/HomeSectionTitle';
+import EventCardResultsPanel from '@/components/competitions/EventCardResultsPanel';
 // import { formatInTimeZone } from 'date-fns-tz';
 
 const EVENTS_PAGE_SIZE = 20; // Minimum events to display per page
@@ -70,6 +71,7 @@ export default function EventsPage() {
   const [hasCheckedInitialLoad, setHasCheckedInitialLoad] = useState(false);
   const [isAutoSwitching, setIsAutoSwitching] = useState(false);
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<number, boolean>>({});
+  const [expandedResults, setExpandedResults] = useState<Record<number, boolean>>({});
 
   // Apply the homepage design system to this page:
   // - `home-page-background`: enables the purple particle field, purple-glass cards
@@ -1045,22 +1047,18 @@ export default function EventsPage() {
 
                         // Determine which buttons to show
                         const showRegisterButton = event.isRegistrationRequired === true && isUpcomingLocal;
-                        // Event Cube ticketed: link to eventcube-checkout (priority over Givebutter)
-                        const isTicketedEventCubeEvent = isTicketedEventCube(event) && isUpcomingLocal;
-                        // Check if event is ticketed fundraiser/charity (shows special fundraiser image)
-                        const isTicketedFundraiser = isTicketedFundraiserEvent(event) && isUpcomingLocal;
-                        // Only show Buy Tickets button for TICKETED events (case-insensitive check)
-                        // BUT NOT if Event Cube or ticketed fundraiser (use their dedicated links instead)
-                        const showBuyTicketsButton = event.admissionType?.toUpperCase() === 'TICKETED' && isUpcomingLocal && !isTicketedFundraiser && !isTicketedEventCubeEvent;
-                        // Show Make a Donation button for donation-based events
-                        // BUT NOT if it's a ticketed fundraiser (use fundraiser image instead)
-                        const showDonationButton = isDonationBasedEvent(event) && isUpcomingLocal && !isTicketedFundraiser;
+                        const buyTicketsTarget = isUpcomingLocal ? resolveBuyTicketsTarget(event) : null;
+                // Show Make a Donation button for donation-based events
+                // BUT NOT if it's a ticketed fundraiser (use fundraiser image instead)
+                const showDonationButton = isDonationBasedEvent(event) && isUpcomingLocal && !isTicketedFundraiserEvent(event);
+                const showResultsButton = event.isCompetitionEvent === true && !isUpcomingLocal;
+                const resultsOpen = !!(event.id && expandedResults[event.id]);
 
                         // Don't render if no buttons should be shown
-                        if (!showRegisterButton && !showBuyTicketsButton && !showDonationButton && !isTicketedFundraiser && !isTicketedEventCubeEvent) return null;
+                        if (!showRegisterButton && !buyTicketsTarget && !showDonationButton && !showResultsButton) return null;
 
                         return (
-                          <div className={`absolute top-4 right-4 lg:top-6 lg:right-6 z-10 ${showRegisterButton && (showBuyTicketsButton || showDonationButton || isTicketedFundraiser || isTicketedEventCubeEvent) ? 'flex flex-col gap-2' : ''}`}>
+                          <div className={`absolute top-4 right-4 lg:top-6 lg:right-6 z-10 ${showRegisterButton && (buyTicketsTarget || showDonationButton || showResultsButton) ? 'flex flex-col gap-2' : ''}`}>
                             {/* Register Here Button - Show if registration is required */}
                             {showRegisterButton && (
                             <Link
@@ -1076,395 +1074,33 @@ export default function EventsPage() {
                             </Link>
                             )}
 
-                            {/* Event Cube: Buy Tickets → eventcube-checkout */}
-                            {isTicketedEventCubeEvent && (
-                            <Link
-                                href={`/events/${event.id}/eventcube-checkout`}
-                              className={`transition-transform hover:scale-105 ${isPast ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
-                                title="Buy Tickets"
-                            >
-                              <img
-                                src="/images/buy_tickets_click_here_red.webp"
-                                alt="Buy Tickets"
-                                className="object-contain w-[150px] h-[52px] sm:w-[200px] sm:h-[70px]"
-                              />
-                            </Link>
-                            )}
-
-                            {/* Fundraiser Image - Show for ticketed fundraiser/charity events (replaces both Buy Tickets and Make a Donation buttons) */}
-                            {isTicketedFundraiser && (
-                            <Link
-                                href={`/events/${event.id}/givebutter-checkout`}
-                              className={`transition-transform hover:scale-105 ${isPast ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
-                                title="Buy Tickets"
-                            >
-                              <img
-                                src="/images/buy_tickets_click_here_fundraiser.png"
-                                alt="Buy Tickets"
-                                className="object-contain w-[150px] h-[52px] sm:w-[200px] sm:h-[70px]"
-                              />
-                            </Link>
-                            )}
-
-                            {/* Buy Tickets Button - Show only for TICKETED events (not fundraiser) */}
-                            {showBuyTicketsButton && (
-                            <Link
-                                href={
-                                  // Route to manual checkout if manual payment is enabled, otherwise Stripe checkout (latest)
-                                  event.manualPaymentEnabled === true &&
-                                  (event.paymentFlowMode === 'MANUAL_ONLY' || event.paymentFlowMode === 'HYBRID')
-                                    ? `/events/${event.id}/manual-checkout`
-                                    : `/events/${event.id}/checkout`
-                                }
-                              className={`transition-transform hover:scale-105 ${isPast ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
-                                title="Buy Tickets"
-                            >
-                              <img
-                                src="/images/buy_tickets_click_here_red.webp"
-                                alt="Buy Tickets"
-                                className="object-contain w-[150px] h-[52px] sm:w-[200px] sm:h-[70px]"
-                              />
-                            </Link>
-                            )}
-
-                            {/* Make a Donation Button - Show for donation-based events (not ticketed fundraiser) */}
-                            {showDonationButton && (
-                              <Link
-                                href={`/events/${event.id}/donation`}
-                                className="flex-shrink-0 h-14 rounded-xl bg-teal-100 hover:bg-teal-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-6"
-                                title="Make a Donation"
-                                aria-label="Make a Donation"
-                              >
-                                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-teal-200 flex items-center justify-center">
-                                  <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                  </svg>
-                                </div>
-                                <span className="font-semibold text-teal-700">Make a Donation</span>
-                              </Link>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </div>
-
-                    {/* Content Section - Bottom on all screen sizes */}
-                    <div className="p-5 border-t border-emerald-100/70 relative">
-                      {/* Title */}
-                      <h2 className="text-xl font-bold text-gray-800 mb-2 sm:pr-48 lg:pr-56">
-                        {event.title}
-                      </h2>
-
-                      {/* Caption */}
-                      {event.caption && (
-                        <p className="text-gray-600 text-base mb-3 sm:pr-48 lg:pr-56">
-                          {event.caption}
-                        </p>
-                      )}
-
-                      {/* Event Details - Matching sponsors page style with centered flexbox */}
-                      <div className="px-4 pb-4 border-t border-emerald-100/70">
-                        <div className="flex flex-wrap justify-center gap-3 mb-2 pt-3 lg:max-w-4xl lg:mx-auto">
-                          {/* Date */}
-                          <div className="flex items-center gap-3 text-gray-700 w-full sm:w-auto sm:min-w-[280px]">
-                            <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                              <svg className="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                            </div>
-                            <span className="text-lg font-semibold">
-                              {formatDate(event.startDate, event.timezone)}
-                            </span>
-                          </div>
-
-                          {/* Time */}
-                          {event.startTime && (
-                            <div className="flex items-center gap-3 text-gray-700 w-full sm:w-auto sm:min-w-[280px]">
-                              <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-green-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                                <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                              </div>
-                              <span className="text-lg font-semibold">
-                                {formatTime(event.startTime)} - {formatTime(event.endTime)} (EDT)
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Location */}
-                          {event.location && (
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 text-gray-700 w-full sm:w-auto sm:min-w-[280px]">
-                              <div className="flex items-center gap-3 min-w-0 flex-1 sm:flex-initial">
-                                <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-purple-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                                  <svg className="w-10 h-10 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  </svg>
-                                </div>
-                                <span className="text-base sm:text-lg font-semibold break-words min-w-0">
-                                  {event.location}
-                                </span>
-                              </div>
-                              {/* Copy and Navigate Icons */}
-                              <div className="flex gap-1 flex-shrink-0 ml-[68px] sm:ml-0">
-                                <button
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(event.location || '');
-                                    alert('Address copied to clipboard!');
-                                  }}
-                                  className="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-100 hover:bg-blue-200 flex items-center justify-center transition-colors"
-                                  title="Copy Address"
-                                  aria-label="Copy address to clipboard"
-                                >
-                                  <svg className="w-6 h-6 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                  </svg>
-                                </button>
-                                <a
-                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location || '')}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex-shrink-0 w-10 h-10 rounded-lg bg-green-100 hover:bg-green-200 flex items-center justify-center transition-colors"
-                                  title="Open in Google Maps"
-                                  aria-label="Open location in Google Maps"
-                                >
-                                  <svg className="w-6 h-6 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                                  </svg>
-                                </a>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Description */}
-                      {event.description && (
-                        <div className="mb-4 px-4 lg:max-w-4xl lg:mx-auto w-full max-w-full overflow-hidden">
-                          <DescriptionDisplay
-                            description={event.description}
-                            isExpanded={expandedDescriptions[event.id!] || false}
-                            onToggle={() => {
-                              setExpandedDescriptions(prev => ({
-                                ...prev,
-                                [event.id!]: !prev[event.id!]
-                              }));
-                            }}
-                          />
-                        </div>
-                      )}
-
-                      {/* Action Buttons */}
-                      <div className="flex flex-col md:flex-row gap-3 sm:gap-4 px-4">
-                        {/* Read More Button - Only show if description is longer than 200 characters */}
-                        {event.description && event.description.length > 200 && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setExpandedDescriptions(prev => ({
-                                ...prev,
-                                [event.id!]: !prev[event.id!]
-                              }));
-                            }}
-                            className="flex-shrink-0 h-14 rounded-xl bg-blue-100 hover:bg-blue-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-6"
-                            title={expandedDescriptions[event.id!] ? "Show Less" : "Read More"}
-                            aria-label={expandedDescriptions[event.id!] ? "Show Less" : "Read More"}
-                            type="button"
-                          >
-                            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-200 flex items-center justify-center">
-                              {expandedDescriptions[event.id!] ? (
-                                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                </svg>
-                              ) : (
-                                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                              )}
-                            </div>
-                            <span className="font-semibold text-blue-700">{expandedDescriptions[event.id!] ? "Show Less" : "Read More"}</span>
-                          </button>
-                        )}
-
-                        {/* Calendar Link - Only for future events */}
-                        {(() => {
-                          if (showPastEvents) return null;
-
-                          // Check that startDate and startTime exist for calendar link generation
-                          if (!event.startDate || !event.startTime) {
-                            console.log(`Event ${event.id} missing startDate or startTime:`, {
-                              startDate: event.startDate,
-                              startTime: event.startTime
-                            });
-                            return null;
-                          }
-
-                          // Get today's date in YYYY-MM-DD format using local timezone
-                          const today = new Date();
-                          const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
-                          // Compare dates as strings to avoid timezone parsing issues
-                          const eventDateStr = event.startDate.split('T')[0]; // Get just the date part (YYYY-MM-DD)
-
-                          // Check if event date is today or in the future
-                          const isToday = eventDateStr === todayStr;
-                          const isFuture = eventDateStr > todayStr;
-                          const isUpcoming = isToday || isFuture;
-
-                          if (!isUpcoming) {
-                            console.log(`Event ${event.id} is not upcoming (past event):`, {
-                              eventDateStr,
-                              todayStr,
-                              isToday,
-                              isFuture
-                            });
-                            return null;
-                          }
-
-                          // If event is today OR in the future, show the button
-                          // This includes events happening later today
-
-                          const start = toGoogleCalendarDate(event.startDate, event.startTime);
-                          const end = toGoogleCalendarDate(event.endDate || event.startDate, event.endTime || event.startTime);
-
-                          if (!start || !end) {
-                            console.log(`Event ${event.id} failed to generate calendar dates:`, {
-                              start,
-                              end,
-                              startDate: event.startDate,
-                              startTime: event.startTime,
-                              endDate: event.endDate,
-                              endTime: event.endTime
-                            });
-                            return null;
-                          }
-
-                          const text = encodeURIComponent(event.title);
-                          const details = encodeURIComponent(event.description || '');
-                          const location = encodeURIComponent(event.location || '');
-                          const calendarLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${start}/${end}&details=${details}&location=${location}`;
-
-                          console.log(`Event ${event.id} calendar link generated:`, calendarLink);
-
-                          return (
-                            <a
-                              href={calendarLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex-shrink-0 h-14 rounded-xl bg-orange-100 hover:bg-orange-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-6"
-                              title="Add to Calendar"
-                              aria-label="Add to Calendar"
-                            >
-                              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-orange-200 flex items-center justify-center">
-                                <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                              </div>
-                              <span className="font-semibold text-orange-700">Add to Calendar</span>
-                            </a>
-                          );
-                        })()}
-
-                        {/* See Event Details Button - Links to event details page */}
-                        <Link
-                          href={`/events/${event.id}`}
-                          className="flex-shrink-0 h-14 rounded-xl bg-green-100 hover:bg-green-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-6"
-                          title="See Event Details"
-                          aria-label="See Event Details"
-                        >
-                          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-green-200 flex items-center justify-center">
-                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                          </div>
-                          <span className="font-semibold text-green-700">See Event Details</span>
-                        </Link>
-
-                        {/* Buy Tickets Image - Show only for TICKETED events */}
-                        {(() => {
-                          if (!event.startDate) return null;
-
-                          // Get today's date in YYYY-MM-DD format using local timezone
-                          const today = new Date();
-                          const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
-                          // Compare dates as strings to avoid timezone parsing issues
-                          const eventDateStr = event.startDate ? event.startDate.split('T')[0] : null;
-
-                          if (!eventDateStr) return null;
-
-                          // Check if event date is today or in the future
-                          const isToday = eventDateStr === todayStr;
-                          const isFuture = eventDateStr > todayStr;
-                          const isUpcomingLocal = isToday || isFuture;
-
-                          // Event Cube ticketed: link to eventcube-checkout (priority over Givebutter)
-                          const isTicketedEventCubeEvent = isTicketedEventCube(event) && isUpcomingLocal;
-                          // Check if event is ticketed fundraiser/charity (shows special fundraiser image)
-                          const isTicketedFundraiser = isTicketedFundraiserEvent(event) && isUpcomingLocal;
-                          // Only show Buy Tickets image for TICKETED events (case-insensitive check)
-                          // BUT NOT if Event Cube or ticketed fundraiser (use their dedicated links instead)
-                          const showBuyTicketsButton = event.admissionType?.toUpperCase() === 'TICKETED' && isUpcomingLocal && !isTicketedFundraiser && !isTicketedEventCubeEvent;
-                          // Show Make a Donation button for donation-based events
-                          // BUT NOT if it's a ticketed fundraiser (use fundraiser image instead)
-                          const showDonationButton = isDonationBasedEvent(event) && isUpcomingLocal && !isTicketedFundraiser;
-
-                          if (!showBuyTicketsButton && !showDonationButton && !isTicketedFundraiser && !isTicketedEventCubeEvent) return null;
-
-                          // Route to manual checkout if manual payment is enabled, otherwise Stripe checkout (latest)
-                          const checkoutRoute =
-                            event.manualPaymentEnabled === true &&
-                            (event.paymentFlowMode === 'MANUAL_ONLY' || event.paymentFlowMode === 'HYBRID')
-                              ? `/events/${event.id}/manual-checkout`
-                              : `/events/${event.id}/checkout`;
-
-                          return (
-                            <div className="flex flex-col gap-2">
-                              {/* Event Cube: Buy Tickets → eventcube-checkout */}
-                              {isTicketedEventCubeEvent && (
-                                <Link
-                                  href={`/events/${event.id}/eventcube-checkout`}
-                                  className="transition-transform hover:scale-105"
-                                  title="Buy Tickets"
-                                  aria-label="Buy Tickets"
-                                >
-                                  <img
-                                    alt="Buy Tickets"
-                                    className="object-contain w-[150px] h-[52px] sm:w-[200px] sm:h-[70px]"
-                                    src="/images/buy_tickets_click_here_red.webp"
-                                  />
-                                </Link>
-                              )}
-                              {/* Fundraiser Image - Show for ticketed fundraiser/charity events (replaces both Buy Tickets and Make a Donation buttons) */}
-                              {isTicketedFundraiser && (
-                                <Link
-                                  href={`/events/${event.id}/givebutter-checkout`}
-                                  className="transition-transform hover:scale-105"
-                                  title="Buy Tickets"
-                                  aria-label="Buy Tickets"
-                                >
-                                  <img
-                                    alt="Buy Tickets"
-                                    className="object-contain w-[150px] h-[52px] sm:w-[200px] sm:h-[70px]"
-                                    src="/images/buy_tickets_click_here_fundraiser.png"
-                                  />
-                                </Link>
-                              )}
-                              {showBuyTicketsButton && (
-                                <Link
-                                  href={checkoutRoute}
-                                  className="transition-transform hover:scale-105"
-                                  title="Buy Tickets"
-                                  aria-label="Buy Tickets"
-                                >
-                                  <img
-                                    alt="Buy Tickets"
-                                    className="object-contain w-[150px] h-[52px] sm:w-[200px] sm:h-[70px]"
-                                    src="/images/buy_tickets_click_here_red.webp"
-                                  />
-                                </Link>
-                              )}
+                            {buyTicketsTarget && (() => {
+                      const useFundraiserImage =
+                        isTicketedFundraiserEvent(event) &&
+                        buyTicketsTarget.kind === 'internal' &&
+                        buyTicketsTarget.href.includes('givebutter');
+                      return (
+                    <Link
+                      href={buyTicketsTarget.href}
+                      className={`transition-transform hover:scale-105 ${isPast ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title="Buy Tickets"
+                      aria-label="Buy Tickets"
+                      {...(buyTicketsTarget.kind === 'external'
+                        ? { target: '_blank', rel: 'noopener noreferrer' }
+                        : {})}
+                    >
+                      <img
+                        alt="Buy Tickets"
+                        className="object-contain w-[150px] h-[52px] sm:w-[200px] sm:h-[70px]"
+                        src={
+                          useFundraiserImage
+                            ? '/images/buy_tickets_click_here_fundraiser.png'
+                            : '/images/buy_tickets_click_here_red.webp'
+                        }
+                      />
+                    </Link>
+                      );
+                    })()}
                               {showDonationButton && (
                                 <Link
                                   href={`/events/${event.id}/donation`}
@@ -1480,13 +1116,40 @@ export default function EventsPage() {
                                   <span className="font-semibold text-teal-700">Make a Donation</span>
                                 </Link>
                               )}
+                              {showResultsButton && event.id && (
+                                <button
+                                  type="button"
+                                  className="flex-shrink-0 h-14 rounded-xl bg-amber-100 hover:bg-amber-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-6"
+                                  title={resultsOpen ? 'Hide Result' : 'Show Result'}
+                                  aria-label={resultsOpen ? 'Hide Result' : 'Show Result'}
+                                  aria-expanded={resultsOpen}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExpandedResults((prev) => ({
+                                      ...prev,
+                                      [event.id!]: !prev[event.id!],
+                                    }));
+                                  }}
+                                >
+                                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-amber-200 flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4zm-2 4h14" />
+                                    </svg>
+                                  </div>
+                                  <span className="font-semibold text-amber-800">{resultsOpen ? 'Hide Result' : 'Result'}</span>
+                                </button>
+                              )}
                             </div>
                           );
                         })()}
                       </div>
+                      {event.isCompetitionEvent === true && event.id && expandedResults[event.id] && (
+                        <div className="px-4 pb-4">
+                          <EventCardResultsPanel eventId={event.id} eventTitle={event.title} />
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
               ))}
               </div>
             </div>

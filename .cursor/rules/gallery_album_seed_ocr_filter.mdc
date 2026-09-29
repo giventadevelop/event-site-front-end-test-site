@@ -1,0 +1,125 @@
+---
+description: Seed/filter gallery albums via scripts; OCR/scrape images for brand text; set covers; prefer scripts over app code for one-off media work.
+globs: scripts/*gallery*.mjs, scripts/*mcefee*.mjs, scripts/gallery-porting/**/*, src/app/admin/gallery/**/*, src/app/gallery/**/*
+alwaysApply: false
+---
+
+# Gallery Album Seed, OCR Filter & Cover Images
+
+## Overview
+
+When building or cleaning a **gallery album** from local/static images (homepage, events, logos, executive committee), prefer **one-off Node scripts** that call the backend with a service JWT. Do **not** change app server actions or proxy handlers for tenant seed/cleanup unless the product feature itself needs a permanent UI/API change.
+
+Use **image scraping / OCR** to decide which uploads belong in the album (e.g. keep only images that visibly contain **“mcefee”**), and keep **executive-committee** headshots that match `/admin/executive-committee`.
+
+## Canonical Scripts (MCEFEE)
+
+| Script | Purpose |
+|--------|---------|
+| [`scripts/seed-mcefee-gallery-album.mjs`](mdc:scripts/seed-mcefee-gallery-album.mjs) | Create **“Mcefee Album”**, upload local + charity-site images, link orphans (`--link-only`), set cover |
+| [`scripts/filter-mcefee-gallery-album.mjs`](mdc:scripts/filter-mcefee-gallery-album.mjs) | OCR/filename filter + exec-team photos; **DELETE** media that do not match |
+| [`scripts/seed-mcefee-executive-team.mjs`](mdc:scripts/seed-mcefee-executive-team.mjs) | Seed executive committee roster + `profileImageUrl` from charity-site team images |
+| [`scripts/gallery-porting/gallery-porting-lib.mjs`](mdc:scripts/gallery-porting/gallery-porting-lib.mjs) | Shared JWT, `apiFetch`, tenant env, content-type helpers |
+
+Related event seed (flyers, not album): [`scripts/seed-mcefee-events-from-charity-site.mjs`](mdc:scripts/seed-mcefee-events-from-charity-site.mjs).
+
+### Typical commands
+
+```bash
+# Create/upload album (Next must be up for proxy upload path)
+node scripts/seed-mcefee-gallery-album.mjs --app-url http://localhost:3002
+
+# Relink media if upload left albumId null
+node scripts/seed-mcefee-gallery-album.mjs --link-only
+
+# Preview keep/delete (OCR)
+node scripts/filter-mcefee-gallery-album.mjs --dry-run
+
+# Apply filter: keep mcefee (filename/OCR) + exec team; delete rest
+node scripts/filter-mcefee-gallery-album.mjs --album-id 64
+```
+
+Requires `.env.local`: `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_TENANT_ID`, `API_JWT_USER` / `API_JWT_PASS`.
+
+## Upload Pattern
+
+1. **Authenticate** with service JWT (`getServiceJwt` from gallery-porting-lib).
+2. **Create album** via `POST /api/gallery-albums` (optional `galleryCategoryId`; category seed may fail on DB sequence — album can ship with `galleryCategoryId=null`).
+3. **Upload** via Next proxy `POST {appUrl}/api/proxy/event-medias/upload-multiple` **or** backend `POST /api/event-medias/upload?...&albumId=...` with `Authorization` + `X-Tenant-ID`.
+4. **Always PATCH** media after upload — multipart upload often leaves `albumId=null`:
+
+```javascript
+// merge-patch with full required non-null fields (see seed script patchAlbumId)
+PATCH /api/event-medias/{id}
+Content-Type: application/merge-patch+json
+{ id, albumId, fileUrl, title, tenantId, eventMediaType, storageType, createdAt, updatedAt, ... }
+```
+
+5. **Cover image**: `PATCH /api/gallery-albums/{albumId}` with `coverImageUrl` set to the chosen media’s `fileUrl` (e.g. `mcefee_logo_black_border_transparent.png`).
+
+## OCR / Image Scraping for Keep-Set
+
+**Goal:** Decide keep vs delete from **what the image shows**, not from seed metadata alone.
+
+### DO
+
+- Prefer **local file OCR** when the same filename exists under charity-site / `public/images/**` (S3 download may fail without public access).
+- Use **Tesseract** (installed path often `C:\Program Files\Tesseract-OCR\tesseract.exe`; override with `TESSERACT_PATH`).
+- Match brand text with a regex on OCR stdout **and** on whitespace-collapsed text (logos OCR as `M CE FE E` / `MCEFEE.ORG`).
+- Match **filename/title only** for text heuristics (e.g. `/mcefee/i` on `title` / URL basename).
+- Optionally use sibling project **`F:\project_workspace\image-edit-ai-tools`** Gemini describe (`/api/nano-banana`, `action: 'describe'`) when `GEMINI_API_KEY` is available — same “read the image” idea as OCR.
+
+### DON’T
+
+- ❌ Use **description** / seed alt text for “contains mcefee” — seed scripts often write `MCEFEE modernist: …` on every file and will false-keep everything.
+- ❌ Treat modernist placeholders `team_1.jpg`…`team_4.jpg` as executive committee — keep only real roster photos (`profileImageUrl` / names like `shaji_varghese.jpeg`).
+- ❌ Trust a single noisy OCR hit without a dry-run; re-check borderline keeps (collapsed OCR can false-positive).
+
+### Keep rules used for Mcefee Album
+
+1. Filename/title contains `mcefee`, **or**
+2. OCR finds `mcefee` / `MCEFEE` (incl. email/domain), **or**
+3. Image is an **executive-committee** member photo (`/api/executive-committee-team-members` → field **`profileImageUrl`**, not `imageUrl`).
+
+Delete non-matches with `DELETE /api/event-medias/{id}`.
+
+## Executive Committee Images
+
+- Admin UI: `/admin/executive-committee`.
+- API: `GET /api/executive-committee-team-members?tenantId.equals=...`.
+- Image field: **`profileImageUrl`**.
+- If those URLs are not already `event_medias` rows in the album, **upload** local files from  
+  `NJ-Malayalees-MCEEFEE-Charity-Site/images/team_members/` and PATCH `albumId` (see filter script).
+
+## Anti-Patterns
+
+```javascript
+// ❌ DON'T: keep if description mentions brand (seed pollution)
+const keep = /mcefee/i.test(media.description);
+
+// ✅ DO: filename + OCR on pixels
+const keep = /mcefee/i.test(media.title) || ocrTextHasMcefee(localOrDownloadedPath);
+
+// ❌ DON'T: assume upload bound the album
+await upload(...); // albumId may still be null
+
+// ✅ DO: PATCH albumId after every upload
+await patchAlbumId(token, media, albumId, displayOrder);
+```
+
+## Reference Implementations
+
+- Seed + link + cover helpers: [`scripts/seed-mcefee-gallery-album.mjs`](mdc:scripts/seed-mcefee-gallery-album.mjs)
+- OCR filter + team upload + delete: [`scripts/filter-mcefee-gallery-album.mjs`](mdc:scripts/filter-mcefee-gallery-album.mjs)
+- Gallery grid styling (UI): [media_gallery_grid_style.mdc](mdc:.cursor/rules/media_gallery_grid_style.mdc)
+- Proxy/JWT patterns: [nextjs_api_routes.mdc](mdc:.cursor/rules/nextjs_api_routes.mdc)
+
+## Checklist for a New Brand/Album Seed
+
+- [ ] Script under `scripts/` reusing `gallery-porting-lib.mjs` (no app-code churn)
+- [ ] `--dry-run` before destructive deletes
+- [ ] Upload → PATCH `albumId` → verify `GET .../event-medias?albumId.equals=`
+- [ ] OCR/filename filter (never description-only)
+- [ ] Exec-team photos from admin roster if required
+- [ ] Cover via `coverImageUrl` pointing at a kept media `fileUrl`
+- [ ] Spot-check gallery UI (`/gallery`, `/admin/gallery/albums/{id}`)

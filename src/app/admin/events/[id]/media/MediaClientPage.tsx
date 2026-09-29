@@ -98,6 +98,7 @@ export function MediaClientPage({ eventId, mediaList: initialMediaList, eventDet
   const pagedMedia = filteredMediaList.slice(mediaPage * mediaPageSize, (mediaPage + 1) * mediaPageSize);
   const hasNextMediaPage = (mediaPage + 1) * mediaPageSize < filteredMediaList.length;
   const [eventFlyer, setEventFlyer] = useState(false);
+  const [isAgendaFlyer, setIsAgendaFlyer] = useState(false);
   const [isEventManagementOfficialDocument, setIsEventManagementOfficialDocument] = useState(false);
   const [officialDocsList, setOfficialDocsList] = useState<EventMediaDTO[]>(initialOfficialDocsList);
   const [officialDocsPage, setOfficialDocsPage] = useState(0);
@@ -262,6 +263,7 @@ export function MediaClientPage({ eventId, mediaList: initialMediaList, eventDet
       // Append other parameters as form data
       formData.append('eventId', eventId);
       formData.append('eventFlyer', String(eventFlyer));
+      formData.append('isAgendaFlyer', String(isAgendaFlyer));
       formData.append('isEventManagementOfficialDocument', String(isEventManagementOfficialDocument));
       formData.append('isHeroImage', String(isHeroImage));
       formData.append('isActiveHeroImage', String(isActiveHeroImage));
@@ -521,6 +523,7 @@ export function MediaClientPage({ eventId, mediaList: initialMediaList, eventDet
       title: media.title || '',
       description: media.description || '',
       eventFlyer: media.eventFlyer || false,
+      isAgendaFlyer: media.isAgendaFlyer || false,
       isHeroImage: media.isHeroImage || false,
       isActiveHeroImage: media.isActiveHeroImage || false,
       isFeaturedEventImage: media.isFeaturedEventImage || false,
@@ -544,6 +547,7 @@ export function MediaClientPage({ eventId, mediaList: initialMediaList, eventDet
         title: media.title || '',
         description: media.description || '',
         eventFlyer: media.eventFlyer || false,
+        isAgendaFlyer: media.isAgendaFlyer || false,
         isHeroImage: media.isHeroImage || false,
         isActiveHeroImage: media.isActiveHeroImage || false,
         isFeaturedEventImage: media.isFeaturedEventImage || false,
@@ -568,7 +572,24 @@ export function MediaClientPage({ eventId, mediaList: initialMediaList, eventDet
       const { name, value, type } = e.target;
       const isCheckbox = (e.target as HTMLInputElement).type === 'checkbox';
       const checked = (e.target as HTMLInputElement).checked;
-      setFormData(prev => ({ ...prev, [name]: isCheckbox ? checked : value }));
+      setFormData(prev => {
+        const next = { ...prev, [name]: isCheckbox ? checked : value };
+        if (isCheckbox && checked) {
+          if (name === 'isAgendaFlyer') {
+            next.eventFlyer = false;
+            next.isEventManagementOfficialDocument = false;
+          }
+          if (name === 'eventFlyer') {
+            next.isAgendaFlyer = false;
+            next.isEventManagementOfficialDocument = false;
+          }
+          if (name === 'isEventManagementOfficialDocument') {
+            next.eventFlyer = false;
+            next.isAgendaFlyer = false;
+          }
+        }
+        return next;
+      });
     };
 
     const handleSaveClick = async () => {
@@ -764,7 +785,7 @@ export function MediaClientPage({ eventId, mediaList: initialMediaList, eventDet
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-4">Media Options</label>
               <div className="custom-grid-table mt-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
-                {['eventFlyer', 'isHeroImage', 'isActiveHeroImage', 'isPublic', 'isFeaturedVideo', 'isFeaturedEventImage', 'isLiveEventImage', 'isHomePageHeroImage'].map(key => (
+                {['eventFlyer', 'isAgendaFlyer', 'isHeroImage', 'isActiveHeroImage', 'isPublic', 'isFeaturedVideo', 'isFeaturedEventImage', 'isLiveEventImage', 'isHomePageHeroImage'].map(key => (
                   <label key={key} className="flex flex-col items-center">
                     <span className="relative flex items-center justify-center">
                       <input
@@ -1281,7 +1302,14 @@ export function MediaClientPage({ eventId, mediaList: initialMediaList, eventDet
             <div className="custom-grid-cell">
               <label className="flex flex-col items-center">
                 <span className="relative flex items-center justify-center">
-                  <input type="checkbox" className="custom-checkbox" checked={eventFlyer} onChange={e => setEventFlyer(e.target.checked)} />
+                  <input type="checkbox" className="custom-checkbox" checked={eventFlyer} onChange={e => {
+                    const checked = e.target.checked;
+                    setEventFlyer(checked);
+                    if (checked) {
+                      setIsEventManagementOfficialDocument(false);
+                      setIsAgendaFlyer(false);
+                    }
+                  }} />
                   <span className="custom-checkbox-tick">
                     {eventFlyer && (
                       <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
@@ -1296,7 +1324,36 @@ export function MediaClientPage({ eventId, mediaList: initialMediaList, eventDet
             <div className="custom-grid-cell">
               <label className="flex flex-col items-center">
                 <span className="relative flex items-center justify-center">
-                  <input type="checkbox" className="custom-checkbox" checked={isEventManagementOfficialDocument} onChange={e => setIsEventManagementOfficialDocument(e.target.checked)} />
+                  <input type="checkbox" className="custom-checkbox" checked={isAgendaFlyer} onChange={e => {
+                    const checked = e.target.checked;
+                    setIsAgendaFlyer(checked);
+                    if (checked) {
+                      setIsEventManagementOfficialDocument(false);
+                      setEventFlyer(false);
+                    }
+                  }} />
+                  <span className="custom-checkbox-tick">
+                    {isAgendaFlyer && (
+                      <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l5 5L19 7" />
+                      </svg>
+                    )}
+                  </span>
+                </span>
+                <span className="mt-2 text-xs text-center select-none break-words max-w-[6rem]">Agenda Flyer</span>
+              </label>
+            </div>
+            <div className="custom-grid-cell">
+              <label className="flex flex-col items-center">
+                <span className="relative flex items-center justify-center">
+                  <input type="checkbox" className="custom-checkbox" checked={isEventManagementOfficialDocument} onChange={e => {
+                    const checked = e.target.checked;
+                    setIsEventManagementOfficialDocument(checked);
+                    if (checked) {
+                      setEventFlyer(false);
+                      setIsAgendaFlyer(false);
+                    }
+                  }} />
                   <span className="custom-checkbox-tick">
                     {isEventManagementOfficialDocument && (
                       <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">

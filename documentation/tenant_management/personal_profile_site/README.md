@@ -27,7 +27,7 @@ Hand this folder to backend, frontend, and ops teams. **Frontend (`mosc-temp`) P
 | `event-site-manager-service` | Spring Boot REST API, Liquibase migrations, JPA entities | **Deploy Phase B Liquibase + `/api/profile-projects`** |
 | `event-site-manager-batch-jobs` | Spring Batch; `PROFILE_AUDIENCE` email; Phase B = SQL mirror only | **Yes for bulk send**; no Java for Phase B |
 
-Canonical SQL (all repos): `code_html_template/SQLS/Current_Sqls/Latest_Schema_Post__Blob_Claude_12.sql`
+Canonical SQL (all repos): `code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql`
 
 Build script (v2): `scripts/build-profile-audience-v2.ps1`
 

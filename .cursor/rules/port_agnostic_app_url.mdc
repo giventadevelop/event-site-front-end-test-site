@@ -1,0 +1,35 @@
+---
+description: Never pin the Next.js app origin to a localhost port from NEXT_PUBLIC_APP_URL
+globs: src/lib/env.ts, src/app/**/*.ts, src/app/**/*.tsx, src/lib/**/*.ts
+alwaysApply: true
+---
+
+# Port-Agnostic Next.js App URL
+
+- **Local `NEXT_PUBLIC_APP_URL` ports are ignored**
+  - `.env.local` may say `http://localhost:3002` while you run `npm run dev:clean -- -p 3003`.
+  - That env value is a stale snapshot. Do not use its port for fetches, Clerk redirects, emails, or QR links.
+
+- **How to resolve the live origin**
+  - Browser / `'use client'` API calls: relative `/api/proxy/...` (never `getAppUrl() + '/api/proxy'`).
+  - Server code in a request: `await getAppUrlFromRequestHeaders()` from [env.ts](mdc:src/lib/env.ts) — uses `Host` / `x-forwarded-host`.
+  - Server → backend REST: `getApiBaseUrl()` + `fetchWithJwtRetry` (not this Next app).
+  - No request context (webhook, CLI): `getAppUrl()` — browser origin, then `PORT` / `next dev -p` / `__NEXT_PRIVATE_ORIGIN`. Never `http://localhost:3000` hardcoded.
+
+```typescript
+// ✅ DO: live request host (works on 3000, 3001, 3003, …)
+const baseUrl = await getAppUrlFromRequestHeaders();
+
+// ✅ DO: client same-origin
+await fetch('/api/proxy/event-details?size=1');
+
+// ❌ DON'T: bake a port into local app origin
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+```
+
+- **Production**
+  - `AMPLIFY_NEXT_PUBLIC_APP_URL` / `NEXT_PUBLIC_APP_URL` stay the real public domain (`https://www.example.com`). No port involved.
+
+- **References**
+  - [getAppUrl / getAppUrlFromRequestHeaders](mdc:src/lib/env.ts)
+  - [App URL and fetch targets](mdc:.cursor/rules/nextjs_api_routes.mdc)

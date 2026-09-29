@@ -16,6 +16,7 @@ import {
   cancelEventServer,
   deleteCalendarEventForEventServer,
   fetchChildEventsBySeriesIdServer,
+  fetchChildEventsByParentIdServer,
   softDeleteEventWithChildrenServer,
   hardDeleteEventWithChildrenServer,
   activateEventWithChildrenServer,
@@ -43,7 +44,7 @@ export default function ManageEventsPage() {
   const [searchEndDate, setSearchEndDate] = useState('');
   const [searchAdmissionType, setSearchAdmissionType] = useState('');
   const [sort, setSort] = useState('startDate,asc');
-  const [searchField, setSearchField] = useState<'title' | 'id' | 'caption'>('title');
+  const [searchField, setSearchField] = useState<'title' | 'caption'>('title');
   const [searchId, setSearchId] = useState('');
   const [showPastEvents, setShowPastEvents] = useState(false);
   // Track event counts for both future and past to determine auto-switch and messages
@@ -102,7 +103,8 @@ export default function ManageEventsPage() {
   }, [userId, cacheKeyForView, page, searchTitle, searchId, searchCaption, searchStartDate, searchEndDate]);
 
   async function loadAll(pageNum = 0, checkInitialLoad = false) {
-    const isDefaultView = pageNum === 0 && !searchTitle && !searchId && !searchCaption && !searchStartDate && !searchEndDate;
+    const lookupByEventId = Boolean(searchId.trim());
+    const isDefaultView = pageNum === 0 && !lookupByEventId && !searchTitle && !searchCaption && !searchStartDate && !searchEndDate;
     if (!isDefaultView) setLoading(true);
     setError(null);
     try {
@@ -113,7 +115,7 @@ export default function ManageEventsPage() {
       let loadingPastEvents = showPastEvents;
 
       // On initial load, check both future and past event counts in parallel
-      if (checkInitialLoad && !hasCheckedInitialLoad && pageNum === 0 && !searchTitle && !searchId && !searchCaption && !searchStartDate && !searchEndDate) {
+      if (checkInitialLoad && !hasCheckedInitialLoad && pageNum === 0 && !lookupByEventId && !searchTitle && !searchCaption && !searchStartDate && !searchEndDate) {
         const futureParams: any = {
           admissionType: searchAdmissionType,
           sort: 'startDate,asc',
@@ -153,23 +155,24 @@ export default function ManageEventsPage() {
         pageSize,
       };
 
-      // Apply date filtering based on toggle (use loadingPastEvents which respects auto-switch)
-      if (loadingPastEvents) {
-        // Show events that ended before today
-        filterParams.endDate = today;
-      } else {
-        // Show events that start today or later (future events including today)
-        filterParams.startDate = today;
+      // Event ID lookup must find the row even if it is past / outside the current view.
+      if (!lookupByEventId) {
+        if (loadingPastEvents) {
+          // Show events that ended before today
+          filterParams.endDate = today;
+        } else {
+          // Show events that start today or later (future events including today)
+          filterParams.startDate = today;
+        }
       }
 
       // Override with manual date filters if provided
       if (searchStartDate) filterParams.startDate = searchStartDate;
       if (searchEndDate) filterParams.endDate = searchEndDate;
 
-      // Add search filters based on selected field
-      if (searchField === 'title') filterParams.title = searchTitle;
-      else if (searchField === 'id') filterParams.id = searchId;
-      else if (searchField === 'caption') filterParams.caption = searchCaption;
+      if (searchField === 'title' && searchTitle) filterParams.title = searchTitle;
+      else if (searchField === 'caption' && searchCaption) filterParams.caption = searchCaption;
+      if (lookupByEventId) filterParams.id = searchId.trim();
 
       // Parallel data fetches instead of sequential
       const [eventsData, types] = await Promise.all([
@@ -184,7 +187,7 @@ export default function ManageEventsPage() {
       setTotalCount(eventsData.totalCount);
       setEventTypes(types);
       setCalendarEvents(calendarEventsResult);
-      if (pageNum === 0 && !searchTitle && !searchId && !searchCaption && !searchStartDate && !searchEndDate) {
+      if (pageNum === 0 && !lookupByEventId && !searchTitle && !searchCaption && !searchStartDate && !searchEndDate) {
         try {
           sessionStorage.setItem(
             getHomepageCacheKey(loadingPastEvents ? 'manage_events_cache_past' : 'manage_events_cache_future'),
@@ -212,8 +215,21 @@ export default function ManageEventsPage() {
         setIsAutoSwitching(false); // Reset flag after skipping
         return;
       }
-      // On initial load (first render), check both future and past counts
-      const isInitialLoad = !hasCheckedInitialLoad && page === 0 && !searchTitle && !searchId && !searchCaption && !searchStartDate && !searchEndDate;
+      const lookupByEventId = Boolean(searchId.trim());
+      if (lookupByEventId && page !== 0) {
+        setPage(0);
+        return;
+      }
+      // On initial load (first render), check both future and past counts.
+      // Do not auto-switch views while looking up by Event ID.
+      const isInitialLoad =
+        !hasCheckedInitialLoad &&
+        page === 0 &&
+        !lookupByEventId &&
+        !searchTitle &&
+        !searchCaption &&
+        !searchStartDate &&
+        !searchEndDate;
       loadAll(page, isInitialLoad);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -227,28 +243,23 @@ export default function ManageEventsPage() {
     // Check if this is a parent event (parentEventId is null/undefined)
     const isParentEvent = event.parentEventId == null || event.parentEventId === undefined;
 
-    if (isParentEvent) {
-      // Parent event: check how many children it has
-      const seriesId = event.recurrenceSeriesId || event.id;
-      if (seriesId) {
-        try {
-          const childEvents = await fetchChildEventsBySeriesIdServer(seriesId);
-          console.log(`[handleDeleteClick] Fetched events for series ${seriesId}:`, childEvents.map(e => ({ id: e.id, parentEventId: e.parentEventId, isActive: e.isActive })));
-          // Exclude the parent event itself from the count
-          // Also filter to only count active child events (children with parentEventId set)
-          const children = childEvents.filter(e =>
-            e.id !== event.id &&
-            e.parentEventId != null &&
-            e.parentEventId === event.id
+    if (isParentEvent && event.id != null) {
+      // Only count real children — never use event.id as a fake recurrenceSeriesId
+      // (backend null-field criteria can return the entire tenant event list)
+      try {
+        let children: EventDetailsDTO[] = [];
+        if (event.recurrenceSeriesId != null) {
+          const seriesEvents = await fetchChildEventsBySeriesIdServer(event.recurrenceSeriesId);
+          children = seriesEvents.filter(
+            (e) => e.id !== event.id && e.parentEventId != null && Number(e.parentEventId) === Number(event.id)
           );
-          console.log(`[handleDeleteClick] Filtered children (excluding parent ${event.id}):`, children.map(e => ({ id: e.id, parentEventId: e.parentEventId })));
-          console.log(`[handleDeleteClick] Child count: ${children.length}`);
-          setChildEventCount(children.length);
-        } catch (err) {
-          console.error('Failed to fetch child events:', err);
-          setChildEventCount(0);
+        } else {
+          children = await fetchChildEventsByParentIdServer(event.id);
         }
-      } else {
+        console.log(`[handleDeleteClick] Child count for event ${event.id}: ${children.length}`);
+        setChildEventCount(children.length);
+      } catch (err) {
+        console.error('Failed to fetch child events:', err);
         setChildEventCount(0);
       }
     } else {
@@ -342,20 +353,18 @@ export default function ManageEventsPage() {
     // Check if this is a parent event (parentEventId is null/undefined)
     const isParentEvent = event.parentEventId == null || event.parentEventId === undefined;
 
-    if (isParentEvent) {
-      // Parent event: check how many children it has
-      const seriesId = event.recurrenceSeriesId || event.id;
-      if (seriesId) {
-        try {
-          const childEvents = await fetchChildEventsBySeriesIdServer(seriesId);
-          // Exclude the parent event itself from the count
-          const children = childEvents.filter(e => e.id !== event.id);
-          setActivateChildEventCount(children.length);
-        } catch (err) {
-          console.error('Failed to fetch child events:', err);
-          setActivateChildEventCount(0);
+    if (isParentEvent && event.id != null) {
+      try {
+        let children: EventDetailsDTO[] = [];
+        if (event.recurrenceSeriesId != null) {
+          const seriesEvents = await fetchChildEventsBySeriesIdServer(event.recurrenceSeriesId);
+          children = seriesEvents.filter((e) => e.id !== event.id);
+        } else {
+          children = await fetchChildEventsByParentIdServer(event.id);
         }
-      } else {
+        setActivateChildEventCount(children.length);
+      } catch (err) {
+        console.error('Failed to fetch child events:', err);
         setActivateChildEventCount(0);
       }
     } else {
@@ -438,6 +447,29 @@ export default function ManageEventsPage() {
   }
   function handleNextPage() {
     setPage((p) => p + 1);
+  }
+
+  const hasSearchFilters =
+    Boolean(searchId.trim()) ||
+    Boolean(searchTitle.trim()) ||
+    Boolean(searchCaption.trim()) ||
+    Boolean(searchStartDate) ||
+    Boolean(searchEndDate) ||
+    Boolean(searchAdmissionType) ||
+    searchField !== 'title' ||
+    sort !== 'startDate,asc';
+
+  function handleClearSearchForm() {
+    setSearchId('');
+    setSearchTitle('');
+    setSearchCaption('');
+    setSearchStartDate('');
+    setSearchEndDate('');
+    setSearchAdmissionType('');
+    setSearchField('title');
+    setSort('startDate,asc');
+    setPage(0);
+    setHasCheckedInitialLoad(false);
   }
 
   // Render page content even if userId is not yet available (client-side auth loading)
@@ -570,29 +602,39 @@ export default function ManageEventsPage() {
           <div className="text-lg font-semibold text-blue-800 mb-4">Search Events</div>
           <div className="flex flex-wrap gap-4 items-end">
             <div>
+              <label className="block text-xs font-semibold mb-1" htmlFor="manage-events-event-id">
+                Event ID
+              </label>
+              <input
+                id="manage-events-event-id"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                className="border px-3 py-2 rounded w-36"
+                value={searchId}
+                onChange={(e) => {
+                  setSearchId(e.target.value);
+                  setPage(0);
+                }}
+                placeholder="Event ID"
+              />
+            </div>
+            <div>
               <label className="block text-xs font-semibold mb-1">Search By</label>
-              <select className="border px-3 py-2 rounded w-40" value={searchField} onChange={e => setSearchField(e.target.value as 'title' | 'id' | 'caption')}>
+              <select className="border px-3 py-2 rounded w-40" value={searchField} onChange={e => setSearchField(e.target.value as 'title' | 'caption')}>
                 <option value="title">Title</option>
-                <option value="id">ID</option>
                 <option value="caption">Caption</option>
               </select>
             </div>
             <div>
               <label htmlFor="manage-events-search" className="block text-xs font-semibold mb-1">
-                {searchField === 'id' ? 'Event ID' : searchField.charAt(0).toUpperCase() + searchField.slice(1)}
+                {searchField.charAt(0).toUpperCase() + searchField.slice(1)}
               </label>
               <ManageEventsSearchCombobox
                 searchField={searchField}
-                committedValue={
-                  searchField === 'title'
-                    ? searchTitle
-                    : searchField === 'id'
-                      ? searchId
-                      : searchCaption
-                }
+                committedValue={searchField === 'title' ? searchTitle : searchCaption}
                 onCommit={(value) => {
                   if (searchField === 'title') setSearchTitle(value);
-                  else if (searchField === 'id') setSearchId(value);
                   else setSearchCaption(value);
                   setPage(0);
                 }}
@@ -627,6 +669,21 @@ export default function ManageEventsPage() {
                 <option value="id,asc">ID (Oldest)</option>
               </select>
             </div>
+            <button
+              type="button"
+              onClick={handleClearSearchForm}
+              disabled={!hasSearchFilters}
+              className="flex-shrink-0 h-14 rounded-xl bg-orange-100 hover:bg-orange-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-6 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              title="Clear search form"
+              aria-label="Clear search form"
+            >
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-orange-200 flex items-center justify-center">
+                <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <span className="font-semibold text-orange-700">Clear</span>
+            </button>
           </div>
 
           {/* Event Filter Toggle */}
@@ -701,7 +758,7 @@ export default function ManageEventsPage() {
       )}
 
       {/* Info box when there are no events at all (both future and past) */}
-      {!loading && hasCheckedInitialLoad && futureEventCount === 0 && pastEventCount === 0 && (
+      {!loading && hasCheckedInitialLoad && !searchId.trim() && futureEventCount === 0 && pastEventCount === 0 && (
         <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-6">
           <div className="flex items-start">
             <div className="flex-shrink-0">
@@ -722,7 +779,7 @@ export default function ManageEventsPage() {
       )}
 
       {/* Message above table when showing past events because no future events exist */}
-      {!loading && hasCheckedInitialLoad && showPastEvents && futureEventCount === 0 && pastEventCount > 0 && (
+      {!loading && hasCheckedInitialLoad && !searchId.trim() && showPastEvents && futureEventCount === 0 && pastEventCount > 0 && (
         <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
           <div className="flex items-start">
             <div className="flex-shrink-0">
@@ -740,7 +797,7 @@ export default function ManageEventsPage() {
       )}
 
       {/* Info box when showing future events but there are no future events */}
-      {!loading && hasCheckedInitialLoad && !showPastEvents && futureEventCount === 0 && (
+      {!loading && hasCheckedInitialLoad && !searchId.trim() && !showPastEvents && futureEventCount === 0 && (
         <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-6">
           <div className="flex items-start">
             <div className="flex-shrink-0">
