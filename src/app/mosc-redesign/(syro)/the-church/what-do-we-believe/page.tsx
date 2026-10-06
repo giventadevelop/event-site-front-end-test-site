@@ -29,14 +29,16 @@ export default async function WhatDoWeBelievePage({
             <div className="lg:col-span-2">
               <div className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] px-4 py-8 md:p-8">
                 {/* Featured Image */}
-                <div className="mb-8 flex justify-center">
+                <div className="mb-8">
                   <Image
                     src="/images/church/what-do-we-believe.jpg"
                     alt="What Do We Believe"
-                    width={188}
+                    width={300}
                     height={188}
-                    className="rounded-lg w-full max-w-[188px] max-h-[188px] object-contain"
+                    className="rounded-lg w-full h-auto object-contain"
                     priority
+                    unoptimized
+                    sizes="(max-width: 1024px) 100vw, 720px"
                   />
                 </div>
 

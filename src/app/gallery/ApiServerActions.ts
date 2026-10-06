@@ -8,7 +8,9 @@ import type {
   GalleryAlbumDTO,
   GalleryAlbumWithMedia,
   GalleryCategoryDTO,
+  GalleryYoutubeVideoDTO,
 } from '@/types';
+import { isYoutubeGalleryMedia, youtubeWatchUrl } from '@/lib/gallery/youtubeMedia';
 
 export interface GalleryAlbumExtraFilters {
   categoryId?: number;
@@ -469,6 +471,68 @@ export async function fetchAlbumWithMedia(
   }
 }
 
+export type AlbumYoutubeItem = {
+  youtubeUrl: string;
+  title?: string | null;
+  description?: string | null;
+};
+
+/**
+ * YouTube items saved on the CMS album that backs a static gallery page
+ * (`description` starts with `static_slug={slug}`).
+ */
+export async function fetchYoutubeItemsForStaticSlug(slug: string): Promise<AlbumYoutubeItem[]> {
+  const marker = `static_slug=${slug}`;
+  try {
+    const tenantId = getTenantId();
+    const albumParams = new URLSearchParams();
+    albumParams.append('tenantId.equals', tenantId);
+    albumParams.append('description.contains', marker);
+    albumParams.append('isPublic.equals', 'true');
+    albumParams.append('size', '10');
+
+    const albumResponse = await fetchWithJwtRetry(
+      `${getApiBase()}/api/gallery-albums?${albumParams.toString()}`,
+      { cache: 'no-store' }
+    );
+    if (!albumResponse.ok) return [];
+
+    const albums = (await albumResponse.json()) as GalleryAlbumDTO[];
+    const album = (Array.isArray(albums) ? albums : []).find((row) =>
+      row.description?.trim().startsWith(marker)
+    );
+    if (!album?.id) return [];
+
+    const mediaParams = new URLSearchParams();
+    mediaParams.append('tenantId.equals', tenantId);
+    mediaParams.append('albumId.equals', String(album.id));
+    mediaParams.append('isPublic.equals', 'true');
+    mediaParams.append('sort', 'displayOrder,asc');
+    mediaParams.append('size', '100');
+
+    const mediaResponse = await fetchWithJwtRetry(
+      `${getApiBase()}/api/event-medias?${mediaParams.toString()}`,
+      { cache: 'no-store' }
+    );
+    if (!mediaResponse.ok) return [];
+
+    const media = (await mediaResponse.json()) as EventMediaDTO[];
+    if (!Array.isArray(media)) return [];
+
+    return media
+      .filter((item) => isYoutubeGalleryMedia(item))
+      .map((item) => ({
+        youtubeUrl: youtubeWatchUrl(item) || '',
+        title: item.title,
+        description: item.description,
+      }))
+      .filter((item) => item.youtubeUrl);
+  } catch (error) {
+    console.error('[fetchYoutubeItemsForStaticSlug]', slug, error);
+    return [];
+  }
+}
+
 function uniqueSortedNumbers(values: (number | null | undefined)[]): number[] {
   const set = new Set<number>();
   for (const v of values) {
@@ -617,5 +681,34 @@ export async function fetchGalleryEventFilterOptions(): Promise<GalleryEventFilt
   } catch (error) {
     console.error('Error fetching gallery event filter options:', error);
     return { years: [], locations: [], eventTypes: [] };
+  }
+}
+
+function parseGalleryVideoList(data: unknown): GalleryYoutubeVideoDTO[] {
+  if (Array.isArray(data)) return data as GalleryYoutubeVideoDTO[];
+  if (data && typeof data === 'object' && Array.isArray((data as { content?: unknown }).content)) {
+    return (data as { content: GalleryYoutubeVideoDTO[] }).content;
+  }
+  return [];
+}
+
+/** Active YouTube videos configured for the MOSC redesign gallery. */
+export async function fetchGalleryYoutubeVideos(): Promise<GalleryYoutubeVideoDTO[]> {
+  try {
+    const params = new URLSearchParams();
+    params.set('tenantId.equals', getTenantId());
+    params.set('isActive.equals', 'true');
+    params.set('sort', 'displayOrder,asc');
+    params.set('size', '100');
+    const res = await fetchWithJwtRetry(
+      `${getApiBase()}/api/gallery-youtube-videos?${params.toString()}`,
+      { cache: 'no-store' },
+      'gallery-youtube-videos-public'
+    );
+    if (!res.ok) return [];
+    return parseGalleryVideoList(await res.json()).filter((video) => Boolean(video.youtubeUrl?.trim()));
+  } catch (error) {
+    console.error('Error fetching gallery YouTube videos:', error);
+    return [];
   }
 }

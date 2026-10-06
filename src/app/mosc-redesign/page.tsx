@@ -11,7 +11,7 @@ import {
   getCurrentCatholicosData,
 } from './getCurrentCatholicosData';
 import type { CurrentCatholicosProfile } from './types/currentCatholicos';
-import { getDevalokamAramanaLiveOrRecent } from '@/lib/youtube/devalokamAramanaLive';
+import { resolveHomepageYoutubeStream } from '@/lib/youtube/resolveHomepageYoutubeStream';
 import type { DevalokamAramanaStream } from '@/lib/youtube/devalokamAramanaLive';
 
 export const metadata: Metadata = {
@@ -48,7 +48,7 @@ export default async function MoscRedesignHomePage() {
   }
 
   try {
-    youtubeLive = await getDevalokamAramanaLiveOrRecent();
+    youtubeLive = await resolveHomepageYoutubeStream();
   } catch (error) {
     console.error('[mosc-redesign home] Failed to load Devalokam Aramana YouTube stream:', error);
   }

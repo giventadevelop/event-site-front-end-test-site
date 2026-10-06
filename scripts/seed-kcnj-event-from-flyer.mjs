@@ -6,25 +6,19 @@
  *
  * Usage:
  *   node scripts/seed-kcnj-event-from-flyer.mjs
- *   IMAGE_PATH="F:/path/to/flyer.jpeg" node scripts/seed-kcnj-event-from-flyer.mjs
+ *   IMAGE_PATH="C:/path/to/a-catalog-flyer.png" node scripts/seed-kcnj-event-from-flyer.mjs
  *
- * Defaults: both Aug 2026 flyers under image-edit-ai-tools/modify_aug_06.
+ * New posters that are not in EVENTS[] belong in the generic script:
+ *   node scripts/seed-event-from-flyer.mjs --help
+ *
+ * Defaults: catalog under image-edit-ai-tools/kcnj. Tenant is whatever
+ * MOSC_TENANT_ID / NEXT_PUBLIC_TENANT_ID this process loads (kcnj-prod → keralacenter_org_9).
  */
-import { readFileSync, existsSync, copyFileSync, mkdirSync } from 'fs';
-import { basename, dirname, join, resolve } from 'path';
-import { fileURLToPath } from 'url';
-import { File } from 'node:buffer';
-import {
-  assertEnv,
-  getServiceJwt,
-  apiFetch,
-  API_BASE_URL,
-  TENANT_ID,
-} from './mosc-in-migration/migration-api-lib.mjs';
+import { resolve } from 'path';
+import { assertEnv, getServiceJwt, API_BASE_URL, TENANT_ID } from './mosc-in-migration/migration-api-lib.mjs';
+import { seedFlyers } from './lib/seedEventFromFlyer.mjs';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = resolve(__dirname, '..');
-const FLYER_DIR = 'F:/project_workspace/image-edit-ai-tools/public/images/kcnj/modify_aug_06';
+const FLYER_DIR = 'C:/project_workspace/image-edit-ai-tools/public/images/kcnj/modify_aug_06';
 
 const EVENT_TYPE_ID = Number(process.env.EVENT_TYPE_ID || 13);
 
@@ -32,6 +26,7 @@ const EVENT_TYPE_ID = Number(process.env.EVENT_TYPE_ID || 13);
  * Scraped from:
  *  - onam_ad_hero_section.png (Parsippany Onam 2026)
  *  - painting_event_2000x800.jpg (Parsippany Onam Painting Competition)
+ *  - Parsippany_Onam_Volunteer_Recognition_2026.png (Volunteer Recognition & Party)
  */
 const EVENTS = [
   {
@@ -86,189 +81,60 @@ const EVENTS = [
     imagePath: resolve(FLYER_DIR, 'painting_event_2000x800.jpg'),
     localCopyName: 'parsippany-onam-painting-2026.jpg',
   },
+  {
+    key: 'parsippany-onam-volunteer-recognition-2026',
+    title: 'Parsippany ONAM 2026 Volunteer Recognition & Party',
+    caption: 'Celebrate the volunteers who made Onam 2026 possible',
+    description: [
+      'Kerala Center of New Jersey presents Parsippany ONAM 2026 Volunteer Recognition & Party.',
+      'Celebrate the volunteers who made Onam 2026 possible.',
+      'Free admission for volunteers. Non-volunteer tickets: $20 adults and $12 kids.',
+      'Friday, October 9, 2026, 6:00 PM to 11:00 PM.',
+      'Venue: Hildale Park Presbyterian Church, 85 Ridgedale Ave, Cedar Knolls, NJ 07927.',
+      'Registration is required: https://forms.gle/4whs3o9arcFZELi97',
+    ].join(' '),
+    startDate: '2026-10-09',
+    endDate: '2026-10-09',
+    promotionStartDate: '2026-09-15',
+    startTime: '18:00:00',
+    endTime: '23:00:00',
+    location: 'Hildale Park Presbyterian Church, 85 Ridgedale Ave, Cedar Knolls, NJ 07927',
+    admissionType: 'ticketed',
+    isFeaturedEvent: true,
+    featuredEventPriorityRanking: 1,
+    isCompetitionEvent: false,
+    isRegistrationRequired: true,
+    externalTicketUrl: 'https://forms.gle/4whs3o9arcFZELi97',
+    fromEmail: 'contactus@keralacenter.org',
+    imagePath: resolve(
+      'C:/project_workspace/image-edit-ai-tools/public/images/kcnj/Parsippany_Onam_Volunteer_Recognition_2026.png'
+    ),
+    localCopyName: 'parsippany-onam-volunteer-recognition-2026.png',
+  },
 ];
-
-function mimeFor(path) {
-  const lower = path.toLowerCase();
-  if (lower.endsWith('.png')) return 'image/png';
-  if (lower.endsWith('.webp')) return 'image/webp';
-  return 'image/jpeg';
-}
-
-function extractUploadUrl(result) {
-  if (!result || typeof result !== 'object') return null;
-  if (Array.isArray(result.data) && result.data[0]) {
-    return result.data[0].fileUrl || result.data[0].url || null;
-  }
-  return result.fileUrl || result.url || null;
-}
-
-async function createEvent(spec, token) {
-  const now = new Date().toISOString();
-  const payload = {
-    title: spec.title,
-    caption: spec.caption,
-    description: spec.description,
-    startDate: spec.startDate,
-    endDate: spec.endDate,
-    promotionStartDate: spec.promotionStartDate,
-    startTime: spec.startTime,
-    endTime: spec.endTime,
-    timezone: 'America/New_York',
-    location: spec.location,
-    directionsToVenue: '',
-    admissionType: spec.admissionType,
-    isActive: true,
-    allowGuests: false,
-    requireGuestApproval: false,
-    enableGuestPricing: false,
-    isRegistrationRequired: !!spec.isRegistrationRequired,
-    isSportsEvent: false,
-    isCompetitionEvent: !!spec.isCompetitionEvent,
-    isLive: false,
-    isFeaturedEvent: !!spec.isFeaturedEvent,
-    featuredEventPriorityRanking: spec.featuredEventPriorityRanking || 0,
-    liveEventPriorityRanking: 0,
-    isRecurring: false,
-    paymentFlowMode: 'STRIPE_ONLY',
-    manualPaymentEnabled: false,
-    tenantId: TENANT_ID,
-    eventType: { id: EVENT_TYPE_ID },
-    donationMetadata: JSON.stringify({ isFundraiserEvent: false, isCharityEvent: false }),
-    fromEmail: spec.fromEmail || 'contactus@keralacenter.org',
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  const { res, json, text } = await apiFetch(
-    '/api/event-details',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    },
-    token
-  );
-  if (!res.ok) {
-    throw new Error(`Create "${spec.title}" failed (${res.status}): ${text.slice(0, 600)}`);
-  }
-  return json;
-}
-
-async function uploadHeroImage(eventId, imagePath, spec, token) {
-  const buf = readFileSync(imagePath);
-  const safeTitle = (spec.title || 'Event').normalize('NFKD').replace(/[^\x20-\x7E]/g, '');
-  const safeCaption = (spec.caption || '').normalize('NFKD').replace(/[^\x20-\x7E]/g, '');
-  const safeFileName = basename(imagePath).replace(/[^a-zA-Z0-9._-]/g, '_');
-  const formData = new FormData();
-  formData.append('file', new File([buf], safeFileName, { type: mimeFor(imagePath) }));
-
-  const params = new URLSearchParams({
-    eventId: String(eventId),
-    eventFlyer: 'true',
-    isEventManagementOfficialDocument: 'false',
-    isHeroImage: 'true',
-    isActiveHeroImage: 'true',
-    isHomePageHeroImage: 'true',
-    isFeaturedEventImage: String(!!spec.isFeaturedEvent),
-    isFeaturedImage: String(!!spec.isFeaturedEvent),
-    isPublic: 'true',
-    title: safeTitle.slice(0, 120),
-    description: safeCaption.slice(0, 200),
-    tenantId: TENANT_ID,
-    displayOrder: '0',
-  });
-
-  const url = `${API_BASE_URL}/api/event-medias/upload?${params.toString()}`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'X-Tenant-ID': TENANT_ID,
-    },
-    body: formData,
-  });
-  const text = await res.text();
-  let json = null;
-  try {
-    json = text ? JSON.parse(text) : null;
-  } catch {
-    json = null;
-  }
-  if (!res.ok) {
-    throw new Error(`Upload for event ${eventId} failed (${res.status}): ${text.slice(0, 400)}`);
-  }
-  return extractUploadUrl(json);
-}
-
-async function findExistingByTitle(title, token) {
-  const { res, json } = await apiFetch(
-    `/api/event-details?title.equals=${encodeURIComponent(title)}&size=5`,
-    { method: 'GET' },
-    token
-  );
-  if (!res.ok) return [];
-  return Array.isArray(json) ? json : json?.content || [];
-}
-
-async function seedOne(spec, token) {
-  if (!existsSync(spec.imagePath)) {
-    throw new Error(`Flyer image not found: ${spec.imagePath}`);
-  }
-
-  const localDir = join(ROOT, 'public', 'images', 'KCNJ', 'events');
-  mkdirSync(localDir, { recursive: true });
-  const localCopy = join(localDir, spec.localCopyName);
-  copyFileSync(spec.imagePath, localCopy);
-  console.log(`[seed-kcnj-flyer] copied → ${localCopy}`);
-
-  const existing = await findExistingByTitle(spec.title, token);
-  if (existing.length > 0) {
-    const id = existing[0].id;
-    console.log(
-      `[seed-kcnj-flyer] Event already exists (id=${id} "${spec.title}"). Skipping create; uploading media.`
-    );
-    const imageUrl = await uploadHeroImage(id, spec.imagePath, spec, token);
-    console.log(`[seed-kcnj-flyer] ✓ id=${id} media=${imageUrl || 'MISSING'}`);
-    return { id, created: false, imageUrl };
-  }
-
-  const created = await createEvent(spec, token);
-  const id = created?.id;
-  if (id == null) {
-    throw new Error(`Create returned no id: ${JSON.stringify(created)}`);
-  }
-  const imageUrl = await uploadHeroImage(id, spec.imagePath, spec, token);
-  console.log(`[seed-kcnj-flyer] ✓ Created id=${id} "${spec.title}"`);
-  console.log(`[seed-kcnj-flyer] ✓ Media upload: ${imageUrl || 'MISSING URL (check admin media)'}`);
-  return { id, created: true, imageUrl };
-}
 
 async function main() {
   assertEnv();
 
   const singlePath = process.env.IMAGE_PATH ? resolve(process.env.IMAGE_PATH) : null;
-  const specs = singlePath
-    ? EVENTS.filter((e) => e.imagePath === singlePath).concat(
-        EVENTS.some((e) => e.imagePath === singlePath)
-          ? []
-          : [{ ...EVENTS[0], imagePath: singlePath, localCopyName: basename(singlePath) }]
-      )
-    : EVENTS;
+  const specs = singlePath ? EVENTS.filter((e) => e.imagePath === singlePath) : EVENTS;
+  if (specs.length === 0) {
+    throw new Error(
+      `No KCNJ catalog entry matches IMAGE_PATH=${singlePath}. Use scripts/seed-event-from-flyer.mjs for a new poster.`
+    );
+  }
 
   console.log(`[seed-kcnj-flyer] API=${API_BASE_URL} tenant=${TENANT_ID}`);
   console.log(`[seed-kcnj-flyer] eventTypeId=${EVENT_TYPE_ID}`);
   console.log(`[seed-kcnj-flyer] seeding ${specs.length} flyer(s)`);
 
   const token = await getServiceJwt();
-  for (const spec of specs) {
-    console.log(
-      `[seed-kcnj-flyer] plan: ${spec.title} | ${spec.startDate} ${spec.startTime}–${spec.endTime}`
-    );
-    console.log(`[seed-kcnj-flyer] location: ${spec.location}`);
-    console.log(`[seed-kcnj-flyer] image=${spec.imagePath}`);
-    await seedOne(spec, token);
-  }
+  await seedFlyers(specs, {
+    token,
+    eventTypeId: EVENT_TYPE_ID,
+    assetFolder: 'KCNJ',
+    logPrefix: '[seed-kcnj-flyer]',
+  });
 }
 
 main().catch((err) => {

@@ -4,8 +4,14 @@ import React, { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { GalleryAlbumDTO, EventMediaDTO } from '@/types';
-import { setAlbumCoverImageServer } from '../../ApiServerActions';
+import { createAlbumYoutubeMediaServer, setAlbumCoverImageServer } from '../../ApiServerActions';
 import { Modal } from '@/components/Modal';
+import {
+  isYoutubeGalleryMedia,
+  looksLikeYoutubeUrl,
+  youtubeThumbnailUrl,
+  youtubeWatchUrl,
+} from '@/lib/gallery/youtubeMedia';
 
 interface AlbumMediaClientPageProps {
   albumId: number;
@@ -43,6 +49,13 @@ export default function AlbumMediaClientPage({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const uploadFormDivRef = useRef<HTMLDivElement>(null);
+  const [videoRows, setVideoRows] = useState<Array<{ key: string; youtubeUrl: string; title: string; description: string }>>([
+    { key: 'video-1', youtubeUrl: '', title: '', description: '' },
+  ]);
+  const [videoPublic, setVideoPublic] = useState(true);
+  const [savingVideos, setSavingVideos] = useState(false);
+  const [videoMessage, setVideoMessage] = useState<string | null>(null);
+  const [videoError, setVideoError] = useState<string | null>(null);
 
   const totalPages = Math.ceil(totalCount / pageSize) || 1;
 
@@ -412,6 +425,79 @@ export default function AlbumMediaClientPage({
     }
   };
 
+  const handleAddVideoRow = () => {
+    setVideoRows((current) => [
+      ...current,
+      { key: `video-${Date.now()}`, youtubeUrl: '', title: '', description: '' },
+    ]);
+  };
+
+  const handleRemoveVideoRow = (key: string) => {
+    setVideoRows((current) => {
+      const next = current.filter((row) => row.key !== key);
+      return next.length > 0 ? next : [{ key: 'video-1', youtubeUrl: '', title: '', description: '' }];
+    });
+  };
+
+  const handleSaveVideos = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setVideoError(null);
+    setVideoMessage(null);
+
+    const filled = videoRows
+      .map((row) => ({
+        youtubeUrl: row.youtubeUrl.trim(),
+        title: row.title.trim(),
+        description: row.description.trim(),
+      }))
+      .filter((row) => row.youtubeUrl || row.title || row.description);
+
+    if (filled.length === 0) {
+      setVideoError('Add a YouTube URL and a title.');
+      return;
+    }
+
+    for (const [index, row] of filled.entries()) {
+      if (!row.youtubeUrl || !looksLikeYoutubeUrl(row.youtubeUrl)) {
+        setVideoError(`Video ${index + 1} needs a YouTube URL.`);
+        return;
+      }
+      if (!row.title) {
+        setVideoError(`Video ${index + 1} needs a title.`);
+        return;
+      }
+    }
+
+    setSavingVideos(true);
+    try {
+      for (const [index, row] of filled.entries()) {
+        await createAlbumYoutubeMediaServer({
+          albumId,
+          youtubeUrl: row.youtubeUrl,
+          title: row.title,
+          description: row.description,
+          displayOrder: totalCount + index,
+          isPublic: videoPublic,
+        });
+      }
+      setVideoRows([{ key: `video-${Date.now()}`, youtubeUrl: '', title: '', description: '' }]);
+      setVideoMessage(
+        filled.length === 1
+          ? 'YouTube video added to this album.'
+          : `${filled.length} YouTube videos added to this album.`
+      );
+      setPage(0);
+      setTimeout(() => {
+        void loadMedia();
+      }, 400);
+    } catch (error: unknown) {
+      const text = error instanceof Error ? error.message : 'Could not add the YouTube video.';
+      setVideoError(text);
+    } finally {
+      setSavingVideos(false);
+    }
+  };
+
   const handleSetCoverImage = async (media: EventMediaDTO) => {
     if (!media.fileUrl) {
       alert('Media does not have a file URL');
@@ -708,6 +794,128 @@ export default function AlbumMediaClientPage({
         </form>
       </div>
 
+      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 className="text-xl font-semibold mb-1">Add YouTube video</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Video URLs are saved as gallery items in this album, together with uploaded photos and files.
+        </p>
+        <form onSubmit={handleSaveVideos} className="space-y-4">
+          {videoRows.map((row, index) => (
+            <div key={row.key} className="border border-gray-200 rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-gray-800">Video {index + 1}</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveVideoRow(row.key)}
+                  className="text-sm font-semibold text-red-700 hover:text-red-800"
+                  title="Remove video"
+                  aria-label={`Remove video ${index + 1}`}
+                >
+                  Remove
+                </button>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor={`${row.key}-url`}>
+                  YouTube URL *
+                </label>
+                <input
+                  id={`${row.key}-url`}
+                  type="url"
+                  value={row.youtubeUrl}
+                  onChange={(e) =>
+                    setVideoRows((current) =>
+                      current.map((item) => (item.key === row.key ? { ...item, youtubeUrl: e.target.value } : item))
+                    )
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor={`${row.key}-title`}>
+                  Title *
+                </label>
+                <input
+                  id={`${row.key}-title`}
+                  type="text"
+                  value={row.title}
+                  onChange={(e) =>
+                    setVideoRows((current) =>
+                      current.map((item) => (item.key === row.key ? { ...item, title: e.target.value } : item))
+                    )
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Video title"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor={`${row.key}-description`}>
+                  Description
+                </label>
+                <textarea
+                  id={`${row.key}-description`}
+                  value={row.description}
+                  onChange={(e) =>
+                    setVideoRows((current) =>
+                      current.map((item) => (item.key === row.key ? { ...item, description: e.target.value } : item))
+                    )
+                  }
+                  rows={2}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Optional description"
+                />
+              </div>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={handleAddVideoRow}
+            className="px-4 py-2 rounded-lg bg-purple-100 hover:bg-purple-200 text-purple-800 font-semibold"
+            title="Add another URL"
+            aria-label="Add another URL"
+          >
+            Add another URL
+          </button>
+
+          <div className="flex items-center">
+            <input
+              id="video-isPublic"
+              type="checkbox"
+              checked={videoPublic}
+              onChange={(e) => setVideoPublic(e.target.checked)}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="video-isPublic" className="ml-2 block text-sm text-gray-700">
+              Make videos public (visible in this album)
+            </label>
+          </div>
+
+          {videoError ? (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <p className="text-sm text-red-800">{videoError}</p>
+            </div>
+          ) : null}
+          {videoMessage ? (
+            <div className="bg-green-50 border border-green-200 rounded-md p-4">
+              <p className="text-sm text-green-800">{videoMessage}</p>
+            </div>
+          ) : null}
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={savingVideos}
+              className="px-6 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Add videos to album"
+              aria-label="Add videos to album"
+            >
+              {savingVideos ? 'Adding...' : 'Add videos to album'}
+            </button>
+          </div>
+        </form>
+      </div>
+
       {/* Loading State */}
       {loading && (
         <div className="bg-white rounded-lg shadow-md p-12 text-center">
@@ -732,7 +940,22 @@ export default function AlbumMediaClientPage({
                         Album Cover
                       </span>
                     )}
-                    {media.fileUrl ? (
+                    {isYoutubeGalleryMedia(media) ? (
+                      <>
+                        <img
+                          src={youtubeThumbnailUrl(youtubeWatchUrl(media) || '') || media.fileUrl || ''}
+                          alt={media.altText || media.title || 'YouTube video'}
+                          className="w-full h-full object-cover"
+                        />
+                        <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#be1929] text-white shadow-lg">
+                            <svg className="ml-1 h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </span>
+                        </span>
+                      </>
+                    ) : media.fileUrl ? (
                       media.fileUrl.match(/\.(mp4|mov|avi|webm|mkv)$/i) ? (
                         <video
                           src={media.fileUrl}
@@ -769,7 +992,7 @@ export default function AlbumMediaClientPage({
                   <div className="p-4 pt-0 flex justify-end gap-2">
                     <button
                       onClick={() => handleSetCoverImage(media)}
-                      disabled={settingCoverMediaId === media.id || isCoverMedia(media)}
+                      disabled={settingCoverMediaId === media.id || isCoverMedia(media) || isYoutubeGalleryMedia(media)}
                       className="flex-shrink-0 w-14 h-14 rounded-xl bg-purple-100 hover:bg-purple-200 flex items-center justify-center transition-all duration-300 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                       title={isCoverMedia(media) ? 'Current album cover' : 'Set as Cover Image'}
                       aria-label={isCoverMedia(media) ? 'Current album cover' : 'Set as Cover Image'}
@@ -928,10 +1151,12 @@ function EditMediaModal({
   onSave: (updated: Partial<EventMediaDTO>) => void;
   loading: boolean;
 }) {
+  const youtubeItem = isYoutubeGalleryMedia(media);
   const [form, setForm] = useState({
     title: media.title || '',
     description: media.description || '',
     altText: media.altText || '',
+    youtubeUrl: youtubeWatchUrl(media) || '',
     isPublic: media.isPublic ?? true,
     displayOrder: media.displayOrder || 0,
     startDisplayingFromDate: media.startDisplayingFromDate ?
@@ -946,13 +1171,26 @@ function EditMediaModal({
 
     if (loading) return;
 
+    if (youtubeItem && !looksLikeYoutubeUrl(form.youtubeUrl)) {
+      return;
+    }
     const payload: Partial<EventMediaDTO> = {
-      ...form,
+      title: form.title,
+      description: form.description,
+      altText: form.altText,
+      isPublic: form.isPublic,
+      displayOrder: form.displayOrder,
       id: media.id,
       updatedAt: new Date().toISOString(),
       startDisplayingFromDate: form.startDisplayingFromDate ? new Date(form.startDisplayingFromDate).toISOString().split('T')[0] : undefined,
       eventMediaType: media.eventMediaType || 'gallery',
       storageType: media.storageType || 's3',
+      ...(youtubeItem
+        ? {
+            featuredVideoUrl: form.youtubeUrl.trim(),
+            fileUrl: youtubeThumbnailUrl(form.youtubeUrl.trim()) || media.fileUrl,
+          }
+        : {}),
     };
     await onSave(payload);
   };
@@ -973,6 +1211,22 @@ function EditMediaModal({
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
+
+        {youtubeItem ? (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-youtubeUrl">
+              YouTube URL *
+            </label>
+            <input
+              id="edit-youtubeUrl"
+              type="url"
+              value={form.youtubeUrl}
+              onChange={(e) => setForm(prev => ({ ...prev, youtubeUrl: e.target.value }))}
+              required
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+        ) : null}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="edit-description">

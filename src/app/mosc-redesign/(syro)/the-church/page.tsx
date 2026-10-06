@@ -1,8 +1,7 @@
 import React from 'react';
-import Link from 'next/link';
 import QuickLinks from '../components/QuickLinks';
 import SyroPageBanner from '../components/SyroPageBanner';
-import { MoscHubCardMedia } from '../components/MoscHubCardMedia';
+import { MOSC_LISTING_GRID_CLASS, MoscCmsHubCard } from '../components/MoscCmsHubCard';
 
 export const metadata = {
   title: 'The Church',
@@ -90,8 +89,6 @@ const churchSections = [
   },
 ];
 
-const cardShadow = 'rgba(50,50,93,0.25) 0px 6px 12px -2px, rgba(0,0,0,0.3) 0px 3px 7px -3px';
-
 const BANNER_DESCRIPTION =
   'Explore our faith, heritage, and tradition—from the Throne of St. Thomas to the Creed, theology, spirituality, Syrian heritage, history, the Holy Myron, and liturgy.';
 
@@ -106,44 +103,21 @@ const TheChurchPage = () => {
 
       <section className="py-16 bg-syro-bg-gray">
         <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8">
-          <h3 className="text-2xl font-light text-syro-dark-gray mb-10 pl-8 border-l-4 border-syro-red">
+          <h3 className="text-2xl font-light text-[#798daf] mb-10 pl-8 border-l-[7px] border-syro-red">
             The Malankara Orthodox Syrian Church
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {churchSections.map((item) => {
-              return (
-                <div
-                  key={item.title}
-                  className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 px-4 py-8 md:p-8 flex flex-col h-full"
-                  style={{ boxShadow: cardShadow }}
-                >
-                  <MoscHubCardMedia
-                    src={item.image}
-                    alt={item.title}
-                    padded={false}
-                    outerClassName="-mx-1"
-                    frameClassName="max-w-none md:max-w-[220px] bg-white"
-                    sizes="(max-width: 767px) 100vw, 220px"
-                  />
-                  <h3 className="font-syro-display text-xl font-semibold text-syro-blue mb-4 leading-snug">
-                    {item.title}
-                  </h3>
-                  <p className="font-syro-primary text-base text-syro-dark-gray flex-1 mb-5 leading-relaxed">
-                    {item.description}
-                  </p>
-                  <Link
-                    href={item.href + '?from=the-church'}
-                    className="syro-primary-button inline-flex items-center gap-2 mt-auto w-fit"
-                  >
-                    <span>Read More</span>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                  </Link>
-                </div>
-              );
-            })}
+          <div className={MOSC_LISTING_GRID_CLASS}>
+            {churchSections.map((item) => (
+              <MoscCmsHubCard
+                key={item.title}
+                href={`${item.href}?from=the-church`}
+                title={item.title}
+                excerpt={item.description}
+                imageUrl={item.image}
+                imageAlt={item.title}
+              />
+            ))}
           </div>
 
           <QuickLinks />

@@ -97,7 +97,7 @@ export default async function ParishesCmsPage({
             </p>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-4">
                 {parishes.map((parish) => {
                   const locationParts = [parish.addressLine1, parish.city, parish.state].filter(Boolean);
                   const locationLine = locationParts.length

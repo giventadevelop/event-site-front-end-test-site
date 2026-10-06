@@ -375,7 +375,7 @@ export default function MoscRedesignHeader() {
                 alt=""
                 width={800}
                 height={200}
-                className="h-14 w-auto max-w-full object-contain object-left sm:h-14 md:h-16 lg:h-20"
+                className="h-14 w-auto max-w-full object-contain object-left sm:h-14 md:h-16 lg:h-[7rem]"
                 priority
                 sizes="(max-width: 1023px) min(calc(100vw - 5rem), 480px), 600px"
                 style={{ width: 'auto' }}

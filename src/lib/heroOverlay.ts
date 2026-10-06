@@ -3,6 +3,7 @@ import {
   isExternalTicketedEvent,
   isTicketedEventCube,
   resolveBuyTicketsTarget,
+  resolveRegisterTarget,
 } from '@/lib/eventcube/utils';
 import { isTicketedFundraiserEvent } from '@/lib/donation/utils';
 
@@ -51,11 +52,13 @@ export function getOverlayInfo(event: EventDetailsDTO | null): HeroOverlayInfo |
     }
   }
 
-  if (event.isRegistrationRequired === true) {
+  const registerTarget = resolveRegisterTarget(event);
+  if (registerTarget) {
     return {
       image: '/images/register_here_button.jpg',
-      href: `/events/${event.id}/register`,
+      href: registerTarget.href,
       alt: 'Register Here',
+      external: registerTarget.kind === 'external',
     };
   }
 

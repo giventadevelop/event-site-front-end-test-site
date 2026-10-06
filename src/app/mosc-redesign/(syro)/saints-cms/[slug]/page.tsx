@@ -53,16 +53,16 @@ export default async function SaintsCmsEntryPage({ params }: PageProps) {
             <div className="lg:col-span-2">
               <div className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] px-4 py-8 md:p-8">
                 {entry.imageUrl ? (
-                  <div className="mb-8 flex justify-center">
+                  <div className="mb-8 flex justify-center lg:block">
                     <Image
                       src={entry.imageUrl}
                       alt={entry.imageAlt ?? entry.name}
-                      width={175}
-                      height={175}
-                      className="rounded-lg object-contain w-full max-w-[290px] md:max-w-[175px] h-auto"
+                      width={800}
+                      height={450}
+                      className="rounded-lg object-contain w-full max-w-[290px] md:max-w-[175px] h-auto lg:!max-w-none lg:w-full"
                       priority
                       unoptimized={Boolean(entry.imageUrl.startsWith('http'))}
-                      sizes="(max-width: 768px) 100vw, 50vw"
+                      sizes="(max-width: 1023px) 290px, 800px"
                     />
                   </div>
                 ) : null}

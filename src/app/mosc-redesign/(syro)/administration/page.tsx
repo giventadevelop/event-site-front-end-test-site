@@ -4,6 +4,7 @@ import Link from 'next/link';
 import QuickLinks from '../components/QuickLinks';
 import SyroPageBanner from '../components/SyroPageBanner';
 import LiveUrlSearch from '../components/LiveUrlSearch';
+import { MOSC_LISTING_CARD_CLASS, MOSC_LISTING_GRID_CLASS } from '../components/MoscCmsHubCard';
 import { MoscHubCardMedia } from '../components/MoscHubCardMedia';
 import DirectoryPagination from '../directory/components/DirectoryPagination';
 import { DIRECTORY_PAGE_SIZE } from '../directory/types/listPagination';
@@ -81,35 +82,54 @@ export default async function AdministrationPage({
             </p>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
+              <div className={MOSC_LISTING_GRID_CLASS}>
                 {adminCards.map((card, index) => {
                   const absoluteIndex = start + index;
                   return (
                     <div
                       key={card.title}
-                      className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] hover:shadow-[rgba(0,0,0,0.35)_0px_5px_15px] transition-shadow duration-300 px-4 py-8 md:p-8 flex flex-col h-full"
+                      className={MOSC_LISTING_CARD_CLASS}
                     >
                       {absoluteIndex === 0 && !hasSearch ? (
-                        <div className="mb-5 flex justify-center">
-                          <Image
-                            src="/images/logos/Current_Edits/MOSC-Logo-only.png"
-                            alt="MOSC Logo"
-                            width={120}
-                            height={120}
-                            className="object-contain"
-                          />
+                        <div className="mb-5 flex justify-center lg:-mx-1">
+                          <div className="flex items-center justify-center lg:h-[330px] lg:w-full">
+                            <Image
+                              src="/images/logos/Current_Edits/MOSC-Logo-only.png"
+                              alt="MOSC Logo"
+                              width={120}
+                              height={120}
+                              className="object-contain"
+                            />
+                          </div>
                         </div>
                       ) : card.image ? (
-                        <MoscHubCardMedia
-                          src={card.image}
-                          alt={card.imageAlt ?? card.title}
-                          objectPosition="top"
-                          padded={false}
-                          outerClassName="-mx-1"
-                          frameClassName="max-w-none md:max-w-[220px]"
-                          sizes="(max-width: 767px) 100vw, 220px"
-                        />
+                        <>
+                          <div className="lg:hidden">
+                            <MoscHubCardMedia
+                              src={card.image}
+                              alt={card.imageAlt ?? card.title}
+                              objectPosition="top"
+                              padded={false}
+                              outerClassName="-mx-1"
+                              frameClassName="max-w-none md:max-w-[220px]"
+                              sizes="(max-width: 767px) 100vw, 220px"
+                            />
+                          </div>
+                          <div className="hidden lg:block">
+                            <MoscHubCardMedia
+                              src={card.image}
+                              alt={card.imageAlt ?? card.title}
+                              frame="portraitUniform"
+                              objectPosition="top"
+                              padded={false}
+                              outerClassName="-mx-1"
+                              frameClassName="!max-w-none w-full bg-white ring-0 !aspect-auto !h-[330px]"
+                              sizes="(max-width: 1023px) 100vw, 380px"
+                            />
+                          </div>
+                        </>
                       ) : null}
+                      <div className="mosc-hub-listing-card-body flex flex-col flex-1">
                       <h3 className="font-syro-display text-xl font-semibold text-syro-blue mb-4 leading-snug">
                         {card.title}
                       </h3>
@@ -130,6 +150,7 @@ export default async function AdministrationPage({
                           />
                         </svg>
                       </Link>
+                      </div>
                     </div>
                   );
                 })}

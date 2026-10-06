@@ -5,6 +5,7 @@ import { getTenantId, getApiBaseUrl } from '@/lib/env';
 import { withTenantId } from '@/lib/withTenantId';
 import { throwFormattedBackendError } from '@/lib/api/formatBackendError';
 import type { GalleryAlbumDTO, GalleryCategoryDTO, EventMediaDTO } from '@/types';
+import { YOUTUBE_GALLERY_MEDIA_TYPE, youtubeThumbnailUrl } from '@/lib/gallery/youtubeMedia';
 
 /** URL-safe slug for gallery_category (matches DB check: ^[a-z0-9]+(-[a-z0-9]+)*$). */
 function slugFromDisplayName(displayName: string): string {
@@ -602,6 +603,70 @@ export async function editAlbumMediaServer(mediaId: number | string, payload: Pa
     console.error('Error updating media:', error);
     throw error;
   }
+}
+
+/**
+ * Add a YouTube video as an album gallery item.
+ */
+export async function createAlbumYoutubeMediaServer(input: {
+  albumId: number;
+  youtubeUrl: string;
+  title: string;
+  description?: string;
+  displayOrder?: number;
+  isPublic?: boolean;
+}): Promise<EventMediaDTO> {
+  const youtubeUrl = input.youtubeUrl.trim();
+  const title = input.title.trim();
+  const thumbnail = youtubeThumbnailUrl(youtubeUrl);
+  if (!title) {
+    throw new Error('Title is required.');
+  }
+  if (!thumbnail) {
+    throw new Error('Enter a YouTube video URL.');
+  }
+
+  const now = new Date().toISOString();
+  const today = now.slice(0, 10);
+  const payload = withTenantId({
+    title,
+    description: input.description?.trim() || '',
+    eventMediaType: YOUTUBE_GALLERY_MEDIA_TYPE,
+    storageType: 'EXTERNAL',
+    fileUrl: thumbnail,
+    contentType: YOUTUBE_GALLERY_MEDIA_TYPE,
+    isPublic: input.isPublic !== false,
+    eventFlyer: false,
+    isAgendaFlyer: false,
+    isEventManagementOfficialDocument: false,
+    altText: title,
+    displayOrder: input.displayOrder ?? 0,
+    isFeaturedVideo: true,
+    featuredVideoUrl: youtubeUrl,
+    isHeroImage: false,
+    isActiveHeroImage: false,
+    isHomePageHeroImage: false,
+    isFeaturedEventImage: false,
+    isLiveEventImage: false,
+    albumId: input.albumId,
+    startDisplayingFromDate: today,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  const res = await fetchWithJwtRetry(`${getApiBase()}/api/event-medias`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'Failed to add YouTube video');
+  }
+
+  return (await res.json()) as EventMediaDTO;
 }
 
 /**

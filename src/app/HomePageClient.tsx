@@ -9,7 +9,6 @@ import LiveEventsSection from '../components/LiveEventsSection';
 import FeaturedEventsSection from '../components/FeaturedEventsSection';
 import ServicesSection from '../components/ServicesSection';
 import AboutSection from '../components/AboutSection';
-import UpcomingEventsSection from '../components/UpcomingEventsSection';
 import CausesSection from '../components/CausesSection';
 import TeamSection from '../components/TeamSection';
 import SquadRosterSection from '../components/squad/SquadRosterSection';
@@ -78,7 +77,6 @@ const TeamFallback = () => (
 // Main content component that uses tenant settings
 function HomePageContent({ initialFeaturedEvents }: { initialFeaturedEvents: FeaturedEventWithMedia[] }) {
   const {
-    showEventsSection,
     showSquadSection,
     showExecutiveCommitteeSection,
     showTeamSection,
@@ -320,11 +318,6 @@ function HomePageContent({ initialFeaturedEvents }: { initialFeaturedEvents: Fea
         </div>
       ) : (
         <>
-          {showEventsSection && (
-            <ErrorBoundary fallback={<EventsFallback />}>
-              <UpcomingEventsSection />
-            </ErrorBoundary>
-          )}
           {showSquadSection && (
             <ErrorBoundary fallback={<div className="py-8 text-center text-gray-500">Squad roster unavailable</div>}>
               <div id="squad-section">

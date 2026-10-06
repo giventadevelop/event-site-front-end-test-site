@@ -12,7 +12,7 @@ import {
   fetchStrapiEntryBySlug,
 } from '@/lib/strapi';
 import { unwrapStrapiRecord } from '@/lib/strapi/unwrapRecord';
-import { getMediaUrl, getMediaAlt } from '@/app/mosc-redesign/(syro)/directory/lib/strapiMedia';
+import { getMediaUrl, getMediaAlt, getMediaDimensions } from '@/app/mosc-redesign/(syro)/directory/lib/strapiMedia';
 import {
   EMPTY_DIRECTORY_PAGINATION,
   DIRECTORY_PAGE_SIZE,
@@ -107,6 +107,7 @@ function parseMember(raw: Record<string, unknown>, baseUrl: string): HolySynodMe
   const image = item.image;
   const imageUrl = image ? getMediaUrl(image, baseUrl) : null;
   const imageAlt = image ? getMediaAlt(image) ?? null : null;
+  const imageSize = image ? getMediaDimensions(image) : null;
 
   return {
     documentId,
@@ -117,6 +118,8 @@ function parseMember(raw: Record<string, unknown>, baseUrl: string): HolySynodMe
     body,
     imageUrl,
     imageAlt,
+    imageWidth: imageSize?.width ?? null,
+    imageHeight: imageSize?.height ?? null,
     address,
     email,
     phones,

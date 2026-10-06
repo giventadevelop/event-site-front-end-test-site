@@ -103,7 +103,7 @@ export default async function KalpanaCmsPage({
             </p>
           ) : (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-4">
                 {editions.map((edition) => (
                   <KalpanaEditionCard
                     key={edition.documentId || edition.slug || edition.year}

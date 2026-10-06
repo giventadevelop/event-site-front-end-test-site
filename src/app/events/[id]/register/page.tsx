@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth, useUser } from "@clerk/nextjs";
 import Image from "next/image";
 import { getTenantId } from "@/lib/env";
+import { resolveRegisterTarget } from "@/lib/eventcube/utils";
 import type { EventDetailsDTO, EventMediaDTO, EventAttendeeDTO, EventAttendeeGuestDTO, UserProfileDTO } from "@/types";
 import { FaPlus, FaTrashAlt, FaCheck, FaPaperclip, FaTimes, FaUpload } from "react-icons/fa";
 import LocationDisplay from '@/components/LocationDisplay';
@@ -74,6 +75,14 @@ export default function EventRegisterPage({ params }: { params: Promise<{ id: st
     }
     fetchEvent();
   }, [eventId]);
+
+  useEffect(() => {
+    if (!event) return;
+    const target = resolveRegisterTarget(event);
+    if (target?.kind === 'external') {
+      window.location.replace(target.href);
+    }
+  }, [event]);
 
   // Prepopulate attendee fields from user profile if logged in
   useEffect(() => {

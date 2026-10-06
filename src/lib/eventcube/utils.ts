@@ -69,3 +69,17 @@ export function resolveBuyTicketsTarget(
 
   return { kind: 'internal', href: checkoutRoute };
 }
+
+/**
+ * Register destination.
+ * When registration is required and the external registration URL checkbox stored a URL,
+ * Register opens that URL. Otherwise Register stays on the in-app form.
+ */
+export function resolveRegisterTarget(event: EventDetailsDTO): BuyTicketsTarget | null {
+  if (event.isRegistrationRequired !== true || event.id == null) return null;
+  const externalUrl = event.externalTicketUrl?.trim();
+  if (externalUrl && /^https?:\/\//i.test(externalUrl)) {
+    return { kind: 'external', href: externalUrl };
+  }
+  return { kind: 'internal', href: `/events/${event.id}/register` };
+}

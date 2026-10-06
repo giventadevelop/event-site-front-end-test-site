@@ -152,7 +152,7 @@ export default async function CatholicateCmsPage({
                         unoptimized={Boolean(entry.imageUrl?.startsWith('http'))}
                         padded={false}
                         outerClassName="-mx-1"
-                        frameClassName="max-w-none md:max-w-[220px] bg-parchment-light ring-0"
+                        frameClassName="!max-w-none w-full bg-parchment-light ring-0 md:!aspect-auto md:!h-[330px]"
                         sizes="(max-width: 767px) 100vw, 220px"
                       />
                       <h3 className="text-lg font-semibold mb-3 leading-snug transition-colors">

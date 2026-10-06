@@ -1,11 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Metadata } from 'next';
 import { getDirectoryHomeData } from './getDirectoryHomeData';
 import type { DirectorySectionCard } from './types';
 import QuickLinks from '../components/QuickLinks';
-import { MoscHubCardMedia } from '../components/MoscHubCardMedia';
+import { MOSC_LISTING_GRID_CLASS, MoscCmsHubCard } from '../components/MoscCmsHubCard';
 import SyroPageBanner from '../components/SyroPageBanner';
 import DirectorySearch from './DirectorySearch';
 
@@ -160,8 +159,8 @@ function DirectoryCardIcon({ title }: { title: string }) {
   const key = getIconKey(title);
   const { path } = DIRECTORY_ICONS[key] ?? DIRECTORY_ICONS.default;
   return (
-    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-syro-red/10 flex items-center justify-center mb-4 self-center" aria-hidden>
-      <svg className="w-6 h-6 text-syro-red" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+    <div className="flex h-48 w-full items-center justify-center bg-white lg:h-[330px]" aria-hidden>
+      <svg className="w-16 h-16 text-syro-red" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d={path} />
       </svg>
     </div>
@@ -199,58 +198,21 @@ export default async function DirectoryPage() {
           </h3>
 
           {/* Cards grid - same styling as administration cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          <div className={MOSC_LISTING_GRID_CLASS}>
             {displayCards.map((card, index) => {
               const imageUrl = card.imageUrl ?? DIRECTORY_CARD_IMAGES[index] ?? null;
               return (
-              <div
-                key={index}
-                className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] hover:shadow-[rgba(0,0,0,0.35)_0px_5px_15px] transition-shadow duration-300 px-4 py-8 md:p-8 flex flex-col h-full overflow-hidden"
-              >
-                {imageUrl ? (
-                  <MoscHubCardMedia
-                    src={imageUrl}
-                    alt={card.imageAlt ?? card.title}
-                    frame="landscape"
-                  />
-                ) : (
-                  <DirectoryCardIcon title={card.title} />
-                )}
-                <h3 className="font-syro-display text-xl font-semibold text-syro-blue mb-4 leading-snug">
-                  {card.title}
-                </h3>
-                {card.description && (
-                  <p className="font-syro-primary text-base text-syro-dark-gray flex-1 mb-5 leading-relaxed">
-                    {card.description}
-                  </p>
-                )}
-                {card.linkUrl ? (
-                  card.isExternal ? (
-                    <a
-                      href={card.linkUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="syro-primary-button inline-flex items-center gap-2 mt-auto w-fit"
-                    >
-                      <span>Read More</span>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                      </svg>
-                    </a>
-                  ) : (
-                    <Link
-                      href={card.linkUrl}
-                      className="syro-primary-button inline-flex items-center gap-2 mt-auto w-fit"
-                    >
-                      <span>Read More</span>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                      </svg>
-                    </Link>
-                  )
-                ) : null}
-              </div>
-            );
+                <MoscCmsHubCard
+                  key={card.title || index}
+                  href={card.linkUrl || undefined}
+                  external={card.isExternal}
+                  title={card.title}
+                  excerpt={card.description}
+                  imageUrl={imageUrl}
+                  imageAlt={card.imageAlt ?? card.title}
+                  media={imageUrl ? undefined : <DirectoryCardIcon title={card.title} />}
+                />
+              );
             })}
           </div>
 

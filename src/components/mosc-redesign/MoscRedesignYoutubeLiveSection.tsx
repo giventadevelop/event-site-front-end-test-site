@@ -10,12 +10,18 @@ type Props = {
  * Homepage section: embeds Devalokam Aramana current or recent livestream.
  */
 export default function MoscRedesignYoutubeLiveSection({ stream }: Props) {
-  const heading = stream.isLive ? 'Live Now' : 'Recent Live Stream';
+  const phase = stream.phase ?? (stream.isLive ? 'live' : 'recent');
+  const heading =
+    phase === 'upcoming' ? 'Upcoming' : phase === 'live' ? 'Live Now' : 'Recent Live Stream';
+  const sectionTitle = stream.sectionTitle?.trim() || 'Devalokam Aramana';
   const sub =
-    stream.title ||
-    (stream.isLive
-      ? 'Watch the live broadcast from Devalokam Aramana'
-      : 'Latest livestream from Devalokam Aramana');
+    stream.description?.trim() ||
+    (!stream.sectionTitle?.trim() ? stream.title : null) ||
+    (phase === 'upcoming'
+      ? 'A scheduled livestream'
+      : phase === 'live'
+        ? 'Watch the live broadcast from Devalokam Aramana'
+        : 'Latest livestream from Devalokam Aramana');
 
   return (
     <section
@@ -25,7 +31,7 @@ export default function MoscRedesignYoutubeLiveSection({ stream }: Props) {
       <div className="max-w-7xl mx-auto px-6 lg:px-16">
         <div className="text-center mb-10">
           <span className="inline-flex items-center gap-2 text-burgundy text-xs font-bold tracking-widest uppercase mb-3 border border-burgundy/30 px-3 py-1 rounded-full bg-burgundy/10">
-            {stream.isLive ? (
+            {phase === 'live' ? (
               <>
                 <span className="relative flex h-2 w-2" aria-hidden>
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
@@ -41,7 +47,7 @@ export default function MoscRedesignYoutubeLiveSection({ stream }: Props) {
             id="mosc-youtube-live-heading"
             className="text-3xl md:text-4xl font-bold text-warmBrown-dark mt-2"
           >
-            Devalokam Aramana
+            {sectionTitle}
             <br />
             <span className="text-burgundy">{heading}</span>
           </h2>

@@ -20,6 +20,12 @@ export type DevalokamAramanaStream = {
   watchUrl: string;
   channelUrl: string;
   streamsUrl: string;
+  /** Replaces the "Devalokam Aramana" heading when an admin override supplies a title. */
+  sectionTitle?: string | null;
+  /** Shown under the heading when an admin override supplies a description. */
+  description?: string | null;
+  /** upcoming = future start still takes the player; live / recent match the automatic resolver. */
+  phase?: 'live' | 'upcoming' | 'recent';
 };
 
 function getYoutubeApiKey(): string | undefined {

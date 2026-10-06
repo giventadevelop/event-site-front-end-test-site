@@ -459,12 +459,13 @@ export function EventForm({ event, eventTypes, onSubmit, loading, onCancel }: Ev
       }
     }
 
-    // Validate external ticket URL (mutual exclusion with Event Cube)
+    // Validate external ticket/registration URL (mutual exclusion with Event Cube)
+    const externalUrlLabel = form.isRegistrationRequired ? 'registration' : 'ticket';
     if (useEventCube && useExternalTicketUrl && externalTicketUrl?.trim()) {
-      errs.externalTicketUrl = 'Cannot use both Event Cube and an external ticket URL. Choose one.';
+      errs.externalTicketUrl = `Cannot use both Event Cube and an external ${externalUrlLabel} URL. Choose one.`;
     } else if (useExternalTicketUrl) {
       if (!externalTicketUrl?.trim()) {
-        errs.externalTicketUrl = 'External ticket URL is required when enabled';
+        errs.externalTicketUrl = `External ${externalUrlLabel} URL is required when enabled`;
       } else if (!/^https?:\/\//i.test(externalTicketUrl.trim())) {
         errs.externalTicketUrl = 'Enter a valid URL starting with http:// or https://';
       }
@@ -1691,11 +1692,15 @@ export function EventForm({ event, eventTypes, onSubmit, loading, onCancel }: Ev
         </div>
       </div>
 
-      {/* External ticket purchase URL (Zeffy, Eventbrite, etc.) */}
+      {/* External ticket purchase URL, or registration URL when Registration Required is on */}
       <div className="border-t border-gray-200 pt-6 mt-6 bg-gradient-to-br from-teal-50 via-cyan-50 to-sky-50 rounded-xl p-6 border border-teal-200/60 shadow-sm">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">External ticket purchase URL</h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-800">
+          {form.isRegistrationRequired ? 'External Registration URL' : 'External ticket purchase URL'}
+        </h3>
         <p className="text-sm text-gray-600 mb-4">
-          Send Buy Tickets to an external vendor (e.g. Zeffy) in a new tab. Set Admission type to &quot;Ticketed&quot;. Do not enable Event Cube at the same time.
+          {form.isRegistrationRequired
+            ? 'Send Register to an external vendor (e.g. Zeffy) in a new tab. Do not enable Event Cube at the same time.'
+            : 'Send Buy Tickets to an external vendor (e.g. Zeffy) in a new tab. Set Admission type to "Ticketed". Do not enable Event Cube at the same time.'}
         </p>
         <div className="space-y-4">
           <label className="flex items-center gap-3 cursor-pointer" htmlFor="useExternalTicketUrl">
@@ -1724,12 +1729,14 @@ export function EventForm({ event, eventTypes, onSubmit, loading, onCancel }: Ev
                 )}
               </span>
             </span>
-            <span className="text-xl font-semibold text-gray-900">Use external ticket purchase URL</span>
+            <span className="text-xl font-semibold text-gray-900">
+              {form.isRegistrationRequired ? 'Use external registration URL' : 'Use external ticket purchase URL'}
+            </span>
           </label>
           {useExternalTicketUrl && (
             <div>
               <label htmlFor="externalTicketUrl" className="block font-medium mb-1 text-gray-700">
-                External ticket URL *
+                {form.isRegistrationRequired ? 'External registration URL *' : 'External ticket URL *'}
               </label>
               <input
                 ref={(el) => { if (el) fieldRefs.current.externalTicketUrl = el; }}
@@ -1746,14 +1753,16 @@ export function EventForm({ event, eventTypes, onSubmit, loading, onCancel }: Ev
                     });
                   }
                 }}
-                placeholder="https://www.zeffy.com/en-US/ticketing/…"
+                placeholder={form.isRegistrationRequired ? 'https://www.zeffy.com/en-US/registration/…' : 'https://www.zeffy.com/en-US/ticketing/…'}
                 className={`w-full border rounded-xl focus:ring-blue-500 px-4 py-3 text-base ${errors.externalTicketUrl ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-400 focus:border-blue-500'}`}
               />
               {errors.externalTicketUrl && (
                 <div className="text-red-500 text-sm mt-1">{errors.externalTicketUrl}</div>
               )}
               <p className="text-xs text-gray-500 mt-1">
-                Full URL to the vendor ticketing page. Buy Tickets opens this link in a new browser tab.
+                {form.isRegistrationRequired
+                  ? 'Full URL to the vendor registration page. Register opens this link in a new browser tab.'
+                  : 'Full URL to the vendor ticketing page. Buy Tickets opens this link in a new browser tab.'}
               </p>
             </div>
           )}

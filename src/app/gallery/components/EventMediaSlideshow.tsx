@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import {
@@ -25,6 +26,7 @@ export function EventMediaSlideshow({ event, media, onClose, initialIndex = 0 }:
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(3000); // 3 seconds per slide
 
   console.log('EventMediaSlideshow rendered with:', {
@@ -54,6 +56,15 @@ export function EventMediaSlideshow({ event, media, onClose, initialIndex = 0 }:
       return () => clearInterval(interval);
     }
   }, [isPlaying, isVideo, media.length, playbackSpeed]);
+
+  useEffect(() => {
+    setMounted(true);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
 
   // Keyboard navigation
   useEffect(() => {
@@ -108,63 +119,75 @@ export function EventMediaSlideshow({ event, media, onClose, initialIndex = 0 }:
     }
   };
 
-  if (!currentMedia) {
-    console.log('No current media found, returning null');
+  if (!mounted || !currentMedia) {
+    if (!currentMedia) console.log('No current media found, returning null');
     return null;
   }
 
   console.log('Rendering slideshow modal for media:', currentMedia);
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center pt-16 pb-8">
-      {/* Close button */}
-      <button
-        onClick={onClose}
-        className="absolute top-20 right-4 z-10 p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-full transition-colors"
-      >
-        <X className="w-6 h-6" />
-      </button>
+  const slideshow = (
+    <div
+      className="fixed inset-0 z-[1200] flex flex-col bg-black"
+      role="dialog"
+      aria-modal="true"
+      aria-label={event.title}
+    >
+      <div className="flex shrink-0 items-center justify-end px-4 py-3">
+        <button
+          onClick={onClose}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-900 shadow-lg hover:bg-gray-100"
+          aria-label="Close gallery"
+          type="button"
+        >
+          <X className="h-5 w-5" aria-hidden="true" />
+        </button>
+      </div>
 
-      {/* Navigation arrows */}
-      {media.length > 1 && (
-        <>
-          <button
-            onClick={goToPrevious}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-full transition-colors"
-          >
-            <ChevronLeft className="w-8 h-8" />
-          </button>
-          <button
-            onClick={goToNext}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-full transition-colors"
-          >
-            <ChevronRight className="w-8 h-8" />
-          </button>
-        </>
-      )}
+      <div className="relative flex min-h-0 flex-1 items-center justify-center px-14">
+        {media.length > 1 && (
+          <>
+            <button
+              onClick={goToPrevious}
+              className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full p-2 text-white transition-colors hover:bg-white/20"
+              aria-label="Previous photo"
+              type="button"
+            >
+              <ChevronLeft className="h-8 w-8" />
+            </button>
+            <button
+              onClick={goToNext}
+              className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full p-2 text-white transition-colors hover:bg-white/20"
+              aria-label="Next photo"
+              type="button"
+            >
+              <ChevronRight className="h-8 w-8" />
+            </button>
+          </>
+        )}
 
-      {/* Main content */}
-      <div className="flex flex-col items-center justify-center w-full h-full px-4">
-        {/* Media display */}
-        <div className="relative max-w-4xl max-h-[70vh] w-full mb-4">
+        <div className="relative h-full w-full max-w-6xl">
           {isVideo ? (
             <video
               src={currentMedia.fileUrl}
               controls
-              className="w-full h-full object-contain"
+              className="mx-auto h-full max-h-full w-full object-contain"
               poster={currentMedia.preSignedUrl}
             />
           ) : (
             <Image
               src={currentMedia.fileUrl || '/placeholder-image.jpg'}
               alt={currentMedia.altText || currentMedia.title}
-              width={800}
-              height={600}
-              className="w-full h-full object-contain"
+              fill
+              className="object-contain"
+              sizes="100vw"
               priority
             />
           )}
         </div>
+      </div>
+
+      <div className="flex shrink-0 flex-col items-center px-4 pb-4 pt-3">
 
         {/* Media info */}
         <div className="max-w-4xl w-full bg-black bg-opacity-50 rounded-lg p-4 text-white">
@@ -285,4 +308,6 @@ export function EventMediaSlideshow({ event, media, onClose, initialIndex = 0 }:
       </div>
     </div>
   );
+
+  return createPortal(slideshow, document.body);
 }

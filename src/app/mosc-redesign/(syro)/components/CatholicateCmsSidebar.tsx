@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { MOSC_CMS_SIDEBAR_CLASS, moscCmsSidebarLinkClass } from './MoscCmsHubCard';
 
 export interface CatholicateCmsSidebarEntry {
   name: string;
@@ -16,22 +17,18 @@ export default function CatholicateCmsSidebar({ entries }: CatholicateCmsSidebar
   const pathname = usePathname();
 
   return (
-    <div className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] p-6">
-      <h3 className="font-syro-display font-semibold text-xl text-syro-blue mb-4 pl-4 border-l-4 border-syro-red">
+    <div className={MOSC_CMS_SIDEBAR_CLASS}>
+      <h3 className="font-syro-display font-semibold text-lg text-syro-blue mb-4">
         The Catholicate
       </h3>
-      <nav className="space-y-1.5">
+      <nav className="space-y-1">
         {entries.map((entry) => {
           const isActive = pathname === entry.href;
           return (
             <Link
               key={entry.href}
               href={entry.href}
-              className={`block px-3 py-2 rounded-lg font-syro-primary text-sm leading-tight outline-none focus:outline-none transition-colors ${
-                isActive
-                  ? 'bg-syro-red text-white'
-                  : 'text-syro-dark-gray hover:text-syro-blue hover:bg-syro-bg-gray/50'
-              }`}
+              className={moscCmsSidebarLinkClass(isActive)}
             >
               <span className={`font-syro-display font-medium ${isActive ? 'text-white' : ''}`}>
                 {entry.name}

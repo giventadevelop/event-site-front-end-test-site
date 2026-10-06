@@ -491,7 +491,7 @@ export function MoscGalleryContent({ initialPage, initialTab }: MoscGalleryConte
 
         if (album.eventLocation) params.set('location', album.eventLocation);
 
-      } else {
+      } else if (tab === 'events') {
 
         if (events.searchTerm.trim()) params.set('q', events.searchTerm.trim());
 
@@ -541,7 +541,7 @@ export function MoscGalleryContent({ initialPage, initialTab }: MoscGalleryConte
 
       setAlbumFilters(parseAlbumFiltersFromParams(searchParams));
 
-    } else {
+    } else if (tab === 'events') {
 
       setEventFilters(parseEventFiltersFromParams(searchParams));
 
@@ -693,7 +693,7 @@ export function MoscGalleryContent({ initialPage, initialTab }: MoscGalleryConte
 
           }
 
-        } else {
+        } else if (activeTab === 'events') {
 
           const data = await fetchEventsForGallery(
 
@@ -726,6 +726,10 @@ export function MoscGalleryContent({ initialPage, initialTab }: MoscGalleryConte
             setEventsCount(data.totalEvents);
 
           }
+
+        } else {
+
+          setLoading(false);
 
         }
 
@@ -849,7 +853,7 @@ export function MoscGalleryContent({ initialPage, initialTab }: MoscGalleryConte
 
       updateUrl('albums', 0, EMPTY_ALBUM_FILTERS);
 
-    } else {
+    } else if (tab === 'events') {
 
       setEventFilters(EMPTY_EVENT_FILTERS);
 

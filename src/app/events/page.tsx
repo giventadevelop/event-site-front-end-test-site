@@ -8,7 +8,7 @@ import { formatInTimeZone } from 'date-fns-tz';
 import LocationDisplay from '@/components/LocationDisplay';
 import { isRecurringEvent, getNextOccurrenceDate } from '@/lib/eventUtils';
 import { isDonationBasedEvent, isTicketedFundraiserEvent } from '@/lib/donation/utils';
-import { resolveBuyTicketsTarget } from '@/lib/eventcube/utils';
+import { resolveBuyTicketsTarget, resolveRegisterTarget } from '@/lib/eventcube/utils';
 import HomeParticleBackground from '@/components/HomeParticleBackground';
 import { HomeSectionEyebrow } from '@/components/HomeSectionEyebrow';
 import { HomeSectionTitle } from '@/components/HomeSectionTitle';
@@ -1046,7 +1046,8 @@ export default function EventsPage() {
                         const isPast = !isUpcomingLocal;
 
                         // Determine which buttons to show
-                        const showRegisterButton = event.isRegistrationRequired === true && isUpcomingLocal;
+                        const registerTarget = isUpcomingLocal ? resolveRegisterTarget(event) : null;
+                        const showRegisterButton = registerTarget != null;
                         const buyTicketsTarget = isUpcomingLocal ? resolveBuyTicketsTarget(event) : null;
                 // Show Make a Donation button for donation-based events
                 // BUT NOT if it's a ticketed fundraiser (use fundraiser image instead)
@@ -1060,11 +1061,15 @@ export default function EventsPage() {
                         return (
                           <div className={`absolute top-4 right-4 lg:top-6 lg:right-6 z-10 ${showRegisterButton && (buyTicketsTarget || showDonationButton || showResultsButton) ? 'flex flex-col gap-2' : ''}`}>
                             {/* Register Here Button - Show if registration is required */}
-                            {showRegisterButton && (
+                            {showRegisterButton && registerTarget && (
                             <Link
-                                href={`/events/${event.id}/register`}
+                                href={registerTarget.href}
                                 className="transition-transform hover:scale-105"
                                 title="Register Here"
+                                aria-label="Register Here"
+                                {...(registerTarget.kind === 'external'
+                                  ? { target: '_blank', rel: 'noopener noreferrer' }
+                                  : {})}
                             >
                               <img
                                   src="/images/register_here_button.jpg"

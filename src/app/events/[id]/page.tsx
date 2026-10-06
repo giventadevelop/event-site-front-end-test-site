@@ -13,7 +13,7 @@ import cardGridStyles from './CenteredCardGrid.module.css';
 import { SponsorCard } from '@/components/sponsors/SponsorCard';
 import { InstagramIcon } from '@/components/icons/InstagramIcon';
 import { isDonationBasedEvent, isTicketedFundraiserEvent } from '@/lib/donation/utils';
-import { resolveBuyTicketsTarget } from '@/lib/eventcube/utils';
+import { resolveBuyTicketsTarget, resolveRegisterTarget } from '@/lib/eventcube/utils';
 import EventCardResultsPanel from '@/components/competitions/EventCardResultsPanel';
 
 // Helper function to get initials from a name
@@ -636,7 +636,8 @@ export default function EventDetailsPage() {
                 const isPast = !isUpcomingLocal;
 
                 // Determine which buttons to show
-                const showRegisterButton = event.isRegistrationRequired === true && isUpcomingLocal;
+                const registerTarget = isUpcomingLocal ? resolveRegisterTarget(event) : null;
+                const showRegisterButton = registerTarget != null;
                 const buyTicketsTarget = isUpcomingLocal ? resolveBuyTicketsTarget(event, { internalPath: 'tickets' }) : null;
                 // Show Make a Donation button for donation-based events
                 // BUT NOT if it's a ticketed fundraiser (use fundraiser image instead)
@@ -657,12 +658,15 @@ export default function EventDetailsPage() {
                 return (
                   <div className="absolute top-4 right-4 lg:top-6 lg:right-6 z-10 flex flex-col gap-2">
                     {/* Register Here Button - Show if registration is required */}
-                    {showRegisterButton && (
+                    {showRegisterButton && registerTarget && (
                       <Link
-                        href={`/events/${event.id}/register`}
+                        href={registerTarget.href}
                         className="flex-shrink-0 h-14 rounded-xl bg-blue-100 hover:bg-blue-200 flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 px-6"
                         title="Register Here"
                         aria-label="Register Here"
+                        {...(registerTarget.kind === 'external'
+                          ? { target: '_blank', rel: 'noopener noreferrer' }
+                          : {})}
                       >
                         <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-200 flex items-center justify-center">
                           <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

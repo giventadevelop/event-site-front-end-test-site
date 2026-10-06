@@ -9,7 +9,7 @@ import type { EventWithMedia, EventDetailsDTO } from "@/types";
 import { formatInTimeZone } from 'date-fns-tz';
 import { isRecurringEvent, getNextOccurrenceDate } from '@/lib/eventUtils';
 import { isDonationBasedEvent, isTicketedFundraiserEvent } from '@/lib/donation/utils';
-import { resolveBuyTicketsTarget } from '@/lib/eventcube/utils';
+import { resolveBuyTicketsTarget, resolveRegisterTarget } from '@/lib/eventcube/utils';
 import { getTenantId } from '@/lib/env';
 import { useDeferredFetch } from '@/hooks/usePageReady';
 import { getHomepageCacheKey } from '@/lib/homepageCacheKeys';
@@ -238,21 +238,30 @@ function UpcomingEventGlassCard({
               </Link>
 
               <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                {isUpcomingEvents && event.isRegistrationRequired === true && (
-                  <Link
-                    href={`/events/${event.id}/register`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-block transition-transform hover:scale-105"
-                  >
-                    <img
-                      src="/images/register_here_button.jpg"
-                      alt="Register Here"
-                      className="h-[70px] w-[200px] max-w-full object-contain"
-                      width={200}
-                      height={70}
-                    />
-                  </Link>
-                )}
+                {isUpcomingEvents && (() => {
+                  const registerTarget = resolveRegisterTarget(event);
+                  if (!registerTarget) return null;
+                  return (
+                    <Link
+                      href={registerTarget.href}
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-block transition-transform hover:scale-105"
+                      title="Register Here"
+                      aria-label="Register Here"
+                      {...(registerTarget.kind === 'external'
+                        ? { target: '_blank', rel: 'noopener noreferrer' }
+                        : {})}
+                    >
+                      <img
+                        src="/images/register_here_button.jpg"
+                        alt="Register Here"
+                        className="h-[70px] w-[200px] max-w-full object-contain"
+                        width={200}
+                        height={70}
+                      />
+                    </Link>
+                  );
+                })()}
 
                 {isUpcomingEvents && (() => {
                   const buyTarget = resolveBuyTicketsTarget(event);

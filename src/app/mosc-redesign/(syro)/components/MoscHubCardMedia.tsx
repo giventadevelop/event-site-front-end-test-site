@@ -11,6 +11,8 @@ import { cn } from '@/lib/utils';
  * Portrait uniform: fixed 2:3 tile + object-cover for equal-height grids (Holy Synod).
  *
  * Landscape: fixed 280×168 + object-cover for directory banners.
+ *
+ * Uniform contain: one shared frame; each image keeps its ratio (no stretch, no crop).
  */
 const HUB_FRAME_BASE =
   'mosc-hub-card-media relative w-full rounded-xl overflow-hidden bg-white shadow-sm ring-1 ring-black/5';
@@ -26,7 +28,13 @@ export const HUB_FRAME_PORTRAIT_PLACEHOLDER = `${HUB_FRAME_BASE} max-w-[290px] m
 
 export const HUB_FRAME_LANDSCAPE = `${HUB_FRAME_BASE} max-w-[calc(100%-2rem)] md:max-w-[280px] aspect-[280/168] mosc-hub-card-media--landscape`;
 
-export type MoscHubCardFrame = 'portrait' | 'portraitUniform' | 'landscape';
+/**
+ * Same box on every card. Width stays at or below the 300px church photos
+ * so those files are not upscaled. object-contain keeps the original ratio.
+ */
+export const HUB_FRAME_UNIFORM_CONTAIN = `${HUB_FRAME_BASE} w-full max-w-[300px] aspect-[300/188] mosc-hub-card-media--uniform-contain`;
+
+export type MoscHubCardFrame = 'portrait' | 'portraitUniform' | 'landscape' | 'uniformContain';
 
 /** Default width/height for Next/Image layout hint (actual display is w-full h-auto). */
 const PORTRAIT_IMAGE_LAYOUT = { width: 440, height: 660 };
@@ -46,6 +54,7 @@ type MoscHubCardMediaProps = {
 function frameClasses(frame: MoscHubCardFrame) {
   if (frame === 'landscape') return HUB_FRAME_LANDSCAPE;
   if (frame === 'portraitUniform') return HUB_FRAME_PORTRAIT_UNIFORM;
+  if (frame === 'uniformContain') return HUB_FRAME_UNIFORM_CONTAIN;
   return HUB_FRAME_PORTRAIT;
 }
 
@@ -60,12 +69,14 @@ export function MoscHubCardMedia({
   outerClassName,
   frameClassName,
 }: MoscHubCardMediaProps) {
-  const usesFillCover = frame === 'landscape' || frame === 'portraitUniform';
+  const usesFill = frame === 'landscape' || frame === 'portraitUniform' || frame === 'uniformContain';
   const resolvedSizes =
     sizes ??
-    (frame === 'landscape'
-      ? '(max-width: 768px) calc(100vw - 4rem), 280px'
-      : '(max-width: 768px) 290px, 220px');
+    (frame === 'uniformContain'
+      ? '300px'
+      : frame === 'landscape'
+        ? '(max-width: 768px) calc(100vw - 4rem), 280px'
+        : '(max-width: 768px) 290px, 220px');
 
   const positionClass =
     objectPosition === 'top'
@@ -75,14 +86,17 @@ export function MoscHubCardMedia({
   return (
     <div className={cn('mb-5 flex justify-center', padded && 'pt-8', outerClassName)}>
       <div className={cn(frameClasses(frame), frameClassName)}>
-        {usesFillCover ? (
+        {usesFill ? (
           <Image
             src={src}
             alt={alt}
             fill
             unoptimized={unoptimized}
             className={cn(
-              'mosc-hub-card-image !rounded-xl mosc-hub-card-image--cover object-cover',
+              'mosc-hub-card-image !rounded-xl',
+              frame === 'uniformContain'
+                ? 'mosc-hub-card-image--contain object-contain'
+                : 'mosc-hub-card-image--cover object-cover',
               positionClass
             )}
             sizes={resolvedSizes}
@@ -123,9 +137,11 @@ export function MoscHubCardMediaPlaceholder({
   const frameClass =
     frame === 'landscape'
       ? HUB_FRAME_LANDSCAPE
-      : frame === 'portraitUniform'
-        ? HUB_FRAME_PORTRAIT_UNIFORM
-        : HUB_FRAME_PORTRAIT_PLACEHOLDER;
+      : frame === 'uniformContain'
+        ? HUB_FRAME_UNIFORM_CONTAIN
+        : frame === 'portraitUniform'
+          ? HUB_FRAME_PORTRAIT_UNIFORM
+          : HUB_FRAME_PORTRAIT_PLACEHOLDER;
 
   return (
     <div className={cn('mb-5 flex justify-center', padded && 'pt-8', outerClassName)}>

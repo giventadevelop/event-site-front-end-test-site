@@ -6,7 +6,7 @@ import { InstagramIcon } from '@/components/icons/InstagramIcon';
 /** Compact header variant of footer social icons (rose on parchment). */
 const HEADER_SOCIAL_LINK_CLASS =
   'inline-flex items-center justify-center rounded-full p-1 leading-none text-rose-600 transition-colors hover:bg-rose-500/10 hover:text-warmGold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50';
-const HEADER_SOCIAL_SVG_CLASS = 'block h-5 w-5 shrink-0 overflow-visible';
+const HEADER_SOCIAL_SVG_CLASS = 'block h-6 w-6 shrink-0 overflow-visible';
 
 /**
  * Same Facebook / Instagram / YouTube / TikTok links as MoscRedesignFooter.
@@ -59,7 +59,7 @@ export default function MoscRedesignHeaderSocialLinks() {
           className={HEADER_SOCIAL_LINK_CLASS}
           aria-label="YouTube"
         >
-          <svg className="block h-6 w-6 shrink-0 overflow-visible" viewBox="0 0 24 24" aria-hidden>
+          <svg className="block h-7 w-7 shrink-0 overflow-visible" viewBox="0 0 24 24" aria-hidden>
             <rect x="1.5" y="5" width="21" height="14" rx="4.5" fill="currentColor" />
             <path fill="#F5EDD8" d="M10 9.2v5.6l5.6-2.8L10 9.2z" />
           </svg>

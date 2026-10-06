@@ -86,6 +86,8 @@ DECLARE
         'news_sidebar_promotion',
         'news_flash',
         'news_live_stream_config',
+        'homepage_youtube_override',
+        'gallery_youtube_video',
         'news_article_category',
         'event_competition_settings',
         'event_competition_day',

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { MoscHubCardMedia, MoscHubCardMediaPlaceholder } from '../../components/MoscHubCardMedia';
 import type { Diocese } from '../../directory/dioceses/types';
 
 const DETAIL_BASE = '/mosc-redesign/directory/dioceses';
@@ -17,53 +18,66 @@ export default function DiocesesCmsSearchGrid({ dioceses }: { dioceses: Diocese[
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-4">
       {dioceses.map((card) => {
         const excerpt = cardExcerpt(card.description);
         const href = `${DETAIL_BASE}/${card.documentId}`;
+        const placeholderIcon = (
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-burgundy/10 ring-1 ring-burgundy/30 text-burgundy/80">
+            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.8}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 10v6m-3-3h6" />
+            </svg>
+          </div>
+        );
         return (
           <div
             key={card.documentId}
-            className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] hover:shadow-[rgba(0,0,0,0.35)_0px_5px_15px] transition-shadow duration-300 overflow-hidden flex flex-col h-full"
+            className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] hover:shadow-[rgba(0,0,0,0.35)_0px_5px_15px] transition-shadow duration-300 overflow-hidden lg:overflow-visible mosc-hub-listing-card--desktop flex flex-col h-full"
           >
-            <div className="relative w-full h-48 shrink-0">
+            <div className="relative w-full h-48 shrink-0 lg:hidden">
               {card.imageUrl ? (
                 <Image
                   src={card.imageUrl}
                   alt={card.imageAlt ?? card.name}
                   fill
                   className="object-contain object-center"
-                  sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                  sizes="(min-width: 640px) 50vw, 100vw"
                   unoptimized={card.imageUrl.startsWith('http')}
                 />
               ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-burgundy/80">
-                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-burgundy/10 ring-1 ring-burgundy/30">
-                    <svg
-                      className="w-12 h-12"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.8}
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.8}
-                        d="M12 10v6m-3-3h6"
-                      />
-                    </svg>
-                  </div>
-                </div>
+                <div className="absolute inset-0 flex items-center justify-center">{placeholderIcon}</div>
               )}
             </div>
-            <div className="px-4 py-8 md:p-8 flex flex-col flex-1">
+            <div className="hidden lg:block">
+              {card.imageUrl ? (
+                <MoscHubCardMedia
+                  src={card.imageUrl}
+                  alt={card.imageAlt ?? card.name}
+                  frame="portraitUniform"
+                  objectPosition="top"
+                  padded={false}
+                  outerClassName="-mx-1"
+                  frameClassName="!max-w-none w-full bg-white ring-0 !aspect-auto !h-[330px]"
+                  sizes="380px"
+                  unoptimized={card.imageUrl.startsWith('http')}
+                />
+              ) : (
+                <MoscHubCardMediaPlaceholder
+                  frame="portraitUniform"
+                  padded={false}
+                  outerClassName="-mx-1"
+                  frameClassName="!max-w-none w-full bg-white ring-0 !aspect-auto !h-[330px]"
+                  icon={placeholderIcon}
+                />
+              )}
+            </div>
+            <div className="mosc-hub-listing-card-body mosc-hub-listing-card-body--inset flex flex-col flex-1">
               <h3 className="font-syro-display text-xl font-semibold text-syro-blue mb-4 leading-snug">
                 {card.name}
               </h3>

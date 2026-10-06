@@ -22,12 +22,13 @@ export default function GreatLentPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             <div className="lg:col-span-2">
               <div className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] p-8">
-                <div className="mb-8 flex justify-center">
+                <div className="mb-8">
                   <Image
                     src="/images/lectionary/lent.jpg"
                     alt="Great Lent"
-                    width={175} height={175}
-                    className="rounded-lg object-contain" style={{ width: '175px', height: '175px' }}
+                    width={800}
+                    height={500}
+                    className="rounded-lg w-full h-auto object-contain"
                     sizes="(min-width: 1024px) 37.5vw, 50vw"
                   />
                 </div>

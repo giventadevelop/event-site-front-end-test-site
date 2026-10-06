@@ -1,9 +1,8 @@
 import React from 'react';
-import Link from 'next/link';
 import QuickLinks from '../components/QuickLinks';
 import SyroPageBanner from '../components/SyroPageBanner';
 import LiveUrlSearch from '../components/LiveUrlSearch';
-import { MoscHubCardMedia } from '../components/MoscHubCardMedia';
+import { MOSC_LISTING_GRID_CLASS, MoscCmsHubCard } from '../components/MoscCmsHubCard';
 import DirectoryPagination from '../directory/components/DirectoryPagination';
 import { DIRECTORY_PAGE_SIZE } from '../directory/types/listPagination';
 import { getTheologicalSeminaryEntriesData } from './getTheologicalSeminaryEntriesData';
@@ -84,7 +83,7 @@ export default async function TheologicalSeminariesCmsPage({
             </p>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+              <div className={MOSC_LISTING_GRID_CLASS}>
                 {entries.map((entry) => (
                   <SeminaryCard key={entry.documentId || entry.slug} entry={entry} />
                 ))}
@@ -112,56 +111,38 @@ export default async function TheologicalSeminariesCmsPage({
 }
 
 function SeminaryCard({ entry }: { entry: TheologicalSeminaryEntry }) {
-  const href = `${BASE_PATH}/${entry.slug}`;
-  const imageSrc = entry.imageUrl ?? PLACEHOLDER_IMAGE;
   return (
-    <div className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] hover:shadow-[rgba(0,0,0,0.35)_0px_5px_15px] transition-shadow duration-300 overflow-hidden flex flex-col h-full">
-      <MoscHubCardMedia
-        src={imageSrc}
-        alt={entry.imageAlt ?? entry.name}
-        unoptimized={Boolean(entry.imageUrl?.startsWith('http'))}
-      />
-      <div className="px-4 pb-8 pt-0 md:p-8 md:pt-0 flex flex-col flex-1">
-        <h3 className="font-syro-display text-xl font-semibold text-syro-blue mb-2 leading-snug">
-          {entry.name}
-        </h3>
-        {entry.subtitle ? (
-          <p className="font-syro-primary text-sm text-syro-red mb-3">{entry.subtitle}</p>
-        ) : null}
-        {entry.excerpt ? (
-          <p className="font-syro-primary text-base text-syro-dark-gray leading-relaxed mb-4 flex-1">
-            {entry.excerpt}
-          </p>
-        ) : null}
-        {(entry.location || entry.established) && (
-          <div className="flex flex-wrap gap-4 pt-4 border-t border-syro-table-border mb-5">
-            {entry.location ? (
-              <div className="flex items-center space-x-2">
-                <span className="text-syro-red" role="img" aria-label="Location">
-                  📍
-                </span>
-                <span className="font-syro-primary text-sm text-syro-dark-gray">{entry.location}</span>
-              </div>
-            ) : null}
-            {entry.established ? (
-              <div className="flex items-center space-x-2">
-                <span className="text-syro-red" role="img" aria-label="Established">
-                  📅
-                </span>
-                <span className="font-syro-primary text-sm text-syro-dark-gray">
-                  Est. {entry.established}
-                </span>
-              </div>
-            ) : null}
-          </div>
-        )}
-        <Link href={href} className="syro-primary-button inline-flex items-center gap-2 mt-auto w-fit">
-          <span>Learn More</span>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-          </svg>
-        </Link>
-      </div>
-    </div>
+    <MoscCmsHubCard
+      href={`${BASE_PATH}/${entry.slug}`}
+      title={entry.name}
+      subtitle={entry.subtitle}
+      excerpt={entry.excerpt}
+      imageUrl={entry.imageUrl ?? PLACEHOLDER_IMAGE}
+      imageAlt={entry.imageAlt ?? entry.name}
+      ctaLabel="Learn More"
+    >
+      {(entry.location || entry.established) && (
+        <div className="flex flex-wrap gap-4 pt-4 border-t border-syro-table-border mb-5">
+          {entry.location ? (
+            <div className="flex items-center space-x-2">
+              <span className="text-syro-red" role="img" aria-label="Location">
+                📍
+              </span>
+              <span className="font-syro-primary text-sm text-syro-dark-gray">{entry.location}</span>
+            </div>
+          ) : null}
+          {entry.established ? (
+            <div className="flex items-center space-x-2">
+              <span className="text-syro-red" role="img" aria-label="Established">
+                📅
+              </span>
+              <span className="font-syro-primary text-sm text-syro-dark-gray">
+                Est. {entry.established}
+              </span>
+            </div>
+          ) : null}
+        </div>
+      )}
+    </MoscCmsHubCard>
   );
 }

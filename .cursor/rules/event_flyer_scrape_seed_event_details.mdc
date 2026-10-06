@@ -1,6 +1,6 @@
 ---
 description: Scrape event flyers (vision/OCR), POST event_details, and upload hero/flyer media via one-off Node scripts. Prefer scripts over admin UI for bulk seed.
-globs: scripts/seed-*-event-from-flyer.mjs, scripts/seed-*-events-from-*.mjs, scripts/mosc-in-migration/migration-api-lib.mjs
+globs: scripts/seed-event-from-flyer.mjs, scripts/lib/seedEventFromFlyer.mjs, scripts/seed-*-event-from-flyer.mjs, scripts/seed-*-events-from-*.mjs, scripts/mosc-in-migration/migration-api-lib.mjs
 alwaysApply: false
 ---
 
@@ -20,19 +20,27 @@ This is **append-only** by default (skip create if the same title already exists
 
 | Script | Behavior |
 |--------|----------|
-| [`scripts/seed-kcnj-event-from-flyer.mjs`](mdc:scripts/seed-kcnj-event-from-flyer.mjs) | **Preferred.** Append-only. Scrape flyers → create missing events → upload hero/flyer. |
+| [`scripts/seed-event-from-flyer.mjs`](mdc:scripts/seed-event-from-flyer.mjs) | **Preferred for any tenant.** Append-only. One poster via flags or a JSON spec. Tenant is `MOSC_TENANT_ID` or `NEXT_PUBLIC_TENANT_ID`. |
+| [`scripts/lib/seedEventFromFlyer.mjs`](mdc:scripts/lib/seedEventFromFlyer.mjs) | Shared create + hero upload used by the CLI and tenant catalogs. |
+| [`scripts/seed-kcnj-event-from-flyer.mjs`](mdc:scripts/seed-kcnj-event-from-flyer.mjs) | KCNJ catalog only. Calls the shared seeder. Does not invent a spec for an unknown image. |
 | [`scripts/seed-mcefee-events-from-charity-site.mjs`](mdc:scripts/seed-mcefee-events-from-charity-site.mjs) | **Destructive.** Deletes all tenant events + media, then recreates from a hardcoded list. Use only when the user asks to replace the whole catalog. |
-| [`scripts/mosc-in-migration/migration-api-lib.mjs`](mdc:scripts/mosc-in-migration/migration-api-lib.mjs) | Service JWT, `apiFetch`, `API_BASE_URL`, `TENANT_ID` from `.env.local`. |
+| [`scripts/mosc-in-migration/migration-api-lib.mjs`](mdc:scripts/mosc-in-migration/migration-api-lib.mjs) | Service JWT, `apiFetch`, `API_BASE_URL`, `TENANT_ID` from `.env.local`. `MOSC_TENANT_ID` overrides the env tenant without editing `.env.local`. |
 
 ```bash
-# Current tenant from .env.local (backend must be up)
-node scripts/seed-kcnj-event-from-flyer.mjs
+# Any project. Run inside that repo so .env.local supplies API + JWT + tenant.
+# Override tenant when this checkout's .env.local is a different site:
+#   $env:MOSC_TENANT_ID="keralacenter_org_9"
 
-# Single extra flyer (reuses first EVENTS spec unless path already listed)
-IMAGE_PATH="F:/path/to/flyer.png" node scripts/seed-kcnj-event-from-flyer.mjs
+node scripts/seed-event-from-flyer.mjs --help
+
+node scripts/seed-event-from-flyer.mjs --spec scripts/flyers/my-event.json --event-type-id 13
+
+node scripts/seed-event-from-flyer.mjs --image C:\path\poster.png --title "Event title" --start-date 2026-10-09 --end-date 2026-10-09 --start-time 18:00:00 --end-time 23:00:00 --location "Venue" --admission ticketed --registration-required --external-url https://example.com/register --event-type-id 13
 ```
 
-Requires `.env.local`: `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_TENANT_ID`, `API_JWT_USER` / `API_JWT_PASS`. Optional: `EVENT_TYPE_ID` (default `13` = Cultural Festival).
+`--event-type-id` or `EVENT_TYPE_ID` is required. Ids are per tenant (on keralacenter_org_9, `13` is Cultural Festival). Do not assume `13` on another tenant.
+
+Requires `.env.local`: `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_TENANT_ID`, `API_JWT_USER` / `API_JWT_PASS`.
 
 ## Process (agent checklist)
 
@@ -42,7 +50,7 @@ Requires `.env.local`: `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_TENANT_ID`, `API
    & "C:\Program Files\Tesseract-OCR\tesseract.exe" "<image>" stdout -l eng --psm 6
    ```
    Override binary with `TESSERACT_PATH`. OCR is noisy on illustrated flyers — prefer vision for title/date/venue; use OCR to confirm phones, schedule boxes, age groups.
-3. **Map into `EVENTS[]`** in the seed script (do not invent dates). If the flyer has only a month range, follow the MCEFEE last-weekend-of-month convention in the charity-site script.
+3. **Pass scraped fields** to `scripts/seed-event-from-flyer.mjs` (flags or a JSON spec). Do not invent dates. A tenant catalog such as `seed-kcnj-event-from-flyer.mjs` is only for flyers already listed in that file. If the flyer has only a month range, follow the MCEFEE last-weekend-of-month convention in the charity-site script.
 4. **Copy** the flyer under `public/images/<tenant>/events/` for a local reference.
 5. **Create** via `POST /api/event-details` with service JWT + `X-Tenant-ID` (`apiFetch` from migration-api-lib). Include required timestamps (`createdAt`, `updatedAt`), `eventType: { id }`, `tenantId`, `timezone: 'America/New_York'`.
 6. **Upload** multipart to `{API_BASE_URL}/api/event-medias/upload?...` (direct backend, not `/api/proxy`). Use `node:buffer` `File`. ASCII-safe filename/title (S3 signing fails on unicode).
@@ -63,7 +71,7 @@ Requires `.env.local`: `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_TENANT_ID`, `API
 | “Register by …” | `isRegistrationRequired` | `true` when flyer requires signup |
 | Homepage promo | `isFeaturedEvent` + `featuredEventPriorityRanking` | Lower number = higher rank |
 
-Also set: `isActive: true`, `paymentFlowMode: 'STRIPE_ONLY'`, `donationMetadata` JSON (`isFundraiserEvent` / `isCharityEvent`), `fromEmail` for the tenant (e.g. `contactus@keralacenter.org`).
+Also set: `isActive: true`, `paymentFlowMode: 'STRIPE_ONLY'`, `donationMetadata` JSON (`isFundraiserEvent` / `isCharityEvent`), `fromEmail` for that tenant when the flyer or site publishes one (e.g. `contactus@keralacenter.org`). Registration links go in `externalTicketUrl` (`--external-url`) together with `isRegistrationRequired`.
 
 ## Media upload query flags
 
@@ -103,7 +111,7 @@ await createEvent(spec, token);
 
 ## Tenant reuse
 
-Copy this rule + [`scripts/seed-kcnj-event-from-flyer.mjs`](mdc:scripts/seed-kcnj-event-from-flyer.mjs) + [`scripts/mosc-in-migration/migration-api-lib.mjs`](mdc:scripts/mosc-in-migration/migration-api-lib.mjs) into satellite/primary frontends if missing. Then edit `FLYER_DIR`, `EVENTS[]`, `fromEmail`, and `EVENT_TYPE_ID` for that tenant’s `.env.local`. The script name can stay; the data must match the tenant.
+Copy [`scripts/seed-event-from-flyer.mjs`](mdc:scripts/seed-event-from-flyer.mjs), [`scripts/lib/seedEventFromFlyer.mjs`](mdc:scripts/lib/seedEventFromFlyer.mjs), and [`scripts/mosc-in-migration/migration-api-lib.mjs`](mdc:scripts/mosc-in-migration/migration-api-lib.mjs) into a frontend that does not have them. Run the script from that frontend so `.env.local` selects the tenant. Set `MOSC_TENANT_ID` only when you must target a different tenant than the file’s `NEXT_PUBLIC_TENANT_ID`. Look up that tenant’s event type id before posting. Keep tenant-specific catalogs (such as the KCNJ `EVENTS[]` list) as data that calls `seedFlyers`, not as a second uploader.
 
 ## Related
 

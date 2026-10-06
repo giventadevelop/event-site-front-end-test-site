@@ -70,7 +70,7 @@ export default async function PriestsCmsPage({
             </p>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-4">
                 {priests.map((priest) => {
                   const bits = [
                     priest.dioceseName,

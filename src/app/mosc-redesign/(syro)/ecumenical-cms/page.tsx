@@ -1,9 +1,8 @@
 import React from 'react';
-import Link from 'next/link';
 import QuickLinks from '../components/QuickLinks';
 import SyroPageBanner from '../components/SyroPageBanner';
 import LiveUrlSearch from '../components/LiveUrlSearch';
-import { MoscHubCardMedia, MoscHubCardMediaPlaceholder } from '../components/MoscHubCardMedia';
+import { MOSC_LISTING_GRID_CLASS, MoscCmsHubCard } from '../components/MoscCmsHubCard';
 import DirectoryPagination from '../directory/components/DirectoryPagination';
 import { DIRECTORY_PAGE_SIZE } from '../directory/types/listPagination';
 import { buildCmsListUrl } from '../lib/cmsListUrl';
@@ -75,56 +74,17 @@ export default async function EcumenicalCmsPage({
             </p>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
-                {articles.map((article) => {
-                  const href = `/mosc-redesign/ecumenical-cms/${article.slug}`;
-                  return (
-                    <div
-                      key={article.documentId || article.slug}
-                      className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] hover:shadow-[rgba(0,0,0,0.35)_0px_5px_15px] transition-shadow duration-300 overflow-hidden flex flex-col h-full"
-                    >
-                      {article.imageUrl ? (
-                        <MoscHubCardMedia
-                          src={article.imageUrl}
-                          alt={article.imageAlt ?? article.name}
-                          frame="landscape"
-                          frameClassName="max-w-[calc(100%-2rem)] md:max-w-[280px]"
-                          sizes="(max-width: 768px) calc(100vw - 4rem), 280px"
-                          unoptimized={Boolean(article.imageUrl.startsWith('http'))}
-                        />
-                      ) : (
-                        <MoscHubCardMediaPlaceholder
-                          frame="landscape"
-                          frameClassName="max-w-[calc(100%-2rem)] md:max-w-[280px]"
-                        />
-                      )}
-                      <div className="px-4 pb-8 pt-0 md:p-8 md:pt-0 flex flex-col flex-1">
-                        <h3 className="font-syro-display text-xl font-semibold text-syro-blue mb-4 leading-snug line-clamp-3">
-                          {article.name}
-                        </h3>
-                        {article.excerpt ? (
-                          <p className="font-syro-primary text-base text-syro-dark-gray flex-1 mb-5 leading-relaxed line-clamp-3">
-                            {article.excerpt}
-                          </p>
-                        ) : null}
-                        <Link
-                          href={href}
-                          className="syro-primary-button inline-flex items-center gap-2 mt-auto w-fit"
-                        >
-                          <span>Read More</span>
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M17 8l4 4m0 0l-4 4m4-4H3"
-                            />
-                          </svg>
-                        </Link>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className={MOSC_LISTING_GRID_CLASS}>
+                {articles.map((article) => (
+                  <MoscCmsHubCard
+                    key={article.documentId || article.slug}
+                    href={`/mosc-redesign/ecumenical-cms/${article.slug}`}
+                    title={article.name}
+                    excerpt={article.excerpt}
+                    imageUrl={article.imageUrl}
+                    imageAlt={article.imageAlt ?? article.name}
+                  />
+                ))}
               </div>
               <DirectoryPagination
                 page={pagination.page}

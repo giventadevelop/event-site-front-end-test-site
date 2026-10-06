@@ -9,6 +9,8 @@ export interface HolySynodMember {
   body: string | null;
   imageUrl: string | null;
   imageAlt: string | null;
+  imageWidth: number | null;
+  imageHeight: number | null;
   address: string | null;
   email: string | null;
   phones: string | null;

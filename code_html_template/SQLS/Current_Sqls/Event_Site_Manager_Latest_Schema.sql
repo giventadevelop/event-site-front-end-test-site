@@ -263,6 +263,8 @@ DROP TABLE IF EXISTS public.satellite_domain CASCADE;
 DROP TABLE IF EXISTS public.news_article_category CASCADE;
 DROP TABLE IF EXISTS public.news_article CASCADE;
 DROP TABLE IF EXISTS public.news_flash CASCADE;
+DROP TABLE IF EXISTS public.homepage_youtube_override CASCADE;
+DROP TABLE IF EXISTS public.gallery_youtube_video CASCADE;
 DROP TABLE IF EXISTS public.news_live_stream_config CASCADE;
 DROP TABLE IF EXISTS public.news_section_display_config CASCADE;
 DROP TABLE IF EXISTS public.news_sidebar_promotion CASCADE;
@@ -1190,6 +1192,20 @@ CREATE SEQUENCE IF NOT EXISTS public.news_flash_id_seq
     CACHE 1;
 
 CREATE SEQUENCE IF NOT EXISTS public.news_live_stream_config_id_seq
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    START WITH 1
+    CACHE 1;
+
+CREATE SEQUENCE IF NOT EXISTS public.homepage_youtube_override_id_seq
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    START WITH 1
+    CACHE 1;
+
+CREATE SEQUENCE IF NOT EXISTS public.gallery_youtube_video_id_seq
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
@@ -6554,6 +6570,48 @@ CREATE INDEX idx_news_live_stream_config_is_active ON public.news_live_stream_co
 
 COMMENT ON TABLE public.news_live_stream_config IS 'Live stream embed config for the LIVE page (e.g. YouTube Live).';
 
+-- homepage_youtube_override: One admin YouTube URL per tenant for the MOSC redesign homepage player.
+CREATE TABLE public.homepage_youtube_override (
+    id bigint DEFAULT nextval('public.homepage_youtube_override_id_seq'::regclass) NOT NULL,
+    tenant_id character varying(255) NOT NULL,
+    youtube_url character varying(1024),
+    title character varying(500),
+    description text,
+    is_active boolean DEFAULT true NOT NULL,
+    starts_at timestamp without time zone,
+    ends_at timestamp without time zone,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    CONSTRAINT homepage_youtube_override_pkey PRIMARY KEY (id),
+    CONSTRAINT ux_homepage_youtube_override_tenant_id UNIQUE (tenant_id)
+);
+
+CREATE INDEX idx_homepage_youtube_override_tenant_id ON public.homepage_youtube_override(tenant_id);
+CREATE INDEX idx_homepage_youtube_override_is_active ON public.homepage_youtube_override(tenant_id, is_active) WHERE is_active = true;
+
+COMMENT ON TABLE public.homepage_youtube_override IS 'Admin YouTube URL override for the MOSC redesign homepage live player. One row per tenant.';
+
+
+-- gallery_youtube_video: Many admin YouTube URLs per tenant for the MOSC redesign gallery.
+CREATE TABLE public.gallery_youtube_video (
+    id bigint DEFAULT nextval('public.gallery_youtube_video_id_seq'::regclass) NOT NULL,
+    tenant_id character varying(255) NOT NULL,
+    youtube_url character varying(1024) NOT NULL,
+    title character varying(500),
+    description text,
+    display_order integer DEFAULT 0 NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    CONSTRAINT gallery_youtube_video_pkey PRIMARY KEY (id)
+);
+
+CREATE INDEX idx_gallery_youtube_video_tenant_id ON public.gallery_youtube_video(tenant_id);
+CREATE INDEX idx_gallery_youtube_video_tenant_order ON public.gallery_youtube_video(tenant_id, display_order);
+CREATE INDEX idx_gallery_youtube_video_is_active ON public.gallery_youtube_video(tenant_id, is_active) WHERE is_active = true;
+
+COMMENT ON TABLE public.gallery_youtube_video IS 'Admin YouTube videos for the MOSC redesign gallery. Many rows per tenant.';
+
 -- news_article_category: Many-to-many between news_article and news_category.
 CREATE TABLE public.news_article_category (
     id bigint DEFAULT nextval('public.news_article_category_id_seq'::regclass) NOT NULL,
@@ -6600,6 +6658,16 @@ CREATE TRIGGER trg_news_flash_updated_at
 
 CREATE TRIGGER trg_news_live_stream_config_updated_at
     BEFORE UPDATE ON public.news_live_stream_config
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE TRIGGER trg_homepage_youtube_override_updated_at
+    BEFORE UPDATE ON public.homepage_youtube_override
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE TRIGGER trg_gallery_youtube_video_updated_at
+    BEFORE UPDATE ON public.gallery_youtube_video
     FOR EACH ROW
     EXECUTE FUNCTION public.update_updated_at_column();
 
@@ -7536,6 +7604,19 @@ SELECT pg_catalog.setval(
 SELECT pg_catalog.setval(
     'public.news_live_stream_config_id_seq',
     GREATEST(COALESCE((SELECT MAX(id) FROM public.news_live_stream_config), 1), 1),
+    true
+);
+-- homepage_youtube_override
+SELECT pg_catalog.setval(
+    'public.homepage_youtube_override_id_seq',
+    GREATEST(COALESCE((SELECT MAX(id) FROM public.homepage_youtube_override), 1), 1),
+    true
+);
+
+-- gallery_youtube_video
+SELECT pg_catalog.setval(
+    'public.gallery_youtube_video_id_seq',
+    GREATEST(COALESCE((SELECT MAX(id) FROM public.gallery_youtube_video), 1), 1),
     true
 );
 -- news_article_category

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { MoscGalleryAlbumCard } from '@/components/gallery/MoscGalleryAlbumCard';
 import { AlbumMediaSlideshow } from '@/app/gallery/components/AlbumMediaSlideshow';
 import { resolveMoscGalleryAlbumHref } from '@/lib/gallery/resolveMoscGalleryHref';
+import { isYoutubeGalleryMedia } from '@/lib/gallery/youtubeMedia';
 import type { GalleryAlbumWithMedia } from '@/types';
 
 interface MoscGalleryAlbumCardWrapperProps {
@@ -24,7 +25,8 @@ export function MoscGalleryAlbumCardWrapper({
   const [showSlideshow, setShowSlideshow] = useState(false);
   const { album, media, totalMediaCount } = albumWithMedia;
 
-  const coverImage = album.coverImageUrl || media.find((m) => m.fileUrl)?.fileUrl;
+  const coverImage =
+    album.coverImageUrl || media.find((m) => m.fileUrl && !isYoutubeGalleryMedia(m))?.fileUrl;
   const href = resolveMoscGalleryAlbumHref(album);
   const useSlideshow = !href && media.length > 0;
 

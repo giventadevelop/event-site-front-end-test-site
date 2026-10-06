@@ -56,43 +56,31 @@ export default async function HolySynodCmsMemberPage({ params }: PageProps) {
     href: `/mosc-redesign/holy-synod-cms/${m.slug}`,
   }));
 
-  const isCatholicos = member.memberType === 'catholicos';
   const hasContact = Boolean(member.address || member.email || member.phones);
+  const imageWidth = member.imageWidth ?? 3;
+  const imageHeight = member.imageHeight ?? 4;
 
   return (
     <div className="bg-syro-bg-gray">
       <SyroPageBanner title={member.name} breadcrumbFrom="holy-synod-cms" />
 
       <section className="py-16 bg-syro-bg-gray">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             <div className="lg:col-span-2">
               <div className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] px-4 py-8 md:p-8">
                 {member.imageUrl && (
-                  <div className="mb-8 flex justify-center">
-                    {isCatholicos ? (
-                      <div className="relative w-full max-w-[420px] aspect-[280/168] rounded-xl overflow-hidden flex items-center justify-center bg-white/5 shadow-xl shadow-gray-400/20 transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-500/25 ring-1 ring-black/5">
-                        <Image
-                          src={member.imageUrl}
-                          alt={member.imageAlt ?? member.name}
-                          fill
-                          className="object-contain rounded-xl"
-                          priority
-                          sizes="(max-width: 768px) 100vw, 420px"
-                          unoptimized
-                        />
-                      </div>
-                    ) : (
-                      <Image
-                        src={member.imageUrl}
-                        alt={member.imageAlt ?? member.name}
-                        width={125}
-                        height={75}
-                        className="rounded-lg w-full max-w-[290px] md:max-w-[125px] h-auto object-contain"
-                        priority
-                        unoptimized
-                      />
-                    )}
+                  <div className="mb-8">
+                    <Image
+                      src={member.imageUrl}
+                      alt={member.imageAlt ?? member.name}
+                      width={imageWidth}
+                      height={imageHeight}
+                      className="rounded-lg w-full h-auto object-contain"
+                      priority
+                      unoptimized
+                      sizes="(max-width: 1024px) 100vw, 720px"
+                    />
                   </div>
                 )}
 

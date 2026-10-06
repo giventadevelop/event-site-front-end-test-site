@@ -1,6 +1,7 @@
 import React from 'react';
 import QuickLinks from '../../components/QuickLinks';
 import SyroPageBanner from '../../components/SyroPageBanner';
+import { MOSC_LISTING_CARD_CLASS, MOSC_LISTING_GRID_CLASS } from '../../components/MoscCmsHubCard';
 import { MoscHubCardMedia } from '../../components/MoscHubCardMedia';
 import DirectoryPagination from '../../directory/components/DirectoryPagination';
 import AdministrationSidebar from '../components/AdministrationSidebar';
@@ -90,12 +91,12 @@ export default async function ManagingCommitteeMembersPage({
 
       <section className="py-16 bg-syro-bg-gray">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             <div className="lg:col-span-1">
               <AdministrationSidebar currentSlug="managing-committee-members" />
             </div>
 
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-2">
               <h3 className="text-2xl font-light text-[#798daf] mb-4 pl-8 border-l-[7px] border-syro-red">
                 Current Roster
               </h3>
@@ -115,13 +116,13 @@ export default async function ManagingCommitteeMembersPage({
                 </p>
               ) : (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
+                  <div className={MOSC_LISTING_GRID_CLASS}>
                     {members.map((member) => {
                       const hasPhoto = Boolean(member.photoUrl);
                       return (
                         <div
                           key={member.documentId || member.slug}
-                          className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] hover:shadow-[rgba(0,0,0,0.35)_0px_5px_15px] transition-shadow duration-300 overflow-hidden flex flex-col h-full"
+                          className={MOSC_LISTING_CARD_CLASS}
                         >
                           {hasPhoto && member.photoUrl ? (
                             <MoscHubCardMedia
@@ -129,13 +130,14 @@ export default async function ManagingCommitteeMembersPage({
                               alt={member.photoAlt ?? member.name}
                               frame="portraitUniform"
                               objectPosition="top"
-                              frameClassName="bg-white"
+                              padded={false}
+                              outerClassName="lg:-mx-1"
+                              frameClassName="max-w-none md:max-w-[220px] bg-white lg:!max-w-none lg:w-full lg:ring-0 lg:!aspect-auto lg:!h-[330px]"
+                              sizes="(max-width: 767px) 100vw, 220px"
                               unoptimized={member.photoUrl.startsWith('http')}
                             />
                           ) : null}
-                          <div
-                            className={`px-4 py-8 md:p-8 flex flex-col flex-1 ${hasPhoto ? 'pt-0 md:pt-0' : ''}`}
-                          >
+                          <div className="mosc-hub-listing-card-body flex flex-col flex-1">
                             <h3 className="font-syro-display text-xl font-semibold text-syro-blue mb-2 leading-snug">
                               {member.name}
                             </h3>

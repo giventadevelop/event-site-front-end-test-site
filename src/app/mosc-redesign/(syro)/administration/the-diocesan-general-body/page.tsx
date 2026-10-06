@@ -20,13 +20,13 @@ export default function DiocesanGeneralBodyPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             <div className="lg:col-span-2">
               <div className="bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,rgba(0,0,0,0.3)_0px_3px_7px_-3px] px-4 py-8 md:p-8">
-                <div className="mb-8 flex justify-center">
+                <div className="mb-8">
                   <Image
                     src="/images/administration/diocesan-general-body.jpg"
                     alt="The Diocesan General Body"
                     width={600}
                     height={360}
-                    className="rounded-lg w-full max-w-md h-auto object-contain"
+                    className="rounded-lg w-full h-auto object-contain"
                     sizes="(min-width: 1024px) 37.5vw, 50vw"
                   />
                 </div>
