@@ -8,7 +8,7 @@ This repository is the **reference production satellite** for the Event Site Man
 | Amplify app | `d1jo61890p2myt` (us-east-2, Web Compute) |
 | Branch | `release/v1.0.0` |
 | Route 53 zone | `Z07785143III9YRMM9SJG` |
-| Primary auth | `https://www.event-site-manager.com` |
+| Primary auth | `https://www.kluvo.ai` |
 | Backend API | `https://event-site-manager-prod.com` (typical prod) |
 | Clerk satellite | `www.mosc-temp.com` (prod instance, **Verified**) |
 | Clerk FAPI CNAME | `clerk.www.mosc-temp.com` → `frontend-api.clerk.services` |

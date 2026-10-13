@@ -5,7 +5,7 @@
  * Requires in .env.local (mosc-temp or ../event-site-manager):
  *   ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET, ZOHO_REFRESH_TOKEN
  *
- * Obtain refresh token: https://www.event-site-manager.com/oauth/zoho/start
+ * Obtain refresh token: https://www.kluvo.ai/oauth/zoho/start
  *
  * Usage:
  *   npm run zobot:bulk-delete-articles -- --dry-run

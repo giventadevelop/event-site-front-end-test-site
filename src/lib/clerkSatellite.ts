@@ -14,7 +14,7 @@ export function getPrimaryHost(): string {
   const raw =
     process.env.NEXT_PUBLIC_PRIMARY_DOMAIN ||
     process.env.AMPLIFY_NEXT_PUBLIC_PRIMARY_DOMAIN ||
-    'www.event-site-manager.com';
+    'www.kluvo.ai';
   return normalizeHostname(raw);
 }
 
