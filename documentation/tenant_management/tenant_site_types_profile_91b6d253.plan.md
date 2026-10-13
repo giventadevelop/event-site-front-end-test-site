@@ -6,7 +6,7 @@ todos:
     content: "Loop 0: Create documentation/tenant_management/personal_profile_site/ with attribute catalog, PRD, ERD, inspiration wireframes, and site_type enum sign-off"
     status: pending
   - id: loop-1-schema-backend
-    content: "Loop 1: Add site_type to tenant_organization + public_profile and child tables in event-site-manager-service; REST + DTOs; sync src/types/index.ts"
+    content: "Loop 1: Add site_type to tenant_organization + public_profile and child tables in kluvo-ai-service; REST + DTOs; sync src/types/index.ts"
     status: pending
   - id: loop-2-admin
     content: "Loop 2: Admin site-type selector on org settings + public profile CRUD (ApiServerActions + proxy routes)"
@@ -197,7 +197,7 @@ Add booleans (mirror existing pattern in [`documentation/HOMEPAGE_CONDITIONAL_SE
 
 ---
 
-## Backend changes (`event-site-manager-service`)
+## Backend changes (`kluvo-ai-service`)
 
 This repo’s DDL lives in [`code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql`](code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql); **runtime API is the sibling Rust/Spring service** (not in `mosc-temp`).
 
@@ -303,7 +303,7 @@ flowchart LR
 1. **Tenancy model**: plan assumes **one public profile per tenant**; multi-profile needs `public_profile.tenant_id` + unique `slug` per person.
 2. **`news_article`**: tables exist in SQL but **no frontend proxy** — either wire for church/news tenants or fold into profile writings in backend.
 3. **Public API auth**: profile pages are public — ensure middleware `publicRoutes` includes new proxy paths if needed ([`src/middleware.ts`](src/middleware.ts)).
-4. **Backend repo access**: migrations and REST must land in **event-site-manager-service** in parallel with this Next app.
+4. **Backend repo access**: migrations and REST must land in **kluvo-ai-service** in parallel with this Next app.
 
 ---
 

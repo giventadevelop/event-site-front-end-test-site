@@ -5,7 +5,7 @@
 - **Date**: 2025-01-27
 - **Status**: Draft
 - **Backend Project Location**: `E:\project_workspace\malayalees-us-site-boot`
-- **Batch Job Project Location**: `E:\project_workspace\event-site-manager-batch-jobs`
+- **Batch Job Project Location**: `E:\project_workspace\kluvo-ai-batch-jobs`
 
 ---
 
@@ -1249,7 +1249,7 @@ All functionality can be implemented using existing Spring Boot/JHipster stack.
 - **Database Schema**: `code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql`
 - **API Documentation**: `documentation/Swagger_API_Docs/api-docs.json`
 - **Backend Project**: `E:\project_workspace\malayalees-us-site-boot`
-- **Batch Job Project**: `E:\project_workspace\event-site-manager-batch-jobs`
+- **Batch Job Project**: `E:\project_workspace\kluvo-ai-batch-jobs`
 - **JHipster Documentation**: https://www.jhipster.tech/
 - **Spring Data REST**: https://spring.io/projects/spring-data-rest
 

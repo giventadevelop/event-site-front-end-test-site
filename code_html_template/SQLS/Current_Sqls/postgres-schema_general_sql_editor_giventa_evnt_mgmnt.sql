@@ -549,13 +549,13 @@ FROM pg_user;
 SELECT datname FROM pg_database;
  
 -- Create application database
-CREATE DATABASE event_site_manager_db;
+CREATE DATABASE kluvo_ai_db;
 
 --Create application user
 CREATE USER event_site_app WITH PASSWORD 'event_site_app!';
 
 --Grant permissions
-GRANT ALL PRIVILEGES ON DATABASE event_site_manager_db TO event_site_app;
+GRANT ALL PRIVILEGES ON DATABASE kluvo_ai_db TO event_site_app;
 GRANT ALL PRIVILEGES ON SCHEMA public TO event_site_app;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO event_site_app;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO event_site_app;
@@ -564,8 +564,8 @@ GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO event_site_app;
 
 GRANT USAGE ON SCHEMA public TO event_site_app;
 GRANT CREATE ON SCHEMA public TO event_site_app;
-GRANT CONNECT ON DATABASE event_site_manager_db TO event_site_app;
-GRANT TEMPORARY ON DATABASE event_site_manager_db TO event_site_app;
+GRANT CONNECT ON DATABASE kluvo_ai_db TO event_site_app;
+GRANT TEMPORARY ON DATABASE kluvo_ai_db TO event_site_app;
 
 -- Table permissions
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO event_site_app;
@@ -580,7 +580,7 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO event_site_app;
 --GRANT ALL ON event_sponsors TO event_site_app;
 --GRANT ALL ON executive_committee_team_members TO event_site_app;
 
-GRANT ALL  ON DATABASE event_site_manager_db TO event_site_app;
+GRANT ALL  ON DATABASE kluvo_ai_db TO event_site_app;
 GRANT ALL  ON SCHEMA public TO event_site_app;
 GRANT ALL  ON ALL TABLES IN SCHEMA public TO event_site_app;
 GRANT ALL  ON ALL SEQUENCES IN SCHEMA public TO event_site_app;

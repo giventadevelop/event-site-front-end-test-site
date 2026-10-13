@@ -19,7 +19,7 @@ sql = sql.replace(/tenant_demo_002/g, tenant);
 
 const client = new pg.Client({
   host: process.env.MOSC_DB_HOST || process.env.RDS_ENDPOINT || 'localhost',
-  database: process.env.MOSC_DB_NAME || process.env.DB_NAME || 'event_site_manager_db',
+  database: process.env.MOSC_DB_NAME || process.env.DB_NAME || 'kluvo_ai_db',
   user: process.env.MOSC_DB_USER || process.env.DB_USERNAME || 'postgres',
   password: process.env.MOSC_DB_PASSWORD || process.env.DB_PASSWORD || 'postgres',
   port: Number(process.env.MOSC_DB_PORT || process.env.DB_PORT || 5432),

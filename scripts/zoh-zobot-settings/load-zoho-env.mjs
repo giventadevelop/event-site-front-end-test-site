@@ -18,7 +18,7 @@ function applyInsecureTlsIfConfigured() {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MOSC_ROOT = path.resolve(__dirname, '../..');
-const EVENT_SITE_MANAGER_ROOT = path.resolve(MOSC_ROOT, '../event-site-manager');
+const EVENT_SITE_MANAGER_ROOT = path.resolve(MOSC_ROOT, '../kluvo-ai-admin');
 
 const DEFAULT_ENV_CANDIDATES = [
   path.join(MOSC_ROOT, '.env.local'),

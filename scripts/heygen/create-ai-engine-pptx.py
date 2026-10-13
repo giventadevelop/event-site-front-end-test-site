@@ -330,7 +330,7 @@ def build():
         Inches(2.5),
         "One-sentence contract\n"
         "The platform tells the engine what to connect to. The engine tells the platform what to do today.\n\n"
-        "Repo (proposed): gas-station-ai-engine  ·  Blueprint reference: Gas_Station_AI project",
+        "Repo (proposed): kluvo-ai-engine  ·  Blueprint reference: Gas_Station_AI project",
         size=15,
         color=DARK,
     )
@@ -834,7 +834,7 @@ def build():
             "LLM returns a tool name + arguments (JSON)",
             "Engine runs Python functions: get_metrics, run_forecast",
             "Results fed back to LLM for final answer",
-            "Hardcoded in gas-station-ai-engine repo",
+            "Hardcoded in kluvo-ai-engine repo",
             "Same pattern OpenAI / Anthropic / Bedrock support",
             "No owner browser access — server-side only",
         ],
@@ -981,12 +981,12 @@ def build():
     slide_header(s, "Deployment & hosting", "Separate stack from the platform — same cloud patterns")
 
     deploy = [
-        ("Engine API + workers", "ECS Fargate or Lambda + SQS/RQ queue\n(match event-site-manager-batch-jobs)"),
+        ("Engine API + workers", "ECS Fargate or Lambda + SQS/RQ queue\n(match kluvo-ai-batch-jobs)"),
         ("Scheduler", "EventBridge rules per timezone window"),
         ("Raw + features", "S3 + optional Timescale (not platform RDS)"),
         ("LLM provider keys", "Engine environment only — never in mosc-temp"),
         ("Secrets", "AWS Secrets Manager for vendor + platform JWT"),
-        ("IaC", "application-deployments → gas-station-ai-engine stack"),
+        ("IaC", "application-deployments → kluvo-ai-engine stack"),
     ]
     for i, (title, body) in enumerate(deploy):
         col = i % 3

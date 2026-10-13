@@ -133,7 +133,7 @@ This guide sets up `www.mosc-temp.com` as a **Clerk satellite domain** that uses
 
 **📍 Documentation Location:**
 ```
-E:\project_workspace\event-site-manager\documentation\clerk_authentication\DOMAIN_REGN_AND_CLERK_SATELLITE_SET_UP_GUIDE.md
+E:\project_workspace\kluvo-ai-admin\documentation\clerk_authentication\DOMAIN_REGN_AND_CLERK_SATELLITE_SET_UP_GUIDE.md
 ```
 
 **What's Covered in That Document:**
@@ -823,7 +823,7 @@ When setting up a primary and satellite domain pair, you need to update **code i
 
 ### Primary Domain Project (event-site-manager)
 
-**Location**: `E:\project_workspace\event-site-manager`
+**Location**: `E:\project_workspace\kluvo-ai-admin`
 
 #### 1. `src/app/layout.tsx` - Allow Redirects from Satellite
 

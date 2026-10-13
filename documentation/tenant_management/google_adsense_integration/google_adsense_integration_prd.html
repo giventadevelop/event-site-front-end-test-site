@@ -29,7 +29,7 @@
     <p class="doc-meta">
         <strong>Frontend repo:</strong> mosc-temp (satellite sites) &nbsp;|&nbsp;
         <strong>Admin repo:</strong> event-site-manager (multi-tenant settings UI) &nbsp;|&nbsp;
-        <strong>Backend repo:</strong> event-site-manager-service &nbsp;|&nbsp;
+        <strong>Backend repo:</strong> kluvo-ai-service &nbsp;|&nbsp;
         <strong>Schema baseline:</strong> <code>Event_Site_Manager_Latest_Schema.sql</code> &nbsp;|&nbsp;
         <strong>Owner guide:</strong> <a href="google_adsense_owner_setup_guide.html">google_adsense_owner_setup_guide.html</a> &nbsp;|&nbsp;
         <strong>Shared ID (giventa.com):</strong> <a href="google_adsense_shared_publisher_giventa.html">google_adsense_shared_publisher_giventa.html</a>
@@ -53,7 +53,7 @@
             <tr><td><code>google_adsense_placements_json</code></td><td>text</td><td>JSON map region → slot id</td></tr>
         </tbody>
     </table>
-    <p><strong>Existing deployments:</strong> Liquibase in <code>event-site-manager-service</code> (<code>20260628120000_add_google_adsense_tenant_settings.xml</code>) applies incremental <code>addColumn</code> changesets on startup — not duplicated as raw SQL ALTER files in mosc-temp or batch-jobs.</p>
+    <p><strong>Existing deployments:</strong> Liquibase in <code>kluvo-ai-service</code> (<code>20260628120000_add_google_adsense_tenant_settings.xml</code>) applies incremental <code>addColumn</code> changesets on startup — not duplicated as raw SQL ALTER files in mosc-temp or batch-jobs.</p>
 
     <h2>2. Backend API fields (OpenAPI / DTO)</h2>
     <table>
@@ -143,10 +143,10 @@
         <li>WhatsApp integration toggle pattern in <code>TenantSettingsForm.tsx</code> Integrations tab</li>
     </ul>
 
-    <h2>10. Batch jobs repo (<code>event-site-manager-batch-jobs</code>)</h2>
+    <h2>10. Batch jobs repo (<code>kluvo-ai-batch-jobs</code>)</h2>
     <div class="info-box">
         <p><strong>Canonical schema:</strong> Mirror the three columns in <code>database/Event_Site_Manager_Latest_Schema.sql</code> (CREATE TABLE block + COMMENT ON COLUMN). No standalone ALTER migration SQL in batch-jobs.</p>
-        <p><strong>Runtime migration:</strong> Liquibase in <code>event-site-manager-service</code> only (shared PostgreSQL database).</p>
+        <p><strong>Runtime migration:</strong> Liquibase in <code>kluvo-ai-service</code> only (shared PostgreSQL database).</p>
         <p><strong>Entity sync required:</strong> <code>com.eventmanager.batch.domain.TenantSettings</code> must map the three JPA fields so production <code>ddl-auto: validate</code> stays aligned.</p>
         <p><strong>No batch logic changes</strong> for AdSense MVP — jobs only read tenant settings for email branding.</p>
     </div>
@@ -154,9 +154,9 @@
         <thead><tr><th>Repo / file</th><th>Action</th></tr></thead>
         <tbody>
             <tr><td><code>mosc-temp/.../Event_Site_Manager_Latest_Schema.sql</code></td><td>Source of truth — columns in CREATE TABLE</td></tr>
-            <tr><td><code>event-site-manager-service/.../TenantSettings.java</code></td><td>JPA entity + DTO + validator</td></tr>
-            <tr><td><code>event-site-manager-batch-jobs/.../TenantSettings.java</code></td><td>JPA entity fields only (schema parity)</td></tr>
-            <tr><td><code>event-site-manager-batch-jobs/database/Event_Site_Manager_Latest_Schema.sql</code></td><td>Keep in sync with mosc-temp canonical schema</td></tr>
+            <tr><td><code>kluvo-ai-service/.../TenantSettings.java</code></td><td>JPA entity + DTO + validator</td></tr>
+            <tr><td><code>kluvo-ai-batch-jobs/.../TenantSettings.java</code></td><td>JPA entity fields only (schema parity)</td></tr>
+            <tr><td><code>kluvo-ai-batch-jobs/database/Event_Site_Manager_Latest_Schema.sql</code></td><td>Keep in sync with mosc-temp canonical schema</td></tr>
         </tbody>
     </table>
 

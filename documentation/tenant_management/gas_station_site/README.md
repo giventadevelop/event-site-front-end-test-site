@@ -25,7 +25,7 @@ Feasibility assessment and database design for onboarding gas-station / convenie
 | Layer | Status |
 |---|---|
 | Canonical schema (`Event_Site_Manager_Latest_Schema.sql`) | ✅ site_type incl. GAS_STATION, tenant_settings gas + profile columns, 4 gas tables + 5 profile tables, sequences + setvals folded in |
-| Backend (`event-site-manager-service`) | ✅ SiteType enum, TenantSettings gas fields, 4 vertical slices (entity/repo/service/criteria/queryService/DTO/mapper/resource), Liquibase `20260703130000_gas_station_module.xml` |
+| Backend (`kluvo-ai-service`) | ✅ SiteType enum, TenantSettings gas fields, 4 vertical slices (entity/repo/service/criteria/queryService/DTO/mapper/resource), Liquibase `20260703130000_gas_station_module.xml` |
 | Frontend types + proxy | ✅ `src/types/gasStation.ts`, GAS_STATION in `TenantSiteType`, 4 proxy route pairs under `src/pages/api/proxy/gas-station-*` |
 | Tenant-management UI | ✅ Site Type dropdown on org form (presets auto-applied on change), profile section toggles + Gas Station AI Engine config in settings form |
 | Admin module `/admin/gas-station` | ✅ Daily brief dashboard (date + station switcher with All-stations rollup, chain-level recs first, Accept/Dismiss/Done + feedback), Stations CRUD, Integrations registry, Compare view; hub tile gated by `enableGasStationModule` |

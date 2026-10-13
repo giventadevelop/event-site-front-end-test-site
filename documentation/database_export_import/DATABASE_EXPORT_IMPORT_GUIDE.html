@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="PostgreSQL data export, INSERT reordering, production user ID replacement, sequence sync, and import troubleshooting for event_site_manager_db.">
+  <meta name="description" content="PostgreSQL data export, INSERT reordering, production user ID replacement, sequence sync, and import troubleshooting for kluvo_ai_db.">
   <title>Database Export, Reorder, and Import Guide</title>
   <style>
     :root {
@@ -414,7 +414,7 @@
             <tr><td>2</td><td><code>node reorder_sql_inserts_final.cjs</code></td><td><code>corrected_event_media_inserts.ordered.sql</code></td></tr>
             <tr><td>3</td><td><code>node scripts/replace-user-profile-ids-in-sql.mjs</code></td><td><code>corrected_event_media_inserts.ordered_PROD.sql</code></td></tr>
             <tr><td>4</td><td>Comment lines starting with <code>pg_dump</code> in the import file</td><td>Import SQL patched</td></tr>
-            <tr><td>5</td><td>Apply <code>Event_Site_Manager_Latest_Schema.sql</code></td><td><code>event_site_manager_db</code> schema rebuilt</td></tr>
+            <tr><td>5</td><td>Apply <code>Event_Site_Manager_Latest_Schema.sql</code></td><td><code>kluvo_ai_db</code> schema rebuilt</td></tr>
             <tr><td>6</td><td>Import ordered (or PROD) INSERT file</td><td>Data loaded</td></tr>
             <tr><td>7</td><td>Run <code>sync_sequence_after_inserts.sql</code></td><td>Primary-key sequence synced</td></tr>
             <tr><td>7b</td><td>Run <code>sync_spring_batch_sequences.sql</code></td><td>Spring Batch sequences synced</td></tr>
@@ -424,7 +424,7 @@
 
       <div class="warning">
         <strong>⚠️ Destructive steps:</strong> Steps 5–7 drop and recreate the schema and replace all data in
-        <code class="code-highlight">event_site_manager_db</code>. For <strong>local Docker</strong>, type
+        <code class="code-highlight">kluvo_ai_db</code>. For <strong>local Docker</strong>, type
         <code class="code-highlight">Y</code> or <code class="code-highlight">YES</code> at the prompt (unless you pass
         <code class="code-highlight">/FORCE</code>). For <strong>remote production</strong> (<code class="code-highlight">/REMOTE</code>),
         you must type <code class="code-highlight">PRODUCTION</code> — even with <code class="code-highlight">/FORCE</code>, remote runs still require that confirmation.
@@ -771,7 +771,7 @@
           </thead>
           <tbody>
             <tr><td><code>RDS_ENDPOINT</code></td><td>PostgreSQL host</td><td><code>your-db.region.rds.amazonaws.com</code></td></tr>
-            <tr><td><code>DB_NAME</code></td><td>Database name</td><td><code>event_site_manager_db</code></td></tr>
+            <tr><td><code>DB_NAME</code></td><td>Database name</td><td><code>kluvo_ai_db</code></td></tr>
             <tr><td><code>DB_USERNAME</code></td><td>PostgreSQL user</td><td><code>postgres</code></td></tr>
             <tr><td><code>DB_PASSWORD</code></td><td>Password</td><td>(your RDS password)</td></tr>
             <tr><td><code>DB_PORT</code></td><td>Optional — port</td><td><code>5432</code> (default if omitted)</td></tr>
@@ -786,7 +786,7 @@
 
       <pre class="code-block"># mosc-temp/.env.local (already used by the app — gitignored)
 RDS_ENDPOINT=your-db.region.rds.amazonaws.com
-DB_NAME=event_site_manager_db
+DB_NAME=kluvo_ai_db
 DB_USERNAME=postgres
 DB_PASSWORD=your_password_here
 # Optional:
@@ -987,7 +987,7 @@ python scripts\extract_dup_tenant_sql.py code_html_template\SQLS\corrected_event
           </thead>
           <tbody>
             <tr><td><code>-U</code></td><td><code>event_site_admin</code></td><td>Database user</td></tr>
-            <tr><td><code>-d</code></td><td><code>event_site_manager_db</code></td><td>Database name</td></tr>
+            <tr><td><code>-d</code></td><td><code>kluvo_ai_db</code></td><td>Database name</td></tr>
             <tr><td><code>--data-only</code></td><td>—</td><td>Data rows only (no CREATE TABLE)</td></tr>
             <tr><td><code>--column-inserts</code></td><td>—</td><td>Explicit column names in each INSERT</td></tr>
             <tr><td>Output</td><td><code>export.sql</code></td><td>Input for reorder script</td></tr>
@@ -997,8 +997,8 @@ python scripts\extract_dup_tenant_sql.py code_html_template\SQLS\corrected_event
 
       <h3>Local development (example container ID)</h3>
       <div class="command-block setup"
-           data-command-base="docker exec -it CONTAINER_ID pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts"
-           data-template-command="docker exec -it a6fb865ce8e0 pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts &gt; export.sql">
+           data-command-base="docker exec -it CONTAINER_ID pg_dump -U event_site_admin -d kluvo_ai_db --data-only --column-inserts"
+           data-template-command="docker exec -it a6fb865ce8e0 pg_dump -U event_site_admin -d kluvo_ai_db --data-only --column-inserts &gt; export.sql">
         <div class="command-header">
           <span class="command-type">Step 3 — Export (local Docker)</span>
           <div class="command-header-buttons">
@@ -1015,17 +1015,17 @@ python scripts\extract_dup_tenant_sql.py code_html_template\SQLS\corrected_event
             </div>
           </div>
         </div>
-        <div class="command-content" id="pgdump-local">docker exec -it a6fb865ce8e0 pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts &gt; export.sql</div>
+        <div class="command-content" id="pgdump-local">docker exec -it a6fb865ce8e0 pg_dump -U event_site_admin -d kluvo_ai_db --data-only --column-inserts &gt; export.sql</div>
         <div class="command-single-line">
           <div class="command-single-line-label">Windows single-line:</div>
-          <code id="pgdump-local-single-code">docker exec -it a6fb865ce8e0 pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts &gt; export.sql</code>
+          <code id="pgdump-local-single-code">docker exec -it a6fb865ce8e0 pg_dump -U event_site_admin -d kluvo_ai_db --data-only --column-inserts &gt; export.sql</code>
         </div>
       </div>
 
       <h3>Azure virtual desktop (example container ID)</h3>
       <div class="command-block advance"
-           data-command-base="docker exec -it CONTAINER_ID pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts"
-           data-template-command="docker exec -it 752786b3431e pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts &gt; export.sql">
+           data-command-base="docker exec -it CONTAINER_ID pg_dump -U event_site_admin -d kluvo_ai_db --data-only --column-inserts"
+           data-template-command="docker exec -it 752786b3431e pg_dump -U event_site_admin -d kluvo_ai_db --data-only --column-inserts &gt; export.sql">
         <div class="command-header">
           <span class="command-type">Step 3 — Export (Azure VDI)</span>
           <div class="command-header-buttons">
@@ -1042,10 +1042,10 @@ python scripts\extract_dup_tenant_sql.py code_html_template\SQLS\corrected_event
             </div>
           </div>
         </div>
-        <div class="command-content" id="pgdump-azure">docker exec -it 752786b3431e pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts &gt; export.sql</div>
+        <div class="command-content" id="pgdump-azure">docker exec -it 752786b3431e pg_dump -U event_site_admin -d kluvo_ai_db --data-only --column-inserts &gt; export.sql</div>
         <div class="command-single-line">
           <div class="command-single-line-label">Windows single-line:</div>
-          <code id="pgdump-azure-single-code">docker exec -it 752786b3431e pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts &gt; export.sql</code>
+          <code id="pgdump-azure-single-code">docker exec -it 752786b3431e pg_dump -U event_site_admin -d kluvo_ai_db --data-only --column-inserts &gt; export.sql</code>
         </div>
       </div>
 
@@ -1343,8 +1343,8 @@ Written: ...\corrected_event_media_inserts.renumbered.sql (1705 INSERTs)</pre>
       </div>
 
       <div class="command-block verify"
-           data-command-base="docker exec -i CONTAINER_ID psql -U event_site_admin -d event_site_manager_db"
-           data-template-command="docker exec -i a6fb865ce8e0 psql -U event_site_admin -d event_site_manager_db &lt; corrected_event_media_inserts.ordered.sql">
+           data-command-base="docker exec -i CONTAINER_ID psql -U event_site_admin -d kluvo_ai_db"
+           data-template-command="docker exec -i a6fb865ce8e0 psql -U event_site_admin -d kluvo_ai_db &lt; corrected_event_media_inserts.ordered.sql">
         <div class="command-header">
           <span class="command-type">Import via psql (recommended)</span>
           <div class="command-header-buttons">
@@ -1361,10 +1361,10 @@ Written: ...\corrected_event_media_inserts.renumbered.sql (1705 INSERTs)</pre>
             </div>
           </div>
         </div>
-        <div class="command-content" id="psql-import">docker exec -i a6fb865ce8e0 psql -U event_site_admin -d event_site_manager_db &lt; corrected_event_media_inserts.ordered.sql</div>
+        <div class="command-content" id="psql-import">docker exec -i a6fb865ce8e0 psql -U event_site_admin -d kluvo_ai_db &lt; corrected_event_media_inserts.ordered.sql</div>
         <div class="command-single-line">
           <div class="command-single-line-label">Windows single-line:</div>
-          <code id="psql-import-single-code">docker exec -i a6fb865ce8e0 psql -U event_site_admin -d event_site_manager_db &lt; corrected_event_media_inserts.ordered.sql</code>
+          <code id="psql-import-single-code">docker exec -i a6fb865ce8e0 psql -U event_site_admin -d kluvo_ai_db &lt; corrected_event_media_inserts.ordered.sql</code>
         </div>
       </div>
 
@@ -1649,7 +1649,7 @@ Written: ...\corrected_event_media_inserts.renumbered.sql (1705 INSERTs)</pre>
     </section>
 
     <footer class="doc-footer">
-      <p>Last updated: June 2026 · MOSC event_site_manager_db export/import workflow</p>
+      <p>Last updated: June 2026 · MOSC kluvo_ai_db export/import workflow</p>
       <p>See also: <code class="code-highlight">documentation/INSERT_TABLE_BULK_SQL_REORDERING_AND_PG_DUMP_GUIDE.md</code> ·
         <code class="code-highlight">code_html_template/SQLS/sequence_fix_inserts/</code> ·
         <a href="SEQUENCE_ID_ALIGNMENT_GUIDE.html">SEQUENCE_ID_ALIGNMENT_GUIDE.html</a></p>
@@ -1720,7 +1720,7 @@ Written: ...\corrected_event_media_inserts.renumbered.sql (1705 INSERTs)</pre>
 
     function updatePgDump(commandId, containerId) {
       const id = (containerId || 'CONTAINER_ID').trim();
-      const cmd = 'docker exec -it ' + id + ' pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts > export.sql';
+      const cmd = 'docker exec -it ' + id + ' pg_dump -U event_site_admin -d kluvo_ai_db --data-only --column-inserts > export.sql';
       const el = document.getElementById(commandId);
       const single = document.getElementById(commandId + '-single-code');
       if (el) el.textContent = cmd;
@@ -1729,7 +1729,7 @@ Written: ...\corrected_event_media_inserts.renumbered.sql (1705 INSERTs)</pre>
 
     function updatePsqlImport(commandId, containerId) {
       const id = (containerId || 'CONTAINER_ID').trim();
-      const cmd = 'docker exec -i ' + id + ' psql -U event_site_admin -d event_site_manager_db < corrected_event_media_inserts.ordered.sql';
+      const cmd = 'docker exec -i ' + id + ' psql -U event_site_admin -d kluvo_ai_db < corrected_event_media_inserts.ordered.sql';
       const el = document.getElementById(commandId);
       const single = document.getElementById(commandId + '-single-code');
       if (el) el.textContent = cmd;

@@ -1,6 +1,6 @@
 /**
  * DTOs for the gas station COO module (site_type = GAS_STATION).
- * Mirror backend entities in event-site-manager-service.
+ * Mirror backend entities in kluvo-ai-service.
  */
 
 export type GasStationSystemType =

@@ -1,5 +1,5 @@
 -- Profile site: achievement images and download cover images
--- Apply via Liquibase in event-site-manager-service or run manually on Postgres.
+-- Apply via Liquibase in kluvo-ai-service or run manually on Postgres.
 
 ALTER TABLE public.profile_achievement
   ADD COLUMN IF NOT EXISTS image_url character varying(1024);

@@ -3,7 +3,7 @@
 -- Composes with documentation/tenant_management/personal_profile_site/migrations/001_personal_profile_site.sql:
 --   both add tenant_organization.site_type idempotently; this migration recreates the CHECK
 --   constraint with the superset enum, so apply order does not matter.
--- Apply via Liquibase in event-site-manager-service; fold into the canonical schema file once approved.
+-- Apply via Liquibase in kluvo-ai-service; fold into the canonical schema file once approved.
 
 -- =====================================================================
 -- 1. tenant_organization.site_type — add GAS_STATION to the archetype enum

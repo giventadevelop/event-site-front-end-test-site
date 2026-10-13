@@ -1,14 +1,14 @@
 # Pilot checklist — Personal profile Phase A/B
 
-## Backend (event-site-manager-service) — done in code
+## Backend (kluvo-ai-service) — done in code
 
 Liquibase + REST landed 2026-07-19. **Deploy/restart the service** so migration 003 runs against your DB.
 
 | Item | Location |
 |------|----------|
-| Liquibase changelog | `event-site-manager-service/.../20260719120000_profile_booking_projects_media_kind.xml` |
+| Liquibase changelog | `kluvo-ai-service/.../20260719120000_profile_booking_projects_media_kind.xml` |
 | Manual SQL (same DDL) | `documentation/.../migrations/003_profile_booking_projects_media_kind.sql` |
-| Batch-jobs SQL mirror (optional) | `event-site-manager-batch-jobs/database/migrations/003_*.sql` |
+| Batch-jobs SQL mirror (optional) | `kluvo-ai-batch-jobs/database/migrations/003_*.sql` |
 | `bookingUrl` | `PublicProfile` / `PublicProfileDTO` → `/api/public-profiles` |
 | `mediaKind` | `ProfileMediaAsset` / DTO → `/api/profile-media-assets` |
 | `showProfileProjectsSection` | `TenantSettings` / DTO → `/api/tenant-settings` |

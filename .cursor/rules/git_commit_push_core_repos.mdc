@@ -17,7 +17,7 @@ When the user asks to **commit and push** (or "commit push these projects") for 
 
 This rule covers the **core multi-repo batch** workflow (batch-jobs, service, mosc-temp, and related frontends when named together).
 
-**Single-repo requests** (e.g. only `event-site-manager-service`) use the same **Step 0 pull → Step 2 `git add -A` + secret scan → commit → push** workflow; stage all **` M` / `??`** paths that pass the filter — including unstaged `src/main/java/**`, `src/test/java/**`, `src/app/**`, docs, SQL, and scripts.
+**Single-repo requests** (e.g. only `kluvo-ai-service`) use the same **Step 0 pull → Step 2 `git add -A` + secret scan → commit → push** workflow; stage all **` M` / `??`** paths that pass the filter — including unstaged `src/main/java/**`, `src/test/java/**`, `src/app/**`, docs, SQL, and scripts.
 
 ### **Unstaged files — mandatory on every commit/push request**
 
@@ -27,7 +27,7 @@ When the user asks to **commit and push** (including *"unstaged files hurt them 
 2. **DO** unstage blocklisted paths (secrets, keys, `tsconfig.tsbuildinfo`, `ordered_PROD.sql`, `__pycache__/`, `*.pyc`, runtime logs) per [git_local_push.mdc](mdc:.cursor/rules/git_local_push.mdc).
 3. **DO** run the staged-path secret filename check — **empty output required** before `git commit`.
 4. **DO** content spot-check new env-like or credential-shaped untracked files (`sk_live_`, `AKIA…`, real `DB_PASSWORD=`, etc.).
-5. **DO** include all four core repos when user lists them: `mosc-temp`, `event-site-manager-service`, `event-site-manager`, `event-site-manager-batch-jobs` — report **local branch** for each before push.
+5. **DO** include all four core repos when user lists them: `mosc-temp`, `kluvo-ai-service`, `event-site-manager`, `kluvo-ai-batch-jobs` — report **local branch** for each before push.
 6. **DON'T** push if porcelain still shows commit-eligible **` M` / `??`** on safe paths after commit (workflow incomplete).
 7. **DON'T** stage or commit paths matching the secret blocklist even when the user says "add everything" or "add unstaged files."
 
@@ -38,9 +38,9 @@ When the user asks to **commit and push** (including *"unstaged files hurt them 
 | Repo | Path | Default branch | Remote |
 |------|------|----------------|--------|
 | **mosc-temp** | `F:\project_workspace\mosc-temp` | `MOSC-redesign-sub-poc-2` | `origin` |
-| **event-site-manager-batch-jobs** | `F:\project_workspace\event-site-manager-batch-jobs` | `main` (work) / `release/v1.0.0` (deploy) | `origin` |
-| **event-site-manager-service** | `F:\project_workspace\event-site-manager-service` | `feature_Freelance_Work` | `origin` |
-| **event-site-manager** | `F:\project_workspace\event-site-manager` | `release/v1.0.0` (verify) / `main` | `origin` |
+| **kluvo-ai-batch-jobs** | `F:\project_workspace\kluvo-ai-batch-jobs` | `main` (work) / `release/v1.0.0` (deploy) | `origin` |
+| **kluvo-ai-service** | `F:\project_workspace\kluvo-ai-service` | `feature_Freelance_Work` | `origin` |
+| **event-site-manager** | `F:\project_workspace\kluvo-ai-admin` | `release/v1.0.0` (verify) / `main` | `origin` |
 | **event-site-front-end-template** | `F:\project_workspace\event-site-front-end-template` | `main` | `origin` |
 | **event-site-front-end-test-site** | `F:\project_workspace\event-site-front-end-test-site` | `release/v1.0.0` | `origin` |
 | **tasks_automation** | `F:\project_workspace\tasks_automation` | `main` | `origin` |
@@ -134,10 +134,10 @@ $env:GIT_SSL_NO_VERIFY = 'true'
 cd "F:\project_workspace\mosc-temp"
 git push origin MOSC-redesign-sub-poc-2
 
-cd "F:\project_workspace\event-site-manager-batch-jobs"
+cd "F:\project_workspace\kluvo-ai-batch-jobs"
 git push origin main
 
-cd "F:\project_workspace\event-site-manager-service"
+cd "F:\project_workspace\kluvo-ai-service"
 git push origin feature_Freelance_Work
 ```
 
@@ -226,7 +226,7 @@ git push origin <branch-name>
 Remove-Item Env:GIT_SSL_NO_VERIFY
 ```
 
-- **event-site-manager-service** often pushes without this; **mosc-temp** and **batch-jobs** may need it on this machine.
+- **kluvo-ai-service** often pushes without this; **mosc-temp** and **batch-jobs** may need it on this machine.
 - Full SSL troubleshooting: [git_local_push.mdc](mdc:.cursor/rules/git_local_push.mdc).
 - Inform the user if SSL bypass was used; suggest fixing CA bundle separately if pushes fail repeatedly.
 
@@ -243,10 +243,10 @@ After push from HP Omen, on the other machine:
 cd "F:\project_workspace\mosc-temp"
 git pull origin MOSC-redesign-sub-poc-2
 
-cd "F:\project_workspace\event-site-manager-batch-jobs"
+cd "F:\project_workspace\kluvo-ai-batch-jobs"
 git pull origin main
 
-cd "F:\project_workspace\event-site-manager-service"
+cd "F:\project_workspace\kluvo-ai-service"
 git pull origin feature_Freelance_Work
 ```
 

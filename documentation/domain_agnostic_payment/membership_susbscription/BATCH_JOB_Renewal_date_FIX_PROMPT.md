@@ -17,7 +17,7 @@ WHERE current_period_end <= CURRENT_DATE + INTERVAL '7 days'
 
 ## Current Implementation
 
-**Location**: `E:\project_workspace\event-site-manager-batch-jobs`
+**Location**: `E:\project_workspace\kluvo-ai-batch-jobs`
 
 **Current Query** (from `SubscriptionRenewalBatchJobConfig.java`):
 ```java

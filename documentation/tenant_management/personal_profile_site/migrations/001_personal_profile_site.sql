@@ -1,5 +1,5 @@
 -- Personal profile site + site_type — incremental migration for existing deployments
--- Apply via Liquibase in event-site-manager-service; canonical DDL in Event_Site_Manager_Latest_Schema.sql
+-- Apply via Liquibase in kluvo-ai-service; canonical DDL in Event_Site_Manager_Latest_Schema.sql
 
 -- tenant_organization.site_type
 ALTER TABLE public.tenant_organization

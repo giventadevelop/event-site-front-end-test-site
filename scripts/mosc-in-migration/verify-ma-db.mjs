@@ -12,7 +12,7 @@ const manifestPaths = new Set(manifest.items.map((i) => i.hierarchyPath));
 
 const sql = `SELECT id, title, hierarchy_path, split_part(file_url, '/', array_length(string_to_array(file_url, '/'), 1)) as s3file FROM event_media WHERE hierarchy_category_label = 'Malankara Association (2022 - 2027)' AND tenant_id = 'mosc_malankara_orthodox_2' ORDER BY hierarchy_path`;
 const raw = execSync(
-  `docker exec event_site_manager_db-postgresql-1 psql -U event_site_admin -d event_site_manager_db -t -A -F "|" -c "${sql}"`,
+  `docker exec kluvo_ai_db-postgresql-1 psql -U event_site_admin -d kluvo_ai_db -t -A -F "|" -c "${sql}"`,
   { encoding: 'utf8' }
 );
 

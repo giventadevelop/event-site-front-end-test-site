@@ -1,5 +1,5 @@
 ---
-description: Per-table {table}_id_seq alignment, SQL reorder/renumber import pipeline, and backend changes (event-site-manager-service + batch-jobs)
+description: Per-table {table}_id_seq alignment, SQL reorder/renumber import pipeline, and backend changes (kluvo-ai-service + batch-jobs)
 globs: code_html_template/SQLS/**/*.sql, code_html_template/SQLS/**/*.cjs, **/domain/*.java, **/SequenceSynchronization*.java
 alwaysApply: false
 ---
@@ -41,7 +41,7 @@ All paths under `code_html_template/SQLS/` unless noted.
 ### Step 1 — Export
 
 ```bash
-docker exec -it <container_id> pg_dump -U event_site_admin -d event_site_manager_db --data-only --column-inserts > export.sql
+docker exec -it <container_id> pg_dump -U event_site_admin -d kluvo_ai_db --data-only --column-inserts > export.sql
 ```
 
 ### Step 2 — Reorder (FK-safe table order)
@@ -87,9 +87,9 @@ Apply schema first: [Event_Site_Manager_Latest_Schema.sql](mdc:code_html_templat
 
 ---
 
-## Backend: event-site-manager-service
+## Backend: kluvo-ai-service
 
-**Repo path:** `F:/project_workspace/event-site-manager-service` (active REST API; not `malayalees-us-site-boot`).
+**Repo path:** `F:/project_workspace/kluvo-ai-service` (active REST API; not `malayalees-us-site-boot`).
 
 ### Entity changes (required for all new/changed entities)
 
@@ -115,7 +115,7 @@ All application domain entities use per-table `sequenceName` and `allocationSize
 | `SequenceSynchronizationService` | `.../service/SequenceSynchronizationService.java` | Dynamic per-table `setval` on all `*_id_seq` (discovers via `pg_sequences`) |
 | `SequenceSynchronizationAspect` | `.../aop/sequence/SequenceSynchronizationAspect.java` | On duplicate PK: sync **that table's** sequence and retry save |
 | `AdminController` | `.../web/rest/AdminController.java` | `POST /api/admin/sync-sequence` returns `sequences` map per table |
-| Duplicate-key pattern | [.cursor/rules/duplicate-key-prevention.mdc](mdc:../event-site-manager-service/.cursor/rules/duplicate-key-prevention.mdc) | Clear `entity.setId(null)` on create; AOP fallback |
+| Duplicate-key pattern | [.cursor/rules/duplicate-key-prevention.mdc](mdc:../kluvo-ai-service/.cursor/rules/duplicate-key-prevention.mdc) | Clear `entity.setId(null)` on create; AOP fallback |
 
 ### Schema alignment
 
@@ -133,9 +133,9 @@ See [database_schema_guidelines.mdc](mdc:database_schema_guidelines.mdc).
 
 ---
 
-## Backend: event-site-manager-batch-jobs
+## Backend: kluvo-ai-batch-jobs
 
-**Repo path:** `F:/project_workspace/event-site-manager-batch-jobs`
+**Repo path:** `F:/project_workspace/kluvo-ai-batch-jobs`
 
 ### Entity changes
 

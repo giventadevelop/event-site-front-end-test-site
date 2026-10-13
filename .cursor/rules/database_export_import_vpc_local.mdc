@@ -1,5 +1,5 @@
 ---
-description: PostgreSQL export/import via database_export_import_refresh.bat — local Docker, VPC dev RDS, and VPC prod RDS (event_site_manager_db)
+description: PostgreSQL export/import via database_export_import_refresh.bat — local Docker, VPC dev RDS, and VPC prod RDS (kluvo_ai_db)
 globs: SQLS/**/*, batch/database_export_import_refresh.bat, scripts/sql_export_import_guardrails.cjs, documentation/DATABASE_EXPORT_IMPORT_GUIDE.html
 alwaysApply: false
 ---
@@ -8,15 +8,15 @@ alwaysApply: false
 
 ## **Overview**
 
-Use the **`database_export_import_refresh.bat`** workflow to export `event_site_manager_db` from **local Docker Postgres**, prepare ordered INSERT SQL (with optional production Clerk user IDs), then apply **schema rebuild + data import + sequence sync** to:
+Use the **`database_export_import_refresh.bat`** workflow to export `kluvo_ai_db` from **local Docker Postgres**, prepare ordered INSERT SQL (with optional production Clerk user IDs), then apply **schema rebuild + data import + sequence sync** to:
 
 - **Local Docker** (dev Clerk IDs, renumbered PKs)
 - **VPC dev RDS** (`event-site-manager-dev-postgres...`, via `mosc-temp\.env.local`)
 - **VPC prod RDS** (`event-site-manager-prod-postgres...`, credentials from AWS Secrets Manager)
 
-**Canonical project:** `F:\project_workspace\event-site-manager-database` ([giventadeveloporg/event-site-manager-database](https://github.com/giventadeveloporg/event-site-manager-database)). Schema, export/import SQL, guardrails, the refresh batch, and the HTML runbook live there. Remote RDS credentials still come from `mosc-temp\.env.local`. Spring Batch sequence SQL still lives in `event-site-manager-service`.
+**Canonical project:** `F:\project_workspace\kluvo-ai-database-repo` ([giventadeveloporg/kluvo-ai-database-repo](https://github.com/giventadeveloporg/kluvo-ai-database-repo)). Schema, export/import SQL, guardrails, the refresh batch, and the HTML runbook live there. Remote RDS credentials still come from `mosc-temp\.env.local`. Spring Batch sequence SQL still lives in `kluvo-ai-service`.
 
-**Not in scope:** Liturgical calendar **readings** (`liturgy-days`) are in **Strapi**, not this Postgres export. Postgres includes `event_calendar_entry`, `official_document_category` (e.g. Panjangom/calendars), and the rest of `event_site_manager_db`.
+**Not in scope:** Liturgical calendar **readings** (`liturgy-days`) are in **Strapi**, not this Postgres export. Postgres includes `event_calendar_entry`, `official_document_category` (e.g. Panjangom/calendars), and the rest of `kluvo_ai_db`.
 
 ---
 
@@ -24,23 +24,23 @@ Use the **`database_export_import_refresh.bat`** workflow to export `event_site_
 
 | Location | Path |
 |----------|------|
-| **Source of truth (project)** | `F:\project_workspace\event-site-manager-database` |
-| **HTML runbook** | `event-site-manager-database/documentation/DATABASE_EXPORT_IMPORT_GUIDE.html` |
-| **Sequence guide** | `event-site-manager-database/documentation/SEQUENCE_ID_ALIGNMENT_GUIDE.html` |
-| **Refresh batch** | `event-site-manager-database/batch/database_export_import_refresh.bat` |
-| **SQL + schema** | `event-site-manager-database/SQLS/` |
-| **Guardrails script** | `event-site-manager-database/scripts/sql_export_import_guardrails.cjs` |
+| **Source of truth (project)** | `F:\project_workspace\kluvo-ai-database-repo` |
+| **HTML runbook** | `kluvo-ai-database-repo/documentation/DATABASE_EXPORT_IMPORT_GUIDE.html` |
+| **Sequence guide** | `kluvo-ai-database-repo/documentation/SEQUENCE_ID_ALIGNMENT_GUIDE.html` |
+| **Refresh batch** | `kluvo-ai-database-repo/batch/database_export_import_refresh.bat` |
+| **SQL + schema** | `kluvo-ai-database-repo/SQLS/` |
+| **Guardrails script** | `kluvo-ai-database-repo/scripts/sql_export_import_guardrails.cjs` |
 | **Remote credentials** | `mosc-temp\.env.local` (gitignored; not stored in the database repo) |
 
-Related: `event-site-manager-database/documentation/SEQUENCE_ID_ALIGNMENT_GUIDE.html`, and `application-deployments/documentation/aws-infrastructure/aws-environment-deployment-guide.html` (RDS hostnames).
+Related: `kluvo-ai-database-repo/documentation/SEQUENCE_ID_ALIGNMENT_GUIDE.html`, and `application-deployments/documentation/aws-infrastructure/aws-environment-deployment-guide.html` (RDS hostnames).
 
 ---
 
 ## **Prerequisites**
 
-- **Docker Desktop** running with local Postgres container (e.g. `event_site_manager_db-postgresql-1`, user `event_site_admin`, DB `event_site_manager_db`)
+- **Docker Desktop** running with local Postgres container (e.g. `kluvo_ai_db-postgresql-1`, user `event_site_admin`, DB `kluvo_ai_db`)
 - **Node.js** on `PATH` (reorder + PROD user-ID scripts)
-- **`WORKSPACE_ROOT`** = parent folder containing **`event-site-manager-database`**, **`mosc-temp`**, and **`event-site-manager-service`** (typically `F:\project_workspace`)
+- **`WORKSPACE_ROOT`** = parent folder containing **`kluvo-ai-database-repo`**, **`mosc-temp`**, and **`kluvo-ai-service`** (typically `F:\project_workspace`)
 - **Remote dev:** `mosc-temp\.env.local` with `RDS_ENDPOINT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` (dev RDS host)
 - **Remote prod:** temporarily point remote config at prod RDS (see **Prod RDS** below) or use `database_target.local.env` fallback when `.env.local` is absent
 - **`psql`** on PATH **or** Docker (batch uses `postgres:16` image for remote `/REMOTE` steps)
@@ -67,10 +67,10 @@ Replace `CONTAINER_ID` with `docker ps` Postgres container ID (e.g. `143972c3c40
 Runs steps 0–7: `pg_dump` → reorder → PROD SQL copy → patch → schema → import (renumbered dev file) → sequence sync.
 
 ```powershell
-F:\project_workspace\event-site-manager-database\batch\database_export_import_refresh.bat F:\project_workspace CONTAINER_ID /FORCE
+F:\project_workspace\kluvo-ai-database-repo\batch\database_export_import_refresh.bat F:\project_workspace CONTAINER_ID /FORCE
 ```
 
-**Import file (local, no `/PROD`):** `event-site-manager-database\SQLS\sequence_fix_inserts\corrected_event_media_inserts.renumbered.sql` (low local IDs).
+**Import file (local, no `/PROD`):** `kluvo-ai-database-repo\SQLS\sequence_fix_inserts\corrected_event_media_inserts.renumbered.sql` (low local IDs).
 
 ### **2. VPC dev RDS — reuse prepared SQL**
 
@@ -79,7 +79,7 @@ Requires `mosc-temp\.env.local` → **dev** host (`event-site-manager-dev-postgr
 `/REMOTE` auto-enables `/PROD` → imports `corrected_event_media_inserts.ordered_PROD.sql`.
 
 ```powershell
-cmd /c "echo PRODUCTION| F:\project_workspace\event-site-manager-database\batch\database_export_import_refresh.bat F:\project_workspace /SKIP-EXPORT /REMOTE /FORCE"
+cmd /c "echo PRODUCTION| F:\project_workspace\kluvo-ai-database-repo\batch\database_export_import_refresh.bat F:\project_workspace /SKIP-EXPORT /REMOTE /FORCE"
 ```
 
 ### **3. VPC prod RDS — reuse prepared SQL**
@@ -91,18 +91,18 @@ cmd /c "echo PRODUCTION| F:\project_workspace\event-site-manager-database\batch\
 Copy-Item F:\project_workspace\mosc-temp\.env.local F:\project_workspace\mosc-temp\.env.local.dev-backup-import -Force
 
 # 2) Set prod RDS_ENDPOINT / DB_* from Secrets Manager (do not commit passwords)
-$secretJson = aws secretsmanager get-secret-value --secret-id "event-site-manager/prod/rds/postgres" --region us-east-1 --query SecretString --output text | ConvertFrom-Json
+$secretJson = aws secretsmanager get-secret-value --secret-id "kluvo-ai/prod/rds/postgres" --region us-east-1 --query SecretString --output text | ConvertFrom-Json
 # Update RDS_ENDPOINT, DB_USERNAME, DB_PASSWORD, DB_NAME in .env.local (PowerShell line replace)
 
 # 3) Import
-cmd /c "echo PRODUCTION| F:\project_workspace\event-site-manager-database\batch\database_export_import_refresh.bat F:\project_workspace /SKIP-EXPORT /REMOTE /FORCE"
+cmd /c "echo PRODUCTION| F:\project_workspace\kluvo-ai-database-repo\batch\database_export_import_refresh.bat F:\project_workspace /SKIP-EXPORT /REMOTE /FORCE"
 
 # 4) Restore dev .env.local
 Copy-Item F:\project_workspace\mosc-temp\.env.local.dev-backup-import F:\project_workspace\mosc-temp\.env.local -Force
 Remove-Item F:\project_workspace\mosc-temp\.env.local.dev-backup-import -Force
 ```
 
-**Alternative:** Rename `.env.local` temporarily and create `event-site-manager-database/batch/database_target.local.env` from `batch/database_target.local.env.example` with the prod host (the batch reads that fallback only when `.env.local` is missing).
+**Alternative:** Rename `.env.local` temporarily and create `kluvo-ai-database-repo/batch/database_target.local.env` from `batch/database_target.local.env.example` with the prod host (the batch reads that fallback only when `.env.local` is missing).
 
 ---
 
@@ -131,13 +131,13 @@ Help: `database_export_import_refresh.bat --help`
 
 **Why:** A lagging `Event_Site_Manager_Latest_Schema.sql` (e.g. missing `show_header_*`) still “succeeded” overall while every `tenant_settings` INSERT failed → **0 rows**. Guardrails fail the batch **before** schema/data apply when dumps are too small, critical tables are under-count, or INSERT columns are missing from the canonical schema.
 
-### **Where it lives (`event-site-manager-database`)**
+### **Where it lives (`kluvo-ai-database-repo`)**
 
 | Artifact | Path |
 |----------|------|
-| Validator + backup rotation | `event-site-manager-database/scripts/sql_export_import_guardrails.cjs` |
-| Baseline mins / tracked tables | `event-site-manager-database/SQLS/guardrails/sql_export_import_guardrails.manifest.json` |
-| Rotating backups (keep 5, gitignored) | `event-site-manager-database/SQLS/guardrails/backups/` |
+| Validator + backup rotation | `kluvo-ai-database-repo/scripts/sql_export_import_guardrails.cjs` |
+| Baseline mins / tracked tables | `kluvo-ai-database-repo/SQLS/guardrails/sql_export_import_guardrails.manifest.json` |
+| Rotating backups (keep 5, gitignored) | `kluvo-ai-database-repo/SQLS/guardrails/backups/` |
 
 **CMD note:** `:run_guardrails` must not use nested `if A if B (...) else (...)` — CMD binds `else` to the **inner** `if`, which previously skipped `node` for `backup` / `post-export` / `post-prepare` while still logging OK. Use a top-level `if pre-import ( ... ) else ( node %GR_PHASE% ... )` instead.
 
@@ -155,7 +155,7 @@ Any **FAIL** stops the batch. Fix SQL/schema, restore from `guardrails/backups/`
 ### **Manual commands**
 
 ```powershell
-cd F:\project_workspace\event-site-manager-database
+cd F:\project_workspace\kluvo-ai-database-repo
 node scripts\sql_export_import_guardrails.cjs backup
 node scripts\sql_export_import_guardrails.cjs post-export
 node scripts\sql_export_import_guardrails.cjs post-prepare
@@ -202,12 +202,12 @@ Do **not** ship an older `export.sql` / ordered / PROD file after media changes 
 
 ### **Canonical schema file**
 
-- **Active:** `event-site-manager-database/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql`
+- **Active:** `kluvo-ai-database-repo/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql`
 - **Historical:** `Current_Sqls/archive/Latest_Schema_Post__Blob_Claude_*__yyyy-MM-dd_HHmmss.sql` (timestamped renames of prior versions)
 
 ### **Canonical schema sync (best ongoing fix)**
 
-1. Ship Liquibase changelog in `event-site-manager-service`.
+1. Ship Liquibase changelog in `kluvo-ai-service`.
 2. **Same change set:** update `Event_Site_Manager_Latest_Schema.sql` (`CREATE TABLE` must include new columns — no lag).
 3. Export → guardrails → import. `pre-import` schema sync (`*`) catches the `show_header_*` class of bugs across all tables.
 
@@ -227,7 +227,7 @@ Do **not** ship an older `export.sql` / ordered / PROD file after media changes 
 |------|--------|-----------------|
 | G | Guardrails `backup` / `post-export` / `post-prepare` / `pre-import` (+ agenda URL content + optional live Docker compare) | Fail fast if dumps/schema/media URLs invalid |
 | 0 | Resolve Docker container | Local export source |
-| 1 | `pg_dump --data-only --column-inserts` | `event-site-manager-database/SQLS/export.sql` |
+| 1 | `pg_dump --data-only --column-inserts` | `kluvo-ai-database-repo/SQLS/export.sql` |
 | 2 | `node reorder_sql_inserts_final.cjs` | `corrected_event_media_inserts.ordered.sql` |
 | 2b | `renumber_sql_insert_ids.cjs` + mojibake fix | `sequence_fix_inserts/corrected_event_media_inserts.renumbered.sql` |
 | 3 | `node scripts/replace-user-profile-ids-in-sql.mjs` | `corrected_event_media_inserts.ordered_PROD.sql` |
@@ -242,13 +242,13 @@ Do **not** ship an older `export.sql` / ordered / PROD file after media changes 
 
 ```env
 RDS_ENDPOINT=event-site-manager-dev-postgres.cwffi3ch4r75.us-east-1.rds.amazonaws.com
-DB_NAME=event_site_manager_db
+DB_NAME=kluvo_ai_db
 DB_USERNAME=postgres
 DB_PASSWORD=<secret>
 # Optional: DB_PORT=5432, DB_SSLMODE=require
 ```
 
-Prod host: `event-site-manager-prod-postgres.cwffi3ch4r75.us-east-1.rds.amazonaws.com` (Secrets Manager: `event-site-manager/prod/rds/postgres`).
+Prod host: `event-site-manager-prod-postgres.cwffi3ch4r75.us-east-1.rds.amazonaws.com` (Secrets Manager: `kluvo-ai/prod/rds/postgres`).
 
 ---
 
@@ -257,7 +257,7 @@ Prod host: `event-site-manager-prod-postgres.cwffi3ch4r75.us-east-1.rds.amazonaw
 Save batch output for audits:
 
 ```powershell
-cmd /c "...database_export_import_refresh.bat ..." 2>&1 | Tee-Object -FilePath "F:\project_workspace\event-site-manager-database\logs\db-import-<target>-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
+cmd /c "...database_export_import_refresh.bat ..." 2>&1 | Tee-Object -FilePath "F:\project_workspace\kluvo-ai-database-repo\logs\db-import-<target>-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
 ```
 
 ---
@@ -271,7 +271,7 @@ Database-only refresh **does not require ECS redeploy** — backend reads RDS di
 ## **DO / DON'T**
 
 ### **DO:**
-- ✅ Use `WORKSPACE_ROOT=F:\project_workspace` so the batch finds `event-site-manager-database\SQLS`, `mosc-temp\.env.local`, and `event-site-manager-service`
+- ✅ Use `WORKSPACE_ROOT=F:\project_workspace` so the batch finds `kluvo-ai-database-repo\SQLS`, `mosc-temp\.env.local`, and `kluvo-ai-service`
 - ✅ Run **local export once**, then `/SKIP-EXPORT /REMOTE` for dev and prod
 - ✅ **Re-export after uploading or changing agenda/event media** before copying SQL or using `/SKIP-EXPORT`
 - ✅ Let guardrails run (do not use `/SKIP-GUARDRAILS` unless emergency)
@@ -280,7 +280,7 @@ Database-only refresh **does not require ECS redeploy** — backend reads RDS di
 - ✅ After Liquibase column adds: update `Event_Site_Manager_Latest_Schema.sql` in the same change, then export/import
 - ✅ Verify calendar-related counts after local import if needed:
   ```powershell
-  docker exec CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -c "SELECT COUNT(*) FROM event_calendar_entry;"
+  docker exec CONTAINER_ID psql -U event_site_admin -d kluvo_ai_db -c "SELECT COUNT(*) FROM event_calendar_entry;"
   ```
 
 ### **DON'T:**
@@ -288,7 +288,7 @@ Database-only refresh **does not require ECS redeploy** — backend reads RDS di
 - ❌ Run `/REMOTE` against prod without explicit intent and backup plan
 - ❌ Assume liturgical **readings** are included — they are in **Strapi**
 - ❌ Expect `/FORCE` to bypass remote **`PRODUCTION`** confirmation
-- ❌ Import when guardrails FAIL (fix schema/SQL or restore from `event-site-manager-database/SQLS/guardrails/backups/`)
+- ❌ Import when guardrails FAIL (fix schema/SQL or restore from `kluvo-ai-database-repo/SQLS/guardrails/backups/`)
 - ❌ Skip updating `Event_Site_Manager_Latest_Schema.sql` when Liquibase adds columns
 - ❌ Copy/import SQL after agenda image re-uploads **without** a fresh export (URLs in dump will be stale)
 
@@ -296,7 +296,7 @@ Database-only refresh **does not require ECS redeploy** — backend reads RDS di
 
 ## **MOSC tenant-only paths**
 
-See §1c in `event-site-manager-database/documentation/DATABASE_EXPORT_IMPORT_GUIDE.html`:
+See §1c in `kluvo-ai-database-repo/documentation/DATABASE_EXPORT_IMPORT_GUIDE.html`:
 
 ```powershell
 # Full MOSC tenant block
@@ -310,8 +310,8 @@ See §1c in `event-site-manager-database/documentation/DATABASE_EXPORT_IMPORT_GU
 
 ## **References**
 
-- Full HTML runbook: `event-site-manager-database/documentation/DATABASE_EXPORT_IMPORT_GUIDE.html`
-- Sequence alignment: `event-site-manager-database/documentation/SEQUENCE_ID_ALIGNMENT_GUIDE.html`
-- Reorder / pg_dump notes: `event-site-manager-database/documentation/INSERT_TABLE_BULK_SQL_REORDERING_AND_PG_DUMP_GUIDE.md`
-- Remote psql helper: `event-site-manager-database/batch/run_remote_psql.ps1`
+- Full HTML runbook: `kluvo-ai-database-repo/documentation/DATABASE_EXPORT_IMPORT_GUIDE.html`
+- Sequence alignment: `kluvo-ai-database-repo/documentation/SEQUENCE_ID_ALIGNMENT_GUIDE.html`
+- Reorder / pg_dump notes: `kluvo-ai-database-repo/documentation/INSERT_TABLE_BULK_SQL_REORDERING_AND_PG_DUMP_GUIDE.md`
+- Remote psql helper: `kluvo-ai-database-repo/batch/run_remote_psql.ps1`
 - AWS RDS inventory: `application-deployments/documentation/aws-infrastructure/aws-environment-deployment-guide.html`

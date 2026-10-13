@@ -1,5 +1,5 @@
 -- Profile Audience CRM v2 — incremental migration
--- Apply via Liquibase in event-site-manager-service; canonical DDL in Event_Site_Manager_Latest_Schema.sql
+-- Apply via Liquibase in kluvo-ai-service; canonical DDL in Event_Site_Manager_Latest_Schema.sql
 
 CREATE SEQUENCE IF NOT EXISTS public.profile_audience_contact_id_seq START WITH 1 INCREMENT BY 1;
 

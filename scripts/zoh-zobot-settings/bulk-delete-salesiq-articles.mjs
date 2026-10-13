@@ -2,7 +2,7 @@
 /**
  * Bulk delete SalesIQ articles via REST API.
  *
- * Requires in .env.local (mosc-temp or ../event-site-manager):
+ * Requires in .env.local (mosc-temp or ../kluvo-ai-admin):
  *   ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET, ZOHO_REFRESH_TOKEN
  *
  * Obtain refresh token: https://www.kluvo.ai/oauth/zoho/start
@@ -11,7 +11,7 @@
  *   npm run zobot:bulk-delete-articles -- --dry-run
  *   npm run zobot:bulk-delete-articles -- --confirm
  *   npm run zobot:bulk-delete-articles -- --confirm --department-id 123 --category-id 456
- *   npm run zobot:bulk-delete-articles -- --env-file F:/project_workspace/event-site-manager/.env.local --dry-run
+ *   npm run zobot:bulk-delete-articles -- --env-file F:/project_workspace/kluvo-ai-admin/.env.local --dry-run
  */
 
 import { loadZohoEnv, getSalesIqConfig } from './load-zoho-env.mjs';

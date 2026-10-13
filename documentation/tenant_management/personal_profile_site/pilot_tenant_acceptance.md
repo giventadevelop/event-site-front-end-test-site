@@ -4,7 +4,7 @@ Use this checklist when launching the first `PERSONAL_PROFILE` tenant (one deplo
 
 ## Prerequisites
 
-1. **Backend** (`event-site-manager-service`): apply `migrations/001_personal_profile_site.sql` (or Liquibase equivalent).
+1. **Backend** (`kluvo-ai-service`): apply `migrations/001_personal_profile_site.sql` (or Liquibase equivalent).
 2. REST resources live: `/api/public-profiles`, `/api/profile-writings`, `/api/profile-achievements`, `/api/profile-affiliations`, `/api/profile-media-assets`.
 3. `tenant_organization.site_type` column deployed; PATCH/PUT accepts `siteType`.
 4. `tenant_settings` profile section flags deployed.

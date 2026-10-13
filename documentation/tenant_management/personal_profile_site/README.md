@@ -1,6 +1,6 @@
 # Personal Profile Site — Documentation Index
 
-Hand this folder to backend, frontend, and ops teams. **Frontend (`mosc-temp`) Phase A/B and Audience CRM are implemented.** Backend Phase B (booking / projects / media_kind) is implemented in `event-site-manager-service` — **deploy so Liquibase 003 applies**.
+Hand this folder to backend, frontend, and ops teams. **Frontend (`mosc-temp`) Phase A/B and Audience CRM are implemented.** Backend Phase B (booking / projects / media_kind) is implemented in `kluvo-ai-service` — **deploy so Liquibase 003 applies**.
 
 ## Start here
 
@@ -24,8 +24,8 @@ Hand this folder to backend, frontend, and ops teams. **Frontend (`mosc-temp`) P
 |------|------|------------------|
 | `mosc-temp` | Next.js app, proxies, admin CMS, public profile UI, Audience tab | Done |
 | `event-site-manager` | Multi-tenant admin; Audience tab parity | Done |
-| `event-site-manager-service` | Spring Boot REST API, Liquibase migrations, JPA entities | **Deploy Phase B Liquibase + `/api/profile-projects`** |
-| `event-site-manager-batch-jobs` | Spring Batch; `PROFILE_AUDIENCE` email; Phase B = SQL mirror only | **Yes for bulk send**; no Java for Phase B |
+| `kluvo-ai-service` | Spring Boot REST API, Liquibase migrations, JPA entities | **Deploy Phase B Liquibase + `/api/profile-projects`** |
+| `kluvo-ai-batch-jobs` | Spring Batch; `PROFILE_AUDIENCE` email; Phase B = SQL mirror only | **Yes for bulk send**; no Java for Phase B |
 
 Canonical SQL (all repos): `code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql`
 

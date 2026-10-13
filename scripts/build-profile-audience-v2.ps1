@@ -10,8 +10,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-$service = Join-Path $root 'event-site-manager-service'
-$batch = Join-Path $root 'event-site-manager-batch-jobs'
+$service = Join-Path $root 'kluvo-ai-service'
+$batch = Join-Path $root 'kluvo-ai-batch-jobs'
 $mosc = Join-Path $root 'mosc-temp'
 $esm = Join-Path $root 'event-site-manager'
 
@@ -31,11 +31,11 @@ function Run-Step($label, $path, $command) {
 }
 
 if (-not $SkipService) {
-    Run-Step 'event-site-manager-service (Maven compile)' $service './mvnw.cmd -q -DskipTests compile'
+    Run-Step 'kluvo-ai-service (Maven compile)' $service './mvnw.cmd -q -DskipTests compile'
 }
 
 if (-not $SkipBatch) {
-    Run-Step 'event-site-manager-batch-jobs (Maven compile)' $batch './mvnw.cmd -q -DskipTests compile'
+    Run-Step 'kluvo-ai-batch-jobs (Maven compile)' $batch './mvnw.cmd -q -DskipTests compile'
 }
 
 if (-not $SkipMoscTemp) {

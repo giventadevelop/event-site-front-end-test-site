@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Sequence generator alignment, SQL reorder/renumber pipeline, and backend changes for event-site-manager-service and event-site-manager-batch-jobs.">
+  <meta name="description" content="Sequence generator alignment, SQL reorder/renumber pipeline, and backend changes for kluvo-ai-service and kluvo-ai-batch-jobs.">
   <title>Sequence and ID Alignment Guide</title>
   <style>
     :root { --text: #333; --code-bg: #e8f4f8; --code-text: #0d3b66; --code-border: #b8d4e3; --blue-accent: #0066cc; }
@@ -68,8 +68,8 @@
         Documents how <strong>primary key IDs</strong> and <strong>PostgreSQL sequences</strong> stay aligned across
         the SQL import pipeline (<code class="code-highlight">reorder</code> → optional <code class="code-highlight">renumber</code> → import → sync)
         and the two backend services:
-        <code class="code-highlight">event-site-manager-service</code> (REST API) and
-        <code class="code-highlight">event-site-manager-batch-jobs</code> (Spring Batch).
+        <code class="code-highlight">kluvo-ai-service</code> (REST API) and
+        <code class="code-highlight">kluvo-ai-batch-jobs</code> (Spring Batch).
       </p>
     </div>
 
@@ -79,8 +79,8 @@
         <li><a href="#architecture">1. Architecture — one shared sequence</a></li>
         <li><a href="#why-600k">2. Why next IDs start at 600000+</a></li>
         <li><a href="#sql-pipeline">3. SQL scripts — reorder, renumber, sync</a></li>
-        <li><a href="#backend-service">4. Backend — event-site-manager-service</a></li>
-        <li><a href="#backend-batch">5. Backend — event-site-manager-batch-jobs</a></li>
+        <li><a href="#backend-service">4. Backend — kluvo-ai-service</a></li>
+        <li><a href="#backend-batch">5. Backend — kluvo-ai-batch-jobs</a></li>
         <li><a href="#run-order">6. Run order (every database / machine)</a></li>
         <li><a href="#verify">7. Verification</a></li>
         <li><a href="#troubleshooting">8. Troubleshooting</a></li>
@@ -155,8 +155,8 @@
       <h3>3.3 Sync after import (mandatory)</h3>
 
       <div class="command-block verify"
-           data-command-base="docker exec -i CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -v ON_ERROR_STOP=1"
-           data-template-command="docker exec -i CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -v ON_ERROR_STOP=1 -f code_html_template/SQLS/Current_Sqls/sync_all_table_sequences.sql">
+           data-command-base="docker exec -i CONTAINER_ID psql -U event_site_admin -d kluvo_ai_db -v ON_ERROR_STOP=1"
+           data-template-command="docker exec -i CONTAINER_ID psql -U event_site_admin -d kluvo_ai_db -v ON_ERROR_STOP=1 -f code_html_template/SQLS/Current_Sqls/sync_all_table_sequences.sql">
         <div class="command-header">
           <span class="command-type">Step 7 — sync_all_table_sequences.sql</span>
           <div class="command-header-buttons">
@@ -164,16 +164,16 @@
             <button type="button" class="copy-button" onclick="copyCommand(this, 'sync-main')" title="Copy">📋 Copy</button>
           </div>
         </div>
-        <div class="command-content" id="sync-main">docker exec -i CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -v ON_ERROR_STOP=1 &lt; code_html_template/SQLS/Current_Sqls/sync_all_table_sequences.sql</div>
+        <div class="command-content" id="sync-main">docker exec -i CONTAINER_ID psql -U event_site_admin -d kluvo_ai_db -v ON_ERROR_STOP=1 &lt; code_html_template/SQLS/Current_Sqls/sync_all_table_sequences.sql</div>
         <div class="command-single-line">
           <div class="command-single-line-label">Windows single-line:</div>
-          <code id="sync-main-single-code">docker exec -i CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -v ON_ERROR_STOP=1 &lt; code_html_template/SQLS/Current_Sqls/sync_all_table_sequences.sql</code>
+          <code id="sync-main-single-code">docker exec -i CONTAINER_ID psql -U event_site_admin -d kluvo_ai_db -v ON_ERROR_STOP=1 &lt; code_html_template/SQLS/Current_Sqls/sync_all_table_sequences.sql</code>
         </div>
       </div>
 
       <div class="command-block verify"
-           data-command-base="docker exec -i CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -v ON_ERROR_STOP=1"
-           data-template-command="docker exec -i CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -v ON_ERROR_STOP=1 -f code_html_template/SQLS/Current_Sqls/sync_spring_batch_sequences.sql">
+           data-command-base="docker exec -i CONTAINER_ID psql -U event_site_admin -d kluvo_ai_db -v ON_ERROR_STOP=1"
+           data-template-command="docker exec -i CONTAINER_ID psql -U event_site_admin -d kluvo_ai_db -v ON_ERROR_STOP=1 -f code_html_template/SQLS/Current_Sqls/sync_spring_batch_sequences.sql">
         <div class="command-header">
           <span class="command-type">Step 7b — sync_spring_batch_sequences.sql</span>
           <div class="command-header-buttons">
@@ -181,10 +181,10 @@
             <button type="button" class="copy-button" onclick="copyCommand(this, 'sync-batch')" title="Copy">📋 Copy</button>
           </div>
         </div>
-        <div class="command-content" id="sync-batch">docker exec -i CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -v ON_ERROR_STOP=1 &lt; code_html_template/SQLS/Current_Sqls/sync_spring_batch_sequences.sql</div>
+        <div class="command-content" id="sync-batch">docker exec -i CONTAINER_ID psql -U event_site_admin -d kluvo_ai_db -v ON_ERROR_STOP=1 &lt; code_html_template/SQLS/Current_Sqls/sync_spring_batch_sequences.sql</div>
         <div class="command-single-line">
           <div class="command-single-line-label">Windows single-line:</div>
-          <code id="sync-batch-single-code">docker exec -i CONTAINER_ID psql -U event_site_admin -d event_site_manager_db -v ON_ERROR_STOP=1 &lt; code_html_template/SQLS/Current_Sqls/sync_spring_batch_sequences.sql</code>
+          <code id="sync-batch-single-code">docker exec -i CONTAINER_ID psql -U event_site_admin -d kluvo_ai_db -v ON_ERROR_STOP=1 &lt; code_html_template/SQLS/Current_Sqls/sync_spring_batch_sequences.sql</code>
         </div>
       </div>
 
@@ -199,8 +199,8 @@
     </section>
 
     <section id="backend-service">
-      <h2>4. Backend — event-site-manager-service</h2>
-      <p><strong>Repo:</strong> <code class="code-highlight">F:/project_workspace/event-site-manager-service</code> (active API; not legacy <code class="code-highlight">malayalees-us-site-boot</code>).</p>
+      <h2>4. Backend — kluvo-ai-service</h2>
+      <p><strong>Repo:</strong> <code class="code-highlight">F:/project_workspace/kluvo-ai-service</code> (active API; not legacy <code class="code-highlight">malayalees-us-site-boot</code>).</p>
 
       <div class="section-container">
         <div class="section-header">Expected entity annotation</div>
@@ -234,8 +234,8 @@
     </section>
 
     <section id="backend-batch">
-      <h2>5. Backend — event-site-manager-batch-jobs</h2>
-      <p><strong>Repo:</strong> <code class="code-highlight">F:/project_workspace/event-site-manager-batch-jobs</code></p>
+      <h2>5. Backend — kluvo-ai-batch-jobs</h2>
+      <p><strong>Repo:</strong> <code class="code-highlight">F:/project_workspace/kluvo-ai-batch-jobs</code></p>
 
       <table>
         <thead><tr><th>Component</th><th>Path</th><th>Role</th></tr></thead>
@@ -316,8 +316,8 @@ SELECT MAX(id) FROM event_media;</pre>
           <tr><td>Sync (Spring Batch)</td><td><code>mosc-temp/code_html_template/SQLS/Current_Sqls/sync_spring_batch_sequences.sql</code></td></tr>
           <tr><td>Legacy increment fix</td><td><code>mosc-temp/code_html_template/SQLS/Current_Sqls/fix_per-table id sequences_increment_by_one.sql</code></td></tr>
           <tr><td>Batch refresh</td><td><code>mosc-temp/code_html_template/batch_files/database_export_import_refresh.bat</code></td></tr>
-          <tr><td>REST API</td><td><code>event-site-manager-service/</code></td></tr>
-          <tr><td>Batch jobs</td><td><code>event-site-manager-batch-jobs/</code></td></tr>
+          <tr><td>REST API</td><td><code>kluvo-ai-service/</code></td></tr>
+          <tr><td>Batch jobs</td><td><code>kluvo-ai-batch-jobs/</code></td></tr>
           <tr><td>Cursor rule</td><td><code>mosc-temp/.cursor/rules/sequence_id_alignment_and_import.mdc</code></td></tr>
         </tbody>
       </table>
