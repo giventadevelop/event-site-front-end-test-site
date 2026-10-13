@@ -88,7 +88,7 @@ const OurSponsorsSection: React.FC = () => {
           if (cachedData) {
             const { data, timestamp } = JSON.parse(cachedData);
             if (Date.now() - timestamp < CACHE_DURATION && Array.isArray(data)) {
-              rawSponsors = data;
+              rawSponsors = data.slice(0, 8);
               console.log('✅ Using cached sponsors list, resolving banners from event_medias');
             }
           }
@@ -103,7 +103,7 @@ const OurSponsorsSection: React.FC = () => {
             'tenantId.equals': tenantId,
             sort: 'priorityRanking,asc',
             page: '0',
-            size: '15',
+            size: '8',
             'isActive.equals': 'true'
           });
           const response = await fetch(`/api/proxy/event-sponsors?${params.toString()}`, {
@@ -118,7 +118,7 @@ const OurSponsorsSection: React.FC = () => {
           }
           const data = await response.json();
           const sponsorsList = Array.isArray(data) ? data : [];
-          rawSponsors = sponsorsList.slice(0, 15);
+          rawSponsors = sponsorsList.slice(0, 8);
           console.log('✅ Fetched sponsors for homepage:', rawSponsors.length);
           try {
             sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data: rawSponsors, timestamp: Date.now() }));

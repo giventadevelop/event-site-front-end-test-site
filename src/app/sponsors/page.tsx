@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { EventSponsorsDTO } from "@/types";
 import { proxyApiPath } from '@/lib/proxyApiPath';
@@ -89,16 +89,42 @@ export default function SponsorsPage() {
     }
   }
 
+  const pendingScrollToTopRef = useRef(false);
+  const sawPageFetchRef = useRef(false);
+
+  const scrollPageToTop = () => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  };
+
+  const goToPage = (page: number) => {
+    if (page === currentPage) return;
+    pendingScrollToTopRef.current = true;
+    setCurrentPage(page);
+    scrollPageToTop();
+  };
+
+  useLayoutEffect(() => {
+    if (!pendingScrollToTopRef.current) return;
+    if (loading) {
+      sawPageFetchRef.current = true;
+      return;
+    }
+    if (!sawPageFetchRef.current) return;
+    sawPageFetchRef.current = false;
+    pendingScrollToTopRef.current = false;
+    scrollPageToTop();
+  }, [loading, sponsors]);
+
   // Pagination handlers
   const handlePrevPage = () => {
     if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+      goToPage(currentPage - 1);
     }
   };
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
+      goToPage(currentPage + 1);
     }
   };
 
