@@ -552,7 +552,7 @@ aws route53 list-hosted-zones --query "HostedZones[?Name=='mosc-temp.com.'].Id" 
    NEXT_PUBLIC_APP_URL=https://www.mosc-temp.com
    AMPLIFY_API_JWT_USER=YOUR_JWT_USER
    AMPLIFY_API_JWT_PASS=YOUR_JWT_PASSWORD
-   NEXT_PUBLIC_API_BASE_URL=https://api.kluvo.ai
+   NEXT_PUBLIC_API_BASE_URL=https://api.adwiiseagent.ai
 
    # Remove these if they exist:
    # CLERK_DOMAIN
@@ -1738,7 +1738,7 @@ www.adwiise.com                CNAME  [Amplify App #1].amplifyapp.com
   ```bash
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_***
   NEXT_PUBLIC_APP_URL=https://www.adwiise.com
-  NEXT_PUBLIC_API_BASE_URL=https://api.kluvo.ai
+  NEXT_PUBLIC_API_BASE_URL=https://api.adwiiseagent.ai
   ```
 
 **Amplify App #2** (www.mosc-temp.com):
@@ -1749,7 +1749,7 @@ www.adwiise.com                CNAME  [Amplify App #1].amplifyapp.com
   ```bash
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_***  # SAME key!
   NEXT_PUBLIC_APP_URL=https://www.mosc-temp.com
-  NEXT_PUBLIC_API_BASE_URL=https://api.kluvo.ai
+  NEXT_PUBLIC_API_BASE_URL=https://api.adwiiseagent.ai
   AMPLIFY_API_JWT_USER=YOUR_JWT_USER
   AMPLIFY_API_JWT_PASS=YOUR_JWT_PASSWORD
   ```

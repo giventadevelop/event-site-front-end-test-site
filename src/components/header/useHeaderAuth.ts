@@ -159,7 +159,7 @@ export function useHeaderAuth({ isTenantAdmin, logPrefix = '[HeaderAuth]' }: Use
     localStorage.setItem('clerk_signout_broadcast', Date.now().toString());
 
     const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-    const primaryDomain = process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || 'www.kluvo.ai';
+    const primaryDomain = process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || 'www.adwiiseagent.ai';
     const primaryHost = primaryDomain.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
     if (isPrimaryHostname(hostname)) {

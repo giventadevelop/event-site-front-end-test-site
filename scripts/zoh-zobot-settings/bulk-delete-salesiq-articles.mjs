@@ -5,7 +5,7 @@
  * Requires in .env.local (mosc-temp or ../kluvo-ai-admin):
  *   ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET, ZOHO_REFRESH_TOKEN
  *
- * Obtain refresh token: https://www.kluvo.ai/oauth/zoho/start
+ * Obtain refresh token: https://www.adwiiseagent.ai/oauth/zoho/start
  *
  * Usage:
  *   npm run zobot:bulk-delete-articles -- --dry-run

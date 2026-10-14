@@ -16,9 +16,9 @@ GET https://clerk.adwiise.com/v1/oauth_callback?err_code=authorization_invalid 4
 
 ### Error 2: Backend API 401 (Unauthorized)
 ```
-GET https://api-dev.kluvo.ai/api/proxy/event-details?sort=startDate,asc 401 (Unauthorized)
-GET https://api-dev.kluvo.ai/api/proxy/tenant-settings 401 (Unauthorized)
-GET https://api-dev.kluvo.ai/api/proxy/executive-committee-team-members 401 (Unauthorized)
+GET https://api-dev.adwiiseagent.ai/api/proxy/event-details?sort=startDate,asc 401 (Unauthorized)
+GET https://api-dev.adwiiseagent.ai/api/proxy/tenant-settings 401 (Unauthorized)
+GET https://api-dev.adwiiseagent.ai/api/proxy/executive-committee-team-members 401 (Unauthorized)
 ```
 
 ---
@@ -88,7 +88,7 @@ API_JWT_USER=YOUR_JWT_USER
 API_JWT_PASS=YOUR_JWT_PASSWORD
 
 # Backend API URL
-NEXT_PUBLIC_API_BASE_URL=https://api.kluvo.ai
+NEXT_PUBLIC_API_BASE_URL=https://api.adwiiseagent.ai
 
 # Tenant ID
 NEXT_PUBLIC_TENANT_ID=your_tenant_id_here
@@ -223,7 +223,7 @@ If backend has domain whitelist:
 ### Test Backend API
 1. Open browser DevTools (F12) > Network tab
 2. Go to: `https://feature-common-clerk.d1508w3f27cyps.amplifyapp.com/`
-3. Check Network tab for requests to `api-dev.kluvo.ai/api/proxy/*`
+3. Check Network tab for requests to `api-dev.adwiiseagent.ai/api/proxy/*`
 4. All should return **200 OK** (not 401)
 5. Data should load on the page
 
@@ -267,7 +267,7 @@ If still getting 401:
 1. Frontend needs data from backend
 2. Frontend calls: /api/proxy/event-details  ← STARTS HERE
 3. Next.js API route generates JWT token (src/lib/api/jwt.ts)
-4. Proxy forwards request to: api-dev.kluvo.ai/api/event-details
+4. Proxy forwards request to: api-dev.adwiiseagent.ai/api/event-details
 5. Proxy includes: Authorization: Bearer {JWT_TOKEN}
 6. Backend validates JWT token  ← 401 ERROR HERE
 7. Backend returns data

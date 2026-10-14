@@ -63,7 +63,7 @@ export function requireZohoCredentials() {
   }
   if (!refreshToken) {
     throw new Error(
-      'Missing ZOHO_REFRESH_TOKEN. Visit https://www.kluvo.ai/oauth/zoho/start to obtain one.',
+      'Missing ZOHO_REFRESH_TOKEN. Visit https://www.adwiiseagent.ai/oauth/zoho/start to obtain one.',
     );
   }
 
