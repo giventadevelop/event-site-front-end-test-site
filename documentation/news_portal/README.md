@@ -17,7 +17,7 @@ This folder contains the Product Requirements Documents (PRDs) for the **News Po
 - **Legacy reference:** `E:\project_workspace\catholicatenews_in\index.html`
 - **Frontend project:** `E:\project_workspace\mosc-temp`
 - **Backend project:** `E:\project_workspace\malayalees-us-site-boot`
-- **Batch jobs:** `E:\project_workspace\kluvo-ai-batch-jobs`
+- **Batch jobs:** `E:\project_workspace\adwiise-agent-batch-jobs`
 - **Schema:** `code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql`
 - **API schema:** `documentation/Swagger_API_Docs/api-docs.json`
 - **Cursor rules:** `nextjs_api_routes.mdc`, `ui_style_guide.mdc`, `mosc_styling_standards.mdc`

@@ -1,7 +1,7 @@
 # Gas Station Location RBAC — Backend Handoff
 
 **Version:** 1.0 · **2026-07-07  
-**Repo:** `kluvo-ai-service` (Spring Boot / JHipster)  
+**Repo:** `adwiise-agent-service` (Spring Boot / JHipster)  
 **Frontend:** `mosc-temp` (already implements client-side filtering + assignment UI)
 
 ## Summary

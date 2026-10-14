@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal Profile Site — kluvo-ai-batch-jobs PRD</title>
+    <title>Personal Profile Site — adwiise-agent-batch-jobs PRD</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1100px; margin: 0 auto; padding: 20px 20px 48px; }
@@ -27,14 +27,14 @@
 
     <h1>Personal Profile Site — Batch Jobs PRD</h1>
     <p class="doc-meta">
-        <strong>Project:</strong> <code>kluvo-ai-batch-jobs</code><br>
-        <strong>Repo path:</strong> <code>F:/project_workspace/kluvo-ai-batch-jobs</code><br>
+        <strong>Project:</strong> <code>adwiise-agent-batch-jobs</code><br>
+        <strong>Repo path:</strong> <code>F:/project_workspace/adwiise-agent-batch-jobs</code><br>
         <strong>Index:</strong> <a href="personal_profile_site_prd.html">personal_profile_site_prd.html</a> ·
-        <strong>Main API PRD:</strong> <a href="backend_event_site_manager_service_prd.html">kluvo-ai-service PRD</a>
+        <strong>Main API PRD:</strong> <a href="backend_event_site_manager_service_prd.html">adwiise-agent-service PRD</a>
     </p>
 
     <div class="lead">
-        <p><strong>v1 position:</strong> Batch jobs do <strong>not</strong> need new scheduled jobs, email flows, or REST endpoints for personal profile content. They share the <strong>same PostgreSQL database</strong> as <code>kluvo-ai-service</code> and run with <code>ddl-auto: validate</code> against a subset of JPA entities.</p>
+        <p><strong>v1 position:</strong> Batch jobs do <strong>not</strong> need new scheduled jobs, email flows, or REST endpoints for personal profile content. They share the <strong>same PostgreSQL database</strong> as <code>adwiise-agent-service</code> and run with <code>ddl-auto: validate</code> against a subset of JPA entities.</p>
         <p><strong>Required work:</strong> Keep <strong>shared entity mappings</strong> and <strong>canonical schema copy</strong> in sync so batch servers start after Liquibase runs on the main service.</p>
         <p><strong>Phase B (booking / projects / media_kind):</strong> <em>No Java changes</em>. Only optional SQL mirror:
             <code>database/migrations/003_profile_booking_projects_media_kind.sql</code>
@@ -47,7 +47,7 @@
 
     <h2>1. Shared vs service-only changes</h2>
     <table>
-        <thead><tr><th>Database object</th><th>kluvo-ai-service</th><th>kluvo-ai-batch-jobs</th></tr></thead>
+        <thead><tr><th>Database object</th><th>adwiise-agent-service</th><th>adwiise-agent-batch-jobs</th></tr></thead>
         <tbody>
             <tr><td><code>tenant_organization.site_type</code></td><td>Entity + DTO + REST</td><td><strong>JPA fields only</strong> on shared <code>TenantOrganization</code> entity</td></tr>
             <tr><td><code>tenant_organization.site_template_version</code></td><td>Entity + DTO + REST</td><td><strong>JPA fields only</strong></td></tr>
@@ -101,10 +101,10 @@
         <thead><tr><th>File</th><th>Action</th></tr></thead>
         <tbody>
             <tr><td><code>mosc-temp/code_html_template/SQLS/Current_Sqls/Event_Site_Manager_Latest_Schema.sql</code></td><td>Source of truth</td></tr>
-            <tr><td><code>kluvo-ai-batch-jobs/database/Event_Site_Manager_Latest_Schema.sql</code></td><td>Mirror tenant_organization, tenant_settings, and new profile tables in CREATE TABLE blocks</td></tr>
+            <tr><td><code>adwiise-agent-batch-jobs/database/Event_Site_Manager_Latest_Schema.sql</code></td><td>Mirror tenant_organization, tenant_settings, and new profile tables in CREATE TABLE blocks</td></tr>
         </tbody>
     </table>
-    <p>Do <strong>not</strong> add standalone ALTER migration files in batch-jobs; Liquibase runs only in <code>kluvo-ai-service</code>.</p>
+    <p>Do <strong>not</strong> add standalone ALTER migration files in batch-jobs; Liquibase runs only in <code>adwiise-agent-service</code>.</p>
 
     <h2>6. Sequence / import alignment</h2>
     <p>If you restore DB dumps or re-import SQL on a batch server:</p>
@@ -153,8 +153,8 @@
         <thead><tr><th>Step</th><th>Owner</th><th>Action</th></tr></thead>
         <tbody>
             <tr><td>1</td><td>mosc-temp</td><td>Canonical SQL + migration SQL (done)</td></tr>
-            <tr><td>2</td><td>kluvo-ai-service</td><td>Liquibase + full REST + entity stack</td></tr>
-            <tr><td>3</td><td>kluvo-ai-batch-jobs</td><td>Update shared JPA entities + schema mirror</td></tr>
+            <tr><td>2</td><td>adwiise-agent-service</td><td>Liquibase + full REST + entity stack</td></tr>
+            <tr><td>3</td><td>adwiise-agent-batch-jobs</td><td>Update shared JPA entities + schema mirror</td></tr>
             <tr><td>4</td><td>Ops</td><td>Deploy main service first; restart batch server; smoke-test one job</td></tr>
             <tr><td>5</td><td>mosc-temp</td><td>Pilot tenant per <a href="pilot_tenant_acceptance.md">pilot_tenant_acceptance.md</a></td></tr>
         </tbody>

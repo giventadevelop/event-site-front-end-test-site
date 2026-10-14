@@ -38,7 +38,7 @@ Copy the container ID (e.g., `0c2a38241eca`).
 **3. Export database data with INSERT statements:**
 
 ```bash
-docker exec -it 0c2a38241eca pg_dump -U event_site_app -d kluvo_ai_db --data-only --column-inserts > corrected_event_media_inserts_TMP.sql
+docker exec -it 0c2a38241eca pg_dump -U event_site_app -d adwiise_agent_db --data-only --column-inserts > corrected_event_media_inserts_TMP.sql
 ```
 
 **Important**: Replace `0c2a38241eca` with your actual container ID from step 2.
@@ -59,17 +59,17 @@ Run the generated SQL file to insert data records into the database tables:
 
 ```bash
 # Using docker exec with psql
-docker exec -i 0c2a38241eca psql -U event_site_app -d kluvo_ai_db < corrected_event_media_inserts.ordered_TMP.sql
+docker exec -i 0c2a38241eca psql -U event_site_app -d adwiise_agent_db < corrected_event_media_inserts.ordered_TMP.sql
 
 # Or using docker-compose (if applicable)
-docker-compose exec -T postgresql psql -U event_site_app -d kluvo_ai_db < corrected_event_media_inserts.ordered_TMP.sql
+docker-compose exec -T postgresql psql -U event_site_app -d adwiise_agent_db < corrected_event_media_inserts.ordered_TMP.sql
 ```
 
 ### Summary
 
 1. ✅ Navigate to `code_html_template/SQLS`
 2. ✅ Get PostgreSQL container ID: `docker ps | findstr postgres`
-3. ✅ Export data: `docker exec -it <container_id> pg_dump -U event_site_app -d kluvo_ai_db --data-only --column-inserts > corrected_event_media_inserts_TMP.sql`
+3. ✅ Export data: `docker exec -it <container_id> pg_dump -U event_site_app -d adwiise_agent_db --data-only --column-inserts > corrected_event_media_inserts_TMP.sql`
 4. ✅ Reorder INSERTs: `node reorder_sql_inserts_final.cjs`
 5. ✅ Import data: Run `corrected_event_media_inserts.ordered_TMP.sql` into the database
 

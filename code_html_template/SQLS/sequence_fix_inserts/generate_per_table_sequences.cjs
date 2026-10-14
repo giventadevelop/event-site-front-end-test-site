@@ -22,7 +22,7 @@ const PATCH_MAP_OUT = path.join(SCRIPT_DIR, 'entity-patch-map.json');
 const DOMAIN_DIR = path.join(
   'F:',
   'project_workspace',
-  'kluvo-ai-service',
+  'adwiise-agent-service',
   'src',
   'main',
   'java',

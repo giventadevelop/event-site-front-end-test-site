@@ -22,7 +22,7 @@
 <body>
 
 <h1>Gas Station COO &amp; Tenant Site Types — Requirements &amp; Implementation Record</h1>
-<p class="meta">Version 1.0 · 2026-07-04 · Repos: <code>mosc-temp</code> (satellite frontend), <code>event-site-manager</code> (platform admin), <code>kluvo-ai-service</code> (Spring Boot backend)</p>
+<p class="meta">Version 1.0 · 2026-07-04 · Repos: <code>mosc-temp</code> (satellite frontend), <code>event-site-manager</code> (platform admin), <code>adwiise-agent-service</code> (Spring Boot backend)</p>
 
 <h2>1. Business requirement</h2>
 <p>Integrate the <strong>AI Gas Station COO</strong> concept (blueprint at <code>E:\Categories\Categories\Software_Projects\Gas_Station_AI</code>) into the multi-tenant event-site platform: each gas-station client (single owner or chain) is onboarded as a tenant; client management, subscription billing, and the daily-brief dashboard live in this platform, while the AI/LLM engine is a separately deployed service that writes curated results back via the tenant-scoped REST API. Additionally, complete the pending <strong>personal-profile site type</strong> integration.</p>
@@ -67,7 +67,7 @@
 </table>
 <p>Incremental migrations (idempotent, applied to local Docker Postgres): <code>migrations/001_gas_station_site.sql</code>, <code>migrations/002_gas_station_billing.sql</code>; profile: <code>../personal_profile_site/migrations/001_personal_profile_site.sql</code>.</p>
 
-<h3>5.2 Backend (<code>kluvo-ai-service</code>)</h3>
+<h3>5.2 Backend (<code>adwiise-agent-service</code>)</h3>
 <ul>
   <li><code>SiteType</code> enum incl. <code>GAS_STATION</code>; <code>TenantSettings</code> gas fields; <code>TenantOrganization.stripeSubscriptionId</code>; <code>GasStationLocation.includedInSubscription</code>.</li>
   <li>Four full vertical slices (entity → repository → service → criteria/queryService → DTO → mapper → REST) at <code>/api/gas-station-locations|-integrations|-daily-metrics|-recommendations</code>; profile slices pre-existing.</li>

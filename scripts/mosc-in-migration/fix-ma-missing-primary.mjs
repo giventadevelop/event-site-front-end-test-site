@@ -46,7 +46,7 @@ function guessContentType(fileName) {
 function getExistingPaths() {
   const sql = `SELECT hierarchy_path FROM event_media WHERE hierarchy_category_label = 'Malankara Association (2022 - 2027)' AND tenant_id = 'mosc_malankara_orthodox_2'`;
   const raw = execSync(
-    `docker exec kluvo_ai_db-postgresql-1 psql -U event_site_admin -d kluvo_ai_db -t -A -c "${sql}"`,
+    `docker exec adwiise_agent_db-postgresql-1 psql -U event_site_admin -d adwiise_agent_db -t -A -c "${sql}"`,
     { encoding: 'utf8' }
   );
   return new Set(raw.trim().split(/\r?\n/).filter(Boolean));

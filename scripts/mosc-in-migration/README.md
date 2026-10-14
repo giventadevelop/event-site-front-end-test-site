@@ -229,7 +229,7 @@ Environment overrides:
 
 **S3 note:** Upload `title` (S3 user metadata) must be US-ASCII. Manifest `hierarchyPath` values with Unicode en-dashes (`–`) are sanitized for `title` automatically; full Unicode remains in `hierarchyPath` / description for the UI.
 
-**AWS credentials:** Backend reads `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_REGION` (not `AWS_DEPLOY_REGION`). Ensure the running Spring Boot process uses the same values as `kluvo-ai-service/src/main/docker/Docker_Local/.env` (bucket is in `us-east-2`).
+**AWS credentials:** Backend reads `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_REGION` (not `AWS_DEPLOY_REGION`). Ensure the running Spring Boot process uses the same values as `adwiise-agent-service/src/main/docker/Docker_Local/.env` (bucket is in `us-east-2`).
 
 ---
 - `MOSC_MIRROR_REPORT`

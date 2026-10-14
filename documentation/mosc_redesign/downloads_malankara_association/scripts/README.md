@@ -16,7 +16,7 @@ NEXT_PUBLIC_TENANT_ID=mosc_malankara_orthodox_2
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 MOSC_DOWNLOAD_ROOT=f:\project_workspace\mosc-temp\mosc_downloads
 MOSC_DB_HOST=localhost
-MOSC_DB_NAME=kluvo_ai_db
+MOSC_DB_NAME=adwiise_agent_db
 MOSC_DB_USER=postgres
 MOSC_DB_PASSWORD=postgres
 ```

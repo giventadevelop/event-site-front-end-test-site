@@ -7,9 +7,9 @@ import subprocess
 import sys
 
 TENANT = sys.argv[1] if len(sys.argv) > 1 else "mosc_malankara_orthodox_2"
-CONTAINER = "kluvo_ai_db-postgresql-1"
+CONTAINER = "adwiise_agent_db-postgresql-1"
 DB_USER = "event_site_admin"
-DB_NAME = "kluvo_ai_db"
+DB_NAME = "adwiise_agent_db"
 
 
 def psql(sql: str) -> str:

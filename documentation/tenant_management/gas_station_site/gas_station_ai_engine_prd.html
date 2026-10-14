@@ -175,7 +175,7 @@
 <div class="lead">
     <p><strong>Purpose:</strong> This document elaborates the <em>External AI engine</em> line item from the gas-station implementation record — a <strong>separately deployed service</strong> responsible for data connectors, forecasting, anomaly detection, and LLM-powered “AI Manager” chat. It <strong>reads</strong> tenant/station/integration registry from the platform backend and <strong>writes back</strong> curated daily metrics and recommendations via the existing REST API using a <strong>service JWT</strong>.</p>
     <p><strong>What already exists (this platform):</strong> Postgres tables (<code>gas_station_*</code>), Spring Boot CRUD APIs, Next.js admin dashboard (<code>/admin/gas-station</code>), demo seed data, billing. Loop 3 of the feasibility plan is complete — the dashboard works with hand-inserted rows <em>without</em> the engine.</p>
-    <p><strong>What this PRD covers:</strong> The separate <code>kluvo-ai-engine</code> project — architecture, components, training, connectors, LLM agent design, write-back contract, security, phases, and effort.</p>
+    <p><strong>What this PRD covers:</strong> The separate <code>adwiise-agent-engine</code> project — architecture, components, training, connectors, LLM agent design, write-back contract, security, phases, and effort.</p>
 </div>
 
 <nav class="toc" aria-label="Table of contents">
@@ -208,7 +208,7 @@
             <li>Owner actions: Accept / Dismiss / Done + feedback text</li>
             <li><code>tenant_settings.gas_ai_engine_*</code> config per tenant</li>
         </ul>
-        <p><strong>Repos:</strong> <code>mosc-temp</code>, <code>event-site-manager</code>, <code>kluvo-ai-service</code></p>
+        <p><strong>Repos:</strong> <code>mosc-temp</code>, <code>event-site-manager</code>, <code>adwiise-agent-service</code></p>
     </div>
     <div class="layer-card engine">
         <h3>External AI engine (separate project)</h3>
@@ -219,7 +219,7 @@
             <li>LLM layer: explanations + conversational “AI Manager”</li>
             <li>Overnight batch + on-demand API for chat/refresh</li>
         </ul>
-        <p><strong>Repo (proposed):</strong> <code>kluvo-ai-engine</code> or reuse blueprint at <code>Gas_Station_AI</code></p>
+        <p><strong>Repo (proposed):</strong> <code>adwiise-agent-engine</code> or reuse blueprint at <code>Gas_Station_AI</code></p>
     </div>
 </div>
 
@@ -632,10 +632,10 @@ Output JSON: { "explanation": "..." }</div>
 <table>
     <thead><tr><th>Artifact</th><th>Location / hosting</th></tr></thead>
     <tbody>
-        <tr><td>Engine API + workers</td><td>New repo <code>kluvo-ai-engine</code>; deploy ECS Fargate or Lambda + queue (match <code>kluvo-ai-batch-jobs</code> patterns)</td></tr>
+        <tr><td>Engine API + workers</td><td>New repo <code>adwiise-agent-engine</code>; deploy ECS Fargate or Lambda + queue (match <code>adwiise-agent-batch-jobs</code> patterns)</td></tr>
         <tr><td>Raw + features</td><td>S3 + optional Timescale/Postgres (separate from platform RDS)</td></tr>
         <tr><td>LLM keys</td><td>Engine env only — never in mosc-temp</td></tr>
-        <tr><td>IaC</td><td>Extend <code>application-deployments</code> with <code>kluvo-ai-engine</code> stack</td></tr>
+        <tr><td>IaC</td><td>Extend <code>application-deployments</code> with <code>adwiise-agent-engine</code> stack</td></tr>
         <tr><td>Blueprint reference</td><td><code>E:\Categories\Categories\Software_Projects\Gas_Station_AI</code></td></tr>
     </tbody>
 </table>

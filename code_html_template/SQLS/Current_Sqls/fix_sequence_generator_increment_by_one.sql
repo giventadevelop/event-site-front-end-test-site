@@ -1,6 +1,6 @@
 -- =============================================================================
 -- Fix: smoother ID generation (increment by 1 instead of 50)
--- Database: kluvo_ai_db (local / dev / prod)
+-- Database: adwiise_agent_db (local / dev / prod)
 --
 -- WHY IDs jump to 600000+:
 --   1. MOSC seed file uses explicit IDs in the 600001+ block (tenant isolation).

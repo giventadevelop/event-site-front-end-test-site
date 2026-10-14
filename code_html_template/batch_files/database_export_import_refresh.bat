@@ -167,7 +167,7 @@ set "EXPORT_FILE=%SQLS_DIR%\export.sql"
 set "ORDERED_FILE=%SQLS_DIR%\corrected_event_media_inserts.ordered.sql"
 set "RENUMBERED_FILE=%SQLS_DIR%\sequence_fix_inserts\corrected_event_media_inserts.renumbered.sql"
 set "PROD_FILE=%SQLS_DIR%\corrected_event_media_inserts.ordered_PROD.sql"
-set "SYNC_BOOT=%WORKSPACE_ROOT%\kluvo-ai-service\src\main\resources\sqls\sync_all_table_sequences.sql"
+set "SYNC_BOOT=%WORKSPACE_ROOT%\adwiise-agent-service\src\main\resources\sqls\sync_all_table_sequences.sql"
 set "SYNC_MOSC=%SQLS_DIR%\Current_Sqls\sync_all_table_sequences.sql"
 set "SYNC_BATCH_MOSC=%SQLS_DIR%\Current_Sqls\sync_spring_batch_sequences.sql"
 set "DELETE_MOSC_FILE=%SQLS_DIR%\delete_mosc_tenant.sql"
@@ -180,7 +180,7 @@ if "%IMPORT_DUP_ONLY%"=="1" (
 )
 
 set "DB_USER=event_site_admin"
-set "DB_NAME=kluvo_ai_db"
+set "DB_NAME=adwiise_agent_db"
 
 call :log_banner "Database Export / Import / Refresh"
 echo( Workspace root : %WORKSPACE_ROOT%

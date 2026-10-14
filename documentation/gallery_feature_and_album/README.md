@@ -188,7 +188,7 @@ CHECK (
 
 - **Frontend Project**: `E:\project_workspace\mosc-temp`
 - **Backend Project**: `E:\project_workspace\malayalees-us-site-boot`
-- **Batch Job Project**: `E:\project_workspace\kluvo-ai-batch-jobs`
+- **Batch Job Project**: `E:\project_workspace\adwiise-agent-batch-jobs`
 
 ## Support & Questions
 

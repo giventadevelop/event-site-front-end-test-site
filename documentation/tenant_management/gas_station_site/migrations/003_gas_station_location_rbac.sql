@@ -1,7 +1,7 @@
 -- Gas station location-scoped RBAC — incremental migration
 -- Links user_profile rows to gas_station_location for GAS_STATION_MANAGER access.
 -- SUPER_ADMIN / ADMIN / GAS_STATION_ADMIN: all locations in tenant (no junction rows required).
--- Apply via Liquibase in kluvo-ai-service after 001_gas_station_site.sql.
+-- Apply via Liquibase in adwiise-agent-service after 001_gas_station_site.sql.
 
 CREATE SEQUENCE IF NOT EXISTS public.gas_station_user_station_assignment_id_seq START WITH 1 INCREMENT BY 1;
 

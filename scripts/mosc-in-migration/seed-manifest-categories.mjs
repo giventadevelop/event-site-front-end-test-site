@@ -23,7 +23,7 @@ for (const item of manifest.items) {
 
 const client = new pg.Client({
   host: process.env.MOSC_DB_HOST || 'localhost',
-  database: process.env.MOSC_DB_NAME || 'kluvo_ai_db',
+  database: process.env.MOSC_DB_NAME || 'adwiise_agent_db',
   user: process.env.MOSC_DB_USER || 'postgres',
   password: process.env.MOSC_DB_PASSWORD || 'postgres',
   port: 5432,

@@ -44,7 +44,7 @@ The AI engine is layer 1–3 of the blueprint's four-layer architecture; this pl
 
 ```mermaid
 flowchart LR
-  subgraph platform [This platform — mosc-temp + kluvo-ai-service]
+  subgraph platform [This platform — mosc-temp + adwiise-agent-service]
     Admin["/admin/tenant-management/organizations\n(client onboarding, site_type=GAS_STATION,\nsubscription/Stripe)"]
     Dash["/admin/gas-station\n(stations, integrations,\ndaily brief dashboard)"]
     Proxy["/api/proxy/gas-station-*\n(JWT + tenant injection)"]
@@ -146,7 +146,7 @@ What is explicitly deferred: per-station manager logins with station-restricted 
 
 ---
 
-## 5. Backend (kluvo-ai-service) — summary
+## 5. Backend (adwiise-agent-service) — summary
 
 Same layered pattern as the personal-profile PRDs in `../personal_profile_site/`:
 

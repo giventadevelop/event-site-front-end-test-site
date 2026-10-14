@@ -12,7 +12,7 @@ const manifestPaths = new Set(manifest.items.map((i) => i.hierarchyPath));
 
 const sql = `SELECT id, title, hierarchy_path FROM event_media WHERE hierarchy_category_label = 'Malankara Association 2022' AND tenant_id = 'mosc_malankara_orthodox_2' ORDER BY id`;
 const raw = execSync(
-  `docker exec kluvo_ai_db-postgresql-1 psql -U event_site_admin -d kluvo_ai_db -t -A -F "|" -c "${sql}"`,
+  `docker exec adwiise_agent_db-postgresql-1 psql -U event_site_admin -d adwiise_agent_db -t -A -F "|" -c "${sql}"`,
   { encoding: 'utf8' }
 );
 

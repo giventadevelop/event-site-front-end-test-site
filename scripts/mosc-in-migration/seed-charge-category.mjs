@@ -10,7 +10,7 @@ config({ path: resolve(REPO_ROOT, '.env.local') });
 const tenant = process.env.MOSC_TENANT_ID || process.env.NEXT_PUBLIC_TENANT_ID || 'mosc_malankara_orthodox_2';
 const client = new pg.Client({
   host: process.env.MOSC_DB_HOST || 'localhost',
-  database: process.env.MOSC_DB_NAME || 'kluvo_ai_db',
+  database: process.env.MOSC_DB_NAME || 'adwiise_agent_db',
   user: process.env.MOSC_DB_USER || 'postgres',
   password: process.env.MOSC_DB_PASSWORD || 'postgres',
   port: Number(process.env.MOSC_DB_PORT || 5432),

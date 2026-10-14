@@ -1,6 +1,6 @@
 # Integration Prompt: `home_page_hero_display_duration_seconds`
 
-Use this prompt to integrate the new **home page hero display duration** field in the **backend** (malayalees-us-site-boot) and **batch job** (kluvo-ai-batch-jobs) projects. The frontend (mosc-temp) already has the field in `EventMediaDTO` and related docs.
+Use this prompt to integrate the new **home page hero display duration** field in the **backend** (malayalees-us-site-boot) and **batch job** (adwiise-agent-batch-jobs) projects. The frontend (mosc-temp) already has the field in `EventMediaDTO` and related docs.
 
 ---
 
@@ -8,7 +8,7 @@ Use this prompt to integrate the new **home page hero display duration** field i
 
 - **Frontend project**: `E:\project_workspace\mosc-temp` (Next.js) — already updated.
 - **Backend project**: `E:\project_workspace\malayalees-us-site-boot` (Java/Spring Boot).
-- **Batch job project**: `E:\project_workspace\kluvo-ai-batch-jobs` (Java).
+- **Batch job project**: `E:\project_workspace\adwiise-agent-batch-jobs` (Java).
 
 **New DB column**: `event_media.home_page_hero_display_duration_seconds`  
 **Type**: `int4` (PostgreSQL INTEGER), **nullable**, **default** `NULL`.  
@@ -115,7 +115,7 @@ Use this prompt to integrate the new **home page hero display duration** field i
 
 ---
 
-# PROMPT FOR BATCH JOB (kluvo-ai-batch-jobs)
+# PROMPT FOR BATCH JOB (adwiise-agent-batch-jobs)
 
 ---
 
@@ -166,16 +166,16 @@ Use this prompt to integrate the new **home page hero display duration** field i
 | Project | Migration | Entity | DTO | Criteria | QueryService | Mapper | Upload params | Schema copy | Swagger |
 |--------|-----------|--------|-----|----------|--------------|--------|---------------|-------------|---------|
 | **Backend** (malayalees-us-site-boot) | ✅ Run | ✅ Add field | ✅ Add field | ✅ Add filter | ✅ Add spec | ✅ Auto | Optional | — | — |
-| **Batch** (kluvo-ai-batch-jobs) | ✅ Run | — | — | — | — | — | — | ✅ Update | Optional refresh |
+| **Batch** (adwiise-agent-batch-jobs) | ✅ Run | — | — | — | — | — | — | ✅ Update | Optional refresh |
 
-Use the **Backend** prompt in `malayalees-us-site-boot` and the **Batch** prompt in `kluvo-ai-batch-jobs`. The frontend (mosc-temp) already uses `homePageHeroDisplayDurationSeconds` in `EventMediaDTO` and related logic.
+Use the **Backend** prompt in `malayalees-us-site-boot` and the **Batch** prompt in `adwiise-agent-batch-jobs`. The frontend (mosc-temp) already uses `homePageHeroDisplayDurationSeconds` in `EventMediaDTO` and related logic.
 
 **Quick reference — files to touch**
 
 | Project | Path | Files |
 |--------|------|-------|
 | **Backend** | `E:\project_workspace\malayalees-us-site-boot` | `domain/EventMedia.java`, `service/dto/EventMediaDTO.java`, `service/criteria/EventMediaCriteria.java`, `service/EventMediaQueryService.java`, `service/mapper/EventMediaMapper.java`; optionally `EventMediaResource` upload params, `EventMediaServiceImpl.uploadFile` |
-| **Batch** | `E:\project_workspace\kluvo-ai-batch-jobs` | `database/migrations/` (add or run migration), `database/Event_Site_Manager_Latest_Schema.sql` (or your canonical schema) |
+| **Batch** | `E:\project_workspace\adwiise-agent-batch-jobs` | `database/migrations/` (add or run migration), `database/Event_Site_Manager_Latest_Schema.sql` (or your canonical schema) |
 | **Frontend** | `E:\project_workspace\mosc-temp` | Already done: `src/types/index.ts` (EventMediaDTO), `documentation/HOME_PAGE_HERO_DISPLAY_DURATION.md`, migration and schema |
 
 **Migration source**: `E:\project_workspace\mosc-temp\code_html_template\SQLS\migration_add_home_page_hero_display_duration.sql`
