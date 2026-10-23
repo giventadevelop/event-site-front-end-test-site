@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getCachedApiJwt } from "@/lib/api/jwt";
 import { fetchWithJwtRetry } from "@/lib/proxyHandler";
 import { getApiBaseUrl, getTenantId } from '@/lib/env';
+import { getRawBody } from '@/lib/getRawBody';
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -44,6 +45,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const apiUrl = buildBackendUrl(method, query);
 
     console.log(`Event media proxy: ${method} ${apiUrl}`);
+
+    if (method === "POST" && String(req.headers["content-type"] || "").includes("application/json")) {
+      const rawBody = (await getRawBody(req)).toString("utf-8");
+      const apiRes = await fetchWithJwtRetry(
+        apiUrl,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: rawBody,
+        },
+        "event-medias-json"
+      );
+      const text = await apiRes.text();
+      res.status(apiRes.status);
+      if (!apiRes.ok) {
+        console.error(`Event media JSON proxy error: ${apiRes.status} ${text}`);
+      }
+      try {
+        res.json(text ? JSON.parse(text) : {});
+      } catch {
+        res.send(text);
+      }
+      return;
+    }
 
     if (method === "POST") {
       // Forward multipart/form-data (streaming body)

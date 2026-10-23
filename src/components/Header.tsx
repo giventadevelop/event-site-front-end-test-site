@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Search, ChevronDown, X, LogOut, User } from 'lucide-react';
 import { useAuth, useClerk, useUser } from '@clerk/nextjs';
 import { useTenantSettings } from '@/components/TenantSettingsProvider';
-import { isPrimaryHostname, isSatelliteHostname } from '@/lib/clerkSatellite';
+import { getAuthPrimaryHost, isPrimaryHostname, isSatelliteHostname } from '@/lib/clerkSatellite';
 import Image from 'next/image';
 
 const navItemCatalog = [
@@ -932,8 +932,7 @@ export default function Header({ hideMenuItems = false, variant = 'charity', isT
     localStorage.setItem('clerk_signout_broadcast', Date.now().toString());
 
     const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-    const primaryDomain = process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || 'www.adwiiseagent.ai';
-    const primaryHost = primaryDomain.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    const primaryHost = getAuthPrimaryHost();
 
     if (isPrimaryHostname(hostname)) {
       try {
@@ -1185,7 +1184,7 @@ export default function Header({ hideMenuItems = false, variant = 'charity', isT
             {/* Right — auth, search, mobile menu (dedicated grid column — never overlaps nav) */}
             <div className="header-auth-cluster flex shrink-0 flex-nowrap items-center justify-end gap-1.5 sm:gap-2 lg:gap-2.5">
               <div className="header-auth-actions hidden lg:flex shrink-0 flex-nowrap items-center gap-1.5 xl:gap-2">
-                {!isLoaded ? null : !userId ? (
+                {!userId ? (
                   <>
                     <Link
                       href="/sign-in"
@@ -1464,7 +1463,7 @@ export default function Header({ hideMenuItems = false, variant = 'charity', isT
 
             {/* Mobile Menu Auth Section */}
             <div className="px-3 mt-6 space-y-2">
-              {!isLoaded ? null : !userId ? (
+              {!userId ? (
                 <div className="space-y-2 p-3 rounded-xl bg-gradient-to-br from-violet-50 to-amber-50 border border-[var(--header-border)]">
                   <Link
                     href="/sign-in"

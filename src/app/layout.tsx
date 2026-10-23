@@ -9,6 +9,7 @@ import Footer from "../components/Footer";
 import ConditionalLayout from "../components/ConditionalLayout";
 import ClerkSyncUrlCleanup from "../components/ClerkSyncUrlCleanup";
 import ClerkSatelliteSyncGate from "../components/ClerkSatelliteSyncGate";
+import PaginationScrollToTop from "../components/PaginationScrollToTop";
 import BrowserTabTitle from "../components/BrowserTabTitle";
 import MobileDebugConsole from "../components/MobileDebugConsole";
 import TenantIdInjector from "../components/TenantIdInjector";
@@ -20,7 +21,8 @@ import { fetchWithJwtRetry } from "@/lib/proxyHandler";
 import { logServerFetchFailure } from "@/lib/logServerFetchFailure";
 import { isAdminRole } from "@/lib/utils";
 import { resolveIsTenantAdmin } from "@/lib/resolveTenantAdminStatus";
-import { getClerkSatelliteHost, isSatelliteHostname } from "@/lib/clerkSatellite";
+import { getAuthPrimaryHost, getClerkSatelliteHost, isSatelliteHostname } from "@/lib/clerkSatellite";
+import { buildClerkProfileInsert, decideClerkProfileIdentity } from "@/lib/clerkProfileIdentity";
 import { getSharedAdsensePublisherIdForMeta } from "@/lib/adsense/sharedPublisherId";
 
 /** Default tab / SEO titles; pages may override. BrowserTabTitle fills unique titles per route. */
@@ -53,7 +55,6 @@ export default async function RootLayout({
 }) {
   debugLog('[LAYOUT] Root layout executing');
   let isTenantAdmin = false;
-  const primaryDomain = process.env.NEXT_PUBLIC_PRIMARY_DOMAIN || process.env.AMPLIFY_NEXT_PUBLIC_PRIMARY_DOMAIN || 'www.adwiiseagent.ai';
   const satelliteDomain = getClerkSatelliteHost() || process.env.NEXT_PUBLIC_CLERK_DOMAIN || process.env.AMPLIFY_NEXT_PUBLIC_CLERK_DOMAIN || 'www.mosc-temp.com';
   let clerkProps: { isSatellite?: boolean; domain?: string; signInUrl?: string; signUpUrl?: string; allowedRedirectOrigins?: string[] } = {};
 
@@ -108,8 +109,8 @@ export default async function RootLayout({
     ? {
       isSatellite: true,
       domain: satelliteDomain,
-      signInUrl: `https://${primaryDomain}/sign-in`,
-      signUpUrl: `https://${primaryDomain}/sign-up`,
+      signInUrl: `https://${getAuthPrimaryHost()}/sign-in`,
+      signUpUrl: `https://${getAuthPrimaryHost()}/sign-up`,
       afterSignOutUrl: '/',
     }
     : {
@@ -209,7 +210,7 @@ export default async function RootLayout({
 
               if (userEmail) {
                 // Check for existing profile with same email + tenantId but different userId
-                const emailCheckUrl = `${apiBase}/api/user-profiles?email.equals=${encodeURIComponent(userEmail)}&tenantId.equals=${encodeURIComponent(tenantId)}&size=1`;
+                const emailCheckUrl = `${apiBase}/api/user-profiles?email.equals=${encodeURIComponent(userEmail)}&tenantId.equals=${encodeURIComponent(tenantId)}&sort=id,asc&size=20`;
                 const emailResp = await fetchWithJwtRetry(emailCheckUrl, {
                   cache: 'no-store',
                   timeout: profileFetchTimeoutMs,
@@ -217,17 +218,42 @@ export default async function RootLayout({
 
                 if (emailResp.ok) {
                   const emailArr = await emailResp.json();
-                  // Handle both raw array and paginated { content: [...] } responses
-                  let existingProfile;
-                  if (Array.isArray(emailArr)) {
-                    existingProfile = emailArr[0];
-                  } else if (emailArr?.content && Array.isArray(emailArr.content)) {
-                    existingProfile = emailArr.content[0];
-                  } else {
-                    existingProfile = emailArr;
-                  }
+                  const emailRows = Array.isArray(emailArr)
+                    ? emailArr
+                    : emailArr?.content && Array.isArray(emailArr.content)
+                      ? emailArr.content
+                      : emailArr
+                        ? [emailArr]
+                        : [];
+                  const identity = decideClerkProfileIdentity(emailRows, userId);
 
-                  if (existingProfile && existingProfile.userId !== userId) {
+                  if (identity.action === 'use') {
+                    const owned = emailRows.find((row: { userId?: string; clerkUserId?: string }) => row?.userId === userId || row?.clerkUserId === userId);
+                    isTenantAdmin = isAdminRole(owned?.userRole);
+                  } else if (identity.action === 'insert') {
+                    debugLog('[Layout] Inserting a profile row for this Clerk user id');
+                    const payload = buildClerkProfileInsert({
+                      userId,
+                      email: userEmail,
+                      tenantId: tenantId || '',
+                      firstName: u?.firstName,
+                      lastName: u?.lastName,
+                      imageUrl: u?.imageUrl,
+                      sibling: identity.sibling,
+                    });
+                    const createRes = await fetch(`${baseUrl}/api/proxy/user-profiles`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(payload),
+                    });
+                    if (createRes.ok) {
+                      const created = await createRes.json().catch(() => null);
+                      isTenantAdmin = isAdminRole(created?.userRole ?? payload.userRole);
+                    } else {
+                      console.error('[Layout] Failed to insert Clerk profile:', createRes.status);
+                    }
+                  } else if (identity.action === 'patch' && identity.row) {
+                    const existingProfile = identity.row;
                     // Step 3: Email + tenantId exists but with different userId
                     // UPDATE the existing record's userId to match current Clerk userId
                     // CRITICAL: Preserve all existing fields - only update userId and clerkUserId
@@ -419,6 +445,7 @@ export default async function RootLayout({
           <ClerkProvider publishableKey={CLERK_KEY} {...clerkProps}>
           <ClerkSyncUrlCleanup />
           <ClerkSatelliteSyncGate />
+          <PaginationScrollToTop />
           <BrowserTabTitle />
           <TenantIdInjector />
           <TrpcProvider>
@@ -457,6 +484,7 @@ export default async function RootLayout({
           <>
           <ClerkSyncUrlCleanup />
           <ClerkSatelliteSyncGate />
+          <PaginationScrollToTop />
           <BrowserTabTitle />
           <TenantIdInjector />
           <TrpcProvider>

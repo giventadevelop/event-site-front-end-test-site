@@ -74,7 +74,10 @@ const LOG_PREFIX = '[STRAPI-NEWS]';
 export async function fetchStrapi<T = unknown>(
   path: string,
   options: RequestInit = {}
-): Promise<{ data: T } | null> {
+): Promise<{
+  data: T;
+  meta?: { pagination?: { page: number; pageSize: number; pageCount: number; total: number } };
+} | null> {
   const base = getStrapiApiBase();
   if (!base) {
     console.warn(`${LOG_PREFIX} Strapi URL not set (NEXT_PUBLIC_STRAPI_URL). Skipping fetch: ${path}`);
@@ -101,11 +104,14 @@ export async function fetchStrapi<T = unknown>(
       }
       return null;
     }
-    const data = (await res.json()) as { data?: T };
-    const payload = (data?.data ?? data) as T;
+    const body = (await res.json()) as {
+      data?: T;
+      meta?: { pagination?: { page: number; pageSize: number; pageCount: number; total: number } };
+    };
+    const payload = (body?.data ?? body) as T;
     const count = Array.isArray(payload) ? payload.length : 1;
     console.info(`${LOG_PREFIX} OK ${path} (${count} item(s))`);
-    return { data: payload };
+    return { data: payload, meta: body.meta };
   } catch (err) {
     console.warn(`${LOG_PREFIX} Strapi fetch failed: ${path}`, err);
     return null;

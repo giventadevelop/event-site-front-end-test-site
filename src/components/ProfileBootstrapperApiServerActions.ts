@@ -1,6 +1,7 @@
 "use server";
 import { getCachedApiJwt, generateApiJwt } from '@/lib/api/jwt';
-import { getTenantId, getApiBaseUrl } from '@/lib/env';
+import { getTenantId, getApiBaseUrl, getAppUrl } from '@/lib/env';
+import { buildClerkProfileInsert, decideClerkProfileIdentity } from '@/lib/clerkProfileIdentity';
 
 // Lazy getter - evaluated at call time, not module load time (critical for Lambda cold starts)
 function getApiBase() {
@@ -78,13 +79,13 @@ export async function bootstrapUserProfile({
       const email = userData?.email || "";
       if (email) {
         let emailToken = token;
-        let emailRes = await fetch(`${getApiBase()}/api/user-profiles?email.equals=${encodeURIComponent(email)}&tenantId.equals=${tenantId}`, {
+        let emailRes = await fetch(`${getApiBase()}/api/user-profiles?email.equals=${encodeURIComponent(email)}&tenantId.equals=${tenantId}&sort=id,asc&size=20`, {
           headers: tenantAuthHeaders(emailToken, { 'Content-Type': 'application/json' }),
           cache: 'no-store',
         });
         if (emailRes.status === 401) {
           emailToken = await generateApiJwt();
-          emailRes = await fetch(`${getApiBase()}/api/user-profiles?email.equals=${encodeURIComponent(email)}&tenantId.equals=${tenantId}`, {
+          emailRes = await fetch(`${getApiBase()}/api/user-profiles?email.equals=${encodeURIComponent(email)}&tenantId.equals=${tenantId}&sort=id,asc&size=20`, {
             headers: tenantAuthHeaders(emailToken, { 'Content-Type': 'application/json' }),
             cache: 'no-store',
           });
@@ -92,14 +93,30 @@ export async function bootstrapUserProfile({
         if (emailRes.ok) {
           const profiles = await emailRes.json();
           if (Array.isArray(profiles) && profiles.length > 0) {
-            const userProfile = profiles[0];
-
-            // CRITICAL: Only update if userId is different
-            // If userId already matches, skip update to preserve existing data
-            if (userProfile.userId === userId) {
+            const decision = decideClerkProfileIdentity(profiles, userId);
+            if (decision.action === 'use') {
               console.log('[bootstrapUserProfile] Profile already has correct userId, skipping update to preserve existing data');
               return;
             }
+            if (decision.action === 'insert') {
+              const payload = buildClerkProfileInsert({
+                userId,
+                email,
+                tenantId,
+                firstName: userData?.firstName,
+                lastName: userData?.lastName,
+                imageUrl: userData?.imageUrl,
+                sibling: decision.sibling,
+              });
+              await fetch(`${getAppUrl()}/api/proxy/user-profiles`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                cache: 'no-store',
+              });
+              return;
+            }
+            const userProfile = decision.row;
 
             // Update the found profile with the current userId
             // CRITICAL: Use PATCH (not PUT) and only update userId/clerkUserId
