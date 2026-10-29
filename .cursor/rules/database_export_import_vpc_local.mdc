@@ -11,8 +11,8 @@ alwaysApply: false
 Use the **`database_export_import_refresh.bat`** workflow to export `adwiise_agent_db` from **local Docker Postgres**, prepare ordered INSERT SQL (with optional production Clerk user IDs), then apply **schema rebuild + data import + sequence sync** to:
 
 - **Local Docker** (dev Clerk IDs, renumbered PKs)
-- **VPC dev RDS** (`event-site-manager-dev-postgres...`, via `mosc-temp\.env.local`)
-- **VPC prod RDS** (`event-site-manager-prod-postgres...`, credentials from AWS Secrets Manager)
+- **VPC dev RDS** (`adwiise-agent-dev-postgres...`, via `mosc-temp\.env.local`)
+- **VPC prod RDS** (`adwiise-agent-prod-postgres...`, credentials from AWS Secrets Manager)
 
 **Canonical project:** `F:\project_workspace\adwiise-agent-database-repo` ([giventadeveloporg/adwiise-agent-database-repo](https://github.com/giventadeveloporg/adwiise-agent-database-repo)). Schema, export/import SQL, guardrails, the refresh batch, and the HTML runbook live there. Remote RDS credentials still come from `mosc-temp\.env.local`. Spring Batch sequence SQL still lives in `adwiise-agent-service`.
 
@@ -74,7 +74,7 @@ F:\project_workspace\adwiise-agent-database-repo\batch\database_export_import_re
 
 ### **2. VPC dev RDS — reuse prepared SQL**
 
-Requires `mosc-temp\.env.local` → **dev** host (`event-site-manager-dev-postgres.cwffi3ch4r75.us-east-1.rds.amazonaws.com`).
+Requires `mosc-temp\.env.local` → **dev** host (`adwiise-agent-dev-postgres.cwffi3ch4r75.us-east-1.rds.amazonaws.com`).
 
 `/REMOTE` auto-enables `/PROD` → imports `corrected_event_media_inserts.ordered_PROD.sql`.
 
@@ -241,14 +241,14 @@ Do **not** ship an older `export.sql` / ordered / PROD file after media changes 
 ## **Remote config keys (`mosc-temp\.env.local`)**
 
 ```env
-RDS_ENDPOINT=event-site-manager-dev-postgres.cwffi3ch4r75.us-east-1.rds.amazonaws.com
+RDS_ENDPOINT=adwiise-agent-dev-postgres.cwffi3ch4r75.us-east-1.rds.amazonaws.com
 DB_NAME=adwiise_agent_db
 DB_USERNAME=postgres
 DB_PASSWORD=<secret>
 # Optional: DB_PORT=5432, DB_SSLMODE=require
 ```
 
-Prod host: `event-site-manager-prod-postgres.cwffi3ch4r75.us-east-1.rds.amazonaws.com` (Secrets Manager: `adwiise-agent/prod/rds/postgres`).
+Prod host: `adwiise-agent-prod-postgres.cwffi3ch4r75.us-east-1.rds.amazonaws.com` (Secrets Manager: `adwiise-agent/prod/rds/postgres`).
 
 ---
 
